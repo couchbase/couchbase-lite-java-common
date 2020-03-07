@@ -20,7 +20,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 project (LiteCoreJNI)
 
-set(LITE_CORE_ROOT ${PROJECT_SOURCE_DIR}/../../couchbase-lite-core)
+set(LITE_CORE_ROOT ${PROJECT_SOURCE_DIR}/../../core)
 
 find_package(Java COMPONENTS Development)
 include (UseJava)
@@ -44,7 +44,7 @@ MESSAGE( STATUS "OUTPUT DIR: " ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
 set(JNI_OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/include)
 add_custom_target(JNI_DIR ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${JNI_OUTPUT_DIR})
 
-set(JNI_CLASSPATH  ${PROJECT_SOURCE_DIR}/src/shared/main/java)
+set(JNI_CLASSPATH  ${PROJECT_SOURCE_DIR}/../common/main/java/)
 set(JNI_CLASSES
     com.couchbase.lite.internal.core.C4
     com.couchbase.lite.internal.core.C4Base
@@ -111,7 +111,7 @@ if(BUILD_ENTERPRISE)
                     -DSQLITE_HAS_CODEC)         # Enables SQLite encryption extension (SEE)
 endif()
 
-aux_source_directory(./src/shared/main/cpp  JNI_SRC)
+aux_source_directory(./main/cpp JNI_SRC)
 add_library(LiteCoreJNI SHARED ${JNI_SRC})
 
 # set dependency
