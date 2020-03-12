@@ -39,7 +39,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     public void setUp() throws CouchbaseLiteException {
         super.setUp();
 
-        otherDB = createDb();
+        otherDB = createDb("replicator-db");
 
         assertNotNull(otherDB);
         assertTrue(otherDB.isOpen());

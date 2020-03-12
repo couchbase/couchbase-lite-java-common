@@ -44,7 +44,7 @@ public class MigrationTest extends BaseTest {
     @Override
     public void setUp() throws CouchbaseLiteException {
         super.setUp();
-        dbDir = new File(getDatabaseDirectoryPath(), getUniqueName());
+        dbDir = new File(getDatabaseDirectoryPath(), getUniqueName("migration-test-dir"));
     }
 
     @After

@@ -48,7 +48,7 @@ public abstract class BaseDbTest extends BaseTest {
     public void setUp() throws CouchbaseLiteException {
         super.setUp();
 
-        baseTestDb = createDb();
+        baseTestDb = createDb("base-db");
 
         assertNotNull(baseTestDb);
         assertTrue(baseTestDb.isOpen());

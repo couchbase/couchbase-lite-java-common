@@ -2134,7 +2134,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testEqualityDifferentDB() throws CouchbaseLiteException {
         Database sameDB = null;
-        Database otherDB = createDb();
+        Database otherDB = createDb("equ-diff-db");
         try {
             MutableDocument doc1a = new MutableDocument("doc1");
             MutableDocument doc1b = new MutableDocument("doc1");

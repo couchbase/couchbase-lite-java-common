@@ -101,7 +101,7 @@ public class LogTest extends BaseDbTest {
     public void setUp() throws CouchbaseLiteException {
         super.setUp();
 
-        scratchDirPath = getScratchDirectoryPath(getUniqueName(getUniqueName("logging-")));
+        scratchDirPath = getScratchDirectoryPath(getUniqueName(getUniqueName("log-dir")));
 
         Log.initLogging();
         Database.log.reset();

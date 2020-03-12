@@ -736,10 +736,10 @@ public class DatabaseTest extends BaseDbTest {
 
     @Test
     public void testStaticDeleteDb() throws CouchbaseLiteException {
-        final String dbDirPath = getScratchDirectoryPath(getUniqueName());
+        final String dbDirPath = getScratchDirectoryPath(getUniqueName("static-delete-dir"));
 
         // create db in a custom directory
-        final Database db = createDb(new DatabaseConfiguration().setDirectory(dbDirPath));
+        final Database db = createDb("static-del-db", new DatabaseConfiguration().setDirectory(dbDirPath));
         try {
             final String dbName = db.getName();
 
@@ -795,7 +795,7 @@ public class DatabaseTest extends BaseDbTest {
 
     @Test
     public void testDatabaseExistsWithDir() throws CouchbaseLiteException {
-        final String uniqueName = getUniqueName();
+        final String uniqueName = getUniqueName("test-exists-dir");
 
         final String dbDirPath = getScratchDirectoryPath(uniqueName);
         final File dbDir = new File(dbDirPath);
@@ -925,7 +925,7 @@ public class DatabaseTest extends BaseDbTest {
 
         final DatabaseConfiguration config = baseTestDb.getConfig();
 
-        String dbName = getUniqueName();
+        String dbName = getUniqueName("test-copy-db");
 
         // Copy:
         Database.copy(new File(baseTestDb.getPath()), dbName, config);
@@ -1081,7 +1081,7 @@ public class DatabaseTest extends BaseDbTest {
         Database database2 = null;
         try {
             // open a database
-            database1 = createDb(config);
+            database1 = createDb("del-open-db", config);
             final String dbName = database1.getName();
 
             // delete it
@@ -1251,7 +1251,7 @@ public class DatabaseTest extends BaseDbTest {
         assertNull(baseTestDb.getDocument("doc"));
     }
 
-    private Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb()); }
+    private Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb("test-db")); }
 
     private Database duplicateBaseTestDb() throws CouchbaseLiteException {
         return verifyDb(duplicateDb(baseTestDb));

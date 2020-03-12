@@ -40,7 +40,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         int errorCode = CBLError.Code.BUSY;
         int errorDomain = 1; // CBLError.Domain.CBLErrorDomain: LiteCoreDomain
         C4ReplicatorStatus c4ReplicatorStatus = new C4ReplicatorStatus(
-            AbstractReplicator.ActivityLevel.CONNECTING.getValue(),
+            C4ReplicatorStatus.ActivityLevel.CONNECTING,
             completed,
             total,
             1,

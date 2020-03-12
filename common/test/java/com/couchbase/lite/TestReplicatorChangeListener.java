@@ -11,8 +11,6 @@ import static org.junit.Assert.assertNotNull;
 
 
 public class TestReplicatorChangeListener implements ReplicatorChangeListener {
-    private static final String[] ACTIVITY_NAMES = {"stopped", "offline", "connecting", "idle", "busy"};
-
     private final AtomicReference<Throwable> testFailureReason = new AtomicReference<>();
     private final CountDownLatch latch = new CountDownLatch(1);
 

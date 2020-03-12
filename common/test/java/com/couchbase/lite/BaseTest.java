@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
@@ -84,17 +83,17 @@ public abstract class BaseTest extends PlatformBaseTest {
         finally { super.tearDown(); }
     }
 
-    protected final String getUniqueName() { return getUniqueName("cbl-test"); }
-
     protected final String getUniqueName(@NonNull String prefix) { return prefix + '-' + TestUtils.randomString(24); }
 
     // Prefer this method to any other way of creating a new database
-    protected final Database createDb() throws CouchbaseLiteException { return createDb(null); }
-
+    protected final Database createDb(@NonNull String name) throws CouchbaseLiteException {
+        return createDb(name, null);
+    }
     // Prefer this method to any other way of creating a new database
-    protected final Database createDb(@Nullable DatabaseConfiguration config) throws CouchbaseLiteException {
+    protected final Database createDb(@NonNull String name, @Nullable DatabaseConfiguration config)
+        throws CouchbaseLiteException {
         if (config == null) { config = new DatabaseConfiguration(); }
-        final String dbName = getUniqueName();
+        final String dbName = getUniqueName(name);
         final File dbDir = new File(config.getDirectory(), dbName + DB_EXTENSION);
         assertFalse(dbDir.exists());
         final Database db = new Database(dbName, config);
