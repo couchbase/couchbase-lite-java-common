@@ -50,11 +50,7 @@ import com.couchbase.lite.internal.core.CBLVersion;
 public final class Log {
     private Log() { } // Utility class
 
-    private static final AtomicBoolean WARNED = new AtomicBoolean(false);
-
-    private static final String DEFAULT_MSG = "Unknown error";
-
-    public static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
+    private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
     static {
         final Map<String, LogDomain> m = new HashMap<>();
         m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
@@ -66,7 +62,7 @@ public final class Log {
         LOGGING_DOMAINS_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
-    public static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
+    private static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
     static {
         final Map<LogDomain, String> m = new HashMap<>();
         m.put(LogDomain.DATABASE, C4Constants.LogDomain.DATABASE);
@@ -76,12 +72,16 @@ public final class Log {
         LOGGING_DOMAINS_TO_C4 = Collections.unmodifiableMap(m);
     }
 
-    public static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
+    private static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
     static {
         final Map<Integer, LogLevel> m = new HashMap<>();
         for (LogLevel level : LogLevel.values()) { m.put(level.getValue(), level); }
         LOG_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
+
+    private static final AtomicBoolean WARNED = new AtomicBoolean(false);
+
+    private static final String DEFAULT_MSG = "Unknown error";
 
     private static volatile Map<String, String> errorMessages;
 
