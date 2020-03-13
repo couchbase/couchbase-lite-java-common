@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,8 +76,32 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private static final int MAX_ONE_SHOT_RETRY_COUNT = 2;
     private static final int MAX_RETRY_DELAY = 10 * 60; // 10min (600 sec)
 
-    private static final List<String> REPLICATOR_ACTIVITY_LEVEL_NAMES
-        = Collections.unmodifiableList(Arrays.asList("stopped", "offline", "connecting", "idle", "busy"));
+    /**
+     * Activity level of a replicator.
+     */
+    public enum ActivityLevel {
+        /**
+         * The replication is finished or hit a fatal error.
+         */
+        STOPPED,
+        /**
+         * The replicator is offline because the remote host is unreachable.
+         */
+        OFFLINE,
+        /**
+         * The replicator is connecting to the remote host.
+         */
+        CONNECTING,
+        /**
+         * The replication is inactive; either waiting for changes or offline
+         * as the remote host is unreachable.
+         */
+        IDLE,
+        /**
+         * The replication is actively transferring data.
+         */
+        BUSY
+    }
 
     /**
      * Progress of a replicator. If `total` is zero, the progress is indeterminate; otherwise,
@@ -141,7 +166,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:
         public Status(C4ReplicatorStatus c4Status) {
             this(
-                AbstractReplicator.ActivityLevel.values()[c4Status.getActivityLevel()],
+                ACTIVITY_LEVEL_FROM_C4.get(c4Status.getActivityLevel()),
                 new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
                 c4Status.getErrorCode() != 0 ? CBLStatus.convertError(c4Status.getC4Error()) : null);
         }
@@ -213,39 +238,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     /**
-     * Activity level of a replicator.
-     */
-    public enum ActivityLevel {
-        /**
-         * The replication is finished or hit a fatal error.
-         */
-        STOPPED(C4ReplicatorStatus.ActivityLevel.STOPPED),
-        /**
-         * The replicator is offline because the remote host is unreachable.
-         */
-        OFFLINE(C4ReplicatorStatus.ActivityLevel.OFFLINE),
-        /**
-         * The replicator is connecting to the remote host.
-         */
-        CONNECTING(C4ReplicatorStatus.ActivityLevel.CONNECTING),
-        /**
-         * The replication is inactive; either waiting for changes or offline
-         * as the remote host is unreachable.
-         */
-        IDLE(C4ReplicatorStatus.ActivityLevel.IDLE),
-        /**
-         * The replication is actively transferring data.
-         */
-        BUSY(C4ReplicatorStatus.ActivityLevel.BUSY);
-
-        private final int value;
-
-        ActivityLevel(int value) { this.value = value; }
-
-        int getValue() { return value; }
-    }
-
-    /**
      * An enum representing level of opt in on progress of replication
      * OVERALL: No additional replication progress callback
      * PER_DOCUMENT: >=1 Every document replication ended callback
@@ -259,8 +251,17 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         private final int value;
 
         ReplicatorProgressLevel(int value) { this.value = value; }
+    }
 
-        int getValue() { return value; }
+    private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
+    static {
+        final Map<Integer, ActivityLevel> m = new HashMap<>();
+        m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
+        m.put(C4ReplicatorStatus.ActivityLevel.OFFLINE, ActivityLevel.OFFLINE);
+        m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
+        m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
+        m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
+        ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
     private static int retryDelay(int retryCount) {
@@ -1029,8 +1030,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
         c4ReplStatus = c4Status.copy();
 
-        // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:
-        final ActivityLevel level = AbstractReplicator.ActivityLevel.values()[c4Status.getActivityLevel()];
+        final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4Status.getActivityLevel());
 
         this.status = new Status(
             level,
@@ -1038,7 +1038,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
 
         Log.i(DOMAIN, "%s is %s, progress %d/%d, error: %s",
             this,
-            REPLICATOR_ACTIVITY_LEVEL_NAMES.get(c4Status.getActivityLevel()),
+            level.toString(),
             c4Status.getProgressUnitsCompleted(),
             c4Status.getProgressUnitsTotal(),
             error);
