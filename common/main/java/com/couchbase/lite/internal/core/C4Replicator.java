@@ -81,18 +81,6 @@ public class C4Replicator extends C4NativePeer {
     private static final Map<Object, C4Replicator> CONTEXT_TO_C4_REPLICATOR_MAP = new HashMap<>();
 
     //-------------------------------------------------------------------------
-    // Public static methods
-    //-------------------------------------------------------------------------
-
-    public static boolean mayBeTransient(@NonNull C4Error err) {
-        return mayBeTransient(err.getDomain(), err.getCode(), err.getInternalInfo());
-    }
-
-    public static boolean mayBeNetworkDependent(@NonNull C4Error err) {
-        return mayBeNetworkDependent(err.getDomain(), err.getCode(), err.getInternalInfo());
-    }
-
-    //-------------------------------------------------------------------------
     // Static Factory Methods
     //-------------------------------------------------------------------------
 
@@ -535,17 +523,5 @@ public class C4Replicator extends C4NativePeer {
      * Returns true if there are documents that have not been resolved.
      */
     private static native boolean isDocumentPending(long handle, String id) throws LiteCoreException;
-
-    /**
-     * Returns true if this is a network error that may be transient,
-     * i.e. the client should retry after a delay.
-     */
-    private static native boolean mayBeTransient(int domain, int code, int info);
-
-    /**
-     * Returns true if this error might go away when the network environment changes,
-     * i.e. the client should retry after notification of a network status change.
-     */
-    private static native boolean mayBeNetworkDependent(int domain, int code, int info);
 }
 
