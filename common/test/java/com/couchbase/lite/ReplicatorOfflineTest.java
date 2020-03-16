@@ -22,6 +22,7 @@ import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.couchbase.lite.utils.TestUtils.assertThrows;
@@ -105,6 +106,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     }
 
     @Test
+    @Ignore("Platform no longer has control of network reachablity")
     public void testNetworkRetry() throws URISyntaxException, InterruptedException {
         final CountDownLatch offline = new CountDownLatch(2);
         final CountDownLatch stopped = new CountDownLatch(1);
@@ -118,7 +120,8 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
                         Replicator r = change.getReplicator();
                         offline.countDown();
                         if (offline.getCount() <= 0) { r.stop(); }
-                        else { r.networkReachable(); }
+                        // !!! Platform no longer has controll of network reachablity
+                        //else { r.networkReachable(); }
                         return;
                     case STOPPED:
                         stopped.countDown();

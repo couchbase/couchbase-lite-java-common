@@ -110,7 +110,11 @@ public class LogTest extends BaseDbTest {
     @After
     @Override
     public void tearDown() {
-        try { FileUtils.eraseFileOrDir(scratchDirPath); }
+        try {
+            // if setup failed, don't obscure its failure.
+            // !!! Failing on Nexus 4
+            if (scratchDirPath != null) { FileUtils.eraseFileOrDir(scratchDirPath); }
+        }
         finally { super.tearDown(); }
     }
 

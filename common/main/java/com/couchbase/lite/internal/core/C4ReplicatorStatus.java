@@ -81,17 +81,6 @@ public final class C4ReplicatorStatus {
             errorInternalInfo);
     }
 
-    public C4ReplicatorStatus copyAtlevel(int newLevel) {
-        return new C4ReplicatorStatus(
-            newLevel,
-            progressUnitsCompleted,
-            progressUnitsTotal,
-            progressDocumentCount,
-            errorDomain,
-            errorCode,
-            errorInternalInfo);
-    }
-
     public int getActivityLevel() { return activityLevel; }
 
     public long getProgressUnitsCompleted() { return progressUnitsCompleted; }

@@ -22,9 +22,7 @@ import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +40,6 @@ import java.util.concurrent.Executor;
 import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
-import com.couchbase.lite.internal.ExecutionService.Cancellable;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4DocumentEnded;
@@ -53,7 +50,6 @@ import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.C4ReplicatorMode;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.core.C4Socket;
-import com.couchbase.lite.internal.core.C4WebSocketCloseCode;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -70,11 +66,8 @@ import com.couchbase.lite.utils.Fn;
  * be notified of progress.
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.TooManyMethods", "PMD.TooManyFields"})
-public abstract class AbstractReplicator extends NetworkReachabilityListener {
+public abstract class AbstractReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
-
-    private static final int MAX_ONE_SHOT_RETRY_COUNT = 2;
-    private static final int MAX_RETRY_DELAY = 10 * 60; // 10min (600 sec)
 
     /**
      * Activity level of a replicator.
@@ -254,6 +247,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     }
 
     private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
+
     static {
         final Map<Integer, ActivityLevel> m = new HashMap<>();
         m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
@@ -262,10 +256,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
         m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
         ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
-    }
-
-    private static int retryDelay(int retryCount) {
-        return Math.min(1 << Math.min(retryCount, 30), MAX_RETRY_DELAY);
     }
 
     private static boolean isPush(ReplicatorConfiguration.ReplicatorType type) {
@@ -315,11 +305,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     private C4ReplicationFilter c4ReplPullFilter;
     private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
     private CouchbaseLiteException lastError;
-    private int retryCount;
-    private Cancellable retryTask;
     private String desc;
-
-    private AbstractNetworkReachabilityManager reachabilityManager;
 
     private Map<String, Object> responseHeaders; // Do something with these (for auth)
     private boolean shouldResetCheckpoint; // Reset the replicator checkpoint.
@@ -353,7 +339,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             }
 
             Log.i(DOMAIN, "%s: Starting", this);
-            resetRetryCount();
             startLocked();
         }
     }
@@ -370,15 +355,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             // this is async; status will change when repl actually stops
             if (c4Replicator != null) { c4Replicator.stop(); }
             else { Log.i(DOMAIN, "%s: Replicator already stopped or offline.", this); }
-
-            if ((c4ReplStatus != null)
-                && (c4ReplStatus.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.OFFLINE)) {
-                Log.i(DOMAIN, "%s: Replicator is offline.  Stopping.", this);
-                dispatcher.execute(
-                    () -> c4StatusChanged(new C4ReplicatorStatus(C4ReplicatorStatus.ActivityLevel.STOPPED)));
-            }
-
-            if (reachabilityManager != null) { reachabilityManager.removeNetworkReachabilityListener(this); }
         }
     }
 
@@ -581,8 +557,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     @Override
     protected void finalize() throws Throwable {
         freeC4Replicator(c4Replicator);
-        final AbstractNetworkReachabilityManager mgr = reachabilityManager;
-        if (mgr != null) { mgr.removeNetworkReachabilityListener(this); }
         super.finalize();
     }
 
@@ -598,7 +572,7 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
     protected final C4Replicator getRemoteC4ReplicatorLocked(@NonNull URI remoteUri) throws LiteCoreException {
         // Set up the port: core uses 0 for not set
         final int p = remoteUri.getPort();
-        final int port = (p <= 0) ? 0 : p;
+        final int port = Math.max(0, p);
 
         // get db name and path
         final Deque<String> splitPath = splitPath(remoteUri.getPath());
@@ -690,23 +664,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             framing);
     }
 
-    //---------------------------------------------
-    // Implementation of NetworkReachabilityListener
-    //---------------------------------------------
-
-    @Override
-    void networkReachable() {
-        Log.i(DOMAIN, "%s: Server may now be reachable; retrying...", this);
-        synchronized (lock) {
-            if (c4Replicator != null) { return; }
-            resetRetryCount();
-            scheduleRetry(0);
-        }
-    }
-
-    @Override
-    void networkUnreachable() { Log.v(DOMAIN, "%s: Server may NOT be reachable now.", this); }
-
     ///// Notification
 
     @SuppressWarnings("PMD.NPathComplexity")
@@ -720,40 +677,12 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             this, pendingResolutions.size(), pendingStatusNotifications.size(), c4Status);
 
         synchronized (lock) {
-            final int c4ActivityLevel = c4Status.getActivityLevel();
-            if (!pendingResolutions.isEmpty()
-                && ((c4ActivityLevel == C4ReplicatorStatus.ActivityLevel.IDLE)
-                || (c4ActivityLevel == C4ReplicatorStatus.ActivityLevel.STOPPED))
-                && !actuallyMeansOffline(c4Status.getC4Error())) {
-                pendingStatusNotifications.add(c4Status);
-            }
+            if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
 
             if ((responseHeaders == null) && (c4Replicator != null)) {
                 final byte[] h = c4Replicator.getResponseHeaders();
                 if (h != null) { responseHeaders = FLValue.fromData(h).asDict(); }
-            }
-
-            switch (c4ActivityLevel) {
-                case C4ReplicatorStatus.ActivityLevel.IDLE:
-                case C4ReplicatorStatus.ActivityLevel.BUSY:
-                    resetRetryCount();
-                    if (reachabilityManager != null) { reachabilityManager.removeNetworkReachabilityListener(this); }
-                    break;
-
-                case C4ReplicatorStatus.ActivityLevel.STOPPED:
-                    final C4Error error = c4Status.getC4Error();
-                    if (actuallyMeansOffline(error)) {
-                        handleError(error);
-                        // Change c4Status to offline, so my state will reflect that, and proceed:
-                        c4Status = c4Status.copyAtlevel(C4ReplicatorStatus.ActivityLevel.OFFLINE);
-                    }
-                    break;
-
-                default:
-                    // This should be happening:
-                    Log.w(DOMAIN, "%s: received unrecognized activity level: ", this, c4Status);
-                    break;
             }
 
             // Update my properties:
@@ -763,13 +692,11 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             // Replicator.getStatus() creates a copy of Status.
             change = new ReplicatorChange((Replicator) this, this.getStatus());
             tokens = new ArrayList<>(changeListenerTokens);
+        }
 
-            // Note: don't use c4ActivityLevel here.  It might not be up to date.
-            if (c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED) {
-                cancelScheduledRetry();
-                freeC4Replicator();
-                config.getDatabase().removeActiveReplicator((Replicator) this); // this is likely to dealloc me
-            }
+        if (c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED) {
+            freeC4Replicator();
+            config.getDatabase().removeActiveReplicator((Replicator) this); // this is likely to dealloc me
         }
 
         for (ReplicatorChangeListenerToken token : tokens) { token.notify(change); }
@@ -949,75 +876,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
         return filter.filtered(new Document(config.getDatabase(), docId, revId, new FLDict(dict)), flags);
     }
 
-    private void retry() {
-        synchronized (lock) {
-            if ((c4Replicator != null)
-                || (c4ReplStatus.getActivityLevel() != C4ReplicatorStatus.ActivityLevel.OFFLINE)) {
-                return;
-            }
-
-            Log.i(DOMAIN, "%s: Retrying...", this);
-            startLocked();
-        }
-    }
-
-    private void scheduleRetry(int delaySec) {
-        cancelScheduledRetry();
-        final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
-        retryTask = exec.postDelayedOnExecutor(delaySec * 1000, dispatcher, this::retry);
-    }
-
-    private void cancelScheduledRetry() {
-        if (retryTask != null) {
-            Log.v(DOMAIN, "%s Cancel the pending scheduled retry", this);
-            final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
-            exec.cancelDelayedTask(retryTask);
-            retryTask = null;
-        }
-    }
-
-    private void resetRetryCount() {
-        if (retryCount > 0) {
-            retryCount = 0;
-            Log.v(DOMAIN, "%s Reset retry count to zero", this);
-        }
-    }
-
-    // See if this is a transient error, or if I'm continuous and the error might go away with a change
-    // in network (i.e. network down, hostname unknown)
-    private boolean actuallyMeansOffline(C4Error c4err) {
-        final boolean isContinuous = config.isContinuous();
-        if (!(isTransient(c4err) || (isContinuous && C4Replicator.mayBeNetworkDependent(c4err)))) {
-            return false;
-        }
-        // this is permanent
-        return isContinuous || (retryCount < MAX_ONE_SHOT_RETRY_COUNT);
-    }
-
-    // If actuallyMeansOffline == true, go offline and retry later.
-    private void handleError(C4Error c4err) {
-        freeC4Replicator();
-
-        if (!isTransient(c4err)) {
-            Log.i(DOMAIN, "%s: Network error (%s); will retry when network changes...", this, c4err);
-        }
-        else {
-            // On transient error, retry periodically, with exponential backoff:
-            final int delaySec = retryDelay(++retryCount);
-            Log.i(DOMAIN, "%s: Transient error (%s); will retry in %d sec...", this, c4err, delaySec);
-            scheduleRetry(delaySec);
-        }
-
-        // Also retry when the network changes:
-        startReachabilityObserver();
-    }
-
-    private boolean isTransient(C4Error c4err) {
-        return C4Replicator.mayBeTransient(c4err) ||
-            ((c4err.getDomain() == C4Constants.ErrorDomain.WEB_SOCKET)
-                && (c4err.getCode() == C4WebSocketCloseCode.kWebSocketCloseUserTransient));
-    }
-
     private void updateStateProperties(@NonNull C4ReplicatorStatus c4Status) {
         CouchbaseLiteException error = null;
         if (c4Status.getErrorCode() != 0) {
@@ -1042,24 +900,6 @@ public abstract class AbstractReplicator extends NetworkReachabilityListener {
             c4Status.getProgressUnitsCompleted(),
             c4Status.getProgressUnitsTotal(),
             error);
-    }
-
-    // !!! CBL-689
-    private void startReachabilityObserver() {
-        if (!(config.getTarget() instanceof URLEndpoint)) { return; }
-
-        final URI remoteUri = ((URLEndpoint) config.getTarget()).getURL();
-
-        try {
-            final InetAddress host = InetAddress.getByName(remoteUri.getHost());
-            if (host.isAnyLocalAddress() || host.isLoopbackAddress()) { return; }
-        }
-        // an unknown host is surely not local
-        catch (UnknownHostException ignore) { }
-
-        if (reachabilityManager == null) { reachabilityManager = new NetworkReachabilityManager(); }
-
-        reachabilityManager.addNetworkReachabilityListener(this);
     }
 
     // - (void) clearRepl
