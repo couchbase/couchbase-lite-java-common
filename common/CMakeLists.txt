@@ -100,8 +100,6 @@ include_directories(
     ${LITE_CORE_ROOT}/vendor/SQLiteCpp/include
     ${LITE_CORE_ROOT}/vendor/SQLiteCpp/sqlite3
     ${LITE_CORE_ROOT}/vendor/sqlite3-unicodesn
-    ${LITE_CORE_ROOT}/vendor/BLIP-Cpp/include/blip_cpp
-    ${LITE_CORE_ROOT}/vendor/BLIP-Cpp/src/util
     ${LITE_CORE_ROOT}/vendor/civetweb/include
     ${LITE_CORE_ROOT}/vendor/mbedtls/include
     ${LITE_CORE_ROOT}/vendor/mbedtls/crypto/include)
