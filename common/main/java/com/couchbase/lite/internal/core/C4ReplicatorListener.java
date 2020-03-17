@@ -17,8 +17,19 @@
 //
 package com.couchbase.lite.internal.core;
 
-public interface C4ReplicatorListener {
-    void statusChanged(C4Replicator replicator, C4ReplicatorStatus status, Object context);
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
-    void documentEnded(C4Replicator replicator, boolean pushing, C4DocumentEnded[] documents, Object context);
+
+public interface C4ReplicatorListener {
+    void statusChanged(
+        @Nullable C4Replicator replicator,
+        @NonNull C4ReplicatorStatus status,
+        @Nullable Object context);
+
+    void documentEnded(
+        @NonNull C4Replicator replicator,
+        boolean pushing,
+        @Nullable C4DocumentEnded[] documents,
+        @Nullable Object context);
 }
