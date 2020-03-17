@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LiteCoreException;
@@ -36,19 +35,17 @@ import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * There are three bits of state to protect in the class:
+ * There are two things that need protection in the class:
  * <ol>
  * <li/> Messages sent to it from native code:  This object proxies those messages out to
  * various listeners.  Until a replicator object is removed from the REVERSE_LOOKUP_TABLE
- * forwarding such a message should always work (there is no dependence on the other two states)
+ * forwarding such a message must work.
  * <li/> Calls to the native object:  These should work as long as the `handle` is non-zero.
  * This object must be careful never to forward a call to a native object once that object has been freed.
- * <li/> Running state: if the underlying native replicator is running there is no need to start it again.
- * Likewise, if it is stopped, there is no need to start it again.  Running state affects only
- * these two calls: it has no direct affect on either of the other two states.
  * </ol>
  * <p>
  * Instances of this class are created using static factory methods
@@ -237,13 +234,14 @@ public class C4Replicator extends C4NativePeer {
     }
 
     private static void bind(long handle, @NonNull C4Replicator repl, @Nullable Object context) {
+        Preconditions.assertNotZero(handle, "handle");
         REVERSE_LOOKUP_TABLE.put(handle, repl);
         if (context != null) { CONTEXT_TO_C4_REPLICATOR_MAP.put(context, repl); }
     }
 
     private static void release(long handle, @Nullable Object context) {
-        REVERSE_LOOKUP_TABLE.remove(handle);
-        CONTEXT_TO_C4_REPLICATOR_MAP.remove(context);
+        if (handle != 0) { REVERSE_LOOKUP_TABLE.remove(handle); }
+        if (context != null) { CONTEXT_TO_C4_REPLICATOR_MAP.remove(context); }
     }
 
     //-------------------------------------------------------------------------
@@ -262,9 +260,6 @@ public class C4Replicator extends C4NativePeer {
     private final C4ReplicationFilter pushFilter;
     @Nullable
     private final C4ReplicationFilter pullFilter;
-
-    @NonNull
-    private final AtomicBoolean running = new AtomicBoolean(false);
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -365,15 +360,9 @@ public class C4Replicator extends C4NativePeer {
         this.pullFilter = null;
     }
 
-    public void start() {
-        if (running.getAndSet(true)) { return; }
-        start(getPeer());
-    }
+    public void start() { start(getPeer()); }
 
-    public void stop() {
-        if (!running.getAndSet(false)) { return; }
-        stop(getPeer());
-    }
+    public void stop() { stop(getPeer()); }
 
     @Nullable
     public C4ReplicatorStatus getStatus() { return getStatus(getPeer()); }
@@ -407,17 +396,15 @@ public class C4Replicator extends C4NativePeer {
     // https://issues.couchbase.com/browse/CBL-34
     public void free() {
         final long handle = getPeerAndClear();
-        if (handle == 0) { return; }
-
         synchronized (CLASS_LOCK) {
             release(handle, this.replicatorContext);
-            free(handle, replicatorContext, socketFactoryContext);
+            if (handle != 0) { free(handle, replicatorContext, socketFactoryContext); }
         }
     }
 
     // This must not be called, unless <code>free()</code> is called first.
-    // Until <code>free()</code> is called, there is a reference to this object
-    // in the <code>REVERSE_LOOKUP_TABLE</code>
+    // Until <code>free()</code> is called, there are references to objects managed by this object
+    // in the <code>REVERSE_LOOKUP_TABLE</code> and <code>CONTEXT_TO_C4_REPLICATOR_MAP</code>
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {

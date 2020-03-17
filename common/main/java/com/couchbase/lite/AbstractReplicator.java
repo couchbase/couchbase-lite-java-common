@@ -200,7 +200,10 @@ public abstract class AbstractReplicator {
     // just queue everything up for in-order processing.
     final class ReplicatorListener implements C4ReplicatorListener {
         @Override
-        public void statusChanged(C4Replicator repl, C4ReplicatorStatus status, Object context) {
+        public void statusChanged(
+            @Nullable C4Replicator repl,
+            @NonNull C4ReplicatorStatus status,
+            @Nullable Object context) {
             Log.i(DOMAIN, "C4ReplicatorListener.statusChanged, context: %s, status: %s", context, status);
 
             if (context == null) {
@@ -209,13 +212,17 @@ public abstract class AbstractReplicator {
             }
 
             final AbstractReplicator replicator = (AbstractReplicator) context;
-            if (!replicator.isSameReplicator(repl)) { return; }
+            if (!replicator.isSameReplicator(repl)) { return; } // this handles repl == null
 
             dispatcher.execute(() -> replicator.c4StatusChanged(status));
         }
 
         @Override
-        public void documentEnded(C4Replicator repl, boolean pushing, C4DocumentEnded[] documents, Object context) {
+        public void documentEnded(
+            @NonNull C4Replicator repl,
+            boolean pushing,
+            @Nullable C4DocumentEnded[] documents,
+            @Nullable Object context) {
             Log.i(DOMAIN, "C4ReplicatorListener.documentEnded, context: %s, pushing: %s", context, pushing);
 
             if (context == null) {
@@ -224,7 +231,7 @@ public abstract class AbstractReplicator {
             }
 
             final AbstractReplicator replicator = (AbstractReplicator) context;
-            if (!replicator.isSameReplicator(repl)) { return; }
+            if (!replicator.isSameReplicator(repl)) { return; } // this handles repl == null
 
             dispatcher.execute(() -> replicator.documentEnded(pushing, documents));
         }
@@ -549,17 +556,6 @@ public abstract class AbstractReplicator {
 
     protected abstract C4Replicator getC4ReplicatorLocked() throws LiteCoreException;
 
-    //---------------------------------------------
-    // Protected methods
-    //---------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        freeC4Replicator(c4Replicator);
-        super.finalize();
-    }
-
     /**
      * Create and return a c4Replicator targeting the passed URI
      *
@@ -695,8 +691,8 @@ public abstract class AbstractReplicator {
         }
 
         if (c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED) {
-            freeC4Replicator();
             config.getDatabase().removeActiveReplicator((Replicator) this); // this is likely to dealloc me
+            freeC4Replicator();
         }
 
         for (ReplicatorChangeListenerToken token : tokens) { token.notify(change); }
@@ -832,11 +828,9 @@ public abstract class AbstractReplicator {
      */
     private void startLocked() {
         C4Replicator repl = null;
-        C4ReplicatorStatus status;
-
+        C4ReplicatorStatus status = null;
         try {
             repl = getC4ReplicatorLocked();
-            c4Replicator = repl;
             repl.start();
             status = repl.getStatus();
         }
@@ -850,6 +844,8 @@ public abstract class AbstractReplicator {
                 C4ReplicatorStatus.ActivityLevel.STOPPED,
                 C4Constants.ErrorDomain.LITE_CORE,
                 C4Constants.LiteCoreError.UNEXPECTED_ERROR));
+
+        c4Replicator = repl;
 
         // Post an initial notification:
         c4ReplListener.statusChanged(repl, c4ReplStatus, this);
@@ -909,12 +905,7 @@ public abstract class AbstractReplicator {
             repl = c4Replicator;
             c4Replicator = null;
         }
-        freeC4Replicator(repl);
-    }
-
-    private void freeC4Replicator(C4Replicator repl) {
-        if (repl == null) { return; }
-        repl.free();
+        if (repl != null) { repl.free(); }
     }
 
     // Decompose a path into its elements.
