@@ -28,14 +28,22 @@ import android.support.annotation.NonNull;
 public final class Meta {
     private Meta() { }
 
+    //---------------------------------------------
+    // API - public static variables
+    //---------------------------------------------
+
     /**
      * A metadata expression referring to the ID of the document.
      */
     @NonNull
     public static final MetaExpression id = new MetaExpression("_id", "id", null);
-    //---------------------------------------------
-    // API - public static variables
-    //---------------------------------------------
+
+    /**
+     * A metadata expression referring to the RevisionId of the document.
+     */
+    @NonNull
+    public static final MetaExpression revisionId = new MetaExpression("_revisionId", "revisionId", null);
+
     /**
      * A metadata expression referring to the sequence number of the document.
      * The sequence number indicates how recently the document has been changed. If one document's
@@ -43,11 +51,13 @@ public final class Meta {
      */
     @NonNull
     public static final MetaExpression sequence = new MetaExpression("_sequence", "sequence", null);
+
     /**
      * A metadata expression referring to the deleted boolean flag of the document.
      */
     @NonNull
     public static final MetaExpression deleted = new MetaExpression("_deleted", "deleted", null);
+
     /**
      * A metadata expression referring to the expiration date of the document.
      */
