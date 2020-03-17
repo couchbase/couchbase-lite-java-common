@@ -42,7 +42,7 @@ public final class Meta {
      * A metadata expression referring to the RevisionId of the document.
      */
     @NonNull
-    public static final MetaExpression revisionId = new MetaExpression("_revisionId", "revisionId", null);
+    public static final MetaExpression revisionID = new MetaExpression("_revisionID", "revisionID", null);
 
     /**
      * A metadata expression referring to the sequence number of the document.

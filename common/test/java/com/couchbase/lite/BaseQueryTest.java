@@ -28,7 +28,7 @@ import static org.junit.Assert.assertEquals;
 public abstract class BaseQueryTest extends BaseDbTest {
     @FunctionalInterface
     public interface QueryResult {
-        void check(int n, Result result) throws Exception;
+        void check(int n, Result result) throws CouchbaseLiteException;
     }
 
     protected static final class SafeTest implements Runnable {
@@ -63,7 +63,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
         return docID;
     }
 
-    protected final List<Map<String, Object>> loadNumberedDocs(final int num) throws Exception {
+    protected final List<Map<String, Object>> loadNumberedDocs(final int num) throws CouchbaseLiteException {
         return loadNumberedDocs(1, num);
     }
 
@@ -82,7 +82,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
         return numbers;
     }
 
-    protected final int verifyQuery(Query query, boolean runBoth, QueryResult result) throws Exception {
+    protected final int verifyQuery(Query query, boolean runBoth, QueryResult result) throws CouchbaseLiteException {
         int counter1 = verifyQueryWithEnumerator(query, result);
         if (runBoth) {
             int counter2 = verifyQueryWithIterable(query, result);
@@ -91,11 +91,11 @@ public abstract class BaseQueryTest extends BaseDbTest {
         return counter1;
     }
 
-    protected final int verifyQuery(Query query, QueryResult result) throws Exception {
+    protected final int verifyQuery(Query query, QueryResult result) throws CouchbaseLiteException {
         return verifyQuery(query, true, result);
     }
 
-    private final int verifyQueryWithEnumerator(Query query, QueryResult queryResult) throws Exception {
+    private final int verifyQueryWithEnumerator(Query query, QueryResult queryResult) throws CouchbaseLiteException {
         int n = 0;
         ResultSet rs = query.execute();
         Result result;
@@ -103,7 +103,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
         return n;
     }
 
-    private int verifyQueryWithIterable(Query query, QueryResult queryResult) throws Exception {
+    private int verifyQueryWithIterable(Query query, QueryResult queryResult) throws CouchbaseLiteException {
         int n = 0;
         ResultSet rs = query.execute();
         for (Result result : rs) { queryResult.check(++n, result); }

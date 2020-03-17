@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -34,6 +35,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.json.JSONException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -54,6 +56,7 @@ public class QueryTest extends BaseQueryTest {
     private static final Expression EXPR_NUMBER2 = Expression.property("number2");
 
     private static final SelectResult SR_DOCID = SelectResult.expression(Meta.id);
+    private static final SelectResult SR_REVID = SelectResult.expression(Meta.revisionID);
     private static final SelectResult SR_SEQUENCE = SelectResult.expression(Meta.sequence);
     private static final SelectResult SR_DELETED = SelectResult.expression(Meta.deleted);
     private static final SelectResult SR_EXPIRATION = SelectResult.expression(Meta.expiration);
@@ -62,7 +65,7 @@ public class QueryTest extends BaseQueryTest {
 
 
     @Test
-    public void testQueryDocumentExpiration() throws Exception {
+    public void testQueryDocumentExpiration() throws CouchbaseLiteException, InterruptedException {
         long now = System.currentTimeMillis();
 
         // this one should expire
@@ -114,7 +117,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testQueryDocumentIsNotDeleted() throws Exception {
+    public void testQueryDocumentIsNotDeleted() throws CouchbaseLiteException {
         MutableDocument doc1a = new MutableDocument("doc1");
         doc1a.setInt("answer", 42);
         doc1a.setString("a", "string");
@@ -133,7 +136,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testQueryDocumentIsDeleted() throws Exception {
+    public void testQueryDocumentIsDeleted() throws CouchbaseLiteException {
         MutableDocument doc1a = new MutableDocument("doc1");
         doc1a.setInt("answer", 42);
         doc1a.setString("a", "string");
@@ -151,7 +154,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testNoWhereQuery() throws Exception {
+    public void testNoWhereQuery() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
         Query query = QueryBuilder.select(SR_DOCID, SR_SEQUENCE).from(DataSource.database(baseTestDb));
         int numRows = verifyQuery(query, (n, result) -> {
@@ -170,7 +173,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereComparison() throws Exception {
+    public void testWhereComparison() throws CouchbaseLiteException {
         Object[][] cases = {
             {EXPR_NUMBER1.lessThan(Expression.intValue(3)), docids(1, 2)},
             {EXPR_NUMBER1.greaterThanOrEqualTo(Expression.intValue(3)), docids(3, 4, 5, 6, 7, 8, 9, 10)},
@@ -188,7 +191,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereArithmetic() throws Exception {
+    public void testWhereArithmetic() throws CouchbaseLiteException {
         Object[][] cases = {
             {
                 EXPR_NUMBER1.multiply(Expression.intValue(2)).greaterThan(Expression.intValue(3)),
@@ -236,7 +239,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereAndOr() throws Exception {
+    public void testWhereAndOr() throws CouchbaseLiteException {
         Object[][] cases = {
             {
                 EXPR_NUMBER1.greaterThan(Expression.intValue(3)).and(EXPR_NUMBER2.greaterThan(Expression.intValue(3))),
@@ -252,7 +255,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereNullOrMissing() throws Exception {
+    public void testWhereNullOrMissing() throws CouchbaseLiteException {
         // https://github.com/couchbase/couchbase-lite-ios/issues/1670
         MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setValue("name", "Scott");
@@ -296,7 +299,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereIs() throws Exception {
+    public void testWhereIs() throws CouchbaseLiteException {
         final MutableDocument doc1 = new MutableDocument();
         doc1.setValue("string", "string");
         saveDocInBaseTestDb(doc1);
@@ -316,7 +319,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereIsNot() throws Exception {
+    public void testWhereIsNot() throws CouchbaseLiteException {
         final MutableDocument doc1 = new MutableDocument();
         doc1.setValue("string", "string");
         saveDocInBaseTestDb(doc1);
@@ -336,7 +339,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereBetween() throws Exception {
+    public void testWhereBetween() throws CouchbaseLiteException {
         Object[][] cases = {
             {EXPR_NUMBER1.between(Expression.intValue(3), Expression.intValue(7)), docids(3, 4, 5, 6, 7)}
         };
@@ -345,7 +348,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereIn() throws Exception {
+    public void testWhereIn() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
 
         final Expression[] expected = {
@@ -372,7 +375,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereLike() throws Exception {
+    public void testWhereLike() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
 
         Expression w = Expression.property("name.first").like(Expression.string("%Mar%"));
@@ -395,7 +398,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereRegex() throws Exception {
+    public void testWhereRegex() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
 
         Expression w = Expression.property("name.first").regex(Expression.string("^Mar.*"));
@@ -418,7 +421,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereMatch() throws Exception {
+    public void testWhereMatch() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("sentences.json");
 
         Index index = IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence"));
@@ -440,7 +443,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testOrderBy() throws Exception {
+    public void testOrderBy() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
 
         boolean[] cases = {true, false};
@@ -463,16 +466,16 @@ public class QueryTest extends BaseQueryTest {
 
             List<String> sorted = new ArrayList<>(firstNames);
             Collections.sort(sorted, (o1, o2) -> ascending ? o1.compareTo(o2) : o2.compareTo(o1));
-            String[] array1 = firstNames.toArray(new String[firstNames.size()]);
+            String[] array1 = firstNames.toArray(new String[0]);
             String[] array2 = firstNames.toArray(new String[sorted.size()]);
             assertArrayEquals(array1, array2);
         }
     }
 
+    // https://github.com/couchbase/couchbase-lite-ios/issues/1669
+    // https://github.com/couchbase/couchbase-lite-core/issues/81
     @Test
-    public void testSelectDistinct() throws Exception {
-        // https://github.com/couchbase/couchbase-lite-ios/issues/1669
-        // https://github.com/couchbase/couchbase-lite-core/issues/81
+    public void testSelectDistinct() throws CouchbaseLiteException {
         final MutableDocument doc1 = new MutableDocument();
         doc1.setValue("number", 20);
         saveDocInBaseTestDb(doc1);
@@ -489,7 +492,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testJoin() throws Exception {
+    public void testJoin() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         final MutableDocument doc1 = new MutableDocument("joinme");
@@ -517,7 +520,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLeftJoin() throws Exception {
+    public void testLeftJoin() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         final MutableDocument joinme = new MutableDocument("joinme");
@@ -551,7 +554,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testCrossJoin() throws Exception {
+    public void testCrossJoin() throws CouchbaseLiteException {
         loadNumberedDocs(10);
 
         DataSource mainDS = DataSource.database(this.baseTestDb).as("main");
@@ -574,7 +577,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGroupBy() throws Exception {
+    public void testGroupBy() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
 
         final List<String> expectedStates = Arrays.asList("AL", "CA", "CO", "FL", "IA");
@@ -643,7 +646,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testParameters() throws Exception {
+    public void testParameters() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         DataSource dataSource = DataSource.database(this.baseTestDb);
@@ -673,7 +676,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testMeta() throws Exception {
+    public void testMeta() throws CouchbaseLiteException {
         loadNumberedDocs(5);
 
         DataSource dataSource = DataSource.database(this.baseTestDb);
@@ -716,7 +719,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLimit() throws Exception {
+    public void testLimit() throws CouchbaseLiteException {
         loadNumberedDocs(10);
 
         DataSource dataSource = DataSource.database(this.baseTestDb);
@@ -752,7 +755,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLimitOffset() throws Exception {
+    public void testLimitOffset() throws CouchbaseLiteException {
         loadNumberedDocs(10);
 
         DataSource dataSource = DataSource.database(this.baseTestDb);
@@ -791,7 +794,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testQueryResult() throws Exception {
+    public void testQueryResult() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
 
         SelectResult RES_FNAME = SelectResult.property("name.first").as("firstname");
@@ -816,7 +819,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testQueryProjectingKeys() throws Exception {
+    public void testQueryProjectingKeys() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         DataSource DS = DataSource.database(baseTestDb);
@@ -849,7 +852,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testQuantifiedOperators() throws Exception {
+    public void testQuantifiedOperators() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
 
         DataSource ds = DataSource.database(baseTestDb);
@@ -902,7 +905,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testAggregateFunctions() throws Exception {
+    public void testAggregateFunctions() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         DataSource ds = DataSource.database(this.baseTestDb);
@@ -931,7 +934,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testArrayFunctions() throws Exception {
+    public void testArrayFunctions() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument("doc1");
         MutableArray array = new MutableArray();
         array.addValue("650-123-0001");
@@ -977,7 +980,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testMathFunctions() throws Exception {
+    public void testMathFunctions() throws CouchbaseLiteException {
         double num = 0.6;
 
         MutableDocument doc = new MutableDocument("doc1");
@@ -1051,7 +1054,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testStringFunctions() throws Exception {
+    public void testStringFunctions() throws CouchbaseLiteException {
         final String str = "  See you 18r  ";
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("greeting", str);
@@ -1108,7 +1111,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testSelectAll() throws Exception {
+    public void testSelectAll() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         final DataSource.As ds = DataSource.database(baseTestDb);
@@ -1180,7 +1183,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testUnicodeCollationWithLocaleNone() throws Exception {
+    public void testUnicodeCollationWithLocaleNone() throws CouchbaseLiteException {
         String[] letters = {"B", "A", "Z", "Å"};
         for (String letter : letters) {
             MutableDocument doc = new MutableDocument();
@@ -1203,7 +1206,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testUnicodeCollationWithLocaleSpanish() throws Exception {
+    public void testUnicodeCollationWithLocaleSpanish() throws CouchbaseLiteException {
         String[] letters = {"B", "A", "Z", "Å"};
         for (String letter : letters) {
             MutableDocument doc = new MutableDocument();
@@ -1227,7 +1230,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Ignore("This test is platform dependent")
     @Test
-    public void testUnicodeCollationWithLocaleSwedish() throws Exception {
+    public void testUnicodeCollationWithLocaleSwedish() throws CouchbaseLiteException {
         String[] letters = {"B", "A", "Z", "Å"};
         for (String letter : letters) {
             MutableDocument doc = new MutableDocument();
@@ -1250,7 +1253,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testCompareWithUnicodeCollation() throws Exception {
+    public void testCompareWithUnicodeCollation() throws CouchbaseLiteException {
         Collation bothSensitive = Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(false);
         Collation accentSensitive = Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(false);
         Collation caseSensitive = Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(true);
@@ -1270,7 +1273,7 @@ public class QueryTest extends BaseQueryTest {
                 Arrays.asList("abc", "abC", false, bothSensitive),
                 Arrays.asList("AB", "abc", false, bothSensitive),
 
-                // Case insenstive:
+                // Case insensitive:
                 Arrays.asList("ABCDEF", "ZYXWVU", false, accentSensitive),
                 Arrays.asList("ABCDEF", "Z", false, accentSensitive),
 
@@ -1346,7 +1349,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLiveQuery() throws Exception {
+    public void testLiveQuery() throws CouchbaseLiteException, InterruptedException {
         loadNumberedDocs(100);
 
         Query query = QueryBuilder
@@ -1396,14 +1399,18 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLiveQueryNoUpdate() throws Exception { testLiveQueryNoUpdate(false); }
+    public void testLiveQueryNoUpdate() throws CouchbaseLiteException, InterruptedException {
+        testLiveQueryNoUpdate(false);
+    }
 
     @Test
-    public void testLiveQueryNoUpdateConsumeAll() throws Exception { testLiveQueryNoUpdate(true); }
+    public void testLiveQueryNoUpdateConsumeAll() throws CouchbaseLiteException, InterruptedException {
+        testLiveQueryNoUpdate(true);
+    }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1356
     @Test
-    public void testCountFunctions() throws Exception {
+    public void testCountFunctions() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         DataSource ds = DataSource.database(this.baseTestDb);
@@ -1417,7 +1424,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testJoinWithArrayContains() throws Exception {
+    public void testJoinWithArrayContains() throws CouchbaseLiteException {
         // Data preparation
         // Hotels
         MutableDocument hotel1 = new MutableDocument("hotel1");
@@ -1505,7 +1512,7 @@ public class QueryTest extends BaseQueryTest {
 
     //https://github.com/couchbase/couchbase-lite-android/issues/1785
     @Test
-    public void testResultToMapWithBoolean() throws Exception {
+    public void testResultToMapWithBoolean() throws CouchbaseLiteException {
         MutableDocument exam1 = new MutableDocument("exam1");
         exam1.setString("exam type", "final");
         exam1.setString("question", "There are 45 states in the US.");
@@ -1540,7 +1547,7 @@ public class QueryTest extends BaseQueryTest {
 
     //https://github.com/couchbase/couchbase-lite-android-ce/issues/34
     @Test
-    public void testResultToMapWithBoolean2() throws Exception {
+    public void testResultToMapWithBoolean2() throws CouchbaseLiteException {
         MutableDocument exam1 = new MutableDocument("exam1");
         exam1.setString("exam type", "final");
         exam1.setString("question", "There are 45 states in the US.");
@@ -1557,12 +1564,12 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(baseTestDb))
             .where(Meta.id.equalTo(Expression.string("exam1")));
 
-        verifyQuery(query, (n, result) -> { assertTrue((Boolean) result.toMap().get("answer")); });
+        verifyQuery(query, (n, result) -> assertTrue((Boolean) result.toMap().get("answer")));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1385
     @Test
-    public void testQueryDeletedDocument() throws Exception {
+    public void testQueryDeletedDocument() throws CouchbaseLiteException {
         // STEP 1: Insert two documents
         Document task1 = createTaskDocument("Task 1", false);
         Document task2 = createTaskDocument("Task 2", false);
@@ -1588,7 +1595,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1389
     @Test
-    public void testQueryWhereBooleanExpresion() throws Exception {
+    public void testQueryWhereBooleanExpression() throws CouchbaseLiteException {
         // STEP 1: Insert two documents
         Document task1 = createTaskDocument("Task 1", false);
         Document task2 = createTaskDocument("Task 2", true);
@@ -1648,7 +1655,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1413
     @Test
-    public void testJoinAll() throws Exception {
+    public void testJoinAll() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         final MutableDocument doc1 = new MutableDocument("joinme");
@@ -1685,7 +1692,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1413
     @Test
-    public void testJoinByDocID() throws Exception {
+    public void testJoinByDocID() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         final MutableDocument doc1 = new MutableDocument("joinme");
@@ -1788,7 +1795,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testAllComparison() throws Exception {
+    public void testAllComparison() throws CouchbaseLiteException {
         String[] values = {"Apple", "Aardvark", "Ångström", "Zebra", "äpple"};
         for (String value : values) {
             MutableDocument doc = new MutableDocument();
@@ -1852,7 +1859,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testFunctionCount() throws Exception {
+    public void testFunctionCount() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         final MutableDocument doc = new MutableDocument();
@@ -1894,7 +1901,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testFunctionCountAll() throws Exception {
+    public void testFunctionCountAll() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         final DataSource.As ds = DataSource.database(baseTestDb);
@@ -1923,7 +1930,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testResultSetEnumeration() throws Exception {
+    public void testResultSetEnumeration() throws CouchbaseLiteException {
         loadNumberedDocs(5);
 
         Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -1979,7 +1986,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetAllResults() throws Exception {
+    public void testGetAllResults() throws CouchbaseLiteException {
         loadNumberedDocs(5);
 
         Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -2030,7 +2037,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testResultSetEnumerationZeroResults() throws Exception {
+    public void testResultSetEnumerationZeroResults() throws CouchbaseLiteException {
         loadNumberedDocs(5);
 
         Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -2080,7 +2087,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testMissingValue() throws Exception {
+    public void testMissingValue() throws CouchbaseLiteException {
         MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setValue("name", "Scott");
         doc1.setValue("address", null);
@@ -2117,7 +2124,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1603
     @Test
-    public void testExpressionNot() throws Exception {
+    public void testExpressionNot() throws CouchbaseLiteException {
         loadNumberedDocs(10);
 
         Query query = QueryBuilder
@@ -2135,7 +2142,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLimitValueIsLargerThanResult() throws Exception {
+    public void testLimitValueIsLargerThanResult() throws CouchbaseLiteException {
         final int N = 4;
         loadNumberedDocs(N);
 
@@ -2150,7 +2157,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1614
     @Test
-    public void testFTSStemming() throws Exception {
+    public void testFTSStemming() throws CouchbaseLiteException {
         MutableDocument mDoc0 = new MutableDocument("doc0");
         mDoc0.setString("content", "hello");
         saveDocInBaseTestDb(mDoc0);
@@ -2192,7 +2199,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-net/blob/master/src/Couchbase.Lite.Tests.Shared/QueryTest.cs#L1721
     @Test
-    public void testFTSStemming2() throws Exception {
+    public void testFTSStemming2() throws CouchbaseLiteException {
         baseTestDb.createIndex(
             "passageIndex",
             IndexBuilder.fullTextIndex(FullTextIndexItem.property("passage")).setLanguage("en"));
@@ -2233,7 +2240,7 @@ public class QueryTest extends BaseQueryTest {
     // https://www.sqlite.org/fts3.html#_set_operations_using_the_enhanced_query_syntax
     // https://github.com/couchbase/couchbase-lite-android/issues/1620
     @Test
-    public void testFTSSetOperations() throws Exception {
+    public void testFTSSetOperations() throws CouchbaseLiteException {
         MutableDocument mDoc1 = new MutableDocument("doc1");
         mDoc1.setString("content", "a database is a software system");
         saveDocInBaseTestDb(mDoc1);
@@ -2298,7 +2305,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1621
     @Test
-    public void testFTSMixedOperators() throws Exception {
+    public void testFTSMixedOperators() throws CouchbaseLiteException {
         MutableDocument mDoc1 = new MutableDocument("doc1");
         mDoc1.setString("content", "a database is a software system");
         saveDocInBaseTestDb(mDoc1);
@@ -2379,7 +2386,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1628
     @Test
-    public void testLiveQueryResultsCount() throws Exception {
+    public void testLiveQueryResultsCount() throws CouchbaseLiteException, InterruptedException {
         loadNumberedDocs(50);
 
         Query query = QueryBuilder
@@ -2409,6 +2416,7 @@ public class QueryTest extends BaseQueryTest {
                 }
                 latchAdd.countDown();
             });
+
             assertTrue(latchAdd.await(20, TimeUnit.SECONDS));
             assertTrue(latch.await(20, TimeUnit.SECONDS));
         }
@@ -2461,7 +2469,7 @@ public class QueryTest extends BaseQueryTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1689
     @Test
-    public void testQueryAndNLikeOperators() throws Exception {
+    public void testQueryAndNLikeOperators() throws CouchbaseLiteException {
         MutableDocument mDoc1 = new MutableDocument("doc1");
         mDoc1.setString("name", "food");
         mDoc1.setString("description", "bar");
@@ -2528,7 +2536,7 @@ public class QueryTest extends BaseQueryTest {
     //     how-to-implement-an-index-join-clause-in-couchbase-lite-2-0-using-objective-c-api/16246
     // https://github.com/couchbase/couchbase-lite-core/issues/497
     @Test
-    public void testQueryJoinAndSelectAll() throws Exception {
+    public void testQueryJoinAndSelectAll() throws CouchbaseLiteException {
         loadNumberedDocs(100);
 
         final MutableDocument joinme = new MutableDocument("joinme");
@@ -2562,7 +2570,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testResultSetAllResults() throws Exception {
+    public void testResultSetAllResults() throws CouchbaseLiteException {
         MutableDocument doc1a = new MutableDocument("doc1");
         doc1a.setInt("answer", 42);
         doc1a.setString("a", "string");
@@ -2668,7 +2676,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testStringToMillis() throws Exception {
+    public void testStringToMillis() throws CouchbaseLiteException {
         createDateDocs();
 
         SelectResult[] selections = new SelectResult[6];
@@ -2733,7 +2741,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testStringToUTC() throws Exception {
+    public void testStringToUTC() throws CouchbaseLiteException, ParseException {
         createDateDocs();
 
         SelectResult[] selections = new SelectResult[6];
@@ -2791,7 +2799,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testMillisConversion() throws Exception {
+    public void testMillisConversion() throws CouchbaseLiteException {
         ArrayList<Number> millisToUse = new ArrayList<>();
         millisToUse.add(499132800000L);
         millisToUse.add(499137660000L);
@@ -2831,7 +2839,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     // ??? This is a ridiculously expensive test
-    private void testLiveQueryNoUpdate(final boolean consumeAll) throws Exception {
+    private void testLiveQueryNoUpdate(final boolean consumeAll) throws CouchbaseLiteException, InterruptedException {
         loadNumberedDocs(100);
 
         Query query = QueryBuilder
@@ -2866,7 +2874,7 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
-    private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases) throws Exception {
+    private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases) throws CouchbaseLiteException {
         for (Object[] c : cases) {
             Expression w = (Expression) c[0];
             String[] documentIDs = (String[]) c[1];
