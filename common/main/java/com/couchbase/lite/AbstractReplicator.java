@@ -15,7 +15,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
 package com.couchbase.lite;
 
 import android.support.annotation.GuardedBy;
@@ -65,9 +64,22 @@ import com.couchbase.lite.utils.Fn;
  * or continuous. The replicator runs asynchronously, so observe the status property to
  * be notified of progress.
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.TooManyMethods", "PMD.TooManyFields"})
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
 public abstract class AbstractReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
+
+    private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
+
+    static {
+        final Map<Integer, ActivityLevel> m = new HashMap<>();
+        m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
+        m.put(C4ReplicatorStatus.ActivityLevel.OFFLINE, ActivityLevel.OFFLINE);
+        m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
+        m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
+        m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
+        ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
+    }
+
 
     /**
      * Activity level of a replicator.
@@ -95,6 +107,7 @@ public abstract class AbstractReplicator {
          */
         BUSY
     }
+
 
     /**
      * Progress of a replicator. If `total` is zero, the progress is indeterminate; otherwise,
@@ -140,6 +153,7 @@ public abstract class AbstractReplicator {
 
         Progress copy() { return new Progress(completed, total); }
     }
+
 
     /**
      * Combined activity level and progress of a replicator.
@@ -197,6 +211,24 @@ public abstract class AbstractReplicator {
         Status copy() { return new Status(activityLevel, progress.copy(), error); }
     }
 
+
+    /**
+     * An enum representing level of opt in on progress of replication
+     * OVERALL: No additional replication progress callback
+     * PER_DOCUMENT: >=1 Every document replication ended callback
+     * PER_ATTACHMENT: >=2 Every blob replication progress callback
+     */
+    enum ReplicatorProgressLevel {
+        OVERALL(0),
+        PER_DOCUMENT(1),
+        PER_ATTACHMENT(2);
+
+        private final int value;
+
+        ReplicatorProgressLevel(int value) { this.value = value; }
+    }
+
+
     // just queue everything up for in-order processing.
     final class ReplicatorListener implements C4ReplicatorListener {
         @Override
@@ -233,54 +265,19 @@ public abstract class AbstractReplicator {
             final AbstractReplicator replicator = (AbstractReplicator) context;
             if (!replicator.isSameReplicator(repl)) { return; } // this handles repl == null
 
+            if (documents == null) {
+                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, documents is null!");
+                return;
+            }
+
             dispatcher.execute(() -> replicator.documentEnded(pushing, documents));
         }
     }
 
-    /**
-     * An enum representing level of opt in on progress of replication
-     * OVERALL: No additional replication progress callback
-     * PER_DOCUMENT: >=1 Every document replication ended callback
-     * PER_ATTACHMENT: >=2 Every blob replication progress callback
-     */
-    enum ReplicatorProgressLevel {
-        OVERALL(0),
-        PER_DOCUMENT(1),
-        PER_ATTACHMENT(2);
 
-        private final int value;
-
-        ReplicatorProgressLevel(int value) { this.value = value; }
-    }
-
-    private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
-
-    static {
-        final Map<Integer, ActivityLevel> m = new HashMap<>();
-        m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
-        m.put(C4ReplicatorStatus.ActivityLevel.OFFLINE, ActivityLevel.OFFLINE);
-        m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
-        m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
-        m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
-        ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
-    }
-
-    private static boolean isPush(ReplicatorConfiguration.ReplicatorType type) {
-        return type == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
-            || type == ReplicatorConfiguration.ReplicatorType.PUSH;
-    }
-
-    private static boolean isPull(ReplicatorConfiguration.ReplicatorType type) {
-        return type == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
-            || type == ReplicatorConfiguration.ReplicatorType.PULL;
-    }
-
-    private static int mkmode(boolean active, boolean continuous) {
-        final C4ReplicatorMode mode = (!active)
-            ? C4ReplicatorMode.C4_DISABLED
-            : ((continuous) ? C4ReplicatorMode.C4_CONTINUOUS : C4ReplicatorMode.C4_ONE_SHOT);
-        return mode.getVal();
-    }
+    ////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////  R E P L I C A T O R   ////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////
 
     //---------------------------------------------
     // member variables
@@ -291,41 +288,58 @@ public abstract class AbstractReplicator {
 
     private final Object lock = new Object();
 
+    private final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
+
     @GuardedBy("lock")
     private final Set<ReplicatorChangeListenerToken> changeListenerTokens = new HashSet<>();
     @GuardedBy("lock")
     private final Set<DocumentReplicationListenerToken> docEndedListenerTokens = new HashSet<>();
 
-    private final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
-
+    @NonNull
     private final Set<Fn.Consumer> pendingResolutions = new HashSet<>();
+    @NonNull
     private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
+    @NonNull
+    private final C4ReplicatorListener c4ReplListener = new ReplicatorListener();
+    @NonNull
     private final SocketFactory socketFactory;
 
+    // Do not use this directly.  It is lazily initialized in the method getC4Replicator
     @GuardedBy("lock")
     private C4Replicator c4Replicator;
 
+    @GuardedBy("lock")
     private Status status = new Status(ActivityLevel.IDLE, new Progress(0, 0), null);
-    private C4ReplicatorStatus c4ReplStatus;
-    private C4ReplicatorListener c4ReplListener;
-    private C4ReplicationFilter c4ReplPushFilter;
-    private C4ReplicationFilter c4ReplPullFilter;
+    @GuardedBy("lock")
     private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
-    private CouchbaseLiteException lastError;
-    private String desc;
 
-    private Map<String, Object> responseHeaders; // Do something with these (for auth)
-    private boolean shouldResetCheckpoint; // Reset the replicator checkpoint.
+    @GuardedBy("lock")
+    private C4ReplicationFilter c4ReplPushFilter;
+    @GuardedBy("lock")
+    private C4ReplicationFilter c4ReplPullFilter;
+
+    // Reset the replicator checkpoint.
+    @GuardedBy("lock")
+    private boolean shouldResetCheckpoint;
+
+    // Do something with these (for auth)
+    @GuardedBy("lock")
+    private Map<String, Object> responseHeaders;
+
+    @GuardedBy("lock")
+    private CouchbaseLiteException lastError;
+
+    private volatile String desc;
 
     /**
      * Initializes a replicator with the given configuration.
      *
      * @param config replicator configuration
      */
-    public AbstractReplicator(@NonNull ReplicatorConfiguration config) {
+    protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
         this.config = config.readonlyCopy();
-        socketFactory = new SocketFactory(config);
+        this.socketFactory = new SocketFactory(config);
     }
 
     /**
@@ -333,21 +347,22 @@ public abstract class AbstractReplicator {
      * and will report its progress through the replicator change notification.
      */
     public void start() {
-        synchronized (lock) {
-            Log.i(DOMAIN, "Replicator is starting .....");
-            if (c4Replicator != null) {
-                Log.i(DOMAIN, "%s has already started", this);
-                return;
-            }
+        Log.i(DOMAIN, "Replicator is starting .....");
+        final C4Replicator repl = lazyCreateC4Replicator();
 
-            if (!pendingResolutions.isEmpty()) {
-                Log.i(DOMAIN, "%s is already running", this);
-                return;
-            }
+        repl.start();
 
-            Log.i(DOMAIN, "%s: Starting", this);
-            startLocked();
+        C4ReplicatorStatus status = repl.getStatus();
+        if (status == null) {
+            status = new C4ReplicatorStatus(
+                C4ReplicatorStatus.ActivityLevel.STOPPED,
+                C4Constants.ErrorDomain.LITE_CORE,
+                C4Constants.LiteCoreError.UNEXPECTED_ERROR);
         }
+
+        synchronized (lock) { status = updateStateProperties(status); }
+
+        c4ReplListener.statusChanged(repl, status, this);
     }
 
     /**
@@ -356,13 +371,8 @@ public abstract class AbstractReplicator {
      * and the replicator change notification will be notified accordingly.
      */
     public void stop() {
-        synchronized (lock) {
-            Log.i(DOMAIN, "%s: Replicator is stopping ...", this);
-
-            // this is async; status will change when repl actually stops
-            if (c4Replicator != null) { c4Replicator.stop(); }
-            else { Log.i(DOMAIN, "%s: Replicator already stopped or offline.", this); }
-        }
+        Log.i(DOMAIN, "%s: Replicator is stopping ...", this);
+        lazyCreateC4Replicator().stop();
     }
 
     /**
@@ -379,8 +389,15 @@ public abstract class AbstractReplicator {
      * @return this replicator's status
      */
     @NonNull
-    public Status getStatus() { return status.copy(); }
+    public Status getStatus() {
+        synchronized (lock) { return status.copy(); }
+    }
 
+    /**
+     * Get a best effort list of documents still pending replication.
+     *
+     * @return a set of ids for documents still awaiting replication.
+     */
     @NonNull
     public Set<String> getPendingDocumentIds() throws CouchbaseLiteException {
         if (config.getReplicatorType().equals(ReplicatorConfiguration.ReplicatorType.PULL)) {
@@ -390,23 +407,21 @@ public abstract class AbstractReplicator {
                 CBLError.Code.UNSUPPORTED);
         }
 
-        final C4Replicator repl;
-        synchronized (lock) { repl = c4Replicator; }
-
-        // ??? Not yet implemented
-        if (repl == null) {
-            Log.i(DOMAIN, "%s: Call to getPendingDocumentIds with unstarted replicator", this);
-            return Collections.emptySet();
-        }
-
         final Set<String> pending;
-        try { pending = repl.getPendingDocIDs(); }
+        try { pending = lazyCreateC4Replicator().getPendingDocIDs(); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e, "Failed fetching pending documentIds"); }
 
-        // ??? C4 call returns null if the native replicator is gone: Not yet implemented
-        return (pending == null) ? Collections.emptySet() : Collections.unmodifiableSet(pending);
+        if (pending == null) { throw new IllegalStateException("Pending doc ids is unexpectedly null"); }
+
+        return Collections.unmodifiableSet(pending);
     }
 
+    /**
+     * Best effort check to see if the document whose ID is passed is still pending replication.
+     *
+     * @param docId Document id
+     * @return true if the document is pending
+     */
     public boolean isDocumentPending(@NonNull String docId) throws CouchbaseLiteException {
         Preconditions.assertNotNull(docId, "document ID");
 
@@ -417,26 +432,21 @@ public abstract class AbstractReplicator {
                 CBLError.Code.UNSUPPORTED);
         }
 
-        final C4Replicator repl;
-        synchronized (lock) { repl = c4Replicator; }
-
-        // ??? Not yet implemented
-        if (repl == null) {
-            Log.i(DOMAIN, "%s: Call to isDocumentPending with unstarted replicator", this);
-            return false;
-        }
-
         final Boolean pending;
-        try { pending = repl.isDocumentPending(docId); }
+        try { pending = lazyCreateC4Replicator().isDocumentPending(docId); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e, "Failed getting document pending status"); }
 
-        // ??? C4 call returns null if the native replicator is gone: Not yet implemented
-        return (pending != null) && pending;
+        if (pending == null) { throw new IllegalStateException("Pending doc ids is unexpectedly null"); }
+
+        return pending;
     }
 
     /**
-     * Adds a change listener for the changes in the replication status and progress. The changes will be
-     * delivered on the UI thread for the Android platform and on an arbitrary thread for the Java platform.
+     * Adds a change listener for the changes in the replication status and progress.
+     * <p>
+     * The changes will be delivered on the UI thread for the Android platform
+     * On other Java platforms, the callback will occur on an arbitrary thread.
+     * <p>
      * When developing a Java Desktop application using Swing or JavaFX that needs to update the UI after
      * receiving the changes, make sure to schedule the UI update on the UI thread by using
      * SwingUtilities.invokeLater(Runnable) or Platform.runLater(Runnable) respectively.
@@ -452,7 +462,7 @@ public abstract class AbstractReplicator {
     /**
      * Adds a change listener for the changes in the replication status and progress with an executor on which
      * the changes will be posted to the listener. If the executor is not specified, the changes will be delivered
-     * on the UI thread for the Android platform and on an arbitrary thread for the Java platform.
+     * on the UI thread on Android platform and on an arbitrary thread on other Java platform.
      *
      * @param executor executor on which events will be delivered
      * @param listener callback
@@ -483,7 +493,7 @@ public abstract class AbstractReplicator {
 
             if (token instanceof DocumentReplicationListenerToken) {
                 docEndedListenerTokens.remove(token);
-                if (docEndedListenerTokens.isEmpty()) { setProgressLevel(ReplicatorProgressLevel.OVERALL); }
+                if (docEndedListenerTokens.isEmpty()) { progressLevel = ReplicatorProgressLevel.OVERALL; }
                 return;
             }
 
@@ -504,7 +514,6 @@ public abstract class AbstractReplicator {
     @NonNull
     public ListenerToken addDocumentReplicationListener(@NonNull DocumentReplicationListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-
         return addDocumentReplicationListener(null, listener);
     }
 
@@ -522,7 +531,7 @@ public abstract class AbstractReplicator {
         @NonNull DocumentReplicationListener listener) {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (lock) {
-            setProgressLevel(ReplicatorProgressLevel.PER_DOCUMENT);
+            progressLevel = ReplicatorProgressLevel.PER_DOCUMENT;
             final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
             docEndedListenerTokens.add(token);
             return token;
@@ -530,13 +539,16 @@ public abstract class AbstractReplicator {
     }
 
     /**
-     * Reset the replicator's local checkpoint: read all changes since the beginning of time
-     * from the remote database. This can only be called when the replicator is in a stopped state.
+     * Reset the replicator's local checkpoint.
+     * This method can only be called when the replicator is in a stopped state.
+     * If this replicator is started after this flag is set, it will read all of the changes since
+     * the beginning of time, from the remote database.
+     * The flag affects only the first run of the replicator after it is set.  If it is started yet again,
+     * after it stops, it will not, again, read all of the changes.
      */
     public void resetCheckpoint() {
         synchronized (lock) {
-            if ((c4ReplStatus != null)
-                && (c4ReplStatus.getActivityLevel() != C4ReplicatorStatus.ActivityLevel.STOPPED)) {
+            if (c4Replicator != null) { // !!! This is broken: CBL-787
                 throw new IllegalStateException(Log.lookupStandardMessage("ReplicatorNotStopped"));
             }
             shouldResetCheckpoint = true;
@@ -551,10 +563,11 @@ public abstract class AbstractReplicator {
     }
 
     //---------------------------------------------
-    // Abstract methods
+    // Protected methods
     //---------------------------------------------
 
-    protected abstract C4Replicator getC4ReplicatorLocked() throws LiteCoreException;
+    @GuardedBy("lock")
+    protected abstract C4Replicator createReplicatorForTarget(Endpoint target) throws LiteCoreException;
 
     /**
      * Create and return a c4Replicator targeting the passed URI
@@ -565,7 +578,7 @@ public abstract class AbstractReplicator {
      */
     @GuardedBy("lock")
     @NonNull
-    protected final C4Replicator getRemoteC4ReplicatorLocked(@NonNull URI remoteUri) throws LiteCoreException {
+    protected final C4Replicator getRemoteC4Replicator(@NonNull URI remoteUri) throws LiteCoreException {
         // Set up the port: core uses 0 for not set
         final int p = remoteUri.getPort();
         final int port = Math.max(0, p);
@@ -575,11 +588,7 @@ public abstract class AbstractReplicator {
         final String dbName = (splitPath.size() <= 0) ? "" : splitPath.removeLast();
         final String path = "/" + StringUtils.join("/", splitPath);
 
-        setupFilters();
-
         final boolean continuous = config.isContinuous();
-
-        c4ReplListener = new ReplicatorListener();
 
         return config.getDatabase().createRemoteReplicator(
             (Replicator) this,
@@ -588,8 +597,8 @@ public abstract class AbstractReplicator {
             port,
             path,
             dbName,
-            mkmode(isPush(config.getReplicatorType()), continuous),
-            mkmode(isPull(config.getReplicatorType()), continuous),
+            mkmode(config.isPush(), continuous),
+            mkmode(config.isPull(), continuous),
             getFleeceOptions(),
             c4ReplListener,
             c4ReplPushFilter,
@@ -607,18 +616,13 @@ public abstract class AbstractReplicator {
      */
     @GuardedBy("lock")
     @NonNull
-    protected final C4Replicator getLocalC4ReplicatorLocked(@NonNull Database otherDb) throws LiteCoreException {
-        setupFilters();
-
+    protected final C4Replicator getLocalC4Replicator(@NonNull Database otherDb) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
-
-        c4ReplListener = new ReplicatorListener();
-
         return config.getDatabase().createLocalReplicator(
             (Replicator) this,
             otherDb.getC4Database(),
-            mkmode(isPush(config.getReplicatorType()), continuous),
-            mkmode(isPull(config.getReplicatorType()), continuous),
+            mkmode(config.isPush(), continuous),
+            mkmode(config.isPull(), continuous),
             getFleeceOptions(),
             c4ReplListener,
             c4ReplPushFilter,
@@ -635,14 +639,8 @@ public abstract class AbstractReplicator {
      */
     @GuardedBy("lock")
     @NonNull
-    protected final C4Replicator getMessageC4ReplicatorLocked(int framing)
-        throws LiteCoreException {
-        setupFilters();
-
+    protected final C4Replicator getMessageC4Replicator(int framing) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
-
-        c4ReplListener = new ReplicatorListener();
-
         return config.getDatabase().createRemoteReplicator(
             (Replicator) this,
             C4Socket.MESSAGE_SCHEME,
@@ -650,8 +648,8 @@ public abstract class AbstractReplicator {
             0,
             null,
             null,
-            mkmode(isPush(config.getReplicatorType()), continuous),
-            mkmode(isPull(config.getReplicatorType()), continuous),
+            mkmode(config.isPush(), continuous),
+            mkmode(config.isPull(), continuous),
             getFleeceOptions(),
             c4ReplListener,
             c4ReplPushFilter,
@@ -660,24 +658,29 @@ public abstract class AbstractReplicator {
             framing);
     }
 
-    ///// Notification
+    //---------------------------------------------
+    // Package visible methods
+    //
+    // Some of these are package protected only to avoid a synthetic accessor
+    //---------------------------------------------
 
-    @SuppressWarnings("PMD.NPathComplexity")
-    void c4StatusChanged(C4ReplicatorStatus c4Status) {
+    CouchbaseLiteException getLastError() { return lastError; }
+
+    void c4StatusChanged(@NonNull C4ReplicatorStatus c4Status) {
         final ReplicatorChange change;
         final List<ReplicatorChangeListenerToken> tokens;
 
-        Log.i(
-            DOMAIN,
-            "%s: status changed: (%d, %d) @%s",
-            this, pendingResolutions.size(), pendingStatusNotifications.size(), c4Status);
-
         synchronized (lock) {
+            Log.i(
+                DOMAIN,
+                "%s: status changed: (%d, %d) @%s",
+                this, pendingResolutions.size(), pendingStatusNotifications.size(), c4Status);
+
             if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
 
-            if ((responseHeaders == null) && (c4Replicator != null)) {
-                final byte[] h = c4Replicator.getResponseHeaders();
+            if (responseHeaders == null) {
+                final byte[] h = lazyCreateC4Replicator().getResponseHeaders();
                 if (h != null) { responseHeaders = FLValue.fromData(h).asDict(); }
             }
 
@@ -692,7 +695,6 @@ public abstract class AbstractReplicator {
 
         if (c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED) {
             config.getDatabase().removeActiveReplicator((Replicator) this); // this is likely to dealloc me
-            freeC4Replicator();
         }
 
         for (ReplicatorChangeListenerToken token : tokens) { token.notify(change); }
@@ -720,23 +722,6 @@ public abstract class AbstractReplicator {
         }
 
         if (!unconflictedDocs.isEmpty()) { notifyDocumentEnded(pushing, unconflictedDocs); }
-    }
-
-    void queueConflictResolution(@NonNull String docId, int flags) {
-        Log.i(DOMAIN, "%s: pulled conflicting version of '%s'", this, docId);
-
-        final ExecutionService.CloseableExecutor executor
-            = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
-        final Database db = config.getDatabase();
-        final ConflictResolver resolver = config.getConflictResolver();
-        final Fn.Consumer<CouchbaseLiteException> task = new Fn.Consumer<CouchbaseLiteException>() {
-            public void accept(CouchbaseLiteException err) { onConflictResolved(this, docId, flags, err); }
-        };
-
-        synchronized (lock) {
-            executor.execute(() -> db.resolveReplicationConflict(resolver, docId, task));
-            pendingResolutions.add(task);
-        }
     }
 
     // callback from queueConflictResolution
@@ -773,28 +758,84 @@ public abstract class AbstractReplicator {
     // Private methods
     //---------------------------------------------
 
-    /**
-     * Compare the passed C4Replicator to ours.
-     *
-     * @param repl a C4Replicator
-     * @return true if the passed replicator is ours
-     */
+    @NonNull
+    private C4Replicator lazyCreateC4Replicator() {
+        synchronized (lock) {
+            if (c4Replicator == null) {
+                setupFilters();
+                try { c4Replicator = createReplicatorForTarget(config.getTarget()); }
+                catch (LiteCoreException e) {
+                    throw new IllegalStateException("Could not create replicator", CBLStatus.convertException(e));
+                }
+            }
+            return c4Replicator;
+        }
+    }
+
     private boolean isSameReplicator(C4Replicator repl) {
         synchronized (lock) { return repl == c4Replicator; }
+    }
+
+    @GuardedBy("lock")
+    private C4ReplicatorStatus updateStateProperties(@NonNull C4ReplicatorStatus c4Status) {
+        final C4ReplicatorStatus c4ReplStatus = c4Status.copy();
+
+        CouchbaseLiteException error = null;
+        if (c4Status.getErrorCode() != 0) {
+            error = CBLStatus.convertException(
+                c4Status.getErrorDomain(),
+                c4Status.getErrorCode(),
+                c4Status.getErrorInternalInfo());
+            lastError = error;
+        }
+
+        final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4Status.getActivityLevel());
+
+        status = new Status(
+            level,
+            new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()), error);
+
+        Log.i(DOMAIN, "%s is %s, progress %d/%d, error: %s",
+            this,
+            (level == null) ? "unknown" : level.toString(),
+            c4Status.getProgressUnitsCompleted(),
+            c4Status.getProgressUnitsTotal(),
+            error);
+
+        return c4ReplStatus;
+    }
+
+    private void queueConflictResolution(@NonNull String docId, int flags) {
+        Log.i(DOMAIN, "%s: pulled conflicting version of '%s'", this, docId);
+
+        final ExecutionService.CloseableExecutor executor
+            = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
+        final Database db = config.getDatabase();
+        final ConflictResolver resolver = config.getConflictResolver();
+        final Fn.Consumer<CouchbaseLiteException> task = new Fn.Consumer<CouchbaseLiteException>() {
+            public void accept(CouchbaseLiteException err) { onConflictResolved(this, docId, flags, err); }
+        };
+
+        synchronized (lock) {
+            executor.execute(() -> db.resolveReplicationConflict(resolver, docId, task));
+            pendingResolutions.add(task);
+        }
     }
 
     private byte[] getFleeceOptions() {
         // Encode the options:
         final Map<String, Object> options = config.effectiveOptions();
 
-        // Update shouldResetCheckpoint flag if needed:
-        if (shouldResetCheckpoint) {
-            options.put(AbstractReplicatorConfiguration.REPLICATOR_RESET_CHECKPOINT, true);
-            // Clear the reset flag, it is a one-time thing
-            shouldResetCheckpoint = false;
-        }
+        synchronized (lock) {
+            options.put(AbstractReplicatorConfiguration.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value);
 
-        options.put(AbstractReplicatorConfiguration.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value);
+            // Update shouldResetCheckpoint flag if needed:
+            if (shouldResetCheckpoint) {
+                options.put(AbstractReplicatorConfiguration.REPLICATOR_RESET_CHECKPOINT, true);
+                // reset the flag: if this replicator is restarted, it will *not* reset the checkpoint
+                shouldResetCheckpoint = false;
+            }
+        }
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {
@@ -810,45 +851,24 @@ public abstract class AbstractReplicator {
         return optionsFleece;
     }
 
+    @GuardedBy("lock")
     private void setupFilters() {
         if (config.getPushFilter() != null) {
-            c4ReplPushFilter = (docID, revId, flags, dict, isPush, context)
-                -> ((AbstractReplicator) context).validationFunction(docID, revId, documentFlags(flags), dict, isPush);
+            c4ReplPushFilter = (docID, revId, flags, dict, isPush, context) ->
+                ((AbstractReplicator) context).filterDocument(docID, revId, documentFlags(flags), dict, isPush);
         }
 
         if (config.getPullFilter() != null) {
-            c4ReplPullFilter = (docID, revId, flags, dict, isPush, context)
-                -> ((AbstractReplicator) context).validationFunction(docID, revId, documentFlags(flags), dict, isPush);
+            c4ReplPullFilter = (docID, revId, flags, dict, isPush, context) ->
+                ((AbstractReplicator) context).filterDocument(docID, revId, documentFlags(flags), dict, isPush);
         }
     }
 
-    /**
-     * Create and start the c4Replicator
-     * Must be called holding lock
-     */
-    private void startLocked() {
-        C4Replicator repl = null;
-        C4ReplicatorStatus status = null;
-        try {
-            repl = getC4ReplicatorLocked();
-            repl.start();
-            status = repl.getStatus();
-        }
-        catch (LiteCoreException e) {
-            status = new C4ReplicatorStatus(C4ReplicatorStatus.ActivityLevel.STOPPED, e.domain, e.code);
-        }
-
-        updateStateProperties((status != null)
-            ? status
-            : new C4ReplicatorStatus(
-                C4ReplicatorStatus.ActivityLevel.STOPPED,
-                C4Constants.ErrorDomain.LITE_CORE,
-                C4Constants.LiteCoreError.UNEXPECTED_ERROR));
-
-        c4Replicator = repl;
-
-        // Post an initial notification:
-        c4ReplListener.statusChanged(repl, c4ReplStatus, this);
+    private int mkmode(boolean active, boolean continuous) {
+        final C4ReplicatorMode mode = (!active)
+            ? C4ReplicatorMode.C4_DISABLED
+            : ((continuous) ? C4ReplicatorMode.C4_CONTINUOUS : C4ReplicatorMode.C4_ONE_SHOT);
+        return mode.getVal();
     }
 
     private EnumSet<DocumentFlag> documentFlags(int flags) {
@@ -862,7 +882,7 @@ public abstract class AbstractReplicator {
         return documentFlags;
     }
 
-    private boolean validationFunction(
+    private boolean filterDocument(
         String docId,
         String revId,
         EnumSet<DocumentFlag> flags,
@@ -870,42 +890,6 @@ public abstract class AbstractReplicator {
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
         return filter.filtered(new Document(config.getDatabase(), docId, revId, new FLDict(dict)), flags);
-    }
-
-    private void updateStateProperties(@NonNull C4ReplicatorStatus c4Status) {
-        CouchbaseLiteException error = null;
-        if (c4Status.getErrorCode() != 0) {
-            error = CBLStatus.convertException(
-                c4Status.getErrorDomain(),
-                c4Status.getErrorCode(),
-                c4Status.getErrorInternalInfo());
-        }
-        if (error != this.lastError) { this.lastError = error; }
-
-        c4ReplStatus = c4Status.copy();
-
-        final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4Status.getActivityLevel());
-
-        this.status = new Status(
-            level,
-            new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()), error);
-
-        Log.i(DOMAIN, "%s is %s, progress %d/%d, error: %s",
-            this,
-            level.toString(),
-            c4Status.getProgressUnitsCompleted(),
-            c4Status.getProgressUnitsTotal(),
-            error);
-    }
-
-    // - (void) clearRepl
-    private void freeC4Replicator() {
-        final C4Replicator repl;
-        synchronized (lock) {
-            repl = c4Replicator;
-            c4Replicator = null;
-        }
-        if (repl != null) { repl.free(); }
     }
 
     // Decompose a path into its elements.
@@ -925,10 +909,8 @@ public abstract class AbstractReplicator {
     private String baseDesc() {
         return "Replicator{@"
             + Integer.toHexString(hashCode()) + ","
-            + (isPull(config.getReplicatorType()) ? "<" : "")
+            + (config.isPull() ? "<" : "")
             + (config.isContinuous() ? "*" : "-")
-            + (isPush(config.getReplicatorType()) ? ">" : "");
+            + (config.isPush() ? ">" : "");
     }
-
-    private void setProgressLevel(ReplicatorProgressLevel level) { progressLevel = level; }
 }

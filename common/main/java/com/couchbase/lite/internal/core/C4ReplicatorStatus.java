@@ -22,7 +22,7 @@ package com.couchbase.lite.internal.core;
 /**
  * WARNING!
  * This class and its members are referenced by name, from native code.
- *
+ * <p>
  * Keep this class immutable.
  */
 public final class C4ReplicatorStatus {
