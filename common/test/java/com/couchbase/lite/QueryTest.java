@@ -679,16 +679,12 @@ public class QueryTest extends BaseQueryTest {
     public void testMeta() throws CouchbaseLiteException {
         loadNumberedDocs(5);
 
-        DataSource dataSource = DataSource.database(this.baseTestDb);
-
         Query query = QueryBuilder
-            .select(SR_DOCID, SR_SEQUENCE, SR_NUMBER1)
-            .from(dataSource)
+            .select(SR_DOCID, SR_SEQUENCE, SR_REVID, SR_NUMBER1)
+            .from(DataSource.database(this.baseTestDb))
             .orderBy(Ordering.expression(Meta.sequence));
 
         final String[] expectedDocIDs = {"doc1", "doc2", "doc3", "doc4", "doc5"};
-        final long[] expectedSeqs = {1, 2, 3, 4, 5};
-        final long[] expectedNumbers = {1, 2, 3, 4, 5};
 
         int numRows = verifyQuery(query, (n, result) -> {
             String docID1 = (String) result.getValue(0);
@@ -701,21 +697,109 @@ public class QueryTest extends BaseQueryTest {
             long seq3 = (long) result.getValue("sequence");
             long seq4 = result.getLong("sequence");
 
-            long number = (long) result.getValue(2);
+            String revId1 = (String) result.getValue(2);
+            String revId2 = result.getString(2);
+            String revId3 = (String) result.getValue("revisionID");
+            String revId4 = result.getString("revisionID");
 
-            assertEquals(expectedDocIDs[n - 1], docID1);
-            assertEquals(expectedDocIDs[n - 1], docID2);
-            assertEquals(expectedDocIDs[n - 1], docID3);
-            assertEquals(expectedDocIDs[n - 1], docID4);
+            long number = (long) result.getValue(3);
 
-            assertEquals(expectedSeqs[n - 1], seq1);
-            assertEquals(expectedSeqs[n - 1], seq2);
-            assertEquals(expectedSeqs[n - 1], seq3);
-            assertEquals(expectedSeqs[n - 1], seq4);
+            assertEquals(docID1, docID2);
+            assertEquals(docID2, docID3);
+            assertEquals(docID3, docID4);
+            assertEquals(docID4, expectedDocIDs[n - 1]);
 
-            assertEquals(expectedNumbers[n - 1], number);
+            assertEquals((long) n, seq1);
+            assertEquals((long) n, seq2);
+            assertEquals((long) n, seq3);
+            assertEquals((long) n, seq4);
+
+            assertEquals(revId1, revId2);
+            assertEquals(revId2, revId3);
+            assertEquals(revId3, revId4);
+            assertEquals(revId4, baseTestDb.getDocument(docID1).getRevisionID());
+
+            assertEquals((long) n, number);
         });
         assertEquals(5, numRows);
+    }
+
+    @Test
+    public void testRevisionIdInCreate() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument();
+        baseTestDb.save(doc);
+
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.revisionID))
+            .from(DataSource.database(this.baseTestDb))
+            .where(Meta.id.equalTo(Expression.string(doc.getId())));
+
+        int numRows = verifyQuery(query, (n, result) -> {
+            assertEquals(doc.getRevisionID(), result.getString(0));
+        });
+
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testRevisionIdInUpdate() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument();
+        baseTestDb.save(doc);
+
+        doc = baseTestDb.getDocument(doc.getId()).toMutable();
+        doc.setString("DEC", "Maynard");
+        baseTestDb.save(doc);
+        final String revId = doc.getRevisionID();
+
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.revisionID))
+            .from(DataSource.database(this.baseTestDb))
+            .where(Meta.id.equalTo(Expression.string(doc.getId())));
+
+        int numRows = verifyQuery(query, (n, result) -> {
+            assertEquals(revId, result.getString(0));
+        });
+
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testRevisionIdInWhere() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument();
+        baseTestDb.save(doc);
+
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(this.baseTestDb))
+            .where(Meta.revisionID.equalTo(Expression.string(doc.getRevisionID())));
+
+        int numRows = verifyQuery(query, (n, result) -> {
+            assertEquals(doc.getId(), result.getString(0));
+        });
+
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testRevisionIdInDelete() throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument();
+        baseTestDb.save(doc);
+
+        final Document dbDoc = baseTestDb.getDocument(doc.getId());
+        assertNotNull(dbDoc);
+
+        baseTestDb.delete(dbDoc);
+
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.revisionID))
+            .from(DataSource.database(this.baseTestDb))
+            .where(Meta.deleted.equalTo(Expression.booleanValue(true)));
+
+        int numRows = verifyQuery(query, (n, result) -> {
+            assertEquals(dbDoc.getRevisionID(), result.getString(0));
+        });
+
+        assertEquals(1, numRows);
     }
 
     @Test
