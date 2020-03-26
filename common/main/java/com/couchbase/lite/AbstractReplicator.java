@@ -432,7 +432,6 @@ public abstract class AbstractReplicator {
                 CBLError.Code.UNSUPPORTED);
         }
 
-        final Boolean pending;
         try { return lazyCreateC4Replicator().isDocumentPending(docId); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e, "Failed getting document pending status"); }
     }

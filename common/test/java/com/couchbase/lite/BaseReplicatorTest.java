@@ -17,9 +17,13 @@
 //
 package com.couchbase.lite;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.After;
 import org.junit.Before;
 
+import com.couchbase.lite.utils.Fn;
 import com.couchbase.lite.utils.Report;
 
 import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PULL;
@@ -30,6 +34,8 @@ import static org.junit.Assert.assertTrue;
 
 
 public abstract class BaseReplicatorTest extends BaseDbTest {
+    protected static final int STD_TIMEOUT_SECS = 5;
+
     protected Replicator baseTestReplicator;
 
     protected Database otherDB;
@@ -53,6 +59,14 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
             else { Report.log(LogLevel.INFO, "expected otherDB to be open"); }
         }
         finally { super.tearDown(); }
+    }
+
+
+    // helper method allows kotlin to call isDocumentPending(null)
+    // Kotlin type checking prevents this.
+    @SuppressWarnings("ConstantConditions")
+    protected final boolean callIsDocumentPendingWithNullId(Replicator repl) throws CouchbaseLiteException {
+        return repl.isDocumentPending(null);
     }
 
     protected final ReplicatorConfiguration makeConfig(
@@ -85,4 +99,85 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         if (resolver != null) { config.setConflictResolver(resolver); }
         return config;
     }
+
+    protected final Replicator run(ReplicatorConfiguration config) { return run(config, null); }
+
+    protected final Replicator run(ReplicatorConfiguration config, Fn.Consumer<Replicator> onReady) {
+        return run(config, 0, null, false, false, onReady);
+    }
+
+    protected final Replicator run(
+        ReplicatorConfiguration config,
+        int expectedErrorCode,
+        String expectedErrorDomain,
+        boolean ignoreErrorAtStopped,
+        boolean reset,
+        Fn.Consumer<Replicator> onReady) {
+        return run(
+            new Replicator(config),
+            expectedErrorCode,
+            expectedErrorDomain,
+            ignoreErrorAtStopped,
+            reset,
+            onReady);
+    }
+
+    protected final Replicator run(Replicator r) { return run(r, 0, null, false, false, null); }
+
+    protected final Replicator run(
+        Replicator r,
+        int expectedErrorCode,
+        String expectedErrorDomain,
+        boolean ignoreErrorAtStopped,
+        boolean reset,
+        Fn.Consumer<Replicator> onReady) {
+        baseTestReplicator = r;
+
+        TestReplicatorChangeListener listener
+            = new TestReplicatorChangeListener(r, expectedErrorDomain, expectedErrorCode, ignoreErrorAtStopped);
+
+        if (reset) { r.resetCheckpoint(); }
+
+        if (onReady != null) { onReady.accept(r); }
+
+
+        boolean success;
+
+        ListenerToken token = r.addChangeListener(testSerialExecutor, listener);
+        try {
+            r.start();
+            success = listener.awaitCompletion(STD_TIMEOUT_SECS, TimeUnit.SECONDS);
+        }
+        finally {
+            r.removeChangeListener(token);
+        }
+
+        // see if the replication succeeded
+        Throwable err = listener.getFailureReason();
+        if (err != null) { throw new RuntimeException(err); }
+
+        assertTrue(success);
+
+        return r;
+    }
+
+    protected final void stopContinuousReplicator(Replicator repl) throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        ListenerToken token = repl.addChangeListener(
+            testSerialExecutor,
+            change -> {
+                if (change.getStatus().getActivityLevel() == Replicator.ActivityLevel.STOPPED) { latch.countDown(); }
+            });
+
+        try {
+            repl.stop();
+            if (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
+                assertTrue(latch.await(STD_TIMEOUT_SECS, TimeUnit.SECONDS));
+            }
+        }
+        finally {
+            repl.removeChangeListener(token);
+        }
+    }
+
 }
