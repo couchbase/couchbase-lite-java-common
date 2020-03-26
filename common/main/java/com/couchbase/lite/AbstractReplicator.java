@@ -433,12 +433,8 @@ public abstract class AbstractReplicator {
         }
 
         final Boolean pending;
-        try { pending = lazyCreateC4Replicator().isDocumentPending(docId); }
+        try { return lazyCreateC4Replicator().isDocumentPending(docId); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e, "Failed getting document pending status"); }
-
-        if (pending == null) { throw new IllegalStateException("Pending doc ids is unexpectedly null"); }
-
-        return pending;
     }
 
     /**

@@ -373,17 +373,13 @@ public class C4Replicator extends C4NativePeer {
     public byte[] getResponseHeaders() { return getResponseHeaders(getPeer()); }
 
     // Null return value indicates that this replicator is dead
-    @Nullable
-    public Boolean isDocumentPending(String docId) throws LiteCoreException {
+    public boolean isDocumentPending(String docId) throws LiteCoreException {
         return isDocumentPending(getPeer(), docId);
     }
 
     // Null return value indicates that this replicator is dead
     @Nullable
     public Set<String> getPendingDocIDs() throws LiteCoreException {
-        final long peer = getPeerHandleUnchecked();
-        if (peer == 0) { return null; }
-
         final FLSliceResult result = new FLSliceResult(getPendingDocIds(getPeer()));
         try {
             final FLValue slice = FLValue.fromData(result);
@@ -391,7 +387,6 @@ public class C4Replicator extends C4NativePeer {
         }
         finally { result.free(); }
     }
-
 
     // Several bugs have been reported, near here:
     // Usually: JNI DETECTED ERROR IN APPLICATION: use of deleted global reference
