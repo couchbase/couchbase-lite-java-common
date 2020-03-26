@@ -36,24 +36,15 @@ public final class ReplicatorChange {
      * Return the source replicator object.
      */
     @NonNull
-    public Replicator getReplicator() {
-        return replicator;
-    }
+    public Replicator getReplicator() { return replicator; }
 
     /**
      * Return the replicator status.
      */
     @NonNull
-    public Replicator.Status getStatus() {
-        return status;
-    }
+    public Replicator.Status getStatus() { return status; }
 
     @NonNull
     @Override
-    public String toString() {
-        return "ReplicatorChange{" +
-            "replicator=" + replicator +
-            ", status=" + status +
-            '}';
-    }
+    public String toString() {return "ReplicatorChange{replicator=" + replicator + ", status=" + status + '}'; }
 }

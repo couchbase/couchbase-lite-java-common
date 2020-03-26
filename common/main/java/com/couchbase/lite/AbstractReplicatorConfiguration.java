@@ -352,11 +352,24 @@ abstract class AbstractReplicatorConfiguration {
     public final Endpoint getTarget() { return target; }
 
 
+    @Override
+    public String toString() { return "ReplicatorConfig{" + database + " => " + target + "}"; }
+
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
     abstract ReplicatorConfiguration getReplicatorConfiguration();
+
+    boolean isPush() {
+        return replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
+            || replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH;
+    }
+
+    boolean isPull() {
+        return replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
+            || replicatorType == ReplicatorConfiguration.ReplicatorType.PULL;
+    }
 
     final ReplicatorConfiguration readonlyCopy() {
         final ReplicatorConfiguration config = new ReplicatorConfiguration(getReplicatorConfiguration());

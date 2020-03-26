@@ -195,8 +195,9 @@ public class C4Replicator extends C4NativePeer {
 
     @SuppressWarnings("unused")
     static void documentEndedCallback(long handle, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
-        final C4Replicator repl = getReplicatorForHandle(handle);
         Log.d(LogDomain.REPLICATOR, "documentEndedCallback() handle: " + handle + ", pushing: " + pushing);
+
+        final C4Replicator repl = getReplicatorForHandle(handle);
         if (repl == null) { return; }
 
         final C4ReplicatorListener listener = repl.listener;
@@ -391,28 +392,23 @@ public class C4Replicator extends C4NativePeer {
         finally { result.free(); }
     }
 
+
     // Several bugs have been reported, near here:
     // Usually: JNI DETECTED ERROR IN APPLICATION: use of deleted global reference
     // https://issues.couchbase.com/browse/CBL-34
-    public void free() {
-        final long handle = getPeerAndClear();
-        synchronized (CLASS_LOCK) {
-            release(handle, this.replicatorContext);
-            if (handle != 0) { free(handle, replicatorContext, socketFactoryContext); }
-        }
-    }
-
-    // This must not be called, unless <code>free()</code> is called first.
-    // Until <code>free()</code> is called, there are references to objects managed by this object
-    // in the <code>REVERSE_LOOKUP_TABLE</code> and <code>CONTEXT_TO_C4_REPLICATOR_MAP</code>
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        if (get() != 0) {
-            throw new IllegalStateException("C4Replicator finalized without being freed: " + this);
-        }
+        final long handle = getPeerAndClear();
+
+        // !!! the two arguments may already be gone
+        if (handle != 0) { free(handle, replicatorContext, socketFactoryContext); }
+
+        synchronized (CLASS_LOCK) { release(handle, this.replicatorContext); }
+
         super.finalize();
     }
+
 
     //-------------------------------------------------------------------------
     // native methods
@@ -436,7 +432,8 @@ public class C4Replicator extends C4NativePeer {
         Object replicatorContext,
         C4ReplicationFilter pushFilter,
         C4ReplicationFilter pullFilter,
-        byte[] options) throws LiteCoreException;
+        byte[] options)
+        throws LiteCoreException;
 
     /**
      * Creates a new local replicator.
@@ -451,7 +448,8 @@ public class C4Replicator extends C4NativePeer {
         Object replicatorContext,
         C4ReplicationFilter pushFilter,
         C4ReplicationFilter pullFilter,
-        byte[] options) throws LiteCoreException;
+        byte[] options)
+        throws LiteCoreException;
 
     /**
      * Creates a new replicator from an already-open C4Socket. This is for use by listeners

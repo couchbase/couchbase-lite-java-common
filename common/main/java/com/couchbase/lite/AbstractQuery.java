@@ -285,6 +285,8 @@ abstract class AbstractQuery implements Query {
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
     }
 
+    // https://issues.couchbase.com/browse/CBL-21
+    // Using c4query_columnTitle is not an improvement, as of 12/2019
     private Map<String, Integer> getColumnNames() throws CouchbaseLiteException {
         final Map<String, Integer> map = new HashMap<>();
         int index = 0;

@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.couchbase.lite.utils.Report;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -38,6 +40,7 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
 
     @Override
     public void changed(@NotNull ReplicatorChange change) {
+        Report.log(LogLevel.DEBUG, "Test change listener: " + change);
         final Replicator.Status status = change.getStatus();
         try {
             if (continuous) { checkContinuousStatus(status); }
