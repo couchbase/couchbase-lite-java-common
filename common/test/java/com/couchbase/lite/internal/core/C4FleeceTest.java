@@ -21,9 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
@@ -32,7 +30,6 @@ import com.couchbase.lite.internal.fleece.FLValue;
 
 import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DATA;
 import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DICT;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

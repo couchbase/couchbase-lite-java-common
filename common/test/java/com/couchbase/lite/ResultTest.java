@@ -55,7 +55,7 @@ public class ResultTest extends BaseQueryTest {
     private static final SelectResult SR_NO_KEY = SelectResult.property("non_existing_key");
 
     @Test
-    public void testGetValueByKey() throws Exception {
+    public void testGetValueByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -88,7 +88,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetValue() throws Exception {
+    public void testGetValue() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -121,7 +121,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetStringByKey() throws Exception {
+    public void testGetStringByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -153,7 +153,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetString() throws Exception {
+    public void testGetString() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -186,7 +186,7 @@ public class ResultTest extends BaseQueryTest {
 
 
     @Test
-    public void testGetNumberByKey() throws Exception {
+    public void testGetNumberByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -218,7 +218,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetNumber() throws Exception {
+    public void testGetNumber() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -249,9 +249,8 @@ public class ResultTest extends BaseQueryTest {
         }
     }
 
-
     @Test
-    public void testGetIntegerByKey() throws Exception {
+    public void testGetIntegerByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -283,7 +282,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetInteger() throws Exception {
+    public void testGetInteger() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -315,7 +314,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetLongByKey() throws Exception {
+    public void testGetLongByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -347,7 +346,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetLong() throws Exception {
+    public void testGetLong() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -379,7 +378,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetFloatByKey() throws Exception {
+    public void testGetFloatByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -410,7 +409,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetFloat() throws Exception {
+    public void testGetFloat() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -442,7 +441,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDoubleByKey() throws Exception {
+    public void testGetDoubleByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -474,7 +473,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDouble() throws Exception {
+    public void testGetDouble() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -506,7 +505,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetBooleanByKey() throws Exception {
+    public void testGetBooleanByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -538,7 +537,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetBoolean() throws Exception {
+    public void testGetBoolean() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -570,7 +569,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDateByKey() throws Exception {
+    public void testGetDateByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -602,7 +601,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDate() throws Exception {
+    public void testGetDate() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -634,7 +633,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetBlobByKey() throws Exception {
+    public void testGetBlobByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -667,7 +666,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetBlob() throws Exception {
+    public void testGetBlob() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -700,7 +699,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDictionaryByKey() throws Exception {
+    public void testGetDictionaryByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -737,7 +736,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDictionary() throws Exception {
+    public void testGetDictionary() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -774,7 +773,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetArrayByKey() throws Exception {
+    public void testGetArrayByKey() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -807,7 +806,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetArray() throws Exception {
+    public void testGetArray() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -840,7 +839,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetKeys() throws Exception {
+    public void testGetKeys() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -882,7 +881,7 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testContains() throws Exception {
+    public void testContains() throws CouchbaseLiteException {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
@@ -893,10 +892,7 @@ public class ResultTest extends BaseQueryTest {
                     "null", "true", "false", "string", "zero", "one",
                     "minus_one", "one_dot_one", "date", "dict", "array",
                     "blob");
-                for (String key : expected) {
-                    assertTrue(r.contains(key));
-                }
-
+                for (String key: expected) { assertTrue(r.contains(key)); }
                 // not exists -> false
                 assertFalse(r.contains("non_existing_key"));
 
@@ -912,7 +908,7 @@ public class ResultTest extends BaseQueryTest {
     // Contributed by Bryan Welter:
     // https://github.com/couchbase/couchbase-lite-android-ce/issues/27
     @Test
-    public void testEmptyDict() throws Exception {
+    public void testEmptyDict() throws CouchbaseLiteException {
         String doc1 = "doc1";
         String key1 = "emptyDict";
 
@@ -926,7 +922,7 @@ public class ResultTest extends BaseQueryTest {
 
         ResultSet results = query.execute();
         assertNotNull(results);
-        for (Result result : results.allResults()) {
+        for (Result result: results.allResults()) {
             assertNotNull(result);
             assertEquals(1, result.toMap().size());
             Dictionary emptyDict = result.getDictionary(key1);

@@ -53,16 +53,13 @@ public abstract class BaseTest extends PlatformBaseTest {
     protected ExecutionService.CloseableExecutor testSerialExecutor;
 
     @AfterClass
-    public static void classTearDown() {
+    public static void tearDownBaseTestClass() {
         FileUtils.deleteContents(new File(CouchbaseLiteInternal.getDbDirectoryPath()));
         FileUtils.deleteContents(new File(CouchbaseLiteInternal.getTmpDirectoryPath()));
     }
 
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-
+    public final void setUpBaseTest() {
         Database.log.getConsole().setLevel(LogLevel.DEBUG);
         //setupFileLogging(); // if needed
 
@@ -75,20 +72,17 @@ public abstract class BaseTest extends PlatformBaseTest {
     }
 
     @After
-    @Override
-    public void tearDown() {
-        try {
-            if (testSerialExecutor != null) { testSerialExecutor.stop(2, TimeUnit.SECONDS); }
-        }
-        finally { super.tearDown(); }
+    public final void tearDownBaseTest() {
+        if (testSerialExecutor != null) { testSerialExecutor.stop(2, TimeUnit.SECONDS); }
     }
 
-    protected final String getUniqueName(@NonNull String prefix) { return prefix + '-' + TestUtils.randomString(24); }
+    protected final String getUniqueName(@NonNull String prefix) { return TestUtils.getUniqueName(prefix); }
 
     // Prefer this method to any other way of creating a new database
     protected final Database createDb(@NonNull String name) throws CouchbaseLiteException {
         return createDb(name, null);
     }
+
     // Prefer this method to any other way of creating a new database
     protected final Database createDb(@NonNull String name, @Nullable DatabaseConfiguration config)
         throws CouchbaseLiteException {

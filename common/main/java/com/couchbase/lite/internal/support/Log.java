@@ -75,7 +75,7 @@ public final class Log {
     private static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
     static {
         final Map<Integer, LogLevel> m = new HashMap<>();
-        for (LogLevel level : LogLevel.values()) { m.put(level.getValue(), level); }
+        for (LogLevel level: LogLevel.values()) { m.put(level.getValue(), level); }
         LOG_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
@@ -358,7 +358,7 @@ public final class Log {
 
     private static void setC4LogLevel(@NonNull EnumSet<LogDomain> domains, @NonNull LogLevel level) {
         final int c4Level = level.getValue();
-        for (LogDomain domain : domains) {
+        for (LogDomain domain: domains) {
             switch (domain) {
                 case DATABASE:
                     C4Log.setLevels(c4Level, C4Constants.LogDomain.DATABASE);

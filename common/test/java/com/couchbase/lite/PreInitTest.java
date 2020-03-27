@@ -23,10 +23,10 @@ import org.junit.Test;
 public class PreInitTest extends PlatformBaseTest {
 
     @BeforeClass
-    public static void classSetUp() { deinitCouchbase(); }
+    public static void setUpPreInitTestClass() { deinitCouchbase(); }
 
     @AfterClass
-    public static void classTearDown() { initCouchbase(); }
+    public static void tearDownPreInitTest() { initCouchbase(); }
 
     @Test(expected = IllegalStateException.class)
     public void testCreateDatabaseBeforeInit() throws CouchbaseLiteException {

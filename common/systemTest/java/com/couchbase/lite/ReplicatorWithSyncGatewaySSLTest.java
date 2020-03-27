@@ -32,9 +32,6 @@ import com.couchbase.lite.utils.ReplicatorSystemTest;
  * Note: https://github.com/couchbase/couchbase-lite-android/tree/master/test/replicator
  */
 public class ReplicatorWithSyncGatewaySSLTest extends BaseReplicatorTest {
-    @After
-    public void tearDown() { super.tearDown(); }
-
     /**
      * This test assumes an SG is serving SSL at port 4994 with a self-signed cert.
      */

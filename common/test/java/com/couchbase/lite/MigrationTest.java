@@ -41,18 +41,12 @@ public class MigrationTest extends BaseTest {
     private Database migrationTestDb;
 
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
+    public final void setUpMigrationTest() {
         dbDir = new File(getDatabaseDirectoryPath(), getUniqueName("migration-test-dir"));
     }
 
     @After
-    @Override
-    public void tearDown() {
-        try { deleteDb(migrationTestDb); }
-        finally { super.tearDown(); }
-    }
+    public final void tearDownMigrationTest() { deleteDb(migrationTestDb); }
 
     // TODO: 1.x DB's attachment is not automatically detected as blob
     // https://github.com/couchbase/couchbase-lite-android/issues/1237

@@ -25,7 +25,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 
 import static org.junit.Assert.assertEquals;
@@ -39,21 +38,12 @@ public class C4ObserverTest extends C4BaseTest {
     private AtomicInteger dbCallbackCalls;
 
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-
-        dbCallbackCalls = new AtomicInteger(0);
-    }
+    public final void setUpC4ObserverTest() { dbCallbackCalls = new AtomicInteger(0); }
 
     @After
-    @Override
-    public void tearDown() {
-        try {
-            if (dbObserver != null) { dbObserver.free(); }
-            if (docObserver != null) { docObserver.free(); }
-        }
-        finally { super.tearDown(); }
+    public final void tearDownC4ObserverTest() {
+        if (dbObserver != null) { dbObserver.free(); }
+        if (docObserver != null) { docObserver.free(); }
     }
 
     // - DB Observer
@@ -123,7 +113,7 @@ public class C4ObserverTest extends C4BaseTest {
         checkChanges(Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
 
         C4Database otherdb = new C4Database(
-            dbDir.getPath(),
+            dbDirPath,
             getFlags(),
             null,
             getVersioning(),

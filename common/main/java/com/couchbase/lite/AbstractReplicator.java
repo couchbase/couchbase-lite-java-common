@@ -692,13 +692,13 @@ public abstract class AbstractReplicator {
             config.getDatabase().removeActiveReplicator((Replicator) this); // this is likely to dealloc me
         }
 
-        for (ReplicatorChangeListenerToken token : tokens) { token.notify(change); }
+        for (ReplicatorChangeListenerToken token: tokens) { token.notify(change); }
     }
 
     void documentEnded(boolean pushing, C4DocumentEnded... docEnds) {
         final List<ReplicatedDocument> unconflictedDocs = new ArrayList<>();
 
-        for (C4DocumentEnded docEnd : docEnds) {
+        for (C4DocumentEnded docEnd: docEnds) {
             final String docId = docEnd.getDocID();
             final C4Error c4Error = docEnd.getC4Error();
 
@@ -735,7 +735,7 @@ public abstract class AbstractReplicator {
         notifyDocumentEnded(false, Arrays.asList(new ReplicatedDocument(docId, flags, err, false)));
 
         if ((pendingNotifications != null) && (!pendingNotifications.isEmpty())) {
-            for (C4ReplicatorStatus status : pendingNotifications) {
+            for (C4ReplicatorStatus status: pendingNotifications) {
                 dispatcher.execute(() -> c4StatusChanged(status));
             }
         }
@@ -745,7 +745,7 @@ public abstract class AbstractReplicator {
         final DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
         final List<DocumentReplicationListenerToken> tokens;
         synchronized (lock) { tokens = new ArrayList<>(docEndedListenerTokens); }
-        for (DocumentReplicationListenerToken token : tokens) { token.notify(update); }
+        for (DocumentReplicationListenerToken token: tokens) { token.notify(update); }
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
     }
 
@@ -890,7 +890,7 @@ public abstract class AbstractReplicator {
     // Decompose a path into its elements.
     private Deque<String> splitPath(String fullPath) {
         final Deque<String> path = new ArrayDeque<>();
-        for (String element : fullPath.split("/")) {
+        for (String element: fullPath.split("/")) {
             if (element.length() > 0) { path.addLast(element); }
         }
         return path;

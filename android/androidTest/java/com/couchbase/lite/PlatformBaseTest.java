@@ -17,18 +17,21 @@
 //
 package com.couchbase.lite;
 
+import android.os.Build;
 import android.support.test.InstrumentationRegistry;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-
-import org.junit.After;
-import org.junit.Before;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
+
+import static org.junit.Assert.fail;
 
 
 /**
@@ -38,6 +41,18 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
+
+    private static final Map<String, Runnable> PLATFORM_DEPENDENT_TESTS;
+    static {
+        final Map<String, Runnable> m = new HashMap<>();
+        m.put(
+            "testStopReplicatorAfterOffline",
+            () -> { if (Build.VERSION.SDK_INT < 21) { fail("Websockets not supported on Android v < 21"); }});
+        m.put(
+            "testStartSingleShotReplicatorInOffline",
+            () -> { if (Build.VERSION.SDK_INT < 21) { fail("Websockets not supported on Android v < 21"); }});
+        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
+    }
 
     public static void initCouchbase() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
@@ -50,12 +65,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     private String tmpDirPath;
 
-    // Before and After naming conventions
-    @Before
-    public void setUp() throws CouchbaseLiteException { }
-
-    @After
-    public void tearDown() { }
+    @Override
+    public final void failImmediatelyForPlatform(String testName) {
+        Runnable test = PLATFORM_DEPENDENT_TESTS.get(testName);
+        if (test != null) { test.run(); }
+    }
 
     // make a half-hearted attempt to set up file logging
     @Override

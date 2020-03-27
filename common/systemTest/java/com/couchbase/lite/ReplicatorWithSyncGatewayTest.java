@@ -46,9 +46,7 @@ public class ReplicatorWithSyncGatewayTest extends BaseReplicatorTest {
 
 
     @Before
-    public void setUp() throws Exception {
-        super.setUp();
-
+    public final void setUpReplicatorWithSyncGatewayTest() throws Exception {
 //        remoteHost = System.getenv().get("couchbase.remoteHost");
 //        Preconditions.checkArgNotNull(remoteHost, "couchbase.remoteHost");
 //        remotePort = System.getenv().get("couchbase.remotePort");

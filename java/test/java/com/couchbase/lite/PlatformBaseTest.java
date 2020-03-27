@@ -48,12 +48,8 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     private String tmpDirPath;
 
-    // Before and After naming conventions
-    @Before
-    public void setUp() throws CouchbaseLiteException { }
-
-    @After
-    public void tearDown() { }
+    @Override
+    public final void failImmediatelyForPlatform(String testName) {}
 
     // set up the file logger...
     @Override

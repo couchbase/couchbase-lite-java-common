@@ -34,12 +34,8 @@ public class C4QueryBaseTest extends C4BaseTest {
     protected C4Query query;
 
     @After
-    @Override
-    public void tearDown() {
-        try {
-            if (query != null) { query.free(); }
-        }
-        finally { super.tearDown(); }
+    public final void tearDownC4QueryBaseTest() {
+        if (query != null) { query.free(); }
     }
 
     protected final C4Query compileSelect(String queryStr) throws LiteCoreException {
@@ -110,7 +106,8 @@ public class C4QueryBaseTest extends C4BaseTest {
             for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatches(i).toList()); }
             matches.add(match);
         }
-        if (e != null) { e.free(); }
+        e.free();
+
         if (encodedParams != null) { encodedParams.free(); }
         return matches;
     }

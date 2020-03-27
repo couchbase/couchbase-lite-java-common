@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 
 import com.couchbase.lite.CouchbaseLiteException;
@@ -57,30 +58,41 @@ public class C4BaseTest extends PlatformBaseTest {
 
     protected C4Database c4Database;
 
-    protected File dbDir;
     protected String tmpDir;
     protected File rootDir;
+    protected String dbDirPath;
 
     protected byte[] fleeceBody;
 
+    private static final List<String> SCRATCH_DIRS = new ArrayList<>();
+
+    // This trickery is necessary because deleting a scratch directory
+    // while logging can cause core to hang rolling non-existent files.
+    @AfterClass
+    public static void tearDownC4BaseTestClass() {
+        Report.log(LogLevel.INFO, "Deleting c4DB directories: " + SCRATCH_DIRS.size());
+        for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
+    }
+
+
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-
-        final String tmpDirName = "c4-test-" + TestUtils.randomString(24);
-
-        tmpDir = getScratchDirectoryPath(tmpDirName);
-        rootDir = new File(getDatabaseDirectoryPath(), tmpDirName);
-        dbDir = new File(rootDir, "cbl_core_test.sqlite3");
-
+    public final void setUpC4BaseTest() throws CouchbaseLiteException {
+        final String tmpDirName = TestUtils.getUniqueName("c4-test-");
         try {
+            tmpDir = getScratchDirectoryPath(tmpDirName);
+            SCRATCH_DIRS.add(tmpDir);
+
+            rootDir = new File(getDatabaseDirectoryPath(), tmpDirName);
+            SCRATCH_DIRS.add(rootDir.getCanonicalPath());
+
+            dbDirPath = new File(rootDir, "cbl_core_test.sqlite3").getCanonicalPath();
+
             if (!rootDir.mkdirs()) { throw new IOException("Can't create directory: " + rootDir); }
 
             C4.setenv("TMPDIR", tmpDir, 1);
 
             c4Database = new C4Database(
-                dbDir.getCanonicalPath(),
+                dbDirPath,
                 getFlags(),
                 null,
                 getVersioning(),
@@ -96,21 +108,15 @@ public class C4BaseTest extends PlatformBaseTest {
     }
 
     @After
-    @Override
-    public void tearDown() {
-        try {
-            if (c4Database != null) {
-                final C4Database db = c4Database;
-                c4Database = null;
+    public final void tearDownC4BaseTest() {
+        final C4Database db = c4Database;
+        c4Database = null;
 
-                try { db.close(); }
-                catch (LiteCoreException e) { throw new IllegalStateException("Failed closing db", e); }
-                finally { db.free(); }
-            }
-            if (rootDir != null) { FileUtils.eraseFileOrDir(rootDir); }
-            if (tmpDir != null) { FileUtils.eraseFileOrDir(tmpDir); }
+        if (db != null) {
+            try { db.close(); }
+            catch (LiteCoreException e) { throw new IllegalStateException("Failed closing db", e); }
+            finally { db.free(); }
         }
-        finally { super.tearDown(); }
     }
 
     protected void createRev(String docID, String revID, byte[] body) throws LiteCoreException {
@@ -156,8 +162,12 @@ public class C4BaseTest extends PlatformBaseTest {
             c4Database = null;
         }
         c4Database = new C4Database(
-            dbDir.getPath(), getFlags(), null, getVersioning(),
-            encryptionAlgorithm(), encryptionKey());
+            dbDirPath,
+            getFlags(),
+            null,
+            getVersioning(),
+            encryptionAlgorithm(),
+            encryptionKey());
         assertNotNull(c4Database);
     }
 
@@ -168,9 +178,7 @@ public class C4BaseTest extends PlatformBaseTest {
             c4Database = null;
         }
         int flag = getFlags() & ~C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.READ_ONLY;
-        c4Database = new C4Database(
-            dbDir.getPath(), flag, null, getVersioning(),
-            encryptionAlgorithm(), encryptionKey());
+        c4Database = new C4Database(dbDirPath, flag, null, getVersioning(), encryptionAlgorithm(), encryptionKey());
         assertNotNull(c4Database);
     }
 
@@ -207,7 +215,7 @@ public class C4BaseTest extends PlatformBaseTest {
         List<C4BlobKey> keys = new ArrayList<>();
         StringBuilder json = new StringBuilder();
         json.append("{attached: [");
-        for (String attachment : attachments) {
+        for (String attachment: attachments) {
             C4BlobStore store = c4Database.getBlobStore();
             C4BlobKey key = store.create(attachment.getBytes(StandardCharsets.UTF_8));
             keys.add(key);
@@ -344,7 +352,7 @@ public class C4BaseTest extends PlatformBaseTest {
             if (body == null) { enc.beginDict(0); }
             else {
                 enc.beginDict(body.size());
-                for (String key : body.keySet()) {
+                for (String key: body.keySet()) {
                     enc.writeKey(key);
                     enc.writeValue(body.get(key));
                 }

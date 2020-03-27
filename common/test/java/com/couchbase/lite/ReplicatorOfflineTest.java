@@ -44,6 +44,9 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test
     public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
+        // this test crashes the test suite on Android <21
+        failImmediatelyForPlatform("testStopReplicatorAfterOffline");
+
         Endpoint target = getRemoteTargetEndpoint();
         ReplicatorConfiguration config = makeConfig(false, true, true, baseTestDb, target);
         Replicator repl = new Replicator(config);
@@ -67,6 +70,9 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test
     public void testStartSingleShotReplicatorInOffline() throws URISyntaxException, InterruptedException {
+        // this test crashes the test suite on Android <21
+        failImmediatelyForPlatform("testStartSingleShotReplicatorInOffline");
+
         Endpoint endpoint = getRemoteTargetEndpoint();
         Replicator repl = new Replicator(makeConfig(true, false, false, endpoint));
         final CountDownLatch stopped = new CountDownLatch(1);
@@ -91,7 +97,9 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
         assertThrows(IllegalArgumentException.class, () -> repl.addDocumentReplicationListener(null));
 
-        assertThrows(IllegalArgumentException.class, () -> repl.addDocumentReplicationListener(testSerialExecutor, null));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> repl.addDocumentReplicationListener(testSerialExecutor, null));
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -120,8 +128,8 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
                         Replicator r = change.getReplicator();
                         offline.countDown();
                         if (offline.getCount() <= 0) { r.stop(); }
-                        // !!! Platform no longer has controll of network reachablity
-                        //else { r.networkReachable(); }
+                        // !!! Platform no longer has control of network reachablity
+                        // else { r.networkReachable(); }
                         return;
                     case STOPPED:
                         stopped.countDown();

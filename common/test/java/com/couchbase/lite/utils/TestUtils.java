@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.utils;
 
+import android.support.annotation.NonNull;
+
 import java.util.Locale;
 import java.util.Random;
 
@@ -33,7 +35,9 @@ public final class TestUtils {
     public static final String ALPHANUMERIC = NUMERIC + ALPHA + ALPHA.toLowerCase(Locale.ROOT);
 
     private static final char[] CHARS = ALPHANUMERIC.toCharArray();
-    private static final Random RANDOM = new Random(System.currentTimeMillis());
+    private static final Random RANDOM = new Random();
+
+    public static String getUniqueName(@NonNull String prefix) { return prefix + '-' + randomString(24); }
 
     public static String randomString(int len) {
         final char[] buf = new char[len];

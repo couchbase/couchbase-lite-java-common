@@ -26,12 +26,8 @@ import java.io.InputStream;
  * Contains methods required for the tests to run on both Android and Java platforms.
  */
 public interface PlatformTest {
-
-    /* @Before naming convention */
-    void setUp() throws CouchbaseLiteException;
-
-    /* @After naming convention */
-    void tearDown();
+    /* Terminate the test with prejudice, on this platform */
+    void failImmediatelyForPlatform(String testName);
 
     /* Set up any test specific logging */
     void setupFileLogging();

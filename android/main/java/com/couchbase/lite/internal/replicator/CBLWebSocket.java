@@ -37,7 +37,7 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
     private static final int ECONNREFUSED = 111;  // java.net.ConnectException
 
 
-    public CBLWebSocket(
+    CBLWebSocket(
         long handle,
         String scheme,
         String hostname,

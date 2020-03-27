@@ -24,7 +24,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
-import java.lang.AssertionError
 import java.util.Stack
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.CountDownLatch
@@ -63,7 +62,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
     private lateinit var cblService: ExecutionService
 
     @Before
-    override fun setUp() {
+    fun setUpExecutionServiceTest() {
         cblService = CouchbaseLiteInternal.getExecutionService()
     }
 
@@ -187,8 +186,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
             executor.execute { finishLatch.countDown() }
 
             assertTrue(finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
-        }
-        catch (e: AssertionError) {
+        } catch (e: AssertionError) {
             tinyService.dumpExecutorState()
             throw e
         }

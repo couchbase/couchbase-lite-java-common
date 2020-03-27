@@ -54,12 +54,8 @@ public class C4BlobStoreTest extends C4BaseTest {
     private C4BlobKey bogusKey;
 
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-
+    public final void setUpC4BlobStoreTest() throws CouchbaseLiteException {
         blobDir = new File(tmpDir);
-
         try {
             blobStore = C4BlobStore.open(blobDir.getCanonicalPath(), C4Constants.DatabaseFlags.CREATE);
             bogusKey = new C4BlobKey("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");
@@ -69,21 +65,17 @@ public class C4BlobStoreTest extends C4BaseTest {
     }
 
     @After
-    @Override
-    public void tearDown() {
-        try {
-            if (blobStore != null) {
-                final C4BlobStore store = blobStore;
-                blobStore = null;
+    public final void tearDownC4BlobStoreTest() {
+        final C4BlobStore store = blobStore;
+        blobStore = null;
 
-                try { store.delete(); }
-                catch (LiteCoreException e) { throw new IllegalStateException("Failed deleting blob store", e); }
-                finally { store.free(); }
-            }
-
-            if (blobDir != null) { FileUtils.eraseFileOrDir(blobDir); }
+        if (store != null) {
+            try { store.delete(); }
+            catch (LiteCoreException e) { throw new IllegalStateException("Failed deleting blob store", e); }
+            finally { store.free(); }
         }
-        finally { super.tearDown(); }
+
+        if (blobDir != null) { FileUtils.eraseFileOrDir(blobDir); }
     }
 
     // - parse blob keys
@@ -281,7 +273,7 @@ public class C4BlobStoreTest extends C4BaseTest {
 
         List<Integer> kSizes = Arrays.asList(0, 1, 15, 16, 17, 4095, 4096, 4097,
             4096 + 15, 4096 + 16, 4096 + 17, 8191, 8192, 8193);
-        for (int size : kSizes) {
+        for (int size: kSizes) {
             Report.log(LogLevel.INFO, "Testing " + size + "-byte blob");
             // Write the blob:
             C4BlobWriteStream stream = blobStore.openWriteStream();

@@ -42,12 +42,7 @@ import static org.junit.Assert.fail;
 
 public class C4QueryTest extends C4QueryBaseTest {
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-
-        importJSONLinesSafely("names_100.json");
-    }
+    public final void setUpC4QueryTest() throws CouchbaseLiteException { importJSONLinesSafely("names_100.json"); }
 
     //-------------------------------------------------------------------------
     // tests
@@ -226,7 +221,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query expression index
     @Test
     public void testDBQueryExpressionIndex() throws LiteCoreException {
-        c4Database.createIndex("length", json5("[['length()', ['.name.first']]]"), C4Constants.IndexType.VALUE, null, true);
+        c4Database.createIndex(
+            "length",
+            json5("[['length()', ['.name.first']]]"),
+            C4Constants.IndexType.VALUE,
+            null,
+            true);
         compile(json5("['=', ['length()', ['.name.first']], 9]"));
         assertEquals(Arrays.asList("0000015", "0000099"), run());
     }
@@ -235,7 +235,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDeleteIndexedDoc() throws LiteCoreException {
         // Create the same index as the above test:
-        c4Database.createIndex("length", json5("[['length()', ['.name.first']]]"), C4Constants.IndexType.VALUE, null, true);
+        c4Database.createIndex(
+            "length",
+            json5("[['length()', ['.name.first']]]"),
+            C4Constants.IndexType.VALUE,
+            null,
+            true);
 
         // Delete doc "0000015":
         {
@@ -288,7 +293,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text query
     @Test
     public void testFullTextQuery() throws LiteCoreException {
-        c4Database.createIndex("byStreet", "[[\".contact.address.street\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
+        c4Database.createIndex(
+            "byStreet",
+            "[[\".contact.address.street\"]]",
+            C4Constants.IndexType.FULL_TEXT,
+            null,
+            true);
         compile(json5("['MATCH', 'byStreet', 'Hwy']"));
         assertEquals(Arrays.asList(
             Arrays.asList(Arrays.asList(13L, 0L, 0L, 10L, 3L)),
@@ -351,7 +361,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Multiple Full-text indexes
     @Test
     public void testMultipleFullTextIndexes() throws LiteCoreException {
-        c4Database.createIndex("byStreet", "[[\".contact.address.street\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
+        c4Database.createIndex(
+            "byStreet",
+            "[[\".contact.address.street\"]]",
+            C4Constants.IndexType.FULL_TEXT,
+            null,
+            true);
         c4Database.createIndex("byCity", "[[\".contact.address.city\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
         compile(json5("['AND', ['MATCH', 'byStreet', 'Hwy'], ['MATCH', 'byCity',   'Santa']]"));
         assertEquals(Arrays.asList("0000015"), run());
@@ -363,7 +378,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text query in multiple ANDs
     @Test
     public void testFullTextQueryInMultipleANDs() throws LiteCoreException {
-        c4Database.createIndex("byStreet", "[[\".contact.address.street\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
+        c4Database.createIndex(
+            "byStreet",
+            "[[\".contact.address.street\"]]",
+            C4Constants.IndexType.FULL_TEXT,
+            null,
+            true);
         c4Database.createIndex("byCity", "[[\".contact.address.city\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
         compile(json5(
             "['AND', ['AND', ['=', ['.gender'], 'male'], ['MATCH', 'byCity', 'Santa']], ['=', ['.name.first'], "
@@ -378,7 +398,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testMultipleFullTextQueries() throws LiteCoreException {
         // You can't query the same FTS index multiple times in a query (says SQLite)
-        c4Database.createIndex("byStreet", "[[\".contact.address.street\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
+        c4Database.createIndex(
+            "byStreet",
+            "[[\".contact.address.street\"]]",
+            C4Constants.IndexType.FULL_TEXT,
+            null,
+            true);
         try { c4Database.createQuery(json5("['AND', ['MATCH', 'byStreet', 'Hwy'], ['MATCH', 'byStreet', 'Blvd']]")); }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
@@ -390,7 +415,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testBuriedFullTextQueries() throws LiteCoreException {
         // You can't put an FTS match inside an expression other than a top-level AND (says SQLite)
-        c4Database.createIndex("byStreet", "[[\".contact.address.street\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
+        c4Database.createIndex(
+            "byStreet",
+            "[[\".contact.address.street\"]]",
+            C4Constants.IndexType.FULL_TEXT,
+            null,
+            true);
         try {
             c4Database.createQuery(
                 json5("['OR', ['MATCH', 'byStreet', 'Hwy'], ['=', ['.', 'contact', 'address', 'state'], 'CA']]"));

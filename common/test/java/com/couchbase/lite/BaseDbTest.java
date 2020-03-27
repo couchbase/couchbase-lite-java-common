@@ -44,22 +44,14 @@ public abstract class BaseDbTest extends BaseTest {
     protected Database baseTestDb;
 
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-
+    public final void setUpBaseDbTest() throws CouchbaseLiteException {
         baseTestDb = createDb("base-db");
-
         assertNotNull(baseTestDb);
         assertTrue(baseTestDb.isOpen());
     }
 
     @After
-    @Override
-    public void tearDown() {
-        try { deleteDb(baseTestDb); }
-        finally { super.tearDown(); }
-    }
+    public final void tearDownBaseDbTest() { deleteDb(baseTestDb); }
 
     protected final void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
 

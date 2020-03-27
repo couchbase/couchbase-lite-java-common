@@ -24,10 +24,12 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import com.couchbase.lite.utils.FileUtils;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogLevel;
+import com.couchbase.lite.utils.FileUtils;
+import com.couchbase.lite.utils.Report;
 import com.couchbase.lite.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
@@ -124,7 +126,7 @@ public class C4DatabaseTest extends C4BaseTest {
         }
 
         try {
-            C4Database.deleteDbAtPath(dbDir.getCanonicalPath());
+            C4Database.deleteDbAtPath(dbDirPath);
             fail();
         }
         catch (LiteCoreException e) {
@@ -146,11 +148,20 @@ public class C4DatabaseTest extends C4BaseTest {
     @Test
     public void testDatabaseOpenBundle() throws LiteCoreException, IOException {
         int flags = getFlags();
-        File bundlePath = new File(getScratchDirectoryPath("cbl_core_test_bundle"));
-        if (bundlePath.exists()) { C4Database.deleteDbAtPath(bundlePath.getPath()); }
+
+        File bundleDir = new File(getScratchDirectoryPath(TestUtils.getUniqueName("cbl_core_test_bundle")));
+
+        // !!! for some reason, this file already exists on the Java platform...
+        if (bundleDir.exists()) {
+            Report.log(LogLevel.WARNING, "Bundle dir exists: " + bundleDir);
+            FileUtils.eraseFileOrDir(bundleDir);
+        }
+
+        assertFalse(bundleDir.exists());
+        String bundlePath = bundleDir.getCanonicalPath();
 
         C4Database bundle = new C4Database(
-            bundlePath.getPath(),
+            bundlePath,
             flags,
             null,
             getVersioning(),
@@ -164,7 +175,7 @@ public class C4DatabaseTest extends C4BaseTest {
         // Reopen without 'create' flag:
         flags &= ~C4Constants.DatabaseFlags.CREATE;
         bundle = new C4Database(
-            bundlePath.getPath(),
+            bundlePath,
             flags,
             null,
             getVersioning(),
@@ -546,7 +557,7 @@ public class C4DatabaseTest extends C4BaseTest {
 
         String srcPath = c4Database.getPath();
 
-        final String dbName = TestUtils.randomString(24) + DB_EXTENSION;
+        final String dbName = TestUtils.getUniqueName("c4-db-test") + DB_EXTENSION;
 
         File nuPath = new File(getScratchDirectoryPath(dbName));
         try { C4Database.deleteDbAtPath(nuPath.getCanonicalPath()); }

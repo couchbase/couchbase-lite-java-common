@@ -50,11 +50,7 @@ public class BlobTest extends BaseDbTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-        localBlobContent = TestUtils.randomString(100);
-    }
+    public final void setUpBlobTest() { localBlobContent = TestUtils.randomString(100); }
 
     @Test
     public void testEquals() throws CouchbaseLiteException {

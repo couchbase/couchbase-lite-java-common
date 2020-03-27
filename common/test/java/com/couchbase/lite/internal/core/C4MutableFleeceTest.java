@@ -31,7 +31,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -50,27 +49,7 @@ import static org.junit.Assert.assertTrue;
 
 
 public class C4MutableFleeceTest extends C4BaseTest {
-    private MValue.Delegate delegate;
-
-    @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-
-        delegate = MValue.getRegisteredDelegate();
-        MValue.registerDelegate(new MValueDelegate());
-    }
-
-    @After
-    @Override
-    public void tearDown() {
-        try {
-            if (delegate != null) { MValue.registerDelegate(delegate); }
-        }
-        finally { super.tearDown(); }
-    }
-
-    static AllocSlice encode(Object obj) throws LiteCoreException {
+    private static AllocSlice encode(Object obj) throws LiteCoreException {
         FLEncoder enc = new FLEncoder();
         try {
             enc.writeValue(obj);
@@ -79,7 +58,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         finally { enc.free(); }
     }
 
-    static AllocSlice encode(MRoot root) throws LiteCoreException {
+    private static AllocSlice encode(MRoot root) throws LiteCoreException {
         FLEncoder enc = new FLEncoder();
         try {
             root.encodeTo(enc);
@@ -88,17 +67,17 @@ public class C4MutableFleeceTest extends C4BaseTest {
         finally { enc.free(); }
     }
 
-    static List<String> sortedKeys(Map<String, Object> dict) {
+    private static List<String> sortedKeys(Map<String, Object> dict) {
         Set<String> keys = dict.keySet();
         ArrayList<String> list = new ArrayList<>(keys);
         Collections.sort(list);
         return list;
     }
 
-    static void verifyDictIterator(Map<String, Object> dict) {
+    private static void verifyDictIterator(Map<String, Object> dict) {
         int count = 0;
         Set<String> keys = new HashSet<>();
-        for (String key : dict.keySet()) {
+        for (String key: dict.keySet()) {
             count++;
             assertNotNull(key);
             keys.add(key);
@@ -107,7 +86,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         assertEquals(dict.size(), count);
     }
 
-    static String fleece2JSON(AllocSlice fleece) {
+    private static String fleece2JSON(AllocSlice fleece) {
         try {
             FLValue v = FLValue.fromData(fleece);
             if (v == null) { return "INVALID_FLEECE"; }
@@ -116,6 +95,20 @@ public class C4MutableFleeceTest extends C4BaseTest {
         finally {
             if (fleece != null) { fleece.free(); }
         }
+    }
+
+
+    private MValue.Delegate delegate;
+
+    @Before
+    public final void setUpC4MutableFleeceTest() {
+        delegate = MValue.getRegisteredDelegate();
+        MValue.registerDelegate(new MValueDelegate());
+    }
+
+    @After
+    public final void tearDownC4MutableFleeceTest() {
+        if (delegate != null) { MValue.registerDelegate(delegate); }
     }
 
     // TEST_CASE("MValue", "[Mutable]")
@@ -255,7 +248,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             MRoot root = new MRoot(data);
             List<Object> array = (List<Object>) root.asNative();
             int i = 0;
-            for (Object o : array) {
+            for (Object o: array) {
                 assertEquals(orig.get(i), o);
                 i++;
             }

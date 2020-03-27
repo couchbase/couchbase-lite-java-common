@@ -1748,6 +1748,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testSetExpirationOnDoc() throws Exception {
         Date dto3 = new Date(System.currentTimeMillis() + 3000L);
+
         MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setInt("answer", 12);
         doc1.setValue("question", "What is six plus six?");
@@ -1758,13 +1759,13 @@ public class DocumentTest extends BaseDbTest {
         doc2.setValue("question", "What is six plus six?");
         saveDocInBaseTestDb(doc2);
 
-        baseTestDb.setDocumentExpiration("doc2", new Date(System.currentTimeMillis()));//expire now
+        baseTestDb.setDocumentExpiration("doc2", new Date(System.currentTimeMillis())); //expire now
         Thread.sleep(500);
         assertNull(baseTestDb.getDocument("doc2"));
 
         baseTestDb.setDocumentExpiration("doc1", dto3);
 
-        Thread.sleep(3 * 1000); // sleep 4 sec
+        Thread.sleep(4 * 1000); // sleep 4 sec
 
         assertNull(baseTestDb.getDocument("doc1"));
     }

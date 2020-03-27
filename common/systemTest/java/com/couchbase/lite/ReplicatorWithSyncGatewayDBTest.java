@@ -64,9 +64,7 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     private String remoteHost;
 
     @Before
-    public void setUp() throws Exception {
-        super.setUp();
-
+    public final void setUpReplicatorWithSyncGatewayDBTest() throws Exception {
         remoteHost = System.getenv().get("couchbase.remoteHost");
         Preconditions.checkArgNotNull(remoteHost, "remoteHost");
 
@@ -75,10 +73,9 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
     }
 
     @After
-    public void tearDown() {
+    public final void tearDownReplicatorWithSyncGatewayDBTest() {
         try { remoteDeleteDb(DB_NAME); }
         catch (IOException e) { Report.log(LogLevel.ERROR,"Failed closing DB: " + DB_NAME, e); }
-        super.tearDown();
     }
 
     @Test

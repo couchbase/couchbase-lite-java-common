@@ -10,12 +10,14 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,7 +26,6 @@ import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.FileUtils;
 import com.couchbase.lite.utils.Fn;
-import com.couchbase.lite.utils.Report;
 
 import static com.couchbase.lite.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
@@ -94,30 +95,26 @@ public class LogTest extends BaseDbTest {
         String getContent() { return content.toString(); }
     }
 
+    private static final List<String> SCRATCH_DIRS = new ArrayList<>();
+
+    // This trickery is necessary because deleting a scratch directory
+    // while logging can cause core to hang rolling non-existent files.
+    @AfterClass
+    public static void tearDownLogTestClass() {
+        Database.log.reset();
+        for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
+    }
+
 
     private String scratchDirPath;
 
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
-
+    public final void setUpLogTest() {
         scratchDirPath = getScratchDirectoryPath(getUniqueName("log-dir"));
+        SCRATCH_DIRS.add(scratchDirPath);
 
         Log.initLogging();
         Database.log.reset();
-    }
-
-    @After
-    @Override
-    public void tearDown() {
-        try {
-            // !!! Failing on Nexus 4 & 5
-            // if setup failed, don't obscure its failure.
-            if (scratchDirPath != null) { FileUtils.eraseFileOrDir(scratchDirPath); }
-            else { Report.log(LogLevel.WARNING, "scratchDirPath is null"); }
-        }
-        finally { super.tearDown(); }
     }
 
     @Test

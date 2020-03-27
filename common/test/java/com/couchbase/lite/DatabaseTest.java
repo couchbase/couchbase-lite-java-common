@@ -28,6 +28,7 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.couchbase.lite.utils.Report;
 import com.couchbase.lite.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
@@ -778,7 +779,7 @@ public class DatabaseTest extends BaseDbTest {
     }
 
     @Test
-    public void testDeleteNonExistingDB() throws CouchbaseLiteException {
+    public void testDeleteNonExistingDB() {
         TestUtils.assertThrowsCBL(
             CBLError.Domain.CBLITE,
             CBLError.Code.NOT_FOUND,
@@ -795,28 +796,31 @@ public class DatabaseTest extends BaseDbTest {
 
     @Test
     public void testDatabaseExistsWithDir() throws CouchbaseLiteException {
-        final String uniqueName = getUniqueName("test-exists-dir");
+        final String dirName = getUniqueName("test-exists-dir");
 
-        final String dbDirPath = getScratchDirectoryPath(uniqueName);
+        final String dbDirPath = getScratchDirectoryPath(dirName);
         final File dbDir = new File(dbDirPath);
-        // ??? This either should exist, or not.
-        if (!dbDir.exists()) { dbDir.mkdirs(); }
-        assertTrue(dbDir.exists());
 
-        assertFalse(Database.exists(uniqueName, dbDir));
+        // !!! for some reason, this file already exists on the Java platform...
+        if (!dbDir.exists()) {
+            Report.log(LogLevel.WARNING, "DB dir exists: " + dbDir);
+            dbDir.mkdirs();
+        }
+
+        assertFalse(Database.exists(dirName, dbDir));
 
         // create db with custom directory
-        final Database db = new Database(uniqueName, new DatabaseConfiguration().setDirectory(dbDirPath));
+        final Database db = new Database(dirName, new DatabaseConfiguration().setDirectory(dbDirPath));
         try {
-            assertTrue(Database.exists(uniqueName, dbDir));
+            assertTrue(Database.exists(dirName, dbDir));
 
             final String dbPath = db.getPath();
 
             db.close();
-            assertTrue(Database.exists(uniqueName, dbDir));
+            assertTrue(Database.exists(dirName, dbDir));
 
-            Database.delete(uniqueName, dbDir);
-            assertFalse(Database.exists(uniqueName, dbDir));
+            Database.delete(dirName, dbDir);
+            assertFalse(Database.exists(dirName, dbDir));
 
             assertFalse(new File(dbPath).exists());
         }

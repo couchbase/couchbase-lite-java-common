@@ -30,26 +30,9 @@ import static org.junit.Assert.assertEquals;
 
 
 public class C4CollatedQueryTest extends C4QueryBaseTest {
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
     @Before
-    @Override
-    public void setUp() throws CouchbaseLiteException {
-        super.setUp();
+    public final void setUpC4CollatedQueryTest() throws CouchbaseLiteException {
         importJSONLinesSafely("iTunesMusicLibrary.json");
-    }
-
-    protected List<String> run() throws LiteCoreException {
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
-        try {
-            List<String> results = new ArrayList<>();
-            while (e.next()) { results.add(e.getColumns().getValueAt(0).asString()); }
-            return results;
-        }
-        finally {
-            e.free();
-        }
     }
 
     //-------------------------------------------------------------------------
@@ -87,5 +70,17 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
         assertEquals("ZENИTH (feat. saåad)", artists.get(2082));
         assertEquals("Zoë Keating", artists.get(2083));
         assertEquals("Zola Jesus", artists.get(2084));
+    }
+
+    protected List<String> run() throws LiteCoreException {
+        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        try {
+            List<String> results = new ArrayList<>();
+            while (e.next()) { results.add(e.getColumns().getValueAt(0).asString()); }
+            return results;
+        }
+        finally {
+            e.free();
+        }
     }
 }
