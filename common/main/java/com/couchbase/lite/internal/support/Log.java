@@ -361,21 +361,19 @@ public final class Log {
         for (LogDomain domain : domains) {
             switch (domain) {
                 case DATABASE:
-                    C4Log.setLevel(C4Constants.LogDomain.DATABASE, c4Level);
+                    C4Log.setLevels(c4Level, C4Constants.LogDomain.DATABASE);
                     break;
 
                 case QUERY:
-                    C4Log.setLevel(C4Constants.LogDomain.QUERY, c4Level);
+                    C4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY);
                     break;
 
                 case REPLICATOR:
-                    C4Log.setLevel(C4Constants.LogDomain.SYNC, c4Level);
-                    C4Log.setLevel(C4Constants.LogDomain.SYNC_BUSY, c4Level);
+                    C4Log.setLevels(c4Level, C4Constants.LogDomain.SYNC, C4Constants.LogDomain.SYNC_BUSY);
                     break;
 
                 case NETWORK:
-                    C4Log.setLevel(C4Constants.LogDomain.BLIP, c4Level);
-                    C4Log.setLevel(C4Constants.LogDomain.WEB_SOCKET, c4Level);
+                    C4Log.setLevels(c4Level, C4Constants.LogDomain.BLIP, C4Constants.LogDomain.WEB_SOCKET);
                     break;
                 default:
                     break;

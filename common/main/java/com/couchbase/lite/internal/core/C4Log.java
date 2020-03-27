@@ -19,6 +19,7 @@ package com.couchbase.lite.internal.core;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.ConsoleLogger;
 import com.couchbase.lite.Database;
@@ -89,15 +90,11 @@ public final class C4Log {
     // native methods
     //-------------------------------------------------------------------------
 
-    public static native void setLevel(String domain, int level);
-
-    public static native int getLevel(String domain);
+    public static native void log(String domain, int level, String message);
 
     public static native int getBinaryFileLevel();
 
     public static native void setBinaryFileLevel(int level);
-
-    public static native void log(String domain, int level, String message);
 
     public static native void writeToBinaryFile(
         String path,
@@ -107,5 +104,10 @@ public final class C4Log {
         boolean usePlaintext,
         String header);
 
+    @VisibleForTesting
+    public static native int getLevel(String domain);
+
     static native void setCallbackLevel(int level);
+
+    private static native void setLevel(String domain, int level);
 }

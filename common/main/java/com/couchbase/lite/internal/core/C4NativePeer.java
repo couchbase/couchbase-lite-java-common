@@ -29,12 +29,14 @@ import com.couchbase.lite.utils.Fn;
  * This approach exposes the native handle, because anybody can call `get`.
  */
 public abstract class C4NativePeer extends AtomicLong {
+    private static final String HANDLE_NAME = "peer handle";
     private Exception cleared;
 
     protected C4NativePeer() {}
 
     protected C4NativePeer(long handle) { setPeerHandle(handle); }
 
+    // This more than a smell, this is a reek.  Please don't use it.
     protected final void setPeer(long handle) { setPeerHandle(handle); }
 
     // This doesn't entirely solve the peer management problem:
@@ -97,7 +99,9 @@ public abstract class C4NativePeer extends AtomicLong {
         return fn.apply(handle);
     }
 
-    private void setPeerHandle(long handle) { set(Preconditions.assertNotZero(handle, "peer handle")); }
+    private void setPeerHandle(long handle) {
+        Preconditions.assertZero(getAndSet(Preconditions.assertNotZero(handle, HANDLE_NAME)), HANDLE_NAME);
+    }
 
     private void logBadCall() {
         Log.w(LogDomain.DATABASE, "Operation on closed native peer", new Exception());

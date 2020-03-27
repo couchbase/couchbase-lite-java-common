@@ -24,6 +24,7 @@ import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.FileUtils;
 import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.utils.Report;
 
 import static com.couchbase.lite.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
@@ -81,7 +82,7 @@ public class LogTest extends BaseDbTest {
 
         int getLineCount() {
             int total = 0;
-            for (LogLevel level : LogLevel.values()) { total += getLineCount(level); }
+            for (LogLevel level: LogLevel.values()) { total += getLineCount(level); }
             return total;
         }
 
@@ -101,7 +102,7 @@ public class LogTest extends BaseDbTest {
     public void setUp() throws CouchbaseLiteException {
         super.setUp();
 
-        scratchDirPath = getScratchDirectoryPath(getUniqueName(getUniqueName("log-dir")));
+        scratchDirPath = getScratchDirectoryPath(getUniqueName("log-dir"));
 
         Log.initLogging();
         Database.log.reset();
@@ -111,9 +112,10 @@ public class LogTest extends BaseDbTest {
     @Override
     public void tearDown() {
         try {
+            // !!! Failing on Nexus 4 & 5
             // if setup failed, don't obscure its failure.
-            // !!! Failing on Nexus 4
             if (scratchDirPath != null) { FileUtils.eraseFileOrDir(scratchDirPath); }
+            else { Report.log(LogLevel.WARNING, "scratchDirPath is null"); }
         }
         finally { super.tearDown(); }
     }
@@ -123,7 +125,7 @@ public class LogTest extends BaseDbTest {
         LogTestLogger customLogger = new LogTestLogger();
         Database.log.setCustom(customLogger);
 
-        for (LogLevel level : LogLevel.values()) {
+        for (LogLevel level: LogLevel.values()) {
             customLogger.setLevel(level);
             Log.d(LogDomain.DATABASE, "TEST DEBUG");
             Log.v(LogDomain.DATABASE, "TEST VERBOSE");
@@ -170,7 +172,7 @@ public class LogTest extends BaseDbTest {
             LogLevel.DEBUG,
             config,
             () -> {
-                for (LogLevel level : LogLevel.values()) {
+                for (LogLevel level: LogLevel.values()) {
                     Database.log.getFile().setLevel(level);
                     Log.d(LogDomain.DATABASE, "TEST DEBUG");
                     Log.v(LogDomain.DATABASE, "TEST VERBOSE");
@@ -179,7 +181,7 @@ public class LogTest extends BaseDbTest {
                     Log.e(LogDomain.DATABASE, "TEST ERROR");
                 }
 
-                for (File log : getLogFiles()) {
+                for (File log: getLogFiles()) {
                     BufferedReader fin = new BufferedReader(new FileReader(log));
                     int lineCount = 0;
                     while ((fin.readLine()) != null) { lineCount++; }
@@ -253,7 +255,7 @@ public class LogTest extends BaseDbTest {
                 assertTrue(files.length >= 4);
 
                 String filenameRegex = "cbl_(debug|verbose|info|warning|error)_\\d+\\.cbllog";
-                for (File file : files) { assertTrue(file.getName().matches(filenameRegex)); }
+                for (File file: files) { assertTrue(file.getName().matches(filenameRegex)); }
             });
     }
 
@@ -284,7 +286,7 @@ public class LogTest extends BaseDbTest {
             config,
             () -> {
                 writeAllLogs(uuidString);
-                for (File log : getLogFiles()) { assertFalse(getLogContents(log).contains(uuidString)); }
+                for (File log: getLogFiles()) { assertFalse(getLogContents(log).contains(uuidString)); }
             });
     }
 
@@ -300,7 +302,7 @@ public class LogTest extends BaseDbTest {
             () -> {
                 writeAllLogs(uuidString);
 
-                for (File log : getLogFiles()) { assertFalse(getLogContents(log).contains(uuidString)); }
+                for (File log: getLogFiles()) { assertFalse(getLogContents(log).contains(uuidString)); }
 
                 Database.log.getFile().setLevel(LogLevel.VERBOSE);
                 writeAllLogs(uuidString);
@@ -309,7 +311,7 @@ public class LogTest extends BaseDbTest {
                     = getTempDir().listFiles((ign, name) -> !name.toLowerCase().startsWith("cbl_debug_"));
                 assertNotNull(filesExceptDebug);
 
-                for (File log : filesExceptDebug) { assertTrue(getLogContents(log).contains(uuidString)); }
+                for (File log: filesExceptDebug) { assertTrue(getLogContents(log).contains(uuidString)); }
             });
     }
 
@@ -322,7 +324,7 @@ public class LogTest extends BaseDbTest {
             config,
             () -> {
                 writeOneKiloByteOfLog();
-                for (File log : getLogFiles()) {
+                for (File log: getLogFiles()) {
                     BufferedReader fin = new BufferedReader(new FileReader(log));
                     String firstLine = fin.readLine();
 
@@ -375,7 +377,7 @@ public class LogTest extends BaseDbTest {
                 Log.w(LogDomain.DATABASE, message, error);
                 Log.e(LogDomain.DATABASE, message, error);
 
-                for (File log : getLogFiles()) { assertTrue(getLogContents(log).contains(uuid)); }
+                for (File log: getLogFiles()) { assertTrue(getLogContents(log).contains(uuid)); }
             });
     }
 
@@ -398,7 +400,7 @@ public class LogTest extends BaseDbTest {
                 Log.w(LogDomain.DATABASE, message, error, uuid2);
                 Log.e(LogDomain.DATABASE, message, error, uuid2);
 
-                for (File log : getLogFiles()) {
+                for (File log: getLogFiles()) {
                     String content = getLogContents(log);
                     assertTrue(content.contains(uuid1));
                     assertTrue(content.contains(uuid2));
@@ -645,7 +647,7 @@ public class LogTest extends BaseDbTest {
     @NotNull
     private File getMostRecent(@NotNull File[] files) {
         File lastModifiedFile = files[0];
-        for (File log : files) {
+        for (File log: files) {
             if (log.lastModified() > lastModifiedFile.lastModified()) { lastModifiedFile = log; }
         }
         return lastModifiedFile;

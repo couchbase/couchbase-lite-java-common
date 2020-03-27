@@ -215,8 +215,7 @@ public abstract class C4Socket extends C4NativePeer {
     }
 
     protected C4Socket(String schema, String host, int port, String path, int framing) {
-        final long handle = fromNative(this, schema, host, port, path, framing);
-        setPeer(handle);
+        setPeer(fromNative(this, schema, host, port, path, framing));
         bind(this);
     }
 

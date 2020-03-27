@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -341,7 +340,7 @@ public class AbstractCBLWebSocket extends C4Socket {
                         final List<Challenge> challenges = response.challenges();
                         Log.v(TAG, "CBLWebSocket received challenges " + challenges);
                         if (challenges != null) {
-                            for (Challenge challenge : challenges) {
+                            for (Challenge challenge: challenges) {
                                 if (challenge.scheme().equals("Basic")) {
                                     return response.request()
                                         .newBuilder()
@@ -388,7 +387,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             @SuppressWarnings("unchecked") final Map<String, Object> extraHeaders
                 = (Map<String, Object>) options.get(REPLICATOR_OPTION_EXTRA_HEADERS);
             if (extraHeaders != null) {
-                for (Map.Entry<String, Object> entry : extraHeaders.entrySet()) {
+                for (Map.Entry<String, Object> entry: extraHeaders.entrySet()) {
                     builder.header(entry.getKey(), entry.getValue().toString());
                 }
             }
@@ -542,7 +541,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         final char[] password = "umwxnikwxx".toCharArray(); // Any password will work.
         final KeyStore keyStore = newEmptyKeyStore(password);
         int index = 0;
-        for (Certificate certificate : certificates) {
+        for (Certificate certificate: certificates) {
             final String certificateAlias = Integer.toString(index++);
             keyStore.setCertificateEntry(certificateAlias, certificate);
         }

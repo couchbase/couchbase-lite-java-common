@@ -22,6 +22,7 @@ import com.couchbase.lite.utils.Fn;
 
 
 public final class Preconditions {
+
     private Preconditions() {}
 
     @NonNull
@@ -32,6 +33,11 @@ public final class Preconditions {
 
     public static long assertNotZero(long n, @NonNull String name) {
         if (n == 0) { throw new IllegalArgumentException(name + " must not be 0"); }
+        return n;
+    }
+
+    public static long assertZero(long n, @NonNull String name) {
+        if (n != 0) { throw new IllegalArgumentException(name + " must be 0"); }
         return n;
     }
 
