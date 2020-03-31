@@ -18,6 +18,7 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.AbstractReplicator;
@@ -299,20 +300,21 @@ public class C4Database extends C4NativePeer {
     // C4Replicator
     ////////////////////////////////
 
+    @NonNull
     public C4Replicator createRemoteReplicator(
-        String scheme,
-        String host,
+        @Nullable String scheme,
+        @Nullable String host,
         int port,
-        String path,
-        String remoteDatabaseName,
+        @Nullable String path,
+        @Nullable String remoteDatabaseName,
         int push,
         int pull,
-        byte[] options,
-        C4ReplicatorListener listener,
-        C4ReplicationFilter pushFilter,
-        C4ReplicationFilter pullFilter,
-        AbstractReplicator replicatorContext,
-        SocketFactory socketFactoryContext,
+        @NonNull byte[] options,
+        @Nullable C4ReplicatorListener listener,
+        @Nullable C4ReplicationFilter pushFilter,
+        @Nullable C4ReplicationFilter pullFilter,
+        @NonNull AbstractReplicator replicatorContext,
+        @Nullable SocketFactory socketFactoryContext,
         int framing)
         throws LiteCoreException {
         return C4Replicator.createRemoteReplicator(
@@ -333,15 +335,16 @@ public class C4Database extends C4NativePeer {
             framing);
     }
 
+    @NonNull
     public C4Replicator createLocalReplicator(
-        C4Database otherLocalDB,
+        @Nullable C4Database otherLocalDB,
         int push,
         int pull,
-        byte[] options,
-        C4ReplicatorListener listener,
-        C4ReplicationFilter pushFilter,
-        C4ReplicationFilter pullFilter,
-        AbstractReplicator replicatorContext)
+        @NonNull byte[] options,
+        @Nullable C4ReplicatorListener listener,
+        @Nullable C4ReplicationFilter pushFilter,
+        @Nullable C4ReplicationFilter pullFilter,
+        @NonNull AbstractReplicator replicatorContext)
         throws LiteCoreException {
         return C4Replicator.createLocalReplicator(
             getPeer(),
@@ -356,11 +359,12 @@ public class C4Database extends C4NativePeer {
     }
 
     public C4Replicator createTargetReplicator(
-        C4Socket openSocket,
-        int push, int pull,
-        byte[] options,
-        C4ReplicatorListener listener,
-        Object replicatorContext)
+        @NonNull C4Socket openSocket,
+        int push,
+        int pull,
+        @Nullable byte[] options,
+        @Nullable C4ReplicatorListener listener,
+        @NonNull Object replicatorContext)
         throws LiteCoreException {
         return C4Replicator.createTargetReplicator(
             getPeer(),

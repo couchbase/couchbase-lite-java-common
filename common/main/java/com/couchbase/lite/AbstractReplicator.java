@@ -49,6 +49,7 @@ import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.C4ReplicatorMode;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.core.C4Socket;
+import com.couchbase.lite.internal.core.InternalReplicator;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -65,7 +66,7 @@ import com.couchbase.lite.utils.Fn;
  * be notified of progress.
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
-public abstract class AbstractReplicator {
+public abstract class AbstractReplicator extends InternalReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
     private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
@@ -304,10 +305,6 @@ public abstract class AbstractReplicator {
     @NonNull
     private final SocketFactory socketFactory;
 
-    // Do not use this directly.  It is lazily initialized in the method getC4Replicator
-    @GuardedBy("lock")
-    private C4Replicator c4Replicator;
-
     @GuardedBy("lock")
     private Status status = new Status(ActivityLevel.IDLE, new Progress(0, 0), null);
     @GuardedBy("lock")
@@ -543,7 +540,7 @@ public abstract class AbstractReplicator {
      */
     public void resetCheckpoint() {
         synchronized (lock) {
-            if (c4Replicator != null) { // !!! This is broken: CBL-787
+            if (getC4Replicator() != null) { // !!! This is broken: CBL-787
                 throw new IllegalStateException(Log.lookupStandardMessage("ReplicatorNotStopped"));
             }
             shouldResetCheckpoint = true;
@@ -756,19 +753,23 @@ public abstract class AbstractReplicator {
     @NonNull
     private C4Replicator lazyCreateC4Replicator() {
         synchronized (lock) {
-            if (c4Replicator == null) {
+            C4Replicator c4Repl = getC4Replicator();
+            if (c4Repl == null) {
                 setupFilters();
-                try { c4Replicator = createReplicatorForTarget(config.getTarget()); }
+                try {
+                    c4Repl = createReplicatorForTarget(config.getTarget());
+                    setC4Replicator(c4Repl);
+                }
                 catch (LiteCoreException e) {
                     throw new IllegalStateException("Could not create replicator", CBLStatus.convertException(e));
                 }
             }
-            return c4Replicator;
+            return c4Repl;
         }
     }
 
     private boolean isSameReplicator(C4Replicator repl) {
-        synchronized (lock) { return repl == c4Replicator; }
+        synchronized (lock) { return repl == getC4Replicator(); }
     }
 
     @GuardedBy("lock")

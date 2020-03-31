@@ -28,6 +28,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -73,15 +75,13 @@ public class C4Replicator extends C4NativePeer {
     @NonNull
     @GuardedBy("CLASS_LOCK")
     private static final Map<Long, C4Replicator> REVERSE_LOOKUP_TABLE = new HashMap<>();
-    @NonNull
-    @GuardedBy("CLASS_LOCK")
-    private static final Map<Object, C4Replicator> CONTEXT_TO_C4_REPLICATOR_MAP = new HashMap<>();
 
     //-------------------------------------------------------------------------
     // Static Factory Methods
     //-------------------------------------------------------------------------
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
     static C4Replicator createRemoteReplicator(
         long db,
         @Nullable String scheme,
@@ -117,16 +117,17 @@ public class C4Replicator extends C4NativePeer {
                 replicatorContext,
                 socketFactoryContext,
                 framing);
-            bind(replicator.getPeer(), replicator, replicatorContext);
+            bind(replicator);
         }
 
         return replicator;
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
     static C4Replicator createLocalReplicator(
         long db,
-        C4Database otherLocalDB,
+        @Nullable C4Database otherLocalDB,
         int push,
         int pull,
         @NonNull byte[] options,
@@ -147,16 +148,17 @@ public class C4Replicator extends C4NativePeer {
                 pushFilter,
                 pullFilter,
                 replicatorContext);
-            bind(replicator.getPeer(), replicator, replicatorContext);
+            bind(replicator);
         }
 
         return replicator;
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
     static C4Replicator createTargetReplicator(
         long db,
-        C4Socket openSocket,
+        @NonNull C4Socket openSocket,
         int push,
         int pull,
         @Nullable byte[] options,
@@ -173,7 +175,7 @@ public class C4Replicator extends C4NativePeer {
                 options,
                 listener,
                 replicatorContext);
-            bind(replicator.getPeer(), replicator, null);
+            bind(replicator);
         }
 
         return replicator;
@@ -204,20 +206,19 @@ public class C4Replicator extends C4NativePeer {
         if (listener != null) { listener.documentEnded(repl, pushing, documentsEnded, repl.replicatorContext); }
     }
 
-    static boolean validationFunction(
-        String docID,
-        String revID,
-        int flags,
-        long dict,
-        boolean isPush,
-        Object context) {
-        final C4Replicator repl = getReplicatorForContext(context);
-        if (repl == null) { return true; }
+    // Supported only for Replicators
+    static boolean validationFunction(String docID, String revID, int flags, long dict, boolean isPush, Object ctxt) {
+        if (!(ctxt instanceof AbstractReplicator)) {
+            Log.w(LogDomain.DATABASE, "Validation function called with unrecognized context: " + ctxt);
+            return true;
+        }
+        final AbstractReplicator repl = (AbstractReplicator) ctxt;
 
-        final C4ReplicationFilter filter = (isPush) ? repl.pushFilter : repl.pullFilter;
+        final C4Replicator c4Repl = repl.getC4Replicator(); // Try that, Kotlin!!
+        if (c4Repl == null) { return true; }
 
-        return (filter == null)
-            || filter.validationFunction(docID, revID, flags, dict, isPush, repl.replicatorContext);
+        final C4ReplicationFilter filter = (isPush) ? c4Repl.pushFilter : c4Repl.pullFilter;
+        return (filter == null) || filter.validationFunction(docID, revID, flags, dict, isPush, repl);
     }
 
     //-------------------------------------------------------------------------
@@ -229,20 +230,13 @@ public class C4Replicator extends C4NativePeer {
         synchronized (CLASS_LOCK) { return REVERSE_LOOKUP_TABLE.get(handle); }
     }
 
-    @Nullable
-    private static C4Replicator getReplicatorForContext(@Nullable Object context) {
-        synchronized (CLASS_LOCK) { return (context == null) ? null : CONTEXT_TO_C4_REPLICATOR_MAP.get(context); }
+    private static void bind(@NonNull C4Replicator repl) {
+        Preconditions.assertNotNull(repl, "repl");
+        REVERSE_LOOKUP_TABLE.put(repl.getPeer(), repl);
     }
 
-    private static void bind(long handle, @NonNull C4Replicator repl, @Nullable Object context) {
-        Preconditions.assertNotZero(handle, "handle");
-        REVERSE_LOOKUP_TABLE.put(handle, repl);
-        if (context != null) { CONTEXT_TO_C4_REPLICATOR_MAP.put(context, repl); }
-    }
-
-    private static void release(long handle, @Nullable Object context) {
+    private static void release(long handle) {
         if (handle != 0) { REVERSE_LOOKUP_TABLE.remove(handle); }
-        if (context != null) { CONTEXT_TO_C4_REPLICATOR_MAP.remove(context); }
     }
 
     //-------------------------------------------------------------------------
@@ -251,8 +245,9 @@ public class C4Replicator extends C4NativePeer {
 
     @NonNull
     private final Object replicatorContext;
+    @SuppressFBWarnings("SE_BAD_FIELD")
     @Nullable
-    private final Object socketFactoryContext;
+    private final SocketFactory socketFactoryContext;
 
     @Nullable
     private final C4ReplicatorListener listener;
@@ -281,8 +276,8 @@ public class C4Replicator extends C4NativePeer {
         @Nullable C4ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
-        @NonNull Object replicatorContext,
-        @Nullable Object socketFactoryContext,
+        @NonNull AbstractReplicator replicatorContext,
+        @Nullable SocketFactory socketFactoryContext,
         int framing)
         throws LiteCoreException {
         super(create(
@@ -312,14 +307,14 @@ public class C4Replicator extends C4NativePeer {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private C4Replicator(
         long db,
-        C4Database otherLocalDB,
+        @Nullable C4Database otherLocalDB,
         int push,
         int pull,
         @NonNull byte[] options,
         @Nullable C4ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
-        @NonNull Object replicatorContext)
+        @NonNull AbstractReplicator replicatorContext)
         throws LiteCoreException {
         super(createLocal(
             db,
@@ -344,7 +339,7 @@ public class C4Replicator extends C4NativePeer {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private C4Replicator(
         long db,
-        C4Socket openSocket,
+        @NonNull C4Socket openSocket,
         int push,
         int pull,
         @Nullable byte[] options,
@@ -399,7 +394,7 @@ public class C4Replicator extends C4NativePeer {
         // !!! the two arguments may already be gone
         if (handle != 0) { free(handle, replicatorContext, socketFactoryContext); }
 
-        synchronized (CLASS_LOCK) { release(handle, this.replicatorContext); }
+        release(handle);
 
         super.finalize();
     }

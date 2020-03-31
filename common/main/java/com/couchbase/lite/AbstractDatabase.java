@@ -885,20 +885,21 @@ abstract class AbstractDatabase {
     //////// REPLICATORS:
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
     C4Replicator createRemoteReplicator(
-        Replicator replicator,
-        String scheme,
-        String host,
+        @NonNull Replicator replicator,
+        @Nullable String scheme,
+        @Nullable String host,
         int port,
-        String path,
-        String remoteDatabaseName,
+        @Nullable String path,
+        @Nullable String remoteDatabaseName,
         int push,
         int pull,
-        byte[] options,
-        C4ReplicatorListener listener,
-        C4ReplicationFilter pushFilter,
-        C4ReplicationFilter pullFilter,
-        SocketFactory socketFactoryContext,
+        @NonNull byte[] options,
+        @Nullable C4ReplicatorListener listener,
+        @Nullable C4ReplicationFilter pushFilter,
+        @Nullable C4ReplicationFilter pullFilter,
+        @Nullable SocketFactory socketFactoryContext,
         int framing)
         throws LiteCoreException {
         final C4Replicator c4Repl;
@@ -924,15 +925,16 @@ abstract class AbstractDatabase {
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
     C4Replicator createLocalReplicator(
-        Replicator replicator,
-        C4Database otherLocalDB,
+        @NonNull Replicator replicator,
+        @Nullable C4Database otherLocalDB,
         int push,
         int pull,
-        byte[] options,
-        C4ReplicatorListener listener,
-        C4ReplicationFilter pushFilter,
-        C4ReplicationFilter pullFilter)
+        @NonNull byte[] options,
+        @Nullable C4ReplicatorListener listener,
+        @Nullable C4ReplicationFilter pushFilter,
+        @Nullable C4ReplicationFilter pullFilter)
         throws LiteCoreException {
         final C4Replicator c4Repl;
         synchronized (lock) {
@@ -945,7 +947,7 @@ abstract class AbstractDatabase {
                 pushFilter,
                 pullFilter,
                 replicator);
-            activeReplications.add(replicator); // keeps me from being deallocated
+            activeReplications.add(replicator); // keeps the replicator from being deallocated
         }
         return c4Repl;
     }
