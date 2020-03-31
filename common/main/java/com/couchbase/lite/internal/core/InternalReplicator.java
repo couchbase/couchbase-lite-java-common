@@ -1,7 +1,5 @@
 //
-// C4ReplicationFilter.java
-//
-// Copyright (c) 2018 Couchbase, Inc All rights reserved.
+// Copyright (c) 2020 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,16 +16,15 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
-import com.couchbase.lite.AbstractReplicator;
 
+@SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
+public abstract class InternalReplicator {
+    private C4Replicator c4Replicator;
 
-public interface C4ReplicationFilter {
-    boolean validationFunction(
-        String docID,
-        String revID,
-        int flags,
-        long dict,
-        boolean isPush,
-        @NonNull AbstractReplicator repl);
+    protected void setC4Replicator(@NonNull C4Replicator c4Repl) { c4Replicator = c4Repl; }
+
+    @Nullable
+    protected C4Replicator getC4Replicator() { return c4Replicator; }
 }
