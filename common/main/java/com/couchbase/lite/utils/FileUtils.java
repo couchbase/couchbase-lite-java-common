@@ -48,6 +48,10 @@ public final class FileUtils {
         return deleteRecursive(fileOrDirectory);
     }
 
+    public static boolean deleteContents(String fileOrDirectory) {
+        return deleteContents((fileOrDirectory == null) ? null : new File(fileOrDirectory));
+    }
+
     @SuppressFBWarnings({"RV_RETURN_VALUE_IGNORED_BAD_PRACTICE"})
     public static boolean deleteContents(File fileOrDirectory) {
         if ((fileOrDirectory == null) || (!fileOrDirectory.isDirectory())) { return true; }
@@ -56,7 +60,7 @@ public final class FileUtils {
         if (contents == null) { return true; }
 
         boolean succeeded = true;
-        for (File file : contents) {
+        for (File file: contents) {
             if (!deleteRecursive(file)) { succeeded = false; }
         }
 
@@ -67,7 +71,7 @@ public final class FileUtils {
         if (fileOrDirectory.isDirectory()) {
             final File[] files = fileOrDirectory.listFiles();
             if (files != null) {
-                for (File child : files) { setPermissionRecursive(child, readable, writable); }
+                for (File child: files) { setPermissionRecursive(child, readable, writable); }
             }
         }
         return fileOrDirectory.setReadable(readable) && fileOrDirectory.setWritable(writable);

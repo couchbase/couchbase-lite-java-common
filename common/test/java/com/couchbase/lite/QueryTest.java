@@ -40,6 +40,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.utils.SlowTest;
 
 import static com.couchbase.lite.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertArrayEquals;
@@ -254,9 +255,9 @@ public class QueryTest extends BaseQueryTest {
         runTestWithNumbers(numbers, cases);
     }
 
+    // https://github.com/couchbase/couchbase-lite-ios/issues/1670
     @Test
     public void testWhereNullOrMissing() throws CouchbaseLiteException {
-        // https://github.com/couchbase/couchbase-lite-ios/issues/1670
         MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setValue("name", "Scott");
         doc1.setValue("address", null);
@@ -1482,11 +1483,13 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
+    @SlowTest
     @Test
     public void testLiveQueryNoUpdate() throws CouchbaseLiteException, InterruptedException {
         testLiveQueryNoUpdate(false);
     }
 
+    @SlowTest
     @Test
     public void testLiveQueryNoUpdateConsumeAll() throws CouchbaseLiteException, InterruptedException {
         testLiveQueryNoUpdate(true);

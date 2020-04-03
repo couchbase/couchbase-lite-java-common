@@ -207,6 +207,7 @@ public class C4Replicator extends C4NativePeer {
     }
 
     // Supported only for Replicators
+    // This method is called from a thread that Java has never even heard of...
     static boolean validationFunction(String docID, String revID, int flags, long dict, boolean isPush, Object ctxt) {
         if (!(ctxt instanceof AbstractReplicator)) {
             Log.w(LogDomain.DATABASE, "Validation function called with unrecognized context: " + ctxt);
