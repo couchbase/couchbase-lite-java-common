@@ -17,6 +17,8 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,7 +38,7 @@ import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.FleeceDict;
-import com.couchbase.lite.internal.fleece.FleeceDocument;
+import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.fleece.MValueDelegate;
@@ -46,6 +48,17 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+
+class FLContext extends MContext {
+    @NonNull
+    private final AllocSlice data;
+
+    public FLContext(@NonNull AllocSlice data) { this.data = data; }
+
+    @NonNull
+    public AllocSlice getData() { return data; }
+}
 
 
 public class C4MutableFleeceTest extends C4BaseTest {
@@ -133,7 +146,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         AllocSlice data = encode(map);
 
         try {
-            MRoot root = new MRoot(data);
+            MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
             assertNotNull(obj);
@@ -192,7 +205,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         AllocSlice data = encode(list);
 
         try {
-            MRoot root = new MRoot(data);
+            MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
             assertNotNull(obj);
@@ -245,7 +258,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         for (int i = 0; i < 100; i++) { orig.add(String.format(Locale.ENGLISH, "This is item number %d", i)); }
         AllocSlice data = encode(orig);
         try {
-            MRoot root = new MRoot(data);
+            MRoot root = getMRoot(data);
             List<Object> array = (List<Object>) root.asNative();
             int i = 0;
             for (Object o: array) {
@@ -272,7 +285,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
         AllocSlice data = encode(map);
         try {
-            Object obj = FleeceDocument.getObject(data, true);
+            Object obj = getMRoot(data).asNative();
             assertNotNull(obj);
             assertTrue(obj instanceof Map);
             Map<String, Object> dict = (Map<String, Object>) obj;
@@ -333,7 +346,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
         AllocSlice data = encode(map);
         try {
-            MRoot root = new MRoot(data);
+            MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
             assertNotNull(obj);
@@ -370,7 +383,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
         AllocSlice data = encode(map);
         try {
-            MRoot root = new MRoot(data);
+            MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
             assertNotNull(obj);
@@ -401,7 +414,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
         AllocSlice data = encode(map);
         try {
-            MRoot root = new MRoot(data);
+            MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
             assertNotNull(obj);
@@ -422,5 +435,9 @@ public class C4MutableFleeceTest extends C4BaseTest {
         finally {
             if (data != null) { data.free(); }
         }
+    }
+
+    private MRoot getMRoot(AllocSlice data) {
+        return new MRoot(new FLContext(data), FLValue.fromData(data));
     }
 }

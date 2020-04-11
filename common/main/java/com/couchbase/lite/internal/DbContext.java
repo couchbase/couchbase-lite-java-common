@@ -15,14 +15,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal;
 
-/**
- * This ResultContext implementation is simplified version of lite-core ResultContext implementation
- * by eliminating unused variables and methods
- */
-final class ResultContext extends DocContext {
-    ResultContext(Database db) {
-        super(db, null);
-    }
+import android.support.annotation.Nullable;
+
+import com.couchbase.lite.Database;
+import com.couchbase.lite.internal.fleece.MContext;
+
+
+public class DbContext extends MContext {
+    @Nullable
+    private final Database db;
+
+    public DbContext(@Nullable Database db) { this.db = db; }
+
+    @Nullable
+    public Database getDatabase() { return db; }
 }

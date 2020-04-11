@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
+import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.MArray;
@@ -325,7 +326,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Override
     public int hashCode() {
         int h = 1;
-        for (Object o : this) { h = 31 * h + (o == null ? 0 : o.hashCode()); }
+        for (Object o: this) { h = 31 * h + (o == null ? 0 : o.hashCode()); }
         return h;
     }
 
@@ -352,11 +353,16 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //-------------------------------------------------------------------------
     // Private
     //-------------------------------------------------------------------------
+
+    @NonNull
     private Object getSharedLock() {
         final MContext context = internalArray.getContext();
-        return ((context == null) || (context == MContext.NULL))
-            ? new Object()
-            : ((DocContext) context).getDatabase().getLock();
+        if (context instanceof DbContext) {
+            final Database db = ((DbContext) context).getDatabase();
+            if (db != null) { return db.getLock(); }
+        }
+        // ??? what kind of fresh horror is this??
+        return new Object();
     }
 
     @NonNull

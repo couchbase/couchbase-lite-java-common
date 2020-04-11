@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.couchbase.lite.internal.CBLStatus;
+import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -47,7 +48,7 @@ public class ResultSet implements Iterable<Result> {
 
     private final AbstractQuery query;
     private final Map<String, Integer> columnNames;
-    private final ResultContext context;
+    private final DbContext context;
     private final C4QueryEnumerator c4enum;
     private boolean isAllEnumerated;
 
@@ -59,7 +60,7 @@ public class ResultSet implements Iterable<Result> {
         this.query = query;
         this.c4enum = c4enum;
         this.columnNames = columnNames;
-        this.context = new ResultContext(query.getDatabase());
+        this.context = new DbContext(query.getDatabase());
     }
 
     //---------------------------------------------
@@ -170,7 +171,7 @@ public class ResultSet implements Iterable<Result> {
         final AbstractQuery q = query;
         if (q != null) {
             final Database db = q.getDatabase();
-            if (db != null) {return db.getLock(); }
+            if (db != null) { return db.getLock(); }
         }
         throw new IllegalStateException("Could not obtain db lock");
     }

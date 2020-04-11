@@ -29,17 +29,16 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     //---------------------------------------------
     // Data members
     //---------------------------------------------
-    private MDict dict;
+
+    private final MDict dict;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    private FleeceDict() { dict = new MDict(); }
-
     // Call from native method
     FleeceDict(MValue mv, MCollection parent) {
-        this();
+        dict = new MDict();
         dict.initInSlot(mv, parent);
     }
 

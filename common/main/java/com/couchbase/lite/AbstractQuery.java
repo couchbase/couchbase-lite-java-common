@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.json.JSONException;
 
 import com.couchbase.lite.internal.CBLStatus;
@@ -223,10 +222,20 @@ abstract class AbstractQuery implements Query {
     //---------------------------------------------
 
     @SuppressWarnings("NoFinalizer")
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @Override
     protected void finalize() throws Throwable {
-        free(c4query);
+        final C4Query query = c4query;
+        if (query == null) { return; }
+
+        final Object lock = getDbLock();
+        if (lock != null) {
+            synchronized (lock) { query.free(); }
+        }
+        else {
+            Log.w(LogDomain.DATABASE, "Could not get DB lock to free query");
+            query.free();
+        }
+
         super.finalize();
     }
 
@@ -291,7 +300,7 @@ abstract class AbstractQuery implements Query {
         final Map<String, Integer> map = new HashMap<>();
         int index = 0;
         int provisionKeyIndex = 0;
-        for (SelectResult selectResult : select.getSelectResults()) {
+        for (SelectResult selectResult: select.getSelectResults()) {
             String name = selectResult.getColumnName();
 
             if (name != null && name.equals(PropertyExpression.PROPS_ALL)) { name = from.getColumnName(); }
@@ -365,27 +374,16 @@ abstract class AbstractQuery implements Query {
     }
 
     // called from finalizer
-    private void free(C4Query query) {
-        if (query == null) { return; }
-
-        final Object lock = getDbLock();
-        if (lock != null) {
-            synchronized (lock) { query.free(); }
-            return;
-        }
-
-        Log.w(LogDomain.DATABASE, "Could not get DB lock to free query");
-        query.free();
-    }
-
     private Object getDbLock() {
-        Database db = database;
+        final Database db = database;
+        if (db != null) { return db.getLock(); }
 
-        if (db == null) {
-            final DataSource src = from;
-            if (src != null) { db = (Database) src.getSource(); }
-        }
+        final DataSource dSrc = from;
+        if (dSrc == null) { return null; }
 
-        return (db == null) ? null : db.getLock();
+        final Object src = dSrc.getSource();
+        if (!(src instanceof Database)) { return null; }
+
+        return ((Database) src).getLock();
     }
 }

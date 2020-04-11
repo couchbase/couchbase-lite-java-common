@@ -58,6 +58,32 @@ public class Document implements DictionaryInterface, Iterable<String> {
         return 0;
     }
 
+    /// Factory methods
+
+    static Document getDocument(@NonNull Database database, @NonNull String id) throws CouchbaseLiteException {
+        return getDocument(database, id, true);
+    }
+
+    static Document getDocument(@NonNull Database database, @NonNull String id, boolean includeDeleted)
+        throws CouchbaseLiteException {
+        Preconditions.assertNotNull(database, "database");
+
+        final C4Document c4Doc;
+        try {
+            final C4Database c4db = database.getC4Database();
+            if (c4db == null) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
+            c4Doc = c4db.get(id, true);
+        }
+        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+
+        if (includeDeleted || ((c4Doc.getFlags() & C4Constants.DocumentFlags.DELETED) == 0)) {
+            return new Document(database, id, c4Doc, false);
+        }
+
+        throw new CouchbaseLiteException("DocumentNotFound", CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
+    }
+
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -87,7 +113,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     // keep a ref to prevent GC
     @SuppressFBWarnings("URF_UNREAD_FIELD")
-    @SuppressWarnings("PMD.UnusedPrivateField")
+    @SuppressWarnings({"PMD.UnusedPrivateField", "FieldCanBeLocal"})
     @GuardedBy("lock")
     @Nullable
     private MRoot root;
@@ -112,31 +138,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
         setC4Document(c4doc, mutable);
     }
 
+    // This constructor is used in replicator filters, to hack together a doc from its Fleece representation
     Document(@NonNull Database database, @NonNull String id, @Nullable String revId, @Nullable FLDict body) {
         this(database, id, null, false);
         this.data = body;
         this.revId = revId;
         updateDictionaryLocked(false);
-    }
-
-    Document(@NonNull Database database, @NonNull String id, boolean includeDeleted) throws CouchbaseLiteException {
-        this(database, id, null, false);
-        Preconditions.assertNotNull(database, "database");
-
-        final C4Document doc;
-        try {
-            final C4Database c4db = database.getC4Database();
-            if (c4db == null) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
-            doc = c4db.get(id, true);
-        }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
-
-        if (!includeDeleted && (doc.getFlags() & C4Constants.DocumentFlags.DELETED) != 0) {
-            throw new CouchbaseLiteException("DocumentNotFound", CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
-        }
-
-        // NOTE: c4doc should not be null.
-        setC4Document(doc, false);
     }
 
     //---------------------------------------------
@@ -432,7 +439,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
             .append('{').append(id).append('@').append(getRevisionID()).append(':');
 
         boolean first = true;
-        for (String key : getKeys()) {
+        for (String key: getKeys()) {
             if (first) { first = false; }
             else { buf.append(','); }
 
@@ -448,6 +455,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     protected final void setContent(@NonNull Dictionary content) {
+        Preconditions.assertNotNull(content, "content");
         synchronized (lock) { internalDict = content; }
     }
 
@@ -501,10 +509,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     final boolean selectConflictingRevision() throws LiteCoreException {
-        boolean foundConflict = false;
         synchronized (lock) {
             if (c4Document == null) { return false; }
 
+            boolean foundConflict = false;
             while (!foundConflict) {
                 try { c4Document.selectNextLeafRevision(true, true); }
                 catch (LiteCoreException e) {
@@ -516,9 +524,9 @@ public class Document implements DictionaryInterface, Iterable<String> {
             }
 
             if (foundConflict) { setC4Document(c4Document, isMutable()); }
-        }
 
-        return foundConflict;
+            return foundConflict;
+        }
     }
 
     @NonNull

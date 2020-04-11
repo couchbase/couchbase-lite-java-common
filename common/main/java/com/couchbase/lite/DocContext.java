@@ -17,26 +17,21 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.Nullable;
+
+import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4Document;
-import com.couchbase.lite.internal.fleece.MContext;
 
 
-/**
- * This DocContext implementation is simplified version of lite-core DocContext implementation
- * by eliminating unused variables and methods
- */
-class DocContext extends MContext {
-    private final Database db;
-    @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
-    private final C4Document doc;
+class DocContext extends DbContext {
+    @Nullable
+    private final C4Document c4Document;
 
-    DocContext(Database db) { this(db, null); }
-
-    DocContext(Database db, C4Document doc) {
-        super(null);
-        this.db = db;
-        this.doc = doc;
+    DocContext(@Nullable Database db, @Nullable C4Document c4Doc) {
+        super(db);
+        this.c4Document = c4Doc;
     }
 
-    Database getDatabase() { return db; }
+    @Nullable
+    C4Document getDocument() { return c4Document; }
 }

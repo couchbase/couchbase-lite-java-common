@@ -28,10 +28,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -48,12 +48,12 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     private final ResultSet rs;
     private final List<FLValue> values;
     private final long missingColumns;
-    private final MContext context;
+    private final DbContext context;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
-    Result(ResultSet rs, C4QueryEnumerator c4enum, MContext context) {
+    Result(ResultSet rs, C4QueryEnumerator c4enum, DbContext context) {
         this.rs = rs;
         this.values = extractColumns(c4enum.getColumns());
         this.missingColumns = c4enum.getMissingColumns();
@@ -443,7 +443,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     public Map<String, Object> toMap() {
         final List<Object> values = toList();
         final Map<String, Object> dict = new HashMap<>();
-        for (String name : rs.getColumnNames()) {
+        for (String name: rs.getColumnNames()) {
             final int index = indexForColumnName(name);
             if (index >= 0) { dict.put(name, values.get(index)); }
         }

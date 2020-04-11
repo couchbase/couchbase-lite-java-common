@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.MCollection;
@@ -105,7 +106,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public Object getValue(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return getMValue(internalDict, key).asNative(internalDict); }
+        synchronized (lock) { return internalDict.get(key).asNative(internalDict); }
     }
 
     /**
@@ -119,7 +120,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     public String getString(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
         synchronized (lock) {
-            final Object obj = getMValue(internalDict, key).asNative(internalDict);
+            final Object obj = internalDict.get(key).asNative(internalDict);
             return obj instanceof String ? (String) obj : null;
         }
     }
@@ -134,7 +135,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public Number getNumber(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asNumber(getMValue(internalDict, key).asNative(internalDict)); }
+        synchronized (lock) { return CBLConverter.asNumber(internalDict.get(key).asNative(internalDict)); }
     }
 
     /**
@@ -148,7 +149,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public int getInt(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asInteger(getMValue(internalDict, key), internalDict); }
+        synchronized (lock) { return CBLConverter.asInteger(internalDict.get(key), internalDict); }
     }
 
     /**
@@ -162,7 +163,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public long getLong(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asLong(getMValue(internalDict, key), internalDict); }
+        synchronized (lock) { return CBLConverter.asLong(internalDict.get(key), internalDict); }
     }
 
     /**
@@ -176,7 +177,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public float getFloat(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asFloat(getMValue(internalDict, key), internalDict); }
+        synchronized (lock) { return CBLConverter.asFloat(internalDict.get(key), internalDict); }
     }
 
     /**
@@ -190,7 +191,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public double getDouble(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asDouble(getMValue(internalDict, key), internalDict); }
+        synchronized (lock) { return CBLConverter.asDouble(internalDict.get(key), internalDict); }
     }
 
     /**
@@ -203,7 +204,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public boolean getBoolean(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return CBLConverter.asBoolean(getMValue(internalDict, key).asNative(internalDict)); }
+        synchronized (lock) { return CBLConverter.asBoolean(internalDict.get(key).asNative(internalDict)); }
     }
 
     /**
@@ -218,7 +219,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     public Blob getBlob(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
         synchronized (lock) {
-            final Object obj = getMValue(internalDict, key).asNative(internalDict);
+            final Object obj = internalDict.get(key).asNative(internalDict);
             return obj instanceof Blob ? (Blob) obj : null;
         }
     }
@@ -253,7 +254,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     public Array getArray(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
         synchronized (lock) {
-            final Object obj = getMValue(internalDict, key).asNative(internalDict);
+            final Object obj = internalDict.get(key).asNative(internalDict);
             return obj instanceof Array ? (Array) obj : null;
         }
     }
@@ -270,7 +271,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     public Dictionary getDictionary(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
         synchronized (lock) {
-            final Object obj = getMValue(internalDict, key).asNative(internalDict);
+            final Object obj = internalDict.get(key).asNative(internalDict);
             return obj instanceof Dictionary ? (Dictionary) obj : null;
         }
     }
@@ -287,7 +288,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         final Map<String, Object> result = new HashMap<>();
         synchronized (lock) {
             for (String key : internalDict) {
-                result.put(key, Fleece.toObject(getMValue(internalDict, key).asNative(internalDict)));
+                result.put(key, Fleece.toObject(internalDict.get(key).asNative(internalDict)));
             }
         }
         return result;
@@ -304,7 +305,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public boolean contains(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return !getMValue(internalDict, key).isEmpty(); }
+        synchronized (lock) { return !internalDict.get(key).isEmpty(); }
     }
 
     /**
@@ -402,16 +403,16 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @NonNull
     private Object getSharedLock() {
         final MContext context = internalDict.getContext();
-        return ((context == null) || (context == MContext.NULL))
-            ? new Object()
-            : ((DocContext) context).getDatabase().getLock();
+        if (context instanceof DbContext) {
+            final Database db = ((DbContext) context).getDatabase();
+            if (db != null) { return db.getLock(); }
+        }
+        // ??? what kind of fresh horror is this??
+        return new Object();
     }
 
     // hashCode for pair of key and value
     private int hashCode(String key, Object value) {
         return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
     }
-
-    @NonNull
-    private MValue getMValue(MDict dict, String key) { return dict.get(key); }
 }

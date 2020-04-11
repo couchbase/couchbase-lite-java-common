@@ -17,10 +17,14 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.VisibleForTesting;
+
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.DbContext;
 
 
 public class MRoot extends MCollection {
+
     //---------------------------------------------
     // Data members
     //---------------------------------------------
@@ -31,18 +35,16 @@ public class MRoot extends MCollection {
     // Constructors
     //---------------------------------------------
 
-    public MRoot(MContext context, FLValue value, boolean isMutable) {
+    public MRoot(DbContext context, FLValue value, boolean isMutable) {
         super(context, isMutable);
         slot = new MValue(value);
     }
 
-    public MRoot(MContext context, boolean isMutable) {
-        this(context, FLValue.fromData(context.getData()), isMutable);
+    @VisibleForTesting
+    public MRoot(MContext context, FLValue value) {
+        super(context);
+        slot = new MValue(value);
     }
-
-    public MRoot(AllocSlice fleeceData, boolean isMutable) { this(new MContext(fleeceData), isMutable); }
-
-    public MRoot(AllocSlice fleeceData) { this(new MContext(fleeceData), true); }
 
     //---------------------------------------------
     // Public Methods

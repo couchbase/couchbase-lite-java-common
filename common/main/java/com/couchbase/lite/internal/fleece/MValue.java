@@ -68,6 +68,7 @@ public class MValue implements Encodable {
     @VisibleForTesting
     public static Delegate getRegisteredDelegate() { return delegate; }
 
+
     //-------------------------------------------------------------------------
     // Instance members
     //-------------------------------------------------------------------------

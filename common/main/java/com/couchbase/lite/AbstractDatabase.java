@@ -387,7 +387,7 @@ abstract class AbstractDatabase {
 
         synchronized (lock) {
             mustBeOpen();
-            try { return new Document((Database) this, id, false); }
+            try { return Document.getDocument((Database) this, id, false); }
             catch (CouchbaseLiteException ex) {
                 // only 404 - Not Found error throws CouchbaseLiteException
                 return null;
@@ -1207,7 +1207,7 @@ abstract class AbstractDatabase {
         final Document localDoc;
         final Document remoteDoc;
         synchronized (lock) {
-            localDoc = new Document((Database) this, docID, true);
+            localDoc = Document.getDocument((Database) this, docID);
             remoteDoc = getConflictingRevision(docID);
         }
 
@@ -1236,7 +1236,7 @@ abstract class AbstractDatabase {
 
     private Document getConflictingRevision(@NonNull String docID)
         throws CouchbaseLiteException, CBLInternalException {
-        final Document remoteDoc = new Document((Database) this, docID, true);
+        final Document remoteDoc = Document.getDocument((Database) this, docID);
         try {
             if (!remoteDoc.selectConflictingRevision()) {
                 final String msg = "Unable to select conflicting revision for doc '" + docID + "'. Skipping.";
@@ -1372,7 +1372,7 @@ abstract class AbstractDatabase {
             }
 
             // Conflict
-            synchronized (lock) { oldDoc = new Document((Database) this, document.getId(), true); }
+            synchronized (lock) { oldDoc = Document.getDocument((Database) this, document.getId()); }
 
             try {
                 if (!handler.handle(document, (oldDoc.isDeleted()) ? null : oldDoc)) {

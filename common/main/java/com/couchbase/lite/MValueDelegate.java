@@ -22,6 +22,7 @@ import android.support.annotation.Nullable;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -84,7 +85,7 @@ final class MValueDelegate implements MValue.Delegate {
     @NonNull
     private Object mValueToDictionary(@NonNull MValue mv, @NonNull MCollection parent) {
         final FLDict flDict = Preconditions.assertNotNull(mv.getValue(), "MValue").asFLDict();
-        final DocContext context = (DocContext) parent.getContext();
+        final DbContext context = (DbContext) parent.getContext();
 
         final FLValue flType = flDict.get(Blob.META_PROP_TYPE);
         final String type = (flType == null) ? null : flType.asString();
@@ -116,12 +117,12 @@ final class MValueDelegate implements MValue.Delegate {
     private Object createSpecialObjectOfType(
         @Nullable String type,
         @NonNull FLDict properties,
-        @NonNull DocContext context) {
+        @NonNull DbContext context) {
         return (!Blob.TYPE_BLOB.equals(type)) ? null : createBlob(properties, context);
     }
 
     @NonNull
-    private Object createBlob(@NonNull FLDict properties, @NonNull DocContext context) {
-        return new Blob(context.getDatabase(), properties.asDict());
+    private Object createBlob(@NonNull FLDict properties, @NonNull DbContext context) {
+        return new Blob(Preconditions.assertNotNull(context.getDatabase(), "database"), properties.asDict());
     }
 }

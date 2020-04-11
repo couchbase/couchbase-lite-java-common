@@ -86,17 +86,15 @@ public class FleeceArray implements List<Object>, Encodable {
     // Data members
     //---------------------------------------------
 
-    private MArray mArray;
+    private final MArray mArray;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    private FleeceArray() { mArray = new MArray(); }
-
     // Call from native method
     FleeceArray(MValue mv, MCollection parent) {
-        this();
+        mArray = new MArray();
         mArray.initInSlot(mv, parent);
     }
 

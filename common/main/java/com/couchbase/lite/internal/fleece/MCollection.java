@@ -17,48 +17,47 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.VisibleForTesting;
+
+import com.couchbase.lite.internal.DbContext;
+
+
 public abstract class MCollection implements Encodable {
     private MValue slot;
-
     private MContext context;
-
+    private MCollection parent;
     private boolean mutable;
-
     private boolean mutated;
-
     private boolean mutableChildren;
 
-    private MCollection parent;
-
-    /* Constructors */
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
 
     protected MCollection() { this(MContext.NULL, true); }
 
-    protected MCollection(MContext context, boolean isMutable) {
+    protected MCollection(DbContext context, boolean isMutable) { this((MContext) context, isMutable); }
+
+    @VisibleForTesting
+    protected MCollection(MContext context) { this(context, true); }
+
+    private MCollection(MContext context, boolean isMutable) {
         this.context = context;
         this.mutable = isMutable;
         mutableChildren = isMutable;
     }
 
-    /* Properties */
+    //---------------------------------------------
+    // Public Methods
+    //---------------------------------------------
 
-    public MContext getContext() {
-        return context;
-    }
+    public boolean isMutable() { return mutable; }
 
-    public boolean isMutable() {
-        return mutable;
-    }
+    public boolean isMutated() { return mutated; }
 
-    public boolean isMutated() {
-        return mutated;
-    }
+    public boolean hasMutableChildren() { return mutableChildren; }
 
-    /* Public Methods */
-
-    public boolean hasMutableChildren() {
-        return mutableChildren;
-    }
+    public MContext getContext() { return context; }
 
     public void initAsCopyOf(MCollection original, boolean isMutable) {
         if (context != MContext.NULL) { throw new IllegalStateException("Current context is not null."); }
@@ -68,7 +67,9 @@ public abstract class MCollection implements Encodable {
         mutableChildren = isMutable;
     }
 
-    /* Protected Methods */
+    //---------------------------------------------
+    // Protected Methods
+    //---------------------------------------------
 
     protected void setSlot(MValue newSlot, MValue oldSlot) {
         if (slot.equals(oldSlot)) {

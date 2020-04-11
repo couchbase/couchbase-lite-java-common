@@ -18,6 +18,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Date;
 import java.util.Locale;
@@ -53,7 +54,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      *
      * @param id the document ID.
      */
-    public MutableDocument(String id) { this(null, id, null); }
+    public MutableDocument(@Nullable String id) { this(null, id, null); }
 
     /**
      * Initializes a new CBLDocument object with a new random UUID and the dictionary as the content.
@@ -64,7 +65,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      *
      * @param data the Map object
      */
-    public MutableDocument(Map<String, Object> data) { this(null, data); }
+    public MutableDocument(@NonNull Map<String, Object> data) { this(null, data); }
 
     /**
      * Initializes a new Document object with a given ID and the dictionary as the content.
@@ -77,17 +78,14 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param id   the document ID.
      * @param data the Map object
      */
-    public MutableDocument(String id, Map<String, Object> data) {
+    public MutableDocument(@Nullable String id, Map<String, Object> data) {
         this(null, id, null);
         setData(data);
     }
 
-    protected MutableDocument(Document doc) {
+    protected MutableDocument(@NonNull Document doc) {
         this(doc.getDatabase(), doc.getId(), doc.getC4doc());
-        if (doc.isMutable()) {
-            final Dictionary dict = doc.getContent();
-            if (dict != null) { setContent(dict.toMutable()); }
-        }
+        if (doc.isMutable()) { setContent(doc.getContent().toMutable()); }
     }
 
     // !!! Expressing this constructor in terms of the previous one
@@ -95,12 +93,12 @@ public final class MutableDocument extends Document implements MutableDictionary
     // the source document's mutated state.  While it *does* copy the
     // mutable state, if the source has been changed since it was created
     // the previous constructor will lose those changes when it is encoded.
-    MutableDocument(String id, Document doc) {
+    MutableDocument(@NonNull String id, @NonNull Document doc) {
         this(doc.getDatabase(), id, null);
         setData(doc.getContent().toMap());
     }
 
-    private MutableDocument(Database database, String id, C4Document c4doc) {
+    private MutableDocument(@Nullable Database database, @Nullable String id, @Nullable C4Document c4doc) {
         super(database, id != null ? id : createUUID(), c4doc, true);
     }
 
