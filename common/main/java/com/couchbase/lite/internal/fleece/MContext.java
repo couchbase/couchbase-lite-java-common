@@ -20,4 +20,6 @@ package com.couchbase.lite.internal.fleece;
 
 public class MContext {
     public static final MContext NULL = new MContext();
+
+    protected MContext() { }
 }

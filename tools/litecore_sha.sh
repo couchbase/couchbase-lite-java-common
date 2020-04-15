@@ -48,28 +48,28 @@ fi
 
 if [[ $EDITION == EE ]]; then
   pushd $SCRIPT_DIR/../../couchbase-lite-core-EE > /dev/null
-    first_sha=`git rev-parse HEAD`
-    first_sha=${first_sha:0:40}
+    ee_sha=`git rev-parse HEAD`
+    ee_sha=${ee_sha:0:40}
     if [ $VERBOSE ]; then
-        echo "EE SHA is: '$first_sha'"
+        echo "EE SHA is: '$ee_sha'"
     fi
     popd > /dev/null
 fi
 
-pushd $SCRIPT_DIR/../../couchbase-lite-core > /dev/null
-second_sha=`git rev-parse HEAD`
-second_sha=${second_sha:0:40}
+pushd $SCRIPT_DIR/../../core > /dev/null
+ce_sha=`git rev-parse HEAD`
+ce_sha=${ce_sha:0:40}
 if [ $VERBOSE ]; then
-    echo "Base SHA is: '$second_sha'"
+    echo "Base SHA is: '$ce_sha'"
 fi
 popd > /dev/null
 
 if [[ $EDITION == EE ]]; then
-    amalgamation="${second_sha}${first_sha}"
+    amalgamation="${ce_sha}${ee_sha}"
     final_sha=`echo -n $amalgamation | shasum -a 1`
     final_sha=${final_sha:0:40}
 else
-    final_sha="${second_sha}"
+    final_sha="${ce_sha}"
 fi
 
 echo $final_sha

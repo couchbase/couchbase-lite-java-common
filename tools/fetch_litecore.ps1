@@ -27,7 +27,7 @@ try {
     if($_.Exception.Status -eq [System.Net.WebExceptionStatus]::ProtocolError) {
         $res = $_.Exception.Response.StatusCode
         if($res -eq 404) {
-            Write-Host "LiteCore for $Sha is not ready yet!"
+            Write-Host "No LiteCore available for $Sha!"
             exit 1
         }
     }
