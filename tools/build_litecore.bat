@@ -1,4 +1,3 @@
- @echo ON
 
 if "%2%" == "" (
     echo Usage: build_litecore.bat ^<VS Generator: 2015,2017,2019^> ^<CE or EE^> ^[LiteCore, mbedcrypto, all ^(default^)^]

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 function usage() {
     echo "usage: build_litecore -e <VAL> [-l <VAL>] [-d]"

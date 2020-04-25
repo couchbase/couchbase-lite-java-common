@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 
 function usage() {
     echo "usage: litecore_sha -e <VAL> [-o <VAL> -v]"
