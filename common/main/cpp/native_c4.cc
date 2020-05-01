@@ -17,7 +17,7 @@
 //
 #if defined(__ANDROID__)
 #include <android/log.h>
-#else
+#elif defined(__linux__) || defined(__APPLE__)
 #include <sys/time.h>
 #endif
 
@@ -34,10 +34,12 @@ static jclass cls_C4Log;
 static jmethodID m_C4Log_logCallback;
 
 // The default logging callback writes to stderr, or on Android to __android_log_write.
+// ??? Need to do something better for web service and Windows logging
 void vLogError(const char *fmt, va_list args) {
 #if defined(__ANDROID__)
     __android_log_vprint(ANDROID_LOG_ERROR, "LiteCore/JNI", fmt, args);
 #else
+#if defined(__linux__) || defined(__APPLE__)
     struct timeval tv;
     gettimeofday(&tv, NULL);
 
@@ -47,8 +49,10 @@ void vLogError(const char *fmt, va_list args) {
     char timestamp[100];
     strftime(timestamp, sizeof(timestamp), "%T", &tm);
 
-    // ??? Need to do something to accommodate web service logging?
-    fprintf(stderr, "%s.%03u E/LiteCore/JNI: ", timestamp, tv.tv_usec / 1000);
+    fprintf(stderr, "%s.%03u ", timestamp, tv.tv_usec / 1000);
+#endif
+
+    fprintf(stderr, "E/LiteCore/JNI: ");
     vfprintf(stderr, fmt, args);
     fputc('\n', stderr);
 #endif
@@ -71,15 +75,15 @@ void logError(const char *fmt, ...) {
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4_setenv(JNIEnv *env, jclass clazz, jstring jname, jstring jvalue,
-                                      jint overwrite) {
+                                                jint overwrite) {
     jstringSlice name(env, jname);
     jstringSlice value(env, jvalue);
 
-    #ifdef _MSC_VER
+#ifdef _MSC_VER
     _putenv_s(name.c_str(), value.c_str());
-    #else
+#else
     setenv(name.c_str(), value.c_str(), overwrite);
-    #endif
+#endif
 }
 
 /*
@@ -156,12 +160,13 @@ Java_com_couchbase_lite_internal_core_C4Log_setLevel(JNIEnv *env, jclass clazz, 
  * Signature: (Ljava/lang/String;I;Ljava/lang/String)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_log(JNIEnv* env, jclass clazz, jstring jdomain, jint jlevel, jstring jmessage) {
+Java_com_couchbase_lite_internal_core_C4Log_log(JNIEnv *env, jclass clazz, jstring jdomain, jint jlevel,
+                                                jstring jmessage) {
     jstringSlice message(env, jmessage);
 
-    const char* domain = env->GetStringUTFChars(jdomain, NULL);
+    const char *domain = env->GetStringUTFChars(jdomain, NULL);
     C4LogDomain logDomain = c4log_getDomain(domain, false);
-    c4slog(logDomain, (C4LogLevel)jlevel, message);
+    c4slog(logDomain, (C4LogLevel) jlevel, message);
     env->ReleaseStringUTFChars(jdomain, domain);
 }
 
@@ -171,7 +176,7 @@ Java_com_couchbase_lite_internal_core_C4Log_log(JNIEnv* env, jclass clazz, jstri
  * Signature: (V)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_getBinaryFileLevel(JNIEnv* env, jclass clazz) {
+Java_com_couchbase_lite_internal_core_C4Log_getBinaryFileLevel(JNIEnv *env, jclass clazz) {
     return c4log_binaryFileLevel();
 }
 
@@ -181,8 +186,8 @@ Java_com_couchbase_lite_internal_core_C4Log_getBinaryFileLevel(JNIEnv* env, jcla
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_setBinaryFileLevel(JNIEnv* env, jclass clazz, jint level) {
-    c4log_setBinaryFileLevel((C4LogLevel)level);
+Java_com_couchbase_lite_internal_core_C4Log_setBinaryFileLevel(JNIEnv *env, jclass clazz, jint level) {
+    c4log_setBinaryFileLevel((C4LogLevel) level);
 }
 
 /*
@@ -191,22 +196,22 @@ Java_com_couchbase_lite_internal_core_C4Log_setBinaryFileLevel(JNIEnv* env, jcla
  * Signature: (Ljava/lang/String;IIJZLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(JNIEnv* env, jclass clazz, jstring jpath,
-                                                    jint jlevel, jint jmaxrotatecount, jlong jmaxsize,
-                                                    jboolean juseplaintext, jstring jheader) {
+Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(JNIEnv *env, jclass clazz, jstring jpath,
+                                                              jint jlevel, jint jmaxrotatecount, jlong jmaxsize,
+                                                              jboolean juseplaintext, jstring jheader) {
     jstringSlice path(env, jpath);
     jstringSlice header(env, jheader);
-    C4LogFileOptions options {
-        (C4LogLevel)jlevel,
-        path,
-        jmaxsize,
-        jmaxrotatecount,
-        (bool)juseplaintext,
-        header
+    C4LogFileOptions options{
+            (C4LogLevel) jlevel,
+            path,
+            jmaxsize,
+            jmaxrotatecount,
+            (bool) juseplaintext,
+            header
     };
 
     C4Error err;
-    if(!c4log_writeToBinaryFile(options, &err)) {
+    if (!c4log_writeToBinaryFile(options, &err)) {
         throwError(env, err);
     }
 }
@@ -214,12 +219,12 @@ Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(JNIEnv* env, jclas
 static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list args) {
     JNIEnv *env = NULL;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if(getEnvStat == JNI_EDETACHED) {
+    if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) != 0) {
             logError("logCallback(): Failed to attach the current thread to a Java VM)");
             return;
         }
-    } else if(getEnvStat != JNI_OK) {
+    } else if (getEnvStat != JNI_OK) {
         logError("logCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
         return;
     }
@@ -230,11 +235,11 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
     }
 
     jstring message = UTF8ToJstring(env, const_cast<char *>(fmt), strlen(fmt));
-    const char* domainNameRaw = c4log_getDomainName(domain);
+    const char *domainNameRaw = c4log_getDomainName(domain);
     jstring domainName = env->NewStringUTF(domainNameRaw);
-    env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint)level, message);
+    env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    if(getEnvStat == JNI_EDETACHED) {
+    if (getEnvStat == JNI_EDETACHED) {
         if (gJVM->DetachCurrentThread() != 0) {
             C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
         }
@@ -247,10 +252,10 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv* env, jclass clazz, jint jlevel) {
-    if(cls_C4Log == nullptr) {
+Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env, jclass clazz, jint jlevel) {
+    if (cls_C4Log == nullptr) {
         cls_C4Log = reinterpret_cast<jclass>(env->NewGlobalRef(clazz));
-        if(!cls_C4Log) {
+        if (!cls_C4Log) {
             C4Error err = c4error_make(LiteCoreDomain, kC4ErrorUnexpectedError, {});
             throwError(env, err);
         }
@@ -259,15 +264,15 @@ Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv* env, jclass
                                                      "logCallback",
                                                      "(Ljava/lang/String;ILjava/lang/String;)V");
 
-        if(!m_C4Log_logCallback) {
+        if (!m_C4Log_logCallback) {
             C4Error err = c4error_make(LiteCoreDomain, kC4ErrorUnexpectedError, {});
             throwError(env, err);
         }
 
-        c4log_writeToCallback((C4LogLevel)jlevel, logCallback, true);
+        c4log_writeToCallback((C4LogLevel) jlevel, logCallback, true);
     }
 
-    c4log_setCallbackLevel((C4LogLevel)jlevel);
+    c4log_setCallbackLevel((C4LogLevel) jlevel);
 }
 
 // ----------------------------------------------------------------------------

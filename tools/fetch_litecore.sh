@@ -82,7 +82,7 @@ if [[ $OS == macosx ]]; then
 fi
 
 if [[ $OS == linux ]]; then
-  curl -Lf "${CORE_URL}.zip" -o "litecore-linux${SUFFIX}.tar.gz"
+  curl -Lf "${CORE_URL}.tar.gz" -o "litecore-linux${SUFFIX}.tar.gz"
   tar xf "litecore-linux${SUFFIX}.tar.gz"
 
   LIBLITECORE_DIR=linux/x86_64

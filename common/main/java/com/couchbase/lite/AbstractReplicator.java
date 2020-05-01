@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
@@ -231,6 +233,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
 
     // just queue everything up for in-order processing.
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     final class ReplicatorListener implements C4ReplicatorListener {
         @Override
         public void statusChanged(
@@ -245,7 +248,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
             }
 
             final AbstractReplicator replicator = (AbstractReplicator) context;
-            if (!replicator.isSameReplicator(repl)) { return; } // this handles repl == null
+            // this guarantees that repl != null
+            if (!replicator.isSameReplicator(repl)) { return; }
 
             dispatcher.execute(() -> replicator.c4StatusChanged(status));
         }

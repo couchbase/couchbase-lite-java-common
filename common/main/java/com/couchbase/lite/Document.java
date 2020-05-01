@@ -72,7 +72,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         try {
             final C4Database c4db = database.getC4Database();
             if (c4db == null) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
-            c4Doc = c4db.get(id, true);
+            c4Doc = c4db.get(id);
         }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
 

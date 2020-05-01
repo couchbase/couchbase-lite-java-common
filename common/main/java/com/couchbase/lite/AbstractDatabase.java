@@ -564,7 +564,7 @@ abstract class AbstractDatabase {
 
         synchronized (lock) {
             try {
-                if (getC4Database().get(id, true) == null) {
+                if (getC4Database().get(id) == null) {
                     throw new CouchbaseLiteException(
                         "DocumentNotFound",
                         CBLError.Domain.CBLITE,
@@ -1446,7 +1446,7 @@ abstract class AbstractDatabase {
 
         final C4Document curDoc;
 
-        try { curDoc = getC4Database().get(document.getId(), true); }
+        try { curDoc = getC4Database().get(document.getId()); }
         catch (LiteCoreException e) {
             // here if deleting and the curDoc doesn't exist.
             if (deleting

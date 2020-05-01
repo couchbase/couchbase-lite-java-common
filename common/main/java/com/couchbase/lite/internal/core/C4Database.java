@@ -173,6 +173,9 @@ public class C4Database extends C4NativePeer {
     // C4Document
     ////////////////////////////////
 
+    public C4Document get(String docID) throws LiteCoreException { return new C4Document(getPeer(), docID, true); }
+
+    @VisibleForTesting
     public C4Document get(String docID, boolean mustExist) throws LiteCoreException {
         return new C4Document(getPeer(), docID, mustExist);
     }
