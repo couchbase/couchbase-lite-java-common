@@ -1075,6 +1075,12 @@ public class DatabaseTest extends BaseDbTest {
         baseTestDb.deleteIndex("index4");
     }
 
+    @Test
+    public void testRebuildIndex() throws CouchbaseLiteException {
+        testCreateIndex();
+        baseTestDb.performMaintenance(MaintenanceType.REINDEX);
+    }
+
     // https://github.com/couchbase/couchbase-lite-android/issues/1416
     @Test
     public void testDeleteAndOpenDB() throws CouchbaseLiteException {

@@ -797,6 +797,11 @@ abstract class AbstractDatabase {
         }
     }
 
+    public boolean performMaintenance(MaintenanceType type) throws CouchbaseLiteException {
+        try { return getC4Database().performMaintenance(type); }
+        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+    }
+
     @VisibleForTesting
     public File getDbFile() { return isOpen() ? getFilePath() : new File(path); }
 

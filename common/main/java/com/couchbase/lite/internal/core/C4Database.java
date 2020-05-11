@@ -21,8 +21,13 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.MaintenanceType;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
@@ -32,6 +37,14 @@ import com.couchbase.lite.internal.fleece.FLValue;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyMethods", "PMD.ExcessiveParameterList"})
 public class C4Database extends C4NativePeer {
+    /* NOTE: Enum values must match the ones in DataFile::MaintenanceType */
+    private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
+    static {
+        final Map<MaintenanceType, Integer> m = new HashMap<>();
+        m.put(MaintenanceType.REINDEX, 0);
+        MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
+    }
+
     public static void copyDb(
         String sourcePath,
         String destinationPath,
@@ -299,6 +312,12 @@ public class C4Database extends C4NativePeer {
 
     public FLValue getIndexes() throws LiteCoreException { return new FLValue(C4Query.getIndexes(getPeer())); }
 
+    public boolean performMaintenance(MaintenanceType type) throws LiteCoreException {
+        final Integer iType = MAINTENANCE_TYPE_MAP.get(type);
+        if (iType == null) { throw new IllegalArgumentException("Unrecognized maintenance type: " + type); }
+        return maintenance(getPeer(), iType);
+    }
+
     ////////////////////////////////
     // C4Replicator
     ////////////////////////////////
@@ -491,4 +510,6 @@ public class C4Database extends C4NativePeer {
     private static native long encodeJSON(long db, byte[] jsonData) throws LiteCoreException;
 
     private static native long getFLSharedKeys(long db);
+
+    private static native boolean maintenance(long db, int type);
 }
