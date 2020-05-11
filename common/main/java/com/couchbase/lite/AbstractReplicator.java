@@ -320,8 +320,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private C4ReplicationFilter c4ReplPullFilter;
 
     // Reset the replicator checkpoint.
-    @GuardedBy("lock")
-    private boolean shouldResetCheckpoint;
+    private volatile boolean resetCheckpoint;
 
     // Do something with these (for auth)
     @GuardedBy("lock")
@@ -344,14 +343,28 @@ public abstract class AbstractReplicator extends InternalReplicator {
     }
 
     /**
-     * Starts the replicator. This method returns immediately; the replicator runs asynchronously
+     * Start the replicator.
+     * This method honors the flag set by the deprecated method <code>resetCheckpoint()</code>.
+     * Use <code>start(boolean resetCheckpoint)</code> instead.
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public void start() { start(resetCheckpoint); }
+
+    /**
+     * Start the replicator.
+     * This method returns immediately.  The replicator runs asynchronously
      * and will report its progress through the replicator change notification.
      */
-    public void start() {
+    public void start(boolean resetCheckpoint) {
         Log.i(DOMAIN, "Replicator is starting .....");
+
+        this.resetCheckpoint = false; // reset the (deprecated) flag
+
         final C4Replicator repl = lazyCreateC4Replicator();
 
-        repl.start(false);
+        repl.start(resetCheckpoint);
 
         C4ReplicatorStatus status = repl.getStatus();
         if (status == null) {
@@ -535,21 +548,13 @@ public abstract class AbstractReplicator extends InternalReplicator {
     }
 
     /**
-     * Reset the replicator's local checkpoint.
-     * This method can only be called when the replicator is in a stopped state.
-     * If this replicator is started after this flag is set, it will read all of the changes since
-     * the beginning of time, from the remote database.
-     * The flag affects only the first run of the replicator after it is set.  If it is started yet again,
-     * after it stops, it will not, again, read all of the changes.
+     * This method, exactly, sets a flag that will be used on the next call to
+     * the deprecated method <code>start()</code>
+     *
+     * @deprecated
      */
-    public void resetCheckpoint() {
-        synchronized (lock) {
-            if (getC4Replicator() != null) { // !!! This is broken: CBL-787
-                throw new IllegalStateException(Log.lookupStandardMessage("ReplicatorNotStopped"));
-            }
-            shouldResetCheckpoint = true;
-        }
-    }
+    @Deprecated
+    public void resetCheckpoint() { resetCheckpoint = true; }
 
     @NonNull
     @Override
@@ -828,13 +833,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         synchronized (lock) {
             options.put(AbstractReplicatorConfiguration.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value);
-
-            // Update shouldResetCheckpoint flag if needed:
-            if (shouldResetCheckpoint) {
-                options.put(AbstractReplicatorConfiguration.REPLICATOR_RESET_CHECKPOINT, true);
-                // reset the flag: if this replicator is restarted, it will *not* reset the checkpoint
-                shouldResetCheckpoint = false;
-            }
         }
 
         byte[] optionsFleece = null;

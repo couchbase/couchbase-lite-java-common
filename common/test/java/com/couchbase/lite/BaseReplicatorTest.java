@@ -123,8 +123,6 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         TestReplicatorChangeListener listener
             = new TestReplicatorChangeListener(r, expectedErrorDomain, expectedErrorCode, ignoreErrorAtStopped);
 
-        if (reset) { r.resetCheckpoint(); }
-
         if (onReady != null) { onReady.accept(r); }
 
 
@@ -132,7 +130,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
         ListenerToken token = r.addChangeListener(testSerialExecutor, listener);
         try {
-            r.start();
+            r.start(reset);
             success = listener.awaitCompletion(STD_TIMEOUT_SECS, TimeUnit.SECONDS);
         }
         finally {
