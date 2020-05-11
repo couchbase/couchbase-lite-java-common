@@ -351,7 +351,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         Log.i(DOMAIN, "Replicator is starting .....");
         final C4Replicator repl = lazyCreateC4Replicator();
 
-        repl.start();
+        repl.start(false);
 
         C4ReplicatorStatus status = repl.getStatus();
         if (status == null) {

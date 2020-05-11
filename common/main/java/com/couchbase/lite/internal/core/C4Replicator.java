@@ -357,7 +357,7 @@ public class C4Replicator extends C4NativePeer {
         this.pullFilter = null;
     }
 
-    public void start() { start(getPeer()); }
+    public void start(boolean restart) { start(getPeer(), restart); }
 
     public void stop() { stop(getPeer()); }
 
@@ -473,7 +473,7 @@ public class C4Replicator extends C4NativePeer {
     /**
      * Tells a replicator to start.
      */
-    private static native void start(long replicator);
+    private static native void start(long replicator, boolean restart);
 
     /**
      * Tells a replicator to stop.

@@ -576,8 +576,8 @@ Java_com_couchbase_lite_internal_core_C4Replicator_free(JNIEnv *env,
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass clazz, jlong repl) {
-    c4repl_start((C4Replicator *) repl);
+Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass clazz, jlong repl, jboolean restart) {
+    c4repl_start((C4Replicator *) repl, (bool) restart);
 }
 
 /*
