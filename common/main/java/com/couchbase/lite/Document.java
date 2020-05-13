@@ -30,13 +30,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.core.C4Constants;
-import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.MRoot;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -69,11 +67,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         Preconditions.assertNotNull(database, "database");
 
         final C4Document c4Doc;
-        try {
-            final C4Database c4db = database.getC4Database();
-            if (c4db == null) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
-            c4Doc = c4db.get(id);
-        }
+        try { c4Doc = database.getC4Document(id); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
 
         if (includeDeleted || ((c4Doc.getFlags() & C4Constants.DocumentFlags.DELETED) == 0)) {
@@ -534,7 +528,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         final Database db = getDatabase();
         if (db == null) { throw new IllegalStateException("encode called with null database"); }
 
-        final FLEncoder encoder = db.getC4Database().getSharedFleeceEncoder();
+        final FLEncoder encoder = db.getSharedFleeceEncoder();
         try {
             encoder.setExtraInfo(this);
             getContent().encodeTo(encoder);

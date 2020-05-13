@@ -127,7 +127,7 @@ public class C4Replicator extends C4NativePeer {
     @NonNull
     static C4Replicator createLocalReplicator(
         long db,
-        @Nullable C4Database otherLocalDB,
+        @NonNull C4Database otherLocalDB,
         int push,
         int pull,
         @NonNull byte[] options,
@@ -308,7 +308,7 @@ public class C4Replicator extends C4NativePeer {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private C4Replicator(
         long db,
-        @Nullable C4Database otherLocalDB,
+        @NonNull C4Database otherLocalDB,
         int push,
         int pull,
         @NonNull byte[] options,
@@ -319,7 +319,7 @@ public class C4Replicator extends C4NativePeer {
         throws LiteCoreException {
         super(createLocal(
             db,
-            (otherLocalDB == null) ? 0 : otherLocalDB.getHandle(),
+            otherLocalDB.getHandle(),
             push,
             pull,
             C4Socket.NO_FRAMING,

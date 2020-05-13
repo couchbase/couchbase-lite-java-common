@@ -49,6 +49,9 @@ import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.core.C4DatabaseChange;
 import com.couchbase.lite.internal.core.C4DatabaseObserver;
 import com.couchbase.lite.internal.core.C4Document;
+import com.couchbase.lite.internal.core.C4DocumentObserver;
+import com.couchbase.lite.internal.core.C4DocumentObserverListener;
+import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorListener;
@@ -220,8 +223,6 @@ abstract class AbstractDatabase {
     // Member variables
     //---------------------------------------------
 
-    protected C4Database c4db;
-
     @NonNull
     final DatabaseConfiguration config;
 
@@ -245,6 +246,9 @@ abstract class AbstractDatabase {
     private final SharedKeys sharedKeys;
 
     private final DocumentExpirationStrategy purgeStrategy;
+
+    @GuardedBy("lock")
+    private C4Database c4Database;
 
     private ChangeNotifier<DatabaseChange> dbChangeNotifier;
 
@@ -293,10 +297,10 @@ abstract class AbstractDatabase {
         CouchbaseLiteInternal.setupDirectories(config.getRootDirectory());
 
         // Can't open the DB until the file system is set up.
-        this.c4db = openC4Db();
+        this.c4Database = openC4Db();
 
         // Initialize a shared keys:
-        this.sharedKeys = new SharedKeys(c4db);
+        this.sharedKeys = new SharedKeys(c4Database);
 
         this.purgeStrategy = new DocumentExpirationStrategy(this, STANDARD_PURGE_INTERVAL_MS, postExecutor);
         this.purgeStrategy.schedulePurge(OPENING_PURGE_DELAY_MS);
@@ -315,7 +319,7 @@ abstract class AbstractDatabase {
 
         CouchbaseLiteInternal.requireInit("Cannot create database");
 
-        this.c4db = c4db;
+        this.c4Database = c4db;
 
         this.name = null;
 
@@ -354,7 +358,7 @@ abstract class AbstractDatabase {
      * @return the database's path.
      */
     public String getPath() {
-        synchronized (lock) { return c4db == null ? null : getC4Database().getPath(); }
+        synchronized (lock) { return c4Database == null ? null : c4Database.getPath(); }
     }
 
     /**
@@ -363,7 +367,7 @@ abstract class AbstractDatabase {
      * @return the number of documents in the database, 0 if database is closed.
      */
     public long getCount() {
-        synchronized (lock) { return c4db == null ? 0L : getC4Database().getDocumentCount(); }
+        synchronized (lock) { return c4Database == null ? 0L : c4Database.getDocumentCount(); }
     }
 
     /**
@@ -386,7 +390,7 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(id, "id");
 
         synchronized (lock) {
-            mustBeOpen();
+            getC4DatabaseLocked();
             try { return Document.getDocument((Database) this, id, false); }
             catch (CouchbaseLiteException ex) {
                 // only 404 - Not Found error throws CouchbaseLiteException
@@ -542,7 +546,7 @@ abstract class AbstractDatabase {
 
         synchronized (lock) {
             try {
-                getC4Database().setExpiration(id, (expiration == null) ? 0 : expiration.getTime());
+                getC4DatabaseLocked().setExpiration(id, (expiration == null) ? 0 : expiration.getTime());
                 purgeStrategy.schedulePurge(0);
             }
             catch (LiteCoreException e) {
@@ -564,13 +568,13 @@ abstract class AbstractDatabase {
 
         synchronized (lock) {
             try {
-                if (getC4Database().get(id) == null) {
+                if (getC4Document(id) == null) {
                     throw new CouchbaseLiteException(
                         "DocumentNotFound",
                         CBLError.Domain.CBLITE,
                         CBLError.Code.NOT_FOUND);
                 }
-                final long timestamp = getC4Database().getExpiration(id);
+                final long timestamp = getC4DatabaseLocked().getExpiration(id);
                 return (timestamp == 0) ? null : new Date(timestamp);
             }
             catch (LiteCoreException e) {
@@ -591,21 +595,20 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(runnable, "runnable");
 
         synchronized (lock) {
-            mustBeOpen();
+            final C4Database db = getC4DatabaseLocked();
+            boolean commit = false;
             try {
-                final C4Database db = getC4Database();
-                boolean commit = false;
                 db.beginTransaction();
                 try {
                     runnable.run();
                     commit = true;
                 }
+                catch (RuntimeException e) {
+                    throw new CouchbaseLiteException(e);
+                }
                 finally {
                     db.endTransaction(commit);
                 }
-            }
-            catch (RuntimeException e) {
-                throw new CouchbaseLiteException(e);
             }
             catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
@@ -622,8 +625,7 @@ abstract class AbstractDatabase {
      */
     public void compact() throws CouchbaseLiteException {
         synchronized (lock) {
-            mustBeOpen();
-            try { getC4Database().compact(); }
+            try { getC4DatabaseLocked().compact(); }
             catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         }
     }
@@ -658,7 +660,7 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(listener, "listener");
 
         synchronized (lock) {
-            mustBeOpen();
+            getC4DatabaseLocked();
             return addDatabaseChangeListenerLocked(executor, listener);
         }
     }
@@ -672,7 +674,7 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(token, "token");
 
         synchronized (lock) {
-            mustBeOpen();
+            getC4DatabaseLocked();
             if (!(token instanceof ChangeListenerToken) || (((ChangeListenerToken) token).getKey() == null)) {
                 removeDatabaseChangeListenerLocked(token);
             }
@@ -709,7 +711,7 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(listener, "listener");
 
         synchronized (lock) {
-            mustBeOpen();
+            getC4DatabaseLocked();
             return addDocumentChangeListenerLocked(id, executor, listener);
         }
     }
@@ -721,13 +723,14 @@ abstract class AbstractDatabase {
      */
     public void close() throws CouchbaseLiteException {
         synchronized (lock) {
-            if (c4db == null) { return; }
+            if (c4Database == null) { return; }
 
-            Log.i(DOMAIN, "Closing %s at path %s", this, c4db.getPath());
+            Log.i(DOMAIN, "Closing %s at path %s", this, c4Database.getPath());
 
             verifyQuiescent();
 
-            closeC4DB();
+            try { c4Database.close(); }
+            catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
 
             shutdown();
         }
@@ -735,12 +738,14 @@ abstract class AbstractDatabase {
 
     /**
      * Deletes a database.
+     * Although attempting to close a closed database is not an error,
+     * attempting to delete a closed database is.
      *
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void delete() throws CouchbaseLiteException {
         synchronized (lock) {
-            mustBeOpen();
+            final C4Database c4db = getC4DatabaseLocked();
 
             Log.i(DOMAIN, "Deleting %s at path %s", this, c4db.getPath());
 
@@ -758,27 +763,25 @@ abstract class AbstractDatabase {
     @NonNull
     public List<String> getIndexes() throws CouchbaseLiteException {
         synchronized (lock) {
-            mustBeOpen();
-            try { return (List<String>) c4db.getIndexes().asObject(); }
+            try { return (List<String>) getC4DatabaseLocked().getIndexes().asObject(); }
             catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         }
     }
 
-    public void createIndex(@NonNull String name, @NonNull Index index) throws CouchbaseLiteException {
+    public void createIndex(@NonNull String name, @NonNull Index idx) throws CouchbaseLiteException {
         Preconditions.assertNotNull(name, "name");
-        Preconditions.assertNotNull(index, "index");
+        final AbstractIndex index = (AbstractIndex) Preconditions.assertNotNull(idx, "index");
 
         synchronized (lock) {
-            mustBeOpen();
+            final C4Database c4Db = getC4DatabaseLocked();
             try {
-                final AbstractIndex abstractIndex = (AbstractIndex) index;
-                final String json = JsonUtils.toJson(abstractIndex.items()).toString();
-                getC4Database().createIndex(
+                final String json = JsonUtils.toJson(index.items()).toString();
+                c4Db.createIndex(
                     name,
                     json,
-                    abstractIndex.type().getValue(),
-                    abstractIndex.language(),
-                    abstractIndex.ignoreAccents());
+                    index.type().getValue(),
+                    index.language(),
+                    index.ignoreAccents());
             }
             catch (LiteCoreException e) {
                 throw CBLStatus.convertException(e);
@@ -790,11 +793,8 @@ abstract class AbstractDatabase {
     }
 
     public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
-        synchronized (lock) {
-            mustBeOpen();
-            try { c4db.deleteIndex(name); }
-            catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
-        }
+        try { getC4Database().deleteIndex(name); }
+        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
     }
 
     public boolean performMaintenance(MaintenanceType type) throws CouchbaseLiteException {
@@ -819,10 +819,6 @@ abstract class AbstractDatabase {
     // Protected level access
     //---------------------------------------------
 
-    protected void mustBeOpen() {
-        if (c4db == null) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
-    }
-
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
@@ -837,6 +833,11 @@ abstract class AbstractDatabase {
     @NonNull
     Object getLock() { return lock; }
 
+    @NonNull
+    C4Database getC4Database() {
+        synchronized (lock) { return getC4DatabaseLocked(); }
+    }
+
     boolean equalsWithPath(Database other) {
         if (other == null) { return false; }
 
@@ -849,36 +850,20 @@ abstract class AbstractDatabase {
     }
 
     @NonNull
-    C4BlobStore getBlobStore() throws LiteCoreException {
-        synchronized (lock) {
-            mustBeOpen();
-            return c4db.getBlobStore();
-        }
-    }
+    C4BlobStore getBlobStore() throws LiteCoreException { return getC4Database().getBlobStore(); }
 
     // Instead of clone()
     Database copy() throws CouchbaseLiteException { return new Database(this.name, this.config); }
 
     //////// DATABASES:
 
-    boolean isOpen() { return c4db != null; }
+    boolean isOpen() {
+        synchronized (lock) { return c4Database != null; }
+    }
 
     File getFilePath() {
         final String path = getPath();
         return path != null ? new File(path) : null;
-    }
-
-    /**
-     * NOTE: In general the mustBeOpen() method has already been called by the caller.
-     * It locks the db to guarantee that c4db is not be closed.
-     * Calling mustBeOpen here just avoids an NPE.
-     *
-     * @return a reference to C4Database instance if db is open.
-     */
-    C4Database getC4Database() {
-        mustBeOpen();
-
-        return c4db;
     }
 
     //////// DOCUMENTS:
@@ -886,6 +871,24 @@ abstract class AbstractDatabase {
     void addActiveLiveQuery(@NonNull LiveQuery query) { activeLiveQueries.add(query); }
 
     void removeActiveLiveQuery(@NonNull LiveQuery query) { activeLiveQueries.remove(query); }
+
+    C4Query createQuery(@NonNull String json) throws LiteCoreException { return getC4Database().createQuery(json); }
+
+    C4Document getC4Document(@NonNull String id) throws LiteCoreException { return getC4Database().get(id); }
+
+    FLEncoder getSharedFleeceEncoder() { return getC4Database().getSharedFleeceEncoder(); }
+
+    long getNextDocumentExpiration() { return getC4Database().nextDocExpiration(); }
+
+    int purgeExpiredDocs() { return getC4Database().purgeExpiredDocs(); }
+
+    @NonNull
+    C4DocumentObserver createDocumentObserver(
+        @NonNull ChangeNotifier<?> context,
+        @NonNull String docID,
+        @NonNull C4DocumentObserverListener listener) {
+        return getC4Database().createDocumentObserver(docID, listener, context);
+    }
 
     //////// REPLICATORS:
 
@@ -909,7 +912,7 @@ abstract class AbstractDatabase {
         throws LiteCoreException {
         final C4Replicator c4Repl;
         synchronized (lock) {
-            c4Repl = getC4Database().createRemoteReplicator(
+            c4Repl = getC4DatabaseLocked().createRemoteReplicator(
                 scheme,
                 host,
                 port,
@@ -933,7 +936,7 @@ abstract class AbstractDatabase {
     @NonNull
     C4Replicator createLocalReplicator(
         @NonNull Replicator replicator,
-        @Nullable C4Database otherLocalDB,
+        @NonNull Database otherLocalDb,
         int push,
         int pull,
         @NonNull byte[] options,
@@ -943,8 +946,8 @@ abstract class AbstractDatabase {
         throws LiteCoreException {
         final C4Replicator c4Repl;
         synchronized (lock) {
-            c4Repl = getC4Database().createLocalReplicator(
-                otherLocalDB,
+            c4Repl = getC4DatabaseLocked().createLocalReplicator(
+                ((AbstractDatabase) otherLocalDb).getC4Database(),
                 push,
                 pull,
                 options,
@@ -1035,6 +1038,7 @@ abstract class AbstractDatabase {
     //---------------------------------------------
 
     //////// DATABASES:
+
     private void beginTransaction() throws CouchbaseLiteException {
         try { getC4Database().beginTransaction(); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
@@ -1077,12 +1081,6 @@ abstract class AbstractDatabase {
 
     private int getDatabaseFlags() { return DEFAULT_DATABASE_FLAGS; }
 
-    // --- C4Database
-    private void closeC4DB() throws CouchbaseLiteException {
-        try { getC4Database().close(); }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
-    }
-
     //////// DOCUMENTS:
 
     // --- Database changes:
@@ -1094,7 +1092,7 @@ abstract class AbstractDatabase {
         @NonNull DatabaseChangeListener listener) {
         if (dbChangeNotifier == null) {
             dbChangeNotifier = new ChangeNotifier<>();
-            registerC4DBObserver();
+            registerC4DbObserver();
         }
         return dbChangeNotifier.addChangeListener(executor, listener);
     }
@@ -1104,7 +1102,7 @@ abstract class AbstractDatabase {
     @GuardedBy("lock")
     private void removeDatabaseChangeListenerLocked(@NonNull ListenerToken token) {
         if (dbChangeNotifier.removeChangeListener(token) == 0) {
-            freeC4DBObserver();
+            freeC4DbObserver();
             dbChangeNotifier = null;
         }
     }
@@ -1140,15 +1138,16 @@ abstract class AbstractDatabase {
         }
     }
 
-    private void registerC4DBObserver() {
-        c4DbObserver = c4db.createDatabaseObserver(
+    @GuardedBy("lock")
+    private void registerC4DbObserver() {
+        c4DbObserver = c4Database.createDatabaseObserver(
             (observer, context) -> scheduleOnPostNotificationExecutor(this::postDatabaseChanged, 0),
             this);
     }
 
     // called from finalizer
     @GuardedBy("lock")
-    private void freeC4DBObserver() {
+    private void freeC4DbObserver() {
         final C4DatabaseObserver observer = c4DbObserver;
         c4DbObserver = null;
 
@@ -1161,18 +1160,18 @@ abstract class AbstractDatabase {
     private void freeC4Observers(boolean cleanup) {
         final Map<String, DocumentChangeNotifier> notifiers = docChangeNotifiers;
 
-        freeC4DBObserver();
+        freeC4DbObserver();
 
         if (notifiers == null) { return; }
 
-        for (DocumentChangeNotifier notifier : notifiers.values()) { notifier.stop(); }
+        for (DocumentChangeNotifier notifier: notifiers.values()) { notifier.stop(); }
 
         if (cleanup) { notifiers.clear(); }
     }
 
     private void postDatabaseChanged() {
         synchronized (lock) {
-            if ((c4DbObserver == null) || (c4db == null)) { return; }
+            if ((c4DbObserver == null) || (c4Database == null)) { return; }
 
             boolean external = false;
             int nChanges;
@@ -1194,11 +1193,13 @@ abstract class AbstractDatabase {
         }
     }
 
+    @GuardedBy("lock")
     private void prepareDocument(Document document) throws CouchbaseLiteException {
-        mustBeOpen();
+        getC4DatabaseLocked();
 
-        if (document.getDatabase() == null) { document.setDatabase((Database) this); }
-        else if (document.getDatabase() != this) {
+        final Database db = document.getDatabase();
+        if (db == null) { document.setDatabase((Database) this); }
+        else if (db != this) {
             throw new CouchbaseLiteException(
                 "DocumentAnotherDatabase",
                 CBLError.Domain.CBLITE,
@@ -1328,7 +1329,7 @@ abstract class AbstractDatabase {
                 if ((resolvedDoc != null) && !resolvedDoc.isDeleted()) { mergedBody = resolvedDoc.encode(); }
                 else {
                     mergedFlags |= C4Constants.RevisionFlags.DELETED;
-                    final FLEncoder enc = getC4Database().getSharedFleeceEncoder();
+                    final FLEncoder enc = getSharedFleeceEncoder();
                     try {
                         enc.writeValue(new HashMap<>()); // Need an empty dictionary body
                         mergedBody = enc.finish2();
@@ -1446,12 +1447,13 @@ abstract class AbstractDatabase {
         }
     }
 
+    @GuardedBy("lock")
     private boolean saveConflicted(@NonNull Document document, boolean deleting)
         throws CouchbaseLiteException {
 
         final C4Document curDoc;
 
-        try { curDoc = getC4Database().get(document.getId()); }
+        try { curDoc = getC4Document(document.getId()); }
         catch (LiteCoreException e) {
             // here if deleting and the curDoc doesn't exist.
             if (deleting
@@ -1477,6 +1479,7 @@ abstract class AbstractDatabase {
     }
 
     // Low-level save method
+    @GuardedBy("lock")
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     private void saveInTransaction(@NonNull Document document, @Nullable C4Document base, boolean deleting)
         throws CouchbaseLiteException {
@@ -1497,7 +1500,7 @@ abstract class AbstractDatabase {
 
             c4Doc = (c4Doc != null)
                 ? c4Doc.update(body, revFlags)
-                : getC4Database().create(document.getId(), body, revFlags);
+                : getC4DatabaseLocked().create(document.getId(), body, revFlags);
 
             document.replaceC4Document(c4Doc);
         }
@@ -1509,11 +1512,12 @@ abstract class AbstractDatabase {
         }
     }
 
+    @GuardedBy("lock")
     private void purgeSynchronized(@NonNull String id) throws CouchbaseLiteException {
         boolean commit = false;
         beginTransaction();
         try {
-            getC4Database().purgeDoc(id);
+            getC4DatabaseLocked().purgeDoc(id);
             commit = true;
         }
         catch (LiteCoreException e) {
@@ -1553,9 +1557,9 @@ abstract class AbstractDatabase {
         // release instances
         freeC4Observers(true);
 
-        if ((!shellMode) && (c4db != null)) {
-            path = c4db.getPath();
-            c4db = null;
+        if ((!shellMode) && (c4Database != null)) {
+            path = c4Database.getPath();
+            c4Database = null;
         }
 
         // shutdown executor service
@@ -1589,5 +1593,17 @@ abstract class AbstractDatabase {
         // shutdown executor service
         if (pExec != null) { pExec.stop(waitTime, TimeUnit.SECONDS); }
         if (qExec != null) { qExec.stop(waitTime, TimeUnit.SECONDS); }
+    }
+
+    /**
+     * Verify that the db is open and return it.
+     *
+     * @return a reference to C4Database instance if db is open.
+     * @throws IllegalStateException if the db is not open.
+     */
+    @GuardedBy("lock")
+    private C4Database getC4DatabaseLocked() {
+        if (c4Database != null) { return c4Database; }
+        throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"));
     }
 }

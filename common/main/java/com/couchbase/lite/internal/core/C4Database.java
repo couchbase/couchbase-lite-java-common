@@ -359,7 +359,7 @@ public class C4Database extends C4NativePeer {
 
     @NonNull
     public C4Replicator createLocalReplicator(
-        @Nullable C4Database otherLocalDB,
+        @NonNull C4Database otherLocalDB,
         int push,
         int pull,
         @NonNull byte[] options,

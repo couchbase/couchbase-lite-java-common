@@ -290,7 +290,7 @@ abstract class AbstractQuery implements Query {
 
         if (columnNames == null) { columnNames = getColumnNames(); }
 
-        try { return database.getC4Database().createQuery(json); }
+        try { return database.createQuery(json); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
     }
 

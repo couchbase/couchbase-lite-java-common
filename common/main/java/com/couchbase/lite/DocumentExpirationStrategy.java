@@ -45,7 +45,7 @@ class DocumentExpirationStrategy {
     }
 
     void schedulePurge(long minDelayMs) {
-        final long nextExpiration = db.getC4Database().nextDocExpiration();
+        final long nextExpiration = db.getNextDocumentExpiration();
         if (nextExpiration <= 0) {
             Log.v(LogDomain.DATABASE, "No pending doc expirations");
             return;
@@ -84,7 +84,7 @@ class DocumentExpirationStrategy {
 
         if (!db.isOpen()) { return; }
 
-        final int purged = db.getC4Database().purgeExpiredDocs();
+        final int purged = db.purgeExpiredDocs();
         Log.v(LogDomain.DATABASE, "Purged %d expired documents", purged);
 
         schedulePurge(expirationInterval);

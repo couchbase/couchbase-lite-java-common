@@ -362,7 +362,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         this.resetCheckpoint = false; // reset the (deprecated) flag
 
-        final C4Replicator repl = lazyCreateC4Replicator();
+        final C4Replicator repl = getOrCreateC4Replicator();
 
         repl.start(resetCheckpoint);
 
@@ -386,7 +386,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
      */
     public void stop() {
         Log.i(DOMAIN, "%s: Replicator is stopping ...", this);
-        lazyCreateC4Replicator().stop();
+        // ??? this seems weird... Create it just to stop it??
+        getOrCreateC4Replicator().stop();
     }
 
     /**
@@ -422,7 +423,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
 
         final Set<String> pending;
-        try { pending = lazyCreateC4Replicator().getPendingDocIDs(); }
+        try { pending = getOrCreateC4Replicator().getPendingDocIDs(); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e, "Failed fetching pending documentIds"); }
 
         if (pending == null) { throw new IllegalStateException("Pending doc ids is unexpectedly null"); }
@@ -446,7 +447,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
                 CBLError.Code.UNSUPPORTED);
         }
 
-        try { return lazyCreateC4Replicator().isDocumentPending(docId); }
+        try { return getOrCreateC4Replicator().isDocumentPending(docId); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e, "Failed getting document pending status"); }
     }
 
@@ -621,7 +622,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         final boolean continuous = config.isContinuous();
         return config.getDatabase().createLocalReplicator(
             (Replicator) this,
-            otherDb.getC4Database(),
+            otherDb,
             mkmode(config.isPush(), continuous),
             mkmode(config.isPull(), continuous),
             getFleeceOptions(),
@@ -681,7 +682,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
             if (!pendingStatusNotifications.isEmpty()) { return; }
 
             if (responseHeaders == null) {
-                final byte[] h = lazyCreateC4Replicator().getResponseHeaders();
+                final C4Replicator repl = getC4Replicator();
+                if (repl == null) { throw new IllegalStateException("null c4Replicator!"); }
+                final byte[] h = repl.getResponseHeaders();
                 if (h != null) { responseHeaders = FLValue.fromData(h).asDict(); }
             }
 
@@ -760,7 +763,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     //---------------------------------------------
 
     @NonNull
-    private C4Replicator lazyCreateC4Replicator() {
+    private C4Replicator getOrCreateC4Replicator() {
         synchronized (lock) {
             C4Replicator c4Repl = getC4Replicator();
             if (c4Repl == null) {

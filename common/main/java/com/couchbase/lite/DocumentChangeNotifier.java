@@ -29,11 +29,11 @@ class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
     DocumentChangeNotifier(final Database db, final String docID) {
         this.db = db;
         this.docID = docID;
-        this.obs = db.c4db.createDocumentObserver(
-            docID,
+        this.obs = db.createDocumentObserver(
+            this, docID,
             (observer, docID1, sequence, context)
-                -> db.scheduleOnPostNotificationExecutor(((DocumentChangeNotifier) context)::postChange, 0),
-            this);
+                -> db.scheduleOnPostNotificationExecutor(((DocumentChangeNotifier) context)::postChange, 0)
+        );
     }
 
     void stop() {
