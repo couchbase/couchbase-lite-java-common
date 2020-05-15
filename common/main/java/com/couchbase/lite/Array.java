@@ -76,20 +76,20 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //---------------------------------------------
     Array() {
         internalArray = new MArray();
-        lock = getSharedLock();
+        lock = getDbLock();
     }
 
     Array(@NonNull MValue mv, @Nullable MCollection parent) {
         internalArray = new MArray();
         internalArray.initInSlot(mv, parent);
-        lock = getSharedLock();
+        lock = getDbLock();
     }
 
     // to crete mutable copy
     Array(@NonNull MArray mArray, boolean isMutable) {
         internalArray = new MArray();
         internalArray.initAsCopyOf(mArray, isMutable);
-        lock = getSharedLock();
+        lock = getDbLock();
     }
 
     //---------------------------------------------
@@ -355,13 +355,12 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //-------------------------------------------------------------------------
 
     @NonNull
-    private Object getSharedLock() {
+    private Object getDbLock() {
         final MContext context = internalArray.getContext();
         if (context instanceof DbContext) {
             final Database db = ((DbContext) context).getDatabase();
             if (db != null) { return db.getLock(); }
         }
-        // ??? what kind of fresh horror is this??
         return new Object();
     }
 

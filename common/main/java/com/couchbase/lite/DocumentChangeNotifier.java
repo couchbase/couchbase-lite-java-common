@@ -24,37 +24,28 @@ import com.couchbase.lite.internal.core.C4DocumentObserver;
 class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
     private final Database db;
     private final String docID;
-    private C4DocumentObserver obs;
+    private final C4DocumentObserver observer;
 
     DocumentChangeNotifier(final Database db, final String docID) {
         this.db = db;
         this.docID = docID;
-        this.obs = db.createDocumentObserver(
+        this.observer = db.createDocumentObserver(
             this, docID,
             (observer, docID1, sequence, context)
                 -> db.scheduleOnPostNotificationExecutor(((DocumentChangeNotifier) context)::postChange, 0)
         );
     }
 
-    void stop() {
-        final C4DocumentObserver observer = obs;
-        obs = null;
-        freeObserver(observer);
-    }
-
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        freeObserver(obs);
+        final C4DocumentObserver obs = observer;
+        if (obs == null) { return; }
+        obs.close();
         super.finalize();
     }
 
     private void postChange() {
         postChange(new DocumentChange(db, docID));
-    }
-
-    private void freeObserver(C4DocumentObserver observer) {
-        if (observer == null) { return; }
-        observer.free();
     }
 }

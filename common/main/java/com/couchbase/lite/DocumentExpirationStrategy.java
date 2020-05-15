@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 
 import java.util.concurrent.Executor;
@@ -28,11 +29,15 @@ import com.couchbase.lite.internal.support.Log;
  * Expire documents at a regular interval, once started.
  */
 class DocumentExpirationStrategy {
+    private final Object lock = new Object();
+
     private final AbstractDatabase db;
     private final Executor expirationExecutor;
     private final long expirationInterval;
 
+    @GuardedBy("lock")
     private boolean expirationCancelled;
+    @GuardedBy("lock")
     private Cancellable expirationTask;
 
     DocumentExpirationStrategy(
@@ -52,7 +57,7 @@ class DocumentExpirationStrategy {
         }
 
         final long delayMs = Math.max(nextExpiration - System.currentTimeMillis(), minDelayMs);
-        synchronized (this) {
+        synchronized (lock) {
             if (expirationCancelled || (expirationTask != null)) { return; }
             expirationTask = CouchbaseLiteInternal.getExecutionService()
                 .postDelayedOnExecutor(delayMs, expirationExecutor, this::purgeExpiredDocuments);
@@ -63,7 +68,7 @@ class DocumentExpirationStrategy {
 
     void cancelPurges() {
         final Cancellable task;
-        synchronized (this) {
+        synchronized (lock) {
             expirationCancelled = true;
             task = expirationTask;
         }
@@ -77,14 +82,16 @@ class DocumentExpirationStrategy {
     // between ending transaction and handling change notification when the documents
     // are purged
     private void purgeExpiredDocuments() {
-        synchronized (this) {
+        synchronized (lock) {
             if (expirationCancelled) { return; }
             expirationTask = null;
         }
 
-        if (!db.isOpen()) { return; }
-
-        final int purged = db.purgeExpiredDocs();
+        final int purged;
+        synchronized (db.getLock()) {
+            if (!db.isOpen()) { return; }
+            purged = db.purgeExpiredDocs();
+        }
         Log.v(LogDomain.DATABASE, "Purged %d expired documents", purged);
 
         schedulePurge(expirationInterval);

@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,6 +35,7 @@ import com.couchbase.lite.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -848,7 +851,7 @@ public class DatabaseTest extends BaseDbTest {
 
         // Update each doc 25 times:
         baseTestDb.inBatch(() -> {
-            for (String docID : docIDs) {
+            for (String docID: docIDs) {
                 Document savedDoc = baseTestDb.getDocument(docID);
                 for (int i = 0; i < nUpdates; i++) {
                     MutableDocument doc = savedDoc.toMutable();
@@ -860,7 +863,7 @@ public class DatabaseTest extends BaseDbTest {
         });
 
         // Add each doc with a blob object:
-        for (String docID : docIDs) {
+        for (String docID: docIDs) {
             MutableDocument doc = baseTestDb.getDocument(docID).toMutable();
             doc.setValue("blob", new Blob("text/plain", doc.getId().getBytes()));
             saveDocInBaseTestDb(doc);
@@ -878,7 +881,7 @@ public class DatabaseTest extends BaseDbTest {
         assertEquals(nDocs, attsDir.listFiles().length);
 
         // Delete all docs:
-        for (String docID : docIDs) {
+        for (String docID: docIDs) {
             Document savedDoc = baseTestDb.getDocument(docID);
             baseTestDb.delete(savedDoc);
             assertNull(baseTestDb.getDocument(docID));
@@ -946,7 +949,7 @@ public class DatabaseTest extends BaseDbTest {
                 .from(DataSource.database(newDb))
                 .execute();
 
-            for (Result r : rs) {
+            for (Result r: rs) {
                 String docID = r.getString(0);
                 assertNotNull(docID);
 

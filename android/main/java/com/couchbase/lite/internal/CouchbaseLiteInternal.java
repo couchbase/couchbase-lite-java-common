@@ -105,10 +105,6 @@ public final class CouchbaseLiteInternal {
 
     public static boolean isDebugging() { return debugging; }
 
-    /**
-     * This method is not part of the public API.
-     * It will be removed in a future release.
-     */
     public static ExecutionService getExecutionService() {
         ExecutionService executionService = EXECUTION_SERVICE.get();
         if (executionService == null) {
@@ -188,7 +184,7 @@ public final class CouchbaseLiteInternal {
         try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
             final JSONObject root = new JSONObject(new Scanner(is, "UTF-8").useDelimiter("\\A").next());
             final Iterable<String> errors = root::keys;
-            for (String error : errors) { errorMessages.put(error, root.getString(error)); }
+            for (String error: errors) { errorMessages.put(error, root.getString(error)); }
         }
         catch (IOException | JSONException e) {
             Log.e(LogDomain.DATABASE, "Failed to load error messages!", e);

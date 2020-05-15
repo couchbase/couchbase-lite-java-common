@@ -19,7 +19,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.Executor;
@@ -46,7 +45,8 @@ final class LiveQuery implements DatabaseChangeListener {
     @VisibleForTesting
     static final long LIVE_QUERY_UPDATE_INTERVAL_MS = 200; // 0.2sec (200ms)
 
-    private enum State {STOPPED, STARTED, SCHEDULED}
+    @VisibleForTesting
+    enum State {STOPPED, STARTED, SCHEDULED}
 
     //---------------------------------------------
     // member variables
@@ -93,17 +93,6 @@ final class LiveQuery implements DatabaseChangeListener {
     public void changed(@NonNull DatabaseChange change) { update(LIVE_QUERY_UPDATE_INTERVAL_MS); }
 
     //---------------------------------------------
-    // protected methods
-    //---------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        stop(query, dbListenerToken);
-        super.finalize();
-    }
-
-    //---------------------------------------------
     // package
     //---------------------------------------------
 
@@ -118,11 +107,6 @@ final class LiveQuery implements DatabaseChangeListener {
         return token;
     }
 
-    /**
-     * Removes a change listener
-     * <p>
-     * NOTE: this method is synchronized with Query level.
-     */
     void removeChangeListener(ListenerToken token) {
         if (changeNotifier.removeChangeListener(token) <= 0) { stop(); }
     }
@@ -131,13 +115,14 @@ final class LiveQuery implements DatabaseChangeListener {
      * Starts observing database changes and reports changes in the query result.
      */
     void start(boolean shouldClearResults) {
-        final Database db = query.getDatabase();
-        if (db == null) { throw new IllegalArgumentException("live query database cannot be null."); }
+        final Database db = Preconditions.assertNotNull(query.getDatabase(), "Live query database");
 
-        synchronized (lock) {
+        // can't have the db closing while a query is starting.
+        synchronized (db.getLock()) {
+            db.mustBeOpen();
+
             if (state.compareAndSet(State.STOPPED, State.STARTED)) {
-                db.addActiveLiveQuery(this);
-                dbListenerToken = db.addChangeListener(this);
+                synchronized (lock) { dbListenerToken = db.addActiveLiveQuery(this); }
             }
             else {
                 // Here if the live query was already running.  This can happen in two ways:
@@ -145,44 +130,44 @@ final class LiveQuery implements DatabaseChangeListener {
                 // 2) when the query parameters have changed.
                 // In either case we probably want to kick off a new query.
                 // In the latter case the current query results are irrelevant and need to be cleared.
-                if (shouldClearResults) { previousResults = null; }
+                if (shouldClearResults) {
+                    synchronized (lock) { previousResults = null; }
+                }
             }
         }
-
         update(0);
     }
+
+    void stop() {
+        final Database db = query.getDatabase();
+        if (db == null) {
+            if (State.STOPPED != state.get()) {
+                Log.w(LogDomain.DATABASE, "Null db when stopping LiveQuery");
+            }
+            return;
+        }
+
+        synchronized (db.getLock()) {
+            if (State.STOPPED == state.getAndSet(State.STOPPED)) { return; }
+
+            synchronized (lock) {
+                previousResults = null;
+
+                final ListenerToken token = dbListenerToken;
+                dbListenerToken = null;
+                if (token == null) { return; }
+
+                db.removeActiveLiveQuery(this, token);
+            }
+        }
+    }
+
+    @VisibleForTesting
+    State getState() { return state.get(); }
 
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
-
-    private void stop() {
-        synchronized (lock) {
-            final State oldState = state.getAndSet(State.STOPPED);
-            if (State.STOPPED == oldState) { return; }
-
-            previousResults = null;
-
-            final ListenerToken token = dbListenerToken;
-            dbListenerToken = null;
-
-            stop(query, token);
-        }
-    }
-
-    // If this object is GCed out of order, e.g., the dbListener token is gone
-    // by the time we get here (via finalize), we are going to leave things in
-    // an inconsistent state...
-    private void stop(@Nullable AbstractQuery query, @Nullable ListenerToken token) {
-        if (query == null) { return; }
-
-        final Database db = query.getDatabase();
-        if (db == null) { return; }
-
-        db.removeActiveLiveQuery(this);
-
-        if (token != null) { db.removeChangeListener(token); }
-    }
 
     private void update(long delay) {
         if (!state.compareAndSet(State.STARTED, State.SCHEDULED)) { return; }

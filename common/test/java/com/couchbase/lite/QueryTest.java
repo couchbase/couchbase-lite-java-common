@@ -49,7 +49,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
 public class QueryTest extends BaseQueryTest {
@@ -285,7 +284,7 @@ public class QueryTest extends BaseQueryTest {
             {work.notNullOrMissing(), docids()},
         };
 
-        for (Object[] c : cases) {
+        for (Object[] c: cases) {
             Expression exp = (Expression) c[0];
             final String[] documentIDs = (String[]) c[1];
             Query query = QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).where(exp);
@@ -448,7 +447,7 @@ public class QueryTest extends BaseQueryTest {
         loadJSONResource("names_100.json");
 
         boolean[] cases = {true, false};
-        for (final boolean ascending : cases) {
+        for (final boolean ascending: cases) {
             Ordering o;
             if (ascending) { o = Ordering.expression(Expression.property("name.first")).ascending(); }
             else { o = Ordering.expression(Expression.property("name.first")).descending(); }
@@ -1123,7 +1122,7 @@ public class QueryTest extends BaseQueryTest {
             Function.trunc(p, Expression.intValue(1))
         );
         final AtomicInteger index = new AtomicInteger(0);
-        for (Expression f : functions) {
+        for (Expression f: functions) {
             Query query = QueryBuilder
                 .select(SelectResult.expression(f))
                 .from(DataSource.database(baseTestDb));
@@ -1270,7 +1269,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testUnicodeCollationWithLocaleNone() throws CouchbaseLiteException {
         String[] letters = {"B", "A", "Z", "Å"};
-        for (String letter : letters) {
+        for (String letter: letters) {
             MutableDocument doc = new MutableDocument();
             doc.setValue("string", letter);
             saveDocInBaseTestDb(doc);
@@ -1293,7 +1292,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testUnicodeCollationWithLocaleSpanish() throws CouchbaseLiteException {
         String[] letters = {"B", "A", "Z", "Å"};
-        for (String letter : letters) {
+        for (String letter: letters) {
             MutableDocument doc = new MutableDocument();
             doc.setValue("string", letter);
             saveDocInBaseTestDb(doc);
@@ -1317,7 +1316,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testUnicodeCollationWithLocaleSwedish() throws CouchbaseLiteException {
         String[] letters = {"B", "A", "Z", "Å"};
-        for (String letter : letters) {
+        for (String letter: letters) {
             MutableDocument doc = new MutableDocument();
             doc.setValue("string", letter);
             saveDocInBaseTestDb(doc);
@@ -1411,7 +1410,7 @@ public class QueryTest extends BaseQueryTest {
             )
         );
 
-        for (List<Object> data : testData) {
+        for (List<Object> data: testData) {
             MutableDocument mDoc = new MutableDocument();
             mDoc.setValue("value", data.get(0));
             Document doc = saveDocInBaseTestDb(mDoc);
@@ -1453,7 +1452,7 @@ public class QueryTest extends BaseQueryTest {
             }
             else if (latch.getCount() == 1) {
                 int count = 0;
-                for (Result result : rs) {
+                for (Result result: rs) {
                     if (count == 0) {
                         Document doc = baseTestDb.getDocument(result.getString(0));
                         assertEquals(-1L, doc.getValue("number1"));
@@ -1884,7 +1883,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testAllComparison() throws CouchbaseLiteException {
         String[] values = {"Apple", "Aardvark", "Ångström", "Zebra", "äpple"};
-        for (String value : values) {
+        for (String value: values) {
             MutableDocument doc = new MutableDocument();
             doc.setString("hey", value);
             saveDocInBaseTestDb(doc);
@@ -1912,7 +1911,7 @@ public class QueryTest extends BaseQueryTest {
             Arrays.asList("Aardvark", "Ångström", "Apple", "äpple", "Zebra")));
 
         Expression property = Expression.property("hey");
-        for (List<Object> data : testData) {
+        for (List<Object> data: testData) {
             Query query = QueryBuilder.select(SelectResult.property("hey"))
                 .from(DataSource.database(baseTestDb))
                 .orderBy(Ordering.expression(property.collate((Collation) data.get(1))));
@@ -1924,25 +1923,33 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testCloseDatabaseWithActiveLiveQuery() throws InterruptedException {
+    public void testDeleteDatabaseWithActiveLiveQuery() throws InterruptedException, CouchbaseLiteException {
         final CountDownLatch latch1 = new CountDownLatch(1);
-        Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
             .from(DataSource.database(baseTestDb));
 
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch1.countDown());
-        assertTrue(latch1.await(2, TimeUnit.SECONDS));
-
         try {
+            assertTrue(latch1.await(2, TimeUnit.SECONDS));
+            baseTestDb.delete();
+        }
+        finally { query.removeChangeListener(token); }
+    }
+
+    @Test
+    public void testCloseDatabaseWithActiveLiveQuery() throws InterruptedException, CouchbaseLiteException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb));
+
+        ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
+        try {
+            assertTrue(latch.await(2, TimeUnit.SECONDS));
             baseTestDb.close();
-            fail();
         }
-        catch (CouchbaseLiteException e) {
-            assertEquals(CBLError.Domain.CBLITE, e.getDomain());
-            assertEquals(CBLError.Code.BUSY, e.getCode());
-        }
-        finally {
-            query.removeChangeListener(token);
-        }
+        finally { query.removeChangeListener(token); }
     }
 
     @Test
@@ -2039,7 +2046,7 @@ public class QueryTest extends BaseQueryTest {
         // Type 2: Enumeration by ResultSet.iterator()
         i = 0;
         rs = query.execute();
-        for (Result r : rs) {
+        for (Result r: rs) {
             assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
             i++;
         }
@@ -2063,7 +2070,7 @@ public class QueryTest extends BaseQueryTest {
         // Type 4: Enumeration by ResultSet.allResults().iterator()
         i = 0;
         rs = query.execute();
-        for (Result r : rs.allResults()) {
+        for (Result r: rs.allResults()) {
             assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
             i++;
         }
@@ -2098,7 +2105,7 @@ public class QueryTest extends BaseQueryTest {
         i = 0;
         rs = query.execute();
         results = rs.allResults();
-        for (Result r : results) {
+        for (Result r: results) {
             assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
             i++;
         }
@@ -2113,7 +2120,7 @@ public class QueryTest extends BaseQueryTest {
         assertNotNull(rs.next());
         results = rs.allResults();
         i = 2;
-        for (Result r : results) {
+        for (Result r: results) {
             assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
             i++;
         }
@@ -2143,7 +2150,7 @@ public class QueryTest extends BaseQueryTest {
         // Type 2: Enumeration by ResultSet.iterator()
         i = 0;
         rs = query.execute();
-        for (Result r : rs) {
+        for (Result r: rs) {
             i++;
         }
         assertEquals(0, i);
@@ -2165,7 +2172,7 @@ public class QueryTest extends BaseQueryTest {
         // Type 4: Enumeration by ResultSet.allResults().iterator()
         i = 0;
         rs = query.execute();
-        for (Result r : rs.allResults()) {
+        for (Result r: rs.allResults()) {
             i++;
         }
         assertEquals(0, i);
@@ -2531,7 +2538,7 @@ public class QueryTest extends BaseQueryTest {
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> {
             int matchs = 0;
             ResultSet rs = change.getResults();
-            for (Result r : rs) {
+            for (Result r: rs) {
                 matchs++;
             }
             // match doc1 with number1 -> 5 which is less than 10
@@ -2805,7 +2812,7 @@ public class QueryTest extends BaseQueryTest {
         expectedLocal.add(499132800000L - offset);
 
         boolean first = true;
-        for (Number entry : expectedUTC) {
+        for (Number entry: expectedUTC) {
             if (first) {
                 first = false;
                 continue;
@@ -2896,7 +2903,7 @@ public class QueryTest extends BaseQueryTest {
         millisToUse.add(499137690555L);
 
         ArrayList<String> expectedLocal = new ArrayList<>();
-        for (Number millis : millisToUse) {
+        for (Number millis: millisToUse) {
             MutableDocument doc = new MutableDocument();
             doc.setNumber("timestamp", millis);
             baseTestDb.save(doc);
@@ -2962,7 +2969,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases) throws CouchbaseLiteException {
-        for (Object[] c : cases) {
+        for (Object[] c: cases) {
             Expression w = (Expression) c[0];
             String[] documentIDs = (String[]) c[1];
             final List<String> docIDList = new ArrayList<>(Arrays.asList(documentIDs));
@@ -2996,7 +3003,7 @@ public class QueryTest extends BaseQueryTest {
         dateTimeFormats.add("1985-10-26 01:21:30.55");
         dateTimeFormats.add("1985-10-26 01:21:30.555");
 
-        for (String format : dateTimeFormats) {
+        for (String format: dateTimeFormats) {
             doc = new MutableDocument();
             doc.setString("local", format);
             doc.setString("JST", format + "+09:00");

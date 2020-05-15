@@ -66,6 +66,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         throws CouchbaseLiteException {
         Preconditions.assertNotNull(database, "database");
 
+        // ??? c4Doc can be closed/freed?
         final C4Document c4Doc;
         try { c4Doc = database.getC4Document(id); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
@@ -413,11 +414,11 @@ public class Document implements DictionaryInterface, Iterable<String> {
         return getContent().equals(doc.getContent());
     }
 
+    // NOTE id and internalDict never null
     @Override
     public int hashCode() {
-        // NOTE id and internalDict never null
         final Database db = getDatabase();
-        int result = db != null && db.getPath() != null ? db.getPath().hashCode() : 0;
+        int result = ((db == null) || (db.getPath() == null)) ? 0 : db.getPath().hashCode();
         result = 31 * result + id.hashCode();
         result = 31 * result + getContent().hashCode();
         return result;

@@ -19,6 +19,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,8 +55,6 @@ abstract class AbstractQuery implements Query {
 
     @GuardedBy("lock")
     private LiveQuery liveQuery;
-
-    private Database database;
 
     // NOTE:
     // https://sqlite.org/lang_select.html
@@ -130,7 +129,7 @@ abstract class AbstractQuery implements Query {
             if (parameters == null) { parameters = new Parameters(); }
             params = parameters.encode();
             final C4QueryEnumerator c4enum;
-            synchronized (getDatabase().getLock()) {
+            synchronized (getDbLock()) {
                 synchronized (lock) {
                     if (c4query == null) { c4query = prepQueryLocked(); }
                     c4enum = c4query.run(options, params);
@@ -163,7 +162,7 @@ abstract class AbstractQuery implements Query {
     @NonNull
     @Override
     public String explain() throws CouchbaseLiteException {
-        synchronized (getDatabase().getLock()) {
+        synchronized (getDbLock()) {
             synchronized (lock) {
                 if (c4query == null) { c4query = prepQueryLocked(); }
                 return c4query.explain();
@@ -227,7 +226,7 @@ abstract class AbstractQuery implements Query {
         final C4Query query = c4query;
         if (query == null) { return; }
 
-        final Object lock = getDbLock();
+        final Object lock = getDbLockUnchecked();
         if (lock != null) {
             synchronized (lock) { query.free(); }
         }
@@ -243,10 +242,7 @@ abstract class AbstractQuery implements Query {
     // Package level access
     //---------------------------------------------
 
-    Database getDatabase() {
-        if (database == null) { database = (Database) from.getSource(); }
-        return database;
-    }
+    Database getDatabase() { return (Database) from.getSource(); }
 
     void setSelect(Select select) { this.select = select; }
 
@@ -276,21 +272,27 @@ abstract class AbstractQuery implements Query {
         this.parameters = query.parameters;
     }
 
+    @VisibleForTesting
+    LiveQuery getLiveQuery() {
+        synchronized (lock) {
+            if (liveQuery == null) { liveQuery = new LiveQuery(this); }
+            return liveQuery;
+        }
+    }
+
     //---------------------------------------------
     // Private methods
     //---------------------------------------------
 
     @GuardedBy("lock")
     private C4Query prepQueryLocked() throws CouchbaseLiteException {
-        database = (Database) from.getSource();
-
         final String json = encodeAsJson();
         Log.v(DOMAIN, "Encoded query: %s", json);
         if (json == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
 
         if (columnNames == null) { columnNames = getColumnNames(); }
 
-        try { return database.createQuery(json); }
+        try { return getDatabase().createQuery(json); }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
     }
 
@@ -366,18 +368,14 @@ abstract class AbstractQuery implements Query {
         return json;
     }
 
-    private LiveQuery getLiveQuery() {
-        synchronized (lock) {
-            if (liveQuery == null) { liveQuery = new LiveQuery(this); }
-            return liveQuery;
-        }
+    private Object getDbLock() {
+        final Database db = getDatabase();
+        if (db != null) { return db.getLock(); }
+        throw new IllegalStateException("Cannot seize DB lock");
     }
 
-    // called from finalizer
-    private Object getDbLock() {
-        final Database db = database;
-        if (db != null) { return db.getLock(); }
-
+    // called only from finalizer
+    private Object getDbLockUnchecked() {
         final DataSource dSrc = from;
         if (dSrc == null) { return null; }
 

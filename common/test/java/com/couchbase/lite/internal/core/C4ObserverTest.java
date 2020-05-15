@@ -42,8 +42,8 @@ public class C4ObserverTest extends C4BaseTest {
 
     @After
     public final void tearDownC4ObserverTest() {
-        if (dbObserver != null) { dbObserver.free(); }
-        if (docObserver != null) { docObserver.free(); }
+        if (dbObserver != null) { dbObserver.close(); }
+        if (docObserver != null) { docObserver.close(); }
     }
 
     // - DB Observer
@@ -69,7 +69,7 @@ public class C4ObserverTest extends C4BaseTest {
 
         checkChanges(Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
 
-        dbObserver.free();
+        dbObserver.close();
         dbObserver = null;
 
         createRev("A", "2-aaaa", fleeceBody);
@@ -137,7 +137,7 @@ public class C4ObserverTest extends C4BaseTest {
         assertEquals(2, dbCallbackCalls.get());
         checkChanges(Arrays.asList("c", "d", "e"), Arrays.asList("1-cc", "1-dd", "1-ee"), true);
 
-        dbObserver.free();
+        dbObserver.close();
         dbObserver = null;
 
         createRev("A", "2-aaaa", fleeceBody);
@@ -185,10 +185,10 @@ public class C4ObserverTest extends C4BaseTest {
         checkChanges(dbObserver1, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
 
 
-        dbObserver.free();
+        dbObserver.close();
         dbObserver = null;
 
-        dbObserver1.free();
+        dbObserver1.close();
 
         createRev("A", "2-aaaa", fleeceBody);
         assertEquals(2, dbCallbackCalls.get());

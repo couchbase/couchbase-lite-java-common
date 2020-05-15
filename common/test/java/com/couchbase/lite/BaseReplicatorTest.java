@@ -125,7 +125,6 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
         if (onReady != null) { onReady.accept(r); }
 
-
         boolean success;
 
         ListenerToken token = r.addChangeListener(testSerialExecutor, listener);

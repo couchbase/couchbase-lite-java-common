@@ -86,13 +86,19 @@ public class C4DatabaseObserver extends C4NativePeer {
 
     public C4DatabaseChange[] getChanges(int maxChanges) { return getChanges(getPeer(), maxChanges); }
 
-    public void free() {
-        final long handle = getPeerAndClear();
+    public void close() {
+        final long handle = getPeer();
         if (handle == 0L) { return; }
-
         REVERSE_LOOKUP_TABLE.remove(handle);
+    }
 
-        free(handle);
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        final long handle = getPeerAndClear();
+        if (handle != 0) { free(handle); }
+
+        super.finalize();
     }
 
     //-------------------------------------------------------------------------

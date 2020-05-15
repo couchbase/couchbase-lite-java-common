@@ -47,6 +47,12 @@ public class C4DocumentObserver extends C4NativePeer {
         return observer;
     }
 
+    public void close() {
+        final long handle = getPeer();
+        if (handle == 0L) { return; }
+        REVERSE_LOOKUP_TABLE.remove(handle);
+    }
+
     //-------------------------------------------------------------------------
     // JNI callback methods
     //-------------------------------------------------------------------------
@@ -98,6 +104,18 @@ public class C4DocumentObserver extends C4NativePeer {
         REVERSE_LOOKUP_TABLE.remove(handle);
 
         free(handle);
+    }
+
+    // Note: the reference in the REVERSE_LOOKUP_TABLE must already be gone, or we wouldn't be here...
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        final long handle = getPeerAndClear();
+        if (handle == 0) { return; }
+
+        free(handle);
+
+        super.finalize();
     }
 
     //-------------------------------------------------------------------------

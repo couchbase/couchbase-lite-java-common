@@ -21,10 +21,16 @@ import android.support.annotation.Nullable;
 
 @SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
 public abstract class InternalReplicator {
+    protected final Object lock = new Object();
+
     private C4Replicator c4Replicator;
 
-    protected void setC4Replicator(@NonNull C4Replicator c4Repl) { c4Replicator = c4Repl; }
+    protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
+        synchronized (lock) { c4Replicator = c4Repl; }
+    }
 
     @Nullable
-    protected C4Replicator getC4Replicator() { return c4Replicator; }
+    protected C4Replicator getC4Replicator() {
+        synchronized (lock) { return c4Replicator; }
+    }
 }

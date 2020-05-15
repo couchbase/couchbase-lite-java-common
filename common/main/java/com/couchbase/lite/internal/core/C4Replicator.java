@@ -231,14 +231,13 @@ public class C4Replicator extends C4NativePeer {
         synchronized (CLASS_LOCK) { return REVERSE_LOOKUP_TABLE.get(handle); }
     }
 
+    @GuardedBy("CLASS_LOCK")
     private static void bind(@NonNull C4Replicator repl) {
         Preconditions.assertNotNull(repl, "repl");
         REVERSE_LOOKUP_TABLE.put(repl.getPeer(), repl);
     }
 
-    private static void release(long handle) {
-        if (handle != 0) { REVERSE_LOOKUP_TABLE.remove(handle); }
-    }
+    private static void release(long handle) { REVERSE_LOOKUP_TABLE.remove(handle); }
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -361,6 +360,12 @@ public class C4Replicator extends C4NativePeer {
 
     public void stop() { stop(getPeer()); }
 
+    public void close() {
+        final long handle = getPeer();
+        if (handle == 0) { return; }
+        release(handle);
+    }
+
     @Nullable
     public C4ReplicatorStatus getStatus() { return getStatus(getPeer()); }
 
@@ -384,22 +389,20 @@ public class C4Replicator extends C4NativePeer {
         finally { result.free(); }
     }
 
-    // Several bugs have been reported, near here:
-    // Usually: JNI DETECTED ERROR IN APPLICATION: use of deleted global reference
-    // https://issues.couchbase.com/browse/CBL-34
+    // Note: the reference in the REVERSE_LOOKUP_TABLE must already be gone, or we wouldn't be here...
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         final long handle = getPeerAndClear();
 
-        // !!! the two arguments may already be gone
-        if (handle != 0) { free(handle, replicatorContext, socketFactoryContext); }
-
-        release(handle);
+        if (handle != 0) {
+            stop(handle);
+            // !!! the two arguments to free may already be gone
+            free(handle, replicatorContext, socketFactoryContext);
+        }
 
         super.finalize();
     }
-
 
     //-------------------------------------------------------------------------
     // native methods

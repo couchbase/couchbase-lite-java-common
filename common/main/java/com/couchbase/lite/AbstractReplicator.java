@@ -291,8 +291,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     final ReplicatorConfiguration config;
 
-    private final Object lock = new Object();
-
     private final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
     @GuardedBy("lock")
@@ -319,15 +317,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @GuardedBy("lock")
     private C4ReplicationFilter c4ReplPullFilter;
 
-    // Reset the replicator checkpoint.
-    private volatile boolean resetCheckpoint;
-
     // Do something with these (for auth)
     @GuardedBy("lock")
     private Map<String, Object> responseHeaders;
 
     @GuardedBy("lock")
     private CouchbaseLiteException lastError;
+
+    // Reset the replicator checkpoint.
+    private volatile boolean resetCheckpoint;
 
     private volatile String desc;
 
@@ -385,9 +383,10 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * and the replicator change notification will be notified accordingly.
      */
     public void stop() {
-        Log.i(DOMAIN, "%s: Replicator is stopping ...", this);
-        // ??? this seems weird... Create it just to stop it??
-        getOrCreateC4Replicator().stop();
+        final C4Replicator c4repl = getC4Replicator();
+        Log.i(DOMAIN, "%s: Replicator is stopping (%s)", this, c4repl);
+        if (c4repl == null) { return; }
+        c4repl.stop();
     }
 
     /**
@@ -571,6 +570,17 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @GuardedBy("lock")
     protected abstract C4Replicator createReplicatorForTarget(Endpoint target) throws LiteCoreException;
 
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        final C4Replicator c4Repl = getC4Replicator();
+        if (c4Repl == null) { return; }
+
+        c4Repl.close();
+
+        super.finalize();
+    }
+
     /**
      * Create and return a c4Replicator targeting the passed URI
      *
@@ -592,15 +602,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         final boolean continuous = config.isContinuous();
 
-        return config.getDatabase().createRemoteReplicator(
+        return getDatabase().createRemoteReplicator(
             (Replicator) this,
             remoteUri.getScheme(),
             remoteUri.getHost(),
             port,
             path,
             dbName,
-            mkmode(config.isPush(), continuous),
-            mkmode(config.isPull(), continuous),
+            makeMode(config.isPush(), continuous),
+            makeMode(config.isPull(), continuous),
             getFleeceOptions(),
             c4ReplListener,
             c4ReplPushFilter,
@@ -620,11 +630,11 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     protected final C4Replicator getLocalC4Replicator(@NonNull Database otherDb) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
-        return config.getDatabase().createLocalReplicator(
+        return getDatabase().createLocalReplicator(
             (Replicator) this,
             otherDb,
-            mkmode(config.isPush(), continuous),
-            mkmode(config.isPull(), continuous),
+            makeMode(config.isPush(), continuous),
+            makeMode(config.isPull(), continuous),
             getFleeceOptions(),
             c4ReplListener,
             c4ReplPushFilter,
@@ -643,15 +653,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     protected final C4Replicator getMessageC4Replicator(int framing) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
-        return config.getDatabase().createRemoteReplicator(
+        return getDatabase().createRemoteReplicator(
             (Replicator) this,
             C4Socket.MESSAGE_SCHEME,
             null,
             0,
             null,
             null,
-            mkmode(config.isPush(), continuous),
-            mkmode(config.isPull(), continuous),
+            makeMode(config.isPush(), continuous),
+            makeMode(config.isPull(), continuous),
             getFleeceOptions(),
             c4ReplListener,
             c4ReplPushFilter,
@@ -698,7 +708,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
 
         if (c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED) {
-            config.getDatabase().removeActiveReplicator((Replicator) this); // this is likely to dealloc me
+            getDatabase().removeActiveReplicator((Replicator) this); // this is likely to dealloc me
         }
 
         for (ReplicatorChangeListenerToken token: tokens) { token.notify(change); }
@@ -764,7 +774,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     @NonNull
     private C4Replicator getOrCreateC4Replicator() {
-        synchronized (lock) {
+        // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
+        synchronized (config.getDatabase().getLock()) {
             C4Replicator c4Repl = getC4Replicator();
             if (c4Repl == null) {
                 setupFilters();
@@ -818,7 +829,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         final ExecutionService.CloseableExecutor executor
             = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
-        final Database db = config.getDatabase();
+        final Database db = getDatabase();
         final ConflictResolver resolver = config.getConflictResolver();
         final Fn.Consumer<CouchbaseLiteException> task = new Fn.Consumer<CouchbaseLiteException>() {
             public void accept(CouchbaseLiteException err) { onConflictResolved(this, docId, flags, err); }
@@ -852,27 +863,28 @@ public abstract class AbstractReplicator extends InternalReplicator {
         return optionsFleece;
     }
 
-    @GuardedBy("lock")
     private void setupFilters() {
-        if (config.getPushFilter() != null) {
-            c4ReplPushFilter = (docID, revId, flags, dict, isPush, context) ->
-                ((AbstractReplicator) context).filterDocument(docID, revId, documentFlags(flags), dict, isPush);
-        }
+        synchronized (lock) {
+            if (config.getPushFilter() != null) {
+                c4ReplPushFilter = (docID, revId, flags, dict, isPush, context) ->
+                    ((AbstractReplicator) context).filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
+            }
 
-        if (config.getPullFilter() != null) {
-            c4ReplPullFilter = (docID, revId, flags, dict, isPush, context) ->
-                ((AbstractReplicator) context).filterDocument(docID, revId, documentFlags(flags), dict, isPush);
+            if (config.getPullFilter() != null) {
+                c4ReplPullFilter = (docID, revId, flags, dict, isPush, context) ->
+                    ((AbstractReplicator) context).filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
+            }
         }
     }
 
-    private int mkmode(boolean active, boolean continuous) {
+    private int makeMode(boolean active, boolean continuous) {
         final C4ReplicatorMode mode = (!active)
             ? C4ReplicatorMode.C4_DISABLED
             : ((continuous) ? C4ReplicatorMode.C4_CONTINUOUS : C4ReplicatorMode.C4_ONE_SHOT);
         return mode.getVal();
     }
 
-    private EnumSet<DocumentFlag> documentFlags(int flags) {
+    private EnumSet<DocumentFlag> getDocumentFlags(int flags) {
         final EnumSet<DocumentFlag> documentFlags = EnumSet.noneOf(DocumentFlag.class);
         if ((flags & C4Constants.RevisionFlags.DELETED) == C4Constants.RevisionFlags.DELETED) {
             documentFlags.add(DocumentFlag.DocumentFlagsDeleted);
@@ -890,8 +902,10 @@ public abstract class AbstractReplicator extends InternalReplicator {
         long dict,
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
-        return filter.filtered(new Document(config.getDatabase(), docId, revId, new FLDict(dict)), flags);
+        return filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
     }
+
+    private Database getDatabase() { return config.getDatabase(); }
 
     // Decompose a path into its elements.
     private Deque<String> splitPath(String fullPath) {
@@ -902,7 +916,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         return path;
     }
 
-    private String description() { return baseDesc() + "," + config.getDatabase() + "," + config.getTarget() + "]"; }
+    private String description() { return baseDesc() + "," + getDatabase() + "," + config.getTarget() + "]"; }
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private String simpleDesc() { return baseDesc() + "}"; }

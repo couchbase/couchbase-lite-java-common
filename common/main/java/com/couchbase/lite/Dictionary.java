@@ -55,19 +55,19 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
 
     Dictionary() {
         internalDict = new MDict();
-        lock = getSharedLock();
+        lock = getDbLock();
     }
 
     Dictionary(MValue mv, MCollection parent) {
         internalDict = new MDict();
         internalDict.initInSlot(mv, parent);
-        lock = getSharedLock();
+        lock = getDbLock();
     }
 
     Dictionary(MDict mDict, boolean isMutable) {
         internalDict = new MDict();
         internalDict.initAsCopyOf(mDict, isMutable);
-        lock = getSharedLock();
+        lock = getDbLock();
     }
 
     //-------------------------------------------------------------------------
@@ -401,13 +401,12 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     //---------------------------------------------
 
     @NonNull
-    private Object getSharedLock() {
+    private Object getDbLock() {
         final MContext context = internalDict.getContext();
         if (context instanceof DbContext) {
             final Database db = ((DbContext) context).getDatabase();
             if (db != null) { return db.getLock(); }
         }
-        // ??? what kind of fresh horror is this??
         return new Object();
     }
 
