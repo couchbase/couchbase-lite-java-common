@@ -39,7 +39,14 @@ public abstract class C4NativePeer extends AtomicLong {
     // This more than a smell, this is a reek.  Please don't use it.
     protected final void setPeer(long handle) { setPeerHandle(handle); }
 
-    // This doesn't entirely solve the peer management problem:
+    protected final long getPeerHandleUnchecked() { return get(); }
+
+    protected long getPeerAndClear() {
+        if (CouchbaseLiteInternal.isDebugging()) { cleared = new Exception(); }
+        return getAndSet(0L);
+    }
+
+    // None of the methods below actually solve the peer management problem.
     // It is still entirely possible that the peer whose handle is
     // returned by this method, will be freed while the client is still using it.
     protected final long getPeer() {
@@ -50,33 +57,6 @@ public abstract class C4NativePeer extends AtomicLong {
         }
 
         return handle;
-    }
-
-    protected long getPeerAndClear() {
-        if (CouchbaseLiteInternal.isDebugging()) { cleared = new Exception(); }
-        return getAndSet(0L);
-    }
-
-    protected final long getPeerHandleUnchecked() { return get(); }
-
-    protected void withPeerVoid(Fn.Consumer<Long> fn) {
-        final long handle = get();
-        if (handle == 0) {
-            logBadCall();
-            return;
-        }
-
-        fn.accept(handle);
-    }
-
-    protected void withPeerVoidThrows(Fn.ConsumerThrows<Long, LiteCoreException> fn) throws LiteCoreException {
-        final long handle = get();
-        if (handle == 0) {
-            logBadCall();
-            return;
-        }
-
-        fn.accept(handle);
     }
 
     protected <T> T withPeer(T def, Fn.Function<Long, T> fn) {

@@ -505,9 +505,9 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_creat
 
     C4Error error;
     C4Replicator *repl = c4repl_newLocal((C4Database *) jdb,
-                                    (C4Database *) jotherLocalDB,
-                                    params,
-                                    &error);
+                                         (C4Database *) jotherLocalDB,
+                                         params,
+                                         &error);
     if (!repl) {
         throwError(env, error);
         return 0;
@@ -525,13 +525,13 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_creat
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(JNIEnv *env,
-                              jclass clazz,
-                              jlong jdb,
-                              jlong jopenSocket,
-                              jint jpush,
-                              jint jpull,
-                              jobject jReplicatorContext,
-                              jbyteArray joptions) {
+                                                                    jclass clazz,
+                                                                    jlong jdb,
+                                                                    jlong jopenSocket,
+                                                                    jint jpush,
+                                                                    jint jpull,
+                                                                    jobject jReplicatorContext,
+                                                                    jbyteArray joptions) {
     C4Database *db = (C4Database *) jdb;
     C4Socket *openSocket = (C4Socket *) jopenSocket;
     jbyteArraySlice options(env, joptions, false);
@@ -658,31 +658,11 @@ Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
- * Method:    mayBeTransient
- * Signature: (III)Z
+ * Method:    setHostReachable
+ * Signature: (JZ)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_mayBeTransient(JNIEnv *env,
-                                                                  jclass clazz,
-                                                                  jint domain,
-                                                                  jint code,
-                                                                  jint ii) {
-    C4Error c4Error = {(C4ErrorDomain) domain, code, ii};
-    return c4error_mayBeTransient(c4Error);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
- * Method:    mayBeNetworkDependent
- * Signature: (III)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_mayBeNetworkDependent(JNIEnv *env,
-                                                                         jclass clazz,
-                                                                         jint domain,
-                                                                         jint code,
-                                                                         jint ii) {
-    C4Error c4Error = {(C4ErrorDomain) domain, code, ii};
-    return c4error_mayBeNetworkDependent(c4Error);
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_setHostReachable
+        (JNIEnv *env, jclass clazz, jlong repl, jboolean reachable) {
+    c4repl_setHostReachable((C4Replicator *) repl, (bool) reachable);
 }
 

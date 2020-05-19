@@ -1,6 +1,4 @@
 //
-// C4Replicator.java
-//
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -389,6 +387,8 @@ public class C4Replicator extends C4NativePeer {
         finally { result.free(); }
     }
 
+    public void setHostReachable(boolean reachable) { setHostReachable(getPeer(), reachable); }
+
     // Note: the reference in the REVERSE_LOOKUP_TABLE must already be gone, or we wouldn't be here...
     @SuppressWarnings("NoFinalizer")
     @Override
@@ -502,5 +502,10 @@ public class C4Replicator extends C4NativePeer {
      * Returns true if there are documents that have not been resolved.
      */
     private static native boolean isDocumentPending(long handle, String id) throws LiteCoreException;
+
+    /**
+     * Hint to core about the reachability of the target of this replicator.
+     */
+    private static native void setHostReachable(long handle, boolean reachable);
 }
 

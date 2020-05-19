@@ -1,6 +1,4 @@
 //
-// C4Database.java
-//
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,6 +31,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyMethods", "PMD.ExcessiveParameterList"})
@@ -317,9 +316,9 @@ public class C4Database extends C4NativePeer {
     public FLValue getIndexes() throws LiteCoreException { return new FLValue(C4Query.getIndexes(getPeer())); }
 
     public boolean performMaintenance(MaintenanceType type) throws LiteCoreException {
-        final Integer iType = MAINTENANCE_TYPE_MAP.get(type);
-        if (iType == null) { throw new IllegalArgumentException("Unrecognized maintenance type: " + type); }
-        return maintenance(getPeer(), iType);
+        return maintenance(
+            getPeer(),
+            Preconditions.assertNotNull(MAINTENANCE_TYPE_MAP.get(type), "Unrecognized maintenance type: " + type));
     }
 
     ////////////////////////////////
@@ -509,5 +508,5 @@ public class C4Database extends C4NativePeer {
 
     private static native long getFLSharedKeys(long db);
 
-    private static native boolean maintenance(long db, int type);
+    private static native boolean maintenance(long db, int type) throws LiteCoreException;
 }

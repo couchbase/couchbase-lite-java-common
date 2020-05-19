@@ -1,6 +1,4 @@
 //
-// AbstractReplicator.java
-//
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -63,8 +61,8 @@ import com.couchbase.lite.utils.Fn;
 
 /**
  * A replicator for replicating document changes between a local database and a target database.
- * The replicator can be bidirectional or either push or pull. The replicator can also be one-short
- * or continuous. The replicator runs asynchronously, so observe the status property to
+ * The replicator can be bidirectional or either push or pull. The replicator can also be one-shot
+ * or continuous. The replicator runs asynchronously, so observe the status to
  * be notified of progress.
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
@@ -82,7 +80,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
         m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
         ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
-
 
     /**
      * Activity level of a replicator.
@@ -279,7 +276,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
     }
 
-
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////  R E P L I C A T O R   ////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -287,7 +283,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-
     @NonNull
     final ReplicatorConfiguration config;
 
@@ -570,6 +565,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @GuardedBy("lock")
     protected abstract C4Replicator createReplicatorForTarget(Endpoint target) throws LiteCoreException;
 
+    protected abstract void handleOffline(ActivityLevel prevState, boolean nowOnline);
+
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
@@ -688,6 +685,12 @@ public abstract class AbstractReplicator extends InternalReplicator {
                 "%s: status changed: (%d, %d) @%s",
                 this, pendingResolutions.size(), pendingStatusNotifications.size(), c4Status);
 
+            if (config.isContinuous()) {
+                handleOffline(
+                    status.getActivityLevel(),
+                    c4Status.getActivityLevel() != C4ReplicatorStatus.ActivityLevel.OFFLINE);
+            }
+
             if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
 
@@ -708,7 +711,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
 
         if (c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED) {
-            getDatabase().removeActiveReplicator((Replicator) this); // this is likely to dealloc me
+            // this will probably make this instance eligible for garbage collection...
+            getDatabase().removeActiveReplicator((Replicator) this);
         }
 
         for (ReplicatorChangeListenerToken token: tokens) { token.notify(change); }
@@ -791,9 +795,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
     }
 
-    private boolean isSameReplicator(C4Replicator repl) {
-        synchronized (lock) { return repl == getC4Replicator(); }
-    }
+    private boolean isSameReplicator(C4Replicator repl) { return repl == getC4Replicator(); }
 
     @GuardedBy("lock")
     private C4ReplicatorStatus updateStateProperties(@NonNull C4ReplicatorStatus c4Status) {

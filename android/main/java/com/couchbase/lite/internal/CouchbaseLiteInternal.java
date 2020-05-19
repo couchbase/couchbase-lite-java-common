@@ -40,6 +40,7 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.R;
 import com.couchbase.lite.internal.core.C4Base;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -60,8 +61,10 @@ public final class CouchbaseLiteInternal {
     private static final String TEMP_DIR_NAME = "CouchbaseLiteTemp";
     private static final String DB_DIR_NAME = ".couchbase";
 
-    private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
+
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
+    private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
+    private static final AtomicReference<NetworkConnectivityManager> CONNECTIVITY_MANAGER = new AtomicReference<>();
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
@@ -104,6 +107,16 @@ public final class CouchbaseLiteInternal {
     }
 
     public static boolean isDebugging() { return debugging; }
+
+    public static NetworkConnectivityManager getNetworkConnectivityManager() {
+        NetworkConnectivityManager connectivityMgr = CONNECTIVITY_MANAGER.get();
+        if (connectivityMgr == null) {
+            CONNECTIVITY_MANAGER.compareAndSet(null, new AndroidConnectivityManager());
+            connectivityMgr = CONNECTIVITY_MANAGER.get();
+        }
+        return connectivityMgr;
+    }
+
 
     public static ExecutionService getExecutionService() {
         ExecutionService executionService = EXECUTION_SERVICE.get();

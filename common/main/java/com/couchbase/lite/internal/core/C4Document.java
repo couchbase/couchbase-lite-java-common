@@ -1,6 +1,4 @@
 //
-// C4Document.java
-//
 // Copyright (c) 2017 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -69,23 +67,21 @@ public class C4Document extends C4NativePeer {
 
     public int getSelectedFlags() { return withPeer(0, C4Document::getSelectedFlags); }
 
-    public void save(int maxRevTreeDepth) throws LiteCoreException {
-        withPeerVoidThrows(h -> save(h, maxRevTreeDepth));
-    }
+    public void save(int maxRevTreeDepth) throws LiteCoreException { save(getPeer(), maxRevTreeDepth); }
 
     // - Revisions
 
     public boolean selectNextRevision() { return withPeer(false, C4Document::selectNextRevision); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
-        withPeerVoidThrows(h -> selectNextLeafRevision(h, includeDeleted, withBody));
+        selectNextLeafRevision(getPeer(), includeDeleted, withBody);
     }
 
     // - Purging and Expiration
 
     public void resolveConflict(String winningRevID, String losingRevID, byte[] mergeBody, int mergedFlags)
         throws LiteCoreException {
-        withPeerVoidThrows(h -> resolveConflict(h, winningRevID, losingRevID, mergeBody, mergedFlags));
+       resolveConflict(getPeer(), winningRevID, losingRevID, mergeBody, mergedFlags);
     }
 
     // - Creating and Updating Documents
@@ -150,7 +146,7 @@ public class C4Document extends C4NativePeer {
     boolean selectCurrentRevision() { return withPeer(false, C4Document::selectCurrentRevision); }
 
     @VisibleForTesting
-    void loadRevisionBody() throws LiteCoreException { withPeerVoidThrows(C4Document::loadRevisionBody); }
+    void loadRevisionBody() throws LiteCoreException { loadRevisionBody(getPeer()); }
 
     @VisibleForTesting
     boolean hasRevisionBody() { return withPeer(false, C4Document::hasRevisionBody); }
