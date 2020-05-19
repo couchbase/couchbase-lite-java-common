@@ -18,36 +18,41 @@ package com.couchbase.lite.internal.replicator;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.AbstractReplicator;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.utils.Fn;
 
 
 public class AndroidConnectivityObserver implements NetworkConnectivityManager.Observer {
+    @NonNull
+    private final NetworkConnectivityManager connectivityManager;
+    @NonNull
     private final Fn.Provider<C4Replicator> replFactory;
 
-    public AndroidConnectivityObserver(Fn.Provider<C4Replicator> replFactory) { this.replFactory = replFactory; }
-
-    public void handleOffline(@NonNull AbstractReplicator.ActivityLevel prevLevel, boolean nowOnline) {
-        final NetworkConnectivityManager mgr = CouchbaseLiteInternal.getNetworkConnectivityManager();
-        if (mgr == null) { return; }
-
-        if (nowOnline) {
-            mgr.unregisterObserver(this);
-            return;
-        }
-
-        if (prevLevel.equals(AbstractReplicator.ActivityLevel.OFFLINE)) { return; }
-
-        mgr.registerObserver(this);
-
-        onConnectivityChanged(mgr.isConnected());
+    public AndroidConnectivityObserver(
+        @NonNull NetworkConnectivityManager connectivityManager,
+        @NonNull Fn.Provider<C4Replicator> replFactory) {
+        this.connectivityManager = connectivityManager;
+        this.replFactory = replFactory;
     }
 
+    @Override
     public void onConnectivityChanged(boolean connected) {
         final C4Replicator c4Repl = replFactory.get();
         if (c4Repl == null) { return; }
 
         c4Repl.setHostReachable(connected);
+    }
+
+    public void handleOffline(@NonNull AbstractReplicator.ActivityLevel prevLevel, boolean nowOnline) {
+        if (nowOnline) {
+            connectivityManager.unregisterObserver(this);
+            return;
+        }
+
+        if (prevLevel.equals(AbstractReplicator.ActivityLevel.OFFLINE)) { return; }
+
+        connectivityManager.registerObserver(this);
+
+        onConnectivityChanged(connectivityManager.isConnected());
     }
 }

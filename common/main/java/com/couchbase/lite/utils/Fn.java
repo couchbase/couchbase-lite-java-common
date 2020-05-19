@@ -31,4 +31,6 @@ public interface Fn {
     interface Consumer<T> { void accept(T x); }
     @FunctionalInterface
     interface TaskThrows<E extends Throwable> { void run() throws E; }
+    @FunctionalInterface
+    interface Runner { void run(Runnable r); }
 }

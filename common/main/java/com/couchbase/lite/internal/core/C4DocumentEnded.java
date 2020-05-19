@@ -64,7 +64,10 @@ public class C4DocumentEnded {
     @NonNull
     @Override
     public String toString() {
-        return "C4DocumentEnded{id=" + docID + ",rev=" + revID + ",flags=" + flags
-            + ",error=@" + errorDomain + "#" + errorCode + "(" + errorInternalInfo + "):" + errorIsTransient + "}";
+        return "C4DocumentEnded{id=" + docID
+            + ",rev=" + revID
+            + ",flags=" + flags
+            + ",error=@" + errorDomain + "#" + errorCode + "(" + errorInternalInfo + "):" + errorIsTransient
+            + "}";
     }
 }

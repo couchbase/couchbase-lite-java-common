@@ -35,6 +35,7 @@ import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -186,7 +187,9 @@ public class C4Replicator extends C4NativePeer {
     @SuppressWarnings("unused")
     static void statusChangedCallback(long handle, @Nullable C4ReplicatorStatus status) {
         final C4Replicator repl = getReplicatorForHandle(handle);
-        Log.d(LogDomain.REPLICATOR, "statusChangedCallback() handle: " + handle + ", status: " + status);
+        Log.d(
+            LogDomain.REPLICATOR,
+            "C4Replicator.statusChangedCallback @" + Long.toHexString(handle) + ", status: " + status);
         if (repl == null) { return; }
 
         final C4ReplicatorListener listener = repl.listener;
@@ -195,7 +198,9 @@ public class C4Replicator extends C4NativePeer {
 
     @SuppressWarnings("unused")
     static void documentEndedCallback(long handle, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
-        Log.d(LogDomain.REPLICATOR, "documentEndedCallback() handle: " + handle + ", pushing: " + pushing);
+        Log.d(
+            LogDomain.REPLICATOR,
+            "C4Replicator.documentEndedCallback @" + Long.toHexString(handle) + ", pushing: " + pushing);
 
         final C4Replicator repl = getReplicatorForHandle(handle);
         if (repl == null) { return; }
@@ -232,7 +237,11 @@ public class C4Replicator extends C4NativePeer {
     @GuardedBy("CLASS_LOCK")
     private static void bind(@NonNull C4Replicator repl) {
         Preconditions.assertNotNull(repl, "repl");
-        REVERSE_LOOKUP_TABLE.put(repl.getPeer(), repl);
+        final long handle = repl.getPeer();
+        Log.d(
+            LogDomain.REPLICATOR,
+            "Binding native replicator @0x" + Long.toHexString(handle) + " => " + ClassUtils.objId(repl));
+        REVERSE_LOOKUP_TABLE.put(handle, repl);
     }
 
     private static void release(long handle) { REVERSE_LOOKUP_TABLE.remove(handle); }

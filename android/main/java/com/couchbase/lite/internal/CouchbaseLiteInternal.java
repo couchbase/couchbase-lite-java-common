@@ -111,7 +111,7 @@ public final class CouchbaseLiteInternal {
     public static NetworkConnectivityManager getNetworkConnectivityManager() {
         NetworkConnectivityManager connectivityMgr = CONNECTIVITY_MANAGER.get();
         if (connectivityMgr == null) {
-            CONNECTIVITY_MANAGER.compareAndSet(null, new AndroidConnectivityManager());
+            CONNECTIVITY_MANAGER.compareAndSet(null, AndroidConnectivityManager.newInstance());
             connectivityMgr = CONNECTIVITY_MANAGER.get();
         }
         return connectivityMgr;

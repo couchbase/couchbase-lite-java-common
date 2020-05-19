@@ -22,6 +22,7 @@ import android.support.annotation.VisibleForTesting;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -57,6 +58,7 @@ import com.couchbase.lite.internal.core.SharedKeys;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.utils.FileUtils;
@@ -96,6 +98,7 @@ abstract class AbstractDatabase {
     private static final int MAX_CHANGES = 100;
 
     private static final int SHUTDOWN_DELAY_SECS = 30;
+    private static final int MAX_CLOSE_RETRIES = 3;
 
     // A random but absurdly large number.
     private static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
@@ -235,7 +238,7 @@ abstract class AbstractDatabase {
     @GuardedBy("activeLiveQueries")
     private final Set<LiveQuery> activeLiveQueries;
     @GuardedBy("activeReplications")
-    private final Set<Replicator> activeReplicators;
+    private final Set<AbstractReplicator> activeReplicators;
     @GuardedBy("dbLock")
     private final Map<String, DocumentChangeNotifier> docChangeNotifiers;
 
@@ -672,14 +675,18 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(token, "token");
 
         synchronized (dbLock) {
-            if (!(token instanceof ChangeListenerToken) || (((ChangeListenerToken) token).getKey() == null)) {
-                removeDatabaseChangeListenerLocked(token);
+            if (token instanceof ChangeListenerToken) {
+                final ChangeListenerToken changeListenerToken = (ChangeListenerToken) token;
+                if (changeListenerToken.getKey() != null) {
+                    removeDocumentChangeListenerLocked(changeListenerToken);
+                    return;
+                }
             }
-            else {
-                removeDocumentChangeListenerLocked((ChangeListenerToken) token);
-            }
+
+            removeDatabaseChangeListenerLocked(token);
         }
     }
+
 
     /**
      * Adds a change listener for the changes that occur to the specified document.
@@ -791,9 +798,7 @@ abstract class AbstractDatabase {
 
     @NonNull
     @Override
-    public String toString() {
-        return "Database{@" + Integer.toHexString(hashCode()) + ", name='" + name + "'}";
-    }
+    public String toString() { return "Database{" + ClassUtils.objId(this) + ", name='" + name + "'}"; }
 
     //---------------------------------------------
     // Protected level access
@@ -892,10 +897,9 @@ abstract class AbstractDatabase {
 
     // This method is not thread safe
     void removeActiveLiveQuery(@NonNull LiveQuery query, @NonNull ListenerToken token) {
-        synchronized (activeLiveQueries) {
-            if (activeLiveQueries.remove(query) && (closeLatch != null)) { closeLatch.countDown(); }
-        }
         removeChangeListener(token);
+        synchronized (activeLiveQueries) { activeLiveQueries.remove(query); }
+        verifyActiveProcesses();
     }
 
     C4Query createQuery(@NonNull String json) throws LiteCoreException {
@@ -963,7 +967,6 @@ abstract class AbstractDatabase {
                 replicator,
                 socketFactoryContext,
                 framing);
-            addActiveReplicator(replicator);
         }
         return c4Repl;
     }
@@ -991,15 +994,20 @@ abstract class AbstractDatabase {
                 pushFilter,
                 pullFilter,
                 replicator);
-            addActiveReplicator(replicator);
         }
         return c4Repl;
     }
 
-    void removeActiveReplicator(Replicator replicator) {
-        synchronized (activeReplicators) {
-            if (activeReplicators.remove(replicator) && (closeLatch != null)) { closeLatch.countDown(); }
-        }
+    // This method is *NOT* thread safe.
+    // If used wo/synchronization, there is a race on the open db
+    void addActiveReplicator(AbstractReplicator replicator) {
+        mustBeOpen();
+        synchronized (activeReplicators) { activeReplicators.add(replicator); }
+    }
+
+    void removeActiveReplicator(AbstractReplicator replicator) {
+        synchronized (activeReplicators) { activeReplicators.remove(replicator); }
+        verifyActiveProcesses();
     }
 
     //////// RESOLVING REPLICATED CONFLICTS:
@@ -1540,11 +1548,35 @@ abstract class AbstractDatabase {
         }
     }
 
-    // This method is *NOT* thread safe.
-    // If used wo/synchronization, there is a race on the open db
-    private void addActiveReplicator(Replicator replicator) {
-        mustBeOpen();
-        synchronized (activeReplicators) { activeReplicators.add(replicator); }
+    private void verifyActiveProcesses() {
+        final Set<LiveQuery> queries;
+        final Set<LiveQuery> deadQueries = new HashSet<>();
+        synchronized (activeLiveQueries) { queries = new HashSet<>(activeLiveQueries); }
+        for (LiveQuery query: queries) {
+            if (LiveQuery.State.STOPPED.equals(query.getState())) {
+                Log.w(LogDomain.QUERY, "Found active stopped query: " + query);
+                deadQueries.add(query);
+            }
+        }
+        synchronized (activeLiveQueries) { activeLiveQueries.removeAll(deadQueries); }
+
+        final Set<AbstractReplicator> replications;
+        final Set<AbstractReplicator> deadReplications = new HashSet<>();
+        synchronized (activeReplicators) { replications = new HashSet<>(activeReplicators); }
+        for (AbstractReplicator replicator: replications) {
+            if (AbstractReplicator.ActivityLevel.STOPPED.equals(replicator.getState())) {
+                Log.w(LogDomain.QUERY, "Found active stopped replicator: " + replicator);
+                deadReplications.add(replicator);
+            }
+        }
+        synchronized (activeReplicators) { activeReplicators.removeAll(deadReplications); }
+
+        if (closeLatch != null) {
+            int processes;
+            synchronized (activeLiveQueries) { processes = activeLiveQueries.size(); }
+            synchronized (activeReplicators) { processes += activeReplicators.size(); }
+            if (processes <= 0) { closeLatch.countDown(); }
+        }
     }
 
     private void shutdown(Fn.ConsumerThrows<C4Database, LiteCoreException> onShut) throws CouchbaseLiteException {
@@ -1561,17 +1593,21 @@ abstract class AbstractDatabase {
             freeC4DbObserver();
             docChangeNotifiers.clear();
 
-            closeLatch = new CountDownLatch(activeLiveQueries.size() + activeReplicators.size());
+            closeLatch = new CountDownLatch(1);
 
-            shutdownLiveQueries(activeLiveQueries);
+            synchronized (activeLiveQueries) { shutdownLiveQueries(activeLiveQueries); }
 
-            shutdownReplicators(activeReplicators);
+            synchronized (activeReplicators) { shutdownReplicators(activeReplicators); }
 
             // the replicators won't be able to shut down until this lock is released
         }
 
-        try { closeLatch.await(); }
-        catch (InterruptedException ignore) { }
+        for (int i = 0; closeLatch.getCount() > 0; i++) {
+            if (i >= MAX_CLOSE_RETRIES) { throw new IllegalStateException("Shutdown failed"); }
+            verifyActiveProcesses();
+            try { closeLatch.await(SHUTDOWN_DELAY_SECS, TimeUnit.SECONDS); }
+            catch (InterruptedException ignore) { }
+        }
 
         synchronized (dbLock) {
             try { onShut.accept(c4Db); }
@@ -1591,15 +1627,15 @@ abstract class AbstractDatabase {
     }
 
     // called from the finalizer
-    private void shutdownLiveQueries(Set<LiveQuery> liveQueries) {
+    private void shutdownLiveQueries(Collection<LiveQuery> liveQueries) {
         if (liveQueries == null) { return; }
         for (LiveQuery query: liveQueries) { query.stop(); }
     }
 
     // called from the finalizer
-    private void shutdownReplicators(Set<Replicator> replicators) {
+    private void shutdownReplicators(Collection<AbstractReplicator> replicators) {
         if (replicators == null) { return; }
-        for (Replicator repl: replicators) { repl.stop(); }
+        for (AbstractReplicator repl: replicators) { repl.stop(); }
     }
 
     // called from the finalizer

@@ -149,12 +149,12 @@ public class Collation {
     @NonNull
     @Override
     public String toString() {
-        return "Collation{" +
-            "isUnicode=" + isUnicode +
-            ", ignoreCase=" + ignoreCase +
-            ", ignoreAccents=" + ignoreAccents +
-            ", locale='" + locale + '\'' +
-            '}';
+        return "Collation{"
+            + "isUnicode=" + isUnicode
+            + ",ignoreCase=" + ignoreCase
+            + ",ignoreAccents=" + ignoreAccents
+            + ",locale=" + locale
+            + '}';
     }
 
     Object asJSON() {

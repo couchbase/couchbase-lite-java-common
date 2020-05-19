@@ -37,6 +37,7 @@ import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -434,7 +435,9 @@ public final class Blob implements FLEncodable {
      */
     @NonNull
     @Override
-    public String toString() { return "Blob[" + contentType + "; " + ((length() + 512) / 1024) + " KB]"; }
+    public String toString() {
+        return "Blob{" + ClassUtils.objId(this) + ",type=" + contentType + ",len=" + length() + "}";
+    }
 
     /**
      * Get the blob hash code.

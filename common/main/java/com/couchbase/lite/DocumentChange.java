@@ -51,9 +51,6 @@ public final class DocumentChange {
     @NonNull
     @Override
     public String toString() {
-        return "DocumentChange{" +
-            "database='" + database.getName() + '\'' +
-            "documentID='" + documentID + '\'' +
-            '}';
+        return "DocumentChange{database=" + database.getName() + ",documentID=" + documentID + "}";
     }
 }

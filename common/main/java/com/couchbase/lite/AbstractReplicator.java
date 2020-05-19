@@ -54,6 +54,7 @@ import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.lite.utils.Fn;
@@ -68,18 +69,6 @@ import com.couchbase.lite.utils.Fn;
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
 public abstract class AbstractReplicator extends InternalReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
-
-    private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
-
-    static {
-        final Map<Integer, ActivityLevel> m = new HashMap<>();
-        m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
-        m.put(C4ReplicatorStatus.ActivityLevel.OFFLINE, ActivityLevel.OFFLINE);
-        m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
-        m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
-        m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
-        ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
-    }
 
     /**
      * Activity level of a replicator.
@@ -162,8 +151,11 @@ public abstract class AbstractReplicator extends InternalReplicator {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
+        @NonNull
         private final ActivityLevel activityLevel;
+        @NonNull
         private final Progress progress;
+        @Nullable
         private final CouchbaseLiteException error;
 
         //---------------------------------------------
@@ -171,14 +163,17 @@ public abstract class AbstractReplicator extends InternalReplicator {
         //---------------------------------------------
 
         // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:
-        public Status(C4ReplicatorStatus c4Status) {
+        public Status(@NonNull C4ReplicatorStatus c4Status) {
             this(
-                ACTIVITY_LEVEL_FROM_C4.get(c4Status.getActivityLevel()),
+                getActivityLevelFromC4(c4Status.getActivityLevel()),
                 new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
                 c4Status.getErrorCode() != 0 ? CBLStatus.convertError(c4Status.getC4Error()) : null);
         }
 
-        private Status(ActivityLevel activityLevel, Progress progress, CouchbaseLiteException error) {
+        private Status(
+            @NonNull ActivityLevel activityLevel,
+            @NonNull Progress progress,
+            @Nullable CouchbaseLiteException error) {
             this.activityLevel = activityLevel;
             this.progress = progress;
             this.error = error;
@@ -200,6 +195,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         @NonNull
         public Replicator.Progress getProgress() { return progress; }
 
+        @Nullable
         public CouchbaseLiteException getError() { return error; }
 
         @NonNull
@@ -276,6 +272,26 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
     }
 
+    private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
+
+    static {
+        final Map<Integer, ActivityLevel> m = new HashMap<>();
+        m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
+        m.put(C4ReplicatorStatus.ActivityLevel.OFFLINE, ActivityLevel.OFFLINE);
+        m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
+        m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
+        m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
+        ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
+    }
+
+    @NonNull
+    private static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
+        final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
+        if (level == null) { throw new IllegalStateException("Unrecognized activity level: " + c4ActivityLevel); }
+        return level;
+    }
+
+
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////  R E P L I C A T O R   ////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -303,8 +319,10 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private final SocketFactory socketFactory;
 
     @GuardedBy("lock")
+    @NonNull
     private Status status = new Status(ActivityLevel.IDLE, new Progress(0, 0), null);
     @GuardedBy("lock")
+    @NonNull
     private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
 
     @GuardedBy("lock")
@@ -351,12 +369,13 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * and will report its progress through the replicator change notification.
      */
     public void start(boolean resetCheckpoint) {
-        Log.i(DOMAIN, "Replicator is starting .....");
+        Log.i(DOMAIN, "Replicator is starting");
 
         this.resetCheckpoint = false; // reset the (deprecated) flag
 
-        final C4Replicator repl = getOrCreateC4Replicator();
+        getDatabase().addActiveReplicator(this);
 
+        final C4Replicator repl = getOrCreateC4Replicator();
         repl.start(resetCheckpoint);
 
         C4ReplicatorStatus status = repl.getStatus();
@@ -675,6 +694,11 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     CouchbaseLiteException getLastError() { return lastError; }
 
+    @NonNull
+    ActivityLevel getState() {
+        synchronized (lock) { return status.getActivityLevel(); }
+    }
+
     void c4StatusChanged(@NonNull C4ReplicatorStatus c4Status) {
         final ReplicatorChange change;
         final List<ReplicatorChangeListenerToken> tokens;
@@ -810,7 +834,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             lastError = error;
         }
 
-        final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4Status.getActivityLevel());
+        final ActivityLevel level = getActivityLevelFromC4(c4Status.getActivityLevel());
 
         status = new Status(
             level,
@@ -818,7 +842,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         Log.i(DOMAIN, "%s is %s, progress %d/%d, error: %s",
             this,
-            (level == null) ? "unknown" : level.toString(),
+            level.toString(),
             c4Status.getProgressUnitsCompleted(),
             c4Status.getProgressUnitsTotal(),
             error);
@@ -918,16 +942,16 @@ public abstract class AbstractReplicator extends InternalReplicator {
         return path;
     }
 
-    private String description() { return baseDesc() + "," + getDatabase() + "," + config.getTarget() + "]"; }
+    private String description() { return baseDesc() + "," + getDatabase() + " => " + config.getTarget() + "}"; }
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private String simpleDesc() { return baseDesc() + "}"; }
 
     private String baseDesc() {
-        return "Replicator{@"
-            + Integer.toHexString(hashCode()) + ","
+        return "Replicator{@0x" + ClassUtils.objId(this) + "("
             + (config.isPull() ? "<" : "")
             + (config.isContinuous() ? "*" : "-")
-            + (config.isPush() ? ">" : "");
+            + (config.isPush() ? ">" : "")
+            + ")";
     }
 }

@@ -1,5 +1,8 @@
 package com.couchbase.lite.internal.replicator;
 
+import android.support.annotation.NonNull;
+
+
 public interface NetworkConnectivityManager {
     interface Observer {
         void onConnectivityChanged(boolean connected);
@@ -7,7 +10,7 @@ public interface NetworkConnectivityManager {
 
     boolean isConnected();
 
-    void registerObserver(Observer observer);
+    void registerObserver(@NonNull Observer observer);
 
-    void unregisterObserver(Observer observer);
+    void unregisterObserver(@NonNull Observer observer);
 }

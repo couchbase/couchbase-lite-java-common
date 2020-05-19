@@ -28,6 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -71,7 +72,7 @@ public abstract class Expression {
         @NonNull
         private Object mapAsJSON(@NonNull Map<String, Object> map) {
             final Map<String, Object> json = new HashMap<>();
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
+            for (Map.Entry<String, Object> entry: map.entrySet()) {
                 json.put(entry.getKey(), asJSON(entry.getValue()));
             }
             return json;
@@ -81,7 +82,7 @@ public abstract class Expression {
         private Object listAsJSON(@NonNull List<Object> list) {
             final List<Object> json = new ArrayList<>();
             json.add("[]"); // Array Operation
-            for (Object obj : list) { json.add(asJSON(obj)); }
+            for (Object obj: list) { json.add(asJSON(obj)); }
             return json;
         }
 
@@ -119,7 +120,7 @@ public abstract class Expression {
         Object asJSON() {
             final List<Object> json = new ArrayList<>();
             json.add("[]");
-            for (Expression expr : expressions) { json.add(expr.asJSON()); }
+            for (Expression expr: expressions) { json.add(expr.asJSON()); }
             return json;
         }
     }
@@ -264,7 +265,7 @@ public abstract class Expression {
                     break;
             }
 
-            for (Expression expr : subexpressions) { json.add(expr.asJSON()); }
+            for (Expression expr: subexpressions) { json.add(expr.asJSON()); }
 
             return json;
         }
@@ -378,7 +379,7 @@ public abstract class Expression {
         Object asJSON() {
             final List<Object> json = new ArrayList<>();
             json.add(func);
-            for (Expression expr : params) { json.add(expr.asJSON()); }
+            for (Expression expr: params) { json.add(expr.asJSON()); }
             return json;
         }
     }
@@ -837,6 +838,6 @@ public abstract class Expression {
     @NonNull
     @Override
     public String toString() {
-        return String.format(Locale.ENGLISH, "%s[json=%s]", getClass().getSimpleName(), asJSON());
+        return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ",json=" + asJSON() + "}";
     }
 }

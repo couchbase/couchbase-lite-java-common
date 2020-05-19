@@ -18,6 +18,10 @@ package com.couchbase.lite.internal.core;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
+
 
 @SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
 public abstract class InternalReplicator {
@@ -27,6 +31,9 @@ public abstract class InternalReplicator {
     private C4Replicator c4Replicator;
 
     protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
+        Log.d(
+            LogDomain.REPLICATOR,
+            "Binding c4 replicator " + ClassUtils.objId(c4Repl) + " => " + ClassUtils.objId(this));
         synchronized (lock) { c4Replicator = c4Repl; }
     }
 

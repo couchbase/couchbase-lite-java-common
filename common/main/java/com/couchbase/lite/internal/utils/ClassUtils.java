@@ -23,4 +23,8 @@ public final class ClassUtils {
         if ((obj != null) && !clazz.isInstance(obj)) { return null; }
         return (T) obj;
     }
+
+    public static String objId(Object obj) {
+        return "@0x" + Integer.toHexString(System.identityHashCode(obj));
+    }
 }

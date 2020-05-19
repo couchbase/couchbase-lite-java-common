@@ -33,6 +33,7 @@ import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryOptions;
 import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -211,7 +212,7 @@ abstract class AbstractQuery implements Query {
     @NonNull
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[json=" + asJson() + "]";
+        return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ",json=" + asJson() + "}";
     }
 
     //---------------------------------------------

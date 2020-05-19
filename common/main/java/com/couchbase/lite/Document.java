@@ -33,6 +33,7 @@ import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.MRoot;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -426,16 +427,14 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @NonNull
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder("Document")
-            .append(isMutable() ? '+' : '.')
-            .append(isDeleted() ? '?' : '.')
-            .append('{').append(id).append('@').append(getRevisionID()).append(':');
+        final StringBuilder buf = new StringBuilder("Document{").append(ClassUtils.objId(this))
+            .append(id).append('@').append(getRevisionID())
+            .append('(').append(isMutable() ? '+' : '.').append(isDeleted() ? '?' : '.').append("):");
 
         boolean first = true;
         for (String key: getKeys()) {
             if (first) { first = false; }
             else { buf.append(','); }
-
             buf.append(key).append("=>").append(getValue(key));
         }
 

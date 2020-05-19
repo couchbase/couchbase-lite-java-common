@@ -369,10 +369,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @NonNull
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder("Dictionary")
+        final StringBuilder buf = new StringBuilder("Dictionary{(")
             .append((internalDict.isMutable()) ? '+' : '.')
             .append((internalDict.isMutated()) ? '!' : '.')
-            .append('{');
+            .append(')');
         boolean first = true;
         for (String key : getKeys()) {
             if (first) { first = false; }

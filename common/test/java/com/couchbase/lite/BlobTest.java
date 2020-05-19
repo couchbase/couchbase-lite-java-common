@@ -37,7 +37,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
 // There are other blob tests in test suites...
@@ -226,7 +225,7 @@ public class BlobTest extends BaseDbTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void testBlobFromFileURL() throws Exception {
+    public void testBlobFromFileURL() throws IOException {
         String contentType = "image/png";
         Blob blob = null;
         URL url = null;
@@ -239,9 +238,6 @@ public class BlobTest extends BaseDbTest {
             fos.close();
 
             blob = new Blob(contentType, path.toURI().toURL());
-        }
-        catch (Exception e) {
-            fail("Failed when writing to tempFile " + e);
         }
 
         byte[] bytes = IOUtils.toByteArray(path);
@@ -256,7 +252,7 @@ public class BlobTest extends BaseDbTest {
     }
 
     @Test
-    public void testBlobReadFunctions() throws Exception {
+    public void testBlobReadFunctions() throws IOException {
         byte[] bytes;
 
         try (InputStream is = getAsset("iTunesMusicLibrary.json")) {
@@ -264,35 +260,22 @@ public class BlobTest extends BaseDbTest {
         }
 
         Blob blob = new Blob("application/json", bytes);
-        try {
-            if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-                // The "iTunesMusicLibrary.json could have different size on Windows depending
-                // on the line endings.
-                assertTrue(blob.toString().equals("Blob[application/json; 6560 KB]") ||
-                    blob.toString().equals("Blob[application/json; 6572 KB]"));
-            }
-            else {
-                assertEquals("Blob[application/json; 6560 KB]", blob.toString());
-            }
-            assertEquals(blob.getContentStream().read(), bytes[0]);
+        assertTrue(blob.toString().matches("Blob\\{@0x\\w{6,8},type=application/json,len=67[12]\\d{4}\\}"));
+        assertEquals(blob.getContentStream().read(), bytes[0]);
 
-            blob = new Blob("application/json", bytes);
-            byte[] bytesReadFromBlob = new byte[bytes.length];
-            blob.getContentStream().read(bytesReadFromBlob, 0, bytes.length);
-            assertArrayEquals(bytesReadFromBlob, bytes);
+        blob = new Blob("application/json", bytes);
+        byte[] bytesReadFromBlob = new byte[bytes.length];
+        blob.getContentStream().read(bytesReadFromBlob, 0, bytes.length);
+        assertArrayEquals(bytesReadFromBlob, bytes);
 
-            blob = new Blob("application/json", bytes);
-            InputStream iStream = blob.getContentStream();
-            iStream.skip(2);
-            assertEquals(iStream.read(), bytes[2]);
-        }
-        catch (Exception e) {
-            fail("Failed when reading the blobs " + e);
-        }
+        blob = new Blob("application/json", bytes);
+        InputStream iStream = blob.getContentStream();
+        iStream.skip(2);
+        assertEquals(iStream.read(), bytes[2]);
     }
 
     @Test
-    public void testReadBlobStream() throws Exception {
+    public void testReadBlobStream() throws IOException, CouchbaseLiteException {
         byte[] bytes;
         try (InputStream is = getAsset("attachment.png")) { bytes = IOUtils.toByteArray(is); }
 
@@ -319,7 +302,7 @@ public class BlobTest extends BaseDbTest {
 
     @SuppressWarnings("ConstantConditions")
     @Test
-    public void testBlobConstructorsWithEmptyArgs() throws Exception {
+    public void testBlobConstructorsWithEmptyArgs() throws IOException {
         byte[] bytes;
         String contentType = "image/png";
 

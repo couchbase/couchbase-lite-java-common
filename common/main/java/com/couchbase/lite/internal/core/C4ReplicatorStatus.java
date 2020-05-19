@@ -99,12 +99,12 @@ public final class C4ReplicatorStatus {
     public String toString() {
         return "C4ReplicatorStatus{"
             + "level=" + activityLevel
-            + ", completed=" + progressUnitsCompleted
-            + ", total=" + progressUnitsTotal
-            + ", #docs=" + progressDocumentCount
-            + ", domain=" + errorDomain
-            + ", code=" + errorCode
-            + ", info=" + errorInternalInfo
+            + ",completed=" + progressUnitsCompleted
+            + ",total=" + progressUnitsTotal
+            + ",#docs=" + progressDocumentCount
+            + ",domain=" + errorDomain
+            + ",code=" + errorCode
+            + ",info=" + errorInternalInfo
             + '}';
     }
 }

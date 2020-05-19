@@ -23,6 +23,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -81,7 +82,7 @@ final class LiveQuery implements DatabaseChangeListener {
 
     @NonNull
     @Override
-    public String toString() { return "LiveQuery[" + query.toString() + "]"; }
+    public String toString() { return "LiveQuery{" + ClassUtils.objId(this) + "," + query.toString() + "}"; }
 
     //---------------------------------------------
     // Implementation of DatabaseChangeListener
@@ -160,7 +161,6 @@ final class LiveQuery implements DatabaseChangeListener {
         }
     }
 
-    @VisibleForTesting
     State getState() { return state.get(); }
 
     //---------------------------------------------
