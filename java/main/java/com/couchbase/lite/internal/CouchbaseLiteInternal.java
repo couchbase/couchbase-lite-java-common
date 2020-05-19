@@ -145,7 +145,7 @@ public final class CouchbaseLiteInternal {
     public static void reset() { INITIALIZED.set(false); }
 
     @VisibleForTesting
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @NonNull
     public static Map<String, String> loadErrorMessages() {
         final Properties errors = new Properties();

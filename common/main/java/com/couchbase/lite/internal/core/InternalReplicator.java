@@ -23,6 +23,7 @@ import android.support.annotation.Nullable;
 public abstract class InternalReplicator {
     protected final Object lock = new Object();
 
+    @Nullable
     private C4Replicator c4Replicator;
 
     protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
