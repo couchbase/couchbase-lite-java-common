@@ -15,12 +15,13 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.Nullable;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.junit.After;
-import org.junit.Before;
+import org.jetbrains.annotations.NotNull;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
@@ -34,7 +35,12 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Java";
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%&'()_+{}][=-.,;'ABCDEabcde";
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
+    private static final String LOG_DIR = ".cbl-test-logs";
+    private static final String SCRATCH_DIR = ".cbl-test-scratch";
+    private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
+    private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
+    // for testing, use the current directory as the root
     public static void initCouchbase() { CouchbaseLite.init(); }
 
     public static void deinitCouchbase() { CouchbaseLiteInternal.reset(); }
@@ -43,37 +49,40 @@ public abstract class PlatformBaseTest implements PlatformTest {
     // there are several tests (C4 tests) that are not subclasses
     static { initCouchbase(); }
 
+    private static LogFileConfiguration logConfig;
 
-    private String tmpDirPath;
-
-    @Override
-    public final void failImmediatelyForPlatform(String testName) {}
 
     // set up the file logger...
     @Override
-    public void setupFileLogging() { }
+    public void setupPlatform() {
+        if (logConfig == null) {
+            logConfig = new LogFileConfiguration(getDirPath(new File(LOG_DIR)))
+                .setUsePlaintext(true)
+                .setMaxSize(MAX_LOG_FILE_BYTES)
+                .setMaxRotateCount(MAX_LOG_FILES);
+        }
 
+        final FileLogger fileLogger = Database.log.getFile();
+        if (!logConfig.equals(fileLogger.getConfig())) { fileLogger.setConfig(logConfig); }
+        fileLogger.setLevel(LogLevel.DEBUG);
+    }
+
+    @Override
+    public void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
+
+    @Nullable
+    @Override
+    public InputStream getAsset(String assetFile) { return getClass().getClassLoader().getResourceAsStream(assetFile); }
+
+    @NotNull
     @Override
     public String getDatabaseDirectoryPath() { return CouchbaseLiteInternal.getDbDirectoryPath(); }
 
     @Override
-    public String getScratchDirectoryPath(String name) {
-        if (tmpDirPath == null) { tmpDirPath = CouchbaseLiteInternal.getTmpDirectoryPath(); }
-
-        try {
-            final File tmpDir = new File(tmpDirPath, name);
-            if (tmpDir.exists() || tmpDir.mkdirs()) { return tmpDir.getCanonicalPath(); }
-            throw new IOException("Could create tmp directory: " + name);
-        }
-        catch (IOException e) {
-            throw new RuntimeException("Failed creating temp directory");
-        }
-    }
+    public String getScratchDirectoryPath(String name) { return getDirPath(new File(SCRATCH_DIR, name)); }
 
     @Override
-    public InputStream getAsset(String assetFile) {
-        return getClass().getClassLoader().getResourceAsStream(assetFile);
-    }
+    public final void failImmediatelyForPlatform(String testName) { }
 
     @Override
     public void executeAsync(long delayMs, Runnable task) {
@@ -81,8 +90,15 @@ public abstract class PlatformBaseTest implements PlatformTest {
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
     }
 
-    @Override
-    public void reloadStandardErrorMessages() {
-        Log.initLogging(CouchbaseLiteInternal.loadErrorMessages());
+    @NotNull
+    private String getDirPath(File dir) {
+        try {
+            if (dir.exists() || dir.mkdirs()) { return dir.getCanonicalPath(); }
+            throw new IOException("Cannot create directory: " + dir);
+        }
+        catch (IOException e) { throw new IllegalStateException("Cannot create log directory", e); }
     }
 }
+
+
+

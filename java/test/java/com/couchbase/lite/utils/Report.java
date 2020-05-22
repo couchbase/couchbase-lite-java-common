@@ -15,10 +15,10 @@
 //
 package com.couchbase.lite.utils;
 
+import java.util.Locale;
+
 import com.couchbase.lite.LogLevel;
 
-import java.io.PrintStream;
-import java.util.Locale;
 
 /**
  * Platform console logging utility for tests
@@ -35,7 +35,7 @@ public final class Report {
     }
 
     public static void log(LogLevel level, String message, Throwable err) {
-        final PrintStream ps = (level == LogLevel.ERROR) ? System.err : System.out;
-        ps.println(level + "/CouchbaseLite/Test:" + message + (err != null ? err : ""));
+        ((LogLevel.WARNING.compareTo(level) <= 0) ? System.err : System.out)
+            .println(level + "/CouchbaseLite/Test:" + message + (err != null ? err : ""));
     }
 }

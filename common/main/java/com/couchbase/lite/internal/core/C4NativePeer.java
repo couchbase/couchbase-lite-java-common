@@ -26,7 +26,11 @@ import com.couchbase.lite.utils.Fn;
 
 
 /**
- * This approach exposes the native handle, because anybody can call `get`.
+ * This approach doesn't actually solve the peer management problem.
+ * It is still entirely possible that the peer whose handle is returned
+ * by getPeer will be freed while the client is still using it.
+ *
+ * It also exposes the native handle because anybody can call `get`.
  */
 public abstract class C4NativePeer extends AtomicLong {
     private static final String HANDLE_NAME = "peer handle";
@@ -46,9 +50,6 @@ public abstract class C4NativePeer extends AtomicLong {
         return getAndSet(0L);
     }
 
-    // None of the methods below actually solve the peer management problem.
-    // It is still entirely possible that the peer whose handle is
-    // returned by this method, will be freed while the client is still using it.
     protected final long getPeer() {
         final long handle = get();
         if (handle == 0) {

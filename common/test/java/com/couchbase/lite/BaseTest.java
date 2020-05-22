@@ -29,6 +29,7 @@ import org.junit.Before;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.utils.FileUtils;
 import com.couchbase.lite.utils.Fn;
 import com.couchbase.lite.utils.Report;
@@ -58,11 +59,12 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @Before
     public final void setUpBaseTest() {
-        Database.log.getConsole().setLevel(LogLevel.DEBUG);
-        //setupFileLogging(); // if needed
-
         // reset the directories
         CouchbaseLiteInternal.setupDirectories(null);
+
+        Log.initLogging();
+
+        setupPlatform();
 
         testFailure.set(null);
 

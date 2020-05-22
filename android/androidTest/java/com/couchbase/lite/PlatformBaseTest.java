@@ -41,6 +41,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
 
     private static final Map<String, Runnable> PLATFORM_DEPENDENT_TESTS;
+
     static {
         final Map<String, Runnable> m = new HashMap<>();
         m.put(
@@ -64,25 +65,19 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private String tmpDirPath;
 
     @Override
-    public final void failImmediatelyForPlatform(String testName) {
-        Runnable test = PLATFORM_DEPENDENT_TESTS.get(testName);
-        if (test != null) { test.run(); }
+    public void setupPlatform() { Database.log.getConsole().setLevel(LogLevel.DEBUG); }
+
+    @Override
+    public void reloadStandardErrorMessages() {
+        Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
+
     }
 
-    // make a half-hearted attempt to set up file logging
     @Override
-    public void setupFileLogging() {
-        try {
-            final FileLogger fileLogger = Database.log.getFile();
-            final File logDir = InstrumentationRegistry.getTargetContext().getExternalFilesDir("logs");
-
-            if (logDir == null) { throw new IllegalStateException("Cannot find external files directory"); }
-
-            fileLogger.setConfig(new LogFileConfiguration(logDir.getCanonicalPath()));
-
-            fileLogger.setLevel(LogLevel.INFO);
-        }
+    public InputStream getAsset(String asset) {
+        try { return CouchbaseLiteInternal.getContext().getAssets().open(asset); }
         catch (IOException ignore) { }
+        return null;
     }
 
     @Override
@@ -97,22 +92,15 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
-    public InputStream getAsset(String asset) {
-        try { return CouchbaseLiteInternal.getContext().getAssets().open(asset); }
-        catch (IOException ignore) { }
-        return null;
+    public final void failImmediatelyForPlatform(String testName) {
+        Runnable test = PLATFORM_DEPENDENT_TESTS.get(testName);
+        if (test != null) { test.run(); }
     }
 
     @Override
     public void executeAsync(long delayMs, Runnable task) {
         ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
-    }
-
-    @Override
-    public void reloadStandardErrorMessages() {
-        Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
-
     }
 
     private static String getSystemProperty(String name) throws Exception {

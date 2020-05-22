@@ -611,12 +611,18 @@ public class LogTest extends BaseDbTest {
 
         final ConsoleLogger consoleLogger = logger.getConsole();
         consoleLogger.setLevel(level);
+        final LogLevel consoleLogLevel = consoleLogger.getLevel();
 
         final FileLogger fileLogger = logger.getFile();
         fileLogger.setConfig(config);
         fileLogger.setLevel(level);
+        final LogLevel fileLogLevel = fileLogger.getLevel();
 
-        task.run();
+        try { task.run(); }
+        finally {
+            consoleLogger.setLevel(consoleLogLevel);
+            fileLogger.setLevel(fileLogLevel);
+        }
     }
 
     private void writeOneKiloByteOfLog() {

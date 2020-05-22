@@ -106,7 +106,7 @@ public final class CouchbaseLiteInternal {
     @NonNull
     public static String makeDbPath(@Nullable String rootDir) {
         requireInit("Can't create DB path");
-        return verifyDir(new File((rootDir == null) ? DEFAULT_ROOT_DIR_NAME : rootDir));
+        return verifyDir(new File((rootDir != null) ? rootDir : DEFAULT_ROOT_DIR_NAME));
     }
 
     @NonNull
