@@ -404,7 +404,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getFLSh
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Database_maintenance
         (JNIEnv *env, jclass clazz, jlong db, jint type) {
     C4Error error = {};
-    bool success = JNI_TRUE; //c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
+    bool success = c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
     if (error.domain != 0 && error.code != 0)
         throwError(env, error);
     return (jboolean) success;

@@ -15,4 +15,12 @@
 //
 package com.couchbase.lite;
 
-public enum MaintenanceType { REINDEX }
+public enum MaintenanceType {
+    /** Private: Use only in collaboration with Couchbase Support */
+    REINDEX,
+
+    /** Public: compact the database */
+    COMPACT,
+    /** Public: verify database integrity */
+    INTEGRITY_CHECK
+}

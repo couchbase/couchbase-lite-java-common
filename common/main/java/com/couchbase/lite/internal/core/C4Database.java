@@ -38,10 +38,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public class C4Database extends C4NativePeer {
     /* NOTE: Enum values must match the ones in DataFile::MaintenanceType */
     private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
-
     static {
         final Map<MaintenanceType, Integer> m = new HashMap<>();
-        m.put(MaintenanceType.REINDEX, 0);
+        m.put(MaintenanceType.COMPACT, 0);
+        m.put(MaintenanceType.REINDEX, 1);
+        m.put(MaintenanceType.INTEGRITY_CHECK, 2);
         MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
     }
 
