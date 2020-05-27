@@ -624,7 +624,10 @@ abstract class AbstractDatabase {
 
     /**
      * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
+     *
+     * @deprecated Use Database.performMaintenance(MaintenanceType.COMPACT)
      */
+    @Deprecated
     public void compact() throws CouchbaseLiteException {
         synchronized (dbLock) {
             try { getC4DatabaseLocked().compact(); }
