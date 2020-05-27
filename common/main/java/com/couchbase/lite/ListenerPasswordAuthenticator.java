@@ -15,16 +15,12 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.Volatile;
+import android.support.annotation.Nullable;
 
 
-public enum MaintenanceType {
-    /**
-     * Use only in collaboration with Couchbase Support
-     */
-    @Volatile
-    REINDEX,
-
-    COMPACT,
-    INTEGRITY_CHECK
+/**
+ * A Listener Password Authenticator
+ */
+public class ListenerPasswordAuthenticator implements ListenerAuthenticator {
+    public ListenerPasswordAuthenticator(@Nullable ListenerPasswordAuthenticatorDelegate delegate) { }
 }

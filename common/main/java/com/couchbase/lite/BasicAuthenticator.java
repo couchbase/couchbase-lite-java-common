@@ -17,6 +17,8 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,19 +36,37 @@ public final class BasicAuthenticator extends Authenticator {
     // member variables
     //---------------------------------------------
 
+    @NonNull
     private final String username;
-    private final String password;
+    @NonNull
+    private final byte[] password;
 
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
 
+    /**
+     * @param username
+     * @param password
+     * @deprecated Use BasicAuthenticator(String, byte[])
+     */
+    @Deprecated
     public BasicAuthenticator(@NonNull String username, @NonNull String password) {
-        Preconditions.assertNotNull(username, "username");
-        Preconditions.assertNotNull(password, "password");
+        this(username, Preconditions.assertNotNull(password, "password").getBytes(Charset.defaultCharset()));
+    }
 
-        this.username = username;
-        this.password = password;
+    /**
+     * Create a Basic Authenticator.
+     * The new instance contains a copy of the password byte array parameter:
+     * the owner of the original retains the responsiblity for zeroing it before releasing it.
+     *
+     * @return
+     */
+    public BasicAuthenticator(@NonNull String username, @NonNull byte[] password) {
+        this.username = Preconditions.assertNotNull(username, "username");
+        Preconditions.assertNotNull(password, "password");
+        this.password = new byte[password.length];
+        System.arraycopy(password, 0, this.password, 0, this.password.length);
     }
 
     //---------------------------------------------
@@ -56,15 +76,36 @@ public final class BasicAuthenticator extends Authenticator {
     @NonNull
     public String getUsername() { return username; }
 
+    @Deprecated
     @NonNull
-    public String getPassword() { return password; }
+    public String getPassword() { return new String(password, Charset.defaultCharset()); }
+
+    /**
+     * Get the password.
+     * The returned byte array is a copy: the owner is responsible for zeroing it before releasing it.
+     *
+     * @return
+     */
+    @NonNull
+    public byte[] getPasswordBytes() {
+        final byte[] pwd = new byte[password.length];
+        System.arraycopy(this.password, 0, pwd, 0, pwd.length);
+        return pwd;
+    }
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        Arrays.fill(password, (byte) 0);
+        super.finalize();
+    }
 
     //---------------------------------------------
     // Authenticator abstract method implementation
     //---------------------------------------------
 
     @Override
-    void authenticate(Map<String, Object> options) {
+    void authenticate(@NonNull Map<String, Object> options) {
         final Map<String, Object> auth = new HashMap<>();
         auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_TYPE, AbstractReplicatorConfiguration.AUTH_TYPE_BASIC);
         auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_USER_NAME, username);

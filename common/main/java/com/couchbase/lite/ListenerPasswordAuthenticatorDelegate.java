@@ -15,16 +15,11 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.Volatile;
+
+import android.support.annotation.NonNull;
 
 
-public enum MaintenanceType {
-    /**
-     * Use only in collaboration with Couchbase Support
-     */
-    @Volatile
-    REINDEX,
-
-    COMPACT,
-    INTEGRITY_CHECK
+@FunctionalInterface
+public interface ListenerPasswordAuthenticatorDelegate {
+    boolean authenticate(@NonNull String username, @NonNull byte[] password);
 }

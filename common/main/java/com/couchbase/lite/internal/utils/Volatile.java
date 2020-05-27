@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2020 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,18 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.utils;
 
-import com.couchbase.lite.internal.utils.Volatile;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 
-public enum MaintenanceType {
-    /**
-     * Use only in collaboration with Couchbase Support
-     */
-    @Volatile
-    REINDEX,
-
-    COMPACT,
-    INTEGRITY_CHECK
-}
+@Retention(RetentionPolicy.SOURCE)
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+@Documented
+public @interface Volatile {}

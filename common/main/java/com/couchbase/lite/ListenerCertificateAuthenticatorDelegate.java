@@ -15,16 +15,16 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.Volatile;
+import android.support.annotation.NonNull;
+
+import java.security.cert.Certificate;
+import java.util.List;
 
 
-public enum MaintenanceType {
-    /**
-     * Use only in collaboration with Couchbase Support
-     */
-    @Volatile
-    REINDEX,
-
-    COMPACT,
-    INTEGRITY_CHECK
+/**
+ * A Listener Certificate Authenticator Delegate
+ */
+@FunctionalInterface
+public interface ListenerCertificateAuthenticatorDelegate {
+    boolean authenticate(@NonNull List<Certificate> certs);
 }

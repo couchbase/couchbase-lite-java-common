@@ -937,7 +937,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         long dict,
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
-        return filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
+        return (filter != null) && filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
     }
 
     private Database getDatabase() { return config.getDatabase(); }
