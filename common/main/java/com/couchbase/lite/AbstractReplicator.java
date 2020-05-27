@@ -320,7 +320,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     @GuardedBy("lock")
     @NonNull
-    private Status status = new Status(ActivityLevel.IDLE, new Progress(0, 0), null);
+    private Status status = new Status(ActivityLevel.STOPPED, new Progress(0, 0), null);
     @GuardedBy("lock")
     @NonNull
     private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
@@ -365,8 +365,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     /**
      * Start the replicator.
-     * This method returns immediately.  The replicator runs asynchronously
-     * and will report its progress through the replicator change notification.
+     * This method does not wait for the replicator to start.
+     * The replicator runs asynchronously and reports its progress
+     * through replicator change notifications.
      */
     public void start(boolean resetCheckpoint) {
         Log.i(DOMAIN, "Replicator is starting");
@@ -376,25 +377,27 @@ public abstract class AbstractReplicator extends InternalReplicator {
         getDatabase().addActiveReplicator(this);
 
         final C4Replicator repl = getOrCreateC4Replicator();
-        repl.start(resetCheckpoint);
+        synchronized (lock) {
+            repl.start(resetCheckpoint);
 
-        C4ReplicatorStatus status = repl.getStatus();
-        if (status == null) {
-            status = new C4ReplicatorStatus(
-                C4ReplicatorStatus.ActivityLevel.STOPPED,
-                C4Constants.ErrorDomain.LITE_CORE,
-                C4Constants.LiteCoreError.UNEXPECTED_ERROR);
+            C4ReplicatorStatus status = repl.getStatus();
+            if (status == null) {
+                status = new C4ReplicatorStatus(
+                    C4ReplicatorStatus.ActivityLevel.STOPPED,
+                    C4Constants.ErrorDomain.LITE_CORE,
+                    C4Constants.LiteCoreError.UNEXPECTED_ERROR);
+            }
+
+            status = updateStatus(status);
+
+            c4ReplListener.statusChanged(repl, status, this);
         }
-
-        synchronized (lock) { status = updateStateProperties(status); }
-
-        c4ReplListener.statusChanged(repl, status, this);
     }
 
     /**
-     * Stops a running replicator. This method returns immediately; when the replicator actually
-     * stops, the replicator will change its status's activity level to `kCBLStopped`
-     * and the replicator change notification will be notified accordingly.
+     * Stop a running replicator.
+     * This method does not wait for the replicator to stop.
+     * When it does actually stop it will a new state, STOPPED, to change listeners.
      */
     public void stop() {
         final C4Replicator c4repl = getC4Replicator();
@@ -566,9 +569,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * the deprecated method <code>start()</code>
      *
      * @deprecated
+     * @throws IllegalStateException unless the Replicator is STOPPED.
      */
     @Deprecated
-    public void resetCheckpoint() { resetCheckpoint = true; }
+    public void resetCheckpoint() {
+        if (!getState().equals(ActivityLevel.STOPPED)) {
+            throw new IllegalStateException(Log.lookupStandardMessage("ReplicatorNotStopped"));
+        }
+        resetCheckpoint = true;
+    }
 
     @NonNull
     @Override
@@ -726,7 +735,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             }
 
             // Update my properties:
-            updateStateProperties(c4Status);
+            updateStatus(c4Status);
 
             // Post notification
             // Replicator.getStatus() creates a copy of Status.
@@ -822,7 +831,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private boolean isSameReplicator(C4Replicator repl) { return repl == getC4Replicator(); }
 
     @GuardedBy("lock")
-    private C4ReplicatorStatus updateStateProperties(@NonNull C4ReplicatorStatus c4Status) {
+    private C4ReplicatorStatus updateStatus(@NonNull C4ReplicatorStatus c4Status) {
         final C4ReplicatorStatus c4ReplStatus = c4Status.copy();
 
         CouchbaseLiteException error = null;
