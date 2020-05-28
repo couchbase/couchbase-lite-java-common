@@ -23,7 +23,7 @@ import java.util.EnumSet;
  */
 public enum LogDomain {
     /**
-     * @deprecated redundant and confusing
+     * @deprecated Use the EnumSet LogDomain.ALL_DOMAINS
      */
     @Deprecated ALL,
     DATABASE, QUERY, REPLICATOR, NETWORK, LISTENER;

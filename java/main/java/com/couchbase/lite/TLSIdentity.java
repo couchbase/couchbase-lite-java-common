@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.security.KeyStore;
@@ -27,19 +28,27 @@ import com.couchbase.lite.internal.AbstractTLSIdentity;
 public class TLSIdentity extends AbstractTLSIdentity {
 
     @Nullable
-    public TLSIdentity getIdentity(KeyStore keyStore, String alias, byte[] keyPassword) {
+    public static TLSIdentity getIdentity(
+        @NonNull KeyStore keyStore,
+        @NonNull String alias,
+        @Nullable byte[] keyPassword)
+        throws CouchbaseLiteException {
         return null;
     }
 
-    public TLSIdentity createIdentity(
+    @NonNull
+    public static TLSIdentity createIdentity(
         boolean isServer,
-        Map<String, String> attributes,
+        @NonNull Map<String, String> attributes,
         @Nullable Date expiration,
-        KeyStore keyStore,
-        String alias,
-        @Nullable byte[] keyPassword) {
-        return null;
+        @NonNull KeyStore keyStore,
+        @NonNull String alias,
+        @Nullable byte[] keyPassword)
+        throws CouchbaseLiteException {
+        return new TLSIdentity();
     }
+
+    public TLSIdentity() { super(null, null); }
 }
 
 

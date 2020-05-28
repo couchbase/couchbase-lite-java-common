@@ -41,18 +41,19 @@ public class AbstractTLSIdentity {
     public static final String CERT_ATTR_REGISTERED_ID = "registeredID";
 
     @Nullable
-    private List<Certificate> certs;
+    private final List<Certificate> certs;
 
     @Nullable
-    private Date expiration;
+    private final Date expiration;
+
+    protected AbstractTLSIdentity(@Nullable List<Certificate> certs, @Nullable Date expiration) {
+        this.certs = certs;
+        this.expiration = expiration;
+    }
 
     @Nullable
-    protected List<Certificate> getCerts() { return certs; }
-
-    protected void setCerts(@Nullable List<Certificate> certs) { this.certs = certs; }
+    public List<Certificate> getCerts() { return certs; }
 
     @Nullable
-    protected Date getExpiration() { return expiration; }
-
-    protected void setExpiration(@Nullable Date expiration) { this.expiration = expiration; }
+    public Date getExpiration() { return expiration; }
 }

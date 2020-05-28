@@ -31,37 +31,43 @@ import com.couchbase.lite.internal.AbstractTLSIdentity;
 public class TLSIdentity extends AbstractTLSIdentity {
 
     @Nullable
-    public TLSIdentity getIdentity(@NonNull String alias, @Nullable byte[] keyPassword) {
+    public static TLSIdentity getIdentity(@NonNull String alias, @Nullable byte[] keyPassword)
+        throws CouchbaseLiteException {
         return null;
     }
 
-    //@NonNull
-    public TLSIdentity getIdentity(
+    @NonNull
+    public static TLSIdentity getIdentity(
         @NonNull KeyStore.PrivateKeyEntry privateKey,
-        @NonNull List<Certificate> certificate) {
-        return null;
+        @NonNull List<Certificate> certificate)
+        throws CouchbaseLiteException {
+        return new TLSIdentity();
     }
 
-    //@NonNull
-    public TLSIdentity createIdentity(
+    @NonNull
+    public static TLSIdentity createIdentity(
         boolean isServer,
         @NonNull Map<String, String> attributes,
         @Nullable Date expiration,
         @NonNull String alias,
-        @Nullable byte[] keyPassword) {
-        return null;
+        @Nullable byte[] keyPassword)
+        throws CouchbaseLiteException {
+        return new TLSIdentity();
     }
 
-    //@NonNull
-    public TLSIdentity importIdentity(
+    @NonNull
+    public static TLSIdentity importIdentity(
         @NonNull InputStream data,
         @NonNull String dataType,
         @Nullable byte[] dataPassword,
         @NonNull String alias,
-        @Nullable byte[] keyPassword) {
-        return null;
+        @Nullable byte[] keyPassword)
+        throws CouchbaseLiteException {
+        return new TLSIdentity();
     }
 
-    public void deleteIdentity(@NonNull String alias) { }
+    public static void deleteIdentity(@NonNull String alias) throws CouchbaseLiteException { }
+
+    private TLSIdentity() { super(null, null); }
 }
 

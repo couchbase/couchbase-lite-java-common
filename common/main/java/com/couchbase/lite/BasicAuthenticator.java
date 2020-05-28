@@ -76,6 +76,9 @@ public final class BasicAuthenticator extends Authenticator {
     @NonNull
     public String getUsername() { return username; }
 
+    /**
+     * @deprecated Use getPasswordBytes(byte[])
+     */
     @Deprecated
     @NonNull
     public String getPassword() { return new String(password, Charset.defaultCharset()); }
@@ -84,7 +87,7 @@ public final class BasicAuthenticator extends Authenticator {
      * Get the password.
      * The returned byte array is a copy: the owner is responsible for zeroing it before releasing it.
      *
-     * @return
+     * @return the password, as a byte array.
      */
     @NonNull
     public byte[] getPasswordBytes() {
