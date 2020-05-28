@@ -23,10 +23,15 @@ import java.util.EnumSet;
  */
 public enum LogDomain {
     /**
-     * @deprecated redundant and confusing
+     * @deprecated Use the EnumSet <code>LogDomain.ALL_DOMAINS</code>
      */
     @Deprecated ALL,
-    DATABASE, QUERY, REPLICATOR, NETWORK;
+    DATABASE, QUERY, REPLICATOR, NETWORK, LISTENER;
 
-    public static final EnumSet<LogDomain> ALL_DOMAINS = EnumSet.of(DATABASE, QUERY, REPLICATOR, NETWORK);
+    public static final EnumSet<LogDomain> ALL_DOMAINS;
+    static {
+        ALL_DOMAINS = EnumSet.allOf(LogDomain.class);
+        ALL_DOMAINS.remove(LogDomain.ALL);
+    }
 }
+

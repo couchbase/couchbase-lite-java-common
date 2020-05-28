@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2020 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,16 +15,4 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.Volatile;
-
-
-public enum MaintenanceType {
-    /**
-     * Use only in collaboration with Couchbase Support
-     */
-    @Volatile
-    REINDEX,
-
-    COMPACT,
-    INTEGRITY_CHECK
-}
+public enum ServerCertificateVerificationMode {CA_CERT, SELF_SIGNED_CERT}

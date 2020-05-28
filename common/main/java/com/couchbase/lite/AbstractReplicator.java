@@ -356,9 +356,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
     /**
      * Start the replicator.
      * This method honors the flag set by the deprecated method <code>resetCheckpoint()</code>.
-     * Use <code>start(boolean resetCheckpoint)</code> instead.
      *
-     * @deprecated
+     * @deprecated Use <code>start(boolean resetCheckpoint)</code> instead.
      */
     @Deprecated
     public void start() { start(resetCheckpoint); }
@@ -568,7 +567,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * This method, exactly, sets a flag that will be used on the next call to
      * the deprecated method <code>start()</code>
      *
-     * @deprecated
+     * @deprecated Use <code>start(boolean resetCheckpoint)</code> instead.
      * @throws IllegalStateException unless the Replicator is STOPPED.
      */
     @Deprecated
@@ -937,7 +936,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         long dict,
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
-        return filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
+        return (filter != null) && filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
     }
 
     private Database getDatabase() { return config.getDatabase(); }

@@ -15,16 +15,16 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.Volatile;
+import android.support.annotation.Nullable;
+
+import java.security.cert.Certificate;
+import java.util.List;
 
 
-public enum MaintenanceType {
-    /**
-     * Use only in collaboration with Couchbase Support
-     */
-    @Volatile
-    REINDEX,
-
-    COMPACT,
-    INTEGRITY_CHECK
+/**
+ * A Listener Certificate Authenticator Delegate
+ */
+public class ListenerCertificateAuthenticator implements ListenerAuthenticator {
+    public ListenerCertificateAuthenticator(@Nullable List<Certificate> rootCerts) { }
+    public ListenerCertificateAuthenticator(@Nullable ListenerCertificateAuthenticatorDelegate delegate) { }
 }

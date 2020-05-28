@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,16 +15,16 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.Volatile;
+
+import android.support.annotation.NonNull;
 
 
-public enum MaintenanceType {
-    /**
-     * Use only in collaboration with Couchbase Support
-     */
-    @Volatile
-    REINDEX,
+public final class ClientCertificateAuthenticator {
+    @NonNull
+    private final TLSIdentity identity;
 
-    COMPACT,
-    INTEGRITY_CHECK
+    public ClientCertificateAuthenticator(@NonNull TLSIdentity identity) {this.identity = identity; }
+
+    @NonNull
+    public TLSIdentity getIdentity() { return identity; }
 }

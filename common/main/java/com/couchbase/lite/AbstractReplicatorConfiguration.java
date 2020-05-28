@@ -29,8 +29,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Replicator configuration.
  */
+@SuppressWarnings("LineLength")
 abstract class AbstractReplicatorConfiguration {
 
+    // @formatter:off
     // Replicator option dictionary keys:
     static final String REPLICATOR_OPTION_EXTRA_HEADERS = "headers";  // Extra HTTP headers: string[]
     static final String REPLICATOR_OPTION_COOKIES = "cookies";  // HTTP Cookie header value: string
@@ -42,13 +44,10 @@ abstract class AbstractReplicatorConfiguration {
     static final String REPLICATOR_OPTION_FILTER_PARAMS = "filterParams";  // Filter params: Dict[string]
     static final String REPLICATOR_OPTION_SKIP_DELETED = "skipDeleted"; // Don't push/pull tombstones: bool
     static final String REPLICATOR_OPTION_NO_CONFLICTS = "noConflicts"; // Puller rejects conflicts: bool
-    static final String REPLICATOR_OPTION_CHECKPOINT_INTERVAL = "checkpointInterval"; // How often to checkpoint, in
-    // seconds: number
-    static final String REPLICATOR_OPTION_REMOTE_DB_UNIQUE_ID = "remoteDBUniqueID"; // How often to checkpoint, in
-    // seconds: number
+    static final String REPLICATOR_OPTION_CHECKPOINT_INTERVAL = "checkpointInterval"; // How often to checkpoint, in seconds: number
+    static final String REPLICATOR_OPTION_REMOTE_DB_UNIQUE_ID = "remoteDBUniqueID"; // How often to checkpoint, in seconds: number
     static final String REPLICATOR_RESET_CHECKPOINT = "reset"; // reset remote checkpoint
-    static final String REPLICATOR_OPTION_PROGRESS_LEVEL = "progress";  //< If >=1, notify on every doc; if >=2, on
-    // every attachment (int)
+    static final String REPLICATOR_OPTION_PROGRESS_LEVEL = "progress";  //< If >=1, notify on every doc; if >=2, on every attachment (int)
 
     // Auth dictionary keys:
     static final String REPLICATOR_AUTH_TYPE = "type"; // Auth property: string
@@ -62,6 +61,7 @@ abstract class AbstractReplicatorConfiguration {
     static final String AUTH_TYPE_OPEN_ID_CONNECT = "OpenID Connect";
     static final String AUTH_TYPE_FACEBOOK = "Facebook";
     static final String AUTH_TYPE_CLIENT_CERT = "Client Cert";
+    // @formatter:on
 
     /**
      * Replicator type
@@ -74,16 +74,28 @@ abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    @NonNull
     private final Database database;
+    @NonNull
     private ReplicatorType replicatorType;
     private boolean continuous;
+    @Nullable
     private Authenticator authenticator;
+    @Nullable
     private Map<String, String> headers;
+    @Nullable
     private byte[] pinnedServerCertificate;
+    @Nullable
     private List<String> channels;
+    @Nullable
     private List<String> documentIDs;
+    @Nullable
     private ReplicationFilter pushFilter;
+    @Nullable
     private ReplicationFilter pullFilter;
+    @NonNull
+    private ServerCertificateVerificationMode certificateVerificationMode
+        = ServerCertificateVerificationMode.CA_CERT;
     @Nullable
     private ConflictResolver conflictResolver;
 
@@ -110,15 +122,14 @@ abstract class AbstractReplicatorConfiguration {
         this.pullFilter = config.pullFilter;
         this.pushFilter = config.pushFilter;
         this.conflictResolver = config.conflictResolver;
+        this.certificateVerificationMode = config.certificateVerificationMode;
     }
 
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        Preconditions.assertNotNull(database, "database");
-        Preconditions.assertNotNull(target, "target");
+        this.database = Preconditions.assertNotNull(database, "database");
+        this.target = Preconditions.assertNotNull(target, "target");
         this.readonly = false;
         this.replicatorType = ReplicatorType.PUSH_AND_PULL;
-        this.database = database;
-        this.target = target;
     }
 
     //---------------------------------------------
@@ -131,12 +142,12 @@ abstract class AbstractReplicatorConfiguration {
      * BasicAuthenticator and SessionAuthenticator, supported.
      *
      * @param authenticator The authenticator.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
     public final ReplicatorConfiguration setAuthenticator(@NonNull Authenticator authenticator) {
         checkReadOnly();
-        this.authenticator = authenticator;
+        this.authenticator = Preconditions.assertNotNull(authenticator, "authenticator");
         return getReplicatorConfiguration();
     }
 
@@ -147,10 +158,10 @@ abstract class AbstractReplicatorConfiguration {
      * by Sync Gateway.
      *
      * @param channels The Sync Gateway channel names.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setChannels(List<String> channels) {
+    public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
         checkReadOnly();
         this.channels = channels;
         return getReplicatorConfiguration();
@@ -160,8 +171,9 @@ abstract class AbstractReplicatorConfiguration {
      * Sets the the conflict resolver.
      *
      * @param conflictResolver The replicator type.
-     * @return The self object.
+     * @return this.
      */
+    @Nullable
     public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
         checkReadOnly();
         this.conflictResolver = conflictResolver;
@@ -175,7 +187,7 @@ abstract class AbstractReplicatorConfiguration {
      * documents.
      *
      * @param continuous The continuous flag.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
     public final ReplicatorConfiguration setContinuous(boolean continuous) {
@@ -189,10 +201,10 @@ abstract class AbstractReplicatorConfiguration {
      * with these IDs will be pushed and/or pulled.
      *
      * @param documentIDs The document IDs.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setDocumentIDs(List<String> documentIDs) {
+    public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
         checkReadOnly();
         this.documentIDs = documentIDs;
         return getReplicatorConfiguration();
@@ -202,10 +214,10 @@ abstract class AbstractReplicatorConfiguration {
      * Sets the extra HTTP headers to send in all requests to the remote target.
      *
      * @param headers The HTTP Headers.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setHeaders(Map<String, String> headers) {
+    public final ReplicatorConfiguration setHeaders(@NonNull Map<String, String> headers) {
         checkReadOnly();
         this.headers = new HashMap<>(headers);
         return getReplicatorConfiguration();
@@ -213,17 +225,19 @@ abstract class AbstractReplicatorConfiguration {
 
     /**
      * Sets the target server's SSL certificate.
-     * <p>
      *
      * @param pinnedCert the SSL certificate.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setPinnedServerCertificate(byte[] pinnedCert) {
+    public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
         checkReadOnly();
 
-        pinnedServerCertificate = new byte[pinnedCert.length];
-        System.arraycopy(pinnedCert, 0, pinnedServerCertificate, 0, pinnedServerCertificate.length);
+        if (pinnedCert == null) { pinnedServerCertificate = null; }
+        else {
+            pinnedServerCertificate = new byte[pinnedCert.length];
+            System.arraycopy(pinnedCert, 0, pinnedServerCertificate, 0, pinnedServerCertificate.length);
+        }
 
         return getReplicatorConfiguration();
     }
@@ -233,10 +247,10 @@ abstract class AbstractReplicatorConfiguration {
      * remote endpoint. Only documents for which the object returns true are replicated.
      *
      * @param pullFilter The filter to filter the document to be pulled.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setPullFilter(ReplicationFilter pullFilter) {
+    public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
         checkReadOnly();
         this.pullFilter = pullFilter;
         return getReplicatorConfiguration();
@@ -247,7 +261,7 @@ abstract class AbstractReplicatorConfiguration {
      * to the remote endpoint.
      *
      * @param pushFilter The filter to filter the document to be pushed.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
     public final ReplicatorConfiguration setPushFilter(ReplicationFilter pushFilter) {
@@ -261,13 +275,27 @@ abstract class AbstractReplicatorConfiguration {
      * The default value is .pushAndPull which is bi-directional.
      *
      * @param replicatorType The replicator type.
-     * @return The self object.
+     * @return this.
      */
     @NonNull
     public final ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
-        Preconditions.assertNotNull(replicatorType, "replicatorType");
         checkReadOnly();
-        this.replicatorType = replicatorType;
+        this.replicatorType = Preconditions.assertNotNull(replicatorType, "replicatorType");
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * Sets the replicator verification mode.
+     * The default value is ServerCertificateVerificationMode.CA_CERT.
+     *
+     * @param mode Specifies the way the replicator verifies the server identity when using TLS communication
+     * @return this.
+     */
+    @NonNull
+    public final ReplicatorConfiguration setServerCertificateVerificationMode(
+        @NonNull ServerCertificateVerificationMode mode) {
+        checkReadOnly();
+        this.certificateVerificationMode = Preconditions.assertNotNull(mode, "certificate verification mode");
         return getReplicatorConfiguration();
     }
 
@@ -278,6 +306,7 @@ abstract class AbstractReplicatorConfiguration {
     /**
      * Return the Authenticator to authenticate with a remote target.
      */
+    @Nullable
     public final Authenticator getAuthenticator() { return authenticator; }
 
     /**
@@ -285,6 +314,7 @@ abstract class AbstractReplicatorConfiguration {
      * The default value is null, meaning that all accessible channels will be pulled.
      * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
      */
+    @Nullable
     public final List<String> getChannels() { return channels; }
 
     /**
@@ -309,17 +339,21 @@ abstract class AbstractReplicatorConfiguration {
      * A set of document IDs to filter by: if not nil, only documents with these IDs will be pushed
      * and/or pulled.
      */
+    @Nullable
     public final List<String> getDocumentIDs() { return documentIDs; }
 
     /**
      * Return Extra HTTP headers to send in all requests to the remote target.
      */
+    @Nullable
     public final Map<String, String> getHeaders() { return headers; }
 
     /**
      * Return the remote target's SSL certificate.
      */
+    @Nullable
     public final byte[] getPinnedServerCertificate() {
+        if (pinnedServerCertificate == null) { return null; }
         final byte[] pinnedCert = new byte[pinnedServerCertificate.length];
         System.arraycopy(pinnedServerCertificate, 0, pinnedCert, 0, pinnedCert.length);
         return pinnedCert;
@@ -329,12 +363,14 @@ abstract class AbstractReplicatorConfiguration {
      * Gets a filter object for validating whether the documents can be pulled
      * from the remote endpoint.
      */
+    @Nullable
     public final ReplicationFilter getPullFilter() { return pullFilter; }
 
     /**
      * Gets a filter object for validating whether the documents can be pushed
      * to the remote endpoint.
      */
+    @Nullable
     public final ReplicationFilter getPushFilter() { return pushFilter; }
 
     /**
@@ -349,7 +385,15 @@ abstract class AbstractReplicatorConfiguration {
     @NonNull
     public final Endpoint getTarget() { return target; }
 
+    /**
+     * Return the replicator verification mode.
+     */
+    @NonNull
+    public final ServerCertificateVerificationMode getServerCertificateVerificationMode() {
+        return certificateVerificationMode;
+    }
 
+    @NonNull
     @Override
     public String toString() { return "ReplicatorConfig{" + database + " => " + target + "}"; }
 
@@ -394,7 +438,7 @@ abstract class AbstractReplicatorConfiguration {
         httpHeaders.put("User-Agent", CBLVersion.getUserAgent());
         // headers
         if ((headers != null) && (!headers.isEmpty())) {
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
+            for (Map.Entry<String, String> entry: headers.entrySet()) {
                 httpHeaders.put(entry.getKey(), entry.getValue());
             }
         }

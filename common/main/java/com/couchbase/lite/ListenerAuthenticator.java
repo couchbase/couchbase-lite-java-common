@@ -15,16 +15,7 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.Volatile;
-
-
-public enum MaintenanceType {
-    /**
-     * Use only in collaboration with Couchbase Support
-     */
-    @Volatile
-    REINDEX,
-
-    COMPACT,
-    INTEGRITY_CHECK
-}
+/**
+ * Oh joy!  Another marker interface...
+ */
+public interface ListenerAuthenticator {}

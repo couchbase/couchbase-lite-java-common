@@ -17,6 +17,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,19 +35,35 @@ public final class BasicAuthenticator extends Authenticator {
     // member variables
     //---------------------------------------------
 
+    @NonNull
     private final String username;
-    private final String password;
+    @NonNull
+    private final char[] password;
 
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
 
+    /**
+     * @param username
+     * @param password
+     * @deprecated Use <code>BasicAuthenticator(String, char[])</code>
+     */
+    @Deprecated
     public BasicAuthenticator(@NonNull String username, @NonNull String password) {
-        Preconditions.assertNotNull(username, "username");
-        Preconditions.assertNotNull(password, "password");
+        this(username, Preconditions.assertNotNull(password, "password").toCharArray());
+    }
 
-        this.username = username;
-        this.password = password;
+    /**
+     * Create a Basic Authenticator.
+     * The new instance contains a copy of the password char[] parameter:
+     * the owner of the original retains the responsiblity for zeroing it before releasing it.
+     */
+    public BasicAuthenticator(@NonNull String username, @NonNull char[] password) {
+        this.username = Preconditions.assertNotNull(username, "username");
+        Preconditions.assertNotNull(password, "password");
+        this.password = new char[password.length];
+        System.arraycopy(password, 0, this.password, 0, this.password.length);
     }
 
     //---------------------------------------------
@@ -56,15 +73,39 @@ public final class BasicAuthenticator extends Authenticator {
     @NonNull
     public String getUsername() { return username; }
 
+    /**
+     * @deprecated Use <code>getPasswordChars(char[])</code>
+     */
+    @Deprecated
     @NonNull
-    public String getPassword() { return password; }
+    public String getPassword() { return new String(password); }
+
+    /**
+     * Get the password.
+     * The returned char[] is a copy: the owner is responsible for zeroing it before releasing it.
+     *
+     * @return the password, as a char[].
+     */
+    @NonNull
+    public char[] getPasswordChars() {
+        final char[] pwd = new char[password.length];
+        System.arraycopy(this.password, 0, pwd, 0, pwd.length);
+        return pwd;
+    }
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        Arrays.fill(password, (char) 0);
+        super.finalize();
+    }
 
     //---------------------------------------------
     // Authenticator abstract method implementation
     //---------------------------------------------
 
     @Override
-    void authenticate(Map<String, Object> options) {
+    void authenticate(@NonNull Map<String, Object> options) {
         final Map<String, Object> auth = new HashMap<>();
         auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_TYPE, AbstractReplicatorConfiguration.AUTH_TYPE_BASIC);
         auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_USER_NAME, username);
