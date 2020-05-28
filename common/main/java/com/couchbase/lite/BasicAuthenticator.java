@@ -17,7 +17,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;

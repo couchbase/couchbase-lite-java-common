@@ -292,7 +292,7 @@ abstract class AbstractReplicatorConfiguration {
      * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setServerCertificateVerficationMode(
+    public final ReplicatorConfiguration setServerCertificateVerificationMode(
         @NonNull ServerCertificateVerificationMode mode) {
         checkReadOnly();
         this.certificateVerificationMode = Preconditions.assertNotNull(mode, "certificate verification mode");
