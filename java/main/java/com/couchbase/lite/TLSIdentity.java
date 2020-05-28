@@ -25,7 +25,7 @@ import java.util.Map;
 import com.couchbase.lite.internal.AbstractTLSIdentity;
 
 
-public class TLSIdentity extends AbstractTLSIdentity {
+public final class TLSIdentity extends AbstractTLSIdentity {
 
     @Nullable
     public static TLSIdentity getIdentity(
@@ -48,7 +48,7 @@ public class TLSIdentity extends AbstractTLSIdentity {
         return new TLSIdentity();
     }
 
-    public TLSIdentity() { super(null, null); }
+    private TLSIdentity() { super(null, null); }
 }
 
 

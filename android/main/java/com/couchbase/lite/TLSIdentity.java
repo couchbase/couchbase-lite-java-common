@@ -28,7 +28,7 @@ import java.util.Map;
 import com.couchbase.lite.internal.AbstractTLSIdentity;
 
 
-public class TLSIdentity extends AbstractTLSIdentity {
+public final class TLSIdentity extends AbstractTLSIdentity {
 
     @Nullable
     public static TLSIdentity getIdentity(@NonNull String alias, @Nullable byte[] keyPassword)

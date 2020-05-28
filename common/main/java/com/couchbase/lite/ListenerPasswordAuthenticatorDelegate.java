@@ -21,5 +21,5 @@ import android.support.annotation.NonNull;
 
 @FunctionalInterface
 public interface ListenerPasswordAuthenticatorDelegate {
-    boolean authenticate(@NonNull String username, @NonNull byte[] password);
+    boolean authenticate(@NonNull String username, @NonNull char[] password);
 }

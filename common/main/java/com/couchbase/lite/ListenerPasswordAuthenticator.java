@@ -15,12 +15,12 @@
 //
 package com.couchbase.lite;
 
-import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
 
 
 /**
  * A Listener Password Authenticator
  */
 public class ListenerPasswordAuthenticator implements ListenerAuthenticator {
-    public ListenerPasswordAuthenticator(@Nullable ListenerPasswordAuthenticatorDelegate delegate) { }
+    public ListenerPasswordAuthenticator(@NonNull ListenerPasswordAuthenticatorDelegate delegate) { }
 }

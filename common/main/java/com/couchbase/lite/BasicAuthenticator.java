@@ -39,7 +39,7 @@ public final class BasicAuthenticator extends Authenticator {
     @NonNull
     private final String username;
     @NonNull
-    private final byte[] password;
+    private final char[] password;
 
     //---------------------------------------------
     // Constructor
@@ -48,24 +48,22 @@ public final class BasicAuthenticator extends Authenticator {
     /**
      * @param username
      * @param password
-     * @deprecated Use BasicAuthenticator(String, byte[])
+     * @deprecated Use <code>BasicAuthenticator(String, char[])</code>
      */
     @Deprecated
     public BasicAuthenticator(@NonNull String username, @NonNull String password) {
-        this(username, Preconditions.assertNotNull(password, "password").getBytes(Charset.defaultCharset()));
+        this(username, Preconditions.assertNotNull(password, "password").toCharArray());
     }
 
     /**
      * Create a Basic Authenticator.
-     * The new instance contains a copy of the password byte array parameter:
+     * The new instance contains a copy of the password char[] parameter:
      * the owner of the original retains the responsiblity for zeroing it before releasing it.
-     *
-     * @return
      */
-    public BasicAuthenticator(@NonNull String username, @NonNull byte[] password) {
+    public BasicAuthenticator(@NonNull String username, @NonNull char[] password) {
         this.username = Preconditions.assertNotNull(username, "username");
         Preconditions.assertNotNull(password, "password");
-        this.password = new byte[password.length];
+        this.password = new char[password.length];
         System.arraycopy(password, 0, this.password, 0, this.password.length);
     }
 
@@ -77,21 +75,21 @@ public final class BasicAuthenticator extends Authenticator {
     public String getUsername() { return username; }
 
     /**
-     * @deprecated Use getPasswordBytes(byte[])
+     * @deprecated Use <code>getPasswordChars(char[])</code>
      */
     @Deprecated
     @NonNull
-    public String getPassword() { return new String(password, Charset.defaultCharset()); }
+    public String getPassword() { return new String(password); }
 
     /**
      * Get the password.
-     * The returned byte array is a copy: the owner is responsible for zeroing it before releasing it.
+     * The returned char[] is a copy: the owner is responsible for zeroing it before releasing it.
      *
-     * @return the password, as a byte array.
+     * @return the password, as a char[].
      */
     @NonNull
-    public byte[] getPasswordBytes() {
-        final byte[] pwd = new byte[password.length];
+    public char[] getPasswordChars() {
+        final char[] pwd = new char[password.length];
         System.arraycopy(this.password, 0, pwd, 0, pwd.length);
         return pwd;
     }
@@ -99,7 +97,7 @@ public final class BasicAuthenticator extends Authenticator {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        Arrays.fill(password, (byte) 0);
+        Arrays.fill(password, (char) 0);
         super.finalize();
     }
 

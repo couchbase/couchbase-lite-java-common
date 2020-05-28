@@ -94,7 +94,7 @@ abstract class AbstractReplicatorConfiguration {
     @Nullable
     private ReplicationFilter pullFilter;
     @NonNull
-    private ServerCertificateVerificationMode certificateVerficationMode
+    private ServerCertificateVerificationMode certificateVerificationMode
         = ServerCertificateVerificationMode.CA_CERT;
     @Nullable
     private ConflictResolver conflictResolver;
@@ -122,7 +122,7 @@ abstract class AbstractReplicatorConfiguration {
         this.pullFilter = config.pullFilter;
         this.pushFilter = config.pushFilter;
         this.conflictResolver = config.conflictResolver;
-        this.certificateVerficationMode = config.certificateVerficationMode;
+        this.certificateVerificationMode = config.certificateVerificationMode;
     }
 
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
@@ -295,7 +295,7 @@ abstract class AbstractReplicatorConfiguration {
     public final ReplicatorConfiguration setServerCertificateVerficationMode(
         @NonNull ServerCertificateVerificationMode mode) {
         checkReadOnly();
-        this.certificateVerficationMode = Preconditions.assertNotNull(mode, "certificate verification mode");
+        this.certificateVerificationMode = Preconditions.assertNotNull(mode, "certificate verification mode");
         return getReplicatorConfiguration();
     }
 
@@ -389,8 +389,8 @@ abstract class AbstractReplicatorConfiguration {
      * Return the replicator verification mode.
      */
     @NonNull
-    public final ServerCertificateVerificationMode getServerCertificateVerficationMode() {
-        return certificateVerficationMode;
+    public final ServerCertificateVerificationMode getServerCertificateVerificationMode() {
+        return certificateVerificationMode;
     }
 
     @NonNull

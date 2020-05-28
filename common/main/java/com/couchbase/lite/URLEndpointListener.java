@@ -23,39 +23,39 @@ import java.util.List;
 
 
 public class URLEndpointListener {
+    @NonNull
     private final URLEndpointListenerConfiguration config;
 
-    @Nullable
-    private int port;
+    private final int port;
 
     @Nullable
-    private List<URL> urls;
+    private final List<URL> urls;
 
     @Nullable
-    private ConnectionStatus status;
+    private final ConnectionStatus status;
 
     // Constructors
-    public URLEndpointListener(@NonNull URLEndpointListenerConfiguration config) { this.config = config; }
+    public URLEndpointListener(@NonNull URLEndpointListenerConfiguration config) {
+        this.config = config;
+        this.port = 0;
+        this.urls = null;
+        this.status = null;
+    }
 
+    @NonNull
     public URLEndpointListenerConfiguration getConfig() { return config; }
 
     public int getPort() { return port; }
 
-    public void setPort(int port) { this.port = port; }
-
     @Nullable
     public List<URL> getUrls() { return urls; }
-
-    public void setUrls(@Nullable List<URL> urls) { this.urls = urls; }
 
     @Nullable
     public ConnectionStatus getStatus() { return status; }
 
-    public void setStatus(@Nullable ConnectionStatus status) { this.status = status; }
-
     // Methods
-    public void start() { }
+    public void start() throws CouchbaseLiteException { }
 
-    public void stop() { }
+    public void stop() throws CouchbaseLiteException { }
 }
 

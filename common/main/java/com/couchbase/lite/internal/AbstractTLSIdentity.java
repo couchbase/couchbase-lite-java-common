@@ -55,5 +55,5 @@ public class AbstractTLSIdentity {
     public List<Certificate> getCerts() { return certs; }
 
     @Nullable
-    public Date getExpiration() { return expiration; }
+    public Date getExpiration() { return (expiration == null) ? null : new Date(expiration.getTime()); }
 }
