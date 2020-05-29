@@ -29,19 +29,34 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
+
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
 import javax.security.auth.x500.X500Principal;
-
-import static okhttp3.internal.Util.verifyAsIpAddress;
 
 
 /**
  * A HostnameVerifier consistent with <a href="http://www.ietf.org/rfc/rfc2818.txt">RFC 2818</a>.
  */
 public final class CustomHostnameVerifier implements HostnameVerifier {
-    public static final CustomHostnameVerifier INSTANCE = new CustomHostnameVerifier();
+
+    /**
+     * Quick and dirty pattern to differentiate IP addresses from hostnames. This
+     * is an approximation of Android's private InetAddress#isNumeric API.
+     *
+     * <p>This matches IPv6 addresses as a hex string containing at least one
+     * colon, and possibly including dots after the first colon. It matches IPv4
+     * addresses as strings containing only decimal digits and dots. This pattern
+     * matches strings like "a:.23" and "54" that are neither IP addresses nor
+     * hostnames; they will be verified as IP addresses (which is a more strict
+     * verification).
+     */
+    private static final Pattern VERIFY_AS_IP_ADDRESS = Pattern.compile(
+            "([0-9a-fA-F]*:[0-9a-fA-F:.]*)|([\\d.]+)");
+
+    private static final CustomHostnameVerifier INSTANCE = new CustomHostnameVerifier();
 
     private static final int ALT_DNS_NAME = 2;
     private static final int ALT_IPA_NAME = 7;
@@ -50,23 +65,27 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
         return INSTANCE;
     }
 
-    private CustomHostnameVerifier() { }
+    private CustomHostnameVerifier() {
+    }
 
     @Override
     public boolean verify(String host, SSLSession session) {
         try {
             Certificate[] certificates = session.getPeerCertificates();
             return verify(host, (X509Certificate) certificates[0]);
-        }
-        catch (SSLException e) {
+        } catch (SSLException e) {
             return false;
         }
     }
 
     public boolean verify(String host, X509Certificate certificate) {
         return verifyAsIpAddress(host)
-            ? verifyIpAddress(host, certificate)
-            : verifyHostname(host, certificate);
+                ? verifyIpAddress(host, certificate)
+                : verifyHostname(host, certificate);
+    }
+
+    private static boolean verifyAsIpAddress(String host) {
+        return VERIFY_AS_IP_ADDRESS.matcher(host).matches();
     }
 
     /**
@@ -108,23 +127,13 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
             String cn = new DistinguishedNameParser(principal).findMostSpecific("cn");
             if (cn != null) {
                 return verifyHostname(hostname, cn);
-            }
-            else {
+            } else {
                 // NOTE: In case of empty Common Name (CN), not checking
                 return true;
             }
         }
 
         return false;
-    }
-
-    public static List<String> allSubjectAltNames(X509Certificate certificate) {
-        List<String> altIpaNames = getSubjectAltNames(certificate, ALT_IPA_NAME);
-        List<String> altDnsNames = getSubjectAltNames(certificate, ALT_DNS_NAME);
-        List<String> result = new ArrayList<>(altIpaNames.size() + altDnsNames.size());
-        result.addAll(altIpaNames);
-        result.addAll(altDnsNames);
-        return result;
     }
 
     private static List<String> getSubjectAltNames(X509Certificate certificate, int type) {
@@ -151,8 +160,7 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
                 }
             }
             return result;
-        }
-        catch (CertificateParsingException e) {
+        } catch (CertificateParsingException e) {
             return Collections.emptyList();
         }
     }
@@ -164,16 +172,16 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
      * @param pattern  domain name pattern from certificate. May be a wildcard pattern such as {@code
      *                 *.android.com}.
      */
-    public boolean verifyHostname(String hostname, String pattern) {
+    private boolean verifyHostname(String hostname, String pattern) {
         // Basic sanity checks
         // Check length == 0 instead of .isEmpty() to support Java 5.
         if ((hostname == null) || (hostname.length() == 0) || (hostname.startsWith("."))
-            || (hostname.endsWith(".."))) {
+                || (hostname.endsWith(".."))) {
             // Invalid domain name
             return false;
         }
         if ((pattern == null) || (pattern.length() == 0) || (pattern.startsWith("."))
-            || (pattern.endsWith(".."))) {
+                || (pattern.endsWith(".."))) {
             // Invalid pattern/domain name
             return false;
         }
@@ -243,6 +251,6 @@ public final class CustomHostnameVerifier implements HostnameVerifier {
         // Check that asterisk did not match across domain name labels.
         int suffixStartIndexInHostname = hostname.length() - suffix.length();
         return (suffixStartIndexInHostname <= 0)
-            || (hostname.lastIndexOf('.', suffixStartIndexInHostname - 1) == -1);
+                || (hostname.lastIndexOf('.', suffixStartIndexInHostname - 1) == -1);
     }
 }
