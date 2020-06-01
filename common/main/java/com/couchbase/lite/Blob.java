@@ -50,6 +50,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * The data itself is stored externally to the document, keyed by the digest.)
  * <p>
  **/
+@SuppressWarnings("PMD.GodClass")
 public final class Blob implements FLEncodable {
 
     //---------------------------------------------

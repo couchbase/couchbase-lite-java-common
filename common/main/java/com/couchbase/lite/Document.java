@@ -40,7 +40,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Readonly version of the Document.
  */
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity"})
 public class Document implements DictionaryInterface, Iterable<String> {
     // !!! This code is from v1.x. Replace with c4rev_getGeneration().
     private static long generationFromRevID(String revID) {

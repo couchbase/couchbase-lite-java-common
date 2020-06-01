@@ -34,10 +34,16 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-@SuppressWarnings({"PMD.GodClass", "PMD.ExcessivePublicCount", "PMD.TooManyMethods", "PMD.ExcessiveParameterList"})
+@SuppressWarnings({
+    "PMD.GodClass",
+    "PMD.ExcessivePublicCount",
+    "PMD.TooManyMethods",
+    "PMD.ExcessiveParameterList",
+    "PMD.CyclomaticComplexity"})
 public class C4Database extends C4NativePeer {
     /* NOTE: Enum values must match the ones in DataFile::MaintenanceType */
     private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
+
     static {
         final Map<MaintenanceType, Integer> m = new HashMap<>();
         m.put(MaintenanceType.COMPACT, 0);

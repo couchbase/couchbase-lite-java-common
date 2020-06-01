@@ -37,7 +37,7 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
-
+@SuppressWarnings("PMD.GodClass")
 abstract class AbstractQuery implements Query {
     //---------------------------------------------
     // constants
