@@ -31,6 +31,7 @@ import org.junit.Before;
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.utils.Report;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -51,7 +52,11 @@ public abstract class BaseDbTest extends BaseTest {
     }
 
     @After
-    public final void tearDownBaseDbTest() { deleteDb(baseTestDb); }
+    public final void tearDownBaseDbTest() {
+        Report.log(LogLevel.INFO, "Delete base test DB");
+        deleteDb(baseTestDb);
+        Report.log(LogLevel.INFO, "Base Test DB deleted");
+    }
 
     protected final void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
 

@@ -53,8 +53,13 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @AfterClass
     public static void tearDownBaseTestClass() {
-        FileUtils.deleteContents(new File(CouchbaseLiteInternal.getDbDirectoryPath()));
+        String path = CouchbaseLiteInternal.getDbDirectoryPath();
+        Report.log(LogLevel.INFO, "Deleting db directory: " + path);
+        FileUtils.deleteContents(new File(path));
+        path = CouchbaseLiteInternal.getTmpDirectoryPath();
+        Report.log(LogLevel.INFO, "Deleting tmp directory: " + path);
         FileUtils.deleteContents(new File(CouchbaseLiteInternal.getTmpDirectoryPath()));
+        Report.log(LogLevel.INFO, "Directories deleted");
     }
 
     @Before
@@ -73,7 +78,10 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @After
     public final void tearDownBaseTest() {
-        if (testSerialExecutor != null) { testSerialExecutor.stop(2, TimeUnit.SECONDS); }
+        Report.log(LogLevel.INFO, "Shutdown executor: " + testSerialExecutor);
+        boolean succeeded = false;
+        if (testSerialExecutor != null) { succeeded = testSerialExecutor.stop(2, TimeUnit.SECONDS); }
+        Report.log(LogLevel.INFO, "Executor shutdown: " + succeeded);
     }
 
     protected final String getUniqueName(@NonNull String prefix) { return TestUtils.getUniqueName(prefix); }

@@ -22,6 +22,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.utils.Report;
 
 import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PULL;
 import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PUSH;
@@ -45,7 +46,11 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     }
 
     @After
-    public final void tearDownBaseReplicatorTest() { deleteDb(otherDB); }
+    public final void tearDownBaseReplicatorTest() {
+        Report.log(LogLevel.INFO, "Delete other DB");
+        deleteDb(otherDB);
+        Report.log(LogLevel.INFO, "Other DB deleted");
+    }
 
     // helper method allows kotlin to call isDocumentPending(null)
     // Kotlin type checking prevents this.
