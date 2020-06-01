@@ -97,8 +97,9 @@ abstract class AbstractDatabase {
 
     private static final int MAX_CHANGES = 100;
 
-    private static final int SHUTDOWN_DELAY_SECS = 30;
-    private static final int MAX_CLOSE_RETRIES = 3;
+    private static final int DB_CLOSE_WAIT_SECS = 6; // > Core replicator timeout
+    private static final int DB_CLOSE_MAX_RETRIES = 5; // random choice: wait for 5 replicators
+    private static final int EXECUTOR_CLOSE_MAX_WAIT_SECS = 5;
 
     // A random but absurdly large number.
     private static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
@@ -679,7 +680,7 @@ abstract class AbstractDatabase {
 
         synchronized (dbLock) {
             if (token instanceof ChangeListenerToken) {
-                final ChangeListenerToken changeListenerToken = (ChangeListenerToken) token;
+                final ChangeListenerToken<?> changeListenerToken = (ChangeListenerToken<?>) token;
                 if (changeListenerToken.getKey() != null) {
                     removeDocumentChangeListenerLocked(changeListenerToken);
                     return;
@@ -1171,13 +1172,13 @@ abstract class AbstractDatabase {
             docNotifier = new DocumentChangeNotifier((Database) this, docID);
             docChangeNotifiers.put(docID, docNotifier);
         }
-        final ChangeListenerToken token = docNotifier.addChangeListener(executor, listener);
+        final ChangeListenerToken<?> token = docNotifier.addChangeListener(executor, listener);
         token.setKey(docID);
         return token;
     }
 
     @GuardedBy("dbLock")
-    private void removeDocumentChangeListenerLocked(@NonNull ChangeListenerToken token) {
+    private void removeDocumentChangeListenerLocked(@NonNull ChangeListenerToken<?> token) {
         final String docID = (String) token.getKey();
         if (docChangeNotifiers.containsKey(docID)) {
             final DocumentChangeNotifier notifier = docChangeNotifiers.get(docID);
@@ -1605,19 +1606,23 @@ abstract class AbstractDatabase {
             // the replicators won't be able to shut down until this lock is released
         }
 
-        for (int i = 0; closeLatch.getCount() > 0; i++) {
-            if (i >= MAX_CLOSE_RETRIES) { throw new IllegalStateException("Shutdown failed"); }
-            verifyActiveProcesses();
-            try { closeLatch.await(SHUTDOWN_DELAY_SECS, TimeUnit.SECONDS); }
-            catch (InterruptedException ignore) { }
+        try {
+            for (int i = 0; ; i++) {
+                verifyActiveProcesses();
+                if ((i >= DB_CLOSE_MAX_RETRIES) && (closeLatch.getCount() > 0)) {
+                    throw new IllegalStateException("Shutdown failed");
+                }
+                if (closeLatch.await(DB_CLOSE_WAIT_SECS, TimeUnit.SECONDS)) { break; }
+            }
         }
+        catch (InterruptedException ignore) { }
 
         synchronized (dbLock) {
             try { onShut.accept(c4Db); }
             catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         }
 
-        shutdownExecutors(postExecutor, queryExecutor, SHUTDOWN_DELAY_SECS);
+        shutdownExecutors(postExecutor, queryExecutor, EXECUTOR_CLOSE_MAX_WAIT_SECS);
     }
 
     @GuardedBy("dbLock")
