@@ -74,8 +74,6 @@ public abstract class BaseTest extends PlatformBaseTest {
         testFailure.set(null);
 
         testSerialExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
-
-        Report.log(LogLevel.INFO, "######### Test initialized");
     }
 
     @After

@@ -22,6 +22,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
@@ -40,17 +44,29 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
+    // this should probably go in the BaseTest but
+    // there are several tests (C4 tests) that are not subclasses
+    static { initCouchbase(); }
+
     // for testing, use the current directory as the root
     public static void initCouchbase() { CouchbaseLite.init(); }
 
     public static void deinitCouchbase() { CouchbaseLiteInternal.reset(); }
 
-    // this should probably go in the BaseTest but
-    // there are several tests (C4 tests) that are not subclasses
-    static { initCouchbase(); }
+    @BeforeClass
+    public static void setUpPlatformSuite() { System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> Suite started"); }
+
+    @AfterClass
+    public static void tearDownBaseTestClass() { System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<< Suite completed"); }
 
     private static LogFileConfiguration logConfig;
 
+
+    @Before
+    public void setUpPlatformTest() { System.out.println(">>>>>>>>> Test started"); }
+
+    @After
+    public void tearDownPlatformTest() { System.out.println("<<<<<<<<< Test completed"); }
 
     // set up the file logger...
     @Override

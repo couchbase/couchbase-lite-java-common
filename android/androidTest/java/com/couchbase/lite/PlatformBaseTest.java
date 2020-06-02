@@ -25,6 +25,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
@@ -53,16 +58,28 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    public static void initCouchbase() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
-
-    public static void deinitCouchbase() { CouchbaseLiteInternal.reset(); }
-
     // this should probably go in the BaseTest but
     // there are several tests (C4 tests) that are not subclasses
     static { initCouchbase(); }
 
+    public static void initCouchbase() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
+
+    public static void deinitCouchbase() { CouchbaseLiteInternal.reset(); }
+
+    @BeforeClass
+    public static void setUpPlatformSuite() { android.util.Log.d(">>>>>>>>>>>>>>>>>>>>>>>>>", " Suite started"); }
+
+    @AfterClass
+    public static void tearDownBaseTestClass() { android.util.Log.d("<<<<<<<<<<<<<<<<<<<<<<<<<", " Suite completed"); }
+
 
     private String tmpDirPath;
+
+    @Before
+    public void setUpPlatformTest() { android.util.Log.d(">>>>>>>>>", " Test started"); }
+
+    @After
+    public void tearDownPlatformTest() { android.util.Log.d("<<<<<<<<<", " Test completed"); }
 
     @Override
     public void setupPlatform() { Database.log.getConsole().setLevel(LogLevel.DEBUG); }
