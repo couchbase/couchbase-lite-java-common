@@ -24,6 +24,8 @@ import java.io.OutputStream;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -59,7 +61,10 @@ public final class FileUtils {
 
         boolean succeeded = true;
         for (File file: contents) {
-            if (!deleteRecursive(file)) { succeeded = false; }
+            if (!deleteRecursive(file)) {
+                Log.v(LogDomain.DATABASE, "Failed deleting file: " + file);
+                succeeded = false;
+            }
         }
 
         return succeeded;

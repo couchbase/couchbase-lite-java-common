@@ -41,15 +41,15 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     @Before
     public final void setUpBaseReplicatorTest() throws CouchbaseLiteException {
         otherDB = createDb("replicator-db");
+        Report.log(LogLevel.INFO, "Create other DB: " + otherDB);
         assertNotNull(otherDB);
         assertTrue(otherDB.isOpen());
     }
 
     @After
     public final void tearDownBaseReplicatorTest() {
-        Report.log(LogLevel.INFO, "Delete other DB");
+        Report.log(LogLevel.INFO, "Delete other DB: " + otherDB);
         deleteDb(otherDB);
-        Report.log(LogLevel.INFO, "Other DB deleted");
     }
 
     // helper method allows kotlin to call isDocumentPending(null)

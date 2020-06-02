@@ -74,14 +74,16 @@ public abstract class BaseTest extends PlatformBaseTest {
         testFailure.set(null);
 
         testSerialExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
+
+        Report.log(LogLevel.INFO, "######### Test initialized");
     }
 
     @After
     public final void tearDownBaseTest() {
-        Report.log(LogLevel.INFO, "Shutdown executor: " + testSerialExecutor);
+        Report.log(LogLevel.INFO, "Stopping executor: " + testSerialExecutor);
         boolean succeeded = false;
         if (testSerialExecutor != null) { succeeded = testSerialExecutor.stop(2, TimeUnit.SECONDS); }
-        Report.log(LogLevel.INFO, "Executor shutdown: " + succeeded);
+        Report.log(LogLevel.INFO, "Executor stopped: " + succeeded);
     }
 
     protected final String getUniqueName(@NonNull String prefix) { return TestUtils.getUniqueName(prefix); }
@@ -109,7 +111,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     protected final Database duplicateDb(@NonNull Database db, @Nullable DatabaseConfiguration config)
         throws CouchbaseLiteException {
-        return new Database(db.getName(), config);
+        return new Database(db.getName(), (config != null) ? config : new DatabaseConfiguration());
     }
 
     protected final Database reopenDb(@NonNull Database db) throws CouchbaseLiteException {
@@ -175,7 +177,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         while (true) {
             try {
                 task.run();
-                Report.log(LogLevel.DEBUG, "Succeeded: " + taskDesc);
+                Report.log(LogLevel.DEBUG, "Succeeded @" + i + ": " + taskDesc);
                 return true;
             }
             catch (CouchbaseLiteException ex) {
