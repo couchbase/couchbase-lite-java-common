@@ -29,6 +29,10 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
@@ -74,15 +78,24 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
 
     private String tmpDirPath;
+    private String testName;
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) { testName = description.getMethodName(); }
+    };
 
     @Before
-    public void setUpPlatformTest() { android.util.Log.d(">>>>>>>>>", " Test started"); }
+    public void setUpPlatformTest() { android.util.Log.d(">>>>>>>>>", " Test started: " + testName); }
 
     @After
-    public void tearDownPlatformTest() { android.util.Log.d("<<<<<<<<<", " Test completed"); }
+    public void tearDownPlatformTest() { android.util.Log.d("<<<<<<<<<", " Test completed: " + testName); }
 
     @Override
-    public void setupPlatform() { Database.log.getConsole().setLevel(LogLevel.DEBUG); }
+    public void setupPlatform() {
+        Database.log.getConsole().setLevel(LogLevel.DEBUG);
+        Log.d(LogDomain.DATABASE, "=========", "Test initialized: " + testName);
+    }
 
     @Override
     public void reloadStandardErrorMessages() {

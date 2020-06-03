@@ -26,6 +26,10 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
@@ -61,12 +65,18 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     private static LogFileConfiguration logConfig;
 
+    private String testName;
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) { testName = description.getMethodName(); }
+    };
 
     @Before
-    public void setUpPlatformTest() { System.out.println(">>>>>>>>> Test started"); }
+    public void setUpPlatformTest() { System.out.println(">>>>>>>>> Test started: " + testName); }
 
     @After
-    public void tearDownPlatformTest() { System.out.println("<<<<<<<<< Test completed"); }
+    public void tearDownPlatformTest() { System.out.println("<<<<<<<<< Test completed: " + testName); }
 
     // set up the file logger...
     @Override
@@ -81,6 +91,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         final FileLogger fileLogger = Database.log.getFile();
         if (!logConfig.equals(fileLogger.getConfig())) { fileLogger.setConfig(logConfig); }
         fileLogger.setLevel(LogLevel.DEBUG);
+        Log.d(LogDomain.DATABASE, "=========", "Test initialized: " + testName);
     }
 
     @Override
