@@ -24,7 +24,7 @@ import org.junit.Assert
 import org.junit.Test
 
 
-class NetworkConnectivityManagerTest : PlatformBaseTest() {
+class NetworkConnectivityManagerTest : BaseTest() {
 
     class TestObserver : NetworkConnectivityManager.Observer {
         var changeCalls = 0
@@ -58,10 +58,13 @@ class NetworkConnectivityManagerTest : PlatformBaseTest() {
 
         mgr.registerObserver(observer)
         Assert.assertTrue(mgr.isRunning)
-        Assert.assertEquals(0, observer.changeCalls)
 
+        // this has to be sloppy because the registration might cause an immediate callback
+        Assert.assertTrue(observer.changeCalls <= 1)
         mgr.connectivityChanged()
-        Assert.assertNotEquals(0, observer.changeCalls)
+        mgr.connectivityChanged()
+        mgr.connectivityChanged()
+        Assert.assertTrue(observer.changeCalls >= 3)
 
         mgr.unregisterObserver(observer)
         Assert.assertFalse(mgr.isRunning)

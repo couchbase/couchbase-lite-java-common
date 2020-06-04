@@ -73,9 +73,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     private final Fn.Runner runner;
 
     @VisibleForTesting
-    public AndroidConnectivityManager(Fn.Runner runner) {
-        this.runner = runner;
-    }
+    public AndroidConnectivityManager(Fn.Runner runner) { this.runner = runner; }
 
     @Override
     public boolean isConnected() {
@@ -118,6 +116,9 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     }
 
     public void connectivityChanged() {
+        final boolean connected = isConnected();
+        Log.d(LogDomain.NETWORK, "Connectivity changed: " + connected);
+
         final Set<Observer> obs = new HashSet<>();
         synchronized (observers) {
             for (WeakReference<Observer> ref: observers.values()) {
@@ -131,20 +132,17 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             return;
         }
 
-        final boolean connected = isConnected();
-        for (Observer observer: obs) {
-            runner.run(() -> observer.onConnectivityChanged(connected));
-        }
+        for (Observer observer: obs) { runner.run(() -> observer.onConnectivityChanged(connected)); }
     }
 
     @VisibleForTesting
     public boolean isRunning() { return listener.get() != null; }
 
     private void start() {
-        Log.v(LogDomain.NETWORK, "Registering network listener: " + this);
-
         final ConnectivityListener newListener = new ConnectivityListener(this);
         if (!listener.compareAndSet(null, newListener)) { return; }
+
+        Log.v(LogDomain.NETWORK, "Registering network listener: " + this);
 
         final IntentFilter filter = new IntentFilter();
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);

@@ -94,7 +94,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public void setupPlatform() {
         Database.log.getConsole().setLevel(LogLevel.DEBUG);
-        Log.d(LogDomain.DATABASE, "=========", "Test initialized: " + testName);
+        Log.d(LogDomain.DATABASE, "========= Test initialized: " + testName);
     }
 
     @Override

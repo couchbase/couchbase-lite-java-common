@@ -144,7 +144,7 @@ public class FLEncoder extends C4NativePeer {
         if (map == null) { beginDict(0); }
         else {
             beginDict(map.size());
-            for (Map.Entry<String, Object> entry : map.entrySet()) {
+            for (Map.Entry<String, Object> entry: map.entrySet()) {
                 writeKey(entry.getKey());
                 writeValue(entry.getValue());
             }
@@ -156,7 +156,7 @@ public class FLEncoder extends C4NativePeer {
         if (list == null) { beginArray(0); }
         else {
             beginArray(list.size());
-            for (Object item : list) { writeValue(item); }
+            for (Object item: list) { writeValue(item); }
         }
         return endArray();
     }

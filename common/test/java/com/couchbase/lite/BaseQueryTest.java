@@ -55,7 +55,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
     }
 
     protected final String createDocNumbered(int i, int num) throws CouchbaseLiteException {
-        String docID = String.format(Locale.ENGLISH, "doc%d", i);
+        String docID = "doc" + i;
         MutableDocument doc = new MutableDocument(docID);
         doc.setValue("number1", i);
         doc.setValue("number2", num - i);

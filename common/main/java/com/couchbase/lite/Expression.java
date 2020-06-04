@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import com.couchbase.lite.internal.support.Log;
@@ -98,8 +97,7 @@ public abstract class Expression {
                 return;
             }
 
-            throw new IllegalArgumentException(
-                String.format(Locale.ENGLISH, "The given value's type (%1$s) is not supported.", value.getClass()));
+            throw new IllegalArgumentException("Unsupported expression value type: " + value.getClass());
         }
     }
 

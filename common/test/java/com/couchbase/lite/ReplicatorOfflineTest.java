@@ -111,42 +111,6 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         assertThrows(IllegalArgumentException.class, () -> repl.addChangeListener(testSerialExecutor, null));
     }
 
-    @Test
-    @Ignore("Platform no longer has control of network reachablity")
-    public void testNetworkRetry() throws URISyntaxException, InterruptedException {
-        final CountDownLatch offline = new CountDownLatch(2);
-        final CountDownLatch stopped = new CountDownLatch(1);
-
-        Replicator repl = new Replicator(makeConfig(false, true, true, baseTestDb, getRemoteTargetEndpoint()));
-        ListenerToken token = repl.addChangeListener(
-            testSerialExecutor,
-            change -> {
-                switch (change.getStatus().getActivityLevel()) {
-                    case OFFLINE:
-                        Replicator r = change.getReplicator();
-                        offline.countDown();
-                        if (offline.getCount() <= 0) { r.stop(); }
-                        // !!! Platform no longer has control of network reachablity
-                        // else { r.networkReachable(); }
-                        return;
-                    case STOPPED:
-                        stopped.countDown();
-                        return;
-                    default:
-                }
-            });
-
-        try {
-            repl.start(false);
-
-            assertTrue(offline.await(10, TimeUnit.SECONDS));
-            assertTrue(stopped.await(10, TimeUnit.SECONDS));
-        }
-        finally {
-            repl.removeChangeListener(token);
-        }
-    }
-
     private URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {
         return new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
     }
