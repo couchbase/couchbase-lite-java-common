@@ -136,13 +136,13 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     protected final boolean closeDb(@Nullable Database db) {
         if ((db == null) || (!db.isOpen())) { return true; }
-        return retryWhileBusy("Close db " + db.getName(), db::close);
+        return doSafely("Close db " + db.getName(), db::close);
     }
 
     protected final boolean deleteDb(@Nullable Database db) {
         if (db == null) { return true; }
         return (db.isOpen())
-            ? retryWhileBusy("Delete db " + db.getName(), db::delete)
+            ? doSafely("Delete db " + db.getName(), db::delete)
             : FileUtils.eraseFileOrDir(db.getDbFile());
     }
 
@@ -170,26 +170,16 @@ public abstract class BaseTest extends PlatformBaseTest {
         if (failure != null) { throw new AssertionError(failure); }
     }
 
-    private boolean retryWhileBusy(@NonNull String taskDesc, @NonNull Fn.TaskThrows<CouchbaseLiteException> task) {
-        int i = 0;
-        while (true) {
-            try {
-                task.run();
-                Report.log(LogLevel.DEBUG, "Succeeded @" + i + ": " + taskDesc);
-                return true;
-            }
-            catch (CouchbaseLiteException ex) {
-                if (ex.getCode() != CBLError.Code.BUSY) {
-                    Report.log(LogLevel.WARNING, "Failed: " + taskDesc, ex);
-                    return false;
-                }
-
-                if (i++ >= BUSY_RETRIES) { return false; }
-
-                Report.log(LogLevel.WARNING, "Failed (busy): " + taskDesc);
-                try { Thread.sleep(BUSY_WAIT_MS); }
-                catch (InterruptedException e) { return false; }
-            }
+    private boolean doSafely(@NonNull String taskDesc, @NonNull Fn.TaskThrows<CouchbaseLiteException> task) {
+        try {
+            task.run();
+            Report.log(LogLevel.DEBUG, taskDesc + " succeeded");
+            return true;
         }
+        catch (CouchbaseLiteException ex) {
+            Report.log(LogLevel.WARNING, taskDesc + " failed", ex);
+        }
+        return false;
     }
 }
+
