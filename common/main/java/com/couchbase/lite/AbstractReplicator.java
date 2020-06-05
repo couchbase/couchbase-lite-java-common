@@ -329,10 +329,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @GuardedBy("lock")
     private C4ReplicationFilter c4ReplPullFilter;
 
-    // Do something with these (for auth)
-    // @GuardedBy("lock")
-    // private Map<String, Object> responseHeaders;
-
     @GuardedBy("lock")
     private CouchbaseLiteException lastError;
 
@@ -724,13 +720,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
             if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
-
-//            if (responseHeaders == null) {
-//                final C4Replicator repl = getC4Replicator();
-//                if (repl == null) { throw new IllegalStateException("null c4Replicator!"); }
-//                final byte[] h = repl.getResponseHeaders();
-//                if (h != null) { responseHeaders = FLValue.fromData(h).asDict(); }
-//            }
 
             // Update my properties:
             updateStatus(c4Status);

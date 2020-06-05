@@ -603,18 +603,6 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
- * Method:    getResponseHeaders
- * Signature: (J)[B
- */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_getResponseHeaders(JNIEnv *env, jclass clazz, jlong repl) {
-    C4Slice s = c4repl_getResponseHeaders((C4Replicator *) repl);
-    jbyteArray res = toJByteArray(env, s);
-    return res;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    getPendingDocIDs
  * Signature: (J)Ljava/lang/Object;
  */

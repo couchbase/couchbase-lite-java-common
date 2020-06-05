@@ -376,10 +376,6 @@ public class C4Replicator extends C4NativePeer {
     @Nullable
     public C4ReplicatorStatus getStatus() { return getStatus(getPeer()); }
 
-    @SuppressWarnings("PMD.MethodReturnsInternalArray")
-    @Nullable
-    public byte[] getResponseHeaders() { return getResponseHeaders(getPeer()); }
-
     // Null return value indicates that this replicator is dead
     public boolean isDocumentPending(String docId) throws LiteCoreException {
         return isDocumentPending(getPeer(), docId);
@@ -496,11 +492,6 @@ public class C4Replicator extends C4NativePeer {
      * Returns the current state of a replicator.
      */
     private static native C4ReplicatorStatus getStatus(long replicator);
-
-    /**
-     * Returns the HTTP response headers as a Fleece-encoded dictionary.
-     */
-    private static native byte[] getResponseHeaders(long replicator);
 
     /**
      * Returns a list of string ids for pending documents.

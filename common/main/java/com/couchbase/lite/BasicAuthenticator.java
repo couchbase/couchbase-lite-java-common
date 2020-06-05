@@ -109,7 +109,8 @@ public final class BasicAuthenticator extends Authenticator {
         final Map<String, Object> auth = new HashMap<>();
         auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_TYPE, AbstractReplicatorConfiguration.AUTH_TYPE_BASIC);
         auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_USER_NAME, username);
-        auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_PASSWORD, password);
+        // !!! Temporary hack until there is JNI/Core support for clearable passwords.
+        auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_PASSWORD, new String(password));
         options.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_OPTION, auth);
     }
 }
