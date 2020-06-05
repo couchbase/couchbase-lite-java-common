@@ -52,7 +52,6 @@ import com.couchbase.lite.internal.core.C4Socket;
 import com.couchbase.lite.internal.core.InternalReplicator;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
-import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -331,8 +330,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private C4ReplicationFilter c4ReplPullFilter;
 
     // Do something with these (for auth)
-    @GuardedBy("lock")
-    private Map<String, Object> responseHeaders;
+    // @GuardedBy("lock")
+    // private Map<String, Object> responseHeaders;
 
     @GuardedBy("lock")
     private CouchbaseLiteException lastError;
@@ -726,12 +725,12 @@ public abstract class AbstractReplicator extends InternalReplicator {
             if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
 
-            if (responseHeaders == null) {
-                final C4Replicator repl = getC4Replicator();
-                if (repl == null) { throw new IllegalStateException("null c4Replicator!"); }
-                final byte[] h = repl.getResponseHeaders();
-                if (h != null) { responseHeaders = FLValue.fromData(h).asDict(); }
-            }
+//            if (responseHeaders == null) {
+//                final C4Replicator repl = getC4Replicator();
+//                if (repl == null) { throw new IllegalStateException("null c4Replicator!"); }
+//                final byte[] h = repl.getResponseHeaders();
+//                if (h != null) { responseHeaders = FLValue.fromData(h).asDict(); }
+//            }
 
             // Update my properties:
             updateStatus(c4Status);
@@ -790,9 +789,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         notifyDocumentEnded(false, Arrays.asList(new ReplicatedDocument(docId, flags, err, false)));
 
         if ((pendingNotifications != null) && (!pendingNotifications.isEmpty())) {
-            for (C4ReplicatorStatus status: pendingNotifications) {
-                dispatcher.execute(() -> c4StatusChanged(status));
-            }
+            for (C4ReplicatorStatus status: pendingNotifications) { dispatcher.execute(() -> c4StatusChanged(status)); }
         }
     }
 
