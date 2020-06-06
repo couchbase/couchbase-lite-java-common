@@ -26,7 +26,7 @@ import android.support.annotation.NonNull;
 public class ConsoleLogger extends AbstractConsoleLogger {
     @Override
     public void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        ((level == LogLevel.ERROR) ? System.err : System.out)
+        ((level == LogLevel.WARNING) ? System.err : System.out)
             .println(level + "/CouchbaseLite/" + domain + ":" + message);
     }
 }

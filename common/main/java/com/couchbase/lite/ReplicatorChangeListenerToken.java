@@ -15,19 +15,22 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 final class ReplicatorChangeListenerToken implements ListenerToken {
     private final ReplicatorChangeListener listener;
     private final Executor executor;
 
-    ReplicatorChangeListenerToken(Executor executor, ReplicatorChangeListener listener) {
-        if (listener == null) { throw new IllegalArgumentException("listener may not be null"); }
+    ReplicatorChangeListenerToken(@Nullable Executor executor, @NonNull ReplicatorChangeListener listener) {
         this.executor = executor;
-        this.listener = listener;
+        this.listener = Preconditions.assertNotNull(listener, "listener");
     }
 
     void notify(final ReplicatorChange change) { getExecutor().execute(() -> listener.changed(change)); }

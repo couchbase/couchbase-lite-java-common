@@ -40,9 +40,9 @@ public final class Log {
     Log() { }
 
     /**
-     * Gets the logger that writes to the Android system log
+     * Gets the logger that writes to the system console
      *
-     * @return The logger that writes to the Android system log
+     * @return The logger that writes to the system console
      */
     @NonNull
     public ConsoleLogger getConsole() {

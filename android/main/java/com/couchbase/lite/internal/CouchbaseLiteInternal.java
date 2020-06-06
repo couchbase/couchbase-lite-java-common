@@ -39,6 +39,7 @@ import com.couchbase.lite.BuildConfig;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.R;
 import com.couchbase.lite.internal.core.C4Base;
+import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.support.Log;
