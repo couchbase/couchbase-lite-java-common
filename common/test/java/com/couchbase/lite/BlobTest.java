@@ -28,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import com.couchbase.lite.utils.FlakyTest;
 import com.couchbase.lite.utils.IOUtils;
 import com.couchbase.lite.utils.TestUtils;
 
@@ -251,6 +252,7 @@ public class BlobTest extends BaseDbTest {
         assertThrows(IllegalArgumentException.class, () -> new Blob(contentType, new URL("http://java.sun.com")));
     }
 
+    @FlakyTest
     @Test
     public void testBlobReadFunctions() throws IOException {
         byte[] bytes;

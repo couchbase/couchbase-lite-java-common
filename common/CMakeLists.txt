@@ -67,6 +67,7 @@ set(JNI_CLASSES
     com.couchbase.lite.internal.core.C4DocumentObserver
     com.couchbase.lite.internal.core.C4FullTextMatch
     com.couchbase.lite.internal.core.C4Key
+    com.couchbase.lite.internal.core.C4Listener
     com.couchbase.lite.internal.core.C4Log
     com.couchbase.lite.internal.core.C4Prediction
     com.couchbase.lite.internal.core.C4Query
@@ -126,8 +127,12 @@ add_dependencies(LiteCoreJNI JNIHeaders)
 add_subdirectory(${LITE_CORE_ROOT} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 target_link_libraries(  LiteCoreJNI
+                        ${WHOLE_LIBRARY_FLAG}
                         LiteCoreStatic
+                        LiteCoreREST_Static
                         FleeceStatic
+                        ${NO_WHOLE_LIBRARY_FLAG}
+                        LiteCoreWebSocket
                         Support
                         SQLite3_UnicodeSN
                         BLIPStatic
@@ -137,7 +142,4 @@ target_link_libraries(  LiteCoreJNI
                         "atomic"
                         "log"
                         zlibstatic)
-if (REST)
-    target_link_libraries(  LiteCoreJNI 
-                            LiteCoreREST_Static)
-endif()
+
