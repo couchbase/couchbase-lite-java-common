@@ -54,9 +54,9 @@ import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.StringUtils;
-import com.couchbase.lite.utils.Fn;
 
 
 /**
@@ -562,8 +562,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * This method, exactly, sets a flag that will be used on the next call to
      * the deprecated method <code>start()</code>
      *
-     * @deprecated Use <code>start(boolean resetCheckpoint)</code> instead.
      * @throws IllegalStateException unless the Replicator is STOPPED.
+     * @deprecated Use <code>start(boolean resetCheckpoint)</code> instead.
      */
     @Deprecated
     public void resetCheckpoint() {

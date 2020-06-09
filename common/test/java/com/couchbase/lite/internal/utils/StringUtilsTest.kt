@@ -19,7 +19,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Arrays
 
 
 class StringUtilsTest {
@@ -34,18 +33,17 @@ class StringUtilsTest {
     @Test
     fun testJoin() {
         assertEquals("", StringUtils.join("", emptyList<String>()))
-        assertEquals("", StringUtils.join("", Arrays.asList("")))
-        assertEquals("", StringUtils.join("", Arrays.asList("", "")))
-        assertEquals("a", StringUtils.join("", Arrays.asList("a")))
-        assertEquals("a", StringUtils.join("", Arrays.asList("a", "")))
-        assertEquals("aa", StringUtils.join("", Arrays.asList("a", "a")))
-
+        assertEquals("", StringUtils.join("", listOf("")))
+        assertEquals("", StringUtils.join("", listOf("", "")))
+        assertEquals("a", StringUtils.join("", listOf("a")))
+        assertEquals("a", StringUtils.join("", listOf("a", "")))
+        assertEquals("aa", StringUtils.join("", listOf("a", "a")))
         assertEquals("", StringUtils.join(".", emptyList<String>()))
-        assertEquals("", StringUtils.join(".", Arrays.asList("")))
-        assertEquals(".", StringUtils.join(".", Arrays.asList("", "")))
-        assertEquals("a", StringUtils.join(".", Arrays.asList("a")))
-        assertEquals("a.", StringUtils.join(".", Arrays.asList("a", "")))
-        assertEquals(".a", StringUtils.join(".", Arrays.asList("", "a")))
-        assertEquals("a.a", StringUtils.join(".", Arrays.asList("a", "a")))
+        assertEquals("", StringUtils.join(".", listOf("")))
+        assertEquals(".", StringUtils.join(".", listOf("", "")))
+        assertEquals("a", StringUtils.join(".", listOf("a")))
+        assertEquals("a.", StringUtils.join(".", listOf("a", "")))
+        assertEquals(".a", StringUtils.join(".", listOf("", "a")))
+        assertEquals("a.a", StringUtils.join(".", listOf("a", "a")))
     }
 }

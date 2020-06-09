@@ -21,7 +21,7 @@ import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 public class AndroidConnectivityObserver implements NetworkConnectivityManager.Observer {

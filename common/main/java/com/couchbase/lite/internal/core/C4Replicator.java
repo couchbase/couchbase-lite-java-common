@@ -76,6 +76,55 @@ public class C4Replicator extends C4NativePeer {
     private static final Map<Long, C4Replicator> REVERSE_LOOKUP_TABLE = new HashMap<>();
 
     //-------------------------------------------------------------------------
+    // Native callback methods
+    //-------------------------------------------------------------------------
+
+    // This method is called by reflection.  Don't change its signature.
+    @SuppressWarnings("unused")
+    static void statusChangedCallback(long handle, @Nullable C4ReplicatorStatus status) {
+        final C4Replicator repl = getReplicatorForHandle(handle);
+        Log.d(
+            LogDomain.REPLICATOR,
+            "C4Replicator.statusChangedCallback @" + Long.toHexString(handle) + ", status: " + status);
+        if (repl == null) { return; }
+
+        final C4ReplicatorListener listener = repl.listener;
+        if (listener != null) { listener.statusChanged(repl, status, repl.replicatorContext); }
+    }
+
+    // This method is called by reflection.  Don't change its signature.
+    @SuppressWarnings("unused")
+    static void documentEndedCallback(long handle, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
+        Log.d(
+            LogDomain.REPLICATOR,
+            "C4Replicator.documentEndedCallback @" + Long.toHexString(handle) + ", pushing: " + pushing);
+
+        final C4Replicator repl = getReplicatorForHandle(handle);
+        if (repl == null) { return; }
+
+        final C4ReplicatorListener listener = repl.listener;
+        if (listener != null) { listener.documentEnded(repl, pushing, documentsEnded, repl.replicatorContext); }
+    }
+
+    // This method is called by reflection.  Don't change its signature.
+    // Supported only for Replicators
+    // This method is called from a native thread that Java has never even heard of...
+    @SuppressWarnings("unused")
+    static boolean validationFunction(String docID, String revID, int flags, long dict, boolean isPush, Object ctxt) {
+        if (!(ctxt instanceof AbstractReplicator)) {
+            Log.w(LogDomain.DATABASE, "Validation function called with unrecognized context: " + ctxt);
+            return true;
+        }
+        final AbstractReplicator repl = (AbstractReplicator) ctxt;
+
+        final C4Replicator c4Repl = repl.getC4Replicator(); // Try that, Kotlin!!
+        if (c4Repl == null) { return true; }
+
+        final C4ReplicationFilter filter = (isPush) ? c4Repl.pushFilter : c4Repl.pullFilter;
+        return (filter == null) || filter.validationFunction(docID, revID, flags, dict, isPush, repl);
+    }
+
+    //-------------------------------------------------------------------------
     // Static Factory Methods
     //-------------------------------------------------------------------------
 
@@ -181,51 +230,6 @@ public class C4Replicator extends C4NativePeer {
     }
 
     //-------------------------------------------------------------------------
-    // Native callback methods
-    //-------------------------------------------------------------------------
-
-    @SuppressWarnings("unused")
-    static void statusChangedCallback(long handle, @Nullable C4ReplicatorStatus status) {
-        final C4Replicator repl = getReplicatorForHandle(handle);
-        Log.d(
-            LogDomain.REPLICATOR,
-            "C4Replicator.statusChangedCallback @" + Long.toHexString(handle) + ", status: " + status);
-        if (repl == null) { return; }
-
-        final C4ReplicatorListener listener = repl.listener;
-        if (listener != null) { listener.statusChanged(repl, status, repl.replicatorContext); }
-    }
-
-    @SuppressWarnings("unused")
-    static void documentEndedCallback(long handle, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
-        Log.d(
-            LogDomain.REPLICATOR,
-            "C4Replicator.documentEndedCallback @" + Long.toHexString(handle) + ", pushing: " + pushing);
-
-        final C4Replicator repl = getReplicatorForHandle(handle);
-        if (repl == null) { return; }
-
-        final C4ReplicatorListener listener = repl.listener;
-        if (listener != null) { listener.documentEnded(repl, pushing, documentsEnded, repl.replicatorContext); }
-    }
-
-    // Supported only for Replicators
-    // This method is called from a thread that Java has never even heard of...
-    static boolean validationFunction(String docID, String revID, int flags, long dict, boolean isPush, Object ctxt) {
-        if (!(ctxt instanceof AbstractReplicator)) {
-            Log.w(LogDomain.DATABASE, "Validation function called with unrecognized context: " + ctxt);
-            return true;
-        }
-        final AbstractReplicator repl = (AbstractReplicator) ctxt;
-
-        final C4Replicator c4Repl = repl.getC4Replicator(); // Try that, Kotlin!!
-        if (c4Repl == null) { return true; }
-
-        final C4ReplicationFilter filter = (isPush) ? c4Repl.pushFilter : c4Repl.pullFilter;
-        return (filter == null) || filter.validationFunction(docID, revID, flags, dict, isPush, repl);
-    }
-
-    //-------------------------------------------------------------------------
     // Private static methods
     //-------------------------------------------------------------------------
 
@@ -245,6 +249,7 @@ public class C4Replicator extends C4NativePeer {
     }
 
     private static void release(long handle) { REVERSE_LOOKUP_TABLE.remove(handle); }
+
 
     //-------------------------------------------------------------------------
     // Member Variables

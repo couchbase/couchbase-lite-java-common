@@ -29,7 +29,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.DateUtils;
-import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.utils.TestUtils;
 
 import static com.couchbase.lite.utils.TestUtils.assertThrows;

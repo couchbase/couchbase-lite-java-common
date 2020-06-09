@@ -18,10 +18,11 @@ package com.couchbase.lite.utils;
 import android.support.annotation.NonNull;
 
 import java.util.Locale;
-import java.util.Random;
 
 import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.internal.utils.Fn;
 
+import static com.couchbase.lite.internal.utils.MathUtils.RANDOM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -35,13 +36,12 @@ public final class TestUtils {
     public static final String ALPHANUMERIC = NUMERIC + ALPHA + ALPHA.toLowerCase(Locale.ROOT);
 
     private static final char[] CHARS = ALPHANUMERIC.toCharArray();
-    private static final Random RANDOM = new Random();
 
     public static String getUniqueName(@NonNull String prefix) { return prefix + '-' + randomString(24); }
 
     public static String randomString(int len) {
         final char[] buf = new char[len];
-        for (int idx = 0; idx < buf.length; ++idx) { buf[idx] = CHARS[RANDOM.nextInt(CHARS.length)]; }
+        for (int idx = 0; idx < buf.length; ++idx) { buf[idx] = CHARS[RANDOM.get().nextInt(CHARS.length)]; }
         return new String(buf);
     }
 

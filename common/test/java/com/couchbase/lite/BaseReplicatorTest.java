@@ -18,15 +18,14 @@ package com.couchbase.lite;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 
-import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.utils.Report;
 
-import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PULL;
-import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PUSH;
-import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
+import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -59,6 +58,15 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return repl.isDocumentPending(null);
     }
 
+    @NotNull
+    protected final ReplicatorType getReplicatorType(boolean push, boolean pull) {
+        return (push && pull)
+            ? ReplicatorType.PUSH_AND_PULL
+            : ((push)
+                ? ReplicatorType.PUSH
+                : ReplicatorType.PULL);
+    }
+
     protected final ReplicatorConfiguration makeConfig(
         boolean push,
         boolean pull,
@@ -84,7 +92,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         Endpoint target,
         ConflictResolver resolver) {
         ReplicatorConfiguration config = new ReplicatorConfiguration(source, target);
-        config.setReplicatorType(push && pull ? PUSH_AND_PULL : (push ? PUSH : PULL));
+        config.setReplicatorType(getReplicatorType(push, pull));
         config.setContinuous(continuous);
         if (resolver != null) { config.setConflictResolver(resolver); }
         return config;
@@ -166,5 +174,4 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
             repl.removeChangeListener(token);
         }
     }
-
 }

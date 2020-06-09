@@ -22,8 +22,8 @@ import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.internal.utils.StopWatch;
 import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.utils.StopWatch;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -221,7 +221,8 @@ public class C4DocumentTest extends C4BaseTest {
         assertEquals(30, c4Database.getMaxRevTreeDepth());
 
         final int kNumRevs = 10000;
-        StopWatch st = new StopWatch();
+        StopWatch timer = new StopWatch();
+
         C4Document doc = c4Database.get(DOC_ID, false);
         assertNotNull(doc);
         boolean commit = false;
@@ -241,7 +242,7 @@ public class C4DocumentTest extends C4BaseTest {
         }
         Report.log(
             LogLevel.INFO,
-            String.format(Locale.ENGLISH, "Created %d revisions in %.3f ms", kNumRevs, st.getElapsedTimeMillis()));
+            String.format(Locale.ENGLISH, "Created %d revisions in %.3f ms", kNumRevs, timer.getElapsedTimeMillis()));
 
         // Check rev tree depth:
         int nRevs = 0;

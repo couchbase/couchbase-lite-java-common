@@ -21,8 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.support.Log;
@@ -35,7 +33,7 @@ public abstract class C4Socket extends C4NativePeer {
     //
     // Most of these are defined in c4Replicator.h and must agree with those definitions.
     //
-    //@formatter:off
+    // @formatter:off
     //-------------------------------------------------------------------------
     private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
 
@@ -90,7 +88,7 @@ public abstract class C4Socket extends C4NativePeer {
     public static final int WEB_SOCKET_CLIENT_FRAMING = 0; ///< Frame as WebSocket client messages (masked)
     public static final int NO_FRAMING = 1;                ///< No framing; use messages as-is
     public static final int WEB_SOCKET_SERVER_FRAMING = 2; ///< Frame as WebSocket server messages (not masked)
-    //@formatter:on
+    // @formatter:on
 
     //-------------------------------------------------------------------------
     // Static Variables
@@ -104,10 +102,9 @@ public abstract class C4Socket extends C4NativePeer {
     // JNI callback methods
     //-------------------------------------------------------------------------
 
-    // This method is called by reflection.  Don't change its name.
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static void open(
+    // This method is called by reflection.  Don't change its signature.
+    @SuppressWarnings("unused")
+    static void open(
         long handle,
         Object context,
         String scheme,
@@ -128,10 +125,9 @@ public abstract class C4Socket extends C4NativePeer {
         socket.openSocket();
     }
 
-    // This method is called by reflection.  Don't change its name.
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static void write(long handle, byte[] allocatedData) {
+    // This method is called by reflection.  Don't change its signature.
+    @SuppressWarnings("unused")
+    static void write(long handle, byte[] allocatedData) {
         if (allocatedData == null) {
             Log.v(LOG_DOMAIN, "C4Socket.callback.write: allocatedData is null");
             return;
@@ -144,11 +140,10 @@ public abstract class C4Socket extends C4NativePeer {
         socket.send(allocatedData);
     }
 
-    // This method is called by reflection.  Don't change its name.
-    // NOTE: No further action is not required?
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static void completedReceive(long handle, long byteCount) {
+    // This method is called by reflection.  Don't change its signature.
+    // NOTE: No further action is required?
+    @SuppressWarnings("unused")
+    static void completedReceive(long handle, long byteCount) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.completedReceive @" + handle + ": " + socket);
         if (socket == null) { return; }
@@ -156,11 +151,10 @@ public abstract class C4Socket extends C4NativePeer {
         socket.completedReceive(byteCount);
     }
 
-    // This method is called by reflection.  Don't change its name.
+    // This method is called by reflection.  Don't change its signature.
     // NOTE: close(long) method should not be called.
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static void close(long handle) {
+    @SuppressWarnings("unused")
+    static void close(long handle) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.close @" + handle + ": " + socket);
         if (socket == null) { return; }
@@ -168,10 +162,9 @@ public abstract class C4Socket extends C4NativePeer {
         socket.close();
     }
 
-    // This method is called by reflection.  Don't change its name.
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static void requestClose(long handle, int status, String message) {
+    // This method is called by reflection.  Don't change its signature.
+    @SuppressWarnings("unused")
+    static void requestClose(long handle, int status, String message) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.requestClose @" + handle + ": " + socket);
         if (socket == null) { return; }
@@ -179,17 +172,20 @@ public abstract class C4Socket extends C4NativePeer {
         socket.requestClose(status, message);
     }
 
-    // This method is called by reflection.  Don't change its name.
+    // This method is called by reflection.  Don't change its signature.
     // NOTE: close(long) method should not be called.
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static void dispose(long handle) {
+    @SuppressWarnings("unused")
+    static void dispose(long handle) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.dispose @" + handle + ": " + socket);
         if (socket == null) { return; }
 
         release(socket);
     }
+
+    //-------------------------------------------------------------------------
+    // Private static methods
+    //-------------------------------------------------------------------------
 
     private static void bind(@NonNull C4Socket socket) {
         final long handle = socket.getPeer();
@@ -202,6 +198,7 @@ public abstract class C4Socket extends C4NativePeer {
         HANDLES_TO_SOCKETS.remove(handle);
         Log.d(LOG_DOMAIN, "C4Socket.release @" + handle + ": " + HANDLES_TO_SOCKETS.size());
     }
+
 
     //-------------------------------------------------------------------------
     // constructors

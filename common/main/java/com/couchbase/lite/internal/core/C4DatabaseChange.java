@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+
 public class C4DatabaseChange {
     private String docID;
     private String revID;
@@ -22,23 +23,13 @@ public class C4DatabaseChange {
     private long bodySize;
     private boolean external;
 
-    public String getDocID() {
-        return docID;
-    }
+    public String getDocID() { return docID; }
 
-    public String getRevID() {
-        return revID;
-    }
+    public String getRevID() { return revID; }
 
-    public long getSequence() {
-        return sequence;
-    }
+    public long getSequence() { return sequence; }
 
-    public long getBodySize() {
-        return bodySize;
-    }
+    public long getBodySize() { return bodySize; }
 
-    public boolean isExternal() {
-        return external;
-    }
+    public boolean isExternal() { return external; }
 }

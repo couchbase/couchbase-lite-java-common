@@ -24,8 +24,8 @@ import org.junit.Test;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.utils.FileUtils;
-import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.utils.Fn;
 
 import static com.couchbase.lite.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;

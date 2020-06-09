@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 public class AndroidConnectivityManager implements NetworkConnectivityManager {

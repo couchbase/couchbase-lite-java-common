@@ -39,9 +39,9 @@ import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.utils.StopWatch;
-import com.couchbase.lite.utils.FileUtils;
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.utils.StopWatch;
 import com.couchbase.lite.utils.TestUtils;
 
 import static org.junit.Assert.assertNotNull;
@@ -297,7 +297,8 @@ public class C4BaseTest extends PlatformBaseTest {
     // Read a file that contains a JSON document per line. Every line becomes a document.
     private long importJSONLines(InputStream is, String idPrefix, double timeout, boolean verbose)
         throws LiteCoreException, IOException {
-        StopWatch st = new StopWatch();
+        StopWatch timer = new StopWatch();
+
         long numDocs = 0;
         boolean commit = false;
         c4Database.beginTransaction();
@@ -324,10 +325,10 @@ public class C4BaseTest extends PlatformBaseTest {
                     }
 
                     numDocs++;
-                    if (numDocs % 1000 == 0 && st.getElapsedTimeSecs() >= timeout) {
+                    if ((numDocs % 1000) == 0 && (timer.getElapsedTimeSecs() >= timeout)) {
                         String msg = String.format(
                             Locale.ENGLISH, "Stopping JSON import after %.3f sec",
-                            st.getElapsedTimeSecs());
+                            timer.getElapsedTimeSecs());
                         throw new IOException(msg);
                     }
                     if (verbose && numDocs % 100000 == 0) {

@@ -20,23 +20,23 @@ package com.couchbase.lite;
  * Connection Status
  */
 public class ConnectionStatus {
-    private final int connectionCount;
-    private final int activeConnectionCount;
+    private final int connections;
+    private final int activeConnections;
 
     public ConnectionStatus(int connectionCount, int activeConnectionCount) {
-        this.connectionCount = connectionCount;
-        this.activeConnectionCount = activeConnectionCount;
+        this.connections = connectionCount;
+        this.activeConnections = activeConnectionCount;
     }
 
-    public int getConnectionCount() { return connectionCount; }
+    public int getActiveConnections() { return connections; }
 
     public ConnectionStatus withConnectionCount(int connectionCount) {
-        return new ConnectionStatus(connectionCount, this.activeConnectionCount);
+        return new ConnectionStatus(connectionCount, this.activeConnections);
     }
 
-    public int getActiveConnectionCount() { return activeConnectionCount; }
+    public int getActiveConnectionCount() { return activeConnections; }
 
     public ConnectionStatus withActiveConnectionCount(int activeConnectionCount) {
-        return new ConnectionStatus(this.connectionCount, activeConnectionCount);
+        return new ConnectionStatus(this.connections, activeConnectionCount);
     }
 }

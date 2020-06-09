@@ -19,7 +19,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
 
 
 // Class has package protected static factory methods
@@ -39,9 +40,11 @@ public class C4DatabaseObserver extends C4NativePeer {
     // JNI callback methods
     //-------------------------------------------------------------------------
 
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static void callback(long handle) {
+    // This method is called by reflection.  Don't change its signature.
+    @SuppressWarnings("unused")
+    static void callback(long handle) {
+        Log.d(LogDomain.DATABASE, "C4DatabaseObserver.callback @" + Long.toHexString(handle));
+
         final C4DatabaseObserver obs = REVERSE_LOOKUP_TABLE.get(handle);
         if (obs == null) { return; }
 
@@ -60,6 +63,7 @@ public class C4DatabaseObserver extends C4NativePeer {
         REVERSE_LOOKUP_TABLE.put(observer.getPeer(), observer);
         return observer;
     }
+
 
     //-------------------------------------------------------------------------
     // Member Variables

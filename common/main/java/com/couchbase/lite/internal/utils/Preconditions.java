@@ -18,8 +18,6 @@ package com.couchbase.lite.internal.utils;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.couchbase.lite.utils.Fn;
-
 
 public final class Preconditions {
 

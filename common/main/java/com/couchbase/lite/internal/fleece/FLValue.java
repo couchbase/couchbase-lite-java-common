@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
-import com.couchbase.lite.utils.Fn;
 
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})

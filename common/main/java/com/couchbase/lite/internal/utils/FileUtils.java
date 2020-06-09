@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.utils;
+package com.couchbase.lite.internal.utils;
 
 import android.support.annotation.NonNull;
 
@@ -26,7 +26,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public final class FileUtils {

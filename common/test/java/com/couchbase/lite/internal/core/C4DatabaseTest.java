@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.utils.FileUtils;
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.utils.Report;
 import com.couchbase.lite.utils.TestUtils;
 

@@ -50,7 +50,7 @@ public final class TLSIdentity extends AbstractTLSIdentity {
         @NonNull Map<String, String> attributes,
         @Nullable Date expiration,
         @NonNull String alias,
-        @Nullable byte[] keyPassword)
+        @Nullable char[] keyPassword)
         throws CouchbaseLiteException {
         return new TLSIdentity();
     }
@@ -59,9 +59,9 @@ public final class TLSIdentity extends AbstractTLSIdentity {
     public static TLSIdentity importIdentity(
         @NonNull InputStream data,
         @NonNull String dataType,
-        @Nullable byte[] dataPassword,
+        @Nullable char[] dataPassword,
         @NonNull String alias,
-        @Nullable byte[] keyPassword)
+        @Nullable char[] keyPassword)
         throws CouchbaseLiteException {
         return new TLSIdentity();
     }

@@ -18,8 +18,8 @@ package com.couchbase.lite.internal.fleece;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
-import com.couchbase.lite.utils.Fn;
 
 
 public class FLArray {

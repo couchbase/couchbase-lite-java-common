@@ -30,8 +30,8 @@ import org.junit.Before;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.utils.FileUtils;
-import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.utils.Report;
 import com.couchbase.lite.utils.TestUtils;
 

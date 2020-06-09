@@ -19,7 +19,7 @@ import com.couchbase.lite.internal.AndroidConnectivityManager
 import com.couchbase.lite.internal.core.C4Replicator
 import com.couchbase.lite.internal.replicator.AndroidConnectivityObserver
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager
-import com.couchbase.lite.utils.Fn
+import com.couchbase.lite.internal.utils.Fn
 import org.junit.Assert
 import org.junit.Test
 

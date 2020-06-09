@@ -27,8 +27,8 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CBLStatus;
-import com.couchbase.lite.internal.utils.StopWatch;
 import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.utils.StopWatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -81,8 +81,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
     // - AllDocsPerformance
     @Test
     public void testAllDocsPerformance() throws LiteCoreException {
-        StopWatch st = new StopWatch();
-        st.start();
+        StopWatch timer = new StopWatch();
 
         // No start or end ID:
         int iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT;
@@ -100,7 +99,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         }
         assertEquals(DOC_NUM, i);
 
-        double elapsed = st.getElapsedTimeMillis();
+        double elapsed = timer.getElapsedTimeMillis();
         Report.log(
             LogLevel.INFO,
             String.format("Enumerating %d docs took %.3f ms (%.3f ms/doc)", i, elapsed, elapsed / i));

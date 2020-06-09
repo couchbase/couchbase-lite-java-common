@@ -20,7 +20,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
 
 
 // Class has package protected static factory methods
@@ -45,26 +46,17 @@ public class C4DocumentObserver extends C4NativePeer {
         return observer;
     }
 
-    public void close() {
-        final long handle = getPeer();
-        if (handle == 0L) { return; }
-        REVERSE_LOOKUP_TABLE.remove(handle);
-    }
-
     //-------------------------------------------------------------------------
     // JNI callback methods
     //-------------------------------------------------------------------------
 
-    /**
-     * Callback invoked by a database observer.
-     * <p>
-     * NOTE: Two parameters, observer and context, which are defined for iOS:
-     * observer -> this instance
-     * context ->  maintained in java layer
-     */
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    @SuppressFBWarnings("UPM_UNCALLED_PRIVATE_METHOD")
-    private static void callback(long handle, String docID, long sequence) {
+    // This method is called by reflection.  Don't change its signature.
+    @SuppressWarnings("unused")
+    static void callback(long handle, String docID, long sequence) {
+        Log.d(
+            LogDomain.DATABASE,
+            "C4DocumentObserver.callback @" + Long.toHexString(handle) + " (" + sequence + "): " + docID);
+
         final C4DocumentObserver obs = REVERSE_LOOKUP_TABLE.get(handle);
         if (obs == null) { return; }
 
@@ -73,6 +65,7 @@ public class C4DocumentObserver extends C4NativePeer {
 
         listener.callback(obs, docID, sequence, obs.context);
     }
+
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -94,6 +87,12 @@ public class C4DocumentObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
+
+    public void close() {
+        final long handle = getPeer();
+        if (handle == 0L) { return; }
+        REVERSE_LOOKUP_TABLE.remove(handle);
+    }
 
     public void free() {
         final long handle = getPeerAndClear();

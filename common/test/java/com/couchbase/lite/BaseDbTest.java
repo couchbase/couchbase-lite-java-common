@@ -30,7 +30,7 @@ import org.junit.Before;
 
 import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
-import com.couchbase.lite.utils.Fn;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.utils.Report;
 
 import static org.junit.Assert.assertEquals;

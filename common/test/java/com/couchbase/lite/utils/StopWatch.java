@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.utils;
+package com.couchbase.lite.utils;
 
 import java.util.Locale;
 

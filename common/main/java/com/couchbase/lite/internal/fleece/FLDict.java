@@ -19,8 +19,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
-import com.couchbase.lite.utils.Fn;
 
 
 public class FLDict {

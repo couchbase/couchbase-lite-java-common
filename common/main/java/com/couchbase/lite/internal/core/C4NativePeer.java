@@ -21,15 +21,15 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
-import com.couchbase.lite.utils.Fn;
 
 
 /**
  * This approach doesn't actually solve the peer management problem.
  * It is still entirely possible that the peer whose handle is returned
  * by getPeer will be freed while the client is still using it.
- *
+ * <p>
  * It also exposes the native handle because anybody can call `get`.
  */
 public abstract class C4NativePeer extends AtomicLong {
