@@ -1,4 +1,3 @@
-
 //
 // Copyright (c) 2020 Couchbase, Inc All rights reserved.
 //
@@ -33,6 +32,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.couchbase.lite.ConnectionStatus;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.utils.MathUtils;
+
 
 // !!! Temporary warning suppression.  Remove this.
 @SuppressFBWarnings("DLS_DEAD_LOCAL_STORE")

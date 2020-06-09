@@ -127,11 +127,11 @@ add_dependencies(LiteCoreJNI JNIHeaders)
 add_subdirectory(${LITE_CORE_ROOT} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
 target_link_libraries(  LiteCoreJNI
-                        "-Wl,--whole-archive"
+                        ${WHOLE_LIBRARY_FLAG}
                         LiteCoreStatic
                         LiteCoreREST_Static
                         FleeceStatic
-                        "-Wl,--no-whole-archive"
+                        ${NO_WHOLE_LIBRARY_FLAG}
                         LiteCoreWebSocket
                         Support
                         SQLite3_UnicodeSN

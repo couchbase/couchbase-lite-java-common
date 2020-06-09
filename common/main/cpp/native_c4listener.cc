@@ -1,7 +1,7 @@
 //
 // native_c4listener.cc
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2020 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -166,6 +166,10 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Listener_startHttp(
     config.allowDeleteDBs = allowDeleteDBs;
 
     auto listener = c4listener_start(&config, &error);
+    if (!listener) {
+        throwError(env, error);
+        return 0;
+    }
 
     return reinterpret_cast<jlong>(listener);
 }
@@ -216,7 +220,10 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Listener_getUrls
             api,
             &error);
 
-    // check error
+    if (!urls) {
+        throwError(env, error);
+        return 0;
+    }
 
     // do something sensible with the return
 
