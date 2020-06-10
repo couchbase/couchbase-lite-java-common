@@ -93,9 +93,6 @@ abstract class AbstractReplicatorConfiguration {
     private ReplicationFilter pushFilter;
     @Nullable
     private ReplicationFilter pullFilter;
-    @NonNull
-    private ServerCertificateVerificationMode certificateVerificationMode
-        = ServerCertificateVerificationMode.CA_CERT;
     @Nullable
     private ConflictResolver conflictResolver;
 
@@ -122,7 +119,6 @@ abstract class AbstractReplicatorConfiguration {
         this.pullFilter = config.pullFilter;
         this.pushFilter = config.pushFilter;
         this.conflictResolver = config.conflictResolver;
-        this.certificateVerificationMode = config.certificateVerificationMode;
     }
 
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
@@ -284,21 +280,6 @@ abstract class AbstractReplicatorConfiguration {
         return getReplicatorConfiguration();
     }
 
-    /**
-     * Sets the replicator verification mode.
-     * The default value is ServerCertificateVerificationMode.CA_CERT.
-     *
-     * @param mode Specifies the way the replicator verifies the server identity when using TLS communication
-     * @return this.
-     */
-    @NonNull
-    public final ReplicatorConfiguration setServerCertificateVerificationMode(
-        @NonNull ServerCertificateVerificationMode mode) {
-        checkReadOnly();
-        this.certificateVerificationMode = Preconditions.assertNotNull(mode, "certificate verification mode");
-        return getReplicatorConfiguration();
-    }
-
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -385,17 +366,17 @@ abstract class AbstractReplicatorConfiguration {
     @NonNull
     public final Endpoint getTarget() { return target; }
 
-    /**
-     * Return the replicator verification mode.
-     */
-    @NonNull
-    public final ServerCertificateVerificationMode getServerCertificateVerificationMode() {
-        return certificateVerificationMode;
-    }
-
     @NonNull
     @Override
     public String toString() { return "ReplicatorConfig{" + database + " => " + target + "}"; }
+
+    //---------------------------------------------
+    // Protected access
+    //---------------------------------------------
+
+    protected void checkReadOnly() {
+        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
+    }
 
     //---------------------------------------------
     // Package level access
@@ -445,9 +426,5 @@ abstract class AbstractReplicatorConfiguration {
         options.put(REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
 
         return options;
-    }
-
-    private void checkReadOnly() {
-        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
     }
 }

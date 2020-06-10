@@ -43,14 +43,20 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Java";
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%&'()_+{}][=-.,;'ABCDEabcde";
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
-    private static final String LOG_DIR = ".cbl-test-logs";
-    private static final String SCRATCH_DIR = ".cbl-test-scratch";
+    private static final String TEST_DIR = ".test";
+    private static final File LOG_DIR = new File(TEST_DIR, "logs");
+    private static final File SCRATCH_DIR = new File(TEST_DIR, "scratch");
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
     // this should probably go in the BaseTest but
     // there are several tests (C4 tests) that are not subclasses
-    static { initCouchbase(); }
+    static {
+        initCouchbase();
+        makeTestDir();
+    }
+
+    private static LogFileConfiguration logConfig;
 
     // for testing, use the current directory as the root
     public static void initCouchbase() { CouchbaseLite.init(); }
@@ -63,7 +69,13 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @AfterClass
     public static void tearDownBaseTestClass() { System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<< Suite completed"); }
 
-    private static LogFileConfiguration logConfig;
+    private static boolean makeTestDir() {
+        boolean ok = false;
+        try { ok = new File(TEST_DIR).mkdirs(); }
+        catch (Exception ignore) { }
+        return ok;
+    }
+
 
     private String testName;
 
@@ -82,7 +94,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public void setupPlatform() {
         if (logConfig == null) {
-            logConfig = new LogFileConfiguration(getDirPath(new File(LOG_DIR)))
+            logConfig = new LogFileConfiguration(getDirPath(LOG_DIR))
                 .setUsePlaintext(true)
                 .setMaxSize(MAX_LOG_FILE_BYTES)
                 .setMaxRotateCount(MAX_LOG_FILES);

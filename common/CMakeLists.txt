@@ -52,7 +52,7 @@ set(CMAKE_C_STANDARD 11)
 set(JNI_OUTPUT_DIR ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/include)
 add_custom_target(JNI_DIR ALL COMMAND ${CMAKE_COMMAND} -E make_directory ${JNI_OUTPUT_DIR})
 
-set(JNI_CLASSPATH  ${PROJECT_SOURCE_DIR}/../common/main/java/)
+set(JNI_CLASSPATH  ${PROJECT_SOURCE_DIR}/main/java/)
 set(JNI_CLASSES
     com.couchbase.lite.internal.core.C4
     com.couchbase.lite.internal.core.C4Base
@@ -67,7 +67,6 @@ set(JNI_CLASSES
     com.couchbase.lite.internal.core.C4DocumentObserver
     com.couchbase.lite.internal.core.C4FullTextMatch
     com.couchbase.lite.internal.core.C4Key
-    com.couchbase.lite.internal.core.C4Listener
     com.couchbase.lite.internal.core.C4Log
     com.couchbase.lite.internal.core.C4Prediction
     com.couchbase.lite.internal.core.C4Query
@@ -83,6 +82,15 @@ set(JNI_CLASSES
     com.couchbase.lite.internal.fleece.FLSliceResult
     com.couchbase.lite.internal.fleece.FLValue
     )
+if(BUILD_ENTERPRISE)
+    set(JNI_CLASSPATH
+        ${JNI_CLASSPATH}
+        ${PROJECT_SOURCE_DIR}/../../ee/common/main/java/)
+    set(JNI_CLASSES
+        ${JNI_CLASSES}
+        com.couchbase.lite.internal.core.C4Listener
+       )
+endif()
 
 create_javah(TARGET JNIHeaders
     CLASSES ${JNI_CLASSES}
