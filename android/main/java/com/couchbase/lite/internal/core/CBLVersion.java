@@ -26,28 +26,28 @@ import com.couchbase.lite.BuildConfig;
 public final class CBLVersion {
     private CBLVersion() {}
 
-    private static final String USER_AGENT = "CouchbaseLite/%s (%s) %s";
-    private static final String VERSION_INFO = "CouchbaseLite Android v%s (%s at %s) on %s";
-    private static final String LIB_INFO = "%s/%s, Commit/%s Core/%s";
-    private static final String SYS_INFO = "Java; Android %s; %s";
+    private static final String USER_AGENT_TMPLT = "CouchbaseLite/%s (%s) %s";
+    private static final String VERSION_INFO_TMPLT = "CouchbaseLite Android v%s (%s at %s) on %s";
+    private static final String LIB_INFO_TMPLT = "%s/%s, Commit/%s Core/%s";
+    private static final String SYS_INFO_TMPLT = "Java; Android %s; %s";
 
-    private static final AtomicReference<String> userAgent = new AtomicReference<>();
-    private static final AtomicReference<String> versionInfo = new AtomicReference<>();
-    private static final AtomicReference<String> libInfo = new AtomicReference<>();
-    private static final AtomicReference<String> sysInfo = new AtomicReference<>();
+    private static final AtomicReference<String> USER_AGENT = new AtomicReference<>();
+    private static final AtomicReference<String> VERSION_INFO = new AtomicReference<>();
+    private static final AtomicReference<String> LIB_INFO = new AtomicReference<>();
+    private static final AtomicReference<String> SYS_INFO = new AtomicReference<>();
 
     public static String getUserAgent() {
-        String agent = userAgent.get();
+        String agent = USER_AGENT.get();
 
         if (agent == null) {
             agent = String.format(
                 Locale.ENGLISH,
-                USER_AGENT,
+                USER_AGENT_TMPLT,
                 BuildConfig.VERSION_NAME,
                 getSysInfo(),
                 getLibInfo());
 
-            userAgent.compareAndSet(null, agent);
+            USER_AGENT.compareAndSet(null, agent);
         }
 
         return agent;
@@ -55,17 +55,17 @@ public final class CBLVersion {
 
     // This is information about this library build.
     public static String getVersionInfo() {
-        String info = versionInfo.get();
+        String info = VERSION_INFO.get();
         if (info == null) {
             info = String.format(
                 Locale.ENGLISH,
-                VERSION_INFO,
+                VERSION_INFO_TMPLT,
                 BuildConfig.VERSION_NAME,
                 getLibInfo(),
                 BuildConfig.BUILD_TIME,
                 getSysInfo());
 
-            versionInfo.compareAndSet(null, info);
+            VERSION_INFO.compareAndSet(null, info);
         }
 
         return info;
@@ -73,17 +73,17 @@ public final class CBLVersion {
 
     // This is information about this library build.
     public static String getLibInfo() {
-        String info = libInfo.get();
+        String info = LIB_INFO.get();
         if (info == null) {
             info = String.format(
                 Locale.ENGLISH,
-                LIB_INFO,
+                LIB_INFO_TMPLT,
                 (BuildConfig.ENTERPRISE) ? "EE" : "CE",
                 BuildConfig.BUILD_TYPE,
                 BuildConfig.BUILD_COMMIT,
                 C4.getVersion());
 
-            libInfo.compareAndSet(null, info);
+            LIB_INFO.compareAndSet(null, info);
         }
 
         return info;
@@ -91,7 +91,7 @@ public final class CBLVersion {
 
     // This is information about the Android on which we are running.
     public static String getSysInfo() {
-        String info = sysInfo.get();
+        String info = SYS_INFO.get();
 
         if (info == null) {
             final String version = Build.VERSION.RELEASE; // "1.0" or "3.4b5"
@@ -99,11 +99,11 @@ public final class CBLVersion {
 
             info = String.format(
                 Locale.ENGLISH,
-                SYS_INFO,
+                SYS_INFO_TMPLT,
                 (version.length() <= 0) ? "unknown" : version,
                 (model.length() <= 0) ? "unknown" : model);
 
-            sysInfo.compareAndSet(null, info);
+            SYS_INFO.compareAndSet(null, info);
         }
 
         return info;
