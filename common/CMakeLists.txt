@@ -88,7 +88,7 @@ if(BUILD_ENTERPRISE)
         ${PROJECT_SOURCE_DIR}/../../ee/common/main/java/)
     set(JNI_CLASSES
         ${JNI_CLASSES}
-        com.couchbase.lite.internal.core.C4Listener
+        com.couchbase.lite.internal.core.impl.NativeC4Listener
        )
 endif()
 

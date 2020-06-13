@@ -15,12 +15,15 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import android.support.annotation.NonNull;
+
 import java.util.Random;
 
 
 public final class MathUtils {
     private MathUtils() { }
 
+    @NonNull
     public static final ThreadLocal<Random> RANDOM = new ThreadLocal<Random>() {
         protected synchronized Random initialValue() { return new Random(); }
     };

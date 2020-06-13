@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite;
 
-import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
 
 import java.security.cert.Certificate;
 import java.util.List;
@@ -24,7 +24,54 @@ import java.util.List;
 /**
  * A Listener Certificate Authenticator Delegate
  */
-public class ListenerCertificateAuthenticator implements ListenerAuthenticator {
-    public ListenerCertificateAuthenticator(@Nullable List<Certificate> rootCerts) { }
-    public ListenerCertificateAuthenticator(@Nullable ListenerCertificateAuthenticatorDelegate delegate) { }
+public abstract class ListenerCertificateAuthenticator
+    implements ListenerAuthenticator, ListenerCertificateAuthenticatorDelegate {
+
+    //-------------------------------------------------------------------------
+    // Implementation classes
+    //-------------------------------------------------------------------------
+
+    static final class RootCertAuthenticator extends ListenerCertificateAuthenticator {
+        @NonNull
+        private final List<Certificate> rootCerts;
+
+        RootCertAuthenticator(@NonNull List<Certificate> rootCerts) { this.rootCerts = rootCerts; }
+
+        @Override
+        public boolean authenticate(@NonNull List<Certificate> certs) {
+            return false;
+        }
+    }
+
+    static final class DelegatingCertAuthenticator extends ListenerCertificateAuthenticator {
+        @NonNull
+        private final ListenerCertificateAuthenticatorDelegate delegate;
+
+        DelegatingCertAuthenticator(@NonNull ListenerCertificateAuthenticatorDelegate delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public boolean authenticate(@NonNull List<Certificate> certs) { return delegate.authenticate(certs); }
+    }
+
+    //-------------------------------------------------------------------------
+    // Static Factory Methods
+    //-------------------------------------------------------------------------
+
+    public static ListenerCertificateAuthenticator newListenerCertificateAuthenticator(
+        @NonNull List<Certificate> rootCerts) {
+        return new RootCertAuthenticator(rootCerts);
+    }
+
+    public static ListenerCertificateAuthenticator newListenerCertificateAuthenticator(
+        @NonNull ListenerCertificateAuthenticatorDelegate delegate) {
+        return new DelegatingCertAuthenticator(delegate);
+    }
+
+    //-------------------------------------------------------------------------
+    // Constructor
+    //-------------------------------------------------------------------------
+
+    ListenerCertificateAuthenticator() {}
 }

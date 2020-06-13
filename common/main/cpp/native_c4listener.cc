@@ -17,23 +17,23 @@
 //
 #ifdef COUCHBASE_ENTERPRISE
 
-#include "com_couchbase_lite_internal_core_C4Listener.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Listener.h"
 #include "native_glue.hh"
 #include "c4Listener.h"
 
 using namespace litecore;
 using namespace litecore::jni;
 
-// C4Listener
+// Java C4Listener class
 static jclass cls_C4Listener;                      // global reference
 static jmethodID m_C4Listener_certAuthCallback;    // statusChangedCallback method
 static jmethodID m_C4Listener_httpAuthCallback;    // documentEndedCallback method
 
-// ConnectionStatus
+// Java ConnectionStatus class
 static jclass cls_ConnectionStatus;                // global reference
 static jmethodID m_ConnectionStatus_init;          // constructor
 
-// ArrayList
+// Java ArrayList class
 static jclass cls_ArrayList;                       // global reference
 static jmethodID m_ArrayList_init;                 // constructor
 static jmethodID m_ArrayList_add;                  // add
@@ -51,7 +51,7 @@ bool litecore::jni::initC4Listener(JNIEnv *env) {
         m_C4Listener_certAuthCallback = env->GetStaticMethodID(
                 cls_C4Listener,
                 "certAuthCallback",
-                "(JLjava/lang/Object;J)Z");
+                "(J[B)Z");
 
         if (!m_C4Listener_certAuthCallback)
             return false;
@@ -59,7 +59,7 @@ bool litecore::jni::initC4Listener(JNIEnv *env) {
         m_C4Listener_httpAuthCallback = env->GetStaticMethodID(
                 cls_C4Listener,
                 "httpAuthCallback",
-                "(JLjava/lang/Object;J)Z");
+                "(JLjava/lang/String;)Z");
 
         if (!m_C4Listener_httpAuthCallback)
             return false;
@@ -100,23 +100,21 @@ bool litecore::jni::initC4Listener(JNIEnv *env) {
     return true;
 }
 
-static bool certAuthCallback(C4Listener *listener, C4Slice clientCertData, void *context) {
+static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     bool res = false;
     if (getEnvStat == JNI_OK) {
         res = env->CallStaticBooleanMethod(cls_C4Listener,
-                                           m_C4Listener_certAuthCallback,
-                                           (jlong) listener,
-                                           NULL, // clientCertData
-                                           (jlong) context);
+                                           m_C4Listener_httpAuthCallback,
+                                           (jlong) context,
+                                           toJString(env, authHeader));
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             res = env->CallStaticBooleanMethod(cls_C4Listener,
-                                               m_C4Listener_certAuthCallback,
-                                               (jlong) listener,
-                                               NULL, // clientCertData
-                                               (jlong) context);
+                                               m_C4Listener_httpAuthCallback,
+                                               (jlong) context,
+                                               toJString(env, authHeader));
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
         } else {
@@ -128,23 +126,21 @@ static bool certAuthCallback(C4Listener *listener, C4Slice clientCertData, void 
     return res;
 }
 
-static bool httpAuthCallback(C4Listener *listener, C4Slice authHeader, void *context) {
+static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     bool res = false;
     if (getEnvStat == JNI_OK) {
         res = env->CallStaticBooleanMethod(cls_C4Listener,
-                                           m_C4Listener_httpAuthCallback,
-                                           (jlong) listener,
-                                           NULL, // authHeader
-                                           reinterpret_cast<jlong>(context));
+                                           m_C4Listener_certAuthCallback,
+                                           (jlong) context,
+                                           toJByteArray(env, clientCertData));
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             res = env->CallStaticBooleanMethod(cls_C4Listener,
-                                               m_C4Listener_httpAuthCallback,
-                                               (jlong) listener,
-                                               NULL, // authHeader
-                                               reinterpret_cast<jlong>(context));
+                                               m_C4Listener_certAuthCallback,
+                                               (jlong) context,
+                                               toJByteArray(env, clientCertData));
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
         } else {
@@ -171,9 +167,10 @@ static jobject toList(JNIEnv *env, FLMutableArray array) {
 
     for (int i = 0; i < n; i++) {
         auto arrayElem = FLArray_Get(array, i);
-        FLStringResult str = FLValue_ToString((FLValue) arrayElem);
+        auto str = FLValue_AsString((FLValue) arrayElem);
         jstring jstr = toJString(env, str);
-        FLSliceResult_Release(str);
+        if (!jstr)
+            continue;
         env->CallBooleanMethod(result, m_ArrayList_add, jstr);
         env->DeleteLocalRef(jstr);
     }
@@ -181,17 +178,19 @@ static jobject toList(JNIEnv *env, FLMutableArray array) {
     return result;
 }
 
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_C4Listener_startHttp(
+static C4Listener* startListener(
         JNIEnv *env,
-        jclass clazz,
         jint port,
         jstring networkInterface,
-        int apis,
+        jint apis,
         jlong context,
         jstring dbPath,
         jboolean allowCreateDBs,
-        jboolean allowDeleteDBs) {
+        jboolean allowDeleteDBs,
+        jboolean allowPush,
+        jboolean allowPull,
+        jboolean enableDeltaSync,
+        C4TLSConfig *tlsConfig) {
 
     jstringSlice iFace(env, networkInterface);
     jstringSlice path(env, dbPath);
@@ -202,30 +201,107 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Listener_startHttp(
     config.port = port;
     config.networkInterface = iFace;
     config.apis = apis;
-    config.tlsConfig = nullptr;
-    config.httpAuthCallback = httpAuthCallback;
+    config.tlsConfig = tlsConfig;
+    config.httpAuthCallback = (tlsConfig) ? nullptr : httpAuthCallback;
     config.callbackContext = (void *) context;
     config.directory = path;
     config.allowCreateDBs = allowCreateDBs;
     config.allowDeleteDBs = allowDeleteDBs;
+    config.allowPush = allowPush;
+    config.allowPull = allowPull;
+    config.enableDeltaSync = enableDeltaSync;
 
     auto listener = c4listener_start(&config, &error);
     if (!listener) {
         throwError(env, error);
-        return 0;
+        return nullptr;
     }
 
-    return reinterpret_cast<jlong>(listener);
+    return listener;
 }
 
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
+        JNIEnv *env,
+        jclass ignore,
+        jint port,
+        jstring networkInterface,
+        jint apis,
+        jlong context,
+        jstring dbPath,
+        jboolean allowCreateDBs,
+        jboolean allowDeleteDBs,
+        jboolean allowPush,
+        jboolean allowPull,
+        jboolean enableDeltaSync) {
+
+    return reinterpret_cast<jlong>(startListener(
+            env,
+            port,
+            networkInterface,
+            apis,
+            context,
+            dbPath,
+            allowCreateDBs,
+            allowDeleteDBs,
+            allowPush,
+            allowPull,
+            enableDeltaSync,
+            nullptr));
+}
+
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
+        JNIEnv *env,
+        jclass ignore,
+        jint port,
+        jstring networkInterface,
+        jint apis,
+        jlong context,
+        jlong keyMode,
+        jbyteArray keyPair,
+        jbyteArray cert,
+        jboolean requireClientCerts,
+        jobjectArray rootClientCerts,
+        jstring dbPath,
+        jboolean allowCreateDBs,
+        jboolean allowDeleteDBs,
+        jboolean allowPush,
+        jboolean allowPull,
+        jboolean enableDeltaSync) {
+
+    C4TLSConfig tlsConfig;
+    tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromCert;
+    tlsConfig.key = nullptr;
+    tlsConfig.certificate = nullptr;
+    tlsConfig.requireClientCerts = requireClientCerts;
+    tlsConfig.rootClientCerts = nullptr;
+    tlsConfig.certAuthCallback = certAuthCallback;
+    tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
+
+    return reinterpret_cast<jlong>(startListener(
+            env,
+            port,
+            networkInterface,
+            apis,
+            context,
+            dbPath,
+            allowCreateDBs,
+            allowDeleteDBs,
+            allowPush,
+            allowPull,
+            enableDeltaSync,
+            &tlsConfig));
+}
+
+
 JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Listener_free(JNIEnv *env, jclass clazz, jlong c4Listener) {
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_free
+        (JNIEnv *env, jclass ignore, jlong c4Listener) {
     c4listener_free(reinterpret_cast<C4Listener *>(c4Listener));
 }
 
 JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Listener_shareDb
-        (JNIEnv *env, jclass clazz, jlong c4Listener, jstring dbName, jlong c4Database) {
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb
+        (JNIEnv *env, jclass ignore, jlong c4Listener, jstring dbName, jlong c4Database) {
     jstringSlice name(env, dbName);
 
     C4Error error;
@@ -240,8 +316,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Listener_shareDb
 }
 
 JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Listener_unshareDb
-        (JNIEnv *env, jclass clazz, jlong c4Listener, jlong c4Database) {
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareDb
+        (JNIEnv *env, jclass ignore, jlong c4Listener, jlong c4Database) {
 
     C4Error error;
 
@@ -254,8 +330,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Listener_unshareDb
 }
 
 JNIEXPORT jobject
-JNICALL Java_com_couchbase_lite_internal_core_C4Listener_getUrls
-        (JNIEnv *env, jclass clazz, jlong c4Listener, jlong c4Database, jint api) {
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls
+        (JNIEnv *env, jclass ignore, jlong c4Listener, jlong c4Database, jint api) {
 
     C4Error error;
 
@@ -274,14 +350,14 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Listener_getUrls
 }
 
 JNIEXPORT jint
-JNICALL Java_com_couchbase_lite_internal_core_C4Listener_getPort
-        (JNIEnv *env, jclass clazz, jlong c4Listener) {
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getPort
+        (JNIEnv *env, jclass ignore, jlong c4Listener) {
     return (jint) c4listener_getPort(reinterpret_cast<C4Listener *>(c4Listener));
 }
 
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_C4Listener_getConnectionStatus
-        (JNIEnv *env, jclass clazz, jlong c4Listener) {
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getConnectionStatus
+        (JNIEnv *env, jclass ignore, jlong c4Listener) {
 
     unsigned connections;
     unsigned activeConnections;
@@ -291,9 +367,9 @@ Java_com_couchbase_lite_internal_core_C4Listener_getConnectionStatus
     return toConnectionStatus(env, connections, activeConnections);
 }
 
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Listener_getUriFromPath
-        (JNIEnv *env, jclass clazz, jlong c4Listener, jstring path) {
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUriFromPath
+        (JNIEnv *env, jclass ignore, jlong c4Listener, jstring path) {
     jstringSlice pathSlice(env, path);
     auto uri = c4db_URINameFromPath(pathSlice);
     jstring jstr = toJString(env, uri);
