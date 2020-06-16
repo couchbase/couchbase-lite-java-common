@@ -35,17 +35,13 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.utils.Report;
 import com.couchbase.lite.utils.TestUtils;
 
-import static junit.framework.Assert.assertFalse;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
 public abstract class BaseTest extends PlatformBaseTest {
     protected static final String TEST_DATE = "2019-02-21T05:37:22.014Z";
     protected static final String BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box.";
-
-
-    private static final int BUSY_WAIT_MS = 100;
-    private static final int BUSY_RETRIES = 3;
 
     private final AtomicReference<AssertionError> testFailure = new AtomicReference<>();
 

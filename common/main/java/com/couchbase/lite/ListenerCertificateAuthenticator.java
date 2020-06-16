@@ -59,13 +59,11 @@ public abstract class ListenerCertificateAuthenticator
     // Static Factory Methods
     //-------------------------------------------------------------------------
 
-    public static ListenerCertificateAuthenticator newListenerCertificateAuthenticator(
-        @NonNull List<Certificate> rootCerts) {
+    public static ListenerCertificateAuthenticator create(@NonNull List<Certificate> rootCerts) {
         return new RootCertAuthenticator(rootCerts);
     }
 
-    public static ListenerCertificateAuthenticator newListenerCertificateAuthenticator(
-        @NonNull ListenerCertificateAuthenticatorDelegate delegate) {
+    public static ListenerCertificateAuthenticator create(@NonNull ListenerCertificateAuthenticatorDelegate delegate) {
         return new DelegatingCertAuthenticator(delegate);
     }
 

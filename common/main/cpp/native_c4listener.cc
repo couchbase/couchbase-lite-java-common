@@ -24,14 +24,14 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+// Java ConnectionStatus class
+static jclass cls_ConnectionStatus;                // global reference
+static jmethodID m_ConnectionStatus_init;          // constructor
+
 // Java C4Listener class
 static jclass cls_C4Listener;                      // global reference
 static jmethodID m_C4Listener_certAuthCallback;    // statusChangedCallback method
 static jmethodID m_C4Listener_httpAuthCallback;    // documentEndedCallback method
-
-// Java ConnectionStatus class
-static jclass cls_ConnectionStatus;                // global reference
-static jmethodID m_ConnectionStatus_init;          // constructor
 
 // Java ArrayList class
 static jclass cls_ArrayList;                       // global reference
@@ -39,6 +39,20 @@ static jmethodID m_ArrayList_init;                 // constructor
 static jmethodID m_ArrayList_add;                  // add
 
 bool litecore::jni::initC4Listener(JNIEnv *env) {
+    {
+        jclass localClass = env->FindClass("com/couchbase/lite/ConnectionStatus");
+        if (!localClass)
+            return false;
+
+        cls_ConnectionStatus = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_ConnectionStatus)
+            return false;
+
+        m_ConnectionStatus_init = env->GetMethodID(cls_ConnectionStatus, "<init>", "(II)V");
+        if (!m_ConnectionStatus_init)
+            return false;
+    }
+
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Listener");
         if (!localClass)
@@ -62,20 +76,6 @@ bool litecore::jni::initC4Listener(JNIEnv *env) {
                 "(JLjava/lang/String;)Z");
 
         if (!m_C4Listener_httpAuthCallback)
-            return false;
-    }
-
-    {
-        jclass localClass = env->FindClass("com/couchbase/lite/ConnectionStatus");
-        if (!localClass)
-            return false;
-
-        cls_ConnectionStatus = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_ConnectionStatus)
-            return false;
-
-        m_ConnectionStatus_init = env->GetMethodID(cls_ConnectionStatus, "<init>", "(II)V");
-        if (!m_ConnectionStatus_init)
             return false;
     }
 
@@ -171,18 +171,37 @@ static jobject toList(JNIEnv *env, FLMutableArray array) {
         jstring jstr = toJString(env, str);
         if (!jstr)
             continue;
+
         env->CallBooleanMethod(result, m_ArrayList_add, jstr);
+
         env->DeleteLocalRef(jstr);
     }
 
     return result;
 }
 
-static C4Listener* startListener(
+static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
+    jbyte *certData = env->GetByteArrayElements(cert, nullptr);
+    size_t certSize = env->GetArrayLength(cert);
+    FLSlice certSlice = {certData, (size_t) certSize};
+
+    C4Error error;
+    auto c4cert = c4cert_fromData(certSlice, &error);
+
+    env->ReleaseByteArrayElements(cert, certData, 0);
+
+    if (!c4cert) {
+        throwError(env, error);
+        return nullptr;
+    }
+
+    return c4cert;
+}
+
+static C4Listener *startListener(
         JNIEnv *env,
         jint port,
         jstring networkInterface,
-        jint apis,
         jlong context,
         jstring dbPath,
         jboolean allowCreateDBs,
@@ -195,14 +214,12 @@ static C4Listener* startListener(
     jstringSlice iFace(env, networkInterface);
     jstringSlice path(env, dbPath);
 
-    C4Error error;
-
     C4ListenerConfig config;
     config.port = port;
     config.networkInterface = iFace;
-    config.apis = apis;
+    config.apis = kC4SyncAPI; // forced
     config.tlsConfig = tlsConfig;
-    config.httpAuthCallback = (tlsConfig) ? nullptr : httpAuthCallback;
+    config.httpAuthCallback = httpAuthCallback;
     config.callbackContext = (void *) context;
     config.directory = path;
     config.allowCreateDBs = allowCreateDBs;
@@ -210,6 +227,8 @@ static C4Listener* startListener(
     config.allowPush = allowPush;
     config.allowPull = allowPull;
     config.enableDeltaSync = enableDeltaSync;
+
+    C4Error error;
 
     auto listener = c4listener_start(&config, &error);
     if (!listener) {
@@ -220,12 +239,12 @@ static C4Listener* startListener(
     return listener;
 }
 
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
         JNIEnv *env,
         jclass ignore,
         jint port,
         jstring networkInterface,
-        jint apis,
         jlong context,
         jstring dbPath,
         jboolean allowCreateDBs,
@@ -233,12 +252,10 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Liste
         jboolean allowPush,
         jboolean allowPull,
         jboolean enableDeltaSync) {
-
     return reinterpret_cast<jlong>(startListener(
             env,
             port,
             networkInterface,
-            apis,
             context,
             dbPath,
             allowCreateDBs,
@@ -249,18 +266,16 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Liste
             nullptr));
 }
 
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         JNIEnv *env,
         jclass ignore,
         jint port,
         jstring networkInterface,
-        jint apis,
         jlong context,
-        jlong keyMode,
-        jbyteArray keyPair,
         jbyteArray cert,
         jboolean requireClientCerts,
-        jobjectArray rootClientCerts,
+        jbyteArray rootClientCerts,
         jstring dbPath,
         jboolean allowCreateDBs,
         jboolean allowDeleteDBs,
@@ -268,12 +283,20 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Liste
         jboolean allowPull,
         jboolean enableDeltaSync) {
 
+    auto c4Cert = getCert(env, cert);
+    if (!c4Cert)
+        return 0;
+
+    auto c4RootCerts = getCert(env, rootClientCerts);
+    if (!c4RootCerts)
+        return 0;
+
     C4TLSConfig tlsConfig;
-    tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromCert;
+    tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromCert; // forced
     tlsConfig.key = nullptr;
-    tlsConfig.certificate = nullptr;
+    tlsConfig.certificate = c4Cert;
     tlsConfig.requireClientCerts = requireClientCerts;
-    tlsConfig.rootClientCerts = nullptr;
+    tlsConfig.rootClientCerts = c4RootCerts;
     tlsConfig.certAuthCallback = certAuthCallback;
     tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
 
@@ -281,7 +304,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Liste
             env,
             port,
             networkInterface,
-            apis,
             context,
             dbPath,
             allowCreateDBs,
@@ -291,7 +313,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Liste
             enableDeltaSync,
             &tlsConfig));
 }
-
 
 JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_free
@@ -331,14 +352,14 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareDb
 
 JNIEXPORT jobject
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls
-        (JNIEnv *env, jclass ignore, jlong c4Listener, jlong c4Database, jint api) {
+        (JNIEnv *env, jclass ignore, jlong c4Listener, jlong c4Database) {
 
     C4Error error;
 
     auto urls = c4listener_getURLs(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
-            api,
+            kC4SyncAPI, // forced
             &error);
 
     if (!urls) {
