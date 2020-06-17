@@ -17,17 +17,14 @@ package com.couchbase.lite.internal.utils;
 
 import java.util.Base64;
 
-
 public final class Base64Utils {
     private Base64Utils() { }
 
-    public interface Base64Encoder {
-        String encodeToString(byte[] src);
-    }
+    public interface Base64Encoder { String encodeToString(byte[] src); }
 
     public static Base64Encoder getEncoder() {
         return new Base64Encoder() {
-            Base64.Encoder encoder = Base64.getEncoder();
+            private final Base64.Encoder encoder = Base64.getEncoder();
 
             @Override
             public String encodeToString(byte[] src) { return encoder.encodeToString(src); }

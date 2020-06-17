@@ -186,16 +186,18 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
     FLSlice certSlice = {certData, (size_t) certSize};
 
     C4Error error;
-    auto c4cert = c4cert_fromData(certSlice, &error);
-
-    env->ReleaseByteArrayElements(cert, certData, 0);
-
-    if (!c4cert) {
-        throwError(env, error);
-        return nullptr;
-    }
-
-    return c4cert;
+// !!! not yet visible in core
+//    auto c4cert = c4cert_fromData(certSlice, &error);
+//
+//    env->ReleaseByteArrayElements(cert, certData, 0);
+//
+//    if (!c4cert) {
+//        throwError(env, error);
+//        return nullptr;
+//    }
+//
+//    return c4cert;
+    return nullptr;
 }
 
 static C4Listener *startListener(

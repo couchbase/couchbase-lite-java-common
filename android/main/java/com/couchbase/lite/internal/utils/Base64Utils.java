@@ -21,7 +21,7 @@ import android.os.Build;
 public final class Base64Utils {
     private Base64Utils() { }
 
-    interface Base64Encoder {
+    public interface Base64Encoder {
         String encodeToString(byte[] src);
     }
 

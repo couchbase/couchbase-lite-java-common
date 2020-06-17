@@ -29,18 +29,19 @@ import java.util.Collection;
 public final class SecurityUtils {
     private SecurityUtils() {}
 
-    public static final String LINE_SEPARATOR = System.getProperty("line.separator");
-    public static final String BEGIN_CERT = LINE_SEPARATOR + "-----BEGIN CERTIFICATE-----" + LINE_SEPARATOR;
-    public static final String END_CERT = LINE_SEPARATOR + "-----END CERTIFICATE-----" + LINE_SEPARATOR;
+    public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
+    public static final String END_CERT = "-----END CERTIFICATE-----";
     private static final Base64Utils.Base64Encoder ENCODER = Base64Utils.getEncoder();
 
-    public static byte[] encodeCertificateChain(Collection<? extends Certificate> certChain)
+    @NonNull
+    public static byte[] encodeCertificateChain(@NonNull Collection<? extends Certificate> certChain)
         throws CertificateEncodingException {
         try (
             ByteArrayOutputStream encodedCerts = new ByteArrayOutputStream();
-            PrintStream ps = new PrintStream(new ByteArrayOutputStream(), false, "UTF-8")
+            PrintStream ps = new PrintStream(encodedCerts, false, "UTF-8")
         ) {
             for (Certificate cert: certChain) { encodeCertificate(cert, ps); }
+            ps.flush();
             return encodedCerts.toByteArray();
         }
         catch (IOException e) {
@@ -48,24 +49,28 @@ public final class SecurityUtils {
         }
     }
 
-    public static byte[] pemEncodeCertificate(Certificate cert) throws CertificateEncodingException {
+    @NonNull
+    public static byte[] encodeCertificate(@NonNull Certificate cert) throws CertificateEncodingException {
         try (
-            ByteArrayOutputStream encodedCerts = new ByteArrayOutputStream();
-            PrintStream ps = new PrintStream(new ByteArrayOutputStream(), false, "UTF-8")
+            ByteArrayOutputStream encodedCert = new ByteArrayOutputStream();
+            PrintStream ps = new PrintStream(encodedCert, false, "UTF-8")
         ) {
             encodeCertificate(cert, ps);
-            return encodedCerts.toByteArray();
+            ps.flush();
+            return encodedCert.toByteArray();
         }
         catch (IOException e) {
-            throw new CertificateEncodingException("I/O error durning encoding", e);
+            throw new CertificateEncodingException("I/O error during encoding", e);
         }
     }
 
-    // !!! this does not correctly limit line length to 64 chars
     private static void encodeCertificate(@NonNull Certificate cert, @NonNull PrintStream ps)
         throws CertificateEncodingException {
+        final String encodedCert = ENCODER.encodeToString(cert.getEncoded());
+        final int n = encodedCert.length();
+        ps.println();
         ps.println(BEGIN_CERT);
-        ps.println(ENCODER.encodeToString(cert.getEncoded()));
+        for (int i = 0; i < n; i += 64) { ps.println(encodedCert.substring(i, Math.min(n, i + 64))); }
         ps.println(END_CERT);
     }
 }
