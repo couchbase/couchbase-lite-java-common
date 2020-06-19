@@ -166,7 +166,7 @@ static jobject toList(JNIEnv *env, FLMutableArray array) {
     jobject result = env->NewObject(cls_ArrayList, m_ArrayList_init, (jint) n);
 
     for (int i = 0; i < n; i++) {
-        auto arrayElem = FLArray_Get(array, i);
+        auto arrayElem = FLArray_Get(array, (u_int32_t) i);
         auto str = FLValue_AsString((FLValue) arrayElem);
         jstring jstr = toJString(env, str);
         if (!jstr)
@@ -182,7 +182,7 @@ static jobject toList(JNIEnv *env, FLMutableArray array) {
 
 static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
     jbyte *certData = env->GetByteArrayElements(cert, nullptr);
-    size_t certSize = env->GetArrayLength(cert);
+    jsize certSize = env->GetArrayLength(cert);
     FLSlice certSlice = {certData, (size_t) certSize};
 
     C4Error error;
@@ -204,6 +204,7 @@ static C4Listener *startListener(
         JNIEnv *env,
         jint port,
         jstring networkInterface,
+        jint apis,
         jlong context,
         jstring dbPath,
         jboolean allowCreateDBs,
@@ -217,9 +218,9 @@ static C4Listener *startListener(
     jstringSlice path(env, dbPath);
 
     C4ListenerConfig config;
-    config.port = port;
+    config.port =  (uint16_t) port;
     config.networkInterface = iFace;
-    config.apis = kC4SyncAPI; // forced
+    config.apis = (unsigned) apis;
     config.tlsConfig = tlsConfig;
     config.httpAuthCallback = httpAuthCallback;
     config.callbackContext = (void *) context;
@@ -247,6 +248,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
         jclass ignore,
         jint port,
         jstring networkInterface,
+        jint apis,
         jlong context,
         jstring dbPath,
         jboolean allowCreateDBs,
@@ -258,6 +260,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
             env,
             port,
             networkInterface,
+            apis,
             context,
             dbPath,
             allowCreateDBs,
@@ -274,6 +277,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jclass ignore,
         jint port,
         jstring networkInterface,
+        jint apis,
         jlong context,
         jbyteArray cert,
         jboolean requireClientCerts,
@@ -294,7 +298,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         return 0;
 
     C4TLSConfig tlsConfig;
-    tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromCert; // forced
+    tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromCert; // Only supported mode.
     tlsConfig.key = nullptr;
     tlsConfig.certificate = c4Cert;
     tlsConfig.requireClientCerts = requireClientCerts;
@@ -306,6 +310,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             env,
             port,
             networkInterface,
+            apis,
             context,
             dbPath,
             allowCreateDBs,
@@ -392,7 +397,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getConnectio
 
 JNIEXPORT jstring
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUriFromPath
-        (JNIEnv *env, jclass ignore, jlong c4Listener, jstring path) {
+        (JNIEnv *env, jclass ignore, jstring path) {
     jstringSlice pathSlice(env, path);
     auto uri = c4db_URINameFromPath(pathSlice);
     jstring jstr = toJString(env, uri);

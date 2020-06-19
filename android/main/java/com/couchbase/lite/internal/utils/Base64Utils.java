@@ -31,7 +31,7 @@ public final class Base64Utils {
         }
         else {
             return new Base64Encoder() {
-                java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
+                private final java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
 
                 @Override
                 public String encodeToString(byte[] src) { return encoder.encodeToString(src); }

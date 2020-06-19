@@ -228,7 +228,7 @@ public class BlobTest extends BaseDbTest {
     @Test
     public void testBlobFromFileURL() throws IOException {
         String contentType = "image/png";
-        Blob blob = null;
+        Blob blob;
         URL url = null;
         File path = tempFolder.newFile("attachment.png");
 

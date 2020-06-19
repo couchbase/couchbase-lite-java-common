@@ -309,7 +309,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private final Set<DocumentReplicationListenerToken> docEndedListenerTokens = new HashSet<>();
 
     @NonNull
-    private final Set<Fn.Consumer> pendingResolutions = new HashSet<>();
+    private final Set<Fn.Consumer<CouchbaseLiteException>> pendingResolutions = new HashSet<>();
     @NonNull
     private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
     @NonNull
@@ -763,7 +763,10 @@ public abstract class AbstractReplicator extends InternalReplicator {
     }
 
     // callback from queueConflictResolution
-    void onConflictResolved(Fn.Consumer task, String docId, int flags, CouchbaseLiteException err) {
+    void onConflictResolved(
+        Fn.Consumer<CouchbaseLiteException> task,
+        String docId, int flags,
+        CouchbaseLiteException err) {
         Log.i(DOMAIN, "Conflict resolved: %s", docId);
         List<C4ReplicatorStatus> pendingNotifications = null;
         synchronized (lock) {
@@ -886,13 +889,13 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private void setupFilters() {
         synchronized (lock) {
             if (config.getPushFilter() != null) {
-                c4ReplPushFilter = (docID, revId, flags, dict, isPush, context) ->
-                    ((AbstractReplicator) context).filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
+                c4ReplPushFilter = (docID, revId, flags, dict, isPush, repl) ->
+                    repl.filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
             }
 
             if (config.getPullFilter() != null) {
-                c4ReplPullFilter = (docID, revId, flags, dict, isPush, context) ->
-                    ((AbstractReplicator) context).filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
+                c4ReplPullFilter = (docID, revId, flags, dict, isPush, repl) ->
+                    repl.filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
             }
         }
     }

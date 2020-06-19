@@ -121,7 +121,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
  * @param ctx
  */
 static void c4DBObsCallback(C4DatabaseObserver *obs, void *ctx) {
-    JNIEnv *env = NULL;
+    JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
         env->CallStaticVoidMethod(cls_C4DBObs, m_C4DBObs_callback, (jlong) obs);
@@ -140,7 +140,7 @@ static void c4DBObsCallback(C4DatabaseObserver *obs, void *ctx) {
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4DatabaseObserver_create(JNIEnv *, jclass, jlong db) {
-    return (jlong) c4dbobs_create((C4Database *) db, c4DBObsCallback, (void *) NULL);
+    return (jlong) c4dbobs_create((C4Database *) db, c4DBObsCallback, nullptr);
 }
 
 /*
@@ -154,20 +154,20 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_getChanges(JNIEnv *env,
                                                           jlong observer,
                                                           jint maxChanges) {
     //static const uint32_t kMaxChanges = 100u;
-    C4DatabaseChange *c4changes = new C4DatabaseChange[maxChanges];
+    auto *c4changes = new C4DatabaseChange[maxChanges];
     bool external = false;
     uint32_t nChanges = c4dbobs_getChanges((C4DatabaseObserver *) observer,
                                            c4changes,
                                            maxChanges,
                                            &external);
 
-    jobjectArray array = env->NewObjectArray(nChanges, cls_C4DBChange, NULL);
+    jobjectArray array = env->NewObjectArray(nChanges, cls_C4DBChange, nullptr);
     for (size_t i = 0; i < nChanges; i++) {
         jobject obj = env->NewObject(cls_C4DBChange, m_C4DBChange_init);
         env->SetObjectField(obj, f_C4DBChange_docID, toJString(env, c4changes[i].docID));
         env->SetObjectField(obj, f_C4DBChange_revID, toJString(env, c4changes[i].revID));
-        env->SetLongField(obj, f_C4DBChange_sequence, c4changes[i].sequence);
-        env->SetLongField(obj, f_C4DBChange_bodySize, c4changes[i].bodySize);
+        env->SetLongField(obj, f_C4DBChange_sequence, (jlong) c4changes[i].sequence);
+        env->SetLongField(obj, f_C4DBChange_bodySize, (jlong) c4changes[i].bodySize);
         env->SetBooleanField(obj, f_C4DBChange_external, external);
         env->SetObjectArrayElement(array, i, obj);
     }
@@ -197,15 +197,15 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_free(JNIEnv *env, jclas
  */
 static void
 c4DocObsCallback(C4DocumentObserver *obs, C4Slice docID, C4SequenceNumber seq, void *ctx) {
-    JNIEnv *env = NULL;
+    JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
         env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs,
-                                  toJString(env, docID), seq);
+                                  toJString(env, docID), (jlong) seq);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs,
-                                      toJString(env, docID), seq);
+                                      toJString(env, docID), (jlong) seq);
             gJVM->DetachCurrentThread();
         }
     }
@@ -219,7 +219,7 @@ c4DocObsCallback(C4DocumentObserver *obs, C4Slice docID, C4SequenceNumber seq, v
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4DocumentObserver_create
         (JNIEnv *env, jclass clazz, jlong jdb, jstring jdocID) {
     jstringSlice docID(env, jdocID);
-    return (jlong) c4docobs_create((C4Database *) jdb, docID, c4DocObsCallback, NULL);
+    return (jlong) c4docobs_create((C4Database *) jdb, docID, c4DocObsCallback, nullptr);
 }
 
 /*

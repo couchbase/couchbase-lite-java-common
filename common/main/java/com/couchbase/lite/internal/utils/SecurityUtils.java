@@ -45,7 +45,7 @@ public final class SecurityUtils {
             return encodedCerts.toByteArray();
         }
         catch (IOException e) {
-            throw new CertificateEncodingException("I/O error durning encoding", e);
+            throw new CertificateEncodingException("I/O error during encoding", e);
         }
     }
 

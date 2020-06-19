@@ -21,6 +21,7 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
@@ -96,6 +97,23 @@ public class LogTest extends BaseDbTest {
         String getContent() { return content.toString(); }
     }
 
+    private static class RawLogListener implements Fn.Consumer<C4Log.RawLog> {
+        private final String domainFilter;
+        private int minLevel;
+
+        public RawLogListener(String domainFilter) { this.domainFilter = domainFilter; }
+
+        @Override
+        public void accept(C4Log.RawLog log) {
+            if (!domainFilter.equals(log.domain)) { return; }
+            if (log.level < minLevel) { minLevel = log.level; }
+        }
+
+        public int getMinLevel() { return minLevel; }
+
+        public void reset() { minLevel = C4Constants.LogLevel.NONE; }
+    }
+
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
     // This trickery is necessary because deleting a scratch directory
@@ -118,6 +136,7 @@ public class LogTest extends BaseDbTest {
         Database.log.reset();
     }
 
+    @FlakyTest
     @Test
     public void testCustomLoggingLevels() {
         LogTestLogger customLogger = new LogTestLogger();
@@ -578,33 +597,40 @@ public class LogTest extends BaseDbTest {
     }
 
     // Verify that we can set the level for log domains that the platform doesn't recognize.
-    @FlakyTest
     @Test
     public void testInternalLogging() throws CouchbaseLiteException {
-        final BasicLogger logger = new BasicLogger();
-        Database.log.setCustom(logger);
+        final String c4Domain = "Query";
 
-        saveDocInBaseTestDb(new MutableDocument());
-        assertTrue(logger.level.getValue() < LogLevel.INFO.getValue());
+        final RawLogListener rawLogListener = new RawLogListener(c4Domain);
+        C4Log.registerListener(rawLogListener);
+        int originalLogLevel = C4Log.getLevel(c4Domain);
+        try {
+            rawLogListener.reset();
+            ResultSet result = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(baseTestDb))
+                .execute();
+            int actualMinLevel = rawLogListener.getMinLevel();
+            assertTrue(actualMinLevel >= originalLogLevel);
 
-        logger.reset();
-        int sqlLevel = C4Log.getLevel("SQL");
-        C4Log.setLevels(LogLevel.INFO.getValue(), "SQL");
-        saveDocInBaseTestDb(new MutableDocument());
-        final LogLevel level = logger.level;
-        assertNotNull(level);
-        assertEquals(LogLevel.INFO, logger.level);
-        final LogDomain domain = logger.domain;
-        assertNotNull(domain);
-        assertEquals(LogDomain.DATABASE, domain);
-        final String message = logger.message;
-        assertNotNull(message);
-        assertTrue(message.length() > 2);
+            rawLogListener.reset();
+            C4Log.setLevels(actualMinLevel + 1, c4Domain);
+            result = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(baseTestDb))
+                .execute();
+            // If level > maxLevel, should be no logs
+            assertEquals(C4Constants.LogLevel.NONE, rawLogListener.getMinLevel());
 
-        logger.reset();
-        C4Log.setLevels(sqlLevel, "SQL");
-        saveDocInBaseTestDb(new MutableDocument());
-        assertTrue(logger.level.getValue() < LogLevel.INFO.getValue());
+            rawLogListener.reset();
+            C4Log.setLevels(originalLogLevel, c4Domain);
+            result = QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.database(baseTestDb))
+                .execute();
+            assertEquals(actualMinLevel, rawLogListener.getMinLevel());
+        }
+        finally {
+            C4Log.registerListener(null);
+            C4Log.setLevels(originalLogLevel, c4Domain);
+        }
     }
 
     private void testWithConfiguration(LogLevel level, LogFileConfiguration config, Fn.TaskThrows<Exception> task)

@@ -607,7 +607,7 @@ abstract class AbstractDatabase {
                     commit = true;
                 }
                 catch (RuntimeException e) {
-                    throw new CouchbaseLiteException(e);
+                    throw new CouchbaseLiteException("In-batch task failed", e);
                 }
                 finally {
                     db.endTransaction(commit);
@@ -776,7 +776,7 @@ abstract class AbstractDatabase {
                 throw CBLStatus.convertException(e);
             }
             catch (JSONException e) {
-                throw new CouchbaseLiteException(e);
+                throw new CouchbaseLiteException("Error encoding JSON", e);
             }
         }
     }
@@ -1051,7 +1051,7 @@ abstract class AbstractDatabase {
                     // The other resolver did the right thing, so there is no reason
                     // to report an error.
                     if (e.getCode() != CBLInternalException.FAILED_SELECTING_CONFLICTING_REVISION) {
-                        err = new CouchbaseLiteException(e);
+                        err = new CouchbaseLiteException("Conflict resolution failed", e);
                     }
                     break;
                 }

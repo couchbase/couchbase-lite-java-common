@@ -49,31 +49,33 @@ public final class Log {
     private Log() { } // Utility class
 
     private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
-
     static {
         final Map<String, LogDomain> m = new HashMap<>();
         m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.QUERY, LogDomain.QUERY);
+        m.put(C4Constants.LogDomain.SQL, LogDomain.DATABASE);
+        m.put(C4Constants.LogDomain.ZIP, LogDomain.DATABASE);
+        m.put(C4Constants.LogDomain.WEB_SOCKET, LogDomain.NETWORK);
+        m.put(C4Constants.LogDomain.BLIP, LogDomain.NETWORK);
+        m.put(C4Constants.LogDomain.TLS, LogDomain.NETWORK);
         m.put(C4Constants.LogDomain.SYNC, LogDomain.REPLICATOR);
         m.put(C4Constants.LogDomain.SYNC_BUSY, LogDomain.REPLICATOR);
-        m.put(C4Constants.LogDomain.BLIP, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.WEB_SOCKET, LogDomain.NETWORK);
+        m.put(C4Constants.LogDomain.QUERY, LogDomain.QUERY);
+        m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
         LOGGING_DOMAINS_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
     private static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
-
     static {
         final Map<LogDomain, String> m = new HashMap<>();
         m.put(LogDomain.DATABASE, C4Constants.LogDomain.DATABASE);
-        m.put(LogDomain.QUERY, C4Constants.LogDomain.QUERY);
-        m.put(LogDomain.REPLICATOR, C4Constants.LogDomain.SYNC);
         m.put(LogDomain.NETWORK, C4Constants.LogDomain.WEB_SOCKET);
+        m.put(LogDomain.REPLICATOR, C4Constants.LogDomain.SYNC);
+        m.put(LogDomain.QUERY, C4Constants.LogDomain.QUERY);
+        m.put(LogDomain.LISTENER, C4Constants.LogDomain.LISTENER);
         LOGGING_DOMAINS_TO_C4 = Collections.unmodifiableMap(m);
     }
 
     private static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
-
     static {
         final Map<Integer, LogLevel> m = new HashMap<>();
         for (LogLevel level: LogLevel.values()) { m.put(level.getValue(), level); }

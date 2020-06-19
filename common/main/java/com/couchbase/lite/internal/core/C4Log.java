@@ -26,6 +26,7 @@ import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.Logger;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 public final class C4Log {
@@ -33,22 +34,28 @@ public final class C4Log {
 
     private static LogLevel callbackLevel = LogLevel.NONE;
 
-    public static void setLevels(int level, String... domains) {
-        if ((domains == null) || (domains.length <= 0)) { return; }
-        for (String domain: domains) { setLevel(domain, level); }
+    @VisibleForTesting
+    public static class RawLog {
+        public final String domain;
+        public final int level;
+        public final String message;
+
+        RawLog(String domain, int level, String message) {
+            this.domain = domain;
+            this.level = level;
+            this.message = message;
+        }
     }
 
-    public static void forceCallbackLevel(@NonNull LogLevel logLevel) {
-        setCallbackLevel(logLevel.getValue());
-        callbackLevel = logLevel;
-    }
+    private static Fn.Consumer<RawLog> rawListener;
 
-    public static void setCallbackLevel(@NonNull LogLevel consoleLevel) {
-        setCoreCallbackLevel(getCallbackLevel(consoleLevel, Database.log.getCustom()));
-    }
+    @VisibleForTesting
+    public static void registerListener(Fn.Consumer<RawLog> listener) { rawListener = listener; }
 
     // This class and this method are referenced by name, from native code.
-    static void logCallback(String c4Domain, int c4Level, String message) {
+    public static void logCallback(String c4Domain, int c4Level, String message) {
+        if (rawListener != null) { rawListener.accept(new RawLog(c4Domain, c4Level, message)); }
+
         final LogLevel level = Log.getLogLevelForC4Level(c4Level);
         final LogDomain domain = Log.getLoggingDomainForC4Domain(c4Domain);
 
@@ -69,6 +76,20 @@ public final class C4Log {
         // This cannot be done synchronously because it will deadlock on the same mutex that is being held
         // for this callback
         CouchbaseLiteInternal.getExecutionService().getMainExecutor().execute(() -> setCoreCallbackLevel(level));
+    }
+
+    public static void setLevels(int level, String... domains) {
+        if ((domains == null) || (domains.length <= 0)) { return; }
+        for (String domain: domains) { setLevel(domain, level); }
+    }
+
+    public static void forceCallbackLevel(@NonNull LogLevel logLevel) {
+        setCallbackLevel(logLevel.getValue());
+        callbackLevel = logLevel;
+    }
+
+    public static void setCallbackLevel(@NonNull LogLevel consoleLevel) {
+        setCoreCallbackLevel(getCallbackLevel(consoleLevel, Database.log.getCustom()));
     }
 
     private static void setCoreCallbackLevel(@NonNull LogLevel logLevel) {
