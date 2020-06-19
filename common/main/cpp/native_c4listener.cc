@@ -186,18 +186,16 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
     FLSlice certSlice = {certData, (size_t) certSize};
 
     C4Error error;
-// !!! not yet visible in core
-//    auto c4cert = c4cert_fromData(certSlice, &error);
-//
-//    env->ReleaseByteArrayElements(cert, certData, 0);
-//
-//    if (!c4cert) {
-//        throwError(env, error);
-//        return nullptr;
-//    }
-//
-//    return c4cert;
-    return nullptr;
+    auto c4cert = c4cert_fromData(certSlice, &error);
+
+    env->ReleaseByteArrayElements(cert, certData, 0);
+
+    if (!c4cert) {
+        throwError(env, error);
+        return nullptr;
+    }
+
+    return c4cert;
 }
 
 static C4Listener *startListener(
@@ -218,7 +216,7 @@ static C4Listener *startListener(
     jstringSlice path(env, dbPath);
 
     C4ListenerConfig config;
-    config.port =  (uint16_t) port;
+    config.port = (uint16_t) port;
     config.networkInterface = iFace;
     config.apis = (unsigned) apis;
     config.tlsConfig = tlsConfig;
