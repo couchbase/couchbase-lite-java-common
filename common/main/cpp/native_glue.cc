@@ -41,29 +41,32 @@ using namespace std;
 jstring litecore::jni::UTF8ToJstring(JNIEnv *env, const char *s, size_t size) {
     std::u16string ustr;
     try {
-        #ifdef _MSC_VER
-            auto tmpstr = std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t>().from_bytes(s, s + size);
-            ustr = reinterpret_cast<const char16_t *>(tmpstr.data());
-        #else
-            ustr = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>().from_bytes(s, s + size);
-        #endif
+#ifdef _MSC_VER
+        auto tmpstr = std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t>().from_bytes(s, s + size);
+        ustr = reinterpret_cast<const char16_t *>(tmpstr.data());
+#else
+        ustr = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>().from_bytes(s, s + size);
+#endif
     }
     catch (const std::bad_alloc &x) {
+        logError("Failed allocating space to convert string: %s", x.what());
         C4Error error = {LiteCoreDomain, kC4ErrorMemoryError, 0};
         throwError(env, error);
-        return NULL;
+        return nullptr;
     }
     catch (const std::exception &x) {
+        // sadly, we better not try to log the actual string...
+        logError("Failed to convert string from UTF-8 to UTF-16: %s", x.what());
         C4Error error = {LiteCoreDomain, kC4ErrorCorruptData, 0};
         throwError(env, error);
-        return NULL;
+        return nullptr;
     }
 
     auto jstr = env->NewString(reinterpret_cast<const jchar *>(ustr.c_str()), ustr.size());
     if (jstr == nullptr) {
         C4Error error = {LiteCoreDomain, kC4ErrorMemoryError, 0};
         throwError(env, error);
-        return NULL;
+        return nullptr;
     }
 
     return jstr;
@@ -82,15 +85,15 @@ std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
         str = std::string();
     } else {
         try {
-            #ifdef _MSC_VER
-                str = std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t>()
-                                    .to_bytes(reinterpret_cast<const int16_t *>(chars),
-                                              reinterpret_cast<const int16_t *>(chars + len));
-            #else
-                str = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>()
-                                    .to_bytes(reinterpret_cast<const char16_t *>(chars),
-                                              reinterpret_cast<const char16_t *>(chars + len));
-            #endif
+#ifdef _MSC_VER
+            str = std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t>()
+                                .to_bytes(reinterpret_cast<const int16_t *>(chars),
+                                          reinterpret_cast<const int16_t *>(chars + len));
+#else
+            str = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>()
+                    .to_bytes(reinterpret_cast<const char16_t *>(chars),
+                              reinterpret_cast<const char16_t *>(chars + len));
+#endif
 
         }
         catch (const std::exception &x) {
@@ -115,12 +118,12 @@ JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *jvm, void *reserved) {
     JNIEnv *env;
     if (jvm->GetEnv((void **) &env, JNI_VERSION_1_6) == JNI_OK
-#ifdef COUCHBASE_ENTERPRISE
+        #ifdef COUCHBASE_ENTERPRISE
         && initC4Listener(env)
-#endif
+        #endif
         && initC4Observer(env)
         && initC4Replicator(env)
-        && initC4Socket(env)){
+        && initC4Socket(env)) {
 
         assert(gJVM == nullptr);
         gJVM = jvm;
@@ -135,7 +138,7 @@ namespace litecore {
 
         JavaVM *gJVM;
 
-        int attachCurrentThread(JNIEnv** env) {
+        int attachCurrentThread(JNIEnv **env) {
 #ifdef JNI_VERSION_1_8
             return gJVM->AttachCurrentThread(reinterpret_cast<void **>(env), NULL);
 #else
@@ -166,13 +169,14 @@ namespace litecore {
         }
 
         const char *jstringSlice::c_str() {
-            return (const char *)_slice.buf;
+            return (const char *) _slice.buf;
         };
 
         // ATTN: In critical, should not call any other JNI methods.
         // http://docs.oracle.com/javase/6/docs/technotes/guides/jni/spec/functions.html
         jbyteArraySlice::jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, bool critical)
-            : jbyteArraySlice(env, jbytes, (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)), critical) { }
+                : jbyteArraySlice(env, jbytes, (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)), critical) {}
+
         jbyteArraySlice::jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, size_t length, bool critical)
                 : _env(env),
                   _jbytes(jbytes),
@@ -182,14 +186,14 @@ namespace litecore {
                 return;
             }
 
-            void* data;
+            void *data;
             if (critical) {
                 data = env->GetPrimitiveArrayCritical(jbytes, NULL);
             } else {
                 data = env->GetByteArrayElements(jbytes, NULL);
             }
 
-            _slice = { data, length };
+            _slice = {data, length};
         }
 
         jbyteArraySlice::~jbyteArraySlice() {

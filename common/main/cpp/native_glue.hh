@@ -102,15 +102,17 @@ namespace litecore {
 
         jbyteArray toJByteArray(JNIEnv *, C4SliceResult);
 
-        // Sets a Java exception based on the LiteCore error.
-        void throwError(JNIEnv *, C4Error);
-
         // Copies an encryption key to a C4EncryptionKey. Returns false on exception.
         bool getEncryptionKey(JNIEnv *env,
                               jint keyAlg,
                               jbyteArray jKeyBytes,
                               C4EncryptionKey *outKey);
 
+        // lightweight logging
+        void logError(const char *fmt, ...);
+
+        // Sets a Java exception based on the LiteCore error.
+        void throwError(JNIEnv *, C4Error);
     }
 }
 

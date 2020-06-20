@@ -58,7 +58,7 @@ void vLogError(const char *fmt, va_list args) {
 #endif
 }
 
-void logError(const char *fmt, ...) {
+void litecore::jni::logError(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     vLogError(fmt, args);
