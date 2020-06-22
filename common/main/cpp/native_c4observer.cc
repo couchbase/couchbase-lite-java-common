@@ -150,7 +150,7 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_create(JNIEnv *, jclass
  */
 JNIEXPORT jobjectArray JNICALL
 Java_com_couchbase_lite_internal_core_C4DatabaseObserver_getChanges(JNIEnv *env,
-                                                          jclass clazz,
+                                                          jclass ignore,
                                                           jlong observer,
                                                           jint maxChanges) {
     //static const uint32_t kMaxChanges = 100u;
@@ -158,17 +158,22 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_getChanges(JNIEnv *env,
     bool external = false;
     uint32_t nChanges = c4dbobs_getChanges((C4DatabaseObserver *) observer,
                                            c4changes,
-                                           maxChanges,
+                                           (uint32_t) maxChanges,
                                            &external);
 
     jobjectArray array = env->NewObjectArray(nChanges, cls_C4DBChange, nullptr);
     for (size_t i = 0; i < nChanges; i++) {
         jobject obj = env->NewObject(cls_C4DBChange, m_C4DBChange_init);
+
+        // ??? Handle null return from toJString?
         env->SetObjectField(obj, f_C4DBChange_docID, toJString(env, c4changes[i].docID));
+
+        // ??? Handle null return from toJString?
         env->SetObjectField(obj, f_C4DBChange_revID, toJString(env, c4changes[i].revID));
+
         env->SetLongField(obj, f_C4DBChange_sequence, (jlong) c4changes[i].sequence);
         env->SetLongField(obj, f_C4DBChange_bodySize, (jlong) c4changes[i].bodySize);
-        env->SetBooleanField(obj, f_C4DBChange_external, external);
+        env->SetBooleanField(obj, f_C4DBChange_external, (jboolean) external);
         env->SetObjectArrayElement(array, i, obj);
     }
     c4dbobs_releaseChanges(c4changes, nChanges);
@@ -181,7 +186,7 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_getChanges(JNIEnv *env,
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4DatabaseObserver_free(JNIEnv *env, jclass clazz, jlong observer) {
+Java_com_couchbase_lite_internal_core_C4DatabaseObserver_free(JNIEnv *env, jclass ignore, jlong observer) {
     if (observer != 0)
         c4dbobs_free((C4DatabaseObserver *) observer);
 }
@@ -217,7 +222,7 @@ c4DocObsCallback(C4DocumentObserver *obs, C4Slice docID, C4SequenceNumber seq, v
  * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4DocumentObserver_create
-        (JNIEnv *env, jclass clazz, jlong jdb, jstring jdocID) {
+        (JNIEnv *env, jclass ignore, jlong jdb, jstring jdocID) {
     jstringSlice docID(env, jdocID);
     return (jlong) c4docobs_create((C4Database *) jdb, docID, c4DocObsCallback, nullptr);
 }
@@ -228,7 +233,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4DocumentObserver
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4DocumentObserver_free(JNIEnv *env, jclass clazz, jlong obs) {
+Java_com_couchbase_lite_internal_core_C4DocumentObserver_free(JNIEnv *env, jclass ignore, jlong obs) {
     if (obs != 0)
         c4docobs_free((C4DocumentObserver *) obs);
 }

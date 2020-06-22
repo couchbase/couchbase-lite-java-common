@@ -110,7 +110,13 @@ public class C4Replicator extends C4NativePeer {
     // Supported only for Replicators
     // This method is called from a native thread that Java has never even heard of...
     @SuppressWarnings("unused")
-    static boolean validationFunction(String docID, String revID, int flags, long dict, boolean isPush, Object ctxt) {
+    static boolean validationFunction(
+        @Nullable String docID,
+        @Nullable String revID,
+        int flags,
+        long dict,
+        boolean isPush,
+        Object ctxt) {
         if (!(ctxt instanceof AbstractReplicator)) {
             Log.w(LogDomain.DATABASE, "Validation function called with unrecognized context: " + ctxt);
             return true;

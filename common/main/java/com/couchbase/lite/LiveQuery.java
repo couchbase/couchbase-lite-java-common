@@ -101,7 +101,7 @@ final class LiveQuery implements DatabaseChangeListener {
      * NOTE: this method is synchronized with Query level.
      */
     ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
-        final ChangeListenerToken token = changeNotifier.addChangeListener(executor, listener);
+        final ChangeListenerToken<?> token = changeNotifier.addChangeListener(executor, listener);
         start(false);
         return token;
     }

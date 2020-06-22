@@ -182,11 +182,7 @@ public class FLValue {
      *
      * @return String
      */
-    public String asString() {
-        try { return asString(handle); }
-        catch (LiteCoreException ignore) {}
-        return null;
-    }
+    public String asString() { return asString(handle); }
 
     public List<Object> asArray() { return asFLArray().asArray(); }
 
@@ -213,8 +209,6 @@ public class FLValue {
      */
     public Object asObject() {
         switch (getType(handle)) {
-            case FLConstants.ValueType.NULL:
-                return null;
             case FLConstants.ValueType.BOOLEAN:
                 return Boolean.valueOf(asBool());
             case FLConstants.ValueType.NUMBER:
@@ -229,6 +223,7 @@ public class FLValue {
                 return asArray();
             case FLConstants.ValueType.DICT:
                 return asDict();
+            case FLConstants.ValueType.NULL:
             default:
                 return null;
         }
@@ -264,10 +259,13 @@ public class FLValue {
 
     private static native boolean isDouble(long value);
 
+    @Nullable
     private static native String toString(long handle);
 
+    @Nullable
     private static native String toJSON(long handle);
 
+    @Nullable
     private static native String toJSON5(long handle);
 
     private static native byte[] asData(long value);
@@ -282,13 +280,14 @@ public class FLValue {
 
     private static native double asDouble(long value);
 
-    private static native String asString(long value) throws LiteCoreException;
+    private static native String asString(long value);
 
     private static native long asArray(long value);
 
     private static native long asDict(long value);
 
     @SuppressWarnings({"MethodName", "PMD.MethodNamingConventions"})
+    @Nullable
     private static native String JSON5ToJSON(String json5) throws LiteCoreException;
 }
 

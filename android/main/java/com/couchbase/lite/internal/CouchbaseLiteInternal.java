@@ -70,7 +70,8 @@ public final class CouchbaseLiteInternal {
 
     private static final Object LOCK = new Object();
 
-    private static volatile boolean debugging = BuildConfig.CBL_DEBUG;
+    @SuppressWarnings("PMD.FieldNamingConventions")
+    private static final boolean debugging = BuildConfig.CBL_DEBUG;
 
     @GuardedBy("lock")
     private static String dbDirPath;

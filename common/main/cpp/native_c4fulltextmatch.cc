@@ -33,7 +33,7 @@ using namespace litecore::jni;
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource
-        (JNIEnv *env, jclass clazz, jlong handle) {
+        (JNIEnv *env, jclass ignore, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->dataSource;
 }
@@ -45,7 +45,7 @@ Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4FullTextMatch_property
-        (JNIEnv *env, jclass clazz, jlong handle) {
+        (JNIEnv *env, jclass ignore, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->property;
 }
@@ -57,7 +57,7 @@ Java_com_couchbase_lite_internal_core_C4FullTextMatch_property
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4FullTextMatch_term
-        (JNIEnv *env, jclass clazz, jlong handle) {
+        (JNIEnv *env, jclass ignore, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->term;
 }
@@ -69,7 +69,7 @@ Java_com_couchbase_lite_internal_core_C4FullTextMatch_term
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4FullTextMatch_start
-        (JNIEnv *env, jclass clazz, jlong handle) {
+        (JNIEnv *env, jclass ignore, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->start;
 }
@@ -81,7 +81,7 @@ Java_com_couchbase_lite_internal_core_C4FullTextMatch_start
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4FullTextMatch_length
-        (JNIEnv *env, jclass clazz, jlong handle) {
+        (JNIEnv *env, jclass ignore, jlong handle) {
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->length;
 }

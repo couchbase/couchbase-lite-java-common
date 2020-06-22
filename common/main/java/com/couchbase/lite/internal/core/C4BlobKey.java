@@ -15,8 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+ import android.support.annotation.NonNull;
+ import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
 
@@ -48,7 +48,10 @@ public class C4BlobKey extends C4NativePeer {
      */
     @NonNull
     @Override
-    public String toString() { return toString(getPeer()); }
+    public String toString() {
+        final String str = toString(getPeer());
+        return (str != null) ? str : "unknown!!";
+    }
 
     public void free() {
         final long handle = getPeerAndClear();
@@ -86,6 +89,7 @@ public class C4BlobKey extends C4NativePeer {
     /**
      * Encodes a blob key to a string of the form "sha1-"+base64.
      */
+    @Nullable
     private static native String toString(long blobKey);
 
     /**

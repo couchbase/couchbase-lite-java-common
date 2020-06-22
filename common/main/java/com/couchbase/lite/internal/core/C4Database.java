@@ -119,6 +119,8 @@ public class C4Database extends C4NativePeer {
 
     // - Accessors
 
+
+    @Nullable
     public String getPath() { return getPath(getPeer()); }
 
     public long getDocumentCount() { return getDocumentCount(getPeer()); }
@@ -128,7 +130,7 @@ public class C4Database extends C4NativePeer {
 
     public long nextDocExpiration() { return nextDocExpiration(getPeer()); }
 
-    public int purgeExpiredDocs() { return purgeExpiredDocs(getPeer()); }
+    public long purgeExpiredDocs() { return purgeExpiredDocs(getPeer()); }
 
     public void purgeDoc(String docID) throws LiteCoreException { purgeDoc(getPeer(), docID); }
 
@@ -458,6 +460,8 @@ public class C4Database extends C4NativePeer {
 
     // - Accessors
 
+
+    @Nullable
     private static native String getPath(long db);
 
     private static native long getDocumentCount(long db);
@@ -466,7 +470,7 @@ public class C4Database extends C4NativePeer {
 
     private static native long nextDocExpiration(long db);
 
-    private static native int purgeExpiredDocs(long db);
+    private static native long purgeExpiredDocs(long db);
 
     private static native void purgeDoc(long db, String id) throws LiteCoreException;
 

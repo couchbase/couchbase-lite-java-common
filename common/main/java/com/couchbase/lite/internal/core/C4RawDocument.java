@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.Nullable;
+
 import com.couchbase.lite.LiteCoreException;
 
 
@@ -30,8 +32,10 @@ public class C4RawDocument extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
+    @Nullable
     public String key() { return key(getPeer()); }
 
+    @Nullable
     public String meta() { return meta(getPeer()); }
 
     public byte[] body() { return body(getPeer()); }

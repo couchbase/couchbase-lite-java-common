@@ -33,7 +33,7 @@ using namespace litecore::jni;
  * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_init(JNIEnv *env, jclass clazz, jlong db, jstring jexpr) {
+Java_com_couchbase_lite_internal_core_C4Query_init(JNIEnv *env, jclass ignore, jlong db, jstring jexpr) {
     jstringSlice expr(env, jexpr);
     C4Error error = {};
     C4Query *query = c4query_new((C4Database *) db, expr, &error);
@@ -48,7 +48,7 @@ Java_com_couchbase_lite_internal_core_C4Query_init(JNIEnv *env, jclass clazz, jl
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_free(JNIEnv *env, jclass clazz, jlong jquery) {
+Java_com_couchbase_lite_internal_core_C4Query_free(JNIEnv *env, jclass ignore, jlong jquery) {
     c4query_release((C4Query *) jquery);
 }
 
@@ -58,7 +58,7 @@ Java_com_couchbase_lite_internal_core_C4Query_free(JNIEnv *env, jclass clazz, jl
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_explain(JNIEnv *env, jclass clazz, jlong jquery) {
+Java_com_couchbase_lite_internal_core_C4Query_explain(JNIEnv *env, jclass ignore, jlong jquery) {
     C4StringResult result = c4query_explain((C4Query *) jquery);
     jstring jstr = toJString(env, result);
     c4slice_free(result);
@@ -71,7 +71,7 @@ Java_com_couchbase_lite_internal_core_C4Query_explain(JNIEnv *env, jclass clazz,
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_columnCount(JNIEnv *env, jclass clazz, jlong jquery) {
+Java_com_couchbase_lite_internal_core_C4Query_columnCount(JNIEnv *env, jclass ignore, jlong jquery) {
     return c4query_columnCount((C4Query *) jquery);
 }
 
@@ -81,7 +81,7 @@ Java_com_couchbase_lite_internal_core_C4Query_columnCount(JNIEnv *env, jclass cl
  * Signature: (JZJ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_run(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_core_C4Query_run(JNIEnv *env, jclass ignore,
                                         jlong jquery,
                                         jboolean jrankFullText,
                                         jlong jparameters) {
@@ -89,7 +89,7 @@ Java_com_couchbase_lite_internal_core_C4Query_run(JNIEnv *env, jclass clazz,
             (bool) jrankFullText
     };
 
-    FLSliceResult *params = (FLSliceResult *) jparameters;
+    auto params = (FLSliceResult *) jparameters;
     C4Error error = {};
     C4Slice s = { params->buf, params->size };
     C4QueryEnumerator *e = c4query_run((C4Query *) jquery, &options, s, &error);
@@ -105,9 +105,9 @@ Java_com_couchbase_lite_internal_core_C4Query_run(JNIEnv *env, jclass clazz,
  */
 JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_core_C4Query_getFullTextMatched
-        (JNIEnv *env, jclass clazz, jlong jquery, jlong jterm) {
+        (JNIEnv *env, jclass ignore, jlong jquery, jlong jterm) {
     C4Error error = {};
-    const C4FullTextMatch *term = (const C4FullTextMatch *) jterm;
+    const auto term = (const C4FullTextMatch *) jterm;
     C4SliceResult s = c4query_fullTextMatched((C4Query *) jquery, term, &error);
     jbyteArray res = toJByteArray(env, s);
     c4slice_free(s);
@@ -120,7 +120,7 @@ Java_com_couchbase_lite_internal_core_C4Query_getFullTextMatched
  * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Z)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_createIndex(JNIEnv *env, jclass clazz, jlong jdb, jstring jname,
+Java_com_couchbase_lite_internal_core_C4Query_createIndex(JNIEnv *env, jclass ignore, jlong jdb, jstring jname,
                                                 jstring jexpressionsJSON, jint indexType,
                                                 jstring jlanguage, jboolean ignoreDiacritics) {
     jstringSlice name(env, jname);
@@ -134,7 +134,7 @@ Java_com_couchbase_lite_internal_core_C4Query_createIndex(JNIEnv *env, jclass cl
                                 (C4IndexType) indexType, &options, &error);
     if (!res)
         throwError(env, error);
-    return res;
+    return (jboolean ) res;
 }
 
 /*
@@ -143,7 +143,7 @@ Java_com_couchbase_lite_internal_core_C4Query_createIndex(JNIEnv *env, jclass cl
  * Signature: (JLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_deleteIndex(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_core_C4Query_deleteIndex(JNIEnv *env, jclass ignore,
         jlong jdb, jstring jname) {
     jstringSlice name(env, jname);
     C4Error error = {};
@@ -158,7 +158,7 @@ Java_com_couchbase_lite_internal_core_C4Query_deleteIndex(JNIEnv *env, jclass cl
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_getIndexes(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Query_getIndexes(JNIEnv *env, jclass ignore, jlong jdb) {
     C4SliceResult data = c4db_getIndexes((C4Database *) jdb, nullptr);
     return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
 }

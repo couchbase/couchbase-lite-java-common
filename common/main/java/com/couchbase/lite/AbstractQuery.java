@@ -164,7 +164,9 @@ abstract class AbstractQuery implements Query {
         synchronized (getDbLock()) {
             synchronized (lock) {
                 if (c4query == null) { c4query = prepQueryLocked(); }
-                return c4query.explain();
+                final String exp = c4query.explain();
+                if (exp == null) { throw new CouchbaseLiteException("Cound not explain query"); }
+                return exp;
             }
         }
     }

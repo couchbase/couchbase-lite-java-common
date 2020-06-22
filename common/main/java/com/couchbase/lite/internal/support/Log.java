@@ -387,6 +387,7 @@ public final class Log {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private static void log(
         @NonNull LogLevel level,
         @NonNull LogDomain domain,

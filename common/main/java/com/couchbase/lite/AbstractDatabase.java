@@ -922,7 +922,7 @@ abstract class AbstractDatabase {
         synchronized (dbLock) { return getC4DatabaseLocked().nextDocExpiration(); }
     }
 
-    int purgeExpiredDocs() {
+    long purgeExpiredDocs() {
         synchronized (dbLock) { return getC4DatabaseLocked().purgeExpiredDocs(); }
     }
 

@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
@@ -46,14 +47,17 @@ public class C4Document extends C4NativePeer {
 
     public int getFlags() { return withPeer(0, C4Document::getFlags); }
 
+    @Nullable
     public String getDocID() { return withPeer(null, C4Document::getDocID); }
 
+    @Nullable
     public String getRevID() { return withPeer(null, C4Document::getRevID); }
 
     public long getSequence() { return withPeer(0L, C4Document::getSequence); }
 
     // - C4Revision
 
+    @Nullable
     public String getSelectedRevID() { return withPeer(null, C4Document::getSelectedRevID); }
 
     public long getSelectedSequence() { return withPeer(0L, C4Document::getSelectedSequence); }
@@ -109,6 +113,7 @@ public class C4Document extends C4NativePeer {
 
     // - Fleece
 
+    @Nullable
     public String bodyAsJSON(boolean canonical) throws LiteCoreException {
         return withPeerThrows(null, h -> bodyAsJSON(h, canonical));
     }
@@ -310,6 +315,7 @@ public class C4Document extends C4NativePeer {
     // - Fleece-related
 
     // doc -> pointer to C4Document
+    @Nullable
     private static native String bodyAsJSON(long doc, boolean canonical) throws LiteCoreException;
 
     private static native boolean dictContainsBlobs(long dict, long sk); // dict -> FLSliceResult

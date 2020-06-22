@@ -16,6 +16,8 @@
 
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.Nullable;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +54,7 @@ public class C4DocumentObserver extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     @SuppressWarnings("unused")
-    static void callback(long handle, String docID, long sequence) {
+    static void callback(long handle, @Nullable String docID, long sequence) {
         Log.d(
             LogDomain.DATABASE,
             "C4DocumentObserver.callback @" + Long.toHexString(handle) + " (" + sequence + "): " + docID);

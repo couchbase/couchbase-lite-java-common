@@ -32,7 +32,7 @@ using namespace litecore::jni;
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_close(JNIEnv *env, jclass clazz, jlong handle) {
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_close(JNIEnv *env, jclass ignore, jlong handle) {
     c4enum_close((C4DocEnumerator *) handle);
 }
 
@@ -42,7 +42,7 @@ Java_com_couchbase_lite_internal_core_C4DocEnumerator_close(JNIEnv *env, jclass 
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_free(JNIEnv *env, jclass clazz, jlong handle) {
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_free(JNIEnv *env, jclass ignore, jlong handle) {
     c4enum_free((C4DocEnumerator *) handle);
 }
 
@@ -52,11 +52,11 @@ Java_com_couchbase_lite_internal_core_C4DocEnumerator_free(JNIEnv *env, jclass c
  * Signature: (JJI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateChanges(JNIEnv *env, jclass clazz, jlong jdb,
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateChanges(JNIEnv *env, jclass ignore, jlong jdb,
                                                              jlong since, jint jflags) {
     const C4EnumeratorOptions options = {C4EnumeratorFlags(jflags)};
     C4Error error;
-    C4DocEnumerator *e = c4db_enumerateChanges((C4Database *) jdb, since, &options, &error);
+    C4DocEnumerator *e = c4db_enumerateChanges((C4Database *) jdb, (uint16_t) since, &options, &error);
     if (!e)
         throwError(env, error);
     return (jlong) e;
@@ -68,7 +68,7 @@ Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateChanges(JNIEnv *e
  * Signature: (JI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateAllDocs(JNIEnv *env, jclass clazz, jlong jdb,
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateAllDocs(JNIEnv *env, jclass ignore, jlong jdb,
                                                              jint jflags) {
     const C4EnumeratorOptions options = {C4EnumeratorFlags(jflags)};
     C4Error error;
@@ -84,12 +84,12 @@ Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateAllDocs(JNIEnv *e
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_next(JNIEnv *env, jclass clazz, jlong handle) {
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_next(JNIEnv *env, jclass ignore, jlong handle) {
     C4Error error = {};
     bool res = c4enum_next((C4DocEnumerator *) handle, &error);
     if (!res && error.code != 0)
         throwError(env, error);
-    return (jlong) res;
+    return (jboolean) res;
 }
 
 /*
@@ -98,7 +98,7 @@ Java_com_couchbase_lite_internal_core_C4DocEnumerator_next(JNIEnv *env, jclass c
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_getDocument(JNIEnv *env, jclass clazz, jlong handle) {
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_getDocument(JNIEnv *env, jclass ignore, jlong handle) {
     C4Error error = {};
     C4Document *doc = c4enum_getDocument((C4DocEnumerator *) handle, &error);
     if (!doc)

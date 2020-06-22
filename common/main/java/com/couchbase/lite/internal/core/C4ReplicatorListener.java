@@ -22,7 +22,7 @@ import android.support.annotation.Nullable;
 public interface C4ReplicatorListener {
     void statusChanged(
         @Nullable C4Replicator replicator,
-        @NonNull C4ReplicatorStatus status,
+        @Nullable C4ReplicatorStatus status,
         @Nullable Object context);
 
     void documentEnded(

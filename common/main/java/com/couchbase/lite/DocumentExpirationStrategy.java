@@ -87,7 +87,7 @@ class DocumentExpirationStrategy {
             expirationTask = null;
         }
 
-        final int purged;
+        final long purged;
         synchronized (db.getLock()) {
             if (!db.isOpen()) { return; }
             purged = db.purgeExpiredDocs();

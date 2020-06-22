@@ -166,7 +166,7 @@ static jobject toList(JNIEnv *env, FLMutableArray array) {
     jobject result = env->NewObject(cls_ArrayList, m_ArrayList_init, (jint) n);
 
     for (int i = 0; i < n; i++) {
-        auto arrayElem = FLArray_Get(array, (u_int32_t) i);
+        auto arrayElem = FLArray_Get(array, (uint32_t) i);
         auto str = FLValue_AsString((FLValue) arrayElem);
         jstring jstr = toJString(env, str);
         if (!jstr)

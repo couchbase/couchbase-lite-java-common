@@ -31,7 +31,7 @@ using namespace litecore::jni;
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4RawDocument_key(JNIEnv *env, jclass clazz, jlong jrawDoc) {
+Java_com_couchbase_lite_internal_core_C4RawDocument_key(JNIEnv *env, jclass ignore, jlong jrawDoc) {
     return toJString(env, ((C4RawDocument *) jrawDoc)->key);
 }
 
@@ -41,7 +41,7 @@ Java_com_couchbase_lite_internal_core_C4RawDocument_key(JNIEnv *env, jclass claz
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4RawDocument_meta(JNIEnv *env, jclass clazz, jlong jrawDoc) {
+Java_com_couchbase_lite_internal_core_C4RawDocument_meta(JNIEnv *env, jclass ignore, jlong jrawDoc) {
     return toJString(env, ((C4RawDocument *) jrawDoc)->meta);
 }
 
@@ -51,6 +51,6 @@ Java_com_couchbase_lite_internal_core_C4RawDocument_meta(JNIEnv *env, jclass cla
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4RawDocument_body(JNIEnv *env, jclass clazz, jlong jrawDoc) {
+Java_com_couchbase_lite_internal_core_C4RawDocument_body(JNIEnv *env, jclass ignore, jlong jrawDoc) {
     return toJByteArray(env, ((C4RawDocument *) jrawDoc)->body);
 }

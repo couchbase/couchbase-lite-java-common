@@ -36,8 +36,9 @@ using namespace std;
 // The strategy here is to use standard C functions to convert the UTF-8 directly to UTF-16, which Java handles nicely.
 // The following two functions are derived from this code:
 //   https://github.com/incanus/android-jni/blob/master/app/src/main/jni/JNI.cpp#L57-L86
-// !! Creating the wstring_convert is expensive.  It would be nice to create one
+// !!! Creating the wstring_convert is expensive.  It would be nice to create one
 //    and to re-use it.  It is *NOT*, however, threadsafe.
+// ??? On failure, just return a nullptr.
 jstring litecore::jni::UTF8ToJstring(JNIEnv *env, const char *s, size_t size) {
     std::u16string ustr;
     try {
@@ -50,15 +51,11 @@ jstring litecore::jni::UTF8ToJstring(JNIEnv *env, const char *s, size_t size) {
     }
     catch (const std::bad_alloc &x) {
         logError("Failed allocating space to convert string: %s", x.what());
-        C4Error error = {LiteCoreDomain, kC4ErrorMemoryError, 0};
-        throwError(env, error);
         return nullptr;
     }
     catch (const std::exception &x) {
         // sadly, we better not try to log the actual string...
         logError("Failed to convert string from UTF-8 to UTF-16: %s", x.what());
-        C4Error error = {LiteCoreDomain, kC4ErrorCorruptData, 0};
-        throwError(env, error);
         return nullptr;
     }
 
@@ -142,12 +139,12 @@ namespace litecore {
 #ifdef JNI_VERSION_1_8
             return gJVM->AttachCurrentThread(reinterpret_cast<void **>(env), NULL);
 #else
-            return gJVM->AttachCurrentThread(env, NULL);
+            return gJVM->AttachCurrentThread(env, nullptr);
 #endif
         }
 
         void deleteGlobalRef(jobject gRef) {
-            JNIEnv *env = NULL;
+            JNIEnv *env = nullptr;
             jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
             if (getEnvStat == JNI_OK) {
                 env->DeleteGlobalRef(gRef);
@@ -188,9 +185,9 @@ namespace litecore {
 
             void *data;
             if (critical) {
-                data = env->GetPrimitiveArrayCritical(jbytes, NULL);
+                data = env->GetPrimitiveArrayCritical(jbytes, nullptr);
             } else {
-                data = env->GetByteArrayElements(jbytes, NULL);
+                data = env->GetByteArrayElements(jbytes, nullptr);
             }
 
             _slice = {data, length};

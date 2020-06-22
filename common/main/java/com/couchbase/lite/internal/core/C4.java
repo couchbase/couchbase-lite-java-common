@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.Nullable;
+
+
 public final class C4 {
     private C4() { }
 
@@ -26,7 +29,9 @@ public final class C4 {
 
     public static native String getenv(String name);
 
+    @Nullable
     public static native String getBuildInfo();
 
+    @Nullable
     public static native String getVersion();
 }

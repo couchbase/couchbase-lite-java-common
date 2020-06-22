@@ -423,7 +423,7 @@ public class C4DatabaseTest extends C4BaseTest {
         catch (InterruptedException e) {
         }
 
-        int cnt = c4Database.purgeExpiredDocs();
+        long cnt = c4Database.purgeExpiredDocs();
 
         assertEquals(cnt, 2);
     }

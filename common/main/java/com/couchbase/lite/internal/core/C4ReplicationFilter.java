@@ -16,14 +16,15 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.couchbase.lite.AbstractReplicator;
 
 
 public interface C4ReplicationFilter {
     boolean validationFunction(
-        String docID,
-        String revID,
+        @Nullable String docID,
+        @Nullable String revID,
         int flags,
         long dict,
         boolean isPush,

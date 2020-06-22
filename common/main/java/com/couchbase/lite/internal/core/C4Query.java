@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.Nullable;
+
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.AllocSlice;
@@ -43,6 +45,7 @@ public class C4Query extends C4NativePeer {
 
     //////// RUNNING QUERIES:
 
+    @Nullable
     public String explain() { return withPeer(null, C4Query::explain); }
 
     //////// INDEXES:
@@ -124,6 +127,7 @@ public class C4Query extends C4NativePeer {
      * @param handle (C4Query*)
      * @return C4StringResult
      */
+    @Nullable
     private static native String explain(long handle);
 
     /**

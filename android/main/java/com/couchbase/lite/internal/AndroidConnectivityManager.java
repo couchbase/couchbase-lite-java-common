@@ -73,7 +73,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     private final Fn.Runner runner;
 
     @VisibleForTesting
-    public AndroidConnectivityManager(Fn.Runner runner) { this.runner = runner; }
+    public AndroidConnectivityManager(@NonNull Fn.Runner runner) { this.runner = runner; }
 
     @Override
     public boolean isConnected() {

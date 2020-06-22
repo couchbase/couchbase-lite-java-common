@@ -230,12 +230,17 @@ public abstract class AbstractReplicator extends InternalReplicator {
         @Override
         public void statusChanged(
             @Nullable C4Replicator repl,
-            @NonNull C4ReplicatorStatus status,
+            @Nullable C4ReplicatorStatus status,
             @Nullable Object context) {
             Log.i(DOMAIN, "C4ReplicatorListener.statusChanged, context: %s, status: %s", context, status);
 
             if (context == null) {
                 Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, context is null!");
+                return;
+            }
+
+            if (status == null) {
+                Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, status is null!");
                 return;
             }
 

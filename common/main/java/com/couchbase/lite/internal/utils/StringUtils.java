@@ -25,7 +25,7 @@ public final class StringUtils {
     public static boolean isEmpty(String str) { return (str == null) || str.isEmpty(); }
 
     @NonNull
-    public static String join(@NonNull CharSequence delimiter, @NonNull Iterable tokens) {
+    public static String join(@NonNull CharSequence delimiter, @NonNull Iterable<?> tokens) {
         final StringBuilder sb = new StringBuilder();
         boolean firstTime = true;
         for (Object token: tokens) {

@@ -36,8 +36,8 @@ public final class SessionAuthenticator extends Authenticator {
     // member variables
     //---------------------------------------------
 
-    private String sessionID;
-    private String cookieName;
+    private final String sessionID;
+    private final String cookieName;
 
     //---------------------------------------------
     // Constructor

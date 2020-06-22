@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -107,10 +108,10 @@ public abstract class C4Socket extends C4NativePeer {
     static void open(
         long handle,
         Object context,
-        String scheme,
-        String hostname,
+        @Nullable String scheme,
+        @Nullable String hostname,
         int port,
-        String path,
+        @Nullable String path,
         byte[] options) {
         C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.open @" + handle + ": " + socket + ", " + context);
@@ -164,7 +165,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     @SuppressWarnings("unused")
-    static void requestClose(long handle, int status, String message) {
+    static void requestClose(long handle, int status, @Nullable String message) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.requestClose @" + handle + ": " + socket);
         if (socket == null) { return; }
@@ -227,7 +228,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     protected abstract void close();
 
-    protected abstract void requestClose(int status, String message);
+    protected abstract void requestClose(int status, @Nullable String message);
 
     //-------------------------------------------------------------------------
     // Protected methods

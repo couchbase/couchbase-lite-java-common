@@ -28,8 +28,9 @@ class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
         this.db = db;
         this.docID = docID;
         this.observer = db.createDocumentObserver(
-            this, docID,
-            (observer, docID1, sequence, context)
+            this,
+            docID,
+            (ign1, ign2, ign3, context)
                 -> db.scheduleOnPostNotificationExecutor(((DocumentChangeNotifier) context)::postChange, 0)
         );
     }

@@ -100,6 +100,7 @@ public class FLDictIterator extends C4NativePeer {
      * @param itr (FLDictIterator *)
      * @return key string
      */
+    @Nullable
     private static native String getKeyString(long itr);
 
     /**

@@ -46,8 +46,8 @@ public final class JsonUtils {
         final JSONArray json = new JSONArray();
         for (Object value : list) {
             if (value == null) { json.put(JSONObject.NULL); }
-            else if (value instanceof Map) { json.put(toJson((Map) value)); }
-            else if (value instanceof List) { json.put(toJson((List) value)); }
+            else if (value instanceof Map) { json.put(toJson((Map<String, Object>) value)); }
+            else if (value instanceof List) { json.put(toJson((List<Object>) value)); }
             else { json.put(value); }
         }
         return json;

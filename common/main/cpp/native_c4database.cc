@@ -34,7 +34,7 @@ using namespace litecore::jni;
  * Signature: (Ljava/lang/String;ILjava/lang/String;II[B)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_open(JNIEnv *env, jclass clazz, jstring jpath,
+Java_com_couchbase_lite_internal_core_C4Database_open(JNIEnv *env, jclass ignore, jstring jpath,
                                             jint jflags,
                                             jstring storageEngine, jint versioning,
                                             jint encryptionAlg, jbyteArray encryptionKey) {
@@ -60,7 +60,7 @@ Java_com_couchbase_lite_internal_core_C4Database_open(JNIEnv *env, jclass clazz,
  * Signature: (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;II[B)Z
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_copy(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_core_C4Database_copy(JNIEnv *env, jclass ignore,
                                             jstring jFromPath, jstring jToPath,
                                             jint jflags,
                                             jstring storageEngine, jint versioning,
@@ -85,7 +85,7 @@ Java_com_couchbase_lite_internal_core_C4Database_copy(JNIEnv *env, jclass clazz,
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_free(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_free(JNIEnv *env, jclass ignore, jlong jdb) {
     c4db_release((C4Database *) jdb);
 }
 
@@ -95,7 +95,7 @@ Java_com_couchbase_lite_internal_core_C4Database_free(JNIEnv *env, jclass clazz,
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_close(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_close(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error;
     if (!c4db_close((C4Database *) jdb, &error))
         throwError(env, error);
@@ -107,7 +107,7 @@ Java_com_couchbase_lite_internal_core_C4Database_close(JNIEnv *env, jclass clazz
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_delete(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_delete(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error;
     if (!c4db_delete((C4Database *) jdb, &error))
         throwError(env, error);
@@ -119,7 +119,7 @@ Java_com_couchbase_lite_internal_core_C4Database_delete(JNIEnv *env, jclass claz
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_deleteAtPath(JNIEnv *env, jclass clazz, jstring jpath) {
+Java_com_couchbase_lite_internal_core_C4Database_deleteAtPath(JNIEnv *env, jclass ignore, jstring jpath) {
     jstringSlice path(env, jpath);
     C4Error error;
     if (!c4db_deleteAtPath(path, &error))
@@ -132,7 +132,7 @@ Java_com_couchbase_lite_internal_core_C4Database_deleteAtPath(JNIEnv *env, jclas
  * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_rekey(JNIEnv *env, jclass clazz, jlong jdb,
+Java_com_couchbase_lite_internal_core_C4Database_rekey(JNIEnv *env, jclass ignore, jlong jdb,
                                              jint encryptionAlg, jbyteArray encryptionKey) {
     C4EncryptionKey key;
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &key))
@@ -149,7 +149,7 @@ Java_com_couchbase_lite_internal_core_C4Database_rekey(JNIEnv *env, jclass clazz
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getPath(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_getPath(JNIEnv *env, jclass ignore, jlong jdb) {
     C4SliceResult slice = c4db_getPath((C4Database *) jdb);
     jstring ret = toJString(env, slice);
     c4slice_free(slice);
@@ -162,7 +162,7 @@ Java_com_couchbase_lite_internal_core_C4Database_getPath(JNIEnv *env, jclass cla
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getConfig(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_getConfig(JNIEnv *env, jclass ignore, jlong jdb) {
     return (jlong) c4db_getConfig((C4Database *) jdb);
 }
 
@@ -172,7 +172,7 @@ Java_com_couchbase_lite_internal_core_C4Database_getConfig(JNIEnv *env, jclass c
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getDocumentCount(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_getDocumentCount(JNIEnv *env, jclass ignore, jlong jdb) {
     return (jlong) c4db_getDocumentCount((C4Database *) jdb);
 }
 
@@ -182,7 +182,7 @@ Java_com_couchbase_lite_internal_core_C4Database_getDocumentCount(JNIEnv *env, j
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getLastSequence(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_getLastSequence(JNIEnv *env, jclass ignore, jlong jdb) {
     return (jlong) c4db_getLastSequence((C4Database *) jdb);
 }
 
@@ -192,7 +192,7 @@ Java_com_couchbase_lite_internal_core_C4Database_getLastSequence(JNIEnv *env, jc
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_nextDocExpiration(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_nextDocExpiration(JNIEnv *env, jclass ignore, jlong jdb) {
     return (jlong) c4db_nextDocExpiration((C4Database *) jdb);
 }
 
@@ -201,10 +201,10 @@ Java_com_couchbase_lite_internal_core_C4Database_nextDocExpiration(JNIEnv *env, 
  * Method:    purgeExpiredDocs
  * Signature: (J)I
  */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_purgeExpiredDocs(JNIEnv *env, jclass clazz, jlong jdb) {
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_purgeExpiredDocs(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error;
-    int num = c4db_purgeExpiredDocs((C4Database *)jdb, &error);
+    long num = c4db_purgeExpiredDocs((C4Database *)jdb, &error);
     if (num == -1)
         throwError(env, error);
     return num;
@@ -216,7 +216,7 @@ Java_com_couchbase_lite_internal_core_C4Database_purgeExpiredDocs(JNIEnv *env, j
  * Signature: (JLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_purgeDoc(JNIEnv *env, jclass clazz,
+Java_com_couchbase_lite_internal_core_C4Database_purgeDoc(JNIEnv *env, jclass ignore,
                                                 jlong jdb, jstring jdocID) {
     jstringSlice docID(env, jdocID);
     C4Error error;
@@ -230,7 +230,7 @@ Java_com_couchbase_lite_internal_core_C4Database_purgeDoc(JNIEnv *env, jclass cl
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getMaxRevTreeDepth(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_getMaxRevTreeDepth(JNIEnv *env, jclass ignore, jlong jdb) {
     return (jint) c4db_getMaxRevTreeDepth((C4Database *) jdb);
 }
 
@@ -240,9 +240,9 @@ Java_com_couchbase_lite_internal_core_C4Database_getMaxRevTreeDepth(JNIEnv *env,
  * Signature: (JI)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_setMaxRevTreeDepth(JNIEnv *env, jclass clazz, jlong jdb,
+Java_com_couchbase_lite_internal_core_C4Database_setMaxRevTreeDepth(JNIEnv *env, jclass ignore, jlong jdb,
                                                           jint jmaxRevTreeDepth) {
-    c4db_setMaxRevTreeDepth((C4Database *) jdb, jmaxRevTreeDepth);
+    c4db_setMaxRevTreeDepth((C4Database *) jdb, (uint32_t) jmaxRevTreeDepth);
 }
 
 /*
@@ -251,7 +251,7 @@ Java_com_couchbase_lite_internal_core_C4Database_setMaxRevTreeDepth(JNIEnv *env,
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getPublicUUID(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_getPublicUUID(JNIEnv *env, jclass ignore, jlong jdb) {
     C4UUID uuid;
     C4Error error;
     if (!c4db_getUUIDs((C4Database *) jdb, &uuid, nullptr, &error))
@@ -266,7 +266,7 @@ Java_com_couchbase_lite_internal_core_C4Database_getPublicUUID(JNIEnv *env, jcla
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getPrivateUUID(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_getPrivateUUID(JNIEnv *env, jclass ignore, jlong jdb) {
     C4UUID uuid;
     C4Error error;
     if (!c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error))
@@ -281,7 +281,7 @@ Java_com_couchbase_lite_internal_core_C4Database_getPrivateUUID(JNIEnv *env, jcl
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_compact(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_compact(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error;
     if (!c4db_compact((C4Database *) jdb, &error))
         throwError(env, error);
@@ -293,7 +293,7 @@ Java_com_couchbase_lite_internal_core_C4Database_compact(JNIEnv *env, jclass cla
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_beginTransaction(JNIEnv *env, jclass clazz, jlong jdb) {
+Java_com_couchbase_lite_internal_core_C4Database_beginTransaction(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error;
     if (!c4db_beginTransaction((C4Database *) jdb, &error))
         throwError(env, error);
@@ -305,7 +305,7 @@ Java_com_couchbase_lite_internal_core_C4Database_beginTransaction(JNIEnv *env, j
  * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_endTransaction(JNIEnv *env, jclass clazz, jlong jdb,
+Java_com_couchbase_lite_internal_core_C4Database_endTransaction(JNIEnv *env, jclass ignore, jlong jdb,
                                                       jboolean jcommit) {
     C4Error error;
     if (!c4db_endTransaction((C4Database *) jdb, jcommit, &error))
@@ -318,7 +318,7 @@ Java_com_couchbase_lite_internal_core_C4Database_endTransaction(JNIEnv *env, jcl
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_rawFree(JNIEnv *env, jclass clazz, jlong jrawDoc) {
+Java_com_couchbase_lite_internal_core_C4Database_rawFree(JNIEnv *env, jclass ignore, jlong jrawDoc) {
     c4raw_free((C4RawDocument *) jrawDoc);
 }
 
@@ -328,7 +328,7 @@ Java_com_couchbase_lite_internal_core_C4Database_rawFree(JNIEnv *env, jclass cla
  * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_rawGet(JNIEnv *env, jclass clazz, jlong jdb,
+Java_com_couchbase_lite_internal_core_C4Database_rawGet(JNIEnv *env, jclass ignore, jlong jdb,
                                               jstring jstoreName, jstring jdocID) {
     jstringSlice storeName(env, jstoreName);
     jstringSlice docID(env, jdocID);
@@ -345,7 +345,7 @@ Java_com_couchbase_lite_internal_core_C4Database_rawGet(JNIEnv *env, jclass claz
  * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_rawPut(JNIEnv *env, jclass clazz, jlong jdb,
+Java_com_couchbase_lite_internal_core_C4Database_rawPut(JNIEnv *env, jclass ignore, jlong jdb,
                                               jstring jstoreName,
                                               jstring jkey, jstring jmeta, jbyteArray jbody) {
     jstringSlice storeName(env, jstoreName);
@@ -363,7 +363,7 @@ Java_com_couchbase_lite_internal_core_C4Database_rawPut(JNIEnv *env, jclass claz
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getSharedFleeceEncoder
-        (JNIEnv *env, jclass clazz, jlong db) {
+        (JNIEnv *env, jclass ignore, jlong db) {
     return (jlong) c4db_getSharedFleeceEncoder((C4Database *) db);
 }
 
@@ -373,14 +373,14 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getShar
  * Signature: (J[B)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_encodeJSON
-        (JNIEnv *env, jclass clazz, jlong db,
+        (JNIEnv *env, jclass ignore, jlong db,
          jbyteArray jbody) {
     jbyteArraySlice body(env, jbody, false);
     C4Error error = {};
     C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
     if (error.domain != 0 && error.code != 0)
         throwError(env, error);
-    C4SliceResult *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
+    auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
     sliceResult->buf = res.buf;
     sliceResult->size = res.size;
     return (jlong) sliceResult;
@@ -392,7 +392,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_encodeJ
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getFLSharedKeys
-        (JNIEnv *env, jclass clazz, jlong db) {
+        (JNIEnv *env, jclass ignore, jlong db) {
     return (jlong) c4db_getFLSharedKeys((C4Database *) db);
 }
 
@@ -402,7 +402,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getFLSh
  * Signature: (JI)J
  */
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Database_maintenance
-        (JNIEnv *env, jclass clazz, jlong db, jint type) {
+        (JNIEnv *env, jclass ignore, jlong db, jint type) {
     C4Error error = {};
     bool success = c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
     if (error.domain != 0 && error.code != 0)
