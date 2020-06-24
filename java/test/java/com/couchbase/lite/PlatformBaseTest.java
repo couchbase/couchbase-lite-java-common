@@ -103,7 +103,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         final FileLogger fileLogger = Database.log.getFile();
         if (!logConfig.equals(fileLogger.getConfig())) { fileLogger.setConfig(logConfig); }
         fileLogger.setLevel(LogLevel.DEBUG);
-        Log.d(LogDomain.DATABASE, "=========", "Test initialized: " + testName);
+        Log.d(LogDomain.DATABASE, "========= Test initialized: %s", testName);
     }
 
     @Override
