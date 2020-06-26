@@ -122,7 +122,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
     protected final Replicator run(Replicator r) { return run(r, 0, null, false, false, null); }
 
-    protected final Replicator run(
+    private Replicator run(
         Replicator r,
         int expectedErrorCode,
         String expectedErrorDomain,
@@ -154,24 +154,5 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         assertTrue(success);
 
         return r;
-    }
-
-    protected final void stopContinuousReplicator(Replicator repl) throws InterruptedException {
-        final CountDownLatch latch = new CountDownLatch(1);
-        ListenerToken token = repl.addChangeListener(
-            testSerialExecutor,
-            change -> {
-                if (change.getStatus().getActivityLevel() == Replicator.ActivityLevel.STOPPED) { latch.countDown(); }
-            });
-
-        try {
-            repl.stop();
-            if (repl.getStatus().getActivityLevel() != Replicator.ActivityLevel.STOPPED) {
-                assertTrue(latch.await(STD_TIMEOUT_SECS, TimeUnit.SECONDS));
-            }
-        }
-        finally {
-            repl.removeChangeListener(token);
-        }
     }
 }

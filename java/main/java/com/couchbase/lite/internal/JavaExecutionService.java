@@ -28,6 +28,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -42,16 +44,22 @@ public class JavaExecutionService extends AbstractExecutionService {
     private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
     private static final ThreadFactory THREAD_FACTORY = new ThreadFactory() {
-        private final AtomicInteger threadCount = new AtomicInteger(1);
+        private final AtomicInteger id = new AtomicInteger(1);
 
-        public Thread newThread(@NonNull Runnable r) { return new Thread(r, "CBL#" + threadCount.getAndIncrement()); }
+        public Thread newThread(@NonNull Runnable r) {
+            final Thread thread = new Thread(r, "CBL #" + id.getAndIncrement());
+            // this, actually, should never happen...
+            thread.setUncaughtExceptionHandler((t, e) ->
+                Log.w(LogDomain.DATABASE, "Uncaught exception on thread" + thread.getName(), e));
+            return thread;
+        }
     };
 
     private static final ThreadPoolExecutor THREAD_POOL_EXECUTOR = new ThreadPoolExecutor(
-        2, CPU_COUNT * 2 + 1, // pool varies between two threads and 2xCPUs
-        30, TimeUnit.SECONDS, // unused threads die after 30 sec
+        2, CPU_COUNT * 2 + 1,        // pool varies between two threads and 2xCPUs
+        30, TimeUnit.SECONDS,        // unused threads die after 30 sec
         new LinkedBlockingQueue<>(), // unbounded queue
-        THREAD_FACTORY);  // nice recognizable names for our threads.
+        THREAD_FACTORY);             // nice recognizable names for our threads.
 
     //---------------------------------------------
     // Types

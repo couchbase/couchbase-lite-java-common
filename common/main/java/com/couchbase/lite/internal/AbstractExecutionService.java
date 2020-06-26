@@ -93,6 +93,13 @@ public abstract class AbstractExecutionService implements ExecutionService {
                 task.run();
                 finishedAt = System.currentTimeMillis();
             }
+            catch (Throwable t) {
+                Log.w(
+                    LogDomain.DATABASE,
+                    "Uncaught exception on thread " + Thread.currentThread().getName() + " in " + this,
+                    t);
+                throw t;
+            }
             finally {
                 final Runnable completionTask = onComplete;
                 if (completionTask != null) { completionTask.run(); }
@@ -314,7 +321,7 @@ public abstract class AbstractExecutionService implements ExecutionService {
             final ArrayList<InstrumentedTask> waiting = new ArrayList<>(pendingTasks);
             Log.w(DOMAIN, "== Pending tasks: " + waiting.size());
             int n = 0;
-            for (InstrumentedTask t : waiting) { Log.w(DOMAIN, "@" + (++n) + ": " + t, t.origin); }
+            for (InstrumentedTask t: waiting) { Log.w(DOMAIN, "@" + (++n) + ": " + t, t.origin); }
         }
     }
 
@@ -438,7 +445,7 @@ public abstract class AbstractExecutionService implements ExecutionService {
 
                 Log.w(DOMAIN, "== Pending tasks: " + waiting.size());
                 int n = 0;
-                for (InstrumentedTask t : waiting) { Log.w(DOMAIN, "@" + (++n) + ": " + t, t.origin); }
+                for (InstrumentedTask t: waiting) { Log.w(DOMAIN, "@" + (++n) + ": " + t, t.origin); }
             }
         }
     }
@@ -452,9 +459,9 @@ public abstract class AbstractExecutionService implements ExecutionService {
 
         final Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
         Log.w(DOMAIN, "==== Threads: " + stackTraces.size());
-        for (Map.Entry<Thread, StackTraceElement[]> stack : stackTraces.entrySet()) {
+        for (Map.Entry<Thread, StackTraceElement[]> stack: stackTraces.entrySet()) {
             Log.w(DOMAIN, "== Thread: " + stack.getKey());
-            for (StackTraceElement frame : stack.getValue()) { Log.w(DOMAIN, "      at " + frame); }
+            for (StackTraceElement frame: stack.getValue()) { Log.w(DOMAIN, "      at " + frame); }
         }
 
         if (!(ex instanceof ThreadPoolExecutor)) { return; }
@@ -462,7 +469,7 @@ public abstract class AbstractExecutionService implements ExecutionService {
         final ArrayList<Runnable> waiting = new ArrayList<>(((ThreadPoolExecutor) ex).getQueue());
         Log.w(DOMAIN, "==== Executor queue: " + waiting.size());
         int n = 0;
-        for (Runnable r : waiting) {
+        for (Runnable r: waiting) {
             final Exception orig = (!(r instanceof InstrumentedTask)) ? null : ((InstrumentedTask) r).origin;
             Log.w(DOMAIN, "@" + (n++) + ": " + r, orig);
         }
