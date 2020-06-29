@@ -57,8 +57,8 @@ set(JNI_CLASSES
     com.couchbase.lite.internal.core.C4
     com.couchbase.lite.internal.core.C4Base
     com.couchbase.lite.internal.core.C4BlobKey
-    com.couchbase.lite.internal.core.C4BlobStore
     com.couchbase.lite.internal.core.C4BlobReadStream
+    com.couchbase.lite.internal.core.C4BlobStore
     com.couchbase.lite.internal.core.C4BlobWriteStream
     com.couchbase.lite.internal.core.C4Database
     com.couchbase.lite.internal.core.C4DatabaseObserver
@@ -117,7 +117,6 @@ include_directories(
     ${LITE_CORE_ROOT}/vendor/SQLiteCpp/include
     ${LITE_CORE_ROOT}/vendor/SQLiteCpp/sqlite3
     ${LITE_CORE_ROOT}/vendor/sqlite3-unicodesn
-    ${LITE_CORE_ROOT}/vendor/civetweb/include
     ${LITE_CORE_ROOT}/vendor/mbedtls/include
     ${LITE_CORE_ROOT}/vendor/mbedtls/crypto/include)
 
@@ -141,7 +140,6 @@ target_link_libraries(  LiteCoreJNI
                         FleeceStatic
                         ${NO_WHOLE_LIBRARY_FLAG}
                         LiteCoreWebSocket
-                        Support
                         SQLite3_UnicodeSN
                         BLIPStatic
                         mbedcrypto
