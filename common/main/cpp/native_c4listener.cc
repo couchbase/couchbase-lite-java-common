@@ -220,7 +220,7 @@ static C4Listener *startListener(
     config.networkInterface = iFace;
     config.apis = (unsigned) apis;
     config.tlsConfig = tlsConfig;
-    config.httpAuthCallback = httpAuthCallback;
+    config.httpAuthCallback = &httpAuthCallback;
     config.callbackContext = (void *) context;
     config.directory = path;
     config.allowCreateDBs = allowCreateDBs;
@@ -254,6 +254,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
         jboolean allowPush,
         jboolean allowPull,
         jboolean enableDeltaSync) {
+
     return reinterpret_cast<jlong>(startListener(
             env,
             port,
@@ -301,7 +302,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
     tlsConfig.certificate = c4Cert;
     tlsConfig.requireClientCerts = requireClientCerts;
     tlsConfig.rootClientCerts = c4RootCerts;
-    tlsConfig.certAuthCallback = certAuthCallback;
+    tlsConfig.certAuthCallback = &certAuthCallback;
     tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
 
     return reinterpret_cast<jlong>(startListener(

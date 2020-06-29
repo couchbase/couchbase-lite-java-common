@@ -87,6 +87,7 @@ public abstract class AbstractExecutionService implements ExecutionService {
 
         public void setCompletion(@NonNull Runnable onComplete) { this.onComplete = onComplete; }
 
+        @SuppressWarnings("PMD.AvoidCatchingThrowable")
         public void run() {
             try {
                 startedAt = System.currentTimeMillis();

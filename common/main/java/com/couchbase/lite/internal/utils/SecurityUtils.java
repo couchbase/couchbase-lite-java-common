@@ -67,6 +67,8 @@ public final class SecurityUtils {
     private static void encodeCertificate(@NonNull Certificate cert, @NonNull PrintStream ps)
         throws CertificateEncodingException {
         final String encodedCert = ENCODER.encodeToString(cert.getEncoded());
+        if (encodedCert == null) { return; }
+
         final int n = encodedCert.length();
         ps.println();
         ps.println(BEGIN_CERT);

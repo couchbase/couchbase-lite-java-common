@@ -234,45 +234,45 @@ public abstract class C4Socket extends C4NativePeer {
     // Protected methods
     //-------------------------------------------------------------------------
 
-    protected boolean released() { return getPeerHandleUnchecked() == 0L; }
+    protected boolean released() { return getPeerUnchecked() == 0L; }
 
     protected final void opened() {
-        final long handle = getPeerHandleUnchecked();
+        final long handle = getPeerUnchecked();
         Log.d(LOG_DOMAIN, "C4Socket.opened @" + handle);
         if (handle == 0) { return; }
         opened(handle);
     }
 
     protected final void completedWrite(long byteCount) {
-        final long handle = getPeerHandleUnchecked();
+        final long handle = getPeerUnchecked();
         Log.d(LOG_DOMAIN, "C4Socket.completedWrite @" + handle + ": " + byteCount);
         if (handle == 0) { return; }
         completedWrite(handle, byteCount);
     }
 
     protected final void received(byte[] data) {
-        final long handle = getPeerHandleUnchecked();
+        final long handle = getPeerUnchecked();
         Log.d(LOG_DOMAIN, "C4Socket.received @" + handle + ": " + data.length);
         if (handle == 0) { return; }
         received(handle, data);
     }
 
     protected final void closed(int errorDomain, int errorCode, String message) {
-        final long handle = getPeerHandleUnchecked();
+        final long handle = getPeerUnchecked();
         Log.d(LOG_DOMAIN, "C4Socket.closed @" + handle + ": " + errorCode);
         if (handle == 0) { return; }
         closed(handle, errorDomain, errorCode, message);
     }
 
     protected final void closeRequested(int status, String message) {
-        final long handle = getPeerHandleUnchecked();
+        final long handle = getPeerUnchecked();
         Log.d(LOG_DOMAIN, "C4Socket.closeRequested @" + handle + ": " + status);
         if (handle == 0) { return; }
         closeRequested(handle, status, message);
     }
 
     protected final void gotHTTPResponse(int httpStatus, byte[] responseHeadersFleece) {
-        final long handle = getPeerHandleUnchecked();
+        final long handle = getPeerUnchecked();
         Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse @" + handle + ": " + httpStatus);
         if (handle == 0) { return; }
         gotHTTPResponse(handle, httpStatus, responseHeadersFleece);

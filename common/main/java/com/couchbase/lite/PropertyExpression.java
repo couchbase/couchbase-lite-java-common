@@ -29,30 +29,25 @@ public final class PropertyExpression extends Expression {
 
     static PropertyExpression allFrom(String from) {
         // Use data source alias name as the column name if specified:
-        return new PropertyExpression(PROPS_ALL, (from != null ? from : PROPS_ALL), from);
+        return new PropertyExpression(PROPS_ALL, from, (from != null ? from : PROPS_ALL));
     }
+
     private final String keyPath;
     private final String fromAlias; // Data Source Alias
     private String columnName;
 
-    PropertyExpression(String keyPath) {
-        this.keyPath = keyPath;
-        this.fromAlias = null;
-    }
+    PropertyExpression(String keyPath) { this(keyPath, null); }
 
-    private PropertyExpression(String keyPath, String from) {
-        this.keyPath = keyPath;
-        this.fromAlias = from;
-    }
+    private PropertyExpression(String keyPath, String from) { this(keyPath, from, null); }
 
     //---------------------------------------------
     // public level access
     //---------------------------------------------
 
-    private PropertyExpression(String keyPath, String columnName, String from) {
+    private PropertyExpression(String keyPath, String from, String columnName) {
         this.keyPath = keyPath;
-        this.columnName = columnName;
         this.fromAlias = from;
+        this.columnName = columnName;
     }
 
     //---------------------------------------------
@@ -79,10 +74,12 @@ public final class PropertyExpression extends Expression {
     }
 
     String getColumnName() {
-        if (columnName == null) {
-            final String[] paths = keyPath.split("\\.");
-            columnName = paths[paths.length - 1];
+        synchronized (this) {
+            if (columnName == null) {
+                final String[] paths = keyPath.split("\\.");
+                columnName = paths[paths.length - 1];
+            }
+            return columnName;
         }
-        return columnName;
     }
 }

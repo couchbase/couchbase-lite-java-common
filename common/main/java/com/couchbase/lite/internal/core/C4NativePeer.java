@@ -43,7 +43,7 @@ public abstract class C4NativePeer extends AtomicLong {
     // This more than a smell, this is a reek.  Please don't use it.
     protected final void setPeer(long handle) { setPeerHandle(handle); }
 
-    protected final long getPeerHandleUnchecked() { return get(); }
+    protected final long getPeerUnchecked() { return get(); }
 
     protected long getPeerAndClear() {
         if (CouchbaseLiteInternal.isDebugging()) { cleared = new Exception(); }

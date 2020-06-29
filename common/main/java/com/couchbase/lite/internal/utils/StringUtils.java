@@ -25,6 +25,11 @@ public final class StringUtils {
     public static boolean isEmpty(String str) { return (str == null) || str.isEmpty(); }
 
     @NonNull
+    public static String getArrayString(String[] strs, int idx) {
+        return (strs == null) || (idx < 0) || (idx >= strs.length) ? "" : strs[idx];
+    }
+
+    @NonNull
     public static String join(@NonNull CharSequence delimiter, @NonNull Iterable<?> tokens) {
         final StringBuilder sb = new StringBuilder();
         boolean firstTime = true;

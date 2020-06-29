@@ -16,15 +16,24 @@
 package com.couchbase.lite.internal.utils;
 
 import android.os.Build;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 
 public final class Base64Utils {
     private Base64Utils() { }
 
     public interface Base64Encoder {
-        String encodeToString(byte[] src);
+        @Nullable
+        String encodeToString(@Nullable byte[] src);
     }
 
+    public interface Base64Decoder {
+        @Nullable
+        byte[] decodeString(@Nullable String src);
+    }
+
+    @NonNull
     public static Base64Encoder getEncoder() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return src -> android.util.Base64.encodeToString(src, android.util.Base64.DEFAULT);
@@ -33,8 +42,34 @@ public final class Base64Utils {
             return new Base64Encoder() {
                 private final java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
 
+                @Nullable
                 @Override
-                public String encodeToString(byte[] src) { return encoder.encodeToString(src); }
+                public String encodeToString(@Nullable byte[] src) {
+                    return (src == null) ? null : encoder.encodeToString(src);
+                }
+            };
+        }
+    }
+
+    @NonNull
+    public static Base64Decoder getDecoder() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return src -> {
+                try { return android.util.Base64.decode(src, android.util.Base64.DEFAULT); }
+                catch (IllegalArgumentException ignore) { }
+                return null;
+            };
+        }
+        else {
+            return new Base64Decoder() {
+                private final java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
+
+                @Nullable
+                @Override
+                public byte[] decodeString(@Nullable String src) {
+                    try { return (src == null) ? null : decoder.decode(src); }
+                    catch (IllegalArgumentException e) { return null; }
+                }
             };
         }
     }

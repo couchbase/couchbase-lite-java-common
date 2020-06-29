@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite;
 
-import java.util.concurrent.CountDownLatch;
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 
 import org.jetbrains.annotations.NotNull;
@@ -102,6 +102,12 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
     protected final Replicator run(ReplicatorConfiguration config, Fn.Consumer<Replicator> onReady) {
         return run(config, 0, null, false, false, onReady);
+    }
+
+    protected final Replicator run(URI url, boolean push, boolean pull, boolean continuous, Authenticator auth) {
+        final ReplicatorConfiguration config = makeConfig(push, pull, continuous, new URLEndpoint(url));
+        config.setAuthenticator(auth);
+        return run(config);
     }
 
     protected final Replicator run(

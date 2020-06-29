@@ -15,19 +15,46 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.util.Base64;
+
 
 public final class Base64Utils {
     private Base64Utils() { }
 
-    public interface Base64Encoder { String encodeToString(byte[] src); }
+    public interface Base64Encoder {
+        @Nullable
+        String encodeToString(@Nullable byte[] src);
+    }
 
+    public interface Base64Decoder {
+        @Nullable
+        byte[] decodeString(@Nullable String src);
+    }
+
+    @NonNull
     public static Base64Encoder getEncoder() {
         return new Base64Encoder() {
             private final Base64.Encoder encoder = Base64.getEncoder();
 
             @Override
             public String encodeToString(byte[] src) { return encoder.encodeToString(src); }
+        };
+    }
+
+    @NonNull
+    public static Base64Decoder getDecoder() {
+        return new Base64Decoder() {
+            private final Base64.Decoder decoder = Base64.getDecoder();
+
+            @Nullable
+            @Override
+            public byte[] decodeString(@Nullable String src) {
+                try { return (src == null) ? null : decoder.decode(src); }
+                catch (IllegalArgumentException e) { return null; }
+            }
         };
     }
 }

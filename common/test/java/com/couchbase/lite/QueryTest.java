@@ -61,7 +61,6 @@ public class QueryTest extends BaseQueryTest {
     private static final SelectResult SR_ALL = SelectResult.all();
     private static final SelectResult SR_NUMBER1 = SelectResult.property("number1");
 
-
     @Test
     public void testQueryDocumentExpiration() throws CouchbaseLiteException, InterruptedException {
         long now = System.currentTimeMillis();
@@ -2930,8 +2929,47 @@ public class QueryTest extends BaseQueryTest {
         });
     }
 
+    @Ignore("Fails: CBSE-8554")
+    @Test
+    public void testQueryDocumentWithDollarSign() throws CouchbaseLiteException {
+        baseTestDb.save(new MutableDocument("doc1")
+            .setString("$type", "book")
+            .setString("$description", "about cats")
+            .setString("$price", "$100"));
+        baseTestDb.save(new MutableDocument("doc2")
+            .setString("$type", "book")
+            .setString("$description", "about dogs")
+            .setString("$price", "$95"));
+        baseTestDb.save(new MutableDocument("doc3")
+            .setString("$type", "animal")
+            .setString("$description", "puppy")
+            .setString("$price", "$195"));
+
+        int cheapBooks = 0;
+        int books = 0;
+
+        Expression w = Expression.property("name.first").regex(Expression.string("^Mar.*"));
+        Where q = QueryBuilder.select(
+            SelectResult.expression(Meta.id),
+            SelectResult.expression(Expression.property("$type")),
+            SelectResult.expression(Expression.property("$price")))
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property("$type").equalTo(Expression.string("book")));
+
+        ResultSet res = q.execute();
+        for (Result r: res) {
+            books++;
+            String p = r.getString("$price");
+            if (Integer.parseInt(p.substring(1)) < 100) { cheapBooks++; }
+
+            assertEquals(2, books);
+            assertEquals(1, cheapBooks);
+        }
+    }
+
     // ??? This is a ridiculously expensive test
-    private void testLiveQueryNoUpdate(final boolean consumeAll) throws CouchbaseLiteException, InterruptedException {
+    private void testLiveQueryNoUpdate(final boolean consumeAll) throws
+        CouchbaseLiteException, InterruptedException {
         loadNumberedDocs(100);
 
         Query query = QueryBuilder
@@ -2966,7 +3004,8 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
-    private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases) throws CouchbaseLiteException {
+    private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases) throws
+        CouchbaseLiteException {
         for (Object[] c: cases) {
             Expression w = (Expression) c[0];
             String[] documentIDs = (String[]) c[1];

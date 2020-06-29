@@ -2003,7 +2003,7 @@ public class DocumentTest extends BaseDbTest {
         Map<String, Object> content = doc.toMap();
         Map<String, Object> result = new HashMap<>();
         int count = 0;
-        for (String key : doc) {
+        for (String key: doc) {
             result.put(key, doc.getValue(key));
             count++;
         }
@@ -2018,7 +2018,7 @@ public class DocumentTest extends BaseDbTest {
             Map<String, Object> content1 = doc1.toMap();
             Map<String, Object> result1 = new HashMap<>();
             int count1 = 0;
-            for (String key : doc1) {
+            for (String key: doc1) {
                 result1.put(key, doc1.getValue(key));
                 count1++;
             }
