@@ -98,15 +98,19 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return config;
     }
 
-    protected final Replicator run(ReplicatorConfiguration config) { return run(config, null); }
+    protected final Replicator run(ReplicatorConfiguration config) throws CouchbaseLiteException {
+        return run(config, null);
+    }
 
-    protected final Replicator run(ReplicatorConfiguration config, Fn.Consumer<Replicator> onReady) {
+    protected final Replicator run(ReplicatorConfiguration config, Fn.Consumer<Replicator> onReady)
+        throws CouchbaseLiteException {
         return run(config, 0, null, false, false, onReady);
     }
 
-    protected final Replicator run(URI url, boolean push, boolean pull, boolean continuous, Authenticator auth) {
+    protected final Replicator run(URI url, boolean push, boolean pull, boolean continuous, Authenticator auth)
+        throws CouchbaseLiteException {
         final ReplicatorConfiguration config = makeConfig(push, pull, continuous, new URLEndpoint(url));
-        config.setAuthenticator(auth);
+        if (auth != null) { config.setAuthenticator(auth); }
         return run(config);
     }
 
@@ -116,7 +120,8 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         String expectedErrorDomain,
         boolean ignoreErrorAtStopped,
         boolean reset,
-        Fn.Consumer<Replicator> onReady) {
+        Fn.Consumer<Replicator> onReady)
+        throws CouchbaseLiteException {
         return run(
             new Replicator(config),
             expectedErrorCode,
@@ -126,7 +131,9 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
             onReady);
     }
 
-    protected final Replicator run(Replicator r) { return run(r, 0, null, false, false, null); }
+    protected final Replicator run(Replicator r) throws CouchbaseLiteException {
+        return run(r, 0, null, false, false, null);
+    }
 
     private Replicator run(
         Replicator r,
@@ -134,7 +141,9 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         String expectedErrorDomain,
         boolean ignoreErrorAtStopped,
         boolean reset,
-        Fn.Consumer<Replicator> onReady) {
+        Fn.Consumer<Replicator> onReady)
+        throws CouchbaseLiteException
+    {
         baseTestReplicator = r;
 
         TestReplicatorChangeListener listener
@@ -155,6 +164,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
         // see if the replication succeeded
         Throwable err = listener.getFailureReason();
+        if (err instanceof CouchbaseLiteException) { throw (CouchbaseLiteException) err; }
         if (err != null) { throw new RuntimeException(err); }
 
         assertTrue(success);
