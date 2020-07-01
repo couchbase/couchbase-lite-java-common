@@ -27,7 +27,7 @@ import java.util.Map;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.DateUtils;
-import com.couchbase.lite.utils.TestUtils;
+import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

@@ -28,11 +28,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import com.couchbase.lite.utils.FlakyTest;
-import com.couchbase.lite.utils.IOUtils;
-import com.couchbase.lite.utils.TestUtils;
+import com.couchbase.lite.internal.utils.PlatformUtils;
+import com.couchbase.lite.internal.utils.FlakyTest;
+import com.couchbase.lite.internal.utils.IOUtils;
+import com.couchbase.lite.internal.utils.TestUtils;
 
-import static com.couchbase.lite.utils.TestUtils.assertThrows;
+import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -134,7 +135,7 @@ public class BlobTest extends BaseDbTest {
     @Test
     public void testBlobContentBytes() throws IOException, CouchbaseLiteException {
         byte[] blobContent;
-        try (InputStream is = getAsset("attachment.png")) { blobContent = IOUtils.toByteArray(is); }
+        try (InputStream is = PlatformUtils.getAsset("attachment.png")) { blobContent = IOUtils.toByteArray(is); }
 
         Blob blob = new Blob("image/png", blobContent);
         MutableDocument mDoc = new MutableDocument("doc1");
@@ -156,7 +157,7 @@ public class BlobTest extends BaseDbTest {
 
     @Test
     public void testBlobContentStream() throws CouchbaseLiteException, IOException {
-        try (InputStream is = getAsset("attachment.png")) {
+        try (InputStream is = PlatformUtils.getAsset("attachment.png")) {
             Blob blob = new Blob("image/png", is);
             MutableDocument mDoc = new MutableDocument("doc1");
             mDoc.setBlob("blob", blob);
@@ -168,7 +169,7 @@ public class BlobTest extends BaseDbTest {
         assertNotNull(savedBlob);
 
         byte[] blobContent;
-        try (InputStream is = getAsset("attachment.png")) { blobContent = IOUtils.toByteArray(is); }
+        try (InputStream is = PlatformUtils.getAsset("attachment.png")) { blobContent = IOUtils.toByteArray(is); }
 
         byte[] buff = new byte[1024];
         try (InputStream in = savedBlob.getContentStream(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
@@ -190,7 +191,7 @@ public class BlobTest extends BaseDbTest {
     public void testGetContent6MBFile() throws IOException, CouchbaseLiteException {
         byte[] bytes;
 
-        try (InputStream is = getAsset("iTunesMusicLibrary.json")) {
+        try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) {
             bytes = IOUtils.toByteArray(is);
         }
 
@@ -209,7 +210,7 @@ public class BlobTest extends BaseDbTest {
     @Test
     public void testGetNonCachedContent6MBFile() throws IOException, CouchbaseLiteException {
         final byte[] bytes;
-        try (InputStream is = getAsset("iTunesMusicLibrary.json")) { bytes = IOUtils.toByteArray(is); }
+        try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { bytes = IOUtils.toByteArray(is); }
 
         Blob blob = new Blob("application/json", bytes);
         MutableDocument mDoc = new MutableDocument("doc1");
@@ -232,7 +233,7 @@ public class BlobTest extends BaseDbTest {
         URL url = null;
         File path = tempFolder.newFile("attachment.png");
 
-        try (InputStream is = getAsset("attachment.png")) {
+        try (InputStream is = PlatformUtils.getAsset("attachment.png")) {
             byte[] bytes = IOUtils.toByteArray(is);
             FileOutputStream fos = new FileOutputStream(path);
             fos.write(bytes);
@@ -257,7 +258,7 @@ public class BlobTest extends BaseDbTest {
     public void testBlobReadFunctions() throws IOException {
         byte[] bytes;
 
-        try (InputStream is = getAsset("iTunesMusicLibrary.json")) {
+        try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) {
             bytes = IOUtils.toByteArray(is);
         }
 
@@ -279,7 +280,7 @@ public class BlobTest extends BaseDbTest {
     @Test
     public void testReadBlobStream() throws IOException, CouchbaseLiteException {
         byte[] bytes;
-        try (InputStream is = getAsset("attachment.png")) { bytes = IOUtils.toByteArray(is); }
+        try (InputStream is = PlatformUtils.getAsset("attachment.png")) { bytes = IOUtils.toByteArray(is); }
 
         Blob blob = new Blob("image/png", bytes);
         MutableDocument mDoc = new MutableDocument("doc1");
@@ -308,7 +309,7 @@ public class BlobTest extends BaseDbTest {
         byte[] bytes;
         String contentType = "image/png";
 
-        InputStream is = getAsset("attachment.png");
+        InputStream is = PlatformUtils.getAsset("attachment.png");
         try { bytes = IOUtils.toByteArray(is); }
         finally { is.close(); }
 

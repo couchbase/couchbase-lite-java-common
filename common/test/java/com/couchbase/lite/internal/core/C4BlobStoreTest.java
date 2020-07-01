@@ -32,7 +32,7 @@ import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.internal.utils.Report;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;

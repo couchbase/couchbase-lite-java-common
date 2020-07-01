@@ -23,8 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
-import com.couchbase.lite.utils.LoadIntegrationTest;
-import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.internal.utils.LoadIntegrationTest;
+import com.couchbase.lite.internal.utils.Report;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

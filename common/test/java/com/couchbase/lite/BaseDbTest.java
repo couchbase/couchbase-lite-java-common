@@ -29,9 +29,11 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.internal.utils.PlatformUtils;
+import com.couchbase.lite.internal.utils.Report;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -156,7 +158,7 @@ public abstract class BaseDbTest extends BaseTest {
     }
 
     protected final void loadJSONResource(String name) throws IOException, JSONException, CouchbaseLiteException {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(getAsset(name)))) {
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(PlatformUtils.getAsset(name)))) {
             int n = 1;
             String line;
             while ((line = in.readLine()) != null) {

@@ -27,8 +27,8 @@ import org.junit.Test;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.utils.Report;
-import com.couchbase.lite.utils.TestUtils;
+import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

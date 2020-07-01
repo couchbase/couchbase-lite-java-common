@@ -31,9 +31,6 @@ public interface PlatformTest {
     /* Reload the cross-platform error messages. */
     void reloadStandardErrorMessages();
 
-    /* Gets the assert as InputStream  by asset's name */
-    InputStream getAsset(String asset) throws IOException;
-
     /* Gets the directory for storing test databases. */
     String getDatabaseDirectoryPath();
 

@@ -20,10 +20,9 @@ import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import static com.couchbase.lite.utils.TestUtils.assertThrows;
+import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 

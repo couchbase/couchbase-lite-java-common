@@ -24,7 +24,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.utils.ZipUtils;
+import com.couchbase.lite.internal.utils.PlatformUtils;
+import com.couchbase.lite.internal.utils.ZipUtils;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -50,7 +51,7 @@ public class MigrationTest extends BaseTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1237
     @Test
     public void testOpenExistingDBv1x() throws Exception {
-        ZipUtils.unzip(getAsset("replacedb/android140-sqlite.cblite2.zip"), dbDir);
+        ZipUtils.unzip(PlatformUtils.getAsset("replacedb/android140-sqlite.cblite2.zip"), dbDir);
 
         migrationTestDb = openDatabase();
         assertEquals(2, migrationTestDb.getCount());
@@ -73,7 +74,7 @@ public class MigrationTest extends BaseTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1237
     @Test
     public void testOpenExistingDBv1xNoAttachment() throws Exception {
-        ZipUtils.unzip(getAsset("replacedb/android140-sqlite-noattachment.cblite2.zip"), dbDir);
+        ZipUtils.unzip(PlatformUtils.getAsset("replacedb/android140-sqlite-noattachment.cblite2.zip"), dbDir);
 
         migrationTestDb = openDatabase();
         assertEquals(2, migrationTestDb.getCount());
@@ -86,7 +87,7 @@ public class MigrationTest extends BaseTest {
 
     @Test
     public void testOpenExistingDB() throws Exception {
-        ZipUtils.unzip(getAsset("replacedb/android200-sqlite.cblite2.zip"), dbDir);
+        ZipUtils.unzip(PlatformUtils.getAsset("replacedb/android200-sqlite.cblite2.zip"), dbDir);
 
         migrationTestDb = openDatabase();
         assertEquals(2, migrationTestDb.getCount());

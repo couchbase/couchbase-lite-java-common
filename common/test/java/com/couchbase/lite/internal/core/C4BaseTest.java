@@ -40,9 +40,10 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.utils.Report;
-import com.couchbase.lite.utils.StopWatch;
-import com.couchbase.lite.utils.TestUtils;
+import com.couchbase.lite.internal.utils.PlatformUtils;
+import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.StopWatch;
+import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -130,11 +131,11 @@ public class C4BaseTest extends PlatformBaseTest {
     protected byte[] encryptionKey() { return null; }
 
     protected long importJSONLines(String name) throws LiteCoreException, IOException {
-        return importJSONLines(getAsset(name));
+        return importJSONLines(PlatformUtils.getAsset(name));
     }
 
     protected long importJSONLines(String name, String idPrefix) throws LiteCoreException, IOException {
-        return importJSONLines(getAsset(name), idPrefix);
+        return importJSONLines(PlatformUtils.getAsset(name), idPrefix);
     }
 
     protected long importJSONLinesSafely(String name) throws CouchbaseLiteException {

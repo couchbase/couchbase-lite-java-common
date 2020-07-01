@@ -19,27 +19,29 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.io.IOException;
+import java.io.InputStream;
 
-public final class Base64Utils {
-    private Base64Utils() { }
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
-    public interface Base64Encoder {
-        @Nullable
-        String encodeToString(@Nullable byte[] src);
-    }
 
-    public interface Base64Decoder {
-        @Nullable
-        byte[] decodeString(@Nullable String src);
+public final class PlatformUtilsDelegate implements PlatformUtils.Delegate {
+
+    @Nullable
+    public InputStream getAsset(@Nullable String asset) {
+        if (asset == null) { return null; }
+        try { return CouchbaseLiteInternal.getContext().getAssets().open(asset); }
+        catch (IOException ignore) { }
+        return null;
     }
 
     @NonNull
-    public static Base64Encoder getEncoder() {
+    public PlatformUtils.Base64Encoder getEncoder() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return src -> android.util.Base64.encodeToString(src, android.util.Base64.DEFAULT);
         }
         else {
-            return new Base64Encoder() {
+            return new PlatformUtils.Base64Encoder() {
                 private final java.util.Base64.Encoder encoder = java.util.Base64.getEncoder();
 
                 @Nullable
@@ -52,7 +54,7 @@ public final class Base64Utils {
     }
 
     @NonNull
-    public static Base64Decoder getDecoder() {
+    public PlatformUtils.Base64Decoder getDecoder() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return src -> {
                 try { return android.util.Base64.decode(src, android.util.Base64.DEFAULT); }
@@ -61,7 +63,7 @@ public final class Base64Utils {
             };
         }
         else {
-            return new Base64Decoder() {
+            return new PlatformUtils.Base64Decoder() {
                 private final java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
 
                 @Nullable

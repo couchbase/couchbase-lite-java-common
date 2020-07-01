@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,18 +15,12 @@
 //
 package com.couchbase.lite.internal.utils;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 
-public class URIUtilsTest {
-    @Test
-    public void testGetPort() throws URISyntaxException {
-        URI uri = new URI("ws://foo.couchbase.com/db");
-        assertEquals(-1, uri.getPort());
-    }
-}
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface LoadIntegrationTest {}

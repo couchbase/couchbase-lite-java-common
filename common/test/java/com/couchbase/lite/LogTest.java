@@ -27,9 +27,9 @@ import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.utils.FlakyTest;
+import com.couchbase.lite.internal.utils.FlakyTest;
 
-import static com.couchbase.lite.utils.TestUtils.assertThrows;
+import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;

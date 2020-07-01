@@ -23,7 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.internal.utils.Report;
 
 import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType;
 import static org.junit.Assert.assertNotNull;
@@ -151,9 +151,9 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
         if (onReady != null) { onReady.accept(r); }
 
-        boolean success;
-
         ListenerToken token = r.addChangeListener(testSerialExecutor, listener);
+
+        boolean success;
         try {
             r.start(reset);
             success = listener.awaitCompletion(STD_TIMEOUT_SECS, TimeUnit.SECONDS);

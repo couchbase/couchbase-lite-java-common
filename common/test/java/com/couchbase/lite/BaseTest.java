@@ -32,8 +32,8 @@ import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.utils.Report;
-import com.couchbase.lite.utils.TestUtils;
+import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

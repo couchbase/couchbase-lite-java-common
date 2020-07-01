@@ -31,7 +31,7 @@ public final class SecurityUtils {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
-    private static final Base64Utils.Base64Encoder ENCODER = Base64Utils.getEncoder();
+    private static final PlatformUtils.Base64Encoder ENCODER = PlatformUtils.getEncoder();
 
     @NonNull
     public static byte[] encodeCertificateChain(@NonNull Collection<? extends Certificate> certChain)

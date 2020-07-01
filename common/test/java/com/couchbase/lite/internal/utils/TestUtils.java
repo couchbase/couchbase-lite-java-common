@@ -13,16 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.utils;
+package com.couchbase.lite.internal.utils;
 
 import android.support.annotation.NonNull;
 
 import java.util.Locale;
 
 import com.couchbase.lite.CouchbaseLiteException;
-import com.couchbase.lite.internal.utils.Fn;
 
-import static com.couchbase.lite.internal.utils.MathUtils.RANDOM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -41,7 +39,7 @@ public final class TestUtils {
 
     public static String randomString(int len) {
         final char[] buf = new char[len];
-        for (int idx = 0; idx < buf.length; ++idx) { buf[idx] = CHARS[RANDOM.get().nextInt(CHARS.length)]; }
+        for (int idx = 0; idx < buf.length; ++idx) { buf[idx] = CHARS[MathUtils.RANDOM.get().nextInt(CHARS.length)]; }
         return new String(buf);
     }
 

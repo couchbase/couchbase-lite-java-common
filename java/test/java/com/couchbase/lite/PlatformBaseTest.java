@@ -109,10 +109,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
 
-    @Nullable
-    @Override
-    public InputStream getAsset(String assetFile) { return getClass().getClassLoader().getResourceAsStream(assetFile); }
-
     @NotNull
     @Override
     public String getDatabaseDirectoryPath() { return CouchbaseLiteInternal.getDbDirectoryPath(); }

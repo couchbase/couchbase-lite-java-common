@@ -181,6 +181,9 @@ static jobject toList(JNIEnv *env, FLMutableArray array) {
 }
 
 static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
+    if (!cert)
+        return nullptr;
+
     jbyte *certData = env->GetByteArrayElements(cert, nullptr);
     jsize certSize = env->GetArrayLength(cert);
     FLSlice certSlice = {certData, (size_t) certSize};
@@ -289,19 +292,13 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jboolean enableDeltaSync) {
 
     auto c4Cert = getCert(env, cert);
-    if (!c4Cert)
-        return 0;
-
-    auto c4RootCerts = getCert(env, rootClientCerts);
-    if (!c4RootCerts)
-        return 0;
 
     C4TLSConfig tlsConfig;
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromCert; // Only supported mode.
     tlsConfig.key = nullptr;
     tlsConfig.certificate = c4Cert;
     tlsConfig.requireClientCerts = requireClientCerts;
-    tlsConfig.rootClientCerts = c4RootCerts;
+    tlsConfig.rootClientCerts = getCert(env, rootClientCerts);
     tlsConfig.certAuthCallback = &certAuthCallback;
     tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
 

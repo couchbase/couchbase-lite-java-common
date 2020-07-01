@@ -27,8 +27,8 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CBLStatus;
-import com.couchbase.lite.utils.Report;
-import com.couchbase.lite.utils.StopWatch;
+import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.StopWatch;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

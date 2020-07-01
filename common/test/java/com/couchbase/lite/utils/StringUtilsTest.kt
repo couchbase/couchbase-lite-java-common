@@ -13,8 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.utils
+package com.couchbase.lite.utils
 
+import com.couchbase.lite.internal.utils.StringUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

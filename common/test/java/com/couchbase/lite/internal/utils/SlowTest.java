@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc All rights reserved.
+// Copyright (c) 2019 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.utils;
+package com.couchbase.lite.internal.utils;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -21,21 +21,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface FlakyTest {
-
-    /**
-     * Optional description.
-     *
-     * @return String
-     */
-    String desc() default "";
-
-    /**
-     * Optional id for associated bug.
-     *
-     * @return String
-     */
-    String bugId() default "";
-}
+public @interface SlowTest {}

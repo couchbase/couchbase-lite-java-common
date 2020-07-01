@@ -20,7 +20,6 @@ import android.support.test.InstrumentationRegistry;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -101,13 +100,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public void reloadStandardErrorMessages() {
         Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
 
-    }
-
-    @Override
-    public InputStream getAsset(String asset) {
-        try { return CouchbaseLiteInternal.getContext().getAssets().open(asset); }
-        catch (IOException ignore) { }
-        return null;
     }
 
     @Override

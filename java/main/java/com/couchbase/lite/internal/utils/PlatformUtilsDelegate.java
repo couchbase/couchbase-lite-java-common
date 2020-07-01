@@ -18,25 +18,20 @@ package com.couchbase.lite.internal.utils;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.io.InputStream;
 import java.util.Base64;
 
 
-public final class Base64Utils {
-    private Base64Utils() { }
-
-    public interface Base64Encoder {
-        @Nullable
-        String encodeToString(@Nullable byte[] src);
-    }
-
-    public interface Base64Decoder {
-        @Nullable
-        byte[] decodeString(@Nullable String src);
+public final class PlatformUtilsDelegate implements PlatformUtils.Delegate {
+    @Nullable
+    public InputStream getAsset(@Nullable String asset) {
+        if (asset == null) { return null; }
+        return Thread.currentThread().getContextClassLoader().getResourceAsStream(asset);
     }
 
     @NonNull
-    public static Base64Encoder getEncoder() {
-        return new Base64Encoder() {
+    public PlatformUtils.Base64Encoder getEncoder() {
+        return new PlatformUtils.Base64Encoder() {
             private final Base64.Encoder encoder = Base64.getEncoder();
 
             @Override
@@ -45,8 +40,8 @@ public final class Base64Utils {
     }
 
     @NonNull
-    public static Base64Decoder getDecoder() {
-        return new Base64Decoder() {
+    public PlatformUtils.Base64Decoder getDecoder() {
+        return new PlatformUtils.Base64Decoder() {
             private final Base64.Decoder decoder = Base64.getDecoder();
 
             @Nullable

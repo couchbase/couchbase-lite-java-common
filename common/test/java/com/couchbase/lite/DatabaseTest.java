@@ -24,14 +24,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.couchbase.lite.utils.Report;
-import com.couchbase.lite.utils.TestUtils;
+import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

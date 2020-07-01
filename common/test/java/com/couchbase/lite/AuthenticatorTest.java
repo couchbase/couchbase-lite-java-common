@@ -1,10 +1,8 @@
 package com.couchbase.lite;
 
-import java.nio.charset.Charset;
-
 import org.junit.Test;
 
-import static com.couchbase.lite.utils.TestUtils.assertThrows;
+import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 
 

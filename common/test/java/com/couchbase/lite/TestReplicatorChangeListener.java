@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.couchbase.lite.utils.Report;
+import com.couchbase.lite.internal.utils.Report;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
