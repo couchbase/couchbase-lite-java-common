@@ -89,6 +89,7 @@ if(BUILD_ENTERPRISE)
     set(JNI_CLASSES
         ${JNI_CLASSES}
         com.couchbase.lite.internal.core.impl.NativeC4Listener
+        com.couchbase.lite.internal.core.impl.NativeC4KeyPair
        )
 endif()
 

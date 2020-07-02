@@ -281,6 +281,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jstring networkInterface,
         jint apis,
         jlong context,
+        jlong keyPair,
         jbyteArray cert,
         jboolean requireClientCerts,
         jbyteArray rootClientCerts,
@@ -294,8 +295,8 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
     auto c4Cert = getCert(env, cert);
 
     C4TLSConfig tlsConfig;
-    tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromCert; // Only supported mode.
-    tlsConfig.key = nullptr;
+    tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
+    tlsConfig.key = (C4KeyPair *) keyPair;
     tlsConfig.certificate = c4Cert;
     tlsConfig.requireClientCerts = requireClientCerts;
     tlsConfig.rootClientCerts = getCert(env, rootClientCerts);

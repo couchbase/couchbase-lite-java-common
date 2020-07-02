@@ -33,6 +33,7 @@ public final class SecurityUtils {
     public static final String END_CERT = "-----END CERTIFICATE-----";
     private static final PlatformUtils.Base64Encoder ENCODER = PlatformUtils.getEncoder();
 
+
     @NonNull
     public static byte[] encodeCertificateChain(@NonNull Collection<? extends Certificate> certChain)
         throws CertificateEncodingException {

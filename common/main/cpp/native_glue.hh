@@ -35,7 +35,7 @@ namespace litecore {
 
         extern JavaVM *gJVM;
 
-        int attachCurrentThread(JNIEnv** p_env);
+        int attachCurrentThread(JNIEnv **p_env);
 
         void deleteGlobalRef(jobject gRef);
 
@@ -43,9 +43,13 @@ namespace litecore {
         bool initC4Replicator(JNIEnv *); // Implemented in native_c4replicator.cc
         bool initC4Socket(JNIEnv *);     // Implemented in native_c4socket.cc
 
+#ifdef COUCHBASE_ENTERPRISE
         bool initC4Listener(JNIEnv *);   // Implemented in native_c4listener.cc
+        bool initC4KeyPair(JNIEnv *);    // Implemented in native_c4keypair.cc
+#endif
 
         std::string JstringToUTF8(JNIEnv *env, jstring jstr);
+
         jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
 
         // Creates a temporary slice value from a Java String object
@@ -54,11 +58,12 @@ namespace litecore {
             jstringSlice(JNIEnv *env, jstring js);
 
             jstringSlice(jstringSlice &&s)
-                : _str(std::move(s._str)), _slice(s._slice) { s._slice = kFLSliceNull; }
+                    : _str(std::move(s._str)), _slice(s._slice) { s._slice = kFLSliceNull; }
 
             operator FLSlice() { return _slice; }
 
-            const char* c_str();
+            const char *c_str();
+
         private:
             std::string _str;
             FLSlice _slice;
@@ -70,6 +75,7 @@ namespace litecore {
             // Warning: If `critical` is true, you cannot make any further JNI calls (except other
             // critical accesses) until this object goes out of scope or is deleted.
             jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, bool critical = false);
+
             jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, size_t length, bool critical = false);
 
             ~jbyteArraySlice();
