@@ -117,7 +117,6 @@ JNI_OnLoad(JavaVM *jvm, void *reserved) {
     if (jvm->GetEnv((void **) &env, JNI_VERSION_1_6) == JNI_OK
         #ifdef COUCHBASE_ENTERPRISE
         && initC4Listener(env)
-        && initC4KeyPair(env)
         #endif
         && initC4Observer(env)
         && initC4Replicator(env)

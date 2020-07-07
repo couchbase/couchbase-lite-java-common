@@ -411,7 +411,7 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         // Post the response headers to LiteCore:
         final Headers hs = response.headers();
-        if (hs != null && hs.size() > 0) {
+        if ((hs != null) && (hs.size() > 0)) {
             byte[] headersFleece = null;
             final Map<String, Object> headers = new HashMap<>();
             for (int i = 0; i < hs.size(); i++) {

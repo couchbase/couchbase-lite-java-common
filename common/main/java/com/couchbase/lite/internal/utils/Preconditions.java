@@ -18,10 +18,18 @@ package com.couchbase.lite.internal.utils;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.List;
+
 
 public final class Preconditions {
 
     private Preconditions() {}
+
+    @NonNull
+    public static <T> List<T> assertNotEmpty(@Nullable List<T> obj, @NonNull String name) {
+        if ((obj == null) || obj.isEmpty()) { throw new IllegalArgumentException(name + " must not be null or empty"); }
+        return obj;
+    }
 
     @NonNull
     public static <T> T assertNotNull(@Nullable T obj, @NonNull String name) {

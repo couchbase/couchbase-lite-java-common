@@ -24,7 +24,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
 
 public final class CouchbaseLite {
-    // Utility class
+    // Singleton
     private CouchbaseLite() {}
 
     /**

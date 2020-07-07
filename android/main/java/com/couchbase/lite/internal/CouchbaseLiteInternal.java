@@ -65,13 +65,14 @@ public final class CouchbaseLiteInternal {
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
     private static final AtomicReference<NetworkConnectivityManager> CONNECTIVITY_MANAGER = new AtomicReference<>();
+    private static final AtomicReference<KeyManager> KEY_MANAGER = new AtomicReference<>();
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
     private static final Object LOCK = new Object();
 
     @SuppressWarnings("PMD.FieldNamingConventions")
-    private static final boolean debugging = BuildConfig.CBL_DEBUG;
+    private static final boolean DEBUGGING = BuildConfig.CBL_DEBUG;
 
     @GuardedBy("lock")
     private static String dbDirPath;
@@ -98,7 +99,7 @@ public final class CouchbaseLiteInternal {
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
-        if (debugging) { C4Base.debug(); }
+        if (DEBUGGING) { C4Base.debug(); }
 
         setC4TmpDirPath();
 
@@ -107,25 +108,27 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(loadErrorMessages(ctxt));
     }
 
-    public static boolean isDebugging() { return debugging; }
+    public static boolean isDebugging() { return DEBUGGING; }
 
     public static NetworkConnectivityManager getNetworkConnectivityManager() {
-        NetworkConnectivityManager connectivityMgr = CONNECTIVITY_MANAGER.get();
-        if (connectivityMgr == null) {
-            CONNECTIVITY_MANAGER.compareAndSet(null, AndroidConnectivityManager.newInstance());
-            connectivityMgr = CONNECTIVITY_MANAGER.get();
-        }
-        return connectivityMgr;
+        final NetworkConnectivityManager connectivityMgr = CONNECTIVITY_MANAGER.get();
+        if (connectivityMgr != null) { return connectivityMgr; }
+        CONNECTIVITY_MANAGER.compareAndSet(null, AndroidConnectivityManager.newInstance());
+        return CONNECTIVITY_MANAGER.get();
     }
 
-
     public static ExecutionService getExecutionService() {
-        ExecutionService executionService = EXECUTION_SERVICE.get();
-        if (executionService == null) {
-            EXECUTION_SERVICE.compareAndSet(null, new AndroidExecutionService());
-            executionService = EXECUTION_SERVICE.get();
-        }
-        return executionService;
+        final ExecutionService executionService = EXECUTION_SERVICE.get();
+        if (executionService != null) { return executionService; }
+        EXECUTION_SERVICE.compareAndSet(null, new AndroidExecutionService());
+        return EXECUTION_SERVICE.get();
+    }
+
+    public static KeyManager getKeyManager() {
+        final KeyManager keyManager = KEY_MANAGER.get();
+        if (keyManager != null) { return keyManager; }
+        KEY_MANAGER.compareAndSet(null, new AndroidKeyManager(getContext()));
+        return KEY_MANAGER.get();
     }
 
     public static void requireInit(String message) {

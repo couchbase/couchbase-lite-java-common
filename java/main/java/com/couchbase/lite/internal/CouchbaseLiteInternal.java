@@ -52,6 +52,7 @@ public final class CouchbaseLiteInternal {
     private static final String DEFAULT_ROOT_DIR_NAME = ".couchbase";
 
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
+    private static final AtomicReference<KeyManager> KEY_MANAGER = new AtomicReference<>();
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
@@ -89,12 +90,17 @@ public final class CouchbaseLiteInternal {
      * This method is for internal used only and will be removed in the future release.
      */
     public static ExecutionService getExecutionService() {
-        ExecutionService executionService = EXECUTION_SERVICE.get();
-        if (executionService == null) {
-            EXECUTION_SERVICE.compareAndSet(null, new JavaExecutionService());
-            executionService = EXECUTION_SERVICE.get();
-        }
-        return executionService;
+        final ExecutionService executionService = EXECUTION_SERVICE.get();
+        if (executionService != null) { return executionService; }
+        EXECUTION_SERVICE.compareAndSet(null, new JavaExecutionService());
+        return EXECUTION_SERVICE.get();
+    }
+
+    public static KeyManager getKeyManager() {
+        final KeyManager keyManager = KEY_MANAGER.get();
+        if (keyManager != null) { return keyManager; }
+        KEY_MANAGER.compareAndSet(null, new JavaKeyManager());
+        return KEY_MANAGER.get();
     }
 
     public static void requireInit(String message) {

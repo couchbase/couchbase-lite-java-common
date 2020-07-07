@@ -45,7 +45,6 @@ namespace litecore {
 
 #ifdef COUCHBASE_ENTERPRISE
         bool initC4Listener(JNIEnv *);   // Implemented in native_c4listener.cc
-        bool initC4KeyPair(JNIEnv *);    // Implemented in native_c4keypair.cc
 #endif
 
         std::string JstringToUTF8(JNIEnv *env, jstring jstr);

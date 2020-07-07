@@ -36,12 +36,10 @@ public abstract class C4NativePeer extends AtomicLong {
     private static final String HANDLE_NAME = "peer handle";
     private Exception cleared;
 
-    @Deprecated
     protected C4NativePeer() {}
 
     protected C4NativePeer(long handle) { setPeerHandle(handle); }
 
-    // This more than a smell, this is a reek.  Please don't use it.
     protected final void setPeer(long handle) { setPeerHandle(handle); }
 
     protected final long getPeerUnchecked() { return get(); }
