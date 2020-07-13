@@ -483,18 +483,9 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
 static jbyteArray getCertData(JNIEnv *env, C4Cert *cert) {
     if (!cert)
         return nullptr;
-
-    // ??? One copy over...
+    
     auto certData = c4cert_copyData(cert, false);
-
-    jbyteArray jData = env->NewByteArray(certData.size);
-    jbyte *jDataBuf = env->GetByteArrayElements(jData, nullptr);
-
-    // ??? Two copy over...
-    for (int i = 0; i < certData.size; i++) {
-        jDataBuf[i] = ((jbyte *) certData.buf)[i];
-    }
-
+    jbyteArray jData = toJByteArray(env, certData);
     c4slice_free(certData);
 
     return jData;
@@ -712,7 +703,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
     }
 
     C4Error error;
-    auto csr = c4cert_createRequest(subjectName, 4, usage, keys, &error);
+    auto csr = c4cert_createRequest(subjectName, size, usage, keys, &error);
     if (!csr) {
         throwError(env, error);
         return nullptr;
