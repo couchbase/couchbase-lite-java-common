@@ -41,17 +41,17 @@ static jmethodID m_ArrayList_init;                 // constructor
 static jmethodID m_ArrayList_add;                  // add
 
 // Java KeyManager class
-static jclass cls_KeyManager;                      // global reference
-static jmethodID m_KeyManager_keyDataCallback;     // get key data
-static jmethodID m_KeyManager_decryptCallback;     // decrypt using key
-static jmethodID m_KeyManager_signCallback;        // sign using key
-static jmethodID m_KeyManager_freeCallback;        // free key
+static jclass cls_C4KeyPair;                      // global reference
+static jmethodID m_C4KeyPair_keyDataCallback;     // get key data
+static jmethodID m_C4KeyPair_decryptCallback;     // decrypt using key
+static jmethodID m_C4KeyPair_signCallback;        // sign using key
+static jmethodID m_C4KeyPair_freeCallback;        // free key
 static C4ExternalKeyCallbacks keyCallbacks;
 
 // Initialization
 static bool initListenerCallbacks(JNIEnv *env);
 
-static bool initKeyManagerCallbacks(JNIEnv *env);
+static bool initKeyPairCallbacks(JNIEnv *env);
 
 //-------------------------------------------------------------------------
 // Package initialization
@@ -61,7 +61,7 @@ static bool initKeyManagerCallbacks(JNIEnv *env);
 //-------------------------------------------------------------------------
 
 bool litecore::jni::initC4Listener(JNIEnv *env) {
-    return initListenerCallbacks(env) && initKeyManagerCallbacks(env);
+    return initListenerCallbacks(env) && initKeyPairCallbacks(env);
 }
 
 //-------------------------------------------------------------------------
@@ -124,13 +124,14 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
 // This method copies the data to its destination.
 static bool
 doKeyDataCallback(JNIEnv *env, void *externalKey, void *output, size_t outputMaxLen, size_t *outputLen) {
-    auto key = (jbyteArray) (env->CallStaticObjectMethod(cls_KeyManager,
-                                                         m_KeyManager_keyDataCallback,
+    auto key = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair,
+                                                         m_C4KeyPair_keyDataCallback,
                                                          (jlong) externalKey));
     if (!key)
         return false;
 
     jsize keyDataSize = env->GetArrayLength(key);
+
     if (keyDataSize > outputMaxLen)
         return false;
 
@@ -172,8 +173,8 @@ doDecryptCallback(JNIEnv *env, void *externalKey, C4Slice input, void *output, s
     jbyteArray encryptedData = env->NewByteArray(input.size);
     env->SetByteArrayRegion(encryptedData, 0, input.size, (jbyte *) input.buf);
 
-    auto decryptedData = (jbyteArray) (env->CallStaticObjectMethod(cls_KeyManager,
-                                                                   m_KeyManager_decryptCallback,
+    auto decryptedData = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair,
+                                                                   m_C4KeyPair_decryptCallback,
                                                                    (jlong) externalKey,
                                                                    encryptedData));
     if (!decryptedData)
@@ -225,8 +226,8 @@ doSignCallback(JNIEnv *env,
     jbyteArray data = env->NewByteArray(inputData.size);
     env->SetByteArrayRegion(data, 0, inputData.size, (jbyte *) inputData.buf);
 
-    auto signature = (jbyteArray) (env->CallStaticObjectMethod(cls_KeyManager,
-                                                               m_KeyManager_signCallback,
+    auto signature = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair,
+                                                               m_C4KeyPair_signCallback,
                                                                (jlong) externalKey,
                                                                (int) digestAlgorithm,
                                                                data));
@@ -272,13 +273,13 @@ static void freeKeyCallback(void *externalKey) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_KeyManager,
-                                  m_KeyManager_freeCallback,
+        env->CallStaticVoidMethod(cls_C4KeyPair,
+                                  m_C4KeyPair_freeCallback,
                                   (jlong) externalKey);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_KeyManager,
-                                      m_KeyManager_freeCallback,
+            env->CallStaticVoidMethod(cls_C4KeyPair,
+                                      m_C4KeyPair_freeCallback,
                                       (jlong) externalKey);
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
@@ -356,29 +357,29 @@ static bool initListenerCallbacks(JNIEnv *env) {
     return true;
 }
 
-static bool initKeyManagerCallbacks(JNIEnv *env) {
-    jclass localClass = env->FindClass("com/couchbase/lite/internal/KeyManager");
+static bool initKeyPairCallbacks(JNIEnv *env) {
+    jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4KeyPair");
     if (!localClass)
         return false;
 
-    cls_KeyManager = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-    if (!cls_KeyManager)
+    cls_C4KeyPair = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+    if (!cls_C4KeyPair)
         return false;
 
-    m_KeyManager_keyDataCallback = env->GetStaticMethodID(cls_KeyManager, "getKeyDataCallback", "(J)[B");
-    if (!m_KeyManager_keyDataCallback)
+    m_C4KeyPair_keyDataCallback = env->GetStaticMethodID(cls_C4KeyPair, "getKeyDataCallback", "(J)[B");
+    if (!m_C4KeyPair_keyDataCallback)
         return false;
 
-    m_KeyManager_decryptCallback = env->GetStaticMethodID(cls_KeyManager, "decryptCallback", "(J[B)[B");
-    if (!m_KeyManager_decryptCallback)
+    m_C4KeyPair_decryptCallback = env->GetStaticMethodID(cls_C4KeyPair, "decryptCallback", "(J[B)[B");
+    if (!m_C4KeyPair_decryptCallback)
         return false;
 
-    m_KeyManager_signCallback = env->GetStaticMethodID(cls_KeyManager, "signKeyCallback", "(JI[B)[B");
-    if (!m_KeyManager_signCallback)
+    m_C4KeyPair_signCallback = env->GetStaticMethodID(cls_C4KeyPair, "signKeyCallback", "(JI[B)[B");
+    if (!m_C4KeyPair_signCallback)
         return false;
 
-    m_KeyManager_freeCallback = env->GetStaticMethodID(cls_KeyManager, "freeCallback", "(J)V");
-    if (!m_KeyManager_freeCallback)
+    m_C4KeyPair_freeCallback = env->GetStaticMethodID(cls_C4KeyPair, "freeCallback", "(J)V");
+    if (!m_C4KeyPair_freeCallback)
         return false;
 
     keyCallbacks.publicKeyData = &publicKeyDataKeyCallback;

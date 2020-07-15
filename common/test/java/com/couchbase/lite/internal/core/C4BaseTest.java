@@ -43,7 +43,7 @@ import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StopWatch;
-import com.couchbase.lite.internal.utils.TestUtils;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -76,7 +76,7 @@ public class C4BaseTest extends PlatformBaseTest {
 
     @Before
     public final void setUpC4BaseTest() throws CouchbaseLiteException {
-        final String tmpDirName = TestUtils.getUniqueName("c4-test-");
+        final String tmpDirName = StringUtils.getUniqueName("c4-test", 24);
         try {
             tmpDir = getScratchDirectoryPath(tmpDirName);
             SCRATCH_DIRS.add(tmpDir);

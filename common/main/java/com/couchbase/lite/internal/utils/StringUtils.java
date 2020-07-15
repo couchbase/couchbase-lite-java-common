@@ -18,8 +18,24 @@ package com.couchbase.lite.internal.utils;
 
 import android.support.annotation.NonNull;
 
+import java.util.Locale;
+
 
 public final class StringUtils {
+    public static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    public static final String NUMERIC = "0123456789";
+    public static final String ALPHANUMERIC = NUMERIC + ALPHA + ALPHA.toLowerCase(Locale.ROOT);
+    private static final char[] CHARS = ALPHANUMERIC.toCharArray();
+
+    public static String getUniqueName(@NonNull String prefix, int len) { return prefix + '-' + randomString(len); }
+
+    @SuppressWarnings("ConstantConditions")
+    public static String randomString(int len) {
+        final char[] buf = new char[len];
+        for (int idx = 0; idx < buf.length; ++idx) { buf[idx] = CHARS[MathUtils.RANDOM.get().nextInt(CHARS.length)]; }
+        return new String(buf);
+    }
+
     private StringUtils() { }
 
     public static boolean isEmpty(String str) { return (str == null) || str.isEmpty(); }

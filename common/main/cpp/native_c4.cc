@@ -250,8 +250,8 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    // If this method is either about to return or about to detach, deleting the refs doesn't help.
-    // I'm not sure that there *is* any other case.  Just being careful.
+    // If this method is on a thread that is was previously attached but was called
+    // from some long running method, we need to release the local refs.
     env->DeleteLocalRef(message);
     if (domainName)
         env->DeleteLocalRef(domainName);
@@ -302,9 +302,10 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env
  * Signature: (Ljava/lang/String;[BII)[B
  */
 JNIEXPORT jbyteArray
-JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass ignore, jstring jpassword, jbyteArray jsalt,
-                                                   jint jiteration,
-                                                   jint jkeyLen) {
+JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass ignore, jstring jpassword,
+                                                           jbyteArray jsalt,
+                                                           jint jiteration,
+                                                           jint jkeyLen) {
 
     // PBKDF2 (Password-Based Key Derivation Function 2)
     // https://en.wikipedia.org/wiki/PBKDF2
@@ -373,7 +374,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass i
  * Signature: (Ljava/lang/String;I)[B
  */
 JNIEXPORT jbyteArray
-JNICALL Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(JNIEnv *env, jclass ignore, jstring password, jint algorithm) {
+JNICALL Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(JNIEnv *env, jclass ignore, jstring password,
+                                                                          jint algorithm) {
     jstringSlice pwd(env, password);
 
     C4EncryptionKey key;

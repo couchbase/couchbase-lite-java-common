@@ -599,7 +599,7 @@ public class LogTest extends BaseDbTest {
     // Verify that we can set the level for log domains that the platform doesn't recognize.
     @Test
     public void testInternalLogging() throws CouchbaseLiteException {
-        final String c4Domain = "Query";
+        final String c4Domain = "foo";
 
         final RawLogListener rawLogListener = new RawLogListener(c4Domain);
         C4Log.registerListener(rawLogListener);
@@ -612,8 +612,8 @@ public class LogTest extends BaseDbTest {
             int actualMinLevel = rawLogListener.getMinLevel();
             assertTrue(actualMinLevel >= originalLogLevel);
 
-            rawLogListener.reset();
             C4Log.setLevels(actualMinLevel + 1, c4Domain);
+            rawLogListener.reset();
             result = QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(baseTestDb))
                 .execute();

@@ -26,12 +26,6 @@ public final class Preconditions {
     private Preconditions() {}
 
     @NonNull
-    public static <T> List<T> assertNotEmpty(@Nullable List<T> obj, @NonNull String name) {
-        if ((obj == null) || obj.isEmpty()) { throw new IllegalArgumentException(name + " must not be null or empty"); }
-        return obj;
-    }
-
-    @NonNull
     public static <T> T assertNotNull(@Nullable T obj, @NonNull String name) {
         if (obj == null) { throw new IllegalArgumentException(name + " must not be null"); }
         return obj;
@@ -49,6 +43,12 @@ public final class Preconditions {
 
     public static void assertNotEmpty(String str, @NonNull String name) {
         if (StringUtils.isEmpty(str)) { throw new IllegalArgumentException(name + " must not be empty"); }
+    }
+
+    @NonNull
+    public static <T> List<T> assertNotEmpty(@Nullable List<T> obj, @NonNull String name) {
+        if ((obj == null) || obj.isEmpty()) { throw new IllegalArgumentException(name + " must not be null or empty"); }
+        return obj;
     }
 
     public static <T> void assertThat(T obj, @NonNull String msg, @NonNull Fn.Predicate<T> predicate) {

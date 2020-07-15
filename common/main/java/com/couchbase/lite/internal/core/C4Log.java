@@ -45,6 +45,10 @@ public final class C4Log {
             this.level = level;
             this.message = message;
         }
+
+        @NonNull
+        @Override
+        public String toString() { return "RawLog{" + domain + "/" + level + ": " + message + "}"; }
     }
 
     private static Fn.Consumer<RawLog> rawListener;

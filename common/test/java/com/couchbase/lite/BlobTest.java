@@ -31,7 +31,7 @@ import org.junit.rules.TemporaryFolder;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.IOUtils;
-import com.couchbase.lite.internal.utils.TestUtils;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertArrayEquals;
@@ -49,7 +49,7 @@ public class BlobTest extends BaseDbTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
-    public final void setUpBlobTest() { localBlobContent = TestUtils.randomString(100); }
+    public final void setUpBlobTest() { localBlobContent = StringUtils.randomString(100); }
 
     @Test
     public void testEquals() throws CouchbaseLiteException {

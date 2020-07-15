@@ -33,7 +33,7 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
-import com.couchbase.lite.internal.utils.TestUtils;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -80,7 +80,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         Report.log(LogLevel.INFO, "Executor stopped: " + succeeded);
     }
 
-    protected final String getUniqueName(@NonNull String prefix) { return TestUtils.getUniqueName(prefix); }
+    protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 24); }
 
     // Prefer this method to any other way of creating a new database
     protected final Database createDb(@NonNull String name) throws CouchbaseLiteException {

@@ -65,7 +65,6 @@ public final class CouchbaseLiteInternal {
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
     private static final AtomicReference<NetworkConnectivityManager> CONNECTIVITY_MANAGER = new AtomicReference<>();
-    private static final AtomicReference<KeyManager> KEY_MANAGER = new AtomicReference<>();
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
@@ -122,13 +121,6 @@ public final class CouchbaseLiteInternal {
         if (executionService != null) { return executionService; }
         EXECUTION_SERVICE.compareAndSet(null, new AndroidExecutionService());
         return EXECUTION_SERVICE.get();
-    }
-
-    public static KeyManager getKeyManager() {
-        final KeyManager keyManager = KEY_MANAGER.get();
-        if (keyManager != null) { return keyManager; }
-        KEY_MANAGER.compareAndSet(null, new AndroidKeyManager(getContext()));
-        return KEY_MANAGER.get();
     }
 
     public static void requireInit(String message) {

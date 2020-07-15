@@ -15,10 +15,6 @@
 //
 package com.couchbase.lite.internal.utils;
 
-import android.support.annotation.NonNull;
-
-import java.util.Locale;
-
 import com.couchbase.lite.CouchbaseLiteException;
 
 import static org.junit.Assert.assertEquals;
@@ -26,22 +22,7 @@ import static org.junit.Assert.fail;
 
 
 public final class TestUtils {
-
     private TestUtils() {}
-
-    public static final String ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    public static final String NUMERIC = "0123456789";
-    public static final String ALPHANUMERIC = NUMERIC + ALPHA + ALPHA.toLowerCase(Locale.ROOT);
-
-    private static final char[] CHARS = ALPHANUMERIC.toCharArray();
-
-    public static String getUniqueName(@NonNull String prefix) { return prefix + '-' + randomString(24); }
-
-    public static String randomString(int len) {
-        final char[] buf = new char[len];
-        for (int idx = 0; idx < buf.length; ++idx) { buf[idx] = CHARS[MathUtils.RANDOM.get().nextInt(CHARS.length)]; }
-        return new String(buf);
-    }
 
     public static <T extends Exception> void assertThrows(Class<T> ex, Fn.TaskThrows<Exception> test) {
         try {

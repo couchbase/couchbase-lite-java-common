@@ -28,7 +28,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
-import com.couchbase.lite.internal.utils.TestUtils;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -147,7 +147,7 @@ public class C4DatabaseTest extends C4BaseTest {
     public void testDatabaseOpenBundle() throws LiteCoreException, IOException {
         int flags = getFlags();
 
-        File bundleDir = new File(getScratchDirectoryPath(TestUtils.getUniqueName("cbl_core_test_bundle")));
+        File bundleDir = new File(getScratchDirectoryPath(StringUtils.getUniqueName("cbl_core_test_bundle", 24)));
 
         // !!! for some reason, this file already exists on the Java platform...
         if (bundleDir.exists()) {
@@ -555,7 +555,7 @@ public class C4DatabaseTest extends C4BaseTest {
 
         String srcPath = c4Database.getPath();
 
-        final String dbName = TestUtils.getUniqueName("c4-db-test") + DB_EXTENSION;
+        final String dbName = StringUtils.getUniqueName("c4-db-test", 24) + DB_EXTENSION;
 
         File nuPath = new File(getScratchDirectoryPath(dbName));
         try { C4Database.deleteDbAtPath(nuPath.getCanonicalPath()); }

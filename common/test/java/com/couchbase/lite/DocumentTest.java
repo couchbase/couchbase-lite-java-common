@@ -34,6 +34,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -831,7 +832,7 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testSetBlob() throws CouchbaseLiteException {
-        final String newBlobContent = TestUtils.randomString(100);
+        final String newBlobContent = StringUtils.randomString(100);
         final Blob newBlob = new Blob("text/plain", newBlobContent.getBytes(StandardCharsets.UTF_8));
         final Blob blob = new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8));
 
