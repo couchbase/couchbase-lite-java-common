@@ -370,8 +370,12 @@ public final class Log {
                     C4Log.setLevels(c4Level, C4Constants.LogDomain.DATABASE);
                     break;
 
+                case LISTENER:
+                    C4Log.setLevels(c4Level, C4Constants.LogDomain.LISTENER);
+                    break;
+
                 case QUERY:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY);
+                    C4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY, C4Constants.LogDomain.SQL);
                     break;
 
                 case REPLICATOR:
@@ -379,9 +383,15 @@ public final class Log {
                     break;
 
                 case NETWORK:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.BLIP, C4Constants.LogDomain.WEB_SOCKET);
+                    C4Log.setLevels(
+                        c4Level,
+                        C4Constants.LogDomain.BLIP,
+                        C4Constants.LogDomain.WEB_SOCKET,
+                        C4Constants.LogDomain.TLS);
                     break;
+
                 default:
+                    Log.d(LogDomain.DATABASE, "unexepcted log domain: " + domain);
                     break;
             }
         }
