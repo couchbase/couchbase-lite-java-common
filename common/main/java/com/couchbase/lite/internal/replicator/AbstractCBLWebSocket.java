@@ -54,7 +54,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
-import okhttp3.internal.tls.CustomHostnameVerifier;
 import okio.Buffer;
 import okio.ByteString;
 
@@ -513,8 +512,9 @@ public class AbstractCBLWebSocket extends C4Socket {
         builder.sslSocketFactory(sslSocketFactory, trustManager);
 
         if (isPinningServerCert) {
-            // Custom hostname verifier - allow IP address and empty Common Name (CN).
-            builder.hostnameVerifier(CustomHostnameVerifier.getInstance());
+            // As the certificate will need to be matched with the pinned certificate, accepts any
+            // host name specified in the certificate.
+            builder.hostnameVerifier((s, sslSession) -> true);
         }
     }
 

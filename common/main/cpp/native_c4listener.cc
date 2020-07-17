@@ -690,7 +690,8 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
          jbyte algorithm,
          jint keyBits,
          jobjectArray nameComponents,
-         jbyte usage) {
+         jbyte usage,
+         jlong validityInSeconds) {
 
     auto keys = (C4KeyPair *) c4KeyPair;
 
@@ -711,6 +712,9 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
     }
 
     C4CertIssuerParameters issuerParams = kDefaultCertIssuerParameters;
+    if (validityInSeconds > 0) {
+        issuerParams.validityInSeconds = validityInSeconds;
+    }
 
     auto cert = c4cert_signRequest(csr, &issuerParams, keys, nullptr, &error);
     c4cert_release(csr);

@@ -72,7 +72,7 @@ final class NativeLibrary {
      * The MD5-Hash is the combined MD5 hash of the hashes of all native libraries.
      */
     @NonNull
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" })
     private static String getTargetDirectory(@NonNull String... libPaths)
         throws NoSuchAlgorithmException, IOException {
         final MessageDigest md = MessageDigest.getInstance("MD5");
@@ -95,7 +95,7 @@ final class NativeLibrary {
      * If the native library already exists in the target library, the existing native library will be used.
      */
     @NonNull
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE", "OBL_UNSATISFIED_OBLIGATION" })
     private static File extract(@NonNull String libResPath, @NonNull String targetDir)
         throws IOException, InterruptedException {
         final File targetFile = new File(targetDir, new File(libResPath).getName());
