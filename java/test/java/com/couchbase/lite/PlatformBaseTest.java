@@ -15,11 +15,8 @@
 //
 package com.couchbase.lite;
 
-import android.support.annotation.Nullable;
-
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;

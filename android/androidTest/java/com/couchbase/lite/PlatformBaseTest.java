@@ -49,7 +49,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
 
     private static final Map<String, Runnable> PLATFORM_DEPENDENT_TESTS;
-
     static {
         final Map<String, Runnable> m = new HashMap<>();
         m.put(
@@ -64,7 +63,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     // this should probably go in the BaseTest but
     // there are several tests (C4 tests) that are not subclasses
     static { initCouchbase(); }
-
     public static void initCouchbase() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
     public static void deinitCouchbase() { CouchbaseLiteInternal.reset(); }
@@ -99,7 +97,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public void reloadStandardErrorMessages() {
         Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
-
     }
 
     @Override

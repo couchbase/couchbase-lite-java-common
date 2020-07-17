@@ -16,10 +16,6 @@
 
 package com.couchbase.lite;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-
 /**
  * Contains methods required for the tests to run on both Android and Java platforms.
  */

@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 
 import com.couchbase.lite.internal.core.C4Log;
@@ -77,6 +78,16 @@ abstract class AbstractConsoleLogger implements Logger {
         logDomains = (!domains.contains(LogDomain.ALL))
             ? domains
             : LogDomain.ALL_DOMAINS;
+    }
+
+    /**
+     * Sets the domains that will be considered for writing to the console log.
+     *
+     * @param domains The domains to make active (vararg)
+     */
+    public void setDomains(@NonNull LogDomain... domains) {
+        Preconditions.assertNotNull(domains, "domains");
+        setDomains(EnumSet.copyOf(Arrays.asList(domains)));
     }
 
     protected abstract void doLog(LogLevel level, @NonNull LogDomain domain, @NonNull String message);
