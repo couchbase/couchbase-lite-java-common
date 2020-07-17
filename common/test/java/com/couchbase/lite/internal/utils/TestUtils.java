@@ -15,7 +15,11 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.internal.KeyStoreManager;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -44,6 +48,14 @@ public final class TestUtils {
             assertEquals(code, e.getCode());
             assertEquals(domain, e.getDomain());
         }
+    }
+
+    public static Map<String, String> get509Attributes() {
+        final Map<String, String> attributes = new HashMap<>();
+        attributes.put(KeyStoreManager.CERT_ATTRIBUTE_ORGANIZATION, "Couchbase");
+        attributes.put(KeyStoreManager.CERT_ATTRIBUTE_ORGANIZATION_UNIT, "Mobile");
+        attributes.put(KeyStoreManager.CERT_ATTRIBUTE_EMAIL_ADDRESS, "lite@couchbase.com");
+        return attributes;
     }
 }
 
