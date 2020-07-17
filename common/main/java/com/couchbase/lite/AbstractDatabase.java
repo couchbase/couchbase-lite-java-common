@@ -62,6 +62,7 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JsonUtils;
+import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -877,6 +878,19 @@ abstract class AbstractDatabase {
     void mustBeOpen() {
         synchronized (dbLock) {
             if (!isOpen()) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
+        }
+    }
+
+    @Nullable
+    String getUuid() {
+        synchronized (dbLock) {
+            if (isOpen()) {
+                byte[] uuid = null;
+                try { uuid = c4Database.getPublicUUID(); }
+                catch (LiteCoreException e) { Log.v(LogDomain.DATABASE, "Failed retrieving database UUID", e); }
+                if (uuid != null) { return PlatformUtils.getEncoder().encodeToString(uuid); }
+            }
+            return null;
         }
     }
 

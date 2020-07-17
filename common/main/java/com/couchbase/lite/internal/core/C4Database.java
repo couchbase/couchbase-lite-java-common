@@ -140,7 +140,6 @@ public class C4Database extends C4NativePeer {
     @VisibleForTesting
     public void setMaxRevTreeDepth(int maxRevTreeDepth) { setMaxRevTreeDepth(getPeer(), maxRevTreeDepth); }
 
-    @VisibleForTesting
     public byte[] getPublicUUID() throws LiteCoreException { return getPublicUUID(getPeer()); }
 
     @VisibleForTesting
