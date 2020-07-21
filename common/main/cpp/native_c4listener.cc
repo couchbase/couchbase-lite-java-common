@@ -692,16 +692,25 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
          jobjectArray nameComponents,
          jbyte usage,
          jlong validityInSeconds) {
-
     auto keys = (C4KeyPair *) c4KeyPair;
 
     int size = env->GetArrayLength(nameComponents);
     C4CertNameComponent subjectName[size];
+
+    // For retaining jstringSlice objects of cert's attributes and values:
+    std::vector<jstringSlice *> attrs;
     for (int i = 0; i < size; ++i) {
         auto component = (jobjectArray) env->GetObjectArrayElement(nameComponents, i);
-        auto attribute = (jstring) env->GetObjectArrayElement(component, 0);
+        auto key = (jstring) env->GetObjectArrayElement(component, 0);
         auto value = (jstring) env->GetObjectArrayElement(component, 1);
-        subjectName[i] = {jstringSlice(env, attribute), jstringSlice(env, value)};
+
+        auto keySlice = new jstringSlice(env, key);
+        auto valueSlice = new jstringSlice(env, value);
+
+        attrs.push_back(keySlice);
+        attrs.push_back(valueSlice);
+
+        subjectName[i] = { *keySlice, *valueSlice };
     }
 
     C4Error error;
@@ -709,6 +718,11 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
     if (!csr) {
         throwError(env, error);
         return nullptr;
+    }
+
+    // Release cert's attributes and values:
+    for (int i = 0; i < attrs.size(); i++) {
+        delete attrs.at(i);
     }
 
     C4CertIssuerParameters issuerParams = kDefaultCertIssuerParameters;
