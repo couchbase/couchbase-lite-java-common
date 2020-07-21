@@ -79,7 +79,7 @@ public class C4Query extends C4NativePeer {
     protected void finalize() throws Throwable {
         final long handle = getPeerAndClear();
         if (handle != 0L) {
-            Log.i(LogDomain.DATABASE, "Finalizing a C4Query that has not been freed: " + this);
+            Log.i(LogDomain.DATABASE, "Finalizing a C4Query that has not been freed: " + handle);
             free(handle);
         }
         super.finalize();

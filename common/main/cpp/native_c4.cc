@@ -246,7 +246,9 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
     }
 
     const char *domainNameRaw = c4log_getDomainName(domain);
-    jstring domainName = env->NewStringUTF(domainNameRaw);
+    jstring domainName = UTF8ToJstring(env, domainNameRaw, strlen(domainNameRaw));
+    if (!domainName)
+        domainName = env->NewStringUTF("???");
 
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 

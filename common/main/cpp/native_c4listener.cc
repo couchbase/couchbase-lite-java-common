@@ -370,12 +370,12 @@ static bool initKeyPairCallbacks(JNIEnv *env) {
     if (!m_C4KeyPair_keyDataCallback)
         return false;
 
-    m_C4KeyPair_decryptCallback = env->GetStaticMethodID(cls_C4KeyPair, "decryptCallback", "(J[B)[B");
-    if (!m_C4KeyPair_decryptCallback)
+    m_C4KeyPair_signCallback = env->GetStaticMethodID(cls_C4KeyPair, "signCallback", "(JI[B)[B");
+    if (!m_C4KeyPair_signCallback)
         return false;
 
-    m_C4KeyPair_signCallback = env->GetStaticMethodID(cls_C4KeyPair, "signKeyCallback", "(JI[B)[B");
-    if (!m_C4KeyPair_signCallback)
+    m_C4KeyPair_decryptCallback = env->GetStaticMethodID(cls_C4KeyPair, "decryptCallback", "(J[B)[B");
+    if (!m_C4KeyPair_decryptCallback)
         return false;
 
     m_C4KeyPair_freeCallback = env->GetStaticMethodID(cls_C4KeyPair, "freeCallback", "(J)V");
@@ -403,7 +403,6 @@ static C4Listener *startListener(
         jboolean allowPull,
         jboolean enableDeltaSync,
         C4TLSConfig *tlsConfig) {
-
     jstringSlice iFace(env, networkInterface);
     jstringSlice path(env, dbPath);
 
@@ -464,8 +463,11 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
     if (!cert)
         return nullptr;
 
-    jbyte *certData = env->GetByteArrayElements(cert, nullptr);
     jsize certSize = env->GetArrayLength(cert);
+    if (certSize <= 0)
+        return nullptr;
+
+    jbyte *certData = env->GetByteArrayElements(cert, nullptr);
     FLSlice certSlice = {certData, (size_t) certSize};
 
     C4Error error;
@@ -484,7 +486,7 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
 static jbyteArray getCertData(JNIEnv *env, C4Cert *cert) {
     if (!cert)
         return nullptr;
-    
+
     auto certData = c4cert_copyData(cert, false);
     jbyteArray jData = toJByteArray(env, certData);
     c4slice_free(certData);
@@ -563,13 +565,10 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jboolean allowPush,
         jboolean allowPull,
         jboolean enableDeltaSync) {
-
-    auto c4Cert = getCert(env, cert);
-
     C4TLSConfig tlsConfig;
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
     tlsConfig.key = (C4KeyPair *) keyPair;
-    tlsConfig.certificate = c4Cert;
+    tlsConfig.certificate = getCert(env, cert);
     tlsConfig.requireClientCerts = requireClientCerts;
     tlsConfig.rootClientCerts = getCert(env, rootClientCerts);
     tlsConfig.certAuthCallback = &certAuthCallback;
@@ -710,7 +709,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
         attrs.push_back(keySlice);
         attrs.push_back(valueSlice);
 
-        subjectName[i] = { *keySlice, *valueSlice };
+        subjectName[i] = {*keySlice, *valueSlice};
     }
 
     C4Error error;
