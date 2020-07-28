@@ -21,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import com.couchbase.lite.internal.utils.FlakyTest;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -155,6 +157,7 @@ public class LiveQueryTest extends BaseDbTest {
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1606
+    @FlakyTest
     @Test
     public void testRemovingLiveQuery() throws CouchbaseLiteException, InterruptedException {
         int n = 1;
