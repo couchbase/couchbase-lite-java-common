@@ -83,42 +83,45 @@ pushd $OS > /dev/null
 OUTPUT_DIR=$SCRIPT_DIR/../lite-core/$OS/x86_64
 mkdir -p $OUTPUT_DIR
 
-if [[ $OS == linux ]]; then
-  if [[ $LIB == LiteCore ]]; then
-    CC=clang CXX=clang++ cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 ../..
+case $OS in
+  linux)
+    if [[ $LIB == LiteCore ]]; then
+      CC=clang CXX=clang++ cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 ../..
 
-    make -j `expr $CORE_COUNT + 1` LiteCore
-    cp -f libLiteCore.so $OUTPUT_DIR
+      make -j `expr $CORE_COUNT + 1` LiteCore
+      cp -f libLiteCore.so $OUTPUT_DIR
 
-    make -j `expr $CORE_COUNT + 1` mbedcrypto
-    cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
-  fi
+      make -j `expr $CORE_COUNT + 1` mbedcrypto
+      cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
+    fi
 
-  if [[ $LIB == mbedcrypto ]]; then
-    CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
-    make -j `expr $CORE_COUNT + 1`
-    cp -f $MBEDTLS_LIB $OUTPUT_DIR
-  fi
-fi
+    if [[ $LIB == mbedcrypto ]]; then
+      CC=clang CXX=clang++ cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
+      make -j `expr $CORE_COUNT + 1`
+      cp -f $MBEDTLS_LIB $OUTPUT_DIR
+    fi
+  ;;
 
-if [[ $OS == macos ]]; then
-  if [[ $LIB == LiteCore ]]; then
-    cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
+  macos)
+    if [[ $LIB == LiteCore ]]; then
+      cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
 
-    make -j `expr $CORE_COUNT + 1` LiteCore
-    strip -x libLiteCore.dylib
-    cp -f libLiteCore.dylib $OUTPUT_DIR
+      make -j `expr $CORE_COUNT + 1` LiteCore
+      strip -x libLiteCore.dylib
+      cp -f libLiteCore.dylib $OUTPUT_DIR
 
-    make -j `expr $CORE_COUNT + 1` mbedcrypto
-    cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
-  fi
+      make -j `expr $CORE_COUNT + 1` mbedcrypto
+      cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
+    fi
 
-  if [[ $LIB == mbedcrypto ]]; then
-    cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
-    make -j `expr $CORE_COUNT + 1`
-    cp -f $MBEDTLS_LIB $OUTPUT_DIR
-  fi
-fi
+    if [[ $LIB == mbedcrypto ]]; then
+      echo "=== cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR"
+      cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
+      make -j `expr $CORE_COUNT + 1`
+      cp -f $MBEDTLS_LIB $OUTPUT_DIR
+    fi
+  ;;
+esac
 
 popd > /dev/null
 popd > /dev/null
