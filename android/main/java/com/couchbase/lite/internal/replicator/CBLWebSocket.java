@@ -43,9 +43,10 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         String hostname,
         int port,
         String path,
-        Map<String, Object> options)
+        Map<String, Object> options,
+        CBLTrustManager.CBLTrustManagerListener trustManagerListener)
         throws GeneralSecurityException, URISyntaxException {
-        super(handle, scheme, hostname, port, path, options);
+        super(handle, scheme, hostname, port, path, options, trustManagerListener);
     }
 
     @SuppressWarnings("PMD.CollapsibleIfStatements")

@@ -15,8 +15,9 @@
 //
 package com.couchbase.lite.internal.replicator;
 
+import android.support.annotation.NonNull;
+
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
@@ -24,12 +25,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -37,12 +33,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import okhttp3.Authenticator;
@@ -54,7 +48,6 @@ import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
-import okio.Buffer;
 import okio.ByteString;
 
 import com.couchbase.lite.LiteCoreException;
@@ -214,7 +207,8 @@ public class AbstractCBLWebSocket extends C4Socket {
         String hostname,
         int port,
         String path,
-        byte[] options) {
+        byte[] options,
+        @NonNull CBLTrustManager.CBLTrustManagerListener trustManagerListener) {
         Log.v(TAG, "Creating a CBLWebSocket ...");
 
         Map<String, Object> fleeceOptions = null;
@@ -228,7 +222,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             scheme = C4Replicator.WEBSOCKET_SECURE_CONNECTION_SCHEME;
         }
 
-        try { return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions); }
+        try { return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions, trustManagerListener); }
         catch (Exception e) { Log.e(TAG, "Failed to instantiate CBLWebSocket", e); }
 
         return null;
@@ -242,6 +236,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     private final CBLWebSocketListener wsListener;
     private final URI uri;
     private final Map<String, Object> options;
+    private final CBLTrustManager.CBLTrustManagerListener trustManagerListener;
     private WebSocket webSocket;
 
     //-------------------------------------------------------------------------
@@ -254,11 +249,13 @@ public class AbstractCBLWebSocket extends C4Socket {
         String hostname,
         int port,
         String path,
-        Map<String, Object> options)
+        Map<String, Object> options,
+        CBLTrustManager.CBLTrustManagerListener trustManagerListener)
         throws GeneralSecurityException, URISyntaxException {
         super(handle);
         this.uri = new URI(checkScheme(scheme), null, hostname, port, path, null, null);
         this.options = options;
+        this.trustManagerListener = trustManagerListener;
         this.httpClient = setupOkHttpClient();
         this.wsListener = new CBLWebSocketListener();
     }
@@ -354,10 +351,6 @@ public class AbstractCBLWebSocket extends C4Socket {
             }
         }
         return null;
-    }
-
-    private InputStream toStream(byte[] pin) {
-        return new Buffer().write(pin).inputStream();
     }
 
     private int responseCount(Response response) {
@@ -495,79 +488,29 @@ public class AbstractCBLWebSocket extends C4Socket {
     }
 
     private void setupSSLSocketFactory(OkHttpClient.Builder builder) throws GeneralSecurityException {
-        boolean isPinningServerCert = false;
-        X509TrustManager trustManager = null;
-        if (options != null && options.containsKey(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT)) {
-            final byte[] pin = (byte[]) options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
-            if (pin != null) {
-                trustManager = trustManagerForCertificates(toStream(pin));
-                isPinningServerCert = true;
+        byte[] pin = null;
+        boolean acceptOnlySelfSignedServerCert = false;
+        if (options != null) {
+            if (options.containsKey(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT)) {
+                pin = (byte[]) options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
+            }
+            if (options.containsKey(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT)) {
+                acceptOnlySelfSignedServerCert =
+                    (boolean) options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
             }
         }
 
-        if (trustManager == null) { trustManager = defaultTrustManager(); }
+        final X509TrustManager trustManager = new CBLTrustManager(
+            pin, acceptOnlySelfSignedServerCert, trustManagerListener);
 
         SSLContext.getInstance("TLS").init(null, new TrustManager[] {trustManager}, null);
         final SSLSocketFactory sslSocketFactory = new TLSSocketFactory(null, new TrustManager[] {trustManager}, null);
         builder.sslSocketFactory(sslSocketFactory, trustManager);
 
-        if (isPinningServerCert) {
+        if (pin != null) {
             // As the certificate will need to be matched with the pinned certificate, accepts any
             // host name specified in the certificate.
             builder.hostnameVerifier((s, sslSession) -> true);
-        }
-    }
-
-    private X509TrustManager defaultTrustManager() throws GeneralSecurityException {
-        final TrustManagerFactory trustManagerFactory
-            = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory.init((KeyStore) null);
-        final TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
-        if (trustManagers.length == 0) { throw new IllegalStateException("Cannot find the default trust manager"); }
-        return (X509TrustManager) trustManagers[0];
-    }
-
-    // https://github.com/square/okhttp/wiki/HTTPS
-    // https://github.com/square/okhttp/blob/master/samples/guide/src/main/java/okhttp3/recipes/CustomTrust.java
-    private X509TrustManager trustManagerForCertificates(InputStream in) throws GeneralSecurityException {
-        final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        final Collection<? extends Certificate> certificates = certificateFactory.generateCertificates(in);
-        if (certificates.isEmpty()) {
-            throw new IllegalArgumentException("expected non-empty set of trusted certificates");
-        }
-
-        // Put the certificates a key store.
-        final char[] password = "umwxnikwxx".toCharArray(); // Any password will work.
-        final KeyStore keyStore = newEmptyKeyStore(password);
-        int index = 0;
-        for (Certificate certificate: certificates) {
-            final String certificateAlias = Integer.toString(index++);
-            keyStore.setCertificateEntry(certificateAlias, certificate);
-        }
-
-        // Use it to build an X509 trust manager.
-        final KeyManagerFactory keyManagerFactory
-            = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-        keyManagerFactory.init(keyStore, password);
-        final TrustManagerFactory trustManagerFactory
-            = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory.init(keyStore);
-        final TrustManager[] trustManagers = trustManagerFactory.getTrustManagers();
-        if (trustManagers.length != 1 || !(trustManagers[0] instanceof X509TrustManager)) {
-            throw new IllegalStateException("Unexpected default trust managers:"
-                + Arrays.toString(trustManagers));
-        }
-        return (X509TrustManager) trustManagers[0];
-    }
-
-    private KeyStore newEmptyKeyStore(char[] password) throws GeneralSecurityException {
-        try {
-            final KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(null, password);
-            return keyStore;
-        }
-        catch (IOException e) {
-            throw new AssertionError(e);
         }
     }
 }

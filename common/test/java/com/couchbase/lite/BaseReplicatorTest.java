@@ -16,6 +16,8 @@
 package com.couchbase.lite;
 
 import java.net.URI;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.util.concurrent.TimeUnit;
 
 import org.jetbrains.annotations.NotNull;
@@ -80,7 +82,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         boolean pull,
         boolean continuous,
         Endpoint target,
-        byte[] pinnedServerCert) {
+        Certificate pinnedServerCert) {
         return makeConfig(push, pull, continuous, baseTestDb, target, pinnedServerCert);
     }
 
@@ -99,7 +101,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         boolean continuous,
         Database source,
         Endpoint target,
-        byte[] pinnedServerCert) {
+        Certificate pinnedServerCert) {
         return makeConfig(push, pull, continuous, source, target, pinnedServerCert, null);
     }
 
@@ -109,12 +111,19 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         boolean continuous,
         Database source,
         Endpoint target,
-        byte[] pinnedServerCert,
+        Certificate pinnedServerCert,
         ConflictResolver resolver) {
         ReplicatorConfiguration config = new ReplicatorConfiguration(source, target);
         config.setReplicatorType(getReplicatorType(push, pull));
         config.setContinuous(continuous);
-        config.setPinnedServerCertificate(pinnedServerCert);
+
+        final byte[] pin;
+        try { pin = pinnedServerCert != null ? pinnedServerCert.getEncoded() : null; }
+        catch (CertificateEncodingException e) {
+            throw new IllegalArgumentException("Invalid pinned server certificate", e);
+        }
+        config.setPinnedServerCertificate(pin);
+
         if (resolver != null) { config.setConflictResolver(resolver); }
         return config;
     }
@@ -135,7 +144,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return run(config);
     }
 
-    protected final Replicator run(URI url, boolean push, boolean pull, boolean continuous, Authenticator auth, byte[] pinnedServerCert)
+    protected final Replicator run(URI url, boolean push, boolean pull, boolean continuous, Authenticator auth, Certificate pinnedServerCert)
         throws CouchbaseLiteException {
         final ReplicatorConfiguration config = makeConfig(push, pull, continuous, new URLEndpoint(url), pinnedServerCert);
         if (auth != null) { config.setAuthenticator(auth); }

@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.replicator;
 
+import android.support.annotation.NonNull;
+
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.util.Map;
@@ -26,7 +28,9 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         String hostname,
         int port,
         String path,
-        Map<String, Object> options) throws GeneralSecurityException, URISyntaxException {
-        super(handle, scheme, hostname, port, path, options);
+        Map<String, Object> options,
+        @NonNull CBLTrustManager.CBLTrustManagerListener trustManagerListener)
+        throws GeneralSecurityException, URISyntaxException {
+        super(handle, scheme, hostname, port, path, options, trustManagerListener);
     }
 }

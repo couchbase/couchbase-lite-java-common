@@ -369,7 +369,7 @@ abstract class AbstractReplicatorConfiguration {
         return config;
     }
 
-    final Map<String, Object> effectiveOptions() {
+    protected Map<String, Object> effectiveOptions() {
         final Map<String, Object> options = new HashMap<>();
 
         if (authenticator != null) { authenticator.authenticate(options); }
