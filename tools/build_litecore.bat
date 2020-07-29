@@ -19,7 +19,7 @@ SET entBuild=OFF
 IF /I "%2%" == "ee" SET entBuild=ON
 
 SET lib=LiteCore
-IF /I "%3%" == "mbedcrypto"   SET lib="mbedcrypto"
+IF /I "%3%" == "mbedcrypto"   SET lib=mbedcrypto
 
 pushd %~dp0
 set scriptDir=%CD%
@@ -27,7 +27,7 @@ popd
 
 echo Build %lib%
 echo Enterprise Edition : %entBuild%
-echo Build using %VS_GEN% ...
+echo Using %VS_GEN% ...
 
 SET liteCoreBuildDir=%scriptDir%\..\..\core\build_cmake
 
