@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 function usage() {
-    echo "usage: litecore_sha -e <VAL> [-o <VAL> -v]"
+    echo "usage: litecore_sha -e <CE|EE> [-o <path>] [-v]"
     echo "  -e|--edition <VAL>      LiteCore edition, CE or EE. The default is EE if couchbase-lite-core-EE exists, otherwise the default is CE".
     echo "  -o|--output-path <VAL>  The output path to write the result to"
     echo "  -v|--verbose            Enable verbose output"

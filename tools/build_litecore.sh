@@ -17,8 +17,6 @@ CORE_COUNT=`getconf _NPROCESSORS_ONLN`
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-LIB="LiteCore"
-
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in 
@@ -28,7 +26,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
         -l|--lib)
-        LIB="$2"
+        TARGET="$2"
         shift
         shift
         ;;
@@ -44,24 +42,38 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [ -z "$EDITION" ]; then
-  echo >&2 "Missing --edition option, aborting..."
-  usage
-  exit 1
-fi
+case "$EDITION" in
+    CE)
+    ENT="OFF"
+    ;;
+    EE)
+    ENT="ON"
+    ;;
+    *)
+    echo >&2 "Unrecognized or missing --edition option ($EDITION): aborting..."
+    usage
+    exit 1
+    ;;
+esac
+
+case "$TARGET" in
+    "" | LiteCore)
+    LIB="LiteCore"
+    ;;
+    mbedcrypto)
+    LIB="mbedcrypto"
+    ;;
+    *)
+    echo >&2 "Unrecognized --lib option ($TARGET): aborting..."
+    usage
+    exit 1
+    ;;
+esac
 
 if [ -z "$DEBUG" ]; then
   BUILD_TYPE="RelWithDebInfo"
 else
   BUILD_TYPE="Debug"
-fi
-
-echo "LiteCore Edition: $EDITION"
-echo "Library: $LIB"
-
-ENT="OFF"
-if [[ $EDITION == EE ]]; then
-  ENT="ON"
 fi
 
 if [[ $OSTYPE == linux* ]]; then
@@ -74,6 +86,9 @@ else
 fi
 
 set -o xtrace
+
+echo "Build: $LIB"
+echo "LiteCore Edition: $EDITION"
 
 pushd $SCRIPT_DIR/../../core/build_cmake > /dev/null
 
@@ -115,8 +130,7 @@ case $OS in
     fi
 
     if [[ $LIB == mbedcrypto ]]; then
-      echo "=== cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR"
-      cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
+      cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
       make -j `expr $CORE_COUNT + 1`
       cp -f $MBEDTLS_LIB $OUTPUT_DIR
     fi

@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 function usage() {
-  echo "usage: fetch_litecore.sh -n <VAL> -v <VAL> -e <VAL> [-d]"
+  echo "usage: fetch_litecore.sh -n <url> -e <EE|CE> [-d] [-o <dir>]"
   echo "  -n|--nexus-repo <VAL>   The URL of the nexus repo containing LiteCore"
   echo "  -e|--edition <VAL>      LiteCore edition, CE or EE."
   echo
@@ -19,6 +19,11 @@ while [[ $# -gt 0 ]]; do
       ;;
     -e|--edition)
       EDITION="$2"
+      shift
+      shift
+      ;;
+    -o|--output)
+      OUTPUT="$2"
       shift
       shift
       ;;
@@ -61,11 +66,17 @@ fi
 hash curl 2>/dev/null || { echo >&2 "Unable to locate curl, aborting..."; exit 1; }
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-OUTPUT_DIR=$SCRIPT_DIR/../lite-core
+
+if [ -z "$OUTPUT" ]; then
+  OUTPUT_DIR="$SCRIPT_DIR/../lite-core"
+else
+  OUTPUT_DIR="${OUTPUT}"
+fi
 mkdir -p $OUTPUT_DIR
 pushd $OUTPUT_DIR > /dev/null
 
-SHA=`$SCRIPT_DIR/litecore_sha.sh -v -e $EDITION`
+"${SCRIPT_DIR}/litecore_sha.sh" -v -e $EDITION -o .core-sha
+SHA=`cat .core-sha`
 
 CORE_URL="${NEXUS_REPO}/couchbase-litecore-${OS}/${SHA}/couchbase-litecore-${OS}-${SHA}${SUFFIX}"
 echo "Fetching LiteCore-$EDITION from: $CORE_URL"

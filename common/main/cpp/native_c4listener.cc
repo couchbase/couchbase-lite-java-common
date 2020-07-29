@@ -17,11 +17,10 @@
 //
 #ifdef COUCHBASE_ENTERPRISE
 
-#include <fleece/slice.hh>
+#include "c4Listener.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Listener.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4KeyPair.h"
 #include "native_glue.hh"
-#include "c4Listener.h"
 
 using namespace litecore;
 using namespace litecore::jni;
@@ -694,7 +693,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
     auto keys = (C4KeyPair *) c4KeyPair;
 
     int size = env->GetArrayLength(nameComponents);
-    C4CertNameComponent subjectName[size];
+    auto subjectName = new C4CertNameComponent[size];
 
     // For retaining jstringSlice objects of cert's attributes and values:
     std::vector<jstringSlice *> attrs;
@@ -714,6 +713,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
 
     C4Error error;
     auto csr = c4cert_createRequest(subjectName, size, usage, keys, &error);
+    delete[] subjectName;
     if (!csr) {
         throwError(env, error);
         return nullptr;
