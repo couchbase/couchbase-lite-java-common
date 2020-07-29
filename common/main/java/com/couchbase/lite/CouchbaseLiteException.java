@@ -21,6 +21,7 @@ import android.support.annotation.Nullable;
 import java.util.Map;
 
 import com.couchbase.lite.internal.CBLInternalException;
+import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -40,8 +41,7 @@ public final class CouchbaseLiteException extends Exception {
 
         if ((msg == null) && (e != null)) { errMsg = e.getMessage(); }
 
-        // look up message by code?
-        return Log.lookupStandardMessage(errMsg);
+        return Log.lookupStandardMessage(errMsg) + "\n   (" + CBLVersion.getVersionInfo() + ")";
     }
 
 

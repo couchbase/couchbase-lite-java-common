@@ -222,10 +222,10 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         // NOTE: OkHttp can not understand blip/blips
         if (scheme.equalsIgnoreCase(C4Replicator.C4_REPLICATOR_SCHEME_2)) {
-            scheme = WEBSOCKET_SCHEME;
+            scheme = C4Replicator.WEBSOCKET_SCHEME;
         }
         else if (scheme.equalsIgnoreCase(C4Replicator.C4_REPLICATOR_TLS_SCHEME_2)) {
-            scheme = WEBSOCKET_SECURE_CONNECTION_SCHEME;
+            scheme = C4Replicator.WEBSOCKET_SECURE_CONNECTION_SCHEME;
         }
 
         try { return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions); }
@@ -321,12 +321,12 @@ public class AbstractCBLWebSocket extends C4Socket {
     }
 
     private Authenticator setupAuthenticator() {
-        if (options != null && options.containsKey(REPLICATOR_OPTION_AUTHENTICATION)) {
+        if (options != null && options.containsKey(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION)) {
             @SuppressWarnings("unchecked") final Map<String, Object> auth
-                = (Map<String, Object>) options.get(REPLICATOR_OPTION_AUTHENTICATION);
+                = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
             if (auth != null) {
-                final String username = (String) auth.get(REPLICATOR_AUTH_USER_NAME);
-                final String password = (String) auth.get(REPLICATOR_AUTH_PASSWORD);
+                final String username = (String) auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
+                final String password = (String) auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
                 if (username != null && password != null) {
                     return (route, response) -> {
                         // http://www.ietf.org/rfc/rfc2617.txt
@@ -383,7 +383,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         if (options != null) {
             // Extra Headers
             @SuppressWarnings("unchecked") final Map<String, Object> extraHeaders
-                = (Map<String, Object>) options.get(REPLICATOR_OPTION_EXTRA_HEADERS);
+                = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
             if (extraHeaders != null) {
                 for (Map.Entry<String, Object> entry: extraHeaders.entrySet()) {
                     builder.header(entry.getKey(), entry.getValue().toString());
@@ -391,11 +391,11 @@ public class AbstractCBLWebSocket extends C4Socket {
             }
 
             // Cookies:
-            final String cookieString = (String) options.get(REPLICATOR_OPTION_COOKIES);
+            final String cookieString = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
             if (cookieString != null) { builder.addHeader("Cookie", cookieString); }
 
             // Configure WebSocket related headers:
-            final String protocols = (String) options.get(SOCKET_OPTION_WS_PROTOCOLS);
+            final String protocols = (String) options.get(C4Replicator.SOCKET_OPTION_WS_PROTOCOLS);
             if (protocols != null) {
                 builder.header("Sec-WebSocket-Protocol", protocols);
             }
@@ -410,25 +410,25 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         // Post the response headers to LiteCore:
         final Headers hs = response.headers();
-        if ((hs != null) && (hs.size() > 0)) {
-            byte[] headersFleece = null;
-            final Map<String, Object> headers = new HashMap<>();
-            for (int i = 0; i < hs.size(); i++) {
-                headers.put(hs.name(i), hs.value(i));
-            }
-            final FLEncoder enc = new FLEncoder();
-            enc.write(headers);
-            try {
-                headersFleece = enc.finish();
-            }
-            catch (LiteCoreException e) {
-                Log.e(TAG, "CBLWebSocket failed to encode response header", e);
-            }
-            finally {
-                enc.free();
-            }
-            gotHTTPResponse(httpStatus, headersFleece);
+        if ((hs == null) || (hs.size() <= 0)) { return; }
+
+        byte[] headersFleece = null;
+        final Map<String, Object> headers = new HashMap<>();
+        for (int i = 0; i < hs.size(); i++) {
+            headers.put(hs.name(i), hs.value(i));
         }
+        final FLEncoder enc = new FLEncoder();
+        enc.write(headers);
+        try {
+            headersFleece = enc.finish();
+        }
+        catch (LiteCoreException e) {
+            Log.e(TAG, "CBLWebSocket failed to encode response header", e);
+        }
+        finally {
+            enc.free();
+        }
+        gotHTTPResponse(httpStatus, headersFleece);
     }
 
     private void didClose(int code, String reason) {
@@ -485,10 +485,10 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     private String checkScheme(String scheme) {
         // NOTE: OkHttp can not understand blip/blips
-        if (scheme.equalsIgnoreCase(C4Replicator.C4_REPLICATOR_SCHEME_2)) { return WEBSOCKET_SCHEME; }
+        if (scheme.equalsIgnoreCase(C4Replicator.C4_REPLICATOR_SCHEME_2)) { return C4Replicator.WEBSOCKET_SCHEME; }
 
         if (scheme.equalsIgnoreCase(C4Replicator.C4_REPLICATOR_TLS_SCHEME_2)) {
-            return WEBSOCKET_SECURE_CONNECTION_SCHEME;
+            return C4Replicator.WEBSOCKET_SECURE_CONNECTION_SCHEME;
         }
 
         return scheme;
@@ -497,8 +497,8 @@ public class AbstractCBLWebSocket extends C4Socket {
     private void setupSSLSocketFactory(OkHttpClient.Builder builder) throws GeneralSecurityException {
         boolean isPinningServerCert = false;
         X509TrustManager trustManager = null;
-        if (options != null && options.containsKey(REPLICATOR_OPTION_PINNED_SERVER_CERT)) {
-            final byte[] pin = (byte[]) options.get(REPLICATOR_OPTION_PINNED_SERVER_CERT);
+        if (options != null && options.containsKey(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT)) {
+            final byte[] pin = (byte[]) options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
             if (pin != null) {
                 trustManager = trustManagerForCertificates(toStream(pin));
                 isPinningServerCert = true;

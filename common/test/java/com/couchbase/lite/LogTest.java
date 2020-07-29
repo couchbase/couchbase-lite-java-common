@@ -572,7 +572,9 @@ public class LogTest extends BaseDbTest {
                 "FOO",
                 CBLError.Domain.CBLITE,
                 CBLError.Code.UNIMPLEMENTED);
-            assertEquals("TEST DEBUG", e.getMessage());
+            String msg = e.getMessage();
+            assertNotNull(msg);
+            assertTrue(msg.startsWith("TEST DEBUG"));
         }
         finally {
             reloadStandardErrorMessages();
@@ -586,10 +588,12 @@ public class LogTest extends BaseDbTest {
         try {
             Log.initLogging(stdErr);
             CouchbaseLiteException e = new CouchbaseLiteException(
-                "BORK",
+                "bork",
                 CBLError.Domain.CBLITE,
                 CBLError.Code.UNIMPLEMENTED);
-            assertEquals("BORK", e.getMessage());
+            String msg = e.getMessage();
+            assertNotNull(msg);
+            assertTrue(msg.startsWith("bork"));
         }
         finally {
             reloadStandardErrorMessages();

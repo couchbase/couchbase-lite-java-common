@@ -679,7 +679,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         final boolean continuous = config.isContinuous();
         return getDatabase().createRemoteReplicator(
             (Replicator) this,
-            C4Socket.MESSAGE_SCHEME,
+            C4Replicator.MESSAGE_SCHEME,
             null,
             0,
             null,
@@ -874,7 +874,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         final Map<String, Object> options = config.effectiveOptions();
 
         synchronized (lock) {
-            options.put(AbstractReplicatorConfiguration.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value);
+            options.put(C4Replicator.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value);
         }
 
         byte[] optionsFleece = null;

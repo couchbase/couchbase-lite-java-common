@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -29,40 +30,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Replicator configuration.
  */
-@SuppressWarnings("LineLength")
 abstract class AbstractReplicatorConfiguration {
-
-    // @formatter:off
-    // Replicator option dictionary keys:
-    static final String REPLICATOR_OPTION_EXTRA_HEADERS = "headers";  // Extra HTTP headers: string[]
-    static final String REPLICATOR_OPTION_COOKIES = "cookies";  // HTTP Cookie header value: string
-    static final String REPLICATOR_AUTH_OPTION = "auth";       // Auth settings: Dict
-    static final String REPLICATOR_OPTION_PINNED_SERVER_CERT = "pinnedCert";  // Cert or public key: data
-    static final String REPLICATOR_OPTION_DOC_IDS = "docIDs";   // Docs to replicate: string[]
-    static final String REPLICATOR_OPTION_CHANNELS = "channels"; // SG channel names: string[]
-    static final String REPLICATOR_OPTION_FILTER = "filter";   // Filter name: string
-    static final String REPLICATOR_OPTION_FILTER_PARAMS = "filterParams";  // Filter params: Dict[string]
-    static final String REPLICATOR_OPTION_SKIP_DELETED = "skipDeleted"; // Don't push/pull tombstones: bool
-    static final String REPLICATOR_OPTION_NO_CONFLICTS = "noConflicts"; // Puller rejects conflicts: bool
-    static final String REPLICATOR_OPTION_CHECKPOINT_INTERVAL = "checkpointInterval"; // How often to checkpoint, in seconds: number
-    static final String REPLICATOR_OPTION_REMOTE_DB_UNIQUE_ID = "remoteDBUniqueID"; // How often to checkpoint, in seconds: number
-    static final String REPLICATOR_RESET_CHECKPOINT = "reset"; // reset remote checkpoint
-    static final String REPLICATOR_OPTION_PROGRESS_LEVEL = "progress";  //< If >=1, notify on every doc; if >=2, on every attachment (int)
-
-    // Auth dictionary keys:
-    static final String REPLICATOR_AUTH_TYPE = "type"; // Auth property: string
-    static final String REPLICATOR_AUTH_USER_NAME = "username"; // Auth property: string
-    static final String REPLICATOR_AUTH_PASSWORD = "password"; // Auth property: string
-    static final String REPLICATOR_AUTH_CLIENT_CERT = "clientCert"; // Auth property: value platform-dependent
-
-    // auth.type values:
-    static final String AUTH_TYPE_BASIC = "Basic"; // HTTP Basic (the default)
-    static final String AUTH_TYPE_SESSION = "Session"; // SG session cookie
-    static final String AUTH_TYPE_OPEN_ID_CONNECT = "OpenID Connect";
-    static final String AUTH_TYPE_FACEBOOK = "Facebook";
-    static final String AUTH_TYPE_CLIENT_CERT = "Client Cert";
-    // @formatter:on
-
     /**
      * Replicator type
      * PUSH_AND_PULL: Bidirectional; both push and pull
@@ -74,6 +42,7 @@ abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+
     @NonNull
     private final Database database;
     @NonNull
@@ -407,12 +376,16 @@ abstract class AbstractReplicatorConfiguration {
 
         // Add the pinned certificate if any:
         if (pinnedServerCertificate != null) {
-            options.put(REPLICATOR_OPTION_PINNED_SERVER_CERT, pinnedServerCertificate);
+            options.put(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT, pinnedServerCertificate);
         }
 
-        if ((documentIDs != null) && (!documentIDs.isEmpty())) { options.put(REPLICATOR_OPTION_DOC_IDS, documentIDs); }
+        if ((documentIDs != null) && (!documentIDs.isEmpty())) {
+            options.put(C4Replicator.REPLICATOR_OPTION_DOC_IDS, documentIDs);
+        }
 
-        if ((channels != null) && (!channels.isEmpty())) { options.put(REPLICATOR_OPTION_CHANNELS, channels); }
+        if ((channels != null) && (!channels.isEmpty())) {
+            options.put(C4Replicator.REPLICATOR_OPTION_CHANNELS, channels);
+        }
 
         final Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:
@@ -423,7 +396,7 @@ abstract class AbstractReplicatorConfiguration {
                 httpHeaders.put(entry.getKey(), entry.getValue());
             }
         }
-        options.put(REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
+        options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
 
         return options;
     }

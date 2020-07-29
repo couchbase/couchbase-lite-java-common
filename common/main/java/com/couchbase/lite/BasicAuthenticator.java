@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -107,10 +108,10 @@ public final class BasicAuthenticator extends Authenticator {
     @Override
     void authenticate(@NonNull Map<String, Object> options) {
         final Map<String, Object> auth = new HashMap<>();
-        auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_TYPE, AbstractReplicatorConfiguration.AUTH_TYPE_BASIC);
-        auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_USER_NAME, username);
+        auth.put(C4Replicator.REPLICATOR_AUTH_TYPE, C4Replicator.AUTH_TYPE_BASIC);
+        auth.put(C4Replicator.REPLICATOR_AUTH_USER_NAME, username);
         // !!! Temporary hack until there is JNI/Core support for clearable passwords.
-        auth.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_PASSWORD, new String(password));
-        options.put(AbstractReplicatorConfiguration.REPLICATOR_AUTH_OPTION, auth);
+        auth.put(C4Replicator.REPLICATOR_AUTH_PASSWORD, new String(password));
+        options.put(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION, auth);
     }
 }

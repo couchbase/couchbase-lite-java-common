@@ -54,13 +54,68 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * WARNING!
  * This class and its members are referenced by name, from native code.
  */
-@SuppressWarnings("PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal")
+@SuppressWarnings({"PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal", "LineLength"})
 public class C4Replicator extends C4NativePeer {
+
     //-------------------------------------------------------------------------
     // Constants
+    //
+    // Most of these are defined in c4Replicator.h and must agree with those definitions.
+    //
+    // @formatter:off
     //-------------------------------------------------------------------------
+    public static final String WEBSOCKET_SCHEME = "ws";
+    public static final String WEBSOCKET_SECURE_CONNECTION_SCHEME = "wss";
+    public static final String MESSAGE_SCHEME = "x-msg-endpt";
+
     public static final String C4_REPLICATOR_SCHEME_2 = "blip";
     public static final String C4_REPLICATOR_TLS_SCHEME_2 = "blips";
+
+    // Replicator option dictionary keys:
+    public static final String REPLICATOR_OPTION_DOC_IDS = "docIDs"; // Docs to replicate: string[]
+    public static final String REPLICATOR_OPTION_CHANNELS = "channels"; // SG channel names: string[]
+    public static final String REPLICATOR_OPTION_FILTER = "filter"; // Filter name: string
+    public static final String REPLICATOR_OPTION_FILTER_PARAMS = "filterParams"; // Filter params: Dict[string]
+    public static final String REPLICATOR_OPTION_SKIP_DELETED = "skipDeleted"; // Don't push/pull tombstones: bool
+    public static final String REPLICATOR_OPTION_NO_INCOMING_CONFLICTS = "noIncomingConflicts"; // Reject incoming conflicts: bool
+    public static final String REPLICATOR_OPTION_OUTGOING_CONFLICTS = "outgoingConflicts"; // Allow creating conflicts on remote: bool
+    public static final String REPLICATOR_CHECKPOINT_INTERVAL = "checkpointInterval"; // How often to checkpoint, in seconds: number
+    public static final String REPLICATOR_OPTION_REMOTE_DB_UNIQUE_ID = "remoteDBUniqueID"; // Stable ID for remote db with unstable URL: string
+    public static final String REPLICATOR_OPTION_PROGRESS_LEVEL = "progress"; // If >=1, notify on every doc; if >=2, on every attachment (int)
+    public static final String REPLICATOR_OPTION_DISABLE_DELTAS = "noDeltas";   ///< Disables delta sync: bool
+    public static final String REPLICATOR_OPTION_MAX_RETRIES = "maxRetries";   ///< Max number of retry attempts (int)
+    public static final String REPLICATOR_OPTION_MAX_RETRY_INTERVAL = "maxRetryInterval";  ///< Max delay betw retries (secs)
+
+
+    public static final String REPLICATOR_OPTION_ROOT_CERTS = "rootCerts";  ///< Trusted root certs (data)
+    public static final String REPLICATOR_OPTION_PINNED_SERVER_CERT = "pinnedCert";  // Cert or public key: [data]
+    public static final String REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT = "onlySelfSignedServer";  ///< Only accept self signed server certs (for P2P, bool)
+
+    public static final String REPLICATOR_OPTION_EXTRA_HEADERS = "headers";  // Extra HTTP headers: string[]
+    public static final String REPLICATOR_OPTION_COOKIES = "cookies";  // HTTP Cookie header value: string
+    public static final String REPLICATOR_OPTION_AUTHENTICATION = "auth";  // Auth settings: Dict
+    public static final String REPLICATOR_OPTION_PROXY_SERVER = "proxy";   ///< Proxy settings (Dict); see [3]]
+
+    // WebSocket protocol options (WebSocketInterface.hh)
+    public static final String REPLICATOR_HEARTBEAT_INTERVAL = "heartbeat"; // Interval in secs to send a keep-alive: ping
+    public static final String SOCKET_OPTION_WS_PROTOCOLS = "WS-Protocols"; ///< Sec-WebSocket-Protocol header value
+    static final String REPLICATOR_AUTH_OPTION = "auth";       // Auth settings: Dict
+    // Auth dictionary keys:
+    public static final String REPLICATOR_AUTH_TYPE = "type"; ///< Auth type; see [2] (string)
+    public static final String REPLICATOR_AUTH_USER_NAME = "username"; ///< User name for basic auth (string)
+    public static final String REPLICATOR_AUTH_PASSWORD = "password"; ///< Password for basic auth (string)
+    public static final String REPLICATOR_AUTH_CLIENT_CERT = "clientCert"; ///< TLS client certificate (value platform-dependent)
+    public static final String REPLICATOR_AUTH_CLIENT_CERT_KEY = "clientCertKey"; ///< Client cert's private key (data)
+    public static final String REPLICATOR_AUTH_TOKEN = "token"; ///< Session cookie or auth token (string)
+
+    // auth.type values:
+    public static final String AUTH_TYPE_BASIC = "Basic"; // HTTP Basic (the default)
+    public static final String AUTH_TYPE_SESSION = "Session"; // SG session cookie
+    public static final String AUTH_TYPE_OPEN_ID_CONNECT = "OpenID Connect";
+    public static final String AUTH_TYPE_FACEBOOK = "Facebook";
+    public static final String AUTH_TYPE_CLIENT_CERT = "Client Cert";
+    // @formatter:on
+
 
     //-------------------------------------------------------------------------
     // Static Variables

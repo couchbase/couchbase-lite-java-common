@@ -21,6 +21,7 @@ import android.support.annotation.Nullable;
 import java.util.Locale;
 import java.util.Map;
 
+import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -91,12 +92,12 @@ public final class SessionAuthenticator extends Authenticator {
 
     @Override
     void authenticate(Map<String, Object> options) {
-        final String current = (String) options.get(AbstractReplicatorConfiguration.REPLICATOR_OPTION_COOKIES);
+        final String current = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
         final StringBuffer cookieStr = current != null ? new StringBuffer(current) : new StringBuffer();
 
         if (cookieStr.length() > 0) { cookieStr.append("; "); }
         cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, sessionID));
 
-        options.put(AbstractReplicatorConfiguration.REPLICATOR_OPTION_COOKIES, cookieStr.toString());
+        options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, cookieStr.toString());
     }
 }

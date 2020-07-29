@@ -65,7 +65,7 @@ OUTPUT_DIR=$SCRIPT_DIR/../lite-core
 mkdir -p $OUTPUT_DIR
 pushd $OUTPUT_DIR > /dev/null
 
-SHA=`$SCRIPT_DIR/litecore_sha.sh -e $EDITION`
+SHA=`$SCRIPT_DIR/litecore_sha.sh -v -e $EDITION`
 
 CORE_URL="${NEXUS_REPO}/couchbase-litecore-${OS}/${SHA}/couchbase-litecore-${OS}-${SHA}${SUFFIX}"
 echo "Fetching LiteCore-$EDITION from: $CORE_URL"
