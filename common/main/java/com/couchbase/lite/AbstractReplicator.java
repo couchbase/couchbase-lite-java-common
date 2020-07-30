@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.net.URI;
+import java.security.cert.Certificate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -342,6 +344,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     private volatile String desc;
 
+    // Server certificates received from the server during the TLS handshake
+    private final AtomicReference<List<Certificate>> serverCertificates = new AtomicReference<>();
+
     /**
      * Initializes a replicator with the given configuration.
      *
@@ -350,7 +355,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
         this.config = config.readonlyCopy();
-        this.socketFactory = new SocketFactory(config);
+        this.socketFactory = new SocketFactory(config, this::setServerCertificates);
     }
 
     /**
@@ -422,6 +427,13 @@ public abstract class AbstractReplicator extends InternalReplicator {
     public Status getStatus() {
         synchronized (lock) { return status.copy(); }
     }
+
+    /**
+     * The server certificates received from the server during the TLS handshake.
+     * @return this replicator's server certificates.
+     */
+    @Nullable
+    public List<Certificate> getServerCertificates() { return serverCertificates.get(); }
 
     /**
      * Get a best effort list of documents still pending replication.
@@ -942,6 +954,11 @@ public abstract class AbstractReplicator extends InternalReplicator {
             if (element.length() > 0) { path.addLast(element); }
         }
         return path;
+    }
+
+    // Consumer callback to set the server certificates received during the TLS Handshake
+    private void setServerCertificates(List<Certificate> certificates) {
+        serverCertificates.set(certificates);
     }
 
     private String description() { return baseDesc() + "," + getDatabase() + " => " + config.getTarget() + "}"; }

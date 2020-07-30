@@ -34,7 +34,6 @@ public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
     private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
 
-
     // C4SocketFraming (C4SocketFactory.framing)
     public static final int WEB_SOCKET_CLIENT_FRAMING = 0; ///< Frame as WebSocket client messages (masked)
     public static final int NO_FRAMING = 1;                ///< No framing; use messages as-is

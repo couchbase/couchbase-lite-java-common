@@ -25,9 +25,12 @@ import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.security.cert.Certificate;
+import java.util.List;
 import java.util.Map;
 
 import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 public class CBLWebSocket extends AbstractCBLWebSocket {
@@ -43,9 +46,10 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         String hostname,
         int port,
         String path,
-        Map<String, Object> options)
+        Map<String, Object> options,
+        Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException, URISyntaxException {
-        super(handle, scheme, hostname, port, path, options);
+        super(handle, scheme, hostname, port, path, options, serverCertsListener);
     }
 
     @SuppressWarnings("PMD.CollapsibleIfStatements")
