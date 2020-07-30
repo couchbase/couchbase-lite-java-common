@@ -10,6 +10,8 @@
   <option name="VISIBILITY" value="public" />
   <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
   <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
+  <option name="BLANK_LINES_AROUND_INITIALIZER" value="0" />
+  <option name="SPACE_BEFORE_COLON_IN_FOREACH" value="false" />
   <option name="PACKAGES_TO_USE_IMPORT_ON_DEMAND">
     <value />
   </option>
@@ -396,5 +398,9 @@
         </section>
       </rules>
     </arrangement>
+  </codeStyleSettings>
+  <codeStyleSettings language="kotlin">
+    <option name="CODE_STYLE_DEFAULTS" value="KOTLIN_OFFICIAL" />
+    <option name="RIGHT_MARGIN" value="120" />
   </codeStyleSettings>
 </code_scheme>

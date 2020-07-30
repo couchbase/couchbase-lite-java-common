@@ -50,18 +50,12 @@ if [[ $EDITION == EE ]]; then
   pushd $SCRIPT_DIR/../../couchbase-lite-core-EE > /dev/null
     ee_sha=`git rev-parse HEAD`
     ee_sha=${ee_sha:0:40}
-    if [ $VERBOSE ]; then
-        echo "EE SHA is: '$ee_sha'"
-    fi
     popd > /dev/null
 fi
 
 pushd $SCRIPT_DIR/../../core > /dev/null
 ce_sha=`git rev-parse HEAD`
 ce_sha=${ce_sha:0:40}
-if [ $VERBOSE ]; then
-    echo "Base SHA is: '$ce_sha'"
-fi
 popd > /dev/null
 
 if [[ $EDITION == EE ]]; then
@@ -70,6 +64,13 @@ if [[ $EDITION == EE ]]; then
     final_sha=${final_sha:0:40}
 else
     final_sha="${ce_sha}"
+fi
+
+if [ $VERBOSE ]; then
+    echo "Base SHA is: '$ce_sha'"
+    if [[ $EDITION == EE ]]; then
+        echo "EE SHA is: '$ee_sha'"
+    fi
 fi
 
 echo $final_sha
