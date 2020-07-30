@@ -355,7 +355,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
         this.config = config.readonlyCopy();
-        this.socketFactory = new SocketFactory(config, certificates -> serverCertificates.set(certificates));
+        this.socketFactory = new SocketFactory(config, this::setServerCertificates);
     }
 
     /**
@@ -954,6 +954,11 @@ public abstract class AbstractReplicator extends InternalReplicator {
             if (element.length() > 0) { path.addLast(element); }
         }
         return path;
+    }
+
+    // Consumer callback to set the server certificates received during the TLS Handshake
+    private void setServerCertificates(List<Certificate> certificates) {
+        serverCertificates.set(certificates);
     }
 
     private String description() { return baseDesc() + "," + getDatabase() + " => " + config.getTarget() + "}"; }

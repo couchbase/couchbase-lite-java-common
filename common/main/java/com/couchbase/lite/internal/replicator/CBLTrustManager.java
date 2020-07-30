@@ -21,6 +21,8 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+import com.couchbase.lite.internal.utils.Fn;
+
 
 /**
  * The trust manager that supports the followings:
@@ -31,25 +33,24 @@ import javax.net.ssl.X509TrustManager;
  * 4. Allows to listen for the server certificates.
  */
 public final class CBLTrustManager implements X509TrustManager {
-    public interface CBLTrustManagerListener {
-        void onReceivedServerCertificate(@Nullable List<Certificate> serverCertificates);
-    }
-
-    private final @Nullable byte[] pinnedServerCertificate;
+    @Nullable
+    private final byte[] pinnedServerCertificate;
 
     private final boolean acceptOnlySelfSignedServerCertificate;
 
-    private final @NonNull CBLTrustManagerListener listener;
+    @NonNull
+    private final Fn.Consumer<List<Certificate>> serverCertslistener;
 
+    @NonNull
     private final AtomicReference<X509TrustManager> defaultTrustManager = new AtomicReference<>();
 
     public CBLTrustManager(
         @Nullable byte[] pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
-        @NonNull CBLTrustManagerListener listener) {
+        @NonNull Fn.Consumer<List<Certificate>> serverCertslistener) {
         this.pinnedServerCertificate = (pinnedServerCert != null ? pinnedServerCert.clone() : null);
         this.acceptOnlySelfSignedServerCertificate = acceptOnlySelfSignedServerCertificate;
-        this.listener = listener;
+        this.serverCertslistener = serverCertslistener;
     }
 
     @Override
@@ -61,7 +62,7 @@ public final class CBLTrustManager implements X509TrustManager {
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         try { doCheckServerTrusted(chain, authType); }
         finally {
-            listener.onReceivedServerCertificate(Collections.unmodifiableList(Arrays.asList(chain)));
+            serverCertslistener.accept(Collections.unmodifiableList(Arrays.asList(chain)));
         }
     }
 

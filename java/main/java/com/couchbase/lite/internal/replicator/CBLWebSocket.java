@@ -19,7 +19,12 @@ import android.support.annotation.NonNull;
 
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.security.cert.Certificate;
+import java.util.List;
 import java.util.Map;
+
+import com.couchbase.lite.internal.utils.Fn;
+
 
 public class CBLWebSocket extends AbstractCBLWebSocket {
     protected CBLWebSocket(
@@ -29,8 +34,8 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         int port,
         String path,
         Map<String, Object> options,
-        @NonNull CBLTrustManager.CBLTrustManagerListener trustManagerListener)
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException, URISyntaxException {
-        super(handle, scheme, hostname, port, path, options, trustManagerListener);
+        super(handle, scheme, hostname, port, path, options, serverCertsListener);
     }
 }

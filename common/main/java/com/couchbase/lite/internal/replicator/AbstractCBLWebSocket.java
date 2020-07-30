@@ -26,6 +26,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.security.cert.Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -59,6 +60,7 @@ import com.couchbase.lite.internal.core.C4WebSocketCloseCode;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 @SuppressWarnings("PMD.GodClass")
@@ -208,7 +210,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         int port,
         String path,
         byte[] options,
-        @NonNull CBLTrustManager.CBLTrustManagerListener trustManagerListener) {
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
         Log.v(TAG, "Creating a CBLWebSocket ...");
 
         Map<String, Object> fleeceOptions = null;
@@ -222,7 +224,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             scheme = C4Replicator.WEBSOCKET_SECURE_CONNECTION_SCHEME;
         }
 
-        try { return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions, trustManagerListener); }
+        try { return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions, serverCertsListener); }
         catch (Exception e) { Log.e(TAG, "Failed to instantiate CBLWebSocket", e); }
 
         return null;
@@ -236,7 +238,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     private final CBLWebSocketListener wsListener;
     private final URI uri;
     private final Map<String, Object> options;
-    private final CBLTrustManager.CBLTrustManagerListener trustManagerListener;
+    private final Fn.Consumer<List<Certificate>> serverCertsListener;
     private WebSocket webSocket;
 
     //-------------------------------------------------------------------------
@@ -250,12 +252,12 @@ public class AbstractCBLWebSocket extends C4Socket {
         int port,
         String path,
         Map<String, Object> options,
-        CBLTrustManager.CBLTrustManagerListener trustManagerListener)
+        Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException, URISyntaxException {
         super(handle);
         this.uri = new URI(checkScheme(scheme), null, hostname, port, path, null, null);
         this.options = options;
-        this.trustManagerListener = trustManagerListener;
+        this.serverCertsListener = serverCertsListener;
         this.httpClient = setupOkHttpClient();
         this.wsListener = new CBLWebSocketListener();
     }
@@ -501,7 +503,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         final X509TrustManager trustManager = new CBLTrustManager(
-            pin, acceptOnlySelfSignedServerCert, trustManagerListener);
+            pin, acceptOnlySelfSignedServerCert, serverCertsListener);
 
         SSLContext.getInstance("TLS").init(null, new TrustManager[] {trustManager}, null);
         final SSLSocketFactory sslSocketFactory = new TLSSocketFactory(null, new TrustManager[] {trustManager}, null);
