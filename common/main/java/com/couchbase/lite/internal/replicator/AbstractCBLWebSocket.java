@@ -509,7 +509,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         final SSLSocketFactory sslSocketFactory = new TLSSocketFactory(null, new TrustManager[] {trustManager}, null);
         builder.sslSocketFactory(sslSocketFactory, trustManager);
 
-        if (pin != null) {
+        if (pin != null || acceptOnlySelfSignedServerCert) {
             // As the certificate will need to be matched with the pinned certificate, accepts any
             // host name specified in the certificate.
             builder.hostnameVerifier((s, sslSession) -> true);

@@ -95,7 +95,7 @@ public final class CBLTrustManager implements X509TrustManager {
             }
         } else {
             // Accept only self-signed certificate:
-            if (chain.length > 0 || !isSelfSignedCertificate(cert)) {
+            if (chain.length > 1 || !isSelfSignedCertificate(cert)) {
                 throw new CertificateException("Server certificate is not self-signed");
             }
         }
