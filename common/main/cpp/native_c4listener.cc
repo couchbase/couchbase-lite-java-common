@@ -564,14 +564,21 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jboolean allowPush,
         jboolean allowPull,
         jboolean enableDeltaSync) {
-    C4TLSConfig tlsConfig;
+    C4TLSConfig tlsConfig = {};
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
     tlsConfig.key = (C4KeyPair *) keyPair;
     tlsConfig.certificate = getCert(env, cert);
+
+    // Client Cert Authentication:
     tlsConfig.requireClientCerts = requireClientCerts;
-    tlsConfig.rootClientCerts = getCert(env, rootClientCerts);
-    tlsConfig.certAuthCallback = &certAuthCallback;
-    tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
+    if (requireClientCerts == true) {
+        if (rootClientCerts != NULL) {
+            tlsConfig.rootClientCerts = getCert(env, rootClientCerts);
+        } else {
+            tlsConfig.certAuthCallback = &certAuthCallback;
+            tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
+        }
+    }
 
     return reinterpret_cast<jlong>(startListener(
             env,

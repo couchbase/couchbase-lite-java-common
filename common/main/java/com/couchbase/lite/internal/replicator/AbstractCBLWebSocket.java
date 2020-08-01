@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -57,6 +58,7 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4Socket;
 import com.couchbase.lite.internal.core.C4WebSocketCloseCode;
+import com.couchbase.lite.internal.core.NativeContext;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
@@ -225,10 +227,19 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         try { return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions, serverCertsListener); }
-        catch (Exception e) { Log.e(TAG, "Failed to instantiate CBLWebSocket", e); }
+        catch (Exception e) {
+            Log.e(TAG, "Failed to instantiate CBLWebSocket", e);
+        }
 
         return null;
     }
+
+    //-------------------------------------------------------------------------
+    // Client Certificate Authentication Identities
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    public static final NativeContext<KeyManager> CLIENT_CERT_AUTH_KEY_MANAGER = new NativeContext<>();
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -310,7 +321,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
 
         // authenticator
-        final Authenticator authenticator = setupAuthenticator();
+        final Authenticator authenticator = setupBasicAuthenticator();
         if (authenticator != null) { builder.authenticator(authenticator); }
 
         // setup SSLFactory and trusted certificate (pinned certificate)
@@ -319,11 +330,15 @@ public class AbstractCBLWebSocket extends C4Socket {
         return builder.build();
     }
 
-    private Authenticator setupAuthenticator() {
+    private Authenticator setupBasicAuthenticator() {
         if (options != null && options.containsKey(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION)) {
-            @SuppressWarnings("unchecked") final Map<String, Object> auth
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> auth
                 = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-            if (auth != null) {
+            if (auth == null) { return null; }
+
+            final String authType = (String) auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
+            if (C4Replicator.AUTH_TYPE_BASIC.equals(authType)) {
                 final String username = (String) auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
                 final String password = (String) auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
                 if (username != null && password != null) {
@@ -346,7 +361,6 @@ public class AbstractCBLWebSocket extends C4Socket {
                                 }
                             }
                         }
-
                         return null;
                     };
                 }
@@ -471,6 +485,14 @@ public class AbstractCBLWebSocket extends C4Socket {
             return;
         }
 
+        if (error instanceof SSLHandshakeException) {
+            closed(
+                    C4Constants.ErrorDomain.NETWORK,
+                    C4Constants.NetworkError.TLS_HANDSHAKE_FAILED,
+                    null);
+            return;
+        }
+
         closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
     }
 
@@ -490,28 +512,56 @@ public class AbstractCBLWebSocket extends C4Socket {
     }
 
     private void setupSSLSocketFactory(OkHttpClient.Builder builder) throws GeneralSecurityException {
-        byte[] pin = null;
+        byte[] pinnedServerCert = null;
         boolean acceptOnlySelfSignedServerCert = false;
+        KeyManager clientCertAuthKeyManager = null;
         if (options != null) {
+            // Pinned Certificate:
             if (options.containsKey(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT)) {
-                pin = (byte[]) options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
+                pinnedServerCert = (byte[]) options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
             }
+
+            // Accept only self-signed server cert mode:
             if (options.containsKey(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT)) {
-                acceptOnlySelfSignedServerCert =
-                    (boolean) options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
+                acceptOnlySelfSignedServerCert = (boolean)
+                    options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
+            }
+
+            // Client Certificate Authentication:
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> auth
+                = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+            if (auth != null) {
+                final String authType = (String) auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
+                if (C4Replicator.AUTH_TYPE_CLIENT_CERT.equals(authType)) {
+                    final long token = (long) auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY);
+                    clientCertAuthKeyManager = CLIENT_CERT_AUTH_KEY_MANAGER.getObjFromContext(token);
+                    if (clientCertAuthKeyManager == null) {
+                        Log.w(TAG, "No key manager configured for client certificate authentication");
+                    }
+                }
             }
         }
 
-        final X509TrustManager trustManager = new CBLTrustManager(
-            pin, acceptOnlySelfSignedServerCert, serverCertsListener);
+        // KeyManager for client cert authentication:
+        KeyManager[] keyManagers = null;
+        if (clientCertAuthKeyManager != null) {
+            keyManagers = new KeyManager[] { clientCertAuthKeyManager };
+        }
 
-        SSLContext.getInstance("TLS").init(null, new TrustManager[] {trustManager}, null);
-        final SSLSocketFactory sslSocketFactory = new TLSSocketFactory(null, new TrustManager[] {trustManager}, null);
+        // TrustManager for server cert verification:
+        final X509TrustManager trustManager = new CBLTrustManager(
+            pinnedServerCert, acceptOnlySelfSignedServerCert, serverCertsListener);
+
+        // SSLSocketFactory:
+        final SSLSocketFactory sslSocketFactory = new TLSSocketFactory(
+            keyManagers, new TrustManager[] { trustManager }, null);
         builder.sslSocketFactory(sslSocketFactory, trustManager);
 
-        if (pin != null || acceptOnlySelfSignedServerCert) {
-            // As the certificate will need to be matched with the pinned certificate, accepts any
-            // host name specified in the certificate.
+        // HostnameVerifier:
+        if (pinnedServerCert != null || acceptOnlySelfSignedServerCert) {
+            // As the certificate will need to be matched with the pinned certificate,
+            // accepts any host name specified in the certificate.
             builder.hostnameVerifier((s, sslSession) -> true);
         }
     }
