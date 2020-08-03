@@ -152,15 +152,15 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     }
 
     protected final Replicator run(
-            int expectedErrorCode,
-            String expectedErrorDomain,
-            URI url,
-            boolean push,
-            boolean pull,
-            boolean continuous,
-            Authenticator auth,
-            Certificate pinnedServerCert)
-            throws CouchbaseLiteException {
+        int expectedErrorCode,
+        String expectedErrorDomain,
+        URI url,
+        boolean push,
+        boolean pull,
+        boolean continuous,
+        Authenticator auth,
+        Certificate pinnedServerCert)
+        throws CouchbaseLiteException {
         final ReplicatorConfiguration config = makeConfig(push, pull, continuous, new URLEndpoint(url), pinnedServerCert);
         if (auth != null) { config.setAuthenticator(auth); }
         return run(config, expectedErrorCode, expectedErrorDomain, false, false, null);
@@ -194,8 +194,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         boolean ignoreErrorAtStopped,
         boolean reset,
         Fn.Consumer<Replicator> onReady)
-        throws CouchbaseLiteException
-    {
+        throws CouchbaseLiteException {
         baseTestReplicator = r;
 
         TestReplicatorChangeListener listener

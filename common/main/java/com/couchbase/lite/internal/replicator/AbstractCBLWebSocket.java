@@ -227,9 +227,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         try { return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions, serverCertsListener); }
-        catch (Exception e) {
-            Log.e(TAG, "Failed to instantiate CBLWebSocket", e);
-        }
+        catch (Exception e) { Log.e(TAG, "Failed to instantiate CBLWebSocket", e); }
 
         return null;
     }
@@ -332,8 +330,7 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     private Authenticator setupBasicAuthenticator() {
         if (options != null && options.containsKey(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION)) {
-            @SuppressWarnings("unchecked")
-            final Map<String, Object> auth
+            @SuppressWarnings("unchecked") final Map<String, Object> auth
                 = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
             if (auth == null) { return null; }
 
@@ -352,7 +349,7 @@ public class AbstractCBLWebSocket extends C4Socket {
                         final List<Challenge> challenges = response.challenges();
                         Log.v(TAG, "CBLWebSocket received challenges " + challenges);
                         if (challenges != null) {
-                            for (Challenge challenge: challenges) {
+                            for (Challenge challenge : challenges) {
                                 if (challenge.scheme().equals("Basic")) {
                                     return response.request()
                                         .newBuilder()
@@ -394,7 +391,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             @SuppressWarnings("unchecked") final Map<String, Object> extraHeaders
                 = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
             if (extraHeaders != null) {
-                for (Map.Entry<String, Object> entry: extraHeaders.entrySet()) {
+                for (Map.Entry<String, Object> entry : extraHeaders.entrySet()) {
                     builder.header(entry.getKey(), entry.getValue().toString());
                 }
             }
@@ -487,9 +484,9 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         if (error instanceof SSLHandshakeException) {
             closed(
-                    C4Constants.ErrorDomain.NETWORK,
-                    C4Constants.NetworkError.TLS_HANDSHAKE_FAILED,
-                    null);
+                C4Constants.ErrorDomain.NETWORK,
+                C4Constants.NetworkError.TLS_HANDSHAKE_FAILED,
+                null);
             return;
         }
 
@@ -528,8 +525,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             }
 
             // Client Certificate Authentication:
-            @SuppressWarnings("unchecked")
-            final Map<String, Object> auth
+            @SuppressWarnings("unchecked") final Map<String, Object> auth
                 = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
             if (auth != null) {
                 final String authType = (String) auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
@@ -546,7 +542,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         // KeyManager for client cert authentication:
         KeyManager[] keyManagers = null;
         if (clientCertAuthKeyManager != null) {
-            keyManagers = new KeyManager[] { clientCertAuthKeyManager };
+            keyManagers = new KeyManager[] {clientCertAuthKeyManager};
         }
 
         // TrustManager for server cert verification:
@@ -555,7 +551,7 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         // SSLSocketFactory:
         final SSLSocketFactory sslSocketFactory = new TLSSocketFactory(
-            keyManagers, new TrustManager[] { trustManager }, null);
+            keyManagers, new TrustManager[] {trustManager}, null);
         builder.sslSocketFactory(sslSocketFactory, trustManager);
 
         // HostnameVerifier:
