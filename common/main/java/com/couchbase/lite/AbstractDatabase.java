@@ -1314,7 +1314,7 @@ abstract class AbstractDatabase {
         try { doc = resolver.resolve(conflict); }
         catch (Exception err) {
             final String msg = String.format(ERROR_RESOLVER_FAILED, docID, err.getLocalizedMessage());
-            Log.w(DOMAIN, msg);
+            Log.w(DOMAIN, msg, err);
             throw new CouchbaseLiteException(msg, err, CBLError.Domain.CBLITE, CBLError.Code.UNEXPECTED_ERROR);
         }
 
@@ -1377,7 +1377,7 @@ abstract class AbstractDatabase {
             }
 
             // Merged body:
-            final byte[] mergedBodyBytes = mergedBody == null ? null : mergedBody.getBuf();
+            final byte[] mergedBodyBytes = (mergedBody == null) ? null : mergedBody.getBuf();
 
             // Ask LiteCore to do the resolution:
             final C4Document rawDoc = Preconditions.assertNotNull(localDoc.getC4doc(), "raw doc is null");

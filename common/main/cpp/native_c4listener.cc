@@ -144,7 +144,7 @@ doKeyDataCallback(JNIEnv *env, void *externalKey, void *output, size_t outputMax
 }
 
 // See C4ExternalKeyCallbacks in C4Certificate.h
-static bool publicKeyDataKeyCallback(void *externalKey, void *output, size_t outputMaxLen, size_t *outputLen) {
+static bool publicKeyDataCallback(void *externalKey, void *output, size_t outputMaxLen, size_t *outputLen) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     bool res = false;
@@ -381,7 +381,7 @@ static bool initKeyPairCallbacks(JNIEnv *env) {
     if (!m_C4KeyPair_freeCallback)
         return false;
 
-    keyCallbacks.publicKeyData = &publicKeyDataKeyCallback;
+    keyCallbacks.publicKeyData = &publicKeyDataCallback;
     keyCallbacks.decrypt = &decryptKeyCallback;
     keyCallbacks.sign = &signKeyCallback;
     keyCallbacks.free = &freeKeyCallback;

@@ -85,7 +85,7 @@ public class C4Document extends C4NativePeer {
 
     public void resolveConflict(String winningRevID, String losingRevID, byte[] mergeBody, int mergedFlags)
         throws LiteCoreException {
-       resolveConflict(getPeer(), winningRevID, losingRevID, mergeBody, mergedFlags);
+        resolveConflict(getPeer(), winningRevID, losingRevID, mergeBody, mergedFlags);
     }
 
     // - Creating and Updating Documents

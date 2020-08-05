@@ -279,7 +279,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
     }
 
     private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
-
     static {
         final Map<Integer, ActivityLevel> m = new HashMap<>();
         m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
@@ -430,6 +429,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     /**
      * The server certificates received from the server during the TLS handshake.
+     *
      * @return this replicator's server certificates.
      */
     @Nullable
@@ -782,9 +782,10 @@ public abstract class AbstractReplicator extends InternalReplicator {
     // callback from queueConflictResolution
     void onConflictResolved(
         Fn.Consumer<CouchbaseLiteException> task,
-        String docId, int flags,
+        String docId,
+        int flags,
         CouchbaseLiteException err) {
-        Log.i(DOMAIN, "Conflict resolved: %s", docId);
+        Log.i(DOMAIN, "Conflict resolved: %s", err, docId);
         List<C4ReplicatorStatus> pendingNotifications = null;
         synchronized (lock) {
             pendingResolutions.remove(task);
