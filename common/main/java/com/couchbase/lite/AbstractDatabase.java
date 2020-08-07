@@ -139,7 +139,7 @@ abstract class AbstractDatabase {
 
         final File path = getDatabaseFile(directory, name);
         try {
-            Log.i(DOMAIN, "delete(): path=%s", path.toString());
+            Log.v(DOMAIN, "Delete database %s at %s", name, path.toString());
             C4Database.deleteDbAtPath(path.getPath());
         }
         catch (LiteCoreException e) {
@@ -544,7 +544,7 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(id, "id");
 
         if (purgeStrategy == null) {
-            Log.w(LogDomain.DATABASE, "Attempt to set document expiration without a purge strategy");
+            Log.w(DOMAIN, "Attempt to set document expiration without a purge strategy");
             return;
         }
 
@@ -731,7 +731,7 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void close() throws CouchbaseLiteException {
-        Log.i(DOMAIN, "Closing %s at path %s", this, path);
+        Log.v(DOMAIN, "Closing %s at path %s", this, path);
         if (!isOpen()) { return; }
         shutdown(C4Database::close);
     }
@@ -744,7 +744,7 @@ abstract class AbstractDatabase {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void delete() throws CouchbaseLiteException {
-        Log.i(DOMAIN, "Deleting %s at path %s", this, path);
+        Log.v(DOMAIN, "Deleting %s at path %s", this, path);
         shutdown(C4Database::delete);
     }
 
@@ -828,7 +828,7 @@ abstract class AbstractDatabase {
         // This is the only thing that is really essential.
         final C4DatabaseObserver observer = c4DbObserver;
         if (observer != null) { observer.close(); }
-        else { Log.w(LogDomain.DATABASE, "Cannot finalize null C4DatabaseObserver"); }
+        else { Log.w(DOMAIN, "Cannot finalize null C4DatabaseObserver"); }
 
         // This stuff might just speed things up a little
         shutdownLiveQueries(activeLiveQueries);
@@ -887,7 +887,7 @@ abstract class AbstractDatabase {
             if (isOpen()) {
                 byte[] uuid = null;
                 try { uuid = c4Database.getPublicUUID(); }
-                catch (LiteCoreException e) { Log.v(LogDomain.DATABASE, "Failed retrieving database UUID", e); }
+                catch (LiteCoreException e) { Log.i(DOMAIN, "Failed retrieving database UUID", e); }
                 if (uuid != null) { return PlatformUtils.getEncoder().encodeToString(uuid); }
             }
             return null;
@@ -1117,7 +1117,7 @@ abstract class AbstractDatabase {
 
     private C4Database openC4Db() throws CouchbaseLiteException {
         final File dbFile = getDatabaseFile(new File(config.getDirectory()), this.name);
-        Log.i(DOMAIN, "Opening %s at path %s", this, dbFile.getPath());
+        Log.v(DOMAIN, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
             return new C4Database(
@@ -1385,7 +1385,7 @@ abstract class AbstractDatabase {
             rawDoc.resolveConflict(remoteDoc.getRevisionID(), localDoc.getRevisionID(), mergedBodyBytes, mergedFlags);
             rawDoc.save(0);
 
-            Log.i(DOMAIN, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
+            Log.v(DOMAIN, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
         }
         catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
@@ -1572,7 +1572,7 @@ abstract class AbstractDatabase {
         synchronized (activeLiveQueries) { queries = new HashSet<>(activeLiveQueries); }
         for (LiveQuery query: queries) {
             if (LiveQuery.State.STOPPED.equals(query.getState())) {
-                Log.w(LogDomain.QUERY, "Found active stopped query: " + query);
+                Log.w(DOMAIN, "Found active stopped query: " + query);
                 deadQueries.add(query);
             }
         }
@@ -1583,17 +1583,19 @@ abstract class AbstractDatabase {
         synchronized (activeReplicators) { replications = new HashSet<>(activeReplicators); }
         for (AbstractReplicator replicator: replications) {
             if (AbstractReplicator.ActivityLevel.STOPPED.equals(replicator.getState())) {
-                Log.w(LogDomain.QUERY, "Found active stopped replicator: " + replicator);
+                Log.w(DOMAIN, "Found active stopped replicator: " + replicator);
                 deadReplications.add(replicator);
             }
         }
         synchronized (activeReplicators) { activeReplicators.removeAll(deadReplications); }
 
         if (closeLatch != null) {
-            int processes;
-            synchronized (activeLiveQueries) { processes = activeLiveQueries.size(); }
-            synchronized (activeReplicators) { processes += activeReplicators.size(); }
-            if (processes <= 0) { closeLatch.countDown(); }
+            final int liveQueries;
+            synchronized (activeLiveQueries) { liveQueries = activeLiveQueries.size(); }
+            final int liveReplicators;
+            synchronized (activeReplicators) { liveReplicators = activeReplicators.size(); }
+            if ((liveQueries + liveReplicators) <= 0) { closeLatch.countDown(); }
+            Log.v(DOMAIN, "Active processes, queries: %d, replicators: %d", liveQueries, liveReplicators);
         }
     }
 
