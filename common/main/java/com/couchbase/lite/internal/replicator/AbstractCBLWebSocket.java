@@ -33,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -48,6 +49,7 @@ import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.Route;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
@@ -57,7 +59,6 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4Socket;
-import com.couchbase.lite.internal.core.C4WebSocketCloseCode;
 import com.couchbase.lite.internal.core.NativeContext;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -69,15 +70,11 @@ import com.couchbase.lite.internal.utils.Fn;
 public class AbstractCBLWebSocket extends C4Socket {
     private static final LogDomain TAG = LogDomain.NETWORK;
 
-    private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
-        // timeouts: Core manages this: set no timeout, here.
-        .connectTimeout(0, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.SECONDS)
-        .writeTimeout(0, TimeUnit.SECONDS)
-        // redirection
-        .followRedirects(true)
-        .followSslRedirects(true)
-        .build();
+    private static final int MAX_AUTH_RETRIES = 3;
+
+    private static final int HTTP_STATUS_MIN = 100;
+    private static final int HTTP_STATUS_MAX = 600;
+
 
     /**
      * Workaround to enable both TLS1.1 and TLS1.2 for Android API 16 - 19.
@@ -110,8 +107,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         @Override
-        public Socket createSocket(String host, int port, InetAddress localHost, int localPort)
-            throws IOException {
+        public Socket createSocket(String host, int port, InetAddress localHost, int localPort) throws IOException {
             return setEnabledProtocols(delegate.createSocket(host, port, localHost, localPort));
         }
 
@@ -134,9 +130,6 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
     }
 
-    //-------------------------------------------------------------------------
-    // Internal class
-    //-------------------------------------------------------------------------
     class CBLWebSocketListener extends WebSocketListener {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
@@ -180,25 +173,42 @@ public class AbstractCBLWebSocket extends C4Socket {
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             Log.w(TAG, "WebSocketListener failed with response " + response, t);
 
-            // Invoked when a web socket has been closed due to an error reading from or writing to the
-            // network. Both outgoing and incoming messages may have been lost. No further calls to this
-            // listener will be made.
+            // Invoked when a web socket has been closed due to an error reading from or writing to the network.
+            // Both outgoing and incoming messages may have been lost. No further calls to this listener will be made.
             if (response == null) {
                 didClose(t);
+                return;
             }
-            else {
-                final int httpStatus = response.code();
-                if (httpStatus == 101) {
-                    didClose(C4WebSocketCloseCode.kWebSocketCloseProtocolError, response.message());
-                }
-                else {
-                    int closeCode = C4WebSocketCloseCode.kWebSocketClosePolicyError;
-                    if (httpStatus >= 300 && httpStatus < 1000) { closeCode = httpStatus; }
-                    didClose(closeCode, response.message());
-                }
+
+            final int httpStatus = response.code();
+            if (httpStatus == 101) {
+                didClose(C4Socket.WS_STATUS_CLOSE_PROTOCOL_ERROR, response.message());
+                return;
             }
+
+            int closeCode = C4Socket.WS_STATUS_CLOSE_POLICY_ERROR;
+            if (httpStatus >= 300 && httpStatus < 1000) { closeCode = httpStatus; }
+            didClose(closeCode, response.message());
         }
     }
+
+    //-------------------------------------------------------------------------
+    // Static members
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    public static final NativeContext<KeyManager> CLIENT_CERT_AUTH_KEY_MANAGER = new NativeContext<>();
+
+    @NonNull
+    private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
+        // timeouts: Core manages this: set no timeout, here.
+        .connectTimeout(0, TimeUnit.SECONDS)
+        .readTimeout(0, TimeUnit.SECONDS)
+        .writeTimeout(0, TimeUnit.SECONDS)
+        // redirection
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build();
 
     //-------------------------------------------------------------------------
     // Factory method
@@ -232,12 +242,6 @@ public class AbstractCBLWebSocket extends C4Socket {
         return null;
     }
 
-    //-------------------------------------------------------------------------
-    // Client Certificate Authentication Identities
-    //-------------------------------------------------------------------------
-
-    @NonNull
-    public static final NativeContext<KeyManager> CLIENT_CERT_AUTH_KEY_MANAGER = new NativeContext<>();
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -251,7 +255,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     private WebSocket webSocket;
 
     //-------------------------------------------------------------------------
-    // constructor
+    // Constructor
     //-------------------------------------------------------------------------
 
     protected AbstractCBLWebSocket(
@@ -271,6 +275,10 @@ public class AbstractCBLWebSocket extends C4Socket {
         this.wsListener = new CBLWebSocketListener();
     }
 
+    @Override
+    @NonNull
+    public String toString() { return "AbstractCBLWebSocket{" + uri + "}"; }
+
     //-------------------------------------------------------------------------
     // Abstract method implementation
     //-------------------------------------------------------------------------
@@ -283,10 +291,12 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     @Override
     protected void send(byte[] allocatedData) {
-        if (this.webSocket.send(ByteString.of(allocatedData, 0, allocatedData.length))) {
-            completedWrite(allocatedData.length);
+        if (!webSocket.send(ByteString.of(allocatedData, 0, allocatedData.length))) {
+            Log.e(TAG, "CBLWebSocket failed to send data of length = " + allocatedData.length);
+            return;
         }
-        else { Log.e(TAG, "CBLWebSocket failed to send data of " + allocatedData.length + " bytes"); }
+
+        completedWrite(allocatedData.length);
     }
 
     @Override
@@ -295,6 +305,8 @@ public class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected void close() { }
 
+    protected boolean handleClose(Throwable error) { return false; }
+
     @Override
     protected void requestClose(int status, String message) {
         if (webSocket == null) {
@@ -302,14 +314,44 @@ public class AbstractCBLWebSocket extends C4Socket {
             return;
         }
 
+        // Core will, apparently, randomly send HTTP statuses in this, purely WS, call.
+        // Just recast them as policy errors.
+        if ((status > HTTP_STATUS_MIN) && (status < HTTP_STATUS_MAX)) {
+            status = C4Socket.WS_STATUS_CLOSE_POLICY_ERROR;
+        }
+
         if (!webSocket.close(status, message)) {
-            Log.w(
-                TAG,
-                "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
+            Log.w(TAG, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
         }
     }
 
-    protected boolean handleClose(Throwable error) { return false; }
+    //-------------------------------------------------------------------------
+    // package visible methods
+    //-------------------------------------------------------------------------
+
+    // http://www.ietf.org/rfc/rfc2617.txt
+    @Nullable
+    Request authenticate(@Nullable Route ignore, @NonNull Response resp, @NonNull String user, @NonNull String pwd) {
+        Log.v(TAG, "CBLWebSocket authenticated for response " + resp);
+
+        // If failed 3 times, give up.
+        if (responseCount(resp) >= MAX_AUTH_RETRIES) { return null; }
+
+        final List<Challenge> challenges = resp.challenges();
+        Log.v(TAG, "CBLWebSocket received challenges " + challenges);
+        if (challenges == null) { return null; }
+
+        for (Challenge challenge: challenges) {
+            if (challenge.scheme().equals("Basic")) {
+                return resp.request()
+                    .newBuilder()
+                    .header("Authorization", Credentials.basic(user, pwd))
+                    .build();
+            }
+        }
+
+        return null;
+    }
 
     //-------------------------------------------------------------------------
     // private methods
@@ -329,48 +371,25 @@ public class AbstractCBLWebSocket extends C4Socket {
     }
 
     private Authenticator setupBasicAuthenticator() {
-        if (options != null && options.containsKey(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION)) {
-            @SuppressWarnings("unchecked") final Map<String, Object> auth
-                = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-            if (auth == null) { return null; }
+        if ((options == null) || !options.containsKey(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION)) { return null; }
 
-            final String authType = (String) auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
-            if (C4Replicator.AUTH_TYPE_BASIC.equals(authType)) {
-                final String username = (String) auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
-                final String password = (String) auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
-                if (username != null && password != null) {
-                    return (route, response) -> {
-                        // http://www.ietf.org/rfc/rfc2617.txt
-                        Log.v(TAG, "CBLWebSocket authenticated for response " + response);
+        @SuppressWarnings("unchecked") final Map<String, Object> auth
+            = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+        if (auth == null) { return null; }
 
-                        // If failed 3 times, give up.
-                        if (responseCount(response) >= 3) { return null; }
+        final String authType = (String) auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
+        if (!C4Replicator.AUTH_TYPE_BASIC.equals(authType)) { return null; }
 
-                        final List<Challenge> challenges = response.challenges();
-                        Log.v(TAG, "CBLWebSocket received challenges " + challenges);
-                        if (challenges != null) {
-                            for (Challenge challenge : challenges) {
-                                if (challenge.scheme().equals("Basic")) {
-                                    return response.request()
-                                        .newBuilder()
-                                        .header("Authorization", Credentials.basic(username, password))
-                                        .build();
-                                }
-                            }
-                        }
-                        return null;
-                    };
-                }
-            }
-        }
-        return null;
+        final String username = (String) auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
+        final String password = (String) auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
+        if ((username == null) || (password == null)) { return null; }
+
+        return (route, response) -> authenticate(route, response, username, password);
     }
 
     private int responseCount(Response response) {
         int result = 1;
-        while ((response = response.priorResponse()) != null) {
-            result++;
-        }
+        while ((response = response.priorResponse()) != null) { result++; }
         return result;
     }
 
@@ -386,26 +405,24 @@ public class AbstractCBLWebSocket extends C4Socket {
         builder.header("Host", host);
 
         // Construct the HTTP request:
-        if (options != null) {
-            // Extra Headers
-            @SuppressWarnings("unchecked") final Map<String, Object> extraHeaders
-                = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
-            if (extraHeaders != null) {
-                for (Map.Entry<String, Object> entry : extraHeaders.entrySet()) {
-                    builder.header(entry.getKey(), entry.getValue().toString());
-                }
-            }
+        if (options == null) { return builder.build(); }
 
-            // Cookies:
-            final String cookieString = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-            if (cookieString != null) { builder.addHeader("Cookie", cookieString); }
-
-            // Configure WebSocket related headers:
-            final String protocols = (String) options.get(C4Replicator.SOCKET_OPTION_WS_PROTOCOLS);
-            if (protocols != null) {
-                builder.header("Sec-WebSocket-Protocol", protocols);
+        // Extra Headers
+        @SuppressWarnings("unchecked") final Map<String, Object> extraHeaders
+            = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+        if (extraHeaders != null) {
+            for (Map.Entry<String, Object> entry: extraHeaders.entrySet()) {
+                builder.header(entry.getKey(), entry.getValue().toString());
             }
         }
+
+        // Cookies:
+        final String cookieString = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+        if (cookieString != null) { builder.addHeader("Cookie", cookieString); }
+
+        // Configure WebSocket related headers:
+        final String protocols = (String) options.get(C4Replicator.SOCKET_OPTION_WS_PROTOCOLS);
+        if (protocols != null) { builder.header("Sec-WebSocket-Protocol", protocols); }
 
         return builder.build();
     }
@@ -420,30 +437,24 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         byte[] headersFleece = null;
         final Map<String, Object> headers = new HashMap<>();
-        for (int i = 0; i < hs.size(); i++) {
-            headers.put(hs.name(i), hs.value(i));
-        }
+        for (int i = 0; i < hs.size(); i++) { headers.put(hs.name(i), hs.value(i)); }
+
         final FLEncoder enc = new FLEncoder();
         enc.write(headers);
-        try {
-            headersFleece = enc.finish();
-        }
-        catch (LiteCoreException e) {
-            Log.e(TAG, "CBLWebSocket failed to encode response header", e);
-        }
-        finally {
-            enc.free();
-        }
+        try { headersFleece = enc.finish(); }
+        catch (LiteCoreException e) { Log.e(TAG, "CBLWebSocket failed to encode response header", e); }
+        finally { enc.free(); }
+
         gotHTTPResponse(httpStatus, headersFleece);
     }
 
     private void didClose(int code, String reason) {
-        if (code == C4WebSocketCloseCode.kWebSocketCloseNormal) {
+        if (code == C4Socket.WS_STATUS_CLOSE_NORMAL) {
             didClose(null);
             return;
         }
 
-        Log.i(TAG, "CBLWebSocket CLOSED WITH STATUS " + code + " \"" + reason + "\"");
+        Log.i(TAG, "CBLWebSocket closed: " + code + "(" + reason + ")");
         closed(C4Constants.ErrorDomain.WEB_SOCKET, code, reason);
     }
 
@@ -457,36 +468,24 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         // TLS Certificate error
         if (error.getCause() instanceof java.security.cert.CertificateException) {
-            closed(
-                C4Constants.ErrorDomain.NETWORK,
-                C4Constants.NetworkError.TLS_CERT_UNTRUSTED,
-                null);
+            closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.TLS_CERT_UNTRUSTED, null);
             return;
         }
 
         // SSLPeerUnverifiedException
         if (error instanceof javax.net.ssl.SSLPeerUnverifiedException) {
-            closed(
-                C4Constants.ErrorDomain.NETWORK,
-                C4Constants.NetworkError.TLS_CERT_UNTRUSTED,
-                null);
+            closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.TLS_CERT_UNTRUSTED, null);
             return;
         }
 
         // UnknownHostException - this is thrown if Airplane mode, offline
         if (error instanceof UnknownHostException) {
-            closed(
-                C4Constants.ErrorDomain.NETWORK,
-                C4Constants.NetworkError.UNKNOWN_HOST,
-                null);
+            closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.UNKNOWN_HOST, null);
             return;
         }
 
         if (error instanceof SSLHandshakeException) {
-            closed(
-                C4Constants.ErrorDomain.NETWORK,
-                C4Constants.NetworkError.TLS_HANDSHAKE_FAILED,
-                null);
+            closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.TLS_HANDSHAKE_FAILED, null);
             return;
         }
 
@@ -520,38 +519,24 @@ public class AbstractCBLWebSocket extends C4Socket {
 
             // Accept only self-signed server cert mode:
             if (options.containsKey(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT)) {
-                acceptOnlySelfSignedServerCert = (boolean)
-                    options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
+                acceptOnlySelfSignedServerCert
+                    = (boolean) options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
             }
 
-            // Client Certificate Authentication:
-            @SuppressWarnings("unchecked") final Map<String, Object> auth
-                = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-            if (auth != null) {
-                final String authType = (String) auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
-                if (C4Replicator.AUTH_TYPE_CLIENT_CERT.equals(authType)) {
-                    final long token = (long) auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY);
-                    clientCertAuthKeyManager = CLIENT_CERT_AUTH_KEY_MANAGER.getObjFromContext(token);
-                    if (clientCertAuthKeyManager == null) {
-                        Log.w(TAG, "No key manager configured for client certificate authentication");
-                    }
-                }
-            }
+            clientCertAuthKeyManager = getAuthenticator();
         }
 
         // KeyManager for client cert authentication:
         KeyManager[] keyManagers = null;
-        if (clientCertAuthKeyManager != null) {
-            keyManagers = new KeyManager[] {clientCertAuthKeyManager};
-        }
+        if (clientCertAuthKeyManager != null) { keyManagers = new KeyManager[] {clientCertAuthKeyManager}; }
 
         // TrustManager for server cert verification:
-        final X509TrustManager trustManager = new CBLTrustManager(
-            pinnedServerCert, acceptOnlySelfSignedServerCert, serverCertsListener);
+        final X509TrustManager trustManager
+            = new CBLTrustManager(pinnedServerCert, acceptOnlySelfSignedServerCert, serverCertsListener);
 
         // SSLSocketFactory:
-        final SSLSocketFactory sslSocketFactory = new TLSSocketFactory(
-            keyManagers, new TrustManager[] {trustManager}, null);
+        final SSLSocketFactory sslSocketFactory
+            = new TLSSocketFactory(keyManagers, new TrustManager[] {trustManager}, null);
         builder.sslSocketFactory(sslSocketFactory, trustManager);
 
         // HostnameVerifier:
@@ -561,4 +546,23 @@ public class AbstractCBLWebSocket extends C4Socket {
             builder.hostnameVerifier((s, sslSession) -> true);
         }
     }
+
+    @SuppressWarnings("unchecked")
+    private KeyManager getAuthenticator() {
+        final Map<String, Object> auth
+            = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+        if (auth == null) { return null; }
+
+        if (!C4Replicator.AUTH_TYPE_CLIENT_CERT.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) { return null; }
+
+        final KeyManager clientCertAuthKeyManager
+            = CLIENT_CERT_AUTH_KEY_MANAGER.getObjFromContext(
+            (long) auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY));
+        if (clientCertAuthKeyManager == null) {
+            Log.w(TAG, "No key manager configured for client certificate authentication");
+        }
+
+        return clientCertAuthKeyManager;
+    }
 }
+

@@ -32,6 +32,25 @@ public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
+
+    // @formatter:off
+    public static final int WS_STATUS_CLOSE_NORMAL = 1000;
+    public static final int WS_STATUS_GOING_AWAY = 1001;               // Peer has to close, e.g. because host app is quitting
+    public static final int WS_STATUS_CLOSE_PROTOCOL_ERROR = 1002;     // Protocol violation: invalid framing data
+    public static final int WS_STATUS_CLOSE_DATA_ERROR = 1003;         // Message payload cannot be handled
+    public static final int WS_STATUS_CLOSE_NO_CODE = 1005;            // Never sent, only received
+    public static final int WS_STATUS_CLOSE_ABNORMAL = 1006;           // Never sent, only received
+    public static final int WS_STATUS_CLOSE_BAD_MESSAGE_FORMAT = 1007; // Unparsable message
+    public static final int WS_STATUS_CLOSE_POLICY_ERROR = 1008;       // Catch-all failure
+    public static final int WS_STATUS_CLOSE_MESSAGE_TO_BIG = 1009;     // Message too big
+    public static final int WS_STATUS_CLOSE_MISSING_EXTENSION = 1010;  // Peer doesn't provide a necessary extension
+    public static final int WS_STATUS_CLOSE_CANT_FULFILL = 1011;       // Can't fulfill request due to "unexpected condition"
+    public static final int WS_STATUS_CLOSE_TLS_FAILURE = 1015;        // Never sent, only received
+    public static final int WS_STATUS_CLOSE_USER = 4000;               // First unregistered code for free-form use
+    public static final int WS_STATUS_CLOSE_USER_TRANSIENT = WS_STATUS_CLOSE_USER + 1; // User-defined transient error
+    public static final int WS_STATUS_CLOSE_USER_PERMANENT = WS_STATUS_CLOSE_USER + 2; // User-defined permanent error
+    // @formatter:on
+
     private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
 
     // C4SocketFraming (C4SocketFactory.framing)
@@ -116,7 +135,7 @@ public abstract class C4Socket extends C4NativePeer {
     @SuppressWarnings("unused")
     static void requestClose(long handle, int status, @Nullable String message) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
-        Log.d(LOG_DOMAIN, "C4Socket.requestClose @" + handle + ": " + socket);
+        Log.d(LOG_DOMAIN, "C4Socket.requestClose @" + handle + ": " + socket + " #" + status + "(" + message + ")");
         if (socket == null) { return; }
 
         socket.requestClose(status, message);
@@ -194,35 +213,35 @@ public abstract class C4Socket extends C4NativePeer {
 
     protected final void completedWrite(long byteCount) {
         final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.completedWrite @" + handle + ": " + byteCount);
+        Log.d(LOG_DOMAIN, "C4Socket.completedWrite @%d: %d", handle, byteCount);
         if (handle == 0) { return; }
         completedWrite(handle, byteCount);
     }
 
     protected final void received(byte[] data) {
         final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.received @" + handle + ": " + data.length);
+        Log.d(LOG_DOMAIN, "C4Socket.received @%d: %d", handle, data.length);
         if (handle == 0) { return; }
         received(handle, data);
     }
 
     protected final void closed(int errorDomain, int errorCode, String message) {
         final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.closed @" + handle + ": " + errorCode);
+        Log.d(LOG_DOMAIN, "C4Socket.closed @%d: %d", handle, errorCode);
         if (handle == 0) { return; }
         closed(handle, errorDomain, errorCode, message);
     }
 
     protected final void closeRequested(int status, String message) {
         final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.closeRequested @" + handle + ": " + status);
+        Log.d(LOG_DOMAIN, "C4Socket.closeRequested @%d: %d(%s)", handle, status, message);
         if (handle == 0) { return; }
         closeRequested(handle, status, message);
     }
 
     protected final void gotHTTPResponse(int httpStatus, byte[] responseHeadersFleece) {
         final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse @" + handle + ": " + httpStatus);
+        Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse  @%d: %d", handle, httpStatus);
         if (handle == 0) { return; }
         gotHTTPResponse(handle, httpStatus, responseHeadersFleece);
     }
