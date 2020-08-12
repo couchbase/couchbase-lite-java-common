@@ -19,6 +19,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -409,6 +410,19 @@ public class C4Database extends C4NativePeer {
             replicatorContext);
     }
 
+    ////////////////////////////////
+    // Cookie Store
+    ////////////////////////////////
+
+    public void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) throws LiteCoreException {
+        setCookie(getPeer(), uri.toString(), setCookieHeader);
+    }
+
+    @Nullable
+    public String getCookies(@NonNull URI uri) throws LiteCoreException {
+        return getCookies(getPeer(), uri.toString());
+    }
+
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
@@ -505,6 +519,11 @@ public class C4Database extends C4NativePeer {
         byte[] body)
         throws LiteCoreException;
 
+    // - Cookie Store
+
+    private static native void setCookie(long db, String url, String setCookieHeader) throws LiteCoreException;
+
+    private static native String getCookies(long db, String url) throws LiteCoreException;
 
     ////////////////////////////////
     // c4Document+Fleece.h

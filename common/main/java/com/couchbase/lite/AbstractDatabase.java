@@ -21,6 +21,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -1081,6 +1082,24 @@ abstract class AbstractDatabase {
         }
 
         callback.accept(err);
+    }
+
+    //////// Cookie Store:
+
+    void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) {
+        synchronized (dbLock) {
+            try { getC4DatabaseLocked().setCookie(uri, setCookieHeader); }
+            catch (LiteCoreException e) { Log.e(DOMAIN, "Cannot save cookie for " + uri, e); }
+        }
+    }
+
+    @Nullable
+    String getCookies(@NonNull URI uri) {
+        synchronized (dbLock) {
+            try { return getC4DatabaseLocked().getCookies(uri); }
+            catch (LiteCoreException e) { Log.e(DOMAIN, "Cannot get cookies for " + uri, e); }
+            return null;
+        }
     }
 
     //////// Execution:

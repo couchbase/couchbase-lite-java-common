@@ -341,6 +341,49 @@ Java_com_couchbase_lite_internal_core_C4Database_rawGet(JNIEnv *env, jclass igno
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    setCookie
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_setCookie(JNIEnv *env, jclass ignore, jlong jdb,
+        jstring jurl, jstring jcookie) {
+    jstringSlice url(env, jurl);
+    jstringSlice cookie(env, jcookie);
+
+    C4Address address;
+    if (!c4address_fromURL(url, &address, nullptr))
+        throwError(env, {NetworkDomain, kC4NetErrInvalidURL});
+
+    C4Error error = {};
+    if (!c4db_setCookie((C4Database *) jdb, cookie, address.hostname, address.path, &error))
+        throwError(env, error);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    getCookies
+ * Signature: (JLjava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_getCookies(JNIEnv *env, jclass ignore, jlong jdb, jstring jurl) {
+    jstringSlice url(env, jurl);
+
+    C4Address address;
+    if (!c4address_fromURL(url, &address, nullptr))
+        throwError(env, {NetworkDomain, kC4NetErrInvalidURL});
+
+    C4Error error = {};
+    C4StringResult result = c4db_getCookies((C4Database *) jdb, address, &error);
+    if (error.domain != 0 && error.code != 0)
+        throwError(env, error);
+
+    jstring cookies = toJString(env, result);
+    c4slice_free(result);
+    return cookies;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    rawPut
  * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V
  */
