@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 
 public abstract class BaseReplicatorTest extends BaseDbTest {
-    protected static final int STD_TIMEOUT_SECS = 5;
+    protected static final long STD_TIMEOUT_SECS = 5;
 
     protected Replicator baseTestReplicator;
 
@@ -144,9 +144,20 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return run(config);
     }
 
-    protected final Replicator run(URI url, boolean push, boolean pull, boolean continuous, Authenticator auth, Certificate pinnedServerCert)
+    protected final Replicator run(
+        URI url,
+        boolean push,
+        boolean pull,
+        boolean continuous,
+        Authenticator auth,
+        Certificate pinnedServerCert)
         throws CouchbaseLiteException {
-        final ReplicatorConfiguration config = makeConfig(push, pull, continuous, new URLEndpoint(url), pinnedServerCert);
+        final ReplicatorConfiguration config = makeConfig(
+            push,
+            pull,
+            continuous,
+            new URLEndpoint(url),
+            pinnedServerCert);
         if (auth != null) { config.setAuthenticator(auth); }
         return run(config);
     }
@@ -161,7 +172,12 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         Authenticator auth,
         Certificate pinnedServerCert)
         throws CouchbaseLiteException {
-        final ReplicatorConfiguration config = makeConfig(push, pull, continuous, new URLEndpoint(url), pinnedServerCert);
+        final ReplicatorConfiguration config = makeConfig(
+            push,
+            pull,
+            continuous,
+            new URLEndpoint(url),
+            pinnedServerCert);
         if (auth != null) { config.setAuthenticator(auth); }
         return run(config, expectedErrorCode, expectedErrorDomain, false, false, null);
     }
