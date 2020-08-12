@@ -119,7 +119,7 @@ abstract class AbstractDatabase {
         @NonNull
         private final T process;
 
-        public ActiveProcess(@NonNull T process) { this.process = process; }
+        ActiveProcess(@NonNull T process) { this.process = process; }
 
         public boolean isActive() { return true; }
 
@@ -136,7 +136,7 @@ abstract class AbstractDatabase {
         public boolean equals(Object o) {
             if (this == o) { return true; }
             if (!(o instanceof ActiveProcess)) { return false; }
-            ActiveProcess<?> other = (ActiveProcess<?>) o;
+            final ActiveProcess<?> other = (ActiveProcess<?>) o;
             return process.equals(other.process);
         }
     }

@@ -352,7 +352,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         if (challenges == null) { return null; }
 
         for (Challenge challenge: challenges) {
-            if (challenge.scheme().equals("Basic")) {
+            if ("Basic".equals(challenge.scheme())) {
                 return resp.request()
                     .newBuilder()
                     .header("Authorization", Credentials.basic(user, pwd))

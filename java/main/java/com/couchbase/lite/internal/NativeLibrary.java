@@ -80,7 +80,7 @@ final class NativeLibrary {
             try (InputStream in = NativeLibrary.class.getResourceAsStream(path + ".MD5")) {
                 if (in == null) { throw new IOException("Cannot find MD5 for library at " + path); }
                 final byte[] buffer = new byte[128];
-                int bytesRead = 0;
+                int bytesRead;
                 while ((bytesRead = in.read(buffer)) != -1) {
                     md.update(buffer, 0, bytesRead);
                 }
@@ -114,7 +114,7 @@ final class NativeLibrary {
             if (in == null) { throw new IOException("Native library not found at " + libResPath); }
 
             final byte[] buffer = new byte[1024];
-            int bytesRead = 0;
+            int bytesRead;
             while ((bytesRead = in.read(buffer)) != -1) { out.write(buffer, 0, bytesRead); }
         }
 

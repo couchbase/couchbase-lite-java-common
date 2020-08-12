@@ -295,7 +295,7 @@ public final class Blob implements FLEncodable {
         Preconditions.assertNotNull(contentType, "contentType");
         Preconditions.assertNotNull(fileURL, "fileUrl");
 
-        if (!fileURL.getProtocol().equalsIgnoreCase("file")) {
+        if (!"file".equalsIgnoreCase(fileURL.getProtocol())) {
             throw new IllegalArgumentException(Log.formatStandardMessage("NotFileBasedURL", fileURL));
         }
 

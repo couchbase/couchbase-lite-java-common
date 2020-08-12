@@ -379,7 +379,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
             else { buf.append(','); }
             buf.append(key).append("=>").append(getValue(key));
         }
-        return buf.append("}").toString();
+        return buf.append('}').toString();
     }
 
     //---------------------------------------------
