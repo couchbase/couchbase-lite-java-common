@@ -67,7 +67,6 @@ import com.couchbase.lite.internal.core.NativeContext;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.CookieUtils;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -79,7 +78,6 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     private static final int HTTP_STATUS_MIN = 100;
     private static final int HTTP_STATUS_MAX = 600;
-
 
     /**
      * Workaround to enable both TLS1.1 and TLS1.2 for Android API 16 - 19.
@@ -227,7 +225,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         int port,
         String path,
         byte[] options,
-        @NonNull Fn.Provider<CBLCookieStore> cookieStoreProvider,
+        @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
         Log.v(TAG, "Creating a CBLWebSocket ...");
 
@@ -244,7 +242,7 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         try {
             return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions,
-                cookieStoreProvider, serverCertsListener);
+                cookieStore, serverCertsListener);
         }
         catch (Exception e) { Log.e(TAG, "Failed to instantiate CBLWebSocket", e); }
 
@@ -260,7 +258,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     private final CBLWebSocketListener wsListener;
     private final URI uri;
     private final Map<String, Object> options;
-    private final Fn.Provider<CBLCookieStore> cookieStoreProvider;
+    private final CBLCookieStore cookieStore;
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
     private WebSocket webSocket;
 
@@ -275,13 +273,13 @@ public class AbstractCBLWebSocket extends C4Socket {
         int port,
         String path,
         Map<String, Object> options,
-        Fn.Provider<CBLCookieStore> cookieStoreProvider,
+        CBLCookieStore cookieStore,
         Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException, URISyntaxException {
         super(handle);
         this.uri = new URI(checkScheme(scheme), null, hostname, port, path, null, null);
         this.options = options;
-        this.cookieStoreProvider = cookieStoreProvider;
+        this.cookieStore = cookieStore;
         this.serverCertsListener = serverCertsListener;
         this.httpClient = setupOkHttpClient();
         this.wsListener = new CBLWebSocketListener();
@@ -372,26 +370,25 @@ public class AbstractCBLWebSocket extends C4Socket {
     private OkHttpClient setupOkHttpClient() throws GeneralSecurityException {
         final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
 
-        // authenticator
+        // Authenticator
         final Authenticator authenticator = setupBasicAuthenticator();
         if (authenticator != null) { builder.authenticator(authenticator); }
 
-        // cookies
-        setupCookieJar(builder);
+        // Cookies
+        builder.cookieJar(getCookieJar());
 
-        // setup SSLFactory and trusted certificate (pinned certificate)
+        // Setup SSLFactory and trusted certificate (pinned certificate)
         setupSSLSocketFactory(builder);
 
         return builder.build();
     }
 
-    private void setupCookieJar(OkHttpClient.Builder builder) {
-        builder.cookieJar(new CookieJar() {
+    private CookieJar getCookieJar() {
+        return new CookieJar() {
             @Override
             public void saveFromResponse(HttpUrl httpUrl, List<Cookie> cookies) {
-                final CBLCookieStore store = cookieStoreProvider.get();
                 for (Cookie cookie : cookies) {
-                    store.setCookie(httpUrl.uri(), cookie.toString());
+                    cookieStore.setCookie(httpUrl.uri(), cookie.toString());
                 }
             }
 
@@ -402,18 +399,17 @@ public class AbstractCBLWebSocket extends C4Socket {
                 // Cookies from config
                 final String confCookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
                 if (confCookies != null) {
-                    cookies.addAll(CookieUtils.parseCookies(url, confCookies));
+                    cookies.addAll(CBLCookieStore.parseCookies(url, confCookies));
                 }
 
                 // Set cookies in the CookieStore
-                final CBLCookieStore store = cookieStoreProvider.get();
-                final String setCookies = store.getCookies(url.uri());
+                final String setCookies = cookieStore.getCookies(url.uri());
                 if (setCookies != null) {
-                    cookies.addAll(CookieUtils.parseCookies(url, setCookies));
+                    cookies.addAll(CBLCookieStore.parseCookies(url, setCookies));
                 }
                 return cookies;
             }
-        });
+        };
     }
 
     private Authenticator setupBasicAuthenticator() {

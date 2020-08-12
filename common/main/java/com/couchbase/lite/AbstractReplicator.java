@@ -355,7 +355,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
         this.config = config.readonlyCopy();
-        this.socketFactory = new SocketFactory(config, this::getCookieStore, this::setServerCertificates);
+        this.socketFactory = new SocketFactory(config, getCookieStore(), this::setServerCertificates);
     }
 
     /**
@@ -958,10 +958,21 @@ public abstract class AbstractReplicator extends InternalReplicator {
         return path;
     }
 
-    // CookieStore Provider:
+    // CookieStore:
     @NonNull
     private CBLCookieStore getCookieStore() {
-        return new CookieStore(getDatabase());
+        return new CBLCookieStore() {
+            @Override
+            public void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) {
+                getDatabase().setCookie(uri, setCookieHeader);
+            }
+
+            @Nullable
+            @Override
+            public String getCookies(@NonNull URI uri) {
+                return getDatabase().getCookies(uri);
+            }
+        };
     }
 
     // Consumer callback to set the server certificates received during the TLS Handshake

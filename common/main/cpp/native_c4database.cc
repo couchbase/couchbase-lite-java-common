@@ -351,8 +351,10 @@ Java_com_couchbase_lite_internal_core_C4Database_setCookie(JNIEnv *env, jclass i
     jstringSlice cookie(env, jcookie);
 
     C4Address address;
-    if (!c4address_fromURL(url, &address, nullptr))
+    if (!c4address_fromURL(url, &address, nullptr)) {
         throwError(env, {NetworkDomain, kC4NetErrInvalidURL});
+        return;
+    }
 
     C4Error error = {};
     if (!c4db_setCookie((C4Database *) jdb, cookie, address.hostname, address.path, &error))
@@ -369,13 +371,17 @@ Java_com_couchbase_lite_internal_core_C4Database_getCookies(JNIEnv *env, jclass 
     jstringSlice url(env, jurl);
 
     C4Address address;
-    if (!c4address_fromURL(url, &address, nullptr))
+    if (!c4address_fromURL(url, &address, nullptr)) {
         throwError(env, {NetworkDomain, kC4NetErrInvalidURL});
+        return nullptr;
+    }
 
     C4Error error = {};
     C4StringResult result = c4db_getCookies((C4Database *) jdb, address, &error);
-    if (error.domain != 0 && error.code != 0)
+    if (error.domain != 0 && error.code != 0) {
         throwError(env, error);
+        return nullptr;
+    }
 
     jstring cookies = toJString(env, result);
     c4slice_free(result);

@@ -18,6 +18,12 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import okhttp3.Cookie;
+import okhttp3.HttpUrl;
 
 
 /**
@@ -28,4 +34,19 @@ public interface CBLCookieStore {
 
     @Nullable
     String getCookies(@NonNull URI uri);
+
+    /**
+     * Parse request header "Cookie" in the format of "name=value;name=value..."
+     * into OKHTTP Cookie used by AbstractCBLWebSocket.
+     */
+    @NonNull
+    static List<Cookie> parseCookies(@NonNull HttpUrl url, @NonNull String cookies) {
+        final List<Cookie> cookieList = new ArrayList<>();
+        final StringTokenizer st = new StringTokenizer(cookies, ";");
+        while (st.hasMoreTokens()) {
+            final Cookie cookie = Cookie.parse(url, st.nextToken().trim());
+            if (cookie != null) { cookieList.add(cookie); }
+        }
+        return cookieList;
+    }
 }
