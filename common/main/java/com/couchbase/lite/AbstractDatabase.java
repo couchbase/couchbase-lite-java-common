@@ -115,6 +115,32 @@ abstract class AbstractDatabase {
         | C4Constants.DatabaseFlags.AUTO_COMPACT
         | C4Constants.DatabaseFlags.SHARED_KEYS;
 
+    static class ActiveProcess<T> {
+        @NonNull
+        private final T process;
+
+        public ActiveProcess(@NonNull T process) { this.process = process; }
+
+        public boolean isActive() { return true; }
+
+        public void stop() {}
+
+        @NonNull
+        @Override
+        public String toString() { return process.toString(); }
+
+        @Override
+        public int hashCode() { return process.hashCode(); }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) { return true; }
+            if (!(o instanceof ActiveProcess)) { return false; }
+            ActiveProcess<?> other = (ActiveProcess<?>) o;
+            return process.equals(other.process);
+        }
+    }
+
     // ---------------------------------------------
     // API - public static methods
     // ---------------------------------------------
@@ -223,6 +249,7 @@ abstract class AbstractDatabase {
         return new File(dir, name.replaceAll("/", ":") + DB_EXTENSION);
     }
 
+
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
@@ -238,13 +265,6 @@ abstract class AbstractDatabase {
 
     private final String path;
 
-    @GuardedBy("activeLiveQueries")
-    private final Set<LiveQuery> activeLiveQueries;
-    @GuardedBy("activeReplications")
-    private final Set<AbstractReplicator> activeReplicators;
-    @GuardedBy("dbLock")
-    private final Map<String, DocumentChangeNotifier> docChangeNotifiers;
-
     // Executor for purge and posting Database/Document changes.
     private final ExecutionService.CloseableExecutor postExecutor;
     // Executor for LiveQuery.
@@ -253,6 +273,12 @@ abstract class AbstractDatabase {
     private final SharedKeys sharedKeys;
 
     private final DocumentExpirationStrategy purgeStrategy;
+
+    @GuardedBy("activeProcesses")
+    private final Set<ActiveProcess<?>> activeProcesses;
+
+    @GuardedBy("dbLock")
+    private final Map<String, DocumentChangeNotifier> docChangeNotifiers;
 
     @GuardedBy("dbLock")
     private C4Database c4Database;
@@ -293,9 +319,7 @@ abstract class AbstractDatabase {
         this.postExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
         this.queryExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
-        // synchronized on 'lock'
-        this.activeReplicators = new HashSet<>();
-        this.activeLiveQueries = new HashSet<>();
+        this.activeProcesses = new HashSet<>();
         this.docChangeNotifiers = new HashMap<>();
 
         // !!! Remove this code.
@@ -336,8 +360,7 @@ abstract class AbstractDatabase {
         this.postExecutor = null;
         this.queryExecutor = null;
 
-        this.activeReplicators = null;
-        this.activeLiveQueries = null;
+        this.activeProcesses = null;
         this.docChangeNotifiers = null;
 
         this.sharedKeys = null;
@@ -832,8 +855,7 @@ abstract class AbstractDatabase {
         else { Log.w(DOMAIN, "Cannot finalize null C4DatabaseObserver"); }
 
         // This stuff might just speed things up a little
-        shutdownLiveQueries(activeLiveQueries);
-        shutdownReplicators(activeReplicators);
+        shutdownActiveProcesses(activeProcesses);
         shutdownExecutors(postExecutor, queryExecutor, 0);
 
         super.finalize();
@@ -910,15 +932,21 @@ abstract class AbstractDatabase {
     // If used wo/synchronization, there is a race on the open db
     ListenerToken addActiveLiveQuery(@NonNull LiveQuery query) {
         mustBeOpen();
-        synchronized (activeLiveQueries) { activeLiveQueries.add(query); }
+        registerProcess(new ActiveProcess<LiveQuery>(query) {
+            @Override
+            public void stop() { query.stop(); }
+
+            @Override
+            public boolean isActive() { return !LiveQuery.State.STOPPED.equals(query.getState()); }
+        });
+
         return addChangeListener(query);
     }
 
     // This method is not thread safe
     void removeActiveLiveQuery(@NonNull LiveQuery query, @NonNull ListenerToken token) {
         removeChangeListener(token);
-        synchronized (activeLiveQueries) { activeLiveQueries.remove(query); }
-        verifyActiveProcesses();
+        unregisterProcess(query);
     }
 
     C4Query createQuery(@NonNull String json) throws LiteCoreException {
@@ -1021,13 +1049,18 @@ abstract class AbstractDatabase {
     // If used wo/synchronization, there is a race on the open db
     void addActiveReplicator(AbstractReplicator replicator) {
         mustBeOpen();
-        synchronized (activeReplicators) { activeReplicators.add(replicator); }
+        registerProcess(new ActiveProcess<AbstractReplicator>(replicator) {
+            @Override
+            public void stop() { replicator.stop(); }
+
+            @Override
+            public boolean isActive() {
+                return !AbstractReplicator.ActivityLevel.STOPPED.equals(replicator.getState());
+            }
+        });
     }
 
-    void removeActiveReplicator(AbstractReplicator replicator) {
-        synchronized (activeReplicators) { activeReplicators.remove(replicator); }
-        verifyActiveProcesses();
-    }
+    void removeActiveReplicator(AbstractReplicator replicator) { unregisterProcess(replicator); }
 
     //////// RESOLVING REPLICATED CONFLICTS:
 
@@ -1110,6 +1143,15 @@ abstract class AbstractDatabase {
 
     void scheduleOnQueryExecutor(@NonNull Runnable task, long delayMs) {
         CouchbaseLiteInternal.getExecutionService().postDelayedOnExecutor(delayMs, queryExecutor, task);
+    }
+
+    void registerProcess(ActiveProcess<?> process) {
+        synchronized (activeProcesses) { activeProcesses.add(process); }
+    }
+
+    <T> void unregisterProcess(T process) {
+        synchronized (activeProcesses) { activeProcesses.remove(new ActiveProcess<T>(process)); }
+        verifyActiveProcesses();
     }
 
     abstract int getEncryptionAlgorithm();
@@ -1586,36 +1628,26 @@ abstract class AbstractDatabase {
     }
 
     private void verifyActiveProcesses() {
-        final Set<LiveQuery> queries;
-        final Set<LiveQuery> deadQueries = new HashSet<>();
-        synchronized (activeLiveQueries) { queries = new HashSet<>(activeLiveQueries); }
-        for (LiveQuery query: queries) {
-            if (LiveQuery.State.STOPPED.equals(query.getState())) {
-                Log.w(DOMAIN, "Found active stopped query: " + query);
-                deadQueries.add(query);
+        final Set<ActiveProcess<?>> processes;
+        final Set<ActiveProcess<?>> deadProcesses = new HashSet<>();
+        synchronized (activeProcesses) { processes = new HashSet<>(activeProcesses); }
+        for (ActiveProcess<?> process: processes) {
+            if (!process.isActive()) {
+                Log.w(DOMAIN, "Found dead process: " + process);
+                deadProcesses.add(process);
             }
         }
-        synchronized (activeLiveQueries) { activeLiveQueries.removeAll(deadQueries); }
 
-        final Set<AbstractReplicator> replications;
-        final Set<AbstractReplicator> deadReplications = new HashSet<>();
-        synchronized (activeReplicators) { replications = new HashSet<>(activeReplicators); }
-        for (AbstractReplicator replicator: replications) {
-            if (AbstractReplicator.ActivityLevel.STOPPED.equals(replicator.getState())) {
-                Log.w(DOMAIN, "Found active stopped replicator: " + replicator);
-                deadReplications.add(replicator);
-            }
+        if (!deadProcesses.isEmpty()) {
+            synchronized (activeProcesses) { activeProcesses.removeAll(deadProcesses); }
         }
-        synchronized (activeReplicators) { activeReplicators.removeAll(deadReplications); }
 
-        if (closeLatch != null) {
-            final int liveQueries;
-            synchronized (activeLiveQueries) { liveQueries = activeLiveQueries.size(); }
-            final int liveReplicators;
-            synchronized (activeReplicators) { liveReplicators = activeReplicators.size(); }
-            if ((liveQueries + liveReplicators) <= 0) { closeLatch.countDown(); }
-            Log.v(DOMAIN, "Active processes, queries: %d, replicators: %d", liveQueries, liveReplicators);
-        }
+        if (closeLatch == null) { return; }
+
+        final int activeProcessCount;
+        synchronized (activeProcesses) { activeProcessCount = activeProcesses.size(); }
+        Log.v(DOMAIN, "Active processes: %d", activeProcessCount);
+        if (activeProcessCount <= 0) { closeLatch.countDown(); }
     }
 
     private void shutdown(Fn.ConsumerThrows<C4Database, LiteCoreException> onShut) throws CouchbaseLiteException {
@@ -1634,9 +1666,12 @@ abstract class AbstractDatabase {
 
             closeLatch = new CountDownLatch(1);
 
-            synchronized (activeLiveQueries) { shutdownLiveQueries(activeLiveQueries); }
+            Set<ActiveProcess<?>> liveProcesses = null;
+            synchronized (activeProcesses) {
+                if (!activeProcesses.isEmpty()) { liveProcesses = new HashSet<>(activeProcesses); }
+            }
 
-            synchronized (activeReplicators) { shutdownReplicators(activeReplicators); }
+            if (liveProcesses != null) { shutdownActiveProcesses(liveProcesses); }
 
             // the replicators won't be able to shut down until this lock is released
         }
@@ -1670,15 +1705,13 @@ abstract class AbstractDatabase {
     }
 
     // called from the finalizer
-    private void shutdownLiveQueries(Collection<LiveQuery> liveQueries) {
-        if (liveQueries == null) { return; }
-        for (LiveQuery query: liveQueries) { query.stop(); }
-    }
-
-    // called from the finalizer
-    private void shutdownReplicators(Collection<AbstractReplicator> replicators) {
-        if (replicators == null) { return; }
-        for (AbstractReplicator repl: replicators) { repl.stop(); }
+    // be careful here:
+    // The call to 'stop' may cause a synchronous call to another method that modifies
+    // the passed collection!  Since this thread already holds the lock, the call will
+    // execute immediately causing a concurrent modification exception.
+    private void shutdownActiveProcesses(Collection<ActiveProcess<?>> processes) {
+        if (processes == null) { return; }
+        for (ActiveProcess<?> process: processes) { process.stop(); }
     }
 
     // called from the finalizer

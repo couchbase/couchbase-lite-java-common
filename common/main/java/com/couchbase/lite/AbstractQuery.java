@@ -180,7 +180,6 @@ abstract class AbstractQuery implements Query {
     @NonNull
     @Override
     public ListenerToken addChangeListener(@NonNull QueryChangeListener listener) {
-        Preconditions.assertNotNull(listener, "listener");
         return addChangeListener(null, listener);
     }
 
