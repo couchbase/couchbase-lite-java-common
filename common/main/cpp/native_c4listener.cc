@@ -401,17 +401,16 @@ static C4Listener *startListener(
         jboolean allowPush,
         jboolean allowPull,
         jboolean enableDeltaSync,
+        jboolean requirePasswordAuth,
         C4TLSConfig *tlsConfig) {
     jstringSlice iFace(env, networkInterface);
     jstringSlice path(env, dbPath);
 
-    C4ListenerConfig config;
+    C4ListenerConfig config = {};
     config.port = (uint16_t) port;
     config.networkInterface = iFace;
     config.apis = (unsigned) apis;
     config.tlsConfig = tlsConfig;
-    config.httpAuthCallback = &httpAuthCallback;
-    config.callbackContext = (void *) context;
     config.directory = path;
     config.allowCreateDBs = allowCreateDBs;
     config.allowDeleteDBs = allowDeleteDBs;
@@ -419,8 +418,12 @@ static C4Listener *startListener(
     config.allowPull = allowPull;
     config.enableDeltaSync = enableDeltaSync;
 
-    C4Error error;
+    if (requirePasswordAuth) {
+        config.httpAuthCallback = &httpAuthCallback;
+        config.callbackContext = (void *) context;
+    }
 
+    C4Error error;
     auto listener = c4listener_start(&config, &error);
     if (!listener) {
         throwError(env, error);
@@ -529,7 +532,8 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
         jboolean allowDeleteDBs,
         jboolean allowPush,
         jboolean allowPull,
-        jboolean enableDeltaSync) {
+        jboolean enableDeltaSync,
+        jboolean requirePasswordAuth) {
 
     return reinterpret_cast<jlong>(startListener(
             env,
@@ -543,6 +547,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
             allowPush,
             allowPull,
             enableDeltaSync,
+            requirePasswordAuth,
             nullptr));
 }
 
@@ -563,7 +568,8 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jboolean allowDeleteDBs,
         jboolean allowPush,
         jboolean allowPull,
-        jboolean enableDeltaSync) {
+        jboolean enableDeltaSync,
+        jboolean requirePasswordAuth) {
     C4TLSConfig tlsConfig = {};
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
     tlsConfig.key = (C4KeyPair *) keyPair;
@@ -592,6 +598,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             allowPush,
             allowPull,
             enableDeltaSync,
+            requirePasswordAuth,
             &tlsConfig));
 }
 
