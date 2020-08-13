@@ -34,8 +34,9 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         int port,
         String path,
         Map<String, Object> options,
+        @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException, URISyntaxException {
-        super(handle, scheme, hostname, port, path, options, serverCertsListener);
+        super(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener);
     }
 }

@@ -54,6 +54,7 @@ import com.couchbase.lite.internal.core.C4Socket;
 import com.couchbase.lite.internal.core.InternalReplicator;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.replicator.CBLCookieStore;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
@@ -354,7 +355,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
         this.config = config.readonlyCopy();
-        this.socketFactory = new SocketFactory(config, this::setServerCertificates);
+        this.socketFactory = new SocketFactory(config, getCookieStore(), this::setServerCertificates);
     }
 
     /**
@@ -955,6 +956,23 @@ public abstract class AbstractReplicator extends InternalReplicator {
             if (element.length() > 0) { path.addLast(element); }
         }
         return path;
+    }
+
+    // CookieStore:
+    @NonNull
+    private CBLCookieStore getCookieStore() {
+        return new CBLCookieStore() {
+            @Override
+            public void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) {
+                getDatabase().setCookie(uri, setCookieHeader);
+            }
+
+            @Nullable
+            @Override
+            public String getCookies(@NonNull URI uri) {
+                return getDatabase().getCookies(uri);
+            }
+        };
     }
 
     // Consumer callback to set the server certificates received during the TLS Handshake

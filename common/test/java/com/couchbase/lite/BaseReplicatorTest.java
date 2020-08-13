@@ -140,7 +140,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final Replicator run(URI url, boolean push, boolean pull, boolean continuous, Authenticator auth)
         throws CouchbaseLiteException {
         final ReplicatorConfiguration config = makeConfig(push, pull, continuous, new URLEndpoint(url));
-        config.setAuthenticator(auth);
+        if (auth != null) { config.setAuthenticator(auth); }
         return run(config);
     }
 
