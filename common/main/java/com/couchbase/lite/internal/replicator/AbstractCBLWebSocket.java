@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
@@ -254,6 +255,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     // Member Variables
     //-------------------------------------------------------------------------
 
+    private final AtomicBoolean closing = new AtomicBoolean(false);
     private final OkHttpClient httpClient;
     private final CBLWebSocketListener wsListener;
     private final URI uri;
@@ -320,7 +322,12 @@ public class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected void requestClose(int status, String message) {
         if (webSocket == null) {
-            Log.w(TAG, "CBLWebSocket has not been initialized when receiving close request.");
+            Log.w(TAG, "CBLWebSocket was not initialized before receiving close request.");
+            return;
+        }
+
+        if (closing.getAndSet(true)) {
+            Log.v(TAG, "CBLWebSocket already closing.");
             return;
         }
 
