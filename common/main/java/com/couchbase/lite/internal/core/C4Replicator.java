@@ -574,4 +574,3 @@ public class C4Replicator extends C4NativePeer {
      */
     private static native void setHostReachable(long handle, boolean reachable);
 }
-

@@ -51,24 +51,16 @@ class NetworkConnectivityManagerTest : BaseTest() {
     }
 
     @Test
-    fun testStartStop() {
-        val mgr = AndroidConnectivityManager { r -> r.run() }
+    fun testStartStopPre21() = testStartStop(AndroidConnectivityManager(19) { r -> r.run() })
 
-        val observer = TestObserver()
+    @Test
+    fun testStartStop21to23() = testStartStop(AndroidConnectivityManager(22) { r -> r.run() })
 
-        mgr.registerObserver(observer)
-        Assert.assertTrue(mgr.isRunning)
+    @Test
+    fun testStartStop24to28() = testStartStop(AndroidConnectivityManager(26) { r -> r.run() })
 
-        // this has to be sloppy because the registration might cause an immediate callback
-        Assert.assertTrue(observer.changeCalls <= 1)
-        mgr.connectivityChanged()
-        mgr.connectivityChanged()
-        mgr.connectivityChanged()
-        Assert.assertTrue(observer.changeCalls >= 3)
-
-        mgr.unregisterObserver(observer)
-        Assert.assertFalse(mgr.isRunning)
-    }
+    @Test
+    fun testStartStopPost29() = testStartStop(AndroidConnectivityManager(29) { r -> r.run() })
 
     @Test
     fun testOffline() {
@@ -105,5 +97,22 @@ class NetworkConnectivityManagerTest : BaseTest() {
         observer.handleOffline(AbstractReplicator.ActivityLevel.CONNECTING, false)
         Assert.assertEquals(1, mgr.observers.size)
         Assert.assertEquals(1, replFactory.calls)
+    }
+
+    fun testStartStop(mgr: AndroidConnectivityManager) {
+        val observer = TestObserver()
+
+        mgr.registerObserver(observer)
+        Assert.assertTrue(mgr.isRunning)
+
+        // this has to be sloppy because the registration might cause an immediate callback
+        Assert.assertTrue(observer.changeCalls <= 1)
+        mgr.connectivityChanged(true)
+        mgr.connectivityChanged(false)
+        mgr.connectivityChanged(true)
+        Assert.assertTrue(observer.changeCalls >= 3)
+
+        mgr.unregisterObserver(observer)
+        Assert.assertFalse(mgr.isRunning)
     }
 }
