@@ -29,9 +29,8 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.couchbase.lite.internal.utils.DateUtils;
-import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Report;
 
@@ -65,17 +64,33 @@ public abstract class BaseDbTest extends BaseTest {
     protected final void recreateBastTestDb() throws CouchbaseLiteException { baseTestDb = recreateDb(baseTestDb); }
 
     protected final Document createSingleDocInBaseTestDb(String docID) throws CouchbaseLiteException {
-        final long n = baseTestDb.getCount() + 1;
+        final long n = baseTestDb.getCount();
 
         MutableDocument doc = new MutableDocument(docID);
         doc.setValue("key", 1);
         saveDocInBaseTestDb(doc);
-        assertEquals(n, baseTestDb.getCount());
+        assertEquals(n + 1, baseTestDb.getCount());
 
         Document savedDoc = baseTestDb.getDocument(docID);
         assertEquals(1, savedDoc.getSequence());
 
         return savedDoc;
+    }
+
+    protected final void createDocsInDb(int first, int count, Database db) throws CouchbaseLiteException {
+        db.inBatch(() -> {
+            try {
+                for (int i = first; i < first + count; i++) {
+                    final MutableDocument doc = new MutableDocument("doc-" + i);
+                    doc.setNumber("count", i);
+                    doc.setString("inverse", "minus-" + i);
+                    db.save(doc);
+                }
+            }
+            catch (CouchbaseLiteException e) {
+                throw new RuntimeException("Batch save failed", e);
+            }
+        });
     }
 
     protected final Document saveDocInBaseTestDb(MutableDocument doc) throws CouchbaseLiteException {

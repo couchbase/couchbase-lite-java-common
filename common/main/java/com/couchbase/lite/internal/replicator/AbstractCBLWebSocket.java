@@ -405,15 +405,12 @@ public class AbstractCBLWebSocket extends C4Socket {
 
                 // Cookies from config
                 final String confCookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-                if (confCookies != null) {
-                    cookies.addAll(CBLCookieStore.parseCookies(url, confCookies));
-                }
+                if (confCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, confCookies)); }
 
                 // Set cookies in the CookieStore
                 final String setCookies = cookieStore.getCookies(url.uri());
-                if (setCookies != null) {
-                    cookies.addAll(CBLCookieStore.parseCookies(url, setCookies));
-                }
+                if (setCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, setCookies)); }
+
                 return cookies;
             }
         };

@@ -414,7 +414,8 @@ static bool pushFilterFunction(C4String docID, C4String revID, C4RevisionFlags f
  *
  * This method accesses global state: not thread safe
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_create(
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_create(
         JNIEnv *env,
         jclass ignore,
         jlong jdb,
@@ -479,7 +480,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_creat
  *
  * This method accesses global state: not thread safe
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_createLocal(
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_createLocal(
         JNIEnv *env,
         jclass ignore,
         jlong jdb,
@@ -528,8 +530,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_creat
  *
  * This method accesses global state: not thread safe
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(JNIEnv *env,
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(JNIEnv *env,
                                                                     jclass ignore,
                                                                     jlong jdb,
                                                                     jlong jopenSocket,
@@ -564,8 +566,8 @@ Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(JNIEnv *env,
  *
  * This method accesses global state: not thread safe
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_free(JNIEnv *env,
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_free(JNIEnv *env,
                                                         jclass ignore,
                                                         jlong repl,
                                                         jobject replicatorContext,
@@ -580,8 +582,8 @@ Java_com_couchbase_lite_internal_core_C4Replicator_free(JNIEnv *env,
  * Method:    start
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass ignore, jlong repl, jboolean restart) {
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass ignore, jlong repl, jboolean restart) {
     c4repl_start((C4Replicator *) repl, (bool) restart);
 }
 
@@ -590,9 +592,15 @@ Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass ign
  * Method:    stop
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_stop(JNIEnv *env, jclass ignore, jlong repl) {
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_stop(JNIEnv *env, jclass ignore, jlong repl) {
     c4repl_stop((C4Replicator *) repl);
+}
+
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_setOptions(JNIEnv *env, jclass clazz, jlong repl, jbyteArray joptions) {
+    jbyteArraySlice options(env, joptions, false);
+    c4repl_setOptions((C4Replicator *) repl, options);
 }
 
 /*
@@ -600,8 +608,8 @@ Java_com_couchbase_lite_internal_core_C4Replicator_stop(JNIEnv *env, jclass igno
  * Method:    getStatus
  * Signature: (J)Lcom/couchbase/lite/internal/core/C4ReplicatorStatus;
  */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass ignore, jlong repl) {
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass ignore, jlong repl) {
     C4ReplicatorStatus status = c4repl_getStatus((C4Replicator *) repl);
     return toJavaObject(env, status);
 }
@@ -611,8 +619,8 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass
  * Method:    getPendingDocIDs
  * Signature: (J)Ljava/lang/Object;
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds
         (JNIEnv *env, jclass ignore, jlong repl) {
     C4Error c4Error = {};
 
@@ -634,8 +642,8 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds
  * Method:    isDocumentPending
  * Signature: (JLjava/lang/String;)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending
         (JNIEnv *env, jclass ignore, jlong repl, jstring jDocId) {
 
     jstringSlice docId(env, jDocId);
@@ -654,8 +662,8 @@ Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending
  * Method:    setHostReachable
  * Signature: (JZ)Z
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_setHostReachable
-        (JNIEnv *env, jclass ignore, jlong repl, jboolean reachable) {
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_setHostReachable(
+        JNIEnv *env, jclass ignore, jlong repl, jboolean reachable) {
     c4repl_setHostReachable((C4Replicator *) repl, (bool) reachable);
 }
-

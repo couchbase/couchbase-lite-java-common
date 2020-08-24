@@ -852,7 +852,7 @@ abstract class AbstractDatabase {
         // This is the only thing that is really essential.
         final C4DatabaseObserver observer = c4DbObserver;
         if (observer != null) { observer.close(); }
-        else { Log.w(DOMAIN, "Cannot finalize null C4DatabaseObserver"); }
+        else { Log.d(DOMAIN, "C4DatabaseObserver is null in database finalizer"); }
 
         // This stuff might just speed things up a little
         shutdownActiveProcesses(activeProcesses);

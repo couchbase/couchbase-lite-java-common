@@ -1465,7 +1465,7 @@ public class QueryTest extends BaseQueryTest {
             // create one doc
             executeAsync(500, () -> {
                 try {
-                    createDocNumbered(-1, 100);
+                    createNumberedDocInBaseTestDb(-1, 100);
                 }
                 catch (CouchbaseLiteException e) {
                     throw new RuntimeException(e);
@@ -2991,7 +2991,7 @@ public class QueryTest extends BaseQueryTest {
         try {
             // create one doc
             executeAsync(500, () -> {
-                try { createDocNumbered(111, 100); }
+                try { createNumberedDocInBaseTestDb(111, 100); }
                 catch (CouchbaseLiteException e) { throw new RuntimeException(e); }
             });
 

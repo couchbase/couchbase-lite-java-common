@@ -440,6 +440,9 @@ public class C4Replicator extends C4NativePeer {
     }
 
     @Nullable
+    public void setOptions(@NonNull byte[] options) { setOptions(getPeer(), options); }
+
+    @Nullable
     public C4ReplicatorStatus getStatus() { return getStatus(getPeer()); }
 
     // Null return value indicates that this replicator is dead
@@ -553,6 +556,11 @@ public class C4Replicator extends C4NativePeer {
      * Tells a replicator to stop.
      */
     private static native void stop(long replicator);
+
+    /**
+     * Set the replicator options.
+     */
+    private static native void setOptions(long replicator, byte[] options);
 
     /**
      * Returns the current state of a replicator.

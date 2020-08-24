@@ -53,7 +53,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
         }
     }
 
-    protected final String createDocNumbered(int i, int num) throws CouchbaseLiteException {
+    protected final String createNumberedDocInBaseTestDb(int i, int num) throws CouchbaseLiteException {
         String docID = "doc" + i;
         MutableDocument doc = new MutableDocument(docID);
         doc.setValue("number1", i);
@@ -71,7 +71,9 @@ public abstract class BaseQueryTest extends BaseDbTest {
         final List<Map<String, Object>> numbers = new ArrayList<>();
 
         SafeTest test = new SafeTest(() -> {
-            for (int i = from; i <= to; i++) { numbers.add(baseTestDb.getDocument(createDocNumbered(i, to)).toMap()); }
+            for (int i = from; i <= to; i++) {
+                numbers.add(baseTestDb.getDocument(createNumberedDocInBaseTestDb(i, to)).toMap());
+            }
         });
         baseTestDb.inBatch(test);
 

@@ -289,7 +289,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
         m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
         ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
-
     @NonNull
     private static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
         final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
@@ -821,16 +820,21 @@ public abstract class AbstractReplicator extends InternalReplicator {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
         synchronized (config.getDatabase().getLock()) {
             C4Replicator c4Repl = getC4Replicator();
-            if (c4Repl == null) {
-                setupFilters();
-                try {
-                    c4Repl = createReplicatorForTarget(config.getTarget());
-                    setC4Replicator(c4Repl);
-                }
-                catch (LiteCoreException e) {
-                    throw new IllegalStateException("Could not create replicator", CBLStatus.convertException(e));
-                }
+
+            if (c4Repl != null) {
+                c4Repl.setOptions(getFleeceOptions());
+                return c4Repl;
             }
+
+            setupFilters();
+            try {
+                c4Repl = createReplicatorForTarget(config.getTarget());
+                setC4Replicator(c4Repl);
+            }
+            catch (LiteCoreException e) {
+                throw new IllegalStateException("Could not create replicator", CBLStatus.convertException(e));
+            }
+
             return c4Repl;
         }
     }
@@ -887,9 +891,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         // Encode the options:
         final Map<String, Object> options = config.effectiveOptions();
 
-        synchronized (lock) {
-            options.put(C4Replicator.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value);
-        }
+        synchronized (lock) { options.put(C4Replicator.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value); }
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {
@@ -963,15 +965,11 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private CBLCookieStore getCookieStore() {
         return new CBLCookieStore() {
             @Override
-            public void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) {
-                getDatabase().setCookie(uri, setCookieHeader);
-            }
+            public void setCookie(@NonNull URI uri, @NonNull String header) { getDatabase().setCookie(uri, header); }
 
             @Nullable
             @Override
-            public String getCookies(@NonNull URI uri) {
-                return getDatabase().getCookies(uri);
-            }
+            public String getCookies(@NonNull URI uri) { return getDatabase().getCookies(uri); }
         };
     }
 
