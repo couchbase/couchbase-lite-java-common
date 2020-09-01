@@ -15,18 +15,19 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.core.C4Constants;
-import com.couchbase.lite.internal.core.C4ReplicatorStatus;
-
-import org.junit.Test;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Test;
+
+import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.core.C4ReplicatorStatus;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 public class ReplicatorMiscTest extends BaseReplicatorTest {
@@ -98,5 +99,50 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertTrue(doc.flags().contains(DocumentFlag.DocumentFlagsDeleted));
         assertEquals(doc.getError().getDomain(), CBLError.Domain.CBLITE);
         assertEquals(doc.getError().getCode(), CBLError.Code.BUSY);
+    }
+
+    // CBL-1218
+    @Test
+    public void testStartReplicatorWithClosedDb() throws URISyntaxException {
+        Replicator replicator = new Replicator(
+            makeConfig(true, true, false, baseTestDb, new URLEndpoint(new URI("wss://foo")), null, null));
+
+        closeDb(baseTestDb);
+
+        try { replicator.start(false); }
+        catch (IllegalStateException ignore) { return; }
+
+        fail("Should fail on closed db");
+    }
+
+    // CBL-1218
+    @Test
+    public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
+        Replicator replicator = new Replicator(
+            makeConfig(true, true, false, baseTestDb, new URLEndpoint(new URI("wss://foo")), null, null));
+
+        closeDb(baseTestDb);
+
+        try { replicator.getPendingDocumentIds(); }
+        catch (IllegalStateException ignore) { return; }
+
+        fail("Should fail on closed db");
+    }
+
+    // CBL-1218
+    @Test
+    public void testGetPendingDocIdsWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
+        MutableDocument doc = new MutableDocument();
+        otherDB.save(doc);
+
+        Replicator replicator = new Replicator(
+            makeConfig(true, true, false, baseTestDb, new URLEndpoint(new URI("wss://foo")), null, null));
+
+        closeDb(baseTestDb);
+
+        try { replicator.isDocumentPending(doc.getId()); }
+        catch (IllegalStateException ignore) { return; }
+
+        fail("Should fail on closed db");
     }
 }
