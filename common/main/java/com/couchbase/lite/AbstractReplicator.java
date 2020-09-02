@@ -433,7 +433,12 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * @return this replicator's server certificates.
      */
     @Nullable
-    public List<Certificate> getServerCertificates() { return serverCertificates.get(); }
+    public List<Certificate> getServerCertificates() {
+        final List<Certificate> serverCerts = serverCertificates.get();
+        return ((serverCerts == null) || serverCerts.isEmpty())
+            ? null
+            : new ArrayList<>(serverCerts);
+    }
 
     /**
      * Get a best effort list of documents still pending replication.
@@ -974,9 +979,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     }
 
     // Consumer callback to set the server certificates received during the TLS Handshake
-    private void setServerCertificates(List<Certificate> certificates) {
-        serverCertificates.set(certificates);
-    }
+    private void setServerCertificates(List<Certificate> certificates) { serverCertificates.set(certificates); }
 
     private String description() { return baseDesc() + "," + getDatabase() + " => " + config.getTarget() + "}"; }
 

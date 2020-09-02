@@ -751,6 +751,7 @@ abstract class AbstractDatabase {
 
     /**
      * Closes a database.
+     * Closing a database will stop all replicators, live queries and all listeners attached to it.
      *
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
@@ -762,8 +763,8 @@ abstract class AbstractDatabase {
 
     /**
      * Deletes a database.
-     * Although attempting to close a closed database is not an error,
-     * attempting to delete a closed database is.
+     * Deleting a database will stop all replicators, live queries and all listeners attached to it.
+     * Although attempting to close a closed database is not an error, attempting to delete a closed database is.
      *
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
