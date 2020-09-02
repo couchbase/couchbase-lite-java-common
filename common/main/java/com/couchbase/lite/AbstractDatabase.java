@@ -1671,7 +1671,7 @@ abstract class AbstractDatabase {
                 if (!activeProcesses.isEmpty()) { liveProcesses = new HashSet<>(activeProcesses); }
             }
 
-            if (liveProcesses != null) { shutdownActiveProcesses(liveProcesses); }
+            shutdownActiveProcesses(liveProcesses);
 
             // the replicators won't be able to shut down until this lock is released
         }

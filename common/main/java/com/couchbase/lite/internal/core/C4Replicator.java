@@ -439,7 +439,6 @@ public class C4Replicator extends C4NativePeer {
         release(handle);
     }
 
-    @Nullable
     public void setOptions(@NonNull byte[] options) { setOptions(getPeer(), options); }
 
     @Nullable
@@ -462,6 +461,10 @@ public class C4Replicator extends C4NativePeer {
     }
 
     public void setHostReachable(boolean reachable) { setHostReachable(getPeer(), reachable); }
+
+    @NonNull
+    @Override
+    public String toString() { return "C4Repl{" + ClassUtils.objId(this) + ", peer='" + getPeerUnchecked() + "'}"; }
 
     // Note: the reference in the REVERSE_LOOKUP_TABLE must already be gone, or we wouldn't be here...
     @SuppressWarnings("NoFinalizer")

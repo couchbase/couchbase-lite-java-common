@@ -38,6 +38,10 @@ public final class Report {
         Report.log(level, String.format(Locale.ENGLISH, template, args));
     }
 
+    public static void log(@NonNull LogLevel level, @Nullable Throwable err, @NonNull String template, Object... args) {
+        Report.log(level, String.format(Locale.ENGLISH, template, args), err);
+    }
+
     public static void log(@NonNull LogLevel level, @NonNull String message, @Nullable Throwable err) {
         final String domain = "CouchbaseLite/Test";
         switch (level) {
