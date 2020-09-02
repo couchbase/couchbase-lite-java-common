@@ -18,8 +18,6 @@ package com.couchbase.lite.internal;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.CBLError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
@@ -33,37 +31,34 @@ import com.couchbase.lite.internal.support.Log;
 public final class CBLStatus {
     private CBLStatus() {}
 
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     @NonNull
-    public static CouchbaseLiteException convertError(@Nullable C4Error c4err) {
+    public static CouchbaseLiteException convertC4Error(@Nullable C4Error c4err) {
         return (c4err == null)
-            ? new CouchbaseLiteException()
-            : convertException(c4err.getDomain(), c4err.getCode(), c4err.getInternalInfo());
+            ? new CouchbaseLiteException("Unknown C4 error")
+            : toCouchbaseLiteException(c4err.getDomain(), c4err.getCode(), c4err.getInternalInfo());
     }
 
-    // CouchbaseLiteException can, actually, deal with a null message
-    @SuppressFBWarnings("NP_NONNULL_PARAM_VIOLATION")
     @NonNull
     public static CouchbaseLiteException convertException(@Nullable LiteCoreException e) {
         return (e == null)
-            ? new CouchbaseLiteException()
-            : convertException(e.domain, e.code, null, e);
+            ? new CouchbaseLiteException("Unknown LiteCore exception")
+            : toCouchbaseLiteException(e.domain, e.code, null, e);
     }
 
     @NonNull
     public static CouchbaseLiteException convertException(@Nullable LiteCoreException e, @NonNull String msg) {
         return (e == null)
             ? new CouchbaseLiteException(msg)
-            : convertException(e.domain, e.code, msg, e);
+            : toCouchbaseLiteException(e.domain, e.code, msg, e);
     }
 
-    public static CouchbaseLiteException convertException(int domainCode, int statusCode, int internalInfo) {
-        return ((domainCode == 0) || (statusCode == 0))
-            ? convertException(domainCode, statusCode, null, null)
-            : convertException(domainCode, statusCode, C4Base.getMessage(domainCode, statusCode, internalInfo), null);
+    public static CouchbaseLiteException toCouchbaseLiteException(int domain, int status, int info) {
+        return ((domain == 0) || (status == 0))
+            ? toCouchbaseLiteException(domain, status, null, null)
+            : toCouchbaseLiteException(domain, status, C4Base.getMessage(domain, status, info), null);
     }
 
-    public static CouchbaseLiteException convertException(
+    public static CouchbaseLiteException toCouchbaseLiteException(
         int domainCode,
         int statusCode,
         @Nullable String msg,

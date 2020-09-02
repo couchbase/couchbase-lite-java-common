@@ -169,7 +169,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             this(
                 getActivityLevelFromC4(c4Status.getActivityLevel()),
                 new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
-                c4Status.getErrorCode() != 0 ? CBLStatus.convertError(c4Status.getC4Error()) : null);
+                (c4Status.getErrorCode() == 0) ? null : CBLStatus.convertC4Error(c4Status.getC4Error()));
         }
 
         private Status(
@@ -770,7 +770,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
                     continue;
                 }
 
-                error = CBLStatus.convertError(c4Error);
+                error = CBLStatus.convertC4Error(c4Error);
             }
 
             unconflictedDocs.add(new ReplicatedDocument(docId, docEnd.getFlags(), error, docEnd.errorIsTransient()));
@@ -847,7 +847,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         CouchbaseLiteException error = null;
         if (c4Status.getErrorCode() != 0) {
-            error = CBLStatus.convertException(
+            error = CBLStatus.toCouchbaseLiteException(
                 c4Status.getErrorDomain(),
                 c4Status.getErrorCode(),
                 c4Status.getErrorInternalInfo());

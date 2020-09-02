@@ -34,7 +34,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         Endpoint endpoint = getRemoteTargetEndpoint();
         ReplicatorConfiguration config = makeConfig(true, false, true, endpoint);
         config.setContinuous(false);
-        baseTestReplicator = new Replicator(config);
+        baseTestReplicator = newReplicator(config);
 
         assertThrows(IllegalStateException.class, () -> baseTestReplicator.getConfig().setContinuous(true));
     }
@@ -46,7 +46,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
         Endpoint target = getRemoteTargetEndpoint();
         ReplicatorConfiguration config = makeConfig(false, true, true, baseTestDb, target);
-        Replicator repl = new Replicator(config);
+        Replicator repl = newReplicator(config);
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(
@@ -71,7 +71,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         failImmediatelyForPlatform("testStartSingleShotReplicatorInOffline");
 
         Endpoint endpoint = getRemoteTargetEndpoint();
-        Replicator repl = new Replicator(makeConfig(true, false, false, endpoint));
+        Replicator repl = newReplicator(makeConfig(true, false, false, endpoint));
         final CountDownLatch stopped = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(
             testSerialExecutor,
@@ -88,7 +88,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testDocumentChangeListenerToken() throws Exception {
         Endpoint endpoint = getRemoteTargetEndpoint();
-        Replicator repl = new Replicator(makeConfig(true, false, false, endpoint));
+        Replicator repl = newReplicator(makeConfig(true, false, false, endpoint));
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
         assertNotNull(token);
 
@@ -103,7 +103,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testChangeListenerEmptyArg() throws Exception {
         Endpoint endpoint = getRemoteTargetEndpoint();
-        Replicator repl = new Replicator(makeConfig(true, false, true, endpoint));
+        Replicator repl = newReplicator(makeConfig(true, false, true, endpoint));
 
         assertThrows(IllegalArgumentException.class, () -> repl.addChangeListener(null));
 

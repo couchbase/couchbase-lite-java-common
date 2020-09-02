@@ -68,6 +68,8 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
                 ? ReplicatorType.PUSH
                 : ReplicatorType.PULL);
     }
+    // Don't let the NetworkConnectivityManager confuse tests
+    protected final Replicator newReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
 
     protected final ReplicatorConfiguration makeConfig(
         boolean push,
@@ -191,7 +193,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         Fn.Consumer<Replicator> onReady)
         throws CouchbaseLiteException {
         return run(
-            new Replicator(config),
+            newReplicator(config),
             expectedErrorCode,
             expectedErrorDomain,
             ignoreErrorAtStopped,
