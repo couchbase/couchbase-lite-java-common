@@ -470,15 +470,18 @@ public class C4Replicator extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        final long handle = getPeerAndClear();
+        try {
+            final long handle = getPeerAndClear();
 
-        if (handle != 0) {
-            stop(handle);
-            // !!! the two arguments to free may already be gone
-            free(handle, replicatorContext, socketFactoryContext);
+            if (handle != 0) {
+                stop(handle);
+                // !!! the two arguments to free may already be gone
+                free(handle, replicatorContext, socketFactoryContext);
+            }
         }
-
-        super.finalize();
+        finally {
+            super.finalize();
+        }
     }
 
     //-------------------------------------------------------------------------

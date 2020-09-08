@@ -614,12 +614,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        final C4Replicator c4Repl = getC4Replicator();
-        if (c4Repl == null) { return; }
+        try {
+            final C4Replicator c4Repl = getC4Replicator();
+            if (c4Repl == null) { return; }
 
-        c4Repl.close();
-
-        super.finalize();
+            c4Repl.close();
+        }
+        finally {
+            super.finalize();
+        }
     }
 
     /**

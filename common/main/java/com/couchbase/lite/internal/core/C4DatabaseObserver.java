@@ -97,10 +97,13 @@ public class C4DatabaseObserver extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        final long handle = getPeerAndClear();
-        if (handle != 0) { free(handle); }
-
-        super.finalize();
+        try {
+            final long handle = getPeerAndClear();
+            if (handle != 0) { free(handle); }
+        }
+        finally {
+            super.finalize();
+        }
     }
 
     //-------------------------------------------------------------------------

@@ -77,10 +77,14 @@ public class FLSliceResult extends C4NativePeer implements AllocSlice {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        if ((!isMemoryManaged) && (get() != 0L)) {
-            throw new IllegalStateException("FLSliceResult was not freed: " + this);
+        try {
+            if ((!isMemoryManaged) && (get() != 0L)) {
+                throw new IllegalStateException("FLSliceResult was not freed: " + this);
+            }
         }
-        super.finalize();
+        finally {
+            super.finalize();
+        }
     }
 
     //-------------------------------------------------------------------------

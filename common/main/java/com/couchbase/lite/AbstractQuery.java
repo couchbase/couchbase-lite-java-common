@@ -37,6 +37,7 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
+
 @SuppressWarnings("PMD.GodClass")
 abstract class AbstractQuery implements Query {
     //---------------------------------------------
@@ -223,19 +224,22 @@ abstract class AbstractQuery implements Query {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        final C4Query query = c4query;
-        if (query == null) { return; }
+        try {
+            final C4Query query = c4query;
+            if (query == null) { return; }
 
-        final Object lock = getDbLockUnchecked();
-        if (lock != null) {
-            synchronized (lock) { query.free(); }
+            final Object lock = getDbLockUnchecked();
+            if (lock != null) {
+                synchronized (lock) { query.free(); }
+            }
+            else {
+                Log.w(LogDomain.DATABASE, "Could not get DB lock to free query");
+                query.free();
+            }
         }
-        else {
-            Log.w(LogDomain.DATABASE, "Could not get DB lock to free query");
-            query.free();
+        finally {
+            super.finalize();
         }
-
-        super.finalize();
     }
 
     //---------------------------------------------

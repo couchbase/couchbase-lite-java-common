@@ -184,10 +184,14 @@ public class FLEncoder extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        if ((!isMemoryManaged) && (get() != 0L)) {
-            throw new IllegalStateException("FLEncoder finalized without being freed: " + this);
+        try {
+            if ((!isMemoryManaged) && (get() != 0L)) {
+                throw new IllegalStateException("FLEncoder finalized without being freed: " + this);
+            }
         }
-        super.finalize();
+        finally {
+            super.finalize();
+        }
     }
 
     //-------------------------------------------------------------------------

@@ -73,8 +73,8 @@ public class C4BlobReadStream extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        close();
-        super.finalize();
+        try { close(); }
+        finally { super.finalize(); }
     }
 
     //-------------------------------------------------------------------------

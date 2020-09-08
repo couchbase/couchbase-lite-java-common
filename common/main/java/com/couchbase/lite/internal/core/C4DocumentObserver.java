@@ -109,12 +109,15 @@ public class C4DocumentObserver extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        final long handle = getPeerAndClear();
-        if (handle == 0) { return; }
+        try {
+            final long handle = getPeerAndClear();
+            if (handle == 0) { return; }
 
-        free(handle);
-
-        super.finalize();
+            free(handle);
+        }
+        finally {
+            super.finalize();
+        }
     }
 
     //-------------------------------------------------------------------------

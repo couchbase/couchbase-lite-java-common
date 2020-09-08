@@ -850,16 +850,18 @@ abstract class AbstractDatabase {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        // This is the only thing that is really essential.
-        final C4DatabaseObserver observer = c4DbObserver;
-        if (observer != null) { observer.close(); }
-        else { Log.d(DOMAIN, "C4DatabaseObserver is null in database finalizer"); }
+        try {
+            // This is the only thing that is really essential.
+            final C4DatabaseObserver observer = c4DbObserver;
+            if (observer != null) { observer.close(); }
 
-        // This stuff might just speed things up a little
-        shutdownActiveProcesses(activeProcesses);
-        shutdownExecutors(postExecutor, queryExecutor, 0);
-
-        super.finalize();
+            // This stuff might just speed things up a little
+            shutdownActiveProcesses(activeProcesses);
+            shutdownExecutors(postExecutor, queryExecutor, 0);
+        }
+        finally {
+            super.finalize();
+        }
     }
 
     //---------------------------------------------

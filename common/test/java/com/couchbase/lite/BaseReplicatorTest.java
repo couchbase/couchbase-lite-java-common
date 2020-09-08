@@ -68,6 +68,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
                 ? ReplicatorType.PUSH
                 : ReplicatorType.PULL);
     }
+
     // Don't let the NetworkConnectivityManager confuse tests
     protected final Replicator newReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
 

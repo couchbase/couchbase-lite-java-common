@@ -53,8 +53,8 @@ public class C4RawDocument extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        free();
-        super.finalize();
+        try { free(); }
+        finally { super.finalize(); }
     }
 
     //-------------------------------------------------------------------------
