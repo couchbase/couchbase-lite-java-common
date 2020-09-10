@@ -447,13 +447,17 @@ public class C4Database extends C4NativePeer {
 
     // - Lifecycle
     private static native long open(
-        String path, int flags,
-        String storageEngine, int versioning,
-        int algorithm, byte[] encryptionKey)
+        String path,
+        int flags,
+        String storageEngine,
+        int versioning,
+        int algorithm,
+        byte[] encryptionKey)
         throws LiteCoreException;
 
     private static native void copy(
-        String sourcePath, String destinationPath,
+        String sourcePath,
+        String destinationPath,
         int flags,
         String storageEngine,
         int versioning,
