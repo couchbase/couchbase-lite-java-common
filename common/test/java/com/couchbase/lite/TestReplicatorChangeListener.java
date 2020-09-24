@@ -16,18 +16,14 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
     private final AtomicReference<Throwable> testFailureReason = new AtomicReference<>();
     private final CountDownLatch latch = new CountDownLatch(1);
 
-    private final Replicator replicator;
     private final boolean continuous;
-    private final String domain;
-    private final int code;
-    private final boolean ignoreErrorAtStopped;
+    private final String expectedErrDomain;
+    private final int expectedErrCode;
 
-    public TestReplicatorChangeListener(Replicator replicator, String domain, int code, boolean ignoreErrorAtStopped) {
-        this.replicator = replicator;
-        this.continuous = replicator.getConfig().isContinuous();
-        this.domain = domain;
-        this.code = code;
-        this.ignoreErrorAtStopped = ignoreErrorAtStopped;
+    public TestReplicatorChangeListener(boolean continuous, String expectedErrDomain, int expectedErrCode) {
+        this.expectedErrDomain = expectedErrDomain;
+        this.expectedErrCode = expectedErrCode;
+        this.continuous = continuous;
     }
 
     public Throwable getFailureReason() { return testFailureReason.get(); }
@@ -40,7 +36,7 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
 
     @Override
     public void changed(@NotNull ReplicatorChange change) {
-        Report.log(LogLevel.DEBUG, "Test replicator listener change: " + change);
+        Report.log(LogLevel.DEBUG, "Test replicator state change: " + change);
         final Replicator.Status status = change.getStatus();
         try {
             if (continuous) { checkContinuousStatus(status); }
@@ -58,10 +54,8 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
         if (state != Replicator.ActivityLevel.STOPPED) { return; }
 
         try {
-            if (code != 0) { checkError(error); }
-            else {
-                if ((!ignoreErrorAtStopped) && (error != null)) { throw error; }
-            }
+            if (expectedErrCode != 0) { verifyError(error); }
+            else if (error != null) { throw error; }
         }
         finally {
             latch.countDown();
@@ -77,7 +71,7 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
         switch (state) {
             case OFFLINE:
                 try {
-                    if (code != 0) { checkError(error); }
+                    if (expectedErrCode != 0) { verifyError(error); }
                     else {
                         // TBD
                     }
@@ -87,8 +81,8 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
                 }
             case IDLE:
                 try {
-                    assertEquals(status.getProgress().getTotal(), (status.getProgress().getCompleted()));
-                    if (code != 0) { checkError(error); }
+                    assertEquals(status.getProgress().getTotal(), status.getProgress().getCompleted());
+                    if (expectedErrCode != 0) { verifyError(error); }
                     else {
                         if (error != null) { throw error; }
                     }
@@ -100,10 +94,10 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
         }
     }
 
-    private void checkError(CouchbaseLiteException error) {
+    private void verifyError(CouchbaseLiteException error) {
         assertNotNull(error);
-        assertEquals(code, error.getCode());
-        if (domain != null) { assertEquals(domain, error.getDomain()); }
+        assertEquals(expectedErrCode, error.getCode());
+        if (expectedErrDomain != null) { assertEquals(expectedErrDomain, error.getDomain()); }
     }
 }
 

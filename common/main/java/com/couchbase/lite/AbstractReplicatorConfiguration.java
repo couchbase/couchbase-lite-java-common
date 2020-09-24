@@ -30,6 +30,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Replicator configuration.
  */
+@SuppressWarnings("PMD.GodClass")
 abstract class AbstractReplicatorConfiguration {
     /**
      * Replicator type
@@ -337,7 +338,27 @@ abstract class AbstractReplicatorConfiguration {
 
     @NonNull
     @Override
-    public String toString() { return "ReplicatorConfig{" + database + " => " + target + "}"; }
+    public String toString() {
+        String typeStr = continuous ? "*" : "=";
+        if (authenticator != null) { typeStr = typeStr + "@"; }
+        if (conflictResolver != null) { typeStr = typeStr + "?"; }
+        if (pinnedServerCertificate != null) { typeStr = typeStr + "!"; }
+        switch (replicatorType) {
+            case PUSH_AND_PULL:
+                typeStr = "<" + typeStr + ">";
+                break;
+            case PUSH:
+                typeStr = typeStr + ">";
+                break;
+            case PULL:
+                typeStr = "<" + typeStr;
+                break;
+        }
+        if (pullFilter != null) { typeStr = "|" + typeStr; }
+        if (pushFilter != null) { typeStr = typeStr + "|"; }
+
+        return "ReplicatorConfig{" + database + typeStr + target + "}";
+    }
 
     //---------------------------------------------
     // Protected access

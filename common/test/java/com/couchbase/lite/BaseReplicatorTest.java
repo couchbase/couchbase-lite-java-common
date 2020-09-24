@@ -55,7 +55,6 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
     // helper method allows kotlin to call isDocumentPending(null)
     // Kotlin type checking prevents this.
-    @SuppressWarnings("ConstantConditions")
     protected final boolean callIsDocumentPendingWithNullId(Replicator repl) throws CouchbaseLiteException {
         return repl.isDocumentPending(null);
     }
@@ -70,7 +69,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     }
 
     // Don't let the NetworkConnectivityManager confuse tests
-    protected final Replicator newReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
+    protected final Replicator testReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
 
     protected final ReplicatorConfiguration makeConfig(
         boolean push,
@@ -131,105 +130,82 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return config;
     }
 
+    protected final Replicator run(
+        int expectedErrorCode,
+        String expectedErrorDomain,
+        URI url,
+        boolean push,
+        boolean pull,
+        boolean continuous,
+        Authenticator auth,
+        Certificate pinnedServerCert)
+        throws CouchbaseLiteException {
+        final ReplicatorConfiguration config = makeConfig(
+            push,
+            pull,
+            continuous,
+            new URLEndpoint(url),
+            pinnedServerCert);
+        if (auth != null) { config.setAuthenticator(auth); }
+        return run(config, expectedErrorCode, expectedErrorDomain, false, null);
+    }
+
     protected final Replicator run(ReplicatorConfiguration config) throws CouchbaseLiteException {
         return run(config, null);
     }
 
     protected final Replicator run(ReplicatorConfiguration config, Fn.Consumer<Replicator> onReady)
         throws CouchbaseLiteException {
-        return run(config, 0, null, false, false, onReady);
+        return run(config, 0, null, false, onReady);
     }
 
-    protected final Replicator run(URI url, boolean push, boolean pull, boolean continuous, Authenticator auth)
+    protected final Replicator run(ReplicatorConfiguration config, boolean reset, Fn.Consumer<Replicator> onReady)
         throws CouchbaseLiteException {
-        final ReplicatorConfiguration config = makeConfig(push, pull, continuous, new URLEndpoint(url));
-        if (auth != null) { config.setAuthenticator(auth); }
-        return run(config);
-    }
-
-    protected final Replicator run(
-        URI url,
-        boolean push,
-        boolean pull,
-        boolean continuous,
-        Authenticator auth,
-        Certificate pinnedServerCert)
-        throws CouchbaseLiteException {
-        final ReplicatorConfiguration config = makeConfig(
-            push,
-            pull,
-            continuous,
-            new URLEndpoint(url),
-            pinnedServerCert);
-        if (auth != null) { config.setAuthenticator(auth); }
-        return run(config);
-    }
-
-    protected final Replicator run(
-        int expectedErrorCode,
-        String expectedErrorDomain,
-        URI url,
-        boolean push,
-        boolean pull,
-        boolean continuous,
-        Authenticator auth,
-        Certificate pinnedServerCert)
-        throws CouchbaseLiteException {
-        final ReplicatorConfiguration config = makeConfig(
-            push,
-            pull,
-            continuous,
-            new URLEndpoint(url),
-            pinnedServerCert);
-        if (auth != null) { config.setAuthenticator(auth); }
-        return run(config, expectedErrorCode, expectedErrorDomain, false, false, null);
+        return run(config, 0, null, reset, onReady);
     }
 
     protected final Replicator run(
         ReplicatorConfiguration config,
         int expectedErrorCode,
         String expectedErrorDomain,
-        boolean ignoreErrorAtStopped,
         boolean reset,
         Fn.Consumer<Replicator> onReady)
         throws CouchbaseLiteException {
         return run(
-            newReplicator(config),
+            testReplicator(config),
             expectedErrorCode,
             expectedErrorDomain,
-            ignoreErrorAtStopped,
             reset,
             onReady);
     }
 
-    protected final Replicator run(Replicator r) throws CouchbaseLiteException {
-        return run(r, 0, null, false, false, null);
+    protected final Replicator run(Replicator repl) throws CouchbaseLiteException {
+        return run(repl, 0, null, false, null);
     }
 
     private Replicator run(
-        Replicator r,
+        Replicator repl,
         int expectedErrorCode,
         String expectedErrorDomain,
-        boolean ignoreErrorAtStopped,
         boolean reset,
         Fn.Consumer<Replicator> onReady)
         throws CouchbaseLiteException {
-        baseTestReplicator = r;
+        baseTestReplicator = repl;
 
         TestReplicatorChangeListener listener
-            = new TestReplicatorChangeListener(r, expectedErrorDomain, expectedErrorCode, ignoreErrorAtStopped);
+            = new TestReplicatorChangeListener(repl.config.isContinuous(), expectedErrorDomain, expectedErrorCode);
 
-        if (onReady != null) { onReady.accept(r); }
+        if (onReady != null) { onReady.accept(repl); }
 
-        ListenerToken token = r.addChangeListener(testSerialExecutor, listener);
+        ListenerToken token = repl.addChangeListener(testSerialExecutor, listener);
 
         boolean success;
         try {
-            r.start(reset);
+            repl.start(reset);
             success = listener.awaitCompletion(STD_TIMEOUT_SECS, TimeUnit.SECONDS);
         }
         finally {
-            r.removeChangeListener(token);
+            repl.removeChangeListener(token);
         }
 
         // see if the replication succeeded
@@ -239,6 +215,6 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
         assertTrue(success);
 
-        return r;
+        return repl;
     }
 }

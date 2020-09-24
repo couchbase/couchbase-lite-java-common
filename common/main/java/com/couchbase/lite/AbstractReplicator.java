@@ -757,7 +757,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         if (c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED) {
             // this will probably make this instance eligible for garbage collection...
-            getDatabase().removeActiveReplicator((Replicator) this);
+            getDatabase().removeActiveReplicator(this);
         }
 
         for (ReplicatorChangeListenerToken token: tokens) { token.notify(change); }

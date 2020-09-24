@@ -1153,7 +1153,7 @@ abstract class AbstractDatabase {
     }
 
     <T> void unregisterProcess(T process) {
-        synchronized (activeProcesses) { activeProcesses.remove(new ActiveProcess<T>(process)); }
+        synchronized (activeProcesses) { activeProcesses.remove(new ActiveProcess<>(process)); }
         verifyActiveProcesses();
     }
 

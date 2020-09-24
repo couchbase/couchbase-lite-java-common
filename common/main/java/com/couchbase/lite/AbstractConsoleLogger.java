@@ -72,9 +72,9 @@ abstract class AbstractConsoleLogger implements Logger {
      *
      * @param domains The domains to make active
      */
+    @SuppressWarnings("deprecation")
     public void setDomains(@NonNull EnumSet<LogDomain> domains) {
         Preconditions.assertNotNull(domains, "domains");
-        //noinspection deprecation
         logDomains = (!domains.contains(LogDomain.ALL))
             ? domains
             : LogDomain.ALL_DOMAINS;

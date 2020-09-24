@@ -135,7 +135,6 @@ public class C4Replicator extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    @SuppressWarnings("unused")
     static void statusChangedCallback(long handle, @Nullable C4ReplicatorStatus status) {
         final C4Replicator repl = getReplicatorForHandle(handle);
         Log.d(
@@ -148,7 +147,6 @@ public class C4Replicator extends C4NativePeer {
     }
 
     // This method is called by reflection.  Don't change its signature.
-    @SuppressWarnings("unused")
     static void documentEndedCallback(long handle, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
         Log.d(
             LogDomain.REPLICATOR,
@@ -164,7 +162,6 @@ public class C4Replicator extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     // Supported only for Replicators
     // This method is called from a native thread that Java has never even heard of...
-    @SuppressWarnings("unused")
     static boolean validationFunction(
         @Nullable String docID,
         @Nullable String revID,
