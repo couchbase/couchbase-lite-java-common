@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import java.io.PrintStream;
 import java.util.Locale;
 
 import com.couchbase.lite.LogLevel;
@@ -26,6 +27,8 @@ import com.couchbase.lite.LogLevel;
 public final class Report {
     private Report() {}
 
+    private static final String DOMAIN = "/CouchbaseLite/TEST: ";
+
     public static void log(LogLevel level, String message) {
         Report.log(level, message, (Throwable) null);
     }
@@ -35,7 +38,12 @@ public final class Report {
     }
 
     public static void log(LogLevel level, String message, Throwable err) {
-        ((LogLevel.WARNING.compareTo(level) <= 0) ? System.err : System.out)
-            .println(level + "/CouchbaseLite/Test:" + message + (err != null ? err : ""));
+        final String header = level + DOMAIN;
+        final PrintStream log = (LogLevel.WARNING.compareTo(level) <= 0) ? System.err : System.out;
+        log.println(header + message);
+        if (err != null) {
+            log.println(header + err.getMessage());
+            err.printStackTrace(log);
+        }
     }
 }

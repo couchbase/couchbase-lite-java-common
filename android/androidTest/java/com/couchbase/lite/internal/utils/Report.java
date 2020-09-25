@@ -30,6 +30,8 @@ import com.couchbase.lite.LogLevel;
 public final class Report {
     private Report() {}
 
+    private static final String DOMAIN = "CouchbaseLite/TEST";
+
     public static void log(@NonNull LogLevel level, @NonNull String message) {
         Report.log(level, message, (Throwable) null);
     }
@@ -43,22 +45,21 @@ public final class Report {
     }
 
     public static void log(@NonNull LogLevel level, @NonNull String message, @Nullable Throwable err) {
-        final String domain = "CouchbaseLite/Test";
         switch (level) {
             case DEBUG:
-                Log.d(domain, message);
+                Log.d(DOMAIN, message, err);
                 break;
             case VERBOSE:
-                Log.v(domain, message);
+                Log.v(DOMAIN, message, err);
                 break;
             case INFO:
-                Log.i(domain, message);
+                Log.i(DOMAIN, message, err);
                 break;
             case WARNING:
-                Log.w(domain, message);
+                Log.w(DOMAIN, message, err);
                 break;
             case ERROR:
-                Log.e(domain, message, err);
+                Log.e(DOMAIN, message, err);
                 break;
         }
     }
