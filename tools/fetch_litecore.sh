@@ -125,7 +125,7 @@ case "${OS}" in
       mv -f lib/libgcc*.* "${SUPPORT_DIR}"
       mv -f lib/libicu*.* "${SUPPORT_DIR}"
       mv -f lib/libstdc*.* "${SUPPORT_DIR}"
-      mv -f lib/libz*.* "${SUPPORT_DIR}"
+      mv -f lib/libz*.* "${SUPPORT_DIR}" || true # Only on CentOS6
       rm -f "${SUPPORT_DIR}/"libicutest*.*
 
       rm -f "${LIB}.tar.gz"

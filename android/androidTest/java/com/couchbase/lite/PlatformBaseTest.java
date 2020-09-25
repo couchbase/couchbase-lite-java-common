@@ -36,8 +36,7 @@ import org.junit.runner.Description;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
-
-import static org.junit.Assert.fail;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 /**
@@ -48,15 +47,10 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
 
-    private static final Map<String, Runnable> PLATFORM_DEPENDENT_TESTS;
+    private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
     static {
-        final Map<String, Runnable> m = new HashMap<>();
-        m.put(
-            "testStopReplicatorAfterOffline",
-            () -> { if (Build.VERSION.SDK_INT < 21) { fail("Websockets not supported on Android v < 21"); }});
-        m.put(
-            "testStartSingleShotReplicatorInOffline",
-            () -> { if (Build.VERSION.SDK_INT < 21) { fail("Websockets not supported on Android v < 21"); }});
+        final Map<String, Fn.Provider<Boolean>> m = new HashMap<>();
+        m.put("android<21", () -> Build.VERSION.SDK_INT < 21);
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
@@ -111,9 +105,9 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
-    public final void failImmediatelyForPlatform(String testName) {
-        Runnable test = PLATFORM_DEPENDENT_TESTS.get(testName);
-        if (test != null) { test.run(); }
+    public final boolean handlePlatformSpecially(String tag) {
+        final Fn.Provider<Boolean> test = PLATFORM_DEPENDENT_TESTS.get(tag);
+        return (test != null) && test.get();
     }
 
     @Override

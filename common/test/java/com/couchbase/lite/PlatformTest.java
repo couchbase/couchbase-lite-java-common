@@ -34,7 +34,7 @@ public interface PlatformTest {
     String getScratchDirectoryPath(String name);
 
     /* Terminate the test with prejudice, on this platform */
-    void failImmediatelyForPlatform(String testName);
+    boolean handlePlatformSpecially(String tag);
 
     /* Scheduled to execute a task asynchronously. */
     void executeAsync(long delayMs, Runnable task);

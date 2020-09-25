@@ -25,6 +25,7 @@ import org.junit.Test;
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 public class ReplicatorOfflineTest extends BaseReplicatorTest {
@@ -42,7 +43,9 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
         // this test crashes the test suite on Android <21
-        failImmediatelyForPlatform("testStopReplicatorAfterOffline");
+        if (handlePlatformSpecially("android<21")) {
+            fail("Websockets not supported on Android v < 21");
+        }
 
         Endpoint target = getRemoteTargetEndpoint();
         ReplicatorConfiguration config = makeConfig(false, true, true, baseTestDb, target);
@@ -68,7 +71,9 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testStartSingleShotReplicatorInOffline() throws URISyntaxException, InterruptedException {
         // this test crashes the test suite on Android <21
-        failImmediatelyForPlatform("testStartSingleShotReplicatorInOffline");
+        if (handlePlatformSpecially("android<21")) {
+            fail("Websockets not supported on Android v < 21");
+        }
 
         Endpoint endpoint = getRemoteTargetEndpoint();
         Replicator repl = testReplicator(makeConfig(true, false, false, endpoint));
@@ -84,7 +89,6 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         repl.removeChangeListener(token);
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void testDocumentChangeListenerToken() throws Exception {
         Endpoint endpoint = getRemoteTargetEndpoint();
@@ -99,8 +103,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
             () -> repl.addDocumentReplicationListener(testSerialExecutor, null));
     }
 
-    @SuppressWarnings("ConstantConditions")
-    @Test
+     @Test
     public void testChangeListenerEmptyArg() throws Exception {
         Endpoint endpoint = getRemoteTargetEndpoint();
         Replicator repl = testReplicator(makeConfig(true, false, true, endpoint));
