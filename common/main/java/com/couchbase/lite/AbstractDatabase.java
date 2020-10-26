@@ -25,7 +25,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -619,21 +618,6 @@ abstract class AbstractDatabase {
         }
 
         postDatabaseChanged();
-    }
-
-    // Compaction:
-
-    /**
-     * Compacts the database file by deleting unused attachment files and vacuuming the SQLite database
-     *
-     * @deprecated Use Database.performMaintenance(MaintenanceType.COMPACT)
-     */
-    @Deprecated
-    public void compact() throws CouchbaseLiteException {
-        synchronized (dbLock) {
-            try { getC4DatabaseLocked().compact(); }
-            catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
-        }
     }
 
     // Document changes:
