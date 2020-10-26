@@ -54,7 +54,7 @@ public final class URLEndpoint implements Endpoint {
 
         final String scheme = url.getScheme();
         if (!(SCHEME_STD.equals(scheme) || SCHEME_TLS.equals(scheme))) {
-            throw new IllegalArgumentException(Log.formatStandardMessage("InvalidSchemeURLEndpoint", scheme));
+            throw new IllegalArgumentException(Log.formatStandardMessage("InvalidSchemeURLEndpoint", url.toString()));
         }
 
         final String userInfo = url.getUserInfo();
