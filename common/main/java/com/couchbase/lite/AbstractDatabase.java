@@ -220,31 +220,6 @@ abstract class AbstractDatabase {
         }
     }
 
-    /**
-     * Set log level for the given log domain.
-     *
-     * @param domain The log domain
-     * @param level  The log level
-     * @deprecated As of 2.5 because it is being replaced with the
-     * {@link com.couchbase.lite.Log#getConsole() getConsole} method from the {@link #log log} property.
-     * This method will eventually be replaced with a no-op to preserve API compatibility.
-     * Until it is, its interactions with other logging maybe be fairly unpredictable.
-     */
-    @Deprecated
-    public static void setLogLevel(@NonNull LogDomain domain, @NonNull LogLevel level) {
-        Preconditions.assertNotNull(domain, "domain");
-        Preconditions.assertNotNull(level, "level");
-
-        //noinspection deprecation
-        final EnumSet<LogDomain> domains = (domain == LogDomain.ALL)
-            ? LogDomain.ALL_DOMAINS
-            : EnumSet.of(domain);
-
-        final ConsoleLogger logger = log.getConsole();
-        logger.setDomains(domains);
-        logger.setLevel(level);
-    }
-
     private static File getDatabaseFile(File dir, String name) {
         return new File(dir, name.replaceAll("/", ":") + DB_EXTENSION);
     }

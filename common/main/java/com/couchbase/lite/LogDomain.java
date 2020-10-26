@@ -22,16 +22,9 @@ import java.util.EnumSet;
  * Log domain
  */
 public enum LogDomain {
-    /**
-     * @deprecated Use the EnumSet <code>LogDomain.ALL_DOMAINS</code>
-     */
-    @Deprecated ALL,
     DATABASE, QUERY, REPLICATOR, NETWORK, LISTENER;
 
     public static final EnumSet<LogDomain> ALL_DOMAINS;
-    static {
-        ALL_DOMAINS = EnumSet.allOf(LogDomain.class);
-        ALL_DOMAINS.remove(LogDomain.ALL);
-    }
+    static { ALL_DOMAINS = EnumSet.allOf(LogDomain.class); }
 }
 
