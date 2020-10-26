@@ -338,9 +338,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @GuardedBy("lock")
     private CouchbaseLiteException lastError;
 
-    // Reset the replicator checkpoint.
-    private volatile boolean resetCheckpoint;
-
     private volatile String desc;
 
     // Server certificates received from the server during the TLS handshake
@@ -360,11 +357,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
     /**
      * Start the replicator.
      * This method honors the flag set by the deprecated method <code>resetCheckpoint()</code>.
-     *
-     * @deprecated Use <code>start(boolean resetCheckpoint)</code> instead.
      */
-    @Deprecated
-    public void start() { start(resetCheckpoint); }
+
+    public void start() { start(false); }
 
     /**
      * Start the replicator.
@@ -374,8 +369,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
      */
     public void start(boolean resetCheckpoint) {
         Log.i(DOMAIN, "Replicator is starting");
-
-        this.resetCheckpoint = false; // reset the (deprecated) flag
 
         getDatabase().addActiveReplicator(this);
 
@@ -578,21 +571,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
             docEndedListenerTokens.add(token);
             return token;
         }
-    }
-
-    /**
-     * This method, exactly, sets a flag that will be used on the next call to
-     * the deprecated method <code>start()</code>
-     *
-     * @throws IllegalStateException unless the Replicator is STOPPED.
-     * @deprecated Use <code>start(boolean resetCheckpoint)</code> instead.
-     */
-    @Deprecated
-    public void resetCheckpoint() {
-        if (!getState().equals(ActivityLevel.STOPPED)) {
-            throw new IllegalStateException(Log.lookupStandardMessage("ReplicatorNotStopped"));
-        }
-        resetCheckpoint = true;
     }
 
     @NonNull
