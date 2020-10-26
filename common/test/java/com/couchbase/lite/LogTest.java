@@ -9,6 +9,8 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -177,6 +179,16 @@ public class LogTest extends BaseDbTest {
         Log.w(LogDomain.DATABASE, "TEST WARNING");
         Log.e(LogDomain.DATABASE, "TEST ERROR");
         assertEquals(4, customLogger.getLineCount());
+    }
+
+    @Test
+    public void testLogArgs() throws URISyntaxException {
+        final String uri = "http://4.4.4.4:4444";
+        IllegalArgumentException err = null;
+        try { new URLEndpoint(new URI(uri)); }
+        catch (IllegalArgumentException e) { err = e; }
+        assertNotNull(err);
+        assertTrue(err.getMessage().contains(uri));
     }
 
     @Test
