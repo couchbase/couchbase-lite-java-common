@@ -46,16 +46,6 @@ public final class BasicAuthenticator extends Authenticator {
     //---------------------------------------------
 
     /**
-     * @param username
-     * @param password
-     * @deprecated Use <code>BasicAuthenticator(String, char[])</code>
-     */
-    @Deprecated
-    public BasicAuthenticator(@NonNull String username, @NonNull String password) {
-        this(username, Preconditions.assertNotNull(password, "password").toCharArray());
-    }
-
-    /**
      * Create a Basic Authenticator.
      * The new instance contains a copy of the password char[] parameter:
      * the owner of the original retains the responsiblity for zeroing it before releasing it.

@@ -875,7 +875,7 @@ public class DatabaseTest extends BaseDbTest {
         assertEquals(nDocs, attsDir.listFiles().length);
 
         // Compact:
-        baseTestDb.compact();
+        baseTestDb.performMaintenance(MaintenanceType.COMPACT);
         assertEquals(nDocs, attsDir.listFiles().length);
 
         // Delete all docs:
@@ -886,7 +886,7 @@ public class DatabaseTest extends BaseDbTest {
         }
 
         // Compact:
-        baseTestDb.compact();
+        baseTestDb.performMaintenance(MaintenanceType.COMPACT);
         assertEquals(0, attsDir.listFiles().length);
     }
 

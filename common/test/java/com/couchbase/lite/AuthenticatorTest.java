@@ -2,7 +2,6 @@ package com.couchbase.lite;
 
 import org.junit.Test;
 
-import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 
 
@@ -17,34 +16,14 @@ public class AuthenticatorTest extends BaseTest {
         assertEquals(password, new String(auth.getPasswordChars()));
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test(expected = IllegalArgumentException.class)
     public void testBasicAuthenticatorWithEmptyUsername() {
         new BasicAuthenticator(null, "somePassword".toCharArray());
     }
 
-    @SuppressWarnings("ConstantConditions")
+
     @Test(expected = IllegalArgumentException.class)
-    public void testBasicAuthenticatorWithEmptyPassword() { new BasicAuthenticator("someUsername", (char[]) null); }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void testLegacyBasicAuthenticatorInstance() {
-        String username = "someUsername";
-        String password = "somePassword";
-        BasicAuthenticator auth = new BasicAuthenticator(username, password);
-        assertEquals(username, auth.getUsername());
-        assertEquals(password, auth.getPassword());
-    }
-
-    @SuppressWarnings({"deprecation", "ConstantConditions"})
-    @Test
-    public void testLegacyBasicAuthenticatorWithEmptyArgs() {
-        String username = "someUsername";
-        String password = "somePassword";
-        assertThrows(IllegalArgumentException.class, () -> new BasicAuthenticator(null, password));
-        assertThrows(IllegalArgumentException.class, () -> new BasicAuthenticator(username, (String) null));
-    }
+    public void testBasicAuthenticatorWithEmptyPassword() { new BasicAuthenticator("someUsername", null); }
 
     @Test
     public void testSessionAuthenticatorWithSessionID() {
@@ -63,7 +42,6 @@ public class AuthenticatorTest extends BaseTest {
         assertEquals(cookie, auth.getCookieName());
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test(expected = IllegalArgumentException.class)
     public void testSessionAuthenticatorEmptySessionID() { new SessionAuthenticator(null, null); }
 

@@ -358,7 +358,7 @@ public class ConcurrencyTest extends BaseDbTest {
         runSafelyInThread(
             latch2,
             () -> {
-                try { baseTestDb.compact(); }
+                try { baseTestDb.performMaintenance(MaintenanceType.COMPACT); }
                 catch (CouchbaseLiteException e) { fail(); }
             });
 
