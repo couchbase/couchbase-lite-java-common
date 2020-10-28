@@ -121,12 +121,19 @@ case "${OS}" in
       mv -f lib/libLiteCore.so "${LIBLITECORE_DIR}"
 
       SUPPORT_DIR=support/linux/x86_64
-      mkdir -p "${SUPPORT_DIR}" && rm -rf "${SUPPORT_DIR}/"*
-      mv -f lib/libgcc*.* "${SUPPORT_DIR}"
-      mv -f lib/libicu*.* "${SUPPORT_DIR}"
-      mv -f lib/libstdc*.* "${SUPPORT_DIR}"
-      mv -f lib/libz*.* "${SUPPORT_DIR}"
-      rm -f "${SUPPORT_DIR}/"libicutest*.*
+      rm -rf "${SUPPORT_DIR}" || true
+      mkdir -p "${SUPPORT_DIR}" 
+
+      mkdir "${SUPPORT_DIR}/libc++" 
+      mv -f lib/libgcc* "${SUPPORT_DIR}/libc++"
+      mv -f lib/libstdc* "${SUPPORT_DIR}/libc++"
+
+      mkdir "${SUPPORT_DIR}/libicu" 
+      mv -f lib/libicu* "${SUPPORT_DIR}/libicu"
+      rm -f "${SUPPORT_DIR}/libicu/"libicutest*
+
+      mkdir "${SUPPORT_DIR}/libz" 
+      mv -f lib/libz*.so* "${SUPPORT_DIR}/libz" || true # Only on CentOS6
 
       rm -f "${LIB}.tar.gz"
       ;;
