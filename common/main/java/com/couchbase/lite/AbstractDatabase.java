@@ -325,7 +325,9 @@ abstract class AbstractDatabase {
         // !!! Remove this code.
         // Setting the temp directory from the Database Configuration is a bad idea and should be deprecated.
         // Directories should be set in the CouchbaseLite.init method
-        CouchbaseLiteInternal.setupDirectories(config.getRootDirectory());
+        final String rootDir = config.getRootDirectory();
+        fixHydrogenBug(rootDir, name);
+        CouchbaseLiteInternal.setupDirectories(rootDir);
 
         // Can't open the DB until the file system is set up.
         this.c4Database = openC4Db();
@@ -1725,5 +1727,34 @@ abstract class AbstractDatabase {
         // shutdown executor service
         if (pExec != null) { pExec.stop(waitTime, TimeUnit.SECONDS); }
         if (qExec != null) { qExec.stop(waitTime, TimeUnit.SECONDS); }
+    }
+
+    // Fix the bug in 2.8.0 that caused databases created in the
+    // default directory to be created in a *different* default directory.
+    // The fix is to use the original "real" default dir (the one used by all pre 2.8.0 code)
+    // and to copy a database from the "2.8" default directory into the "real" default
+    // directory as long as it won't overwrite anything that is already there.
+    private void fixHydrogenBug(@NonNull String rootDirPath, @NonNull String dbName) throws CouchbaseLiteException {
+        final String defaultDirPath = AbstractDatabaseConfiguration.getDbDirectory(null);
+
+        // Both rootDir and defaultDir are canonical, so string comparison should work.
+        // If this is not about a database located in the default directory, none of this is relevant.
+        if (defaultDirPath.equals(rootDirPath)) { return; }
+        final File defaultDir = new File(defaultDirPath);
+
+        // If this database doesn't exist in the 2.8 default dir, were'r done here.
+        final File twoDotEightDefaultDir = new File(defaultDir, ".couchbase");
+        if (Database.exists(dbName, twoDotEightDefaultDir)) { return; }
+
+        // If this database already exists in the real default directory,
+        // we can't risk trashing it. We just use the database in the real default
+        // directory and leave well enough alone.
+        // It is *always* possible to use 2.8 database, by specifying
+        // its directory explicitly.
+        if (Database.exists(dbName, defaultDir)) { return; }
+
+        // This database is in the 2.8 default dir but not in the real
+        // default dir.  Copy it to where it belongs.
+        Database.copy(twoDotEightDefaultDir, dbName, new DatabaseConfiguration());
     }
 }
