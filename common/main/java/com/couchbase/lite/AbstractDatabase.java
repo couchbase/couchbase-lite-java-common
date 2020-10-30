@@ -1735,26 +1735,28 @@ abstract class AbstractDatabase {
     // and to copy a database from the "2.8" default directory into the "real" default
     // directory as long as it won't overwrite anything that is already there.
     private void fixHydrogenBug(@Nullable String rootDirPath, @NonNull String dbName) throws CouchbaseLiteException {
+        // This is the real default directory
         final String defaultDirPath = AbstractDatabaseConfiguration.getDbDirectory(null);
 
+        // Check to see if the rootDirPath refers to the default directory.  If not, none of this is relevant.
         // Both rootDir and defaultDir are canonical, so string comparison should work.
-        // If this is not about a database located in the default directory, none of this is relevant.
         if (!defaultDirPath.equals(AbstractDatabaseConfiguration.getDbDirectory(rootDirPath))) { return; }
+
         final File defaultDir = new File(defaultDirPath);
 
         // If this database doesn't exist in the 2.8 default dir, were'r done here.
         final File twoDotEightDefaultDir = new File(defaultDir, ".couchbase");
-        if (!Database.exists(dbName, twoDotEightDefaultDir)) { return; }
+        if (!exists(dbName, twoDotEightDefaultDir)) { return; }
 
         // If this database already exists in the real default directory,
         // we can't risk trashing it. We just use the database in the real default
         // directory and leave well enough alone.
         // It is *always* possible to use 2.8 database, by specifying
         // its directory explicitly.
-        if (Database.exists(dbName, defaultDir)) { return; }
+        if (exists(dbName, defaultDir)) { return; }
 
         // This database is in the 2.8 default dir but not in the real
         // default dir.  Copy it to where it belongs.
-        Database.copy(twoDotEightDefaultDir, dbName, new DatabaseConfiguration());
+        Database.copy(getDatabaseFile(twoDotEightDefaultDir, dbName), dbName, new DatabaseConfiguration());
     }
 }
