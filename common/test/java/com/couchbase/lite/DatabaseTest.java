@@ -28,6 +28,7 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.TestUtils;
 
@@ -1223,8 +1224,6 @@ public class DatabaseTest extends BaseDbTest {
         assertNull(baseTestDb.getDocument(doc.getId()));
     }
 
-    ///////////////////////////////  H E R E   ! ! ! !
-
     @Test
     public void testDeleteNonExistingDoc() throws CouchbaseLiteException {
         Document doc1a = createSingleDocInBaseTestDb("doc1");
@@ -1260,6 +1259,154 @@ public class DatabaseTest extends BaseDbTest {
         // 3. delete by previously retrieved document
         baseTestDb.delete(doc);
         assertNull(baseTestDb.getDocument("doc"));
+    }
+
+    // The following four tests verify, explicitly, the code that
+    // mitigates the 2.8.0 bug
+    // There is one more test for this in DatabaseEncryptionTest
+
+    @Test
+    public void testReOpenExistingDb() throws CouchbaseLiteException {
+        final String dbName = getUniqueName("test-db");
+
+        Database db = null;
+        try {
+            db = new Database(dbName);
+            final MutableDocument mDoc = new MutableDocument();
+            mDoc.setString("foo", "bar");
+            db.save(mDoc);
+            db.close();
+            db = null;
+
+            db = new Database(dbName);
+            assertEquals(1L, db.getCount());
+            final Document doc = db.getDocument(mDoc.getId());
+            assertEquals("bar", doc.getString("foo"));
+        }
+        finally {
+            try {
+                if (db != null) { db.delete(); }
+            }
+            catch (Exception ignore) { }
+        }
+    }
+
+    @Test
+    public void testReOpenExisting2Dot8DotOhDb() throws CouchbaseLiteException {
+        final String dbName = getUniqueName("test-db");
+        final String twoDot8DotOhDirPath = AbstractDatabaseConfiguration.getDbDirectory(null) + "/.couchbase";
+
+        Database db = null;
+        try {
+            // Create a database in the misguided 2.8.0 directory
+            final DatabaseConfiguration config = new DatabaseConfiguration();
+            config.setDirectory(twoDot8DotOhDirPath);
+
+            db = new Database(dbName, config);
+            final MutableDocument mDoc = new MutableDocument();
+            mDoc.setString("foo", "bar");
+            db.save(mDoc);
+            db.close();
+            db = null;
+
+            // This should open the database created above
+            db = new Database(dbName);
+            assertEquals(1L, db.getCount());
+            final Document doc = db.getDocument(mDoc.getId());
+            assertEquals("bar", doc.getString("foo"));
+        }
+        finally {
+            try {
+                FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
+                if (db != null) { db.delete(); }
+            }
+            catch (Exception ignore) { }
+        }
+    }
+
+    @Test
+    public void testReOpenExisting2Dot8DotOhDbCopyFails() throws CouchbaseLiteException {
+        final String dbName = getUniqueName("test-db");
+        final String twoDot8DotOhDirPath = AbstractDatabaseConfiguration.getDbDirectory(null) + "/.couchbase";
+
+        Database db = null;
+        try {
+            // Create a database in the misguided 2.8.0 directory
+            final DatabaseConfiguration config = new DatabaseConfiguration();
+            config.setDirectory(twoDot8DotOhDirPath);
+
+            db = new Database(dbName, config);
+            final MutableDocument mDoc = new MutableDocument();
+            mDoc.setString("foo", "bar");
+            db.save(mDoc);
+            db.close();
+            db = null;
+
+            final File twoDot8DotOhDir = new File(twoDot8DotOhDirPath);
+            FileUtils.deleteContents(AbstractDatabase.getDatabaseFile(twoDot8DotOhDir, dbName));
+
+            // this should try to copy the db created above, but fail
+            try {
+                db = new Database(dbName);
+                fail("DB open should have thrown an exception");
+            }
+            catch (CouchbaseLiteException ignore) { }
+
+            // the (uncopyable) 2.8.0 db should still exist
+            assertTrue(AbstractDatabase.getDatabaseFile(twoDot8DotOhDir, dbName).exists());
+            // the copy should not exist
+            assertFalse(AbstractDatabase.getDatabaseFile(
+                new File(AbstractDatabaseConfiguration.getDbDirectory(null)),
+                dbName)
+                .exists());
+        }
+        finally {
+            try {
+                FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
+                if (db != null) { db.delete(); }
+            }
+            catch (Exception ignore) { }
+        }
+    }
+
+    @Test
+    public void testReOpenExistingLegacyAnd2Dot8DotOhDb() throws CouchbaseLiteException {
+        final String dbName = getUniqueName("test-db");
+        final String twoDot8DotOhDirPath = AbstractDatabaseConfiguration.getDbDirectory(null) + "/.couchbase";
+
+        Database db = null;
+        try {
+            db = new Database(dbName);
+            final MutableDocument mDoc1 = new MutableDocument();
+            mDoc1.setString("foo", "bar");
+            db.save(mDoc1);
+            db.close();
+            db = null;
+
+            // Create a database in the misguided 2.8.0 directory
+            final DatabaseConfiguration config = new DatabaseConfiguration();
+            config.setDirectory(twoDot8DotOhDirPath);
+
+            db = new Database(dbName, config);
+            final MutableDocument mDoc2 = new MutableDocument();
+            mDoc2.setString("foo", "baz");
+            db.save(mDoc2);
+            db.close();
+            db = null;
+
+            // This should open the database created above
+            db = new Database(dbName);
+            assertEquals(1L, db.getCount());
+            final Document doc = db.getDocument(mDoc1.getId());
+            assertEquals("bar", doc.getString("foo"));
+        }
+        finally {
+            try {
+                FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
+                if (db != null) { db.delete(); }
+            }
+            catch (Exception ignore) { }
+        }
     }
 
     private Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb("test-db")); }

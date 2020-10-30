@@ -16,6 +16,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -84,7 +85,8 @@ abstract class AbstractDatabaseConfiguration {
 
     String getRootDirectory() { return rootDirectory; }
 
-    private void setRootDirectory(@Nullable String dir) {
+    @VisibleForTesting
+    void setRootDirectory(@Nullable String dir) {
         dbDirectory = getDbDirectory(dir);
         rootDirectory = dir;
     }
