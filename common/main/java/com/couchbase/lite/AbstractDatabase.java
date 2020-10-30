@@ -1757,6 +1757,15 @@ abstract class AbstractDatabase {
 
         // This database is in the 2.8 default dir but not in the real
         // default dir.  Copy it to where it belongs.
-        Database.copy(getDatabaseFile(twoDotEightDefaultDir, dbName), dbName, new DatabaseConfiguration());
+        final File twoDotEightDb = getDatabaseFile(twoDotEightDefaultDir, dbName);
+        try { Database.copy(twoDotEightDb, dbName, new DatabaseConfiguration()); }
+        catch (CouchbaseLiteException e) {
+            // Per review: If the copy fails, delete the partial DB
+            // and throw an exception.  This is a poison pill.
+            // The db can only be opened by explicitly specifying 2.8.0 directory.
+            try { FileUtils.eraseFileOrDir(twoDotEightDb); }
+            catch (Exception ignore) { }
+            throw e;
+        }
     }
 }
