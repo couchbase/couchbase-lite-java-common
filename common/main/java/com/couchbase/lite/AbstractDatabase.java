@@ -325,9 +325,8 @@ abstract class AbstractDatabase {
         // !!! Remove this code.
         // Setting the temp directory from the Database Configuration is a bad idea and should be deprecated.
         // Directories should be set in the CouchbaseLite.init method
-        final String rootDir = config.getRootDirectory();
-        fixHydrogenBug(rootDir, name);
-        CouchbaseLiteInternal.setupDirectories(rootDir);
+        fixHydrogenBug(config, name);
+        CouchbaseLiteInternal.setupDirectories(config.getRootDirectory());
 
         // Can't open the DB until the file system is set up.
         this.c4Database = openC4Db();
@@ -1734,13 +1733,14 @@ abstract class AbstractDatabase {
     // The fix is to use the original "real" default dir (the one used by all pre 2.8.0 code)
     // and to copy a database from the "2.8" default directory into the "real" default
     // directory as long as it won't overwrite anything that is already there.
-    private void fixHydrogenBug(@Nullable String rootDirPath, @NonNull String dbName) throws CouchbaseLiteException {
+    private void fixHydrogenBug(@NonNull DatabaseConfiguration config, @NonNull String dbName)
+        throws CouchbaseLiteException {
         // This is the real default directory
         final String defaultDirPath = AbstractDatabaseConfiguration.getDbDirectory(null);
 
         // Check to see if the rootDirPath refers to the default directory.  If not, none of this is relevant.
         // Both rootDir and defaultDir are canonical, so string comparison should work.
-        if (!defaultDirPath.equals(AbstractDatabaseConfiguration.getDbDirectory(rootDirPath))) { return; }
+        if (!defaultDirPath.equals(AbstractDatabaseConfiguration.getDbDirectory(config.getDirectory()))) { return; }
 
         final File defaultDir = new File(defaultDirPath);
 
@@ -1758,12 +1758,12 @@ abstract class AbstractDatabase {
         // This database is in the 2.8 default dir but not in the real
         // default dir.  Copy it to where it belongs.
         final File twoDotEightDb = getDatabaseFile(twoDotEightDefaultDir, dbName);
-        try { Database.copy(twoDotEightDb, dbName, new DatabaseConfiguration()); }
+        try { Database.copy(twoDotEightDb, dbName, config); }
         catch (CouchbaseLiteException e) {
             // Per review: If the copy fails, delete the partial DB
             // and throw an exception.  This is a poison pill.
             // The db can only be opened by explicitly specifying 2.8.0 directory.
-            try { FileUtils.eraseFileOrDir(twoDotEightDb); }
+            try { FileUtils.eraseFileOrDir(getDatabaseFile(defaultDir, dbName)); }
             catch (Exception ignore) { }
             throw e;
         }
