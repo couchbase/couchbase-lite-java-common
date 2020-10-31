@@ -245,7 +245,8 @@ abstract class AbstractDatabase {
         logger.setLevel(level);
     }
 
-    private static File getDatabaseFile(File dir, String name) {
+    @VisibleForTesting
+    static File getDatabaseFile(File dir, String name) {
         return new File(dir, name.replaceAll("/", ":") + DB_EXTENSION);
     }
 
@@ -325,6 +326,7 @@ abstract class AbstractDatabase {
         // !!! Remove this code.
         // Setting the temp directory from the Database Configuration is a bad idea and should be deprecated.
         // Directories should be set in the CouchbaseLite.init method
+        fixHydrogenBug(config, name);
         CouchbaseLiteInternal.setupDirectories(config.getRootDirectory());
 
         // Can't open the DB until the file system is set up.
@@ -1725,5 +1727,46 @@ abstract class AbstractDatabase {
         // shutdown executor service
         if (pExec != null) { pExec.stop(waitTime, TimeUnit.SECONDS); }
         if (qExec != null) { qExec.stop(waitTime, TimeUnit.SECONDS); }
+    }
+
+    // Fix the bug in 2.8.0 that caused databases created in the
+    // default directory to be created in a *different* default directory.
+    // The fix is to use the original "real" default dir (the one used by all pre 2.8.0 code)
+    // and to copy a database from the "2.8" default directory into the "real" default
+    // directory as long as it won't overwrite anything that is already there.
+    private void fixHydrogenBug(@NonNull DatabaseConfiguration config, @NonNull String dbName)
+        throws CouchbaseLiteException {
+        // This is the real default directory
+        final String defaultDirPath = AbstractDatabaseConfiguration.getDbDirectory(null);
+
+        // Check to see if the rootDirPath refers to the default directory.  If not, none of this is relevant.
+        // Both rootDir and defaultDir are canonical, so string comparison should work.
+        if (!defaultDirPath.equals(AbstractDatabaseConfiguration.getDbDirectory(config.getDirectory()))) { return; }
+
+        final File defaultDir = new File(defaultDirPath);
+
+        // If this database doesn't exist in the 2.8 default dir, were'r done here.
+        final File twoDotEightDefaultDir = new File(defaultDir, ".couchbase");
+        if (!exists(dbName, twoDotEightDefaultDir)) { return; }
+
+        // If this database already exists in the real default directory,
+        // we can't risk trashing it. We just use the database in the real default
+        // directory and leave well enough alone.
+        // It is *always* possible to use 2.8 database, by specifying
+        // its directory explicitly.
+        if (exists(dbName, defaultDir)) { return; }
+
+        // This database is in the 2.8 default dir but not in the real
+        // default dir.  Copy it to where it belongs.
+        final File twoDotEightDb = getDatabaseFile(twoDotEightDefaultDir, dbName);
+        try { Database.copy(twoDotEightDb, dbName, config); }
+        catch (CouchbaseLiteException e) {
+            // Per review: If the copy fails, delete the partial DB
+            // and throw an exception.  This is a poison pill.
+            // The db can only be opened by explicitly specifying 2.8.0 directory.
+            try { FileUtils.eraseFileOrDir(getDatabaseFile(defaultDir, dbName)); }
+            catch (Exception ignore) { }
+            throw e;
+        }
     }
 }

@@ -59,8 +59,6 @@ public final class CouchbaseLiteInternal {
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
     private static final String TEMP_DIR_NAME = "CouchbaseLiteTemp";
-    private static final String DB_DIR_NAME = ".couchbase";
-
 
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
@@ -143,7 +141,7 @@ public final class CouchbaseLiteInternal {
     @NonNull
     public static String makeDbPath(@Nullable String rootDir) {
         requireInit("Can't create DB path");
-        return verifyDir((rootDir != null) ? new File(rootDir) : new File(getContext().getFilesDir(), DB_DIR_NAME));
+        return verifyDir((rootDir != null) ? new File(rootDir) : getContext().getFilesDir());
     }
 
     @NonNull
