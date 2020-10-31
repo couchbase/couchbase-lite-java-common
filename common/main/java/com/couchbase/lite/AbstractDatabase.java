@@ -245,7 +245,8 @@ abstract class AbstractDatabase {
         logger.setLevel(level);
     }
 
-    private static File getDatabaseFile(File dir, String name) {
+    @VisibleForTesting
+    static File getDatabaseFile(File dir, String name) {
         return new File(dir, name.replaceAll("/", ":") + DB_EXTENSION);
     }
 
