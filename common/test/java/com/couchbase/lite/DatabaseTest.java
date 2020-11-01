@@ -1277,6 +1277,7 @@ public class DatabaseTest extends BaseDbTest {
             mDoc.setString("foo", "bar");
             db.save(mDoc);
             db.close();
+            db = null;
 
             db = new Database(dbName);
             assertEquals(1L, db.getCount());
@@ -1284,7 +1285,10 @@ public class DatabaseTest extends BaseDbTest {
             assertEquals("bar", doc.getString("foo"));
         }
         finally {
-            if (db != null) { db.delete(); }
+            try {
+                if (db != null) { db.delete(); }
+            }
+            catch (Exception ignore) { }
         }
     }
 
@@ -1304,6 +1308,7 @@ public class DatabaseTest extends BaseDbTest {
             mDoc.setString("foo", "bar");
             db.save(mDoc);
             db.close();
+            db = null;
 
             // This should open the database created above
             db = new Database(dbName);
@@ -1312,8 +1317,11 @@ public class DatabaseTest extends BaseDbTest {
             assertEquals("bar", doc.getString("foo"));
         }
         finally {
-            FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
-            if (db != null) { db.delete(); }
+            try {
+                FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
+                if (db != null) { db.delete(); }
+            }
+            catch (Exception ignore) { }
         }
     }
 
@@ -1333,12 +1341,12 @@ public class DatabaseTest extends BaseDbTest {
             mDoc.setString("foo", "bar");
             db.save(mDoc);
             db.close();
+            db = null;
 
             final File twoDot8DotOhDir = new File(twoDot8DotOhDirPath);
             FileUtils.deleteContents(AbstractDatabase.getDatabaseFile(twoDot8DotOhDir, dbName));
 
             // this should try to copy the db created above, but fail
-            db = null;
             try {
                 db = new Database(dbName);
                 fail("DB open should have thrown an exception");
@@ -1354,8 +1362,11 @@ public class DatabaseTest extends BaseDbTest {
                 .exists());
         }
         finally {
-            FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
-            if (db != null) { db.delete(); }
+            try {
+                FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
+                if (db != null) { db.delete(); }
+            }
+            catch (Exception ignore) { }
         }
     }
 
@@ -1371,6 +1382,7 @@ public class DatabaseTest extends BaseDbTest {
             mDoc1.setString("foo", "bar");
             db.save(mDoc1);
             db.close();
+            db = null;
 
             // Create a database in the misguided 2.8.0 directory
             final DatabaseConfiguration config = new DatabaseConfiguration();
@@ -1381,6 +1393,7 @@ public class DatabaseTest extends BaseDbTest {
             mDoc2.setString("foo", "baz");
             db.save(mDoc2);
             db.close();
+            db = null;
 
             // This should open the database created above
             db = new Database(dbName);
@@ -1389,8 +1402,11 @@ public class DatabaseTest extends BaseDbTest {
             assertEquals("bar", doc.getString("foo"));
         }
         finally {
-            FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
-            if (db != null) { db.delete(); }
+            try {
+                FileUtils.eraseFileOrDir(twoDot8DotOhDirPath);
+                if (db != null) { db.delete(); }
+            }
+            catch (Exception ignore) { }
         }
     }
 
