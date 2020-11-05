@@ -1,7 +1,9 @@
-#!/bin/bash -e
+#!/bin/bash
 
 MBEDTLS_DIR=vendor/mbedtls
 MBEDTLS_LIB=crypto/library/libmbedcrypto.a
+
+BUILD_TYPE="RelWithDebInfo"
 
 cores=`getconf _NPROCESSORS_ONLN`
 JOBS=`expr $cores + 1`
@@ -9,10 +11,10 @@ JOBS=`expr $cores + 1`
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 function usage() {
-    echo "usage: build_litecore -e <VAL> [-l <VAL>] [-d]"
-    echo "  -e|--edition CE|EE   LiteCore edition: CE or EE."
-    echo "  -l|--lib <VAL>       The library to build:  LiteCore (LiteCore + mbedcrypto) or mbedcrypto (mbedcrypto only). The default is LiteCore."
-    echo "  -d|--debug           Use build type 'Debug' instead of 'RelWithDebInfo'"
+    echo "usage: $0 -e EE|CE [-d] [-l LiteCore|mbedcrypto]"
+    echo "  -e|--edition    LiteCore edition: CE or EE."
+    echo "  -d|--debug      Use build type 'Debug' instead of 'RelWithDebInfo'"
+    echo "  -l|--lib        The library to build:  LiteCore (LiteCore + mbedcrypto) or mbedcrypto (mbedcrypto only). The default is LiteCore."
     echo
 }
 
@@ -25,13 +27,13 @@ while [[ $# -gt 0 ]]; do
          shift
          shift
          ;;
+      -d|--debug)
+         BUILD_TYPE="Debug"
+         shift
+         ;;
       -l|--lib)
          TARGET="$2"
          shift
-         shift
-         ;;
-      -d|--debug)
-         DEBUG=1
          shift
          ;;
       *)
@@ -56,20 +58,6 @@ case "$EDITION" in
       ;;
 esac
 
-case "${OSTYPE}" in
-   linux*)
-      OS="linux"
-      hash tar 2>/dev/null || { echo >&2 "Unable to locate tar, aborting..."; exit 1; }
-      ;;
-   darwin*)
-      OS=macos
-      hash unzip 2>/dev/null || { echo >&2 "Unable to locate unzip, aborting..."; exit 1; }
-      ;;
-   *)
-      echo "Unsupported OS ($OSTYPE), aborting..."
-      exit 1
-esac
-
 case "$TARGET" in
    "" | LiteCore)
       LIB="LiteCore"
@@ -84,25 +72,33 @@ case "$TARGET" in
       ;;
 esac
 
-if [ -z "$DEBUG" ]; then
-   BUILD_TYPE="RelWithDebInfo"
-else
-   BUILD_TYPE="Debug"
-fi
+case "$OSTYPE" in
+   linux*)
+      OS="linux"
+      hash tar 2>/dev/null || { echo >&2 "Unable to locate tar, aborting..."; exit 1; }
+      ;;
+   darwin*)
+      OS=macos
+      hash unzip 2>/dev/null || { echo >&2 "Unable to locate unzip, aborting..."; exit 1; }
+      ;;
+   *)
+      echo "Unsupported OS ($OSTYPE), aborting..."
+      exit 1
+esac
 
-set -o xtrace
-
-echo "Build: $LIB"
+echo "=== Building: $LIB"
 echo "  edition: $EDITION"
 echo "  for: $OS"
 
-pushd $SCRIPT_DIR/../../core/build_cmake > /dev/null
+OUTPUT_DIR="$SCRIPT_DIR/../lite-core/$OS/x86_64"
+mkdir -p "$OUTPUT_DIR"
 
-rm -rf $OS && mkdir -p $OS
+pushd "$SCRIPT_DIR/../../core/build_cmake" > /dev/null
+
+rm -rf $OS
+mkdir -p $OS
 pushd $OS > /dev/null
 
-OUTPUT_DIR=$SCRIPT_DIR/../lite-core/$OS/x86_64
-mkdir -p $OUTPUT_DIR
 
 case $OS in
    linux)
@@ -125,8 +121,8 @@ case $OS in
       fi
       ;;
 
+   # works on several OSX versions
    macos)
-      # untested
       if [[ $LIB == LiteCore ]]; then
          cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
 
@@ -138,7 +134,6 @@ case $OS in
          cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
       fi
 
-      # works
       if [[ $LIB == mbedcrypto ]]; then
          cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
          make -j $JOBS mbedx509 mbedcrypto mbedtls
@@ -147,8 +142,8 @@ case $OS in
       ;;
 esac
 
+echo "=== Build complete"
+find "$OUTPUT_DIR"
 popd > /dev/null
 popd > /dev/null
-
-echo "Build complete: $LIB"
 
