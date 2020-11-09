@@ -10,7 +10,7 @@ function usage() {
    echo "  -n|--nexus-repo   The URL of the nexus repo containing LiteCore"
    echo "  -d|--debug        Fetch a debug version"
    echo "  -o|--output       Download target directory. Default is <root>/common/lite-core"
-   echo "  -p|--platform     Core platform: darwin, centos6, centos7 or linux. Default inferred from current OS" 
+   echo "  -p|--platform     Core platform: darwin, windows, centos6, centos7 or linux. Default inferred from current OS" 
    echo
 }
 
@@ -64,6 +64,14 @@ fi
 
 if [ -z "${PLATFORM}" ]; then PLATFORM="${OSTYPE}"; fi
 case "${PLATFORM}" in
+   darwin*)
+      OS=macosx
+      hash unzip 2>/dev/null || { echo >&2 "Unable to locate unzip. Aborting..."; exit 1; }
+      ;;
+   win*)
+      OS=windows-win64
+      hash unzip 2>/dev/null || { echo >&2 "Unable to locate unzip. Aborting..."; exit 1; }
+      ;;
    centos6)
       OS="centos6"
       hash tar 2>/dev/null || { echo >&2 "Unable to locate tar. Aborting..."; exit 1; }
@@ -71,10 +79,6 @@ case "${PLATFORM}" in
    centos7|linux*)
       OS="linux"
       hash tar 2>/dev/null || { echo >&2 "Unable to locate tar. Aborting..."; exit 1; }
-      ;;
-   darwin*)
-      OS=macosx
-      hash unzip 2>/dev/null || { echo >&2 "Unable to locate unzip. Aborting..."; exit 1; }
       ;;
    *)
       echo "Unsupported platform: ${PLATFORM}. Aborting..."
@@ -88,6 +92,7 @@ pushd "${OUTPUT_DIR}" > /dev/null
 
 "${SCRIPT_DIR}/litecore_sha.sh" -v -e ${EDITION} -o .core-sha
 SHA=`cat .core-sha`
+rm -f .core-sha
 
 LIB="litecore-${OS}-${SHA}${DEBUG_SUFFIX}"
 CORE_URL="${NEXUS_REPO}/couchbase-litecore-${OS}/${SHA}/couchbase-${LIB}"
@@ -102,6 +107,17 @@ case "${OS}" in
       LIBLITECORE_DIR=macos/x86_64
       mkdir -p "${LIBLITECORE_DIR}"
       mv -f lib/libLiteCore.dylib "${LIBLITECORE_DIR}"
+
+      rm -f "${LIB}.zip"
+      ;;
+   windows-win64)
+      curl -Lf "${CORE_URL}.zip" -o "${LIB}.zip"
+      mkdir lib
+      unzip -j "${LIB}.zip" -d lib
+
+      LIBLITECORE_DIR=windows/x86_64
+      mkdir -p "${LIBLITECORE_DIR}"
+      mv -f lib/LiteCore.* "${LIBLITECORE_DIR}"
 
       rm -f "${LIB}.zip"
       ;;
