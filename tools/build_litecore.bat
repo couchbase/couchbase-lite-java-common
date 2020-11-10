@@ -25,16 +25,16 @@ pushd %~dp0
 set scriptDir=%CD%
 popd
 
-echo Build %lib%
+echo Building %lib%
 echo Enterprise Edition : %entBuild%
 echo Using %VS_GEN% ...
 
 SET liteCoreBuildDir=%scriptDir%\..\..\core\build_cmake
 
 pushd %liteCoreBuildDir%
-rmdir /Q /S x64
-mkdir x64
-pushd x64
+rmdir /Q /S windows
+mkdir windows
+pushd windows
 
 SET outputDir=%scriptDir%\..\lite-core\windows\x86_64
 if not exist "%outputDir%" (
@@ -46,18 +46,19 @@ if "%lib%" == "LiteCore" (
     "C:\Program Files\CMake\bin\cmake.exe" -G %VS_GEN% -DBUILD_ENTERPRISE=%entBuild% -DCMAKE_BUILD_TYPE=RelWithDebInfo ..\.. || goto :error
 
     "C:\Program Files\CMake\bin\cmake.exe" --build . --config RelWithDebInfo --target LiteCore || goto :error
-	   copy /y %liteCoreBuildDir%\x64\RelWithDebInfo\LiteCore.dll %outputDir%
-	   copy /y %liteCoreBuildDir%\x64\RelWithDebInfo\LiteCore.lib %outputDir%
+	   copy /y %liteCoreBuildDir%\windows\RelWithDebInfo\LiteCore.dll %outputDir%
+	   copy /y %liteCoreBuildDir%\windows\RelWithDebInfo\LiteCore.lib %outputDir%
  
     "C:\Program Files\CMake\bin\cmake.exe" --build . --config RelWithDebInfo --target mbedcrypto || goto :error
-	   copy /y %liteCoreBuildDir%\x64\crypto\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
+	   copy /y %liteCoreBuildDir%\windows\crypto\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
 )
 
+rem Works
 if "%lib%" == "mbedcrypto" (
     "C:\Program Files\CMake\bin\cmake.exe" -G %VS_GEN% -DCMAKE_BUILD_TYPE=RelWithDebInfo ..\..\vendor\mbedtls || goto :error
  
     "C:\Program Files\CMake\bin\cmake.exe" --build . --config RelWithDebInfo --target mbedcrypto || goto :error
-	   copy /y %liteCoreBuildDir%\x64\crypto\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
+	   copy /y %liteCoreBuildDir%\windows\crypto\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
 )
 
 popd

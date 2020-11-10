@@ -1,44 +1,55 @@
-#!/bin/bash -e
+#!/bin/bash
 #
 # Script for extracting LiteCore native libraries from CBL Java distribution zip files
 # (macos and windows) and putting them into the canonical lite-core directory
 # for inclusion in the final distribution package.
 #
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+OUTPUT_DIR=$SCRIPT_DIR/../lite-core
 
 function usage() {
-    echo "Usage: $0 <platform specific distribution zip> <workspace path>"
+    echo "usage: $0 <distribution url> <distribution name> <workspace path>"
     exit 1
 }
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 3 ]; then
     usage
 fi
 
-DIST_ZIP="$1"
-if [ -z "${DIST_ZIP}" ]; then
+ZIP_URL="$1"
+if [ -z "${ZIP_URL}" ]; then
     usage
 fi
 
-WORKSPACE="$2"
-if [ -z "$WORKSPACE" ]; then
+ZIP_FILE="$2"
+if [ -z "${ZIP_FILE}" ]; then
     usage
 fi
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+ZIP_DIR="$3"
+if [ -z "${ZIP_DIR}" ]; then
+    usage
+fi
+
 hash curl 2>/dev/null || { echo >&2 "Unable to locate curl, aborting..."; exit 1; }
-hash unzip 2>/dev/null || { echo >&2 "Unable to locate tar, aborting..."; exit 1; }
+hash unzip 2>/dev/null || { echo >&2 "Unable to locate zip, aborting..."; exit 1; }
 
-OUTPUT_DIR=$SCRIPT_DIR/../lite-core
-mkdir -p $OUTPUT_DIR
+mkdir -p "${OUTPUT_DIR}"
 
-ZIP_DIR="${WORKSPACE}/extracted"
 rm -rf "${ZIP_DIR}"
-unzip "${DIST_ZIP}" -d "${ZIP_DIR}"
-
+mkdir -p "${ZIP_DIR}"
 pushd "${ZIP_DIR}" > /dev/null
+
+echo "=== Downloading: ${ZIP_URL}/${ZIP_FILE}"
+curl -f -L "${ZIP_URL}/${ZIP_FILE}" -o "${ZIP_FILE}" || exit 1
+unzip "${ZIP_FILE}"
+rm -rf "${ZIP_FILE}"
+
 jar -xf `find . -name 'couchbase-lite-java*.jar' -print` libs
+
+cp -R "libs/"* "${OUTPUT_DIR}"
+
 popd > /dev/null
 
-cp -R "${ZIP_DIR}/libs/"* "${OUTPUT_DIR}/"
-
 rm -rf "${ZIP_DIR}"
+
