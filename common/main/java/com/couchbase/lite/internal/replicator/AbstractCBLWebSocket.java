@@ -209,6 +209,8 @@ public class AbstractCBLWebSocket extends C4Socket {
         .connectTimeout(0, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.SECONDS)
         .writeTimeout(0, TimeUnit.SECONDS)
+        .pingInterval(10, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(false)
         // redirection
         .followRedirects(true)
         .followSslRedirects(true)
