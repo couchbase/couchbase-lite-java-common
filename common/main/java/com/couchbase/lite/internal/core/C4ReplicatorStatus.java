@@ -24,12 +24,14 @@ package com.couchbase.lite.internal.core;
  * Keep this class immutable.
  */
 public final class C4ReplicatorStatus {
+    // These must agree exactly with the definitions in c4Replicator.cc
     public static final class ActivityLevel {
         public static final int STOPPED = 0;
         public static final int OFFLINE = 1;
         public static final int CONNECTING = 2;
         public static final int IDLE = 3;
         public static final int BUSY = 4;
+        public static final int STOPPING = 5;
 
         private ActivityLevel() {}
     }

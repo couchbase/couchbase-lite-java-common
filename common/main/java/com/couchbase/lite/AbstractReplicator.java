@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.net.URI;
 import java.security.cert.Certificate;
@@ -96,7 +97,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
         /**
          * The replication is actively transferring data.
          */
-        BUSY
+        BUSY,
+        /**
+         * The replication is stopping.
+         */
+        STOPPING,
+        /**
+         * Unrecognized replication state.
+         */
+        UNKNOWN
     }
 
 
@@ -287,13 +296,14 @@ public abstract class AbstractReplicator extends InternalReplicator {
         m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
         m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
         m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
+        m.put(C4ReplicatorStatus.ActivityLevel.STOPPING, ActivityLevel.STOPPING);
         ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
+    @VisibleForTesting
     @NonNull
-    private static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
+    static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
         final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
-        if (level == null) { throw new IllegalStateException("Unrecognized activity level: " + c4ActivityLevel); }
-        return level;
+        return (level != null) ? level : ActivityLevel.UNKNOWN;
     }
 
 

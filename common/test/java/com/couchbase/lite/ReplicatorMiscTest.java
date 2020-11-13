@@ -145,4 +145,33 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         fail("Should fail on closed db");
     }
+
+    // CBL-1441
+    @Test
+    public void testReplicatorStatus() {
+        assertEquals(
+            AbstractReplicator.ActivityLevel.STOPPED,
+            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.STOPPED));
+        assertEquals(
+            AbstractReplicator.ActivityLevel.OFFLINE,
+            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.OFFLINE));
+        assertEquals(
+            AbstractReplicator.ActivityLevel.CONNECTING,
+            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.CONNECTING));
+        assertEquals(
+            AbstractReplicator.ActivityLevel.IDLE,
+            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.IDLE));
+        assertEquals(
+            AbstractReplicator.ActivityLevel.BUSY,
+            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.BUSY));
+        assertEquals(
+            AbstractReplicator.ActivityLevel.STOPPING,
+            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.STOPPING));
+        assertEquals(
+            AbstractReplicator.ActivityLevel.UNKNOWN,
+            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.STOPPED - 1));
+        assertEquals(
+            AbstractReplicator.ActivityLevel.UNKNOWN,
+            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.STOPPING + 1));
+    }
 }
