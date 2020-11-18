@@ -26,11 +26,11 @@ public interface Fn {
     @FunctionalInterface
     interface Provider<T> { T get(); }
     @FunctionalInterface
-    interface ConsumerThrows<T, E extends Throwable> { void accept(T x) throws E; }
+    interface ConsumerThrows<T, E extends Exception> { void accept(T x) throws E; }
     @FunctionalInterface
     interface Consumer<T> { void accept(T x); }
     @FunctionalInterface
-    interface TaskThrows<E extends Throwable> { void run() throws E; }
+    interface TaskThrows<E extends Exception> { void run() throws E; }
     @FunctionalInterface
     interface Runner { void run(Runnable r); }
 }

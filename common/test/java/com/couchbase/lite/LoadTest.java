@@ -51,7 +51,7 @@ public class LoadTest extends BaseDbTest {
     }
 
     @Test
-    public void testAddRevisions() {
+    public void testAddRevisions() throws CouchbaseLiteException {
         final int revs = 1000;
         addRevisions(revs, false);
         addRevisions(revs, true);
@@ -203,28 +203,17 @@ public class LoadTest extends BaseDbTest {
         return true;
     }
 
-    private void addRevisions(final int revisions, final boolean retriveNewDoc) {
-        try {
-            baseTestDb.inBatch(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        MutableDocument mDoc = new MutableDocument("doc");
-                        if (retriveNewDoc) { updateDocWithGetDocument(mDoc, revisions); }
-                        else { updateDoc(mDoc, revisions); }
-                    }
-                    catch (CouchbaseLiteException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-            Document doc = baseTestDb.getDocument("doc");
-            assertEquals(revisions - 1, doc.getInt("count")); // start from 0.
-        }
-        catch (CouchbaseLiteException e) {
-            e.printStackTrace();
-        }
+    private void addRevisions(final int revisions, final boolean retriveNewDoc) throws CouchbaseLiteException {
+        baseTestDb.inBatch(() -> {
+            MutableDocument mDoc = new MutableDocument("doc");
+            if (retriveNewDoc) { updateDocWithGetDocument(mDoc, revisions); }
+            else { updateDoc(mDoc, revisions); }
+        });
+
+        Document doc = baseTestDb.getDocument("doc");
+        assertEquals(revisions - 1, doc.getInt("count")); // start from 0.
     }
+
 
     private void updateDoc(MutableDocument doc, final int revisions) throws CouchbaseLiteException {
         for (int i = 0; i < revisions; i++) {
@@ -322,7 +311,7 @@ public class LoadTest extends BaseDbTest {
             .from(DataSource.database(baseTestDb))
             .where(Expression.property("tag").equalTo(Expression.string(tag)));
         int n = 0;
-        for (Result row : query.execute()) { block.verify(++n, row); }
+        for (Result row: query.execute()) { block.verify(++n, row); }
     }
 
     private void verifyByTagName(String tag, int nRows) throws CouchbaseLiteException {

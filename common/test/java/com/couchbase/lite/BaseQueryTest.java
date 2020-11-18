@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.utils.Fn;
-
 import static org.junit.Assert.assertEquals;
 
 
@@ -28,29 +26,6 @@ public abstract class BaseQueryTest extends BaseDbTest {
     @FunctionalInterface
     public interface QueryResult {
         void check(int n, Result result) throws CouchbaseLiteException;
-    }
-
-    protected static final class SafeTest implements Runnable {
-        private final Fn.TaskThrows<CouchbaseLiteException> test;
-        private AssertionError fail;
-        private CouchbaseLiteException err;
-
-        public void checkFail() throws AssertionError {
-            if (fail != null) { throw fail; }
-        }
-
-        public void checkErr() throws CouchbaseLiteException {
-            if (err != null) { throw err; }
-        }
-
-        SafeTest(Fn.TaskThrows<CouchbaseLiteException> test) { this.test = test; }
-
-        @Override
-        public void run() {
-            try { test.run(); }
-            catch (AssertionError e) { fail = e; }
-            catch (CouchbaseLiteException e) { err = e; }
-        }
     }
 
     protected final String createNumberedDocInBaseTestDb(int i, int num) throws CouchbaseLiteException {
@@ -70,15 +45,11 @@ public abstract class BaseQueryTest extends BaseDbTest {
         throws CouchbaseLiteException {
         final List<Map<String, Object>> numbers = new ArrayList<>();
 
-        SafeTest test = new SafeTest(() -> {
+        baseTestDb.inBatch(() -> {
             for (int i = from; i <= to; i++) {
                 numbers.add(baseTestDb.getDocument(createNumberedDocInBaseTestDb(i, to)).toMap());
             }
         });
-        baseTestDb.inBatch(test);
-
-        test.checkFail();
-        test.checkErr();
 
         return numbers;
     }

@@ -591,11 +591,11 @@ abstract class AbstractDatabase {
      * like multiple inserts/updates; it saves the overhead of multiple database commits, greatly
      * improving performance.
      *
-     * @param runnable the action which is implementation of Runnable interface
+     * @param task a task that may terminate abruptly (with an exception)
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
-    public void inBatch(@NonNull Runnable runnable) throws CouchbaseLiteException {
-        Preconditions.assertNotNull(runnable, "runnable");
+    public <T extends Exception> void inBatch(@NonNull Fn.TaskThrows<T> task) throws CouchbaseLiteException, T {
+        Preconditions.assertNotNull(task, "task");
 
         synchronized (dbLock) {
             final C4Database db = getC4DatabaseLocked();
@@ -603,11 +603,8 @@ abstract class AbstractDatabase {
             try {
                 db.beginTransaction();
                 try {
-                    runnable.run();
+                    task.run();
                     commit = true;
-                }
-                catch (RuntimeException e) {
-                    throw new CouchbaseLiteException("In-batch task failed", e);
                 }
                 finally {
                     db.endTransaction(commit);

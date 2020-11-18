@@ -43,12 +43,7 @@ public class NotificationTest extends BaseDbTest {
             for (int i = 0; i < 10; i++) {
                 MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                 doc.setValue("type", "demo");
-                try {
-                    saveDocInBaseTestDb(doc);
-                }
-                catch (CouchbaseLiteException e) {
-                    throw new RuntimeException(e);
-                }
+                saveDocInBaseTestDb(doc);
             }
         });
         assertTrue(latch.await(5, TimeUnit.SECONDS));
@@ -103,7 +98,6 @@ public class NotificationTest extends BaseDbTest {
         baseTestDb.delete(docA);
         assertTrue(latch3.await(5, TimeUnit.SECONDS));
         baseTestDb.removeChangeListener(token);
-
     }
 
     @Test
@@ -134,12 +128,7 @@ public class NotificationTest extends BaseDbTest {
                 for (int i = 0; i < 10; i++) {
                     MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
                     doc.setValue("type", "demo");
-                    try {
-                        saveDocInBaseTestDb(doc);
-                    }
-                    catch (CouchbaseLiteException e) {
-                        throw new RuntimeException(e);
-                    }
+                    saveDocInBaseTestDb(doc);
                 }
             });
 

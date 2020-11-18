@@ -79,12 +79,7 @@ public class ConcurrencyTest extends BaseDbTest {
             kNThreads,
             threadIndex -> {
                 final String tag = "tag-" + threadIndex;
-                try {
-                    baseTestDb.inBatch(() -> {
-                        try { createDocs(kNDocs, tag); }
-                        catch (CouchbaseLiteException e) { fail(); }
-                    });
-                }
+                try { baseTestDb.inBatch(() -> { createDocs(kNDocs, tag); }); }
                 catch (CouchbaseLiteException e) { fail(); }
             },
             kWaitInSec);
@@ -200,7 +195,7 @@ public class ConcurrencyTest extends BaseDbTest {
         runSafelyInThread(
             latch1,
             () -> {
-                for (String docID : docIDs) {
+                for (String docID: docIDs) {
                     try {
                         Document doc = baseTestDb.getDocument(docID);
                         if (doc != null) { baseTestDb.delete(doc); }
@@ -213,7 +208,7 @@ public class ConcurrencyTest extends BaseDbTest {
         runSafelyInThread(
             latch2,
             () -> {
-                for (String docID : docIDs) {
+                for (String docID: docIDs) {
                     try {
                         Document doc = baseTestDb.getDocument(docID);
                         if (doc != null) { baseTestDb.delete(doc); }
@@ -242,7 +237,7 @@ public class ConcurrencyTest extends BaseDbTest {
         runSafelyInThread(
             latch1,
             () -> {
-                for (String docID : docIDs) {
+                for (String docID: docIDs) {
                     Document doc = baseTestDb.getDocument(docID);
                     if (doc != null) {
                         try { baseTestDb.purge(doc); }
@@ -255,7 +250,7 @@ public class ConcurrencyTest extends BaseDbTest {
         runSafelyInThread(
             latch2,
             () -> {
-                for (String docID : docIDs) {
+                for (String docID: docIDs) {
                     Document doc = baseTestDb.getDocument(docID);
                     if (doc != null) {
                         try { baseTestDb.purge(doc); }
@@ -510,7 +505,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     private boolean updateDocs(List<String> docIds, int rounds, String tag) {
         for (int i = 1; i <= rounds; i++) {
-            for (String docId : docIds) {
+            for (String docId: docIds) {
                 Document d = baseTestDb.getDocument(docId);
                 MutableDocument doc = d.toMutable();
                 doc.setValue("tag", tag);
@@ -536,7 +531,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     private void readDocs(List<String> docIDs, int rounds) {
         for (int i = 1; i <= rounds; i++) {
-            for (String docID : docIDs) {
+            for (String docID: docIDs) {
                 Document doc = baseTestDb.getDocument(docID);
                 assertNotNull(doc);
                 assertEquals(docID, doc.getId());
@@ -549,7 +544,7 @@ public class ConcurrencyTest extends BaseDbTest {
             .from(DataSource.database(baseTestDb))
             .where(Expression.property("tag").equalTo(Expression.string(tag)));
         int n = 0;
-        for (Result result : query.execute()) { block.verify(++n, result); }
+        for (Result result: query.execute()) { block.verify(++n, result); }
     }
 
     private void verifyByTagName(String tag, int nRows) throws CouchbaseLiteException {

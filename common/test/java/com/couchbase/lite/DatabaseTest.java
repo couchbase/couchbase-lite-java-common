@@ -34,7 +34,6 @@ import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -230,10 +229,7 @@ public class DatabaseTest extends BaseDbTest {
     public void testSaveInBatch() throws CouchbaseLiteException {
         final int nDocs = 10;
 
-        baseTestDb.inBatch(() -> {
-            try { createDocsInBaseTestDb(nDocs); }
-            catch (CouchbaseLiteException e) { throw new IllegalStateException("Unexpected exception", e); }
-        });
+        baseTestDb.inBatch(() -> createDocsInBaseTestDb(nDocs));
         assertEquals(nDocs, baseTestDb.getCount());
         verifyDocuments(nDocs);
     }
@@ -336,8 +332,7 @@ public class DatabaseTest extends BaseDbTest {
             for (int i = 0; i < nDocs; i++) {
                 String docID = String.format(Locale.US, "doc_%03d", i);
                 Document doc = baseTestDb.getDocument(docID);
-                try { baseTestDb.delete(doc); }
-                catch (CouchbaseLiteException e) { throw new IllegalStateException("Unexpected exception", e); }
+                baseTestDb.delete(doc);
                 assertNull(baseTestDb.getDocument(docID));
                 assertEquals((9 - i), baseTestDb.getCount());
             }
@@ -464,8 +459,7 @@ public class DatabaseTest extends BaseDbTest {
             for (int i = 0; i < nDocs; i++) {
                 String docID = String.format(Locale.US, "doc_%03d", i);
                 Document doc = baseTestDb.getDocument(docID);
-                try { purgeDocAndVerify(doc); }
-                catch (CouchbaseLiteException e) { throw new IllegalStateException("Unexpected exception", e); }
+                purgeDocAndVerify(doc);
                 assertEquals((9 - i), baseTestDb.getCount());
             }
         });
@@ -726,7 +720,7 @@ public class DatabaseTest extends BaseDbTest {
     }
 
     @Test
-    public void testDeleteOpenDbWithDefaultDir() throws CouchbaseLiteException {
+    public void testDeleteOpenDbWithDefaultDir() {
         File path = new File(baseTestDb.getPath());
         assertNotNull(path);
         assertTrue(path.exists());
@@ -855,8 +849,7 @@ public class DatabaseTest extends BaseDbTest {
                 for (int i = 0; i < nUpdates; i++) {
                     MutableDocument doc = savedDoc.toMutable();
                     doc.setValue("number", i);
-                    try { savedDoc = saveDocInBaseTestDb(doc); }
-                    catch (CouchbaseLiteException e) { throw new IllegalStateException("Unexpected exception", e); }
+                    savedDoc = saveDocInBaseTestDb(doc);
                 }
             }
         });
@@ -1113,8 +1106,7 @@ public class DatabaseTest extends BaseDbTest {
                     doc.setInt("index", i);
                     for (int j = 0; j < 10; j++) { doc.setInt("item_" + j, j); }
 
-                    try { db.save(doc); }
-                    catch (CouchbaseLiteException e) { throw new IllegalStateException("Unexpected exception", e); }
+                    db.save(doc);
                 }
             });
 
@@ -1625,5 +1617,4 @@ public class DatabaseTest extends BaseDbTest {
 
         recreateBastTestDb();
     }
-
 }

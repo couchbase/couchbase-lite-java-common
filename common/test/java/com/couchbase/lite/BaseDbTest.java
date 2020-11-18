@@ -79,16 +79,11 @@ public abstract class BaseDbTest extends BaseTest {
 
     protected final void createDocsInDb(int first, int count, Database db) throws CouchbaseLiteException {
         db.inBatch(() -> {
-            try {
-                for (int i = first; i < first + count; i++) {
-                    final MutableDocument doc = new MutableDocument("doc-" + i);
-                    doc.setNumber("count", i);
-                    doc.setString("inverse", "minus-" + i);
-                    db.save(doc);
-                }
-            }
-            catch (CouchbaseLiteException e) {
-                throw new RuntimeException("Batch save failed", e);
+            for (int i = first; i < first + count; i++) {
+                final MutableDocument doc = new MutableDocument("doc-" + i);
+                doc.setNumber("count", i);
+                doc.setString("inverse", "minus-" + i);
+                db.save(doc);
             }
         });
     }
