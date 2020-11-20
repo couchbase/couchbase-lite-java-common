@@ -417,7 +417,7 @@ public final class Log {
             message += System.lineSeparator() + sw.toString();
         }
 
-        sendToLoggers(level, domain, message);
+        sendToLoggers(level, domain, "Java: " + message);
     }
 
     private static String formatMessage(String msg, Object... args) {
