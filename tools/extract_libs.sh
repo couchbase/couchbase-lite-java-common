@@ -47,7 +47,7 @@ rm -rf "${ZIP_FILE}"
 
 jar -xf `find . -name 'couchbase-lite-java*.jar' -print` libs
 
-cp -R "libs/"* "${OUTPUT_DIR}"
+cp -R libs/* "${OUTPUT_DIR}"
 
 popd > /dev/null
 
