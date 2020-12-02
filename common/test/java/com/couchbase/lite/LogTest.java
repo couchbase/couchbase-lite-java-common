@@ -373,19 +373,19 @@ public class LogTest extends BaseDbTest {
         Database.log.setCustom(logger);
 
         Log.d(LogDomain.DATABASE, "TEST DEBUG");
-        assertEquals("TEST DEBUG", logger.message);
+        assertEquals(Log.LOG_HEADER + "TEST DEBUG", logger.message);
 
         Log.d(LogDomain.DATABASE, "TEST DEBUG", new Exception("whoops"));
         assertTrue(logger.message.startsWith(
-            "TEST DEBUG" + nl + "java.lang.Exception: whoops" + System.lineSeparator()));
+            Log.LOG_HEADER + "TEST DEBUG" + nl + "java.lang.Exception: whoops" + System.lineSeparator()));
 
         // test formatting, including argument ordering
         Log.d(LogDomain.DATABASE, "TEST DEBUG %2$s %1$d %3$.2f", 1, "arg", 3.0F);
-        assertEquals("TEST DEBUG arg 1 3.00", logger.message);
+        assertEquals(Log.LOG_HEADER + "TEST DEBUG arg 1 3.00", logger.message);
 
         Log.d(LogDomain.DATABASE, "TEST DEBUG %2$s %1$d %3$.2f", new Exception("whoops"), 1, "arg", 3.0F);
         assertTrue(logger.message.startsWith(
-            "TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
+            Log.LOG_HEADER + "TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
     }
 
     @Test
@@ -540,7 +540,7 @@ public class LogTest extends BaseDbTest {
 
             Log.d(LogDomain.DATABASE, "FOO", new Exception("whoops"), 1, "arg", 3.0F);
             assertTrue(logger.message.startsWith(
-                "TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
+                Log.LOG_HEADER + "TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
         }
         finally {
             reloadStandardErrorMessages();

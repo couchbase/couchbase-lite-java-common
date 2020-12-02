@@ -48,6 +48,8 @@ import com.couchbase.lite.internal.core.CBLVersion;
 public final class Log {
     private Log() { } // Utility class
 
+    public static final String LOG_HEADER = "Java: ";
+
     private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
     static {
         final Map<String, LogDomain> m = new HashMap<>();
@@ -417,7 +419,7 @@ public final class Log {
             message += System.lineSeparator() + sw.toString();
         }
 
-        sendToLoggers(level, domain, "Java: " + message);
+        sendToLoggers(level, domain, LOG_HEADER + message);
     }
 
     private static String formatMessage(String msg, Object... args) {
