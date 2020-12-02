@@ -22,6 +22,8 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+
+
 #ifdef COUCHBASE_ENTERPRISE
 
 #include <c4PredictiveQuery.h>
@@ -38,10 +40,13 @@ static C4SliceResult prediction(void* context, FLDict input, C4Database* c4db, C
     auto model = (jobject)context;
     jlong result = env->CallLongMethod(model, m_prediction, (jlong)input, (jlong)c4db);
 
+    auto resultSlice = *(C4SliceResult*)result;
+    ::free(reinterpret_cast<void *>(result));
+
     if (getEnvStat == JNI_EDETACHED)
         gJVM->DetachCurrentThread();
 
-    return *(C4SliceResult*)result;
+    return resultSlice;
 }
 
 static void unregistered(void* context) {
@@ -50,8 +55,13 @@ static void unregistered(void* context) {
 
 #endif
 
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Prediction_registerModel
-        (JNIEnv *env, jclass ignore, jstring jname, jobject jmodel) {
+
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Prediction_registerModel(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jname,
+        jobject jmodel) {
 #ifdef COUCHBASE_ENTERPRISE
     jstringSlice name(env, jname);
 
@@ -75,8 +85,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Prediction_regist
  * Method:    unregisterModel
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Prediction_unregisterModel
-        (JNIEnv *env, jclass ignore, jstring jname) {
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Prediction_unregisterModel (JNIEnv *env, jclass ignore, jstring jname) {
 #ifdef COUCHBASE_ENTERPRISE
     jstringSlice name(env, jname);
     c4pred_unregisterModel(name.c_str());

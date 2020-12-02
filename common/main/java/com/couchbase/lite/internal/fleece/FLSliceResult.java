@@ -15,7 +15,9 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -24,12 +26,12 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * call free() method to release the memory except the managed() method is called to indicate
  * that the memory will be managed and released by the native code.
  */
-public class FLSliceResult extends C4NativePeer implements AllocSlice {
+public class FLSliceResult extends C4NativePeer implements AutoCloseable, AllocSlice {
     //-------------------------------------------------------------------------
     // Member variables
     //-------------------------------------------------------------------------
 
-    private final boolean isMemoryManaged;
+    private final boolean isCoreOwned;
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -37,21 +39,19 @@ public class FLSliceResult extends C4NativePeer implements AllocSlice {
 
     public FLSliceResult() { this(false); }
 
-    public FLSliceResult(boolean managed) { this(init(), managed); }
+    /*
+     * Create a FLSliceResult whose ownership will be passed to core.
+     * Use this method when the FLSliceResult will be freed by the native code.
+     */
+    public FLSliceResult(boolean isCoreOwned) { this(init(), isCoreOwned); }
 
     public FLSliceResult(byte[] bytes) { this(initWithBytes(Preconditions.assertNotNull(bytes, "raw bytes"))); }
 
     public FLSliceResult(long handle) { this(handle, false); }
 
-    /*
-     * Allow the FLSliceResult in managed mode. In the managed mode, the IllegalStateException will be
-     * thrown when the free() method is called and the finalize() will not throw the
-     * IllegalStateException as the free() method is not called. Use this method when the
-     * FLSliceResult will be freed by the native code.
-     */
-    FLSliceResult(long handle, boolean managed) {
+    FLSliceResult(long handle, boolean isCoreOwned) {
         super(handle);
-        this.isMemoryManaged = managed;
+        this.isCoreOwned = isCoreOwned;
     }
 
     //-------------------------------------------------------------------------
@@ -65,8 +65,12 @@ public class FLSliceResult extends C4NativePeer implements AllocSlice {
 
     public long getSize() { return getSize(getPeer()); }
 
-    public void free() {
-        if (isMemoryManaged) { throw new IllegalStateException("Attempt to free a managed FLSliceResult"); }
+    @Override
+    public void close() {
+        if (isCoreOwned) {
+            Log.w(LogDomain.DATABASE, "Attempt to free core-owned FLSliceResult: " + this);
+            return;
+        }
 
         final long hdl = getPeerAndClear();
         if (hdl == 0L) { return; }
@@ -74,17 +78,25 @@ public class FLSliceResult extends C4NativePeer implements AllocSlice {
         free(hdl);
     }
 
+    @Override
+    public void free() { close(); }
+
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try {
-            if ((!isMemoryManaged) && (get() != 0L)) {
-                throw new IllegalStateException("FLSliceResult was not freed: " + this);
-            }
-        }
-        finally {
-            super.finalize();
-        }
+        try { freeOwned(); }
+        finally { super.finalize(); }
+    }
+
+    private void freeOwned() {
+        if (isCoreOwned) { return; }
+
+        final long hdl = getPeerUnchecked();
+        if (hdl == 0L) { return; }
+
+        Log.w(LogDomain.DATABASE, "FLSliceResult was not freed: " + this);
+
+        free(hdl);
     }
 
     //-------------------------------------------------------------------------
