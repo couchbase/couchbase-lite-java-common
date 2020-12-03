@@ -206,9 +206,9 @@ public class AbstractCBLWebSocket extends C4Socket {
     @NonNull
     private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
         // timeouts: Core manages this: set no timeout, here.
-        .connectTimeout(0, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.SECONDS)
-        .writeTimeout(0, TimeUnit.SECONDS)
+        .connectTimeout(16, TimeUnit.SECONDS)
+        .readTimeout(21, TimeUnit.SECONDS)
+        .writeTimeout(21, TimeUnit.SECONDS)
         .pingInterval(10, TimeUnit.SECONDS)
         .retryOnConnectionFailure(false)
         // redirection
