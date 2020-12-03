@@ -99,10 +99,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
          */
         BUSY,
         /**
-         * The replication is stopping.
-         */
-        STOPPING,
-        /**
          * Unrecognized replication state.
          */
         UNKNOWN
@@ -296,14 +292,17 @@ public abstract class AbstractReplicator extends InternalReplicator {
         m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
         m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
         m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
-        m.put(C4ReplicatorStatus.ActivityLevel.STOPPING, ActivityLevel.STOPPING);
         ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
     @VisibleForTesting
     @NonNull
     static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
         final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
-        return (level != null) ? level : ActivityLevel.UNKNOWN;
+        if (level != null) { return level; }
+
+        Log.w(LogDomain.REPLICATOR, "Unrecognized replicator activity level: " + c4ActivityLevel);
+
+        return ActivityLevel.UNKNOWN;
     }
 
 
