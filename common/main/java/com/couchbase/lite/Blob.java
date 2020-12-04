@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.jetbrains.annotations.NotNull;
 
 import com.couchbase.lite.internal.core.C4BlobKey;
 import com.couchbase.lite.internal.core.C4BlobReadStream;
@@ -181,7 +182,7 @@ public final class Blob implements FLEncodable {
 
             // key should be free
             if (key != null) {
-                key.free();
+                key.close();
                 key = null;
             }
 
@@ -385,7 +386,7 @@ public final class Blob implements FLEncodable {
     /**
      * The cryptographic digest of this Blob's contents, which uniquely identifies it.
      *
-     * @return The cryptograhic digest of this blob's contents; null if the content has not been saved in a database
+     * @return The cryptographic digest of this blob's contents; null if the content has not been saved in a database
      */
     @Nullable
     public String digest() { return blobDigest; }
@@ -511,17 +512,14 @@ public final class Blob implements FLEncodable {
         Preconditions.assertNotNull(database, "database");
 
         C4BlobStore blobStore = null;
-        C4BlobKey key = null;
-        FLSliceResult res = null;
+        // = null;
         final byte[] newContent;
         try {
             blobStore = database.getBlobStore();
-
-            key = new C4BlobKey(blobDigest);
-
-            res = blobStore.getContents(key);
-
-            newContent = res.getBuf();
+            try (C4BlobKey key = new C4BlobKey(blobDigest);
+                 FLSliceResult res = blobStore.getContents(key)) {
+                newContent = res.getBuf();
+            }
         }
         catch (LiteCoreException e) {
             final String msg = "Failed to read content from database for digest: " + blobDigest;
@@ -529,8 +527,6 @@ public final class Blob implements FLEncodable {
             throw new IllegalStateException(msg, e);
         }
         finally {
-            if (res != null) { res.free(); }
-            if (key != null) { key.free(); }
             if (blobStore != null) { blobStore.free(); }
         }
 
@@ -542,13 +538,10 @@ public final class Blob implements FLEncodable {
 
     @NonNull
     private InputStream getStreamFromDatabase(@NonNull Database db) {
-        C4BlobKey key = null;
-        try {
-            key = new C4BlobKey(blobDigest);
+        try (C4BlobKey key = new C4BlobKey(blobDigest)) {
             return new BlobInputStream(key, db.getBlobStore());
         }
         catch (IllegalArgumentException | LiteCoreException e) {
-            if (key != null) { key.free(); }
             throw new IllegalStateException("Failed opening blobContent stream.", e);
         }
     }
@@ -558,29 +551,30 @@ public final class Blob implements FLEncodable {
 
         if (database != null) {
             if (this.database == db) { return; }
-
             throw new IllegalStateException(Log.lookupStandardMessage("BlobDifferentDatabase"));
         }
 
-        C4BlobKey key = null;
         C4BlobStore store = null;
         try {
             store = db.getBlobStore();
-
-            if (blobContent != null) { key = store.create(blobContent); }
-            else if (blobContentStream != null) { key = writeDatabaseFromInitStream(store); }
-            else { throw new IllegalStateException(Log.lookupStandardMessage("BlobContentNull")); }
-
+            try (C4BlobKey key = getBlobKey(store)) { this.blobDigest = key.toString(); }
             this.database = db;
-            this.blobDigest = key.toString();
         }
         catch (Exception e) {
+            this.database = null;
+            this.blobDigest = null;
             throw new IllegalStateException("Failed reading blob content from database", e);
         }
         finally {
-            if (key != null) { key.free(); }
             if (store != null) { store.free(); }
         }
+    }
+
+    @NotNull
+    private C4BlobKey getBlobKey(C4BlobStore store) throws LiteCoreException, IOException {
+        if (blobContent != null) { return store.create(blobContent); }
+        if (blobContentStream != null) { return writeDatabaseFromInitStream(store); }
+        throw new IllegalStateException(Log.lookupStandardMessage("BlobContentNull"));
     }
 
     private Map<String, Object> getJsonRepresentation() {
@@ -621,10 +615,7 @@ public final class Blob implements FLEncodable {
 
         int len = 0;
         final byte[] buffer;
-        C4BlobWriteStream blobOut = null;
-        try {
-            blobOut = store.openWriteStream();
-
+        try (C4BlobWriteStream blobOut = store.openWriteStream()) {
             buffer = new byte[MAX_CACHED_CONTENT_LENGTH];
             int n;
             while ((n = blobContentStream.read(buffer)) >= 0) {
@@ -640,8 +631,6 @@ public final class Blob implements FLEncodable {
             try { blobContentStream.close(); }
             catch (IOException ignore) { }
             blobContentStream = null;
-
-            if (blobOut != null) { blobOut.close(); }
         }
 
         blobLength = len;

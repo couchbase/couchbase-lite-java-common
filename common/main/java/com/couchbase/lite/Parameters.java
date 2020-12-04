@@ -22,8 +22,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -209,12 +209,10 @@ public final class Parameters {
     //---------------------------------------------
     Parameters readonlyCopy() { return new Parameters(this, true); }
 
-    AllocSlice encode() throws LiteCoreException {
-        final FLEncoder encoder = new FLEncoder();
-        try {
+    FLSliceResult encode() throws LiteCoreException {
+        try (FLEncoder encoder = new FLEncoder()) {
             encoder.write(map);
             return encoder.finish2();
         }
-        finally { encoder.free(); }
     }
 }

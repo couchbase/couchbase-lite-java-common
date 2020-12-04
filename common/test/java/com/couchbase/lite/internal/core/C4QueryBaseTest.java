@@ -22,8 +22,8 @@ import java.util.Map;
 import org.junit.After;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 import static org.junit.Assert.assertNotNull;
 
@@ -36,25 +36,24 @@ public class C4QueryBaseTest extends C4BaseTest {
         if (query != null) { query.free(); }
     }
 
-    protected final C4Query compileSelect(String queryStr) throws LiteCoreException {
+    protected final void compileSelect(String queryStr) throws LiteCoreException {
         if (query != null) {
             query.free();
             query = null;
         }
         query = c4Database.createQuery(queryStr);
         assertNotNull(query);
-        return query;
     }
 
-    protected final C4Query compile(String whereExpr) throws LiteCoreException { return compile(whereExpr, null); }
+    protected final void compile(String whereExpr) throws LiteCoreException { compile(whereExpr, null); }
 
-    protected final C4Query compile(String whereExpr, String sortExpr) throws LiteCoreException {
-        return compile(whereExpr, sortExpr, false);
+    protected final void compile(String whereExpr, String sortExpr) throws LiteCoreException {
+        compile(whereExpr, sortExpr, false);
     }
 
-    protected final C4Query compile(String whereExpr, String sortExpr, boolean addOffsetLimit)
+    protected final void compile(String whereExpr, String sortExpr, boolean addOffsetLimit)
         throws LiteCoreException {
-        StringBuffer json = new StringBuffer();
+        StringBuilder json = new StringBuilder();
         json.append("[\"SELECT\", {\"WHERE\": ");
         json.append(whereExpr);
         if (sortExpr != null && sortExpr.length() > 0) {
@@ -70,7 +69,6 @@ public class C4QueryBaseTest extends C4BaseTest {
         }
         query = c4Database.createQuery(json.toString());
         assertNotNull(query);
-        return query;
     }
 
     protected List<String> run() throws LiteCoreException { return run(null); }
@@ -78,44 +76,44 @@ public class C4QueryBaseTest extends C4BaseTest {
     protected final List<String> run(Map<String, Object> params) throws LiteCoreException {
         List<String> docIDs = new ArrayList<>();
         C4QueryOptions opts = new C4QueryOptions();
-        AllocSlice encodedParams = encodeParameters(params);
-        C4QueryEnumerator e = query.run(opts, encodedParams);
+
+        final C4QueryEnumerator e;
+        try (FLSliceResult encodedParams = encodeParameters(params)) { e = query.run(opts, encodedParams); }
+        assertNotNull(e);
+
         try {
-            assertNotNull(e);
             while (e.next()) { docIDs.add(e.getColumns().getValueAt(0).asString()); }
             return docIDs;
         }
-        finally {
-            if (e != null) { e.free(); }
-            if (encodedParams != null) { encodedParams.free(); }
-        }
+        finally { e.free(); }
     }
 
-    protected final List<List<List<Long>>> runFTS() throws LiteCoreException { return runFTS(null);}
 
-    protected final List<List<List<Long>>> runFTS(Map<String, Object> params) throws LiteCoreException {
-        List<List<List<Long>>> matches = new ArrayList<>();
-        C4QueryOptions opts = new C4QueryOptions();
-        AllocSlice encodedParams = encodeParameters(params);
-        C4QueryEnumerator e = query.run(opts, encodedParams);
+    protected final List<List<List<Long>>> runFTS() throws LiteCoreException {
+        final List<List<List<Long>>> matches = new ArrayList<>();
+        final C4QueryOptions opts = new C4QueryOptions();
+
+        final C4QueryEnumerator e;
+        try (FLSliceResult encodedParams = encodeParameters(null)) { e = query.run(opts, encodedParams); }
         assertNotNull(e);
-        while (e.next()) {
-            List<List<Long>> match = new ArrayList<>();
-            for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatches(i).toList()); }
-            matches.add(match);
-        }
-        e.free();
 
-        if (encodedParams != null) { encodedParams.free(); }
+        try {
+            while (e.next()) {
+                List<List<Long>> match = new ArrayList<>();
+                for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatches(i).toList()); }
+                matches.add(match);
+            }
+        }
+        finally { e.free(); }
+
+
         return matches;
     }
 
-    private AllocSlice encodeParameters(Map<String, Object> params) throws LiteCoreException {
-        FLEncoder encoder = new FLEncoder();
-        try {
-            encoder.write(params);
-            return encoder.finish2();
+    private FLSliceResult encodeParameters(Map<String, Object> params) throws LiteCoreException {
+        try (FLEncoder enc = new FLEncoder()) {
+            enc.write(params);
+            return enc.finish2();
         }
-        finally { encoder.free(); }
     }
 }

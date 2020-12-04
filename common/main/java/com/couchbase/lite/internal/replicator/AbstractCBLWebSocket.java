@@ -146,13 +146,13 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         @Override
         public void onMessage(WebSocket webSocket, String text) {
-            Log.v(TAG, "WebSocketListener received text string with length of " + text.length());
+            Log.v(TAG, "WebSocketListener received text string with length " + text.length());
             received(text.getBytes(StandardCharsets.UTF_8));
         }
 
         @Override
         public void onMessage(WebSocket webSocket, ByteString bytes) {
-            Log.v(TAG, "WebSocketListener received data of " + bytes.size() + " bytes");
+            Log.v(TAG, "WebSocketListener received " + bytes.size() + " bytes of data");
             received(bytes.toByteArray());
         }
 
@@ -481,11 +481,11 @@ public class AbstractCBLWebSocket extends C4Socket {
         final Map<String, Object> headers = new HashMap<>();
         for (int i = 0; i < hs.size(); i++) { headers.put(hs.name(i), hs.value(i)); }
 
-        final FLEncoder enc = new FLEncoder();
-        enc.write(headers);
-        try { headersFleece = enc.finish(); }
+        try (FLEncoder enc = new FLEncoder()) {
+            enc.write(headers);
+            headersFleece = enc.finish();
+        }
         catch (LiteCoreException e) { Log.e(TAG, "CBLWebSocket failed to encode response header", e); }
-        finally { enc.free(); }
 
         gotHTTPResponse(httpStatus, headersFleece);
     }

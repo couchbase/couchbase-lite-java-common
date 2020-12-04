@@ -32,8 +32,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.FleeceDict;
 import com.couchbase.lite.internal.fleece.MContext;
@@ -50,32 +50,29 @@ import static org.junit.Assert.assertTrue;
 
 class FLContext extends MContext {
     @NonNull
-    private final AllocSlice data;
+    private final FLSliceResult data;
 
-    public FLContext(@NonNull AllocSlice data) { this.data = data; }
+    public FLContext(@NonNull FLSliceResult data) { this.data = data; }
 
     @NonNull
-    public AllocSlice getData() { return data; }
+    public FLSliceResult getData() { return data; }
 }
 
 
+@SuppressWarnings("unchecked")
 public class C4MutableFleeceTest extends C4BaseTest {
-    private static AllocSlice encode(Object obj) throws LiteCoreException {
-        FLEncoder enc = new FLEncoder();
-        try {
+    private static FLSliceResult encode(Object obj) throws LiteCoreException {
+        try (FLEncoder enc = new FLEncoder()) {
             enc.writeValue(obj);
             return enc.finish2();
         }
-        finally { enc.free(); }
     }
 
-    private static AllocSlice encode(MRoot root) throws LiteCoreException {
-        FLEncoder enc = new FLEncoder();
-        try {
+    private static FLSliceResult encode(MRoot root) throws LiteCoreException {
+        try (FLEncoder enc = new FLEncoder()) {
             root.encodeTo(enc);
             return enc.finish2();
         }
-        finally { enc.free(); }
     }
 
     private static List<String> sortedKeys(Map<String, Object> dict) {
@@ -97,14 +94,14 @@ public class C4MutableFleeceTest extends C4BaseTest {
         assertEquals(dict.size(), count);
     }
 
-    private static String fleece2JSON(AllocSlice fleece) {
+    private static String fleece2JSON(FLSliceResult fleece) {
         try {
             FLValue v = FLValue.fromData(fleece);
             if (v == null) { return "INVALID_FLEECE"; }
             return v.toJSON5();
         }
         finally {
-            if (fleece != null) { fleece.free(); }
+            if (fleece != null) { fleece.close(); }
         }
     }
 
@@ -141,9 +138,8 @@ public class C4MutableFleeceTest extends C4BaseTest {
         subMap.put("boil", 212);
         map.put("dict", subMap);
 
-        AllocSlice data = encode(map);
 
-        try {
+        try (FLSliceResult data = encode(map)) {
             MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
@@ -184,15 +180,16 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
             verifyDictIterator(dict);
 
-            assertEquals(
-                "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
-                fleece2JSON(encode(dict)));
-            assertEquals(
-                "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
-                fleece2JSON(encode(root)));
-        }
-        finally {
-            if (data != null) { data.free(); }
+            try (FLSliceResult encodedDict = encode(dict)) {
+                assertEquals(
+                    "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
+                    fleece2JSON(encodedDict));
+            }
+            try (FLSliceResult encodedRoot = encode(root)) {
+                assertEquals(
+                    "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
+                    fleece2JSON(encodedRoot));
+            }
         }
     }
 
@@ -200,9 +197,8 @@ public class C4MutableFleeceTest extends C4BaseTest {
     @Test
     public void testMArray() throws LiteCoreException {
         List<Object> list = Arrays.asList("hi", Arrays.asList("boo", false), 42);
-        AllocSlice data = encode(list);
 
-        try {
+        try (FLSliceResult data = encode(list)) {
             MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
@@ -237,15 +233,16 @@ public class C4MutableFleeceTest extends C4BaseTest {
             List<Object> nested = (List<Object>) obj;
             nested.set(1, true);
 
-            assertEquals(
-                "[[3.14,2.17],[\"boo\",true],\"NEW\",42]",
-                fleece2JSON(encode(array)));
-            assertEquals(
-                "[[3.14,2.17],[\"boo\",true],\"NEW\",42]",
-                fleece2JSON(encode(root)));
-        }
-        finally {
-            if (data != null) { data.free(); }
+            try (FLSliceResult encodedArray = encode(array)) {
+                assertEquals(
+                    "[[3.14,2.17],[\"boo\",true],\"NEW\",42]",
+                    fleece2JSON(encodedArray));
+            }
+            try (FLSliceResult encodedRoot = encode(root)) {
+                assertEquals(
+                    "[[3.14,2.17],[\"boo\",true],\"NEW\",42]",
+                    fleece2JSON(encodedRoot));
+            }
         }
     }
 
@@ -254,8 +251,8 @@ public class C4MutableFleeceTest extends C4BaseTest {
     public void testMArrayIteration() throws LiteCoreException {
         List<Object> orig = new ArrayList<>();
         for (int i = 0; i < 100; i++) { orig.add(String.format(Locale.ENGLISH, "This is item number %d", i)); }
-        AllocSlice data = encode(orig);
-        try {
+
+        try (FLSliceResult data = encode(orig)) {
             MRoot root = getMRoot(data);
             List<Object> array = (List<Object>) root.asNative();
             int i = 0;
@@ -263,9 +260,6 @@ public class C4MutableFleeceTest extends C4BaseTest {
                 assertEquals(orig.get(i), o);
                 i++;
             }
-        }
-        finally {
-            if (data != null) { data.free(); }
         }
     }
 
@@ -281,8 +275,8 @@ public class C4MutableFleeceTest extends C4BaseTest {
         map.put("array", Arrays.asList("boo", false));
         map.put("dict", subMap);
 
-        AllocSlice data = encode(map);
-        try {
+
+        try (FLSliceResult data = encode(map)) {
             Object obj = getMRoot(data).asNative();
             assertNotNull(obj);
             assertTrue(obj instanceof Map);
@@ -321,12 +315,11 @@ public class C4MutableFleeceTest extends C4BaseTest {
             verifyDictIterator(nested);
             verifyDictIterator(dict);
 
-            assertEquals(
-                "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
-                fleece2JSON(encode(dict)));
-        }
-        finally {
-            if (data != null) { data.free(); }
+            try (FLSliceResult encodedDict = encode(dict)) {
+                assertEquals(
+                    "{array:[\"boo\",false],dict:{boil:212,freeze:[32,\"Fahrenheit\"]},greeting:\"hi\"}",
+                    fleece2JSON(encodedDict));
+            }
         }
     }
 
@@ -342,8 +335,8 @@ public class C4MutableFleeceTest extends C4BaseTest {
         map.put("array", Arrays.asList("boo", false));
         map.put("dict", subMap);
 
-        AllocSlice data = encode(map);
-        try {
+
+        try (FLSliceResult data = encode(map)) {
             MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
@@ -357,15 +350,17 @@ public class C4MutableFleeceTest extends C4BaseTest {
             dict.put("new", array);
             array.add(true);
 
-            assertEquals(
-                "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
-                fleece2JSON(encode(root)));
-            assertEquals(
-                "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
-                fleece2JSON(root.encode()));
-        }
-        finally {
-            if (data != null) { data.free(); }
+            try (FLSliceResult encodedRoot = encode(root)) {
+                assertEquals(
+                    "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
+                    fleece2JSON(encodedRoot));
+            }
+
+            try (FLSliceResult encodedRoot = root.encode()) {
+                assertEquals(
+                    "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
+                    fleece2JSON(encodedRoot));
+            }
         }
     }
 
@@ -379,8 +374,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         map.put("array", Arrays.asList("boo", false));
         map.put("dict", subMap);
 
-        AllocSlice data = encode(map);
-        try {
+        try (FLSliceResult data = encode(map)) {
             MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
@@ -391,17 +385,21 @@ public class C4MutableFleeceTest extends C4BaseTest {
             assertEquals(Arrays.asList("boo", false), dict.get("array"));
             assertEquals(subMap, dict.get("dict"));
 
-            assertEquals("{array:[\"boo\",false],dict:{boil:212,melt:32},greeting:\"hi\"}", fleece2JSON(root.encode()));
+            try (FLSliceResult encodedRoot = root.encode()) {
+                assertEquals(
+                    "{array:[\"boo\",false],dict:{boil:212,melt:32},greeting:\"hi\"}",
+                    fleece2JSON(encodedRoot));
+            }
 
             List<Object> array = (List<Object>) dict.get("array");
             dict.put("new", array);
             array.add(true);
-            assertEquals(
-                "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
-                fleece2JSON(root.encode()));
-        }
-        finally {
-            if (data != null) { data.free(); }
+
+            try (FLSliceResult encodedRoot = root.encode()) {
+                assertEquals(
+                    "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
+                    fleece2JSON(encodedRoot));
+            }
         }
     }
 
@@ -410,8 +408,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         Map<String, Object> map = new HashMap<>();
         map.put("greeting", "hi");
 
-        AllocSlice data = encode(map);
-        try {
+        try (FLSliceResult data = encode(map)) {
             MRoot root = getMRoot(data);
             assertFalse(root.isMutated());
             Object obj = root.asNative();
@@ -419,23 +416,35 @@ public class C4MutableFleeceTest extends C4BaseTest {
             assertTrue(obj instanceof Map);
             Map<String, Object> dict = (Map<String, Object>) obj;
             assertEquals("hi", dict.get("greeting"));
-            assertEquals("{greeting:\"hi\"}", fleece2JSON(root.encode()));
-            assertEquals("{greeting:\"hi\"}", fleece2JSON(encode(root)));
+
+            try (FLSliceResult encodedRoot = root.encode()) {
+                assertEquals("{greeting:\"hi\"}", fleece2JSON(encodedRoot));
+            }
+            try (FLSliceResult encodedRoot = encode(root)) {
+                assertEquals("{greeting:\"hi\"}", fleece2JSON(encodedRoot));
+            }
 
             dict.put("hello", "world");
             assertEquals("hi", dict.get("greeting"));
             assertEquals("world", dict.get("hello"));
-            assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encode(dict)));
-            assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encode(root.asNative())));
-            assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(root.encode()));
-            assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encode(root)));
-        }
-        finally {
-            if (data != null) { data.free(); }
+
+            try (FLSliceResult encodedDict = encode(dict)) {
+                assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encodedDict));
+            }
+
+            try (FLSliceResult encodedNative = encode(root.asNative())) {
+                assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encodedNative));
+            }
+            try (FLSliceResult encodedRoot = root.encode()) {
+                assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encodedRoot));
+            }
+            try (FLSliceResult encodedRoot = encode(root)) {
+                assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encodedRoot));
+            }
         }
     }
 
-    private MRoot getMRoot(AllocSlice data) {
+    private MRoot getMRoot(FLSliceResult data) {
         return new MRoot(new FLContext(data), FLValue.fromData(data));
     }
 }

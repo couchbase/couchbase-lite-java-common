@@ -441,20 +441,16 @@ public class C4Replicator extends C4NativePeer {
     @Nullable
     public C4ReplicatorStatus getStatus() { return getStatus(getPeer()); }
 
-    // Null return value indicates that this replicator is dead
     public boolean isDocumentPending(String docId) throws LiteCoreException {
         return isDocumentPending(getPeer(), docId);
     }
 
-    // Null return value indicates that this replicator is dead
-    @Nullable
+    @NonNull
     public Set<String> getPendingDocIDs() throws LiteCoreException {
-        final FLSliceResult result = new FLSliceResult(getPendingDocIds(getPeer()));
-        try {
+        try (FLSliceResult result = new FLSliceResult(getPendingDocIds(getPeer()))) {
             final FLValue slice = FLValue.fromData(result);
             return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray());
         }
-        finally { result.free(); }
     }
 
     public void setHostReachable(boolean reachable) { setHostReachable(getPeer(), reachable); }

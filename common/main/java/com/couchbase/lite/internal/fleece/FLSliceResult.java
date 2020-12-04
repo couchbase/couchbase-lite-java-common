@@ -18,19 +18,15 @@ package com.couchbase.lite.internal.fleece;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /*
- * Represent a block of memory returned from the API call. The caller takes ownership, and must
- * call free() method to release the memory except the managed() method is called to indicate
- * that the memory will be managed and released by the native code.
+ * Represent the block of native heap memory returned from the API call.
+ * Normally, the caller takes ownership and must call close() method to release the memory.
+ * If either if the two constructors with an 'isCoreOwned' param is called with that param true,
+ * the heap memory will be released in native code.
  */
-public class FLSliceResult extends C4NativePeer implements AutoCloseable, AllocSlice {
-    //-------------------------------------------------------------------------
-    // Member variables
-    //-------------------------------------------------------------------------
-
+public class FLSliceResult extends C4NativePeer implements AutoCloseable {
     private final boolean isCoreOwned;
 
     //-------------------------------------------------------------------------
@@ -39,15 +35,14 @@ public class FLSliceResult extends C4NativePeer implements AutoCloseable, AllocS
 
     public FLSliceResult() { this(false); }
 
-    /*
-     * Create a FLSliceResult whose ownership will be passed to core.
-     * Use this method when the FLSliceResult will be freed by the native code.
-     */
-    public FLSliceResult(boolean isCoreOwned) { this(init(), isCoreOwned); }
-
-    public FLSliceResult(byte[] bytes) { this(initWithBytes(Preconditions.assertNotNull(bytes, "raw bytes"))); }
-
     public FLSliceResult(long handle) { this(handle, false); }
+
+    /*
+     * Create a FLSliceResult whose ownership may be passed to core.
+     * Use these methods with arg "true" when the FLSliceResult will be freed by native code.
+     */
+
+    public FLSliceResult(boolean isCoreOwned) { this(init(), isCoreOwned); }
 
     FLSliceResult(long handle, boolean isCoreOwned) {
         super(handle);
@@ -67,36 +62,30 @@ public class FLSliceResult extends C4NativePeer implements AutoCloseable, AllocS
 
     @Override
     public void close() {
-        if (isCoreOwned) {
-            Log.w(LogDomain.DATABASE, "Attempt to free core-owned FLSliceResult: " + this);
+        if (!isCoreOwned) {
+            free(false);
             return;
         }
 
-        final long hdl = getPeerAndClear();
-        if (hdl == 0L) { return; }
-
-        free(hdl);
+        Log.w(LogDomain.DATABASE, "Attempt to close a core-owned FLSliceResult: " + this, new Exception());
     }
-
-    @Override
-    public void free() { close(); }
 
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { freeOwned(); }
+        try {
+            if (!isCoreOwned) { free(true); }
+        }
         finally { super.finalize(); }
     }
 
-    private void freeOwned() {
-        if (isCoreOwned) { return; }
-
-        final long hdl = getPeerUnchecked();
+    private void free(boolean shouldBeFree) {
+        final long hdl = getPeerAndClear();
         if (hdl == 0L) { return; }
 
-        Log.w(LogDomain.DATABASE, "FLSliceResult was not freed: " + this);
-
         free(hdl);
+
+        if (shouldBeFree) { Log.w(LogDomain.DATABASE, "FLSliceResult was not closed: " + this); }
     }
 
     //-------------------------------------------------------------------------
@@ -104,8 +93,6 @@ public class FLSliceResult extends C4NativePeer implements AutoCloseable, AllocS
     //-------------------------------------------------------------------------
 
     private static native long init();
-
-    private static native long initWithBytes(byte[] bytes);
 
     private static native void free(long slice);
 

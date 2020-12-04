@@ -26,7 +26,7 @@ import com.couchbase.lite.LiteCoreException;
  * <p>
  * A raw SHA-1 digest used as the unique identifier of a blob.
  */
-public class C4BlobKey extends C4NativePeer {
+public class C4BlobKey extends C4NativePeer implements AutoCloseable {
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -43,6 +43,13 @@ public class C4BlobKey extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
+    @Override
+    public void close() {
+        final long handle = getPeerAndClear();
+        if (handle == 0L) { return; }
+        free(handle);
+    }
+
     /**
      * Encodes a blob key to a string of the form "sha1-"+base64.
      */
@@ -53,12 +60,6 @@ public class C4BlobKey extends C4NativePeer {
         return (str != null) ? str : "unknown!!";
     }
 
-    public void free() {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-        free(handle);
-    }
-
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
@@ -66,7 +67,7 @@ public class C4BlobKey extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { free(); }
+        try { close(); }
         finally { super.finalize(); }
     }
 

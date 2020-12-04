@@ -184,15 +184,12 @@ public class C4BaseTest extends PlatformBaseTest {
     protected byte[] json2fleece(String json) throws LiteCoreException {
         boolean commit = false;
         c4Database.beginTransaction();
-        FLSliceResult body = null;
-        try {
-            body = c4Database.encodeJSON(json5(json).getBytes(StandardCharsets.UTF_8));
+        try (FLSliceResult body = c4Database.encodeJSON(json5(json).getBytes(StandardCharsets.UTF_8))) {
             byte[] bytes = body.getBuf();
             commit = true;
             return bytes;
         }
         finally {
-            if (body != null) { body.free(); }
             c4Database.endTransaction(commit);
         }
     }
@@ -207,51 +204,6 @@ public class C4BaseTest extends PlatformBaseTest {
         }
         assertNotNull(json);
         return json;
-    }
-
-    protected List<C4BlobKey> addDocWithAttachments(String docID, List<String> attachments, String contentType)
-        throws LiteCoreException {
-        List<C4BlobKey> keys = new ArrayList<>();
-        StringBuilder json = new StringBuilder();
-        json.append("{attached: [");
-        for (String attachment: attachments) {
-            C4BlobStore store = c4Database.getBlobStore();
-            C4BlobKey key = store.create(attachment.getBytes(StandardCharsets.UTF_8));
-            keys.add(key);
-            String keyStr = key.toString();
-            json.append("{'");
-            json.append("@type");
-            json.append("': '");
-            json.append("blob");
-            json.append("', ");
-            json.append("digest: '");
-            json.append(keyStr);
-            json.append("', length: ");
-            json.append(attachment.length());
-            json.append(", content_type: '");
-            json.append(contentType);
-            json.append("'},");
-        }
-        json.append("]}");
-        String jsonStr = json5(json.toString());
-        FLSliceResult body = c4Database.encodeJSON(jsonStr.getBytes(StandardCharsets.UTF_8));
-
-        // Save document:
-        C4Document doc
-            = c4Database.put(
-            body,
-            docID,
-            C4Constants.RevisionFlags.HAS_ATTACHMENTS,
-            false,
-            false,
-            new String[0],
-            true,
-            0,
-            0);
-        assertNotNull(doc);
-        body.free();
-        doc.free();
-        return keys;
     }
 
     /**
@@ -307,8 +259,7 @@ public class C4BaseTest extends PlatformBaseTest {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = br.readLine()) != null) {
-                    FLSliceResult body = c4Database.encodeJSON(line.getBytes(StandardCharsets.UTF_8));
-                    try {
+                    try (FLSliceResult body = c4Database.encodeJSON(line.getBytes(StandardCharsets.UTF_8))) {
                         String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
 
                         C4Document doc = c4Database.put(body, docID, 0,
@@ -320,9 +271,6 @@ public class C4BaseTest extends PlatformBaseTest {
                         finally {
                             doc.free();
                         }
-                    }
-                    finally {
-                        body.free();
                     }
 
                     numDocs++;
@@ -347,8 +295,8 @@ public class C4BaseTest extends PlatformBaseTest {
     }
 
     private byte[] createFleeceBody(Map<String, Object> body) throws LiteCoreException {
-        FLEncoder enc = new FLEncoder();
-        try {
+
+        try (FLEncoder enc = new FLEncoder()) {
             if (body == null) { enc.beginDict(0); }
             else {
                 enc.beginDict(body.size());
@@ -360,6 +308,5 @@ public class C4BaseTest extends PlatformBaseTest {
             enc.endDict();
             return enc.finish();
         }
-        finally { enc.free(); }
     }
 }

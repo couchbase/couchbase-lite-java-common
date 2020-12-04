@@ -15,51 +15,46 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.NonNull;
+
 import java.util.List;
 import java.util.Map;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
+import com.couchbase.lite.internal.support.Log;
 
 
-@SuppressWarnings("PMD.TooManyMethods")
-public class FLEncoder extends C4NativePeer {
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
+public class FLEncoder extends C4NativePeer implements AutoCloseable {
     //-------------------------------------------------------------------------
     // Member variables
     //-------------------------------------------------------------------------
 
-    private final boolean isMemoryManaged;
+    private final boolean isCoreOwned;
 
     private Object extraInfo;
 
     //-------------------------------------------------------------------------
-    // public methods
+    // Constructors
     //-------------------------------------------------------------------------
 
-    public FLEncoder() { this(init()); }
-
-    public FLEncoder(long handle) { this(handle, false); }
+    public FLEncoder() { this(init(), false); }
 
     /*
-     * Allow the FLEncoder in managed mode. In the managed mode, the IllegalStateException will be
-     * thrown when the free() method is called and the finalize() will not throw the
-     * IllegalStateException as the free() method is not called. Use this method when the
-     * FLEncoder will be freed by the native code.
-     *
-     * ??? Why are these things *ever* not memory managed?
+     * Create a FLEncoder whose ownership may be passed to core.
+     * Use this method with arg "true" when the FLEncoder will be freed by native code.
      */
+
     public FLEncoder(long handle, boolean managed) {
         super(handle);
-        this.isMemoryManaged = managed;
+        this.isCoreOwned = managed;
     }
 
-    public void free() {
-        if (isMemoryManaged) { throw new IllegalStateException("Attempt to free a managed FLEncoder"); }
-
-        final long handle = getPeerAndClear();
-
-        if (handle != 0) { free(handle); }
-    }
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
 
     public boolean writeString(String value) { return writeString(getPeer(), value); }
 
@@ -163,10 +158,12 @@ public class FLEncoder extends C4NativePeer {
 
     public byte[] finish() throws LiteCoreException { return finish(getPeer()); }
 
+    @NonNull
     public FLSliceResult finish2() throws LiteCoreException {
         return new FLSliceResult(finish2(getPeer()));
     }
 
+    @NonNull
     public FLSliceResult managedFinish2() throws LiteCoreException {
         return new FLSliceResult(finish2(getPeer()), true);
     }
@@ -177,6 +174,8 @@ public class FLEncoder extends C4NativePeer {
 
     public void reset() { reset(getPeer()); }
 
+    public void close() { free(false); }
+
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
@@ -184,13 +183,24 @@ public class FLEncoder extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try {
-            if ((!isMemoryManaged) && (get() != 0L)) {
-                throw new IllegalStateException("FLEncoder finalized without being freed: " + this);
-            }
-        }
-        finally {
-            super.finalize();
+        try { free(true); }
+        finally { super.finalize(); }
+    }
+
+    //-------------------------------------------------------------------------
+    // private methods
+    //-------------------------------------------------------------------------
+
+    private void free(boolean shouldBeFree) {
+        final long hdl = getPeerAndClear();
+        if (hdl == 0L) { return; }
+
+        if (shouldBeFree) { Log.w(LogDomain.DATABASE, "FLEncoder was not closed: " + this); }
+
+        if (!isCoreOwned) { free(hdl); }
+        else {
+            reset(hdl);
+            extraInfo = null;
         }
     }
 

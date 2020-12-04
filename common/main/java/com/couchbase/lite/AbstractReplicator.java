@@ -834,6 +834,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
     }
 
+    @SuppressWarnings("NumberEquality")
     private boolean isSameReplicator(C4Replicator repl) { return repl == getC4Replicator(); }
 
     @GuardedBy("lock")
@@ -853,7 +854,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         status = new Status(
             level,
-            new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()), error);
+            new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
+            error);
 
         Log.i(DOMAIN, "%s is %s, progress %d/%d, error: %s",
             this,
@@ -883,20 +885,17 @@ public abstract class AbstractReplicator extends InternalReplicator {
     }
 
     private byte[] getFleeceOptions() {
-        // Encode the options:
         final Map<String, Object> options = config.effectiveOptions();
 
         synchronized (lock) { options.put(C4Replicator.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value); }
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {
-            final FLEncoder enc = new FLEncoder();
-            try {
+            try (FLEncoder enc = new FLEncoder()) {
                 enc.write(options);
                 optionsFleece = enc.finish();
             }
-            catch (LiteCoreException e) { Log.e(DOMAIN, "Failed to encode", e); }
-            finally { enc.free(); }
+            catch (LiteCoreException e) { Log.w(DOMAIN, "Failed encoding replicator options", e); }
         }
 
         return optionsFleece;

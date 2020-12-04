@@ -526,15 +526,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
         final Database db = getDatabase();
         if (db == null) { throw new IllegalStateException("encode called with null database"); }
 
-        final FLEncoder encoder = db.getSharedFleeceEncoder();
-        try {
+        try (FLEncoder encoder = db.getSharedFleeceEncoder()) {
             encoder.setExtraInfo(this);
             getContent().encodeTo(encoder);
             return encoder.finish2();
-        }
-        finally {
-            encoder.setExtraInfo(null);
-            encoder.reset();
         }
     }
 
@@ -552,6 +547,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
+    @SuppressWarnings("NumberEquality")
     @GuardedBy("lock")
     private void updateC4DocumentLocked(@Nullable C4Document c4Doc) {
         if (c4Document == c4Doc) { return; }

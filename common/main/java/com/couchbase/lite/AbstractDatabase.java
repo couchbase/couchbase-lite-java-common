@@ -1367,14 +1367,12 @@ abstract class AbstractDatabase {
         @NonNull Document localDoc,
         @NonNull Document remoteDoc)
         throws CouchbaseLiteException {
-        FLSliceResult mergedBody = null;
-        int mergedFlags = 0x00;
-
         if (resolvedDoc == null) {
             if (remoteDoc.isDeleted()) { resolvedDoc = remoteDoc; }
             else if (localDoc.isDeleted()) { resolvedDoc = localDoc; }
         }
 
+        int mergedFlags = 0x00;
         if (resolvedDoc != null) {
             if (resolvedDoc != localDoc) { resolvedDoc.setDatabase((Database) this); }
 
@@ -1382,23 +1380,21 @@ abstract class AbstractDatabase {
             if (c4Doc != null) { mergedFlags = c4Doc.getSelectedFlags(); }
         }
 
+        byte[] mergedBodyBytes = null;
         try {
             // Unless the remote revision is being used as-is, we need a new revision:
             if (resolvedDoc != remoteDoc) {
-                if ((resolvedDoc != null) && !resolvedDoc.isDeleted()) { mergedBody = resolvedDoc.encode(); }
+                if ((resolvedDoc != null) && !resolvedDoc.isDeleted()) {
+                    try (FLSliceResult mergedBody = resolvedDoc.encode()) { mergedBodyBytes = mergedBody.getBuf(); }
+                }
                 else {
                     mergedFlags |= C4Constants.RevisionFlags.DELETED;
-                    final FLEncoder enc = getSharedFleeceEncoder();
-                    try {
-                        enc.writeValue(new HashMap<>()); // Need an empty dictionary body
-                        mergedBody = enc.finish2();
+                    try (FLEncoder enc = getSharedFleeceEncoder()) {
+                        enc.writeValue(new HashMap<>());
+                        try (FLSliceResult mergedBody = enc.finish2()) { mergedBodyBytes = mergedBody.getBuf(); }
                     }
-                    finally { enc.reset(); }
                 }
             }
-
-            // Merged body:
-            final byte[] mergedBodyBytes = (mergedBody == null) ? null : mergedBody.getBuf();
 
             // Ask LiteCore to do the resolution:
             final C4Document rawDoc = Preconditions.assertNotNull(localDoc.getC4doc(), "raw doc is null");
@@ -1410,9 +1406,6 @@ abstract class AbstractDatabase {
         }
         catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
-        }
-        finally {
-            if (mergedBody != null) { mergedBody.free(); }
         }
     }
 
@@ -1567,7 +1560,7 @@ abstract class AbstractDatabase {
             throw CBLStatus.convertException(e);
         }
         finally {
-            if (body != null) { body.free(); }
+            if (body != null) { body.close(); }
         }
     }
 

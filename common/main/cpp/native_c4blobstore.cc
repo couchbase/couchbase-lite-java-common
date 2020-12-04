@@ -53,7 +53,7 @@ Java_com_couchbase_lite_internal_core_C4BlobKey_fromString(JNIEnv *env, jclass i
     jstringSlice str(env, jstr);
     auto pBlobKey = (C4BlobKey *) ::malloc(sizeof(C4BlobKey));
     if (!c4blob_keyFromString(str, pBlobKey)) {
-        free(pBlobKey);
+        ::free(pBlobKey);
         throwError(env, {LiteCoreDomain, 0});
     }
     return (jlong) pBlobKey;
@@ -80,7 +80,7 @@ Java_com_couchbase_lite_internal_core_C4BlobKey_toString(JNIEnv *env, jclass ign
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4BlobKey_free(JNIEnv *env, jclass ignore, jlong jblobkey) {
-    free((C4BlobKey *) jblobkey);
+    ::free((C4BlobKey *) jblobkey);
 }
 
 // ----------------------------------------------------------------------------
@@ -284,7 +284,7 @@ Java_com_couchbase_lite_internal_core_C4BlobReadStream_read__J_3BIJ(JNIEnv *env,
                                 (size_t) jsize,
                                 &error);
 
-    env->ReleaseByteArrayElements(buffer, buff, NULL);
+    env->ReleaseByteArrayElements(buffer, buff, 0);
 
     return read;
 }

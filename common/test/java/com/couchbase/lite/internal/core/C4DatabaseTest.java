@@ -17,19 +17,25 @@ package com.couchbase.lite.internal.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -93,13 +99,13 @@ public class C4DatabaseTest extends C4BaseTest {
         assertNotNull(publicUUID);
         assertTrue(publicUUID.length > 0);
         // Weird requirements of UUIDs according to the spec:
-        assertTrue((publicUUID[6] & 0xF0) == 0x40);
-        assertTrue((publicUUID[8] & 0xC0) == 0x80);
+        assertEquals(0x40, (publicUUID[6] & 0xF0));
+        assertEquals(0x80, (publicUUID[8] & 0xC0));
         byte[] privateUUID = c4Database.getPrivateUUID();
         assertNotNull(privateUUID);
         assertTrue(privateUUID.length > 0);
-        assertTrue((privateUUID[6] & 0xF0) == 0x40);
-        assertTrue((privateUUID[8] & 0xC0) == 0x80);
+        assertEquals(0x40, (privateUUID[6] & 0xF0));
+        assertEquals(0x80, (privateUUID[8] & 0xC0));
         assertFalse(Arrays.equals(publicUUID, privateUUID));
 
         reopenDB();
@@ -107,13 +113,13 @@ public class C4DatabaseTest extends C4BaseTest {
         // Make sure UUIDs are persistent:
         byte[] publicUUID2 = c4Database.getPublicUUID();
         byte[] privateUUID2 = c4Database.getPrivateUUID();
-        assertTrue(Arrays.equals(publicUUID, publicUUID2));
-        assertTrue(Arrays.equals(privateUUID, privateUUID2));
+        assertArrayEquals(publicUUID, publicUUID2);
+        assertArrayEquals(privateUUID, privateUUID2);
     }
 
     // - Database deletion lock
     @Test
-    public void testDatabaseDeletionLock() throws IOException {
+    public void testDatabaseDeletionLock() {
         try {
             C4Database.deleteDbAtPath(c4Database.getPath());
             fail();
@@ -220,7 +226,7 @@ public class C4DatabaseTest extends C4BaseTest {
         assertNotNull(doc);
         assertEquals(doc.key(), key);
         assertEquals(doc.meta(), meta);
-        assertTrue(Arrays.equals(doc.body(), fleeceBody));
+        assertArrayEquals(doc.body(), fleeceBody);
         doc.free();
 
         // Nonexistent:
@@ -262,7 +268,7 @@ public class C4DatabaseTest extends C4BaseTest {
                     assertNull(doc.getSelectedBody());
                     // Doc was loaded without its body, but it should load on demand:
                     doc.loadRevisionBody();
-                    assertTrue(Arrays.equals(fleeceBody, doc.getSelectedBody()));
+                    assertArrayEquals(fleeceBody, doc.getSelectedBody());
                     i++;
                 }
                 finally {
@@ -308,7 +314,6 @@ public class C4DatabaseTest extends C4BaseTest {
         finally {
             e.free();
         }
-
     }
 
     // - "Database Changes"
@@ -367,7 +372,6 @@ public class C4DatabaseTest extends C4BaseTest {
         finally {
             e.free();
         }
-
     }
 
     // - "Database Expired"
@@ -390,11 +394,9 @@ public class C4DatabaseTest extends C4BaseTest {
 
         String docID3 = "dont_expire_me";
         createRev(docID3, REV_ID_1, fleeceBody);
-        try {
-            Thread.sleep(2 * 1000); // sleep 2 sec
-        }
-        catch (InterruptedException e) {
-        }
+
+        try { Thread.sleep(2 * 1000); }
+        catch (InterruptedException ignore) { }
 
         assertEquals(expire, c4Database.getExpiration(docID));
         assertEquals(expire, c4Database.getExpiration(docID2));
@@ -417,11 +419,8 @@ public class C4DatabaseTest extends C4BaseTest {
         createRev(docID2, REV_ID_1, fleeceBody);
         c4Database.setExpiration(docID2, expire);
 
-        try {
-            Thread.sleep(3 * 1000); // sleep 3 sec
-        }
-        catch (InterruptedException e) {
-        }
+        try { Thread.sleep(3 * 1000); }
+        catch (InterruptedException ignore) { }
 
         long cnt = c4Database.purgeExpiredDocs();
 
@@ -432,13 +431,11 @@ public class C4DatabaseTest extends C4BaseTest {
     public void testPurgeDoc() throws LiteCoreException {
         String docID = "purge_me";
         createRev(docID, REV_ID_1, fleeceBody);
-        try {
-            c4Database.purgeDoc(docID);
-        }
-        catch (Exception e) {}
-        try {
-            c4Database.get(docID, true);
-        }
+
+        try { c4Database.purgeDoc(docID); }
+        catch (Exception ignore) { }
+
+        try { c4Database.get(docID, true); }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
             assertEquals(C4Constants.LiteCoreError.NOT_FOUND, e.code);
@@ -457,11 +454,8 @@ public class C4DatabaseTest extends C4BaseTest {
         c4Database.setExpiration(docID, expire);
         c4Database.setExpiration(docID, 0);
 
-        try {
-            Thread.sleep(2 * 1000); // sleep 2 sec
-        }
-        catch (InterruptedException e) {
-        }
+        try { Thread.sleep(2 * 1000); }
+        catch (InterruptedException ignore) { }
 
         assertNotNull(c4Database.get(docID, true));
     }
@@ -485,63 +479,79 @@ public class C4DatabaseTest extends C4BaseTest {
         String content2 = "This is the second attachment";
         String content3 = "This is the third attachment";
 
-        C4BlobKey key1, key2, key3;
-        List<String> atts = new ArrayList<>();
-        c4Database.beginTransaction();
+        Set<C4BlobKey> allKeys = new HashSet<>();
+
+        final C4BlobKey key1;
+        final C4BlobKey key2;
+        final C4BlobKey key3;
         try {
-            atts.add(content1);
-            key1 = addDocWithAttachments(doc1ID, atts, "text/plain").get(0);
+            List<String> atts = new ArrayList<>();
+            List<C4BlobKey> keys;
+            c4Database.beginTransaction();
+            try {
+                atts.add(content1);
+                keys = addDocWithAttachments(doc1ID, atts);
+                allKeys.addAll(keys);
+                key1 = keys.get(0);
 
-            atts.clear();
-            atts.add(content2);
-            key2 = addDocWithAttachments(doc2ID, atts, "text/plain").get(0);
+                atts.clear();
+                atts.add(content2);
+                keys = addDocWithAttachments(doc2ID, atts);
+                allKeys.addAll(keys);
+                key2 = keys.get(0);
 
-            addDocWithAttachments(doc4ID, atts, "text/plain");
+                keys = addDocWithAttachments(doc4ID, atts);
+                allKeys.addAll(keys);
 
-            atts.clear();
-            atts.add(content3);
-            key3 = addDocWithAttachments(doc3ID, atts, "text/plain")
-                .get(0); // legacy: TODO need to implement legacy support
+                atts.clear();
+                atts.add(content3);
+                keys = addDocWithAttachments(doc3ID, atts);
+                allKeys.addAll(keys);
+                key3 = keys.get(0); // legacy: TODO need to implement legacy support
+            }
+            finally {
+                c4Database.endTransaction(true);
+            }
+
+            C4BlobStore store = c4Database.getBlobStore();
+            assertNotNull(store);
+            c4Database.compact();
+            assertTrue(store.getSize(key1) > 0);
+            assertTrue(store.getSize(key2) > 0);
+            assertTrue(store.getSize(key3) > 0);
+
+            // Only reference to first blob is gone
+            createRev(doc1ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
+            c4Database.compact();
+            assertEquals(store.getSize(key1), -1);
+            assertTrue(store.getSize(key2) > 0);
+            assertTrue(store.getSize(key3) > 0);
+
+            // Two references exist to the second blob, so it should still
+            // exist after deleting doc002
+            createRev(doc2ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
+            c4Database.compact();
+            assertEquals(store.getSize(key1), -1);
+            assertTrue(store.getSize(key2) > 0);
+            assertTrue(store.getSize(key3) > 0);
+
+            // After deleting doc4 both blobs should be gone
+            createRev(doc4ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
+            c4Database.compact();
+            assertEquals(store.getSize(key1), -1);
+            assertEquals(store.getSize(key2), -1);
+            assertTrue(store.getSize(key3) > 0);
+
+            // Delete doc with legacy attachment, and it too will be gone
+            createRev(doc3ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
+            c4Database.compact();
+            assertEquals(store.getSize(key1), -1);
+            assertEquals(store.getSize(key2), -1);
+            assertEquals(store.getSize(key3), -1);
         }
         finally {
-            c4Database.endTransaction(true);
+            closeKeys(allKeys);
         }
-
-        C4BlobStore store = c4Database.getBlobStore();
-        assertNotNull(store);
-        c4Database.compact();
-        assertTrue(store.getSize(key1) > 0);
-        assertTrue(store.getSize(key2) > 0);
-        assertTrue(store.getSize(key3) > 0);
-
-        // Only reference to first blob is gone
-        createRev(doc1ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
-        c4Database.compact();
-        assertTrue(store.getSize(key1) == -1);
-        assertTrue(store.getSize(key2) > 0);
-        assertTrue(store.getSize(key3) > 0);
-
-        // Two references exist to the second blob, so it should still
-        // exist after deleting doc002
-        createRev(doc2ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
-        c4Database.compact();
-        assertTrue(store.getSize(key1) == -1);
-        assertTrue(store.getSize(key2) > 0);
-        assertTrue(store.getSize(key3) > 0);
-
-        // After deleting doc4 both blobs should be gone
-        createRev(doc4ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
-        c4Database.compact();
-        assertTrue(store.getSize(key1) == -1);
-        assertTrue(store.getSize(key2) == -1);
-        assertTrue(store.getSize(key3) > 0);
-
-        // Delete doc with legacy attachment, and it too will be gone
-        createRev(doc3ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
-        c4Database.compact();
-        assertTrue(store.getSize(key1) == -1);
-        assertTrue(store.getSize(key2) == -1);
-        assertTrue(store.getSize(key3) == -1);
     }
 
     // - "Database copy"
@@ -660,4 +670,53 @@ public class C4DatabaseTest extends C4BaseTest {
         // Add a deleted doc to make sure it's skipped by default:
         createRev("doc-005DEL", REV_ID_1, null, C4Constants.DocumentFlags.DELETED);
     }
+
+    private void closeKeys(Collection<C4BlobKey> keys) { for (C4BlobKey key: keys) { key.close(); } }
+
+    private List<C4BlobKey> addDocWithAttachments(String docID, List<String> attachments)
+        throws LiteCoreException {
+        List<C4BlobKey> keys = new ArrayList<>();
+        StringBuilder json = new StringBuilder();
+        json.append("{attached: [");
+        for (String attachment: attachments) {
+            C4BlobStore store = c4Database.getBlobStore();
+            C4BlobKey key = store.create(attachment.getBytes(StandardCharsets.UTF_8));
+            keys.add(key);
+            String keyStr = key.toString();
+            json.append("{'");
+            json.append("@type");
+            json.append("': '");
+            json.append("blob");
+            json.append("', ");
+            json.append("digest: '");
+            json.append(keyStr);
+            json.append("', length: ");
+            json.append(attachment.length());
+            json.append(", content_type: '");
+            json.append("text/plain");
+            json.append("'},");
+        }
+        json.append("]}");
+        String jsonStr = json5(json.toString());
+
+        final C4Document doc;
+        try (FLSliceResult body = c4Database.encodeJSON(jsonStr.getBytes(StandardCharsets.UTF_8))) {
+            // Save document:
+            doc = c4Database.put(
+                body,
+                docID,
+                C4Constants.RevisionFlags.HAS_ATTACHMENTS,
+                false,
+                false,
+                new String[0],
+                true,
+                0,
+                0);
+        }
+        assertNotNull(doc);
+        doc.free();
+
+        return keys;
+    }
 }
+

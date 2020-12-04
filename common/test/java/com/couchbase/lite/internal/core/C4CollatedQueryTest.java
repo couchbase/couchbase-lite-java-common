@@ -58,7 +58,7 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
         List<String> artists = run();
         assertEquals(2097, artists.size());
 
-        // Benoît Pioulard appears twice in the database, once miscapitalized as BenoÎt Pioulard.
+        // Benoît Pioulard appears twice in the database, once mis-capitalized as BenoÎt Pioulard.
         // Check that these got coalesced by the DISTINCT operator:
         assertEquals("Benny Goodman", artists.get(214));
         assertEquals("Benoît Pioulard", artists.get(215));
@@ -71,7 +71,7 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     }
 
     protected List<String> run() throws LiteCoreException {
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
         try {
             List<String> results = new ArrayList<>();
             while (e.next()) { results.add(e.getColumns().getValueAt(0).asString()); }

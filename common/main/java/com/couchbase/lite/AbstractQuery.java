@@ -31,7 +31,7 @@ import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryOptions;
-import com.couchbase.lite.internal.fleece.AllocSlice;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JsonUtils;
@@ -123,25 +123,22 @@ abstract class AbstractQuery implements Query {
     @NonNull
     @Override
     public ResultSet execute() throws CouchbaseLiteException {
-        AllocSlice params = null;
         try {
             final C4QueryOptions options = new C4QueryOptions();
             if (parameters == null) { parameters = new Parameters(); }
-            params = parameters.encode();
             final C4QueryEnumerator c4enum;
-            synchronized (getDbLock()) {
-                synchronized (lock) {
-                    if (c4query == null) { c4query = prepQueryLocked(); }
-                    c4enum = c4query.run(options, params);
+            try (FLSliceResult params = parameters.encode()) {
+                synchronized (getDbLock()) {
+                    synchronized (lock) {
+                        if (c4query == null) { c4query = prepQueryLocked(); }
+                        c4enum = c4query.run(options, params);
+                    }
                 }
             }
             return new ResultSet(this, c4enum, columnNames);
         }
         catch (LiteCoreException e) {
             throw CBLStatus.convertException(e);
-        }
-        finally {
-            if (params != null) { params.free(); }
         }
     }
 
@@ -166,7 +163,7 @@ abstract class AbstractQuery implements Query {
             synchronized (lock) {
                 if (c4query == null) { c4query = prepQueryLocked(); }
                 final String exp = c4query.explain();
-                if (exp == null) { throw new CouchbaseLiteException("Cound not explain query"); }
+                if (exp == null) { throw new CouchbaseLiteException("Could not explain query"); }
                 return exp;
             }
         }
@@ -221,7 +218,7 @@ abstract class AbstractQuery implements Query {
     // Protected level access
     //---------------------------------------------
 
-    @SuppressWarnings("NoFinalizer")
+    @SuppressWarnings({"NoFinalizer", "SynchronizationOnLocalVariableOrMethodParameter"})
     @Override
     protected void finalize() throws Throwable {
         try {

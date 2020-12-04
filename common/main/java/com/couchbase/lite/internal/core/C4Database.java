@@ -314,10 +314,10 @@ public class C4Database extends C4NativePeer {
         return new C4Query(getPeer(), expression);
     }
 
-    public boolean createIndex(
+    public void createIndex(
         String name, String expressionsJSON, int indexType, String language,
         boolean ignoreDiacritics) throws LiteCoreException {
-        return C4Query.createIndex(getPeer(), name, expressionsJSON, indexType, language, ignoreDiacritics);
+        C4Query.createIndex(getPeer(), name, expressionsJSON, indexType, language, ignoreDiacritics);
     }
 
     public void deleteIndex(String name) throws LiteCoreException { C4Query.deleteIndex(getPeer(), name); }

@@ -109,7 +109,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         params.put("limit", 4);
         assertEquals(Arrays.asList("0000004", "0000006", "0000008", "0000015"), run(params));
 
-        // ...wherease null is a JSON null value
+        // ...whereas null is a JSON null value
         compile(json5("['IS', ['.', 'contact', 'phone', [0]], null]"), "", true);
         params = new HashMap<>();
         params.put("offset", 0);
@@ -272,7 +272,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testMissingColumns() throws LiteCoreException {
         {
             compileSelect(json5("['SELECT', {'WHAT': [['.name'], ['.gender']], 'LIMIT': 1}]"));
-            C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+            C4QueryEnumerator e = query.run(new C4QueryOptions());
             while (e.next()) { assertEquals(0x00, e.getMissingColumns()); }
             e.free();
         }
@@ -280,7 +280,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         {
             compileSelect(json5("['SELECT', {'WHAT': [['.XX'], ['.name'], ['.YY'], ['.gender'], ['.ZZ']], 'LIMIT': "
                 + "1}]"));
-            C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+            C4QueryEnumerator e = query.run(new C4QueryOptions());
             while (e.next()) { assertEquals(0x15, e.getMissingColumns()); }
             e.free();
         }
@@ -445,7 +445,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         // String name0 = query.nameOfColumn(0);
         // String name1 = query.nameOfColumn(1);
 
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -468,7 +468,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             "{WHAT: ['.name'], WHERE: ['>=', ['length()', ['.name.first']], 9], ORDER_BY: [['.name.first']]}"));
         assertEquals(1, query.columnCount());
 
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -489,7 +489,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testDBQueryAggregate() throws LiteCoreException {
         compileSelect(json5("{WHAT: [['min()', ['.name.last']], ['max()', ['.name.last']]]}"));
 
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -516,7 +516,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             "{WHAT: [['.contact.address.state'], ['min()', ['.name.last']], ['max()', ['.name.last']]],GROUP_BY: [['"
                 + ".contact.address.state']]}"));
 
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -544,7 +544,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             "{WHAT: ['.person.name.first', '.state.name'], FROM: [{as: 'person'}, {as: 'state', on: ['=', ['.state"
                 + ".abbreviation'], ['.person.contact.address.state']]}],WHERE: ['>=', ['length()', ['.person.name"
                 + ".first']], 9],ORDER_BY: [['.person.name.first']]}"));
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -564,7 +564,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQuerySeek() throws LiteCoreException {
         compile(json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"));
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
         e.next();
         String docID = e.getColumns().getValueAt(0).asString();
@@ -612,7 +612,7 @@ public class C4QueryTest extends C4QueryBaseTest {
                 + " FROM kv_default AS _doc"
                 + " WHERE (fl_value(_doc.body, 'contact.address.state') = 'CA') AND (_doc.flags & 1 = 0)",
             explanation);
-        C4QueryEnumerator e = query.run(new C4QueryOptions(), null);
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
         C4QueryEnumerator refreshed = e.refresh();
         assertNull(refreshed);

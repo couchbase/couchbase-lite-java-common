@@ -21,8 +21,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 
 import static org.junit.Assert.assertEquals;
@@ -60,7 +60,8 @@ public class EncodingTest extends BaseTest {
         if (System.getProperty("os.name").toLowerCase().contains("windows")) {
             // Weird: windows is parsing in this case, third byte is illegal without the preceding 4byte char
             testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world"); // a cat and a half
-        } else {
+        }
+        else {
             testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world", ""); // a cat and a half
         }
     }
@@ -132,23 +133,21 @@ public class EncodingTest extends BaseTest {
             null);
     }
 
-    private void testRoundTrip(Object item) throws Exception { testRoundTrip(item, item); }
+    private void testRoundTrip(Object item) throws LiteCoreException { testRoundTrip(item, item); }
 
-    private void testRoundTrip(Object item, Object expected) throws Exception {
-        final FLEncoder encoder = new FLEncoder();
-        AllocSlice slice = null;
-        try {
+    private void testRoundTrip(Object item, Object expected) throws LiteCoreException {
+        try (FLEncoder encoder = new FLEncoder()) {
             assertTrue(encoder.writeValue(item));
-            slice = encoder.finish2();
-            assertNotNull(slice);
-            FLValue flValue = FLValue.fromData(slice);
-            assertNotNull(flValue);
-            Object obj = FLValue.toObject(flValue);
-            assertEquals(expected, obj);
-        }
-        finally {
-            if (slice != null) slice.free();
-            encoder.free();
+
+            try (FLSliceResult slice = encoder.finish2()) {
+                assertNotNull(slice);
+                final FLValue flValue = FLValue.fromData(slice);
+
+                assertNotNull(flValue);
+
+                Object obj = FLValue.toObject(flValue);
+                assertEquals(expected, obj);
+            }
         }
     }
 

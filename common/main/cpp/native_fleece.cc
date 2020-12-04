@@ -458,21 +458,6 @@ Java_com_couchbase_lite_internal_fleece_FLSliceResult_init(JNIEnv *env, jclass i
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
- * Method:    initWithBytes
- * Signature: ([B)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLSliceResult_initWithBytes(JNIEnv *env, jclass ignore, jbyteArray jvalue) {
-    jbyteArraySlice bytes(env, jvalue, true);
-    FLSlice slice = bytes;
-    auto *sliceResult = (FLSliceResult *) ::malloc(sizeof(FLSliceResult));
-    sliceResult->buf = slice.buf;
-    sliceResult->size = slice.size;
-    return (jlong) sliceResult;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
  * Method:    free
  * Signature: (J)V
  */

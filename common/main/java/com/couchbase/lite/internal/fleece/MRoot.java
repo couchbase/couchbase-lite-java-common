@@ -55,14 +55,10 @@ public class MRoot extends MCollection {
 
     public Object asNative() { return slot.asNative(this); }
 
-    public AllocSlice encode() throws LiteCoreException {
-        final FLEncoder encoder = new FLEncoder();
-        try {
+    public FLSliceResult encode() throws LiteCoreException {
+        try (FLEncoder encoder = new FLEncoder()) {
             slot.encodeTo(encoder);
             return encoder.finish2();
-        }
-        finally {
-            encoder.free();
         }
     }
 }

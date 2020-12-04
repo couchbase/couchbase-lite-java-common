@@ -70,7 +70,7 @@ public class MDict extends MCollection implements Iterable<String> {
         }
         else {
             enc.beginDict(valCount);
-            for (Map.Entry<String, MValue> entry : valueMap.entrySet()) {
+            for (Map.Entry<String, MValue> entry: valueMap.entrySet()) {
                 final MValue value = entry.getValue();
                 if (!value.isEmpty()) {
                     enc.writeKey(entry.getKey());
@@ -79,8 +79,7 @@ public class MDict extends MCollection implements Iterable<String> {
             }
 
             if ((flDict != null) && (flDict.count() > 0)) {
-                final FLDictIterator itr = new FLDictIterator();
-                try {
+                try (FLDictIterator itr = new FLDictIterator()) {
                     itr.begin(flDict);
                     String key;
                     while ((key = itr.getKeyString()) != null) {
@@ -90,9 +89,6 @@ public class MDict extends MCollection implements Iterable<String> {
                         }
                         itr.next();
                     }
-                }
-                finally {
-                    itr.free();
                 }
             }
             enc.endDict();
@@ -108,8 +104,7 @@ public class MDict extends MCollection implements Iterable<String> {
         valueMap.clear();
 
         if ((flDict != null) && (flDict.count() > 0)) {
-            final FLDictIterator itr = new FLDictIterator();
-            try {
+            try (FLDictIterator itr = new FLDictIterator()) {
                 itr.begin(flDict);
                 String key;
                 while ((key = itr.getKeyString()) != null) {
@@ -117,12 +112,10 @@ public class MDict extends MCollection implements Iterable<String> {
                     itr.next();
                 }
             }
-            finally {
-                itr.free();
-            }
         }
 
         valCount = 0;
+
         return true;
     }
 
@@ -134,22 +127,18 @@ public class MDict extends MCollection implements Iterable<String> {
 
     public List<String> getKeys() {
         final List<String> keys = new ArrayList<>();
-        for (Map.Entry<String, MValue> entry : valueMap.entrySet()) {
+        for (Map.Entry<String, MValue> entry: valueMap.entrySet()) {
             if (!entry.getValue().isEmpty()) { keys.add(entry.getKey()); }
         }
 
         if ((flDict != null) && (flDict.count() > 0)) {
-            final FLDictIterator itr = new FLDictIterator();
-            try {
+            try (FLDictIterator itr = new FLDictIterator()) {
                 itr.begin(flDict);
                 String key;
                 while ((key = itr.getKeyString()) != null) {
                     if (!valueMap.containsKey(key)) { keys.add(key); }
                     itr.next();
                 }
-            }
-            finally {
-                itr.free();
             }
         }
 

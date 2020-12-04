@@ -21,7 +21,7 @@ import android.support.annotation.Nullable;
 import com.couchbase.lite.internal.core.C4NativePeer;
 
 
-public class FLDictIterator extends C4NativePeer {
+public class FLDictIterator extends C4NativePeer implements AutoCloseable {
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -51,7 +51,8 @@ public class FLDictIterator extends C4NativePeer {
 
     public boolean next() { return next(getPeer()); }
 
-    public void free() {
+    @Override
+    public void close() {
         final long handle = getPeerAndClear();
         if (handle == 0) { return; }
         free(handle);
@@ -64,7 +65,7 @@ public class FLDictIterator extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { free(); }
+        try { close(); }
         finally { super.finalize(); }
     }
 

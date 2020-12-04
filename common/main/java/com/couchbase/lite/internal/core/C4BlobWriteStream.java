@@ -24,7 +24,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * An open stream for writing data to a blob.
  */
-public class C4BlobWriteStream extends C4NativePeer {
+public class C4BlobWriteStream extends C4NativePeer implements AutoCloseable {
 
     //-------------------------------------------------------------------------
     // Constructor

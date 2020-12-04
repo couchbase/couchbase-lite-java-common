@@ -129,12 +129,9 @@ public class MValue implements Encodable {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try {
-            nativeChangeSlot(null); // ??? WAT?
-        }
-        finally {
-            super.finalize();
-        }
+        // ??? WAT?
+        try { nativeChangeSlot(null); }
+        finally { super.finalize(); }
     }
 
     //-------------------------------------------------------------------------

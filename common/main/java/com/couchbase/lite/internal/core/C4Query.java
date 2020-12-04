@@ -15,11 +15,12 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.fleece.AllocSlice;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
 
@@ -52,16 +53,10 @@ public class C4Query extends C4NativePeer {
 
     // - Creates a database index, to speed up subsequent queries.
 
-    public C4QueryEnumerator run(C4QueryOptions options, AllocSlice parameters) throws LiteCoreException {
-        final AllocSlice params = (parameters != null) ? parameters : new FLSliceResult();
-        try {
-            return withPeerThrows(
-                null,
-                h -> new C4QueryEnumerator(run(h, options.isRankFullText(), params.getHandle())));
-        }
-        finally {
-            if (params != parameters) { params.free(); }
-        }
+    public C4QueryEnumerator run(@NonNull C4QueryOptions opts, @NonNull FLSliceResult params) throws LiteCoreException {
+        return withPeerThrows(
+            null,
+            h -> new C4QueryEnumerator(run(h, opts.isRankFullText(), params.getHandle())));
     }
 
     @SuppressWarnings("PMD.MethodReturnsInternalArray")
@@ -94,6 +89,11 @@ public class C4Query extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     int columnCount() { return withPeer(0, C4Query::columnCount); }
+
+    @VisibleForTesting
+    C4QueryEnumerator run(@NonNull C4QueryOptions opts) throws LiteCoreException {
+        try (FLSliceResult params = new FLSliceResult()) { return run(opts, params); }
+    }
 
     //-------------------------------------------------------------------------
     // Native methods

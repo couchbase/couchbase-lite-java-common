@@ -23,7 +23,7 @@ import com.couchbase.lite.LiteCoreException;
 /**
  * An open stream for reading data from a blob.
  */
-public class C4BlobReadStream extends C4NativePeer {
+public class C4BlobReadStream extends C4NativePeer implements AutoCloseable {
 
     //-------------------------------------------------------------------------
     // Constructor

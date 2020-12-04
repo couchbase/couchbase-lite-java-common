@@ -34,7 +34,7 @@ public class FLValue {
     //-------------------------------------------------------------------------
 
     @Nullable
-    public static FLValue fromData(AllocSlice slice) {
+    public static FLValue fromData(FLSliceResult slice) {
         if (slice == null) { return null; }
         final long value = fromData(slice.getHandle());
         return value == 0 ? null : new FLValue(value);
@@ -178,7 +178,7 @@ public class FLValue {
 
     /**
      * Returns the exact contents of a string value, or null for all other types.
-     * ??? If we are out of memory or the string cannot be decoded, we just lose it
+     * !!! If we are out of memory or the string cannot be decoded, we just lose it
      *
      * @return String
      */
