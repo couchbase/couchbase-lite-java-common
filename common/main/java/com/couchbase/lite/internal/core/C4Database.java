@@ -172,12 +172,14 @@ public class C4Database extends C4NativePeer {
 
     // - Fleece-related
     // !!! This needs to hold both the document and the database locks
-    public FLEncoder getSharedFleeceEncoder() { return new FLEncoder(getSharedFleeceEncoder(getPeer()), true); }
+    public FLEncoder getSharedFleeceEncoder() {
+        return FLEncoder.getUnmanagedEncoder(getSharedFleeceEncoder(getPeer()));
+    }
 
     // NOTE: Should param be String instead of byte[]?
     @VisibleForTesting
     public FLSliceResult encodeJSON(byte[] jsonData) throws LiteCoreException {
-        return new FLSliceResult(encodeJSON(getPeer(), jsonData));
+        return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), jsonData));
     }
 
     public final FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }

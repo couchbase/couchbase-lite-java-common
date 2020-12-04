@@ -58,6 +58,7 @@ import okhttp3.Route;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
+import org.jetbrains.annotations.NotNull;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -136,7 +137,7 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     class CBLWebSocketListener extends WebSocketListener {
         @Override
-        public void onOpen(WebSocket webSocket, Response response) {
+        public void onOpen(@NotNull WebSocket webSocket, @NotNull Response response) {
             Log.v(TAG, "WebSocketListener opened with response " + response);
             AbstractCBLWebSocket.this.webSocket = webSocket;
             receivedHTTPResponse(response);
@@ -145,25 +146,25 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         @Override
-        public void onMessage(WebSocket webSocket, String text) {
+        public void onMessage(@NotNull WebSocket webSocket, String text) {
             Log.v(TAG, "WebSocketListener received text string with length " + text.length());
             received(text.getBytes(StandardCharsets.UTF_8));
         }
 
         @Override
-        public void onMessage(WebSocket webSocket, ByteString bytes) {
+        public void onMessage(@NotNull WebSocket webSocket, ByteString bytes) {
             Log.v(TAG, "WebSocketListener received " + bytes.size() + " bytes of data");
             received(bytes.toByteArray());
         }
 
         @Override
-        public void onClosing(WebSocket webSocket, int code, String reason) {
+        public void onClosing(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
             Log.v(TAG, "WebSocketListener is closing with code " + code + ", reason " + reason);
             closeRequested(code, reason);
         }
 
         @Override
-        public void onClosed(WebSocket webSocket, int code, String reason) {
+        public void onClosed(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
             Log.v(TAG, "WebSocketListener closed with code " + code + ", reason " + reason);
             didClose(code, reason);
         }
@@ -174,8 +175,8 @@ public class AbstractCBLWebSocket extends C4Socket {
         // {kCFURLErrorNetworkConnectionLost,          {POSIXDomain, ECONNRESET}},
 
         @Override
-        public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-            Log.w(TAG, "WebSocketListener failed with response " + response, t);
+        public void onFailure(@NotNull WebSocket webSocket, @NotNull Throwable t, Response response) {
+            Log.i(TAG, "WebSocketListener failed with response " + response, t);
 
             // Invoked when a web socket has been closed due to an error reading from or writing to the network.
             // Both outgoing and incoming messages may have been lost. No further calls to this listener will be made.
@@ -245,7 +246,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions,
                 cookieStore, serverCertsListener);
         }
-        catch (Exception e) { Log.e(TAG, "Failed to instantiate CBLWebSocket", e); }
+        catch (Exception e) { Log.w(TAG, "Failed to instantiate CBLWebSocket", e); }
 
         return null;
     }
@@ -304,7 +305,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected void send(byte[] allocatedData) {
         if (!webSocket.send(ByteString.of(allocatedData, 0, allocatedData.length))) {
-            Log.e(TAG, "CBLWebSocket failed to send data of length = " + allocatedData.length);
+            Log.i(TAG, "CBLWebSocket failed to send data of length = " + allocatedData.length);
             return;
         }
 
@@ -338,7 +339,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         if (!webSocket.close(status, message)) {
-            Log.w(TAG, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
+            Log.i(TAG, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
         }
     }
 
@@ -393,14 +394,15 @@ public class AbstractCBLWebSocket extends C4Socket {
     private CookieJar getCookieJar() {
         return new CookieJar() {
             @Override
-            public void saveFromResponse(HttpUrl httpUrl, List<Cookie> cookies) {
-                for (Cookie cookie : cookies) {
+            public void saveFromResponse(@NotNull HttpUrl httpUrl, @NotNull List<Cookie> cookies) {
+                for (Cookie cookie: cookies) {
                     cookieStore.setCookie(httpUrl.uri(), cookie.toString());
                 }
             }
 
+            @NotNull
             @Override
-            public List<Cookie> loadForRequest(HttpUrl url) {
+            public List<Cookie> loadForRequest(@NotNull HttpUrl url) {
                 final List<Cookie> cookies = new ArrayList<>();
 
                 // Cookies from config
@@ -481,11 +483,11 @@ public class AbstractCBLWebSocket extends C4Socket {
         final Map<String, Object> headers = new HashMap<>();
         for (int i = 0; i < hs.size(); i++) { headers.put(hs.name(i), hs.value(i)); }
 
-        try (FLEncoder enc = new FLEncoder()) {
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.write(headers);
             headersFleece = enc.finish();
         }
-        catch (LiteCoreException e) { Log.e(TAG, "CBLWebSocket failed to encode response header", e); }
+        catch (LiteCoreException e) { Log.w(TAG, "CBLWebSocket failed to encode response header", e); }
 
         gotHTTPResponse(httpStatus, headersFleece);
     }
@@ -597,14 +599,12 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         if (!C4Replicator.AUTH_TYPE_CLIENT_CERT.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) { return null; }
 
-        final KeyManager clientCertAuthKeyManager
-            = CLIENT_CERT_AUTH_KEY_MANAGER.getObjFromContext(
-            (long) auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY));
-        if (clientCertAuthKeyManager == null) {
-            Log.w(TAG, "No key manager configured for client certificate authentication");
-        }
+        KeyManager keyAuthManager = null;
+        final Object certKey = auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY);
+        if (certKey != null) { keyAuthManager = CLIENT_CERT_AUTH_KEY_MANAGER.getObjFromContext((long) certKey); }
+        if (keyAuthManager == null) { Log.i(TAG, "No key manager configured for client certificate authentication"); }
 
-        return clientCertAuthKeyManager;
+        return keyAuthManager;
     }
 }
 

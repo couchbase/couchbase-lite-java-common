@@ -111,7 +111,7 @@ public class C4QueryBaseTest extends C4BaseTest {
     }
 
     private FLSliceResult encodeParameters(Map<String, Object> params) throws LiteCoreException {
-        try (FLEncoder enc = new FLEncoder()) {
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.write(params);
             return enc.finish2();
         }

@@ -53,9 +53,8 @@ public class C4DocumentObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    @SuppressWarnings("unused")
     static void callback(long handle, @Nullable String docID, long sequence) {
-        Log.d(
+        Log.v(
             LogDomain.DATABASE,
             "C4DocumentObserver.callback @" + Long.toHexString(handle) + " (" + sequence + "): " + docID);
 

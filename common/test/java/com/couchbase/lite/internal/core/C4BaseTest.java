@@ -296,7 +296,7 @@ public class C4BaseTest extends PlatformBaseTest {
 
     private byte[] createFleeceBody(Map<String, Object> body) throws LiteCoreException {
 
-        try (FLEncoder enc = new FLEncoder()) {
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             if (body == null) { enc.beginDict(0); }
             else {
                 enc.beginDict(body.size());

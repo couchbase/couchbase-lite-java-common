@@ -56,7 +56,7 @@ public class MRoot extends MCollection {
     public Object asNative() { return slot.asNative(this); }
 
     public FLSliceResult encode() throws LiteCoreException {
-        try (FLEncoder encoder = new FLEncoder()) {
+        try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
             slot.encodeTo(encoder);
             return encoder.finish2();
         }

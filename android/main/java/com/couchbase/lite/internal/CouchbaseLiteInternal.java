@@ -194,7 +194,7 @@ public final class CouchbaseLiteInternal {
             for (String error: errors) { errorMessages.put(error, root.getString(error)); }
         }
         catch (IOException | JSONException e) {
-            Log.e(LogDomain.DATABASE, "Failed to load error messages!", e);
+            Log.w(LogDomain.DATABASE, "Failed to load error messages", e);
         }
 
         return errorMessages;

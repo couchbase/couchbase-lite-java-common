@@ -86,7 +86,7 @@ public class ResultSet implements Iterable<Result> {
                     return null;
                 }
                 else if (!c4enum.next()) {
-                    Log.i(DOMAIN, "End of query enumeration");
+                    Log.v(DOMAIN, "End of query enumeration");
                     isAllEnumerated = true;
                     return null;
                 }
@@ -95,7 +95,7 @@ public class ResultSet implements Iterable<Result> {
                 }
             }
             catch (LiteCoreException e) {
-                Log.w(DOMAIN, "Query enumeration error: %s", e.toString());
+                Log.w(DOMAIN, "Error enumerating query", e);
                 return null;
             }
         }

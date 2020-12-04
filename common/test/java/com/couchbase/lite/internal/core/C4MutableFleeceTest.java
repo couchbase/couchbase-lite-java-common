@@ -61,51 +61,6 @@ class FLContext extends MContext {
 
 @SuppressWarnings("unchecked")
 public class C4MutableFleeceTest extends C4BaseTest {
-    private static FLSliceResult encode(Object obj) throws LiteCoreException {
-        try (FLEncoder enc = new FLEncoder()) {
-            enc.writeValue(obj);
-            return enc.finish2();
-        }
-    }
-
-    private static FLSliceResult encode(MRoot root) throws LiteCoreException {
-        try (FLEncoder enc = new FLEncoder()) {
-            root.encodeTo(enc);
-            return enc.finish2();
-        }
-    }
-
-    private static List<String> sortedKeys(Map<String, Object> dict) {
-        Set<String> keys = dict.keySet();
-        ArrayList<String> list = new ArrayList<>(keys);
-        Collections.sort(list);
-        return list;
-    }
-
-    private static void verifyDictIterator(Map<String, Object> dict) {
-        int count = 0;
-        Set<String> keys = new HashSet<>();
-        for (String key: dict.keySet()) {
-            count++;
-            assertNotNull(key);
-            keys.add(key);
-        }
-        assertEquals(dict.size(), keys.size());
-        assertEquals(dict.size(), count);
-    }
-
-    private static String fleece2JSON(FLSliceResult fleece) {
-        try {
-            FLValue v = FLValue.fromData(fleece);
-            if (v == null) { return "INVALID_FLEECE"; }
-            return v.toJSON5();
-        }
-        finally {
-            if (fleece != null) { fleece.close(); }
-        }
-    }
-
-
     private MValue.Delegate delegate;
 
     @Before
@@ -441,6 +396,49 @@ public class C4MutableFleeceTest extends C4BaseTest {
             try (FLSliceResult encodedRoot = encode(root)) {
                 assertEquals("{greeting:\"hi\",hello:\"world\"}", fleece2JSON(encodedRoot));
             }
+        }
+    }
+    private FLSliceResult encode(Object obj) throws LiteCoreException {
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
+            enc.writeValue(obj);
+            return enc.finish2();
+        }
+    }
+
+    private FLSliceResult encode(MRoot root) throws LiteCoreException {
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
+            root.encodeTo(enc);
+            return enc.finish2();
+        }
+    }
+
+    private List<String> sortedKeys(Map<String, Object> dict) {
+        Set<String> keys = dict.keySet();
+        ArrayList<String> list = new ArrayList<>(keys);
+        Collections.sort(list);
+        return list;
+    }
+
+    private void verifyDictIterator(Map<String, Object> dict) {
+        int count = 0;
+        Set<String> keys = new HashSet<>();
+        for (String key: dict.keySet()) {
+            count++;
+            assertNotNull(key);
+            keys.add(key);
+        }
+        assertEquals(dict.size(), keys.size());
+        assertEquals(dict.size(), count);
+    }
+
+    private String fleece2JSON(FLSliceResult fleece) {
+        try {
+            FLValue v = FLValue.fromData(fleece);
+            if (v == null) { return "INVALID_FLEECE"; }
+            return v.toJSON5();
+        }
+        finally {
+            if (fleece != null) { fleece.close(); }
         }
     }
 

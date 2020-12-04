@@ -15,43 +15,91 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 
 
-/*
- * Represent the block of native heap memory returned from the API call.
- * Normally, the caller takes ownership and must call close() method to release the memory.
- * If either if the two constructors with an 'isCoreOwned' param is called with that param true,
- * the heap memory will be released in native code.
+/**
+ * Represent the block of native heap memory whose ref is passed as a parameter
+ * or returned returned by the Core "init" call. The caller takes ownership of the "managed" version's peer
+ * and must call the close() method to release it. The "unmanaged" version's peer belongs to Core:
+ * it will be release by the native code.
  */
-public class FLSliceResult extends C4NativePeer implements AutoCloseable {
-    private final boolean isCoreOwned;
+public abstract class FLSliceResult extends C4NativePeer implements AutoCloseable {
+
+    // unmanaged: the native code will free it
+    static final class UnmanagedFLSliceResult extends FLSliceResult {
+        UnmanagedFLSliceResult() { super(); }
+
+        UnmanagedFLSliceResult(long handle) { super(handle); }
+
+        @Override
+        public void close() { getPeerAndClear(); }
+    }
+
+    // managed: Java code is responsible for freeing it
+    static final class ManagedFLSliceResult extends FLSliceResult {
+        ManagedFLSliceResult() { super(); }
+
+        ManagedFLSliceResult(long handle) { super(handle); }
+
+        @Override
+        public void close() { free(); }
+
+        @SuppressWarnings("NoFinalizer")
+        @Override
+        protected void finalize() throws Throwable {
+            try {
+                if (free()) { Log.i(LogDomain.DATABASE, "FLSliceResult was not closed: " + this); }
+            }
+            finally { super.finalize(); }
+        }
+
+        private boolean free() {
+            final long hdl = getPeerAndClear();
+            if (hdl == 0L) { return false; }
+
+            free(hdl);
+
+            return true;
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // Factory Methods
+    //-------------------------------------------------------------------------
+
+    public static FLSliceResult getUnmanagedSliceResult() { return new UnmanagedFLSliceResult(); }
+
+    public static FLSliceResult getUnmanagedSliceResult(long handle) { return new UnmanagedFLSliceResult(handle); }
+
+    public static FLSliceResult getManagedSliceResult() { return new ManagedFLSliceResult(); }
+
+    public static FLSliceResult getManagedSliceResult(long handle) { return new ManagedFLSliceResult(handle); }
+
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
-    public FLSliceResult() { this(false); }
+    private FLSliceResult() { super(init()); }
 
-    public FLSliceResult(long handle) { this(handle, false); }
-
-    /*
-     * Create a FLSliceResult whose ownership may be passed to core.
-     * Use these methods with arg "true" when the FLSliceResult will be freed by native code.
-     */
-
-    public FLSliceResult(boolean isCoreOwned) { this(init(), isCoreOwned); }
-
-    FLSliceResult(long handle, boolean isCoreOwned) {
-        super(handle);
-        this.isCoreOwned = isCoreOwned;
-    }
+    private FLSliceResult(long handle) { super(handle); }
 
     //-------------------------------------------------------------------------
     // Public methods
     //-------------------------------------------------------------------------
+
+    @NonNull
+    @Override
+    public String toString() { return "FLSliceResult{" + ClassUtils.objId(this) + "/" + getPeerUnchecked() + "}"; }
+
+    @Override
+    public abstract void close();
 
     // !!!  Exposes the peer handle
     public long getHandle() { return getPeer(); }
@@ -60,41 +108,13 @@ public class FLSliceResult extends C4NativePeer implements AutoCloseable {
 
     public long getSize() { return getSize(getPeer()); }
 
-    @Override
-    public void close() {
-        if (!isCoreOwned) {
-            free(false);
-            return;
-        }
-
-        Log.w(LogDomain.DATABASE, "Attempt to close a core-owned FLSliceResult: " + this, new Exception());
-    }
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            if (!isCoreOwned) { free(true); }
-        }
-        finally { super.finalize(); }
-    }
-
-    private void free(boolean shouldBeFree) {
-        final long hdl = getPeerAndClear();
-        if (hdl == 0L) { return; }
-
-        free(hdl);
-
-        if (shouldBeFree) { Log.w(LogDomain.DATABASE, "FLSliceResult was not closed: " + this); }
-    }
-
     //-------------------------------------------------------------------------
     // Native methods
     //-------------------------------------------------------------------------
 
-    private static native long init();
+    static native void free(long slice);
 
-    private static native void free(long slice);
+    private static native long init();
 
     private static native byte[] getBuf(long slice);
 

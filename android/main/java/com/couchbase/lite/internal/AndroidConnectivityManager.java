@@ -166,7 +166,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             final String msg = name + " network listener for " + getCblMgr() + ": " + this;
             try { connectivityMgr.unregisterNetworkCallback(connectivityCallback); }
             catch (RuntimeException e) {
-                Log.e(LogDomain.NETWORK, "Failed stopping " + msg, e);
+                Log.w(LogDomain.NETWORK, "Failed stopping " + msg, e);
                 return;
             }
 
@@ -229,7 +229,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
 
     /**
      * Listener for API >= 29: use a ConnectivityCallback registered to the Default Network for updates
-     * and getNetworkCapabilites for current status
+     * and getNetworkCapabilities for current status
      * <p>
      * This actually might work as far back as API 23.  It has not been tested on API 29.
      */
@@ -276,7 +276,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     private final Fn.Runner runner;
     private final int androidVersion;
 
-    // Distinct API codepaths are: 19 22 26 29
+    // Distinct API code paths are: 19 22 26 29
     AndroidConnectivityManager(@NonNull Fn.Runner runner) { this(Build.VERSION.SDK_INT, runner); }
 
     @VisibleForTesting

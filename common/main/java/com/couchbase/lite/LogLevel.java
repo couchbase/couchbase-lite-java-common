@@ -17,7 +17,6 @@ package com.couchbase.lite;
 
 import java.util.EnumMap;
 
-import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -29,36 +28,35 @@ public enum LogLevel {
     /**
      * Debug log messages. Only present in debug builds of CouchbaseLite.
      */
-    DEBUG(C4Constants.LogLevel.DEBUG),
+    DEBUG,
 
     /**
      * Verbose log messages.
      */
-    VERBOSE(C4Constants.LogLevel.VERBOSE),
+    VERBOSE,
 
     /**
      * Informational log messages.
      */
-    INFO(C4Constants.LogLevel.INFO),
+    INFO,
 
     /**
      * Warning log messages.
      */
-    WARNING(C4Constants.LogLevel.WARNING),
+    WARNING,
 
     /**
      * Error log messages. These indicate immediate errors that need to be addressed.
      */
-    ERROR(C4Constants.LogLevel.ERROR),
+    ERROR,
 
     /**
      * Disabling log messages of a given log domain.
      */
-    NONE(C4Constants.LogLevel.NONE);
+    NONE;
 
 
     private static final EnumMap<LogLevel, String> LEVELS = new EnumMap<>(LogLevel.class);
-
     static {
         LEVELS.put(DEBUG, "D");
         LEVELS.put(VERBOSE, "V");
@@ -67,26 +65,11 @@ public enum LogLevel {
         LEVELS.put(ERROR, "E");
         LEVELS.put(NONE, "");
     }
-
-    private final int value;
-
-    LogLevel(int value) { this.value = value; }
-
-    /**
-     * !!! This should not be part if the Public API.  The number that it returns
-     * is never useful to client software and begs confusion with the integer
-     * log level used by Android, to which it is completely unrelated.
-     *
-     * @return the CBL internal representation of the log level
-     */
-    public int getValue() { return value; }
-
     @Override
     public String toString() {
         final String s = LEVELS.get(this);
         if (s != null) { return s; }
-        Log.d(LogDomain.DATABASE, "Unknown log level: " + this);
+        Log.d(LogDomain.DATABASE, "Unrecognized log level: " + this);
         return "?";
     }
 }
-

@@ -61,7 +61,7 @@ public final class FileUtils {
         boolean succeeded = true;
         for (File file: contents) {
             if (!deleteRecursive(file)) {
-                Log.v(LogDomain.DATABASE, "Failed deleting file: " + file);
+                Log.i(LogDomain.DATABASE, "Failed deleting file: " + file);
                 succeeded = false;
             }
         }

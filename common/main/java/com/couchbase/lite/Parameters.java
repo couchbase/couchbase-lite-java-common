@@ -210,7 +210,7 @@ public final class Parameters {
     Parameters readonlyCopy() { return new Parameters(this, true); }
 
     FLSliceResult encode() throws LiteCoreException {
-        try (FLEncoder encoder = new FLEncoder()) {
+        try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
             encoder.write(map);
             return encoder.finish2();
         }

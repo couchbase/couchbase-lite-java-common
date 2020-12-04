@@ -34,7 +34,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 public abstract class C4NativePeer extends AtomicLong {
     private static final String HANDLE_NAME = "peer handle";
-    private Exception cleared;
+    private Exception closedAt;
 
     protected C4NativePeer() {}
 
@@ -45,7 +45,7 @@ public abstract class C4NativePeer extends AtomicLong {
     protected final long getPeerUnchecked() { return get(); }
 
     protected long getPeerAndClear() {
-        if (CouchbaseLiteInternal.isDebugging()) { cleared = new Exception(); }
+        if (CouchbaseLiteInternal.isDebugging()) { closedAt = new Exception(); }
         return getAndSet(0L);
     }
 
@@ -59,6 +59,7 @@ public abstract class C4NativePeer extends AtomicLong {
         return handle;
     }
 
+    // !!! This does not prevent the peer from being closed while the lambda is running
     protected <T> T withPeer(T def, Fn.Function<Long, T> fn) {
         final long handle = get();
         if (handle == 0) {
@@ -69,6 +70,7 @@ public abstract class C4NativePeer extends AtomicLong {
         return fn.apply(handle);
     }
 
+    // !!! This does not prevent the peer from being closed while the lambda is running
     protected <T> T withPeerThrows(T def, Fn.FunctionThrows<Long, T, LiteCoreException> fn) throws LiteCoreException {
         final long handle = get();
         if (handle == 0) {
@@ -84,7 +86,7 @@ public abstract class C4NativePeer extends AtomicLong {
     }
 
     private void logBadCall() {
-        Log.w(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
-        Log.w(LogDomain.DATABASE, "Closed at", cleared);
+        Log.e(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
+        if (closedAt != null) { Log.e(LogDomain.DATABASE, "Closed at", closedAt); }
     }
 }

@@ -88,7 +88,7 @@ public final class C4Log {
     }
 
     public static void forceCallbackLevel(@NonNull LogLevel logLevel) {
-        setCallbackLevel(logLevel.getValue());
+        setCallbackLevel(Log.getC4LevelForLogLevel(logLevel));
         callbackLevel = logLevel;
     }
 

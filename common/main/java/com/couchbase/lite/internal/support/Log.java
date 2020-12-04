@@ -43,6 +43,13 @@ import com.couchbase.lite.internal.core.CBLVersion;
 
 /**
  * Couchbase Lite Internal Log Utility.
+ * <p>
+ * Log levels are as follows:
+ * e: internal errors that are unrecoverable
+ * w: internal errors that are recoverable; client errors that may not be recoverable
+ * i: client errors that are probably recoverable
+ * v: useful state change information
+ * d: low-level debugging information
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
 public final class Log {
@@ -80,8 +87,23 @@ public final class Log {
     private static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
     static {
         final Map<Integer, LogLevel> m = new HashMap<>();
-        for (LogLevel level: LogLevel.values()) { m.put(level.getValue(), level); }
+        m.put(C4Constants.LogLevel.DEBUG, LogLevel.DEBUG);
+        m.put(C4Constants.LogLevel.VERBOSE, LogLevel.VERBOSE);
+        m.put(C4Constants.LogLevel.INFO, LogLevel.INFO);
+        m.put(C4Constants.LogLevel.WARNING, LogLevel.WARNING);
+        m.put(C4Constants.LogLevel.ERROR, LogLevel.ERROR);
         LOG_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
+    }
+
+    private static final Map<LogLevel, Integer> LOG_LEVEL_TO_C4;
+    static {
+        final Map<LogLevel, Integer> m = new HashMap<>();
+        m.put(LogLevel.DEBUG, C4Constants.LogLevel.DEBUG);
+        m.put(LogLevel.VERBOSE, C4Constants.LogLevel.VERBOSE);
+        m.put(LogLevel.INFO, C4Constants.LogLevel.INFO);
+        m.put(LogLevel.WARNING, C4Constants.LogLevel.WARNING);
+        m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
+        LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
 
     private static final AtomicBoolean WARNED = new AtomicBoolean(false);
@@ -344,6 +366,11 @@ public final class Log {
         return (level != null) ? level : LogLevel.INFO;
     }
 
+    public static int getC4LevelForLogLevel(@NonNull LogLevel logLevel) {
+        final Integer c4level = LOG_LEVEL_TO_C4.get(logLevel);
+        return (c4level != null) ? c4level : C4Constants.LogLevel.INFO;
+    }
+
     @NonNull
     public static String getC4DomainForLoggingDomain(@NonNull LogDomain domain) {
         final String c4Domain = LOGGING_DOMAINS_TO_C4.get(domain);
@@ -365,7 +392,7 @@ public final class Log {
     }
 
     private static void setC4LogLevel(@NonNull EnumSet<LogDomain> domains, @NonNull LogLevel level) {
-        final int c4Level = level.getValue();
+        final int c4Level = getC4LevelForLogLevel(level);
         for (LogDomain domain: domains) {
             switch (domain) {
                 case DATABASE:
@@ -393,7 +420,7 @@ public final class Log {
                     break;
 
                 default:
-                    Log.d(LogDomain.DATABASE, "unexepcted log domain: " + domain);
+                    Log.i(LogDomain.DATABASE, "Unexepected log domain: " + domain);
                     break;
             }
         }

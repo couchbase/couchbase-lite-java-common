@@ -240,15 +240,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
             @Nullable C4Replicator repl,
             @Nullable C4ReplicatorStatus status,
             @Nullable Object context) {
-            Log.i(DOMAIN, "C4ReplicatorListener.statusChanged, context: %s, status: %s", context, status);
+            Log.v(DOMAIN, "C4ReplicatorListener.statusChanged, context: %s, status: %s", context, status);
 
             if (context == null) {
-                Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, context is null!");
+                Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, context is null");
                 return;
             }
 
             if (status == null) {
-                Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, status is null!");
+                Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, status is null");
                 return;
             }
 
@@ -268,7 +268,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             Log.i(DOMAIN, "C4ReplicatorListener.documentEnded, context: %s, pushing: %s", context, pushing);
 
             if (context == null) {
-                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, context is null!");
+                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, context is null");
                 return;
             }
 
@@ -276,7 +276,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             if (!replicator.isSameReplicator(repl)) { return; } // this handles repl == null
 
             if (documents == null) {
-                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, documents is null!");
+                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, documents is null");
                 return;
             }
 
@@ -891,7 +891,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {
-            try (FLEncoder enc = new FLEncoder()) {
+            try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
                 enc.write(options);
                 optionsFleece = enc.finish();
             }

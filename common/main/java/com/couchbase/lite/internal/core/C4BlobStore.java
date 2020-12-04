@@ -105,7 +105,7 @@ public class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public FLSliceResult getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return new FLSliceResult(getContents(getPeer(), getBlobKeyPeer(blobKey)));
+        return FLSliceResult.getManagedSliceResult(getContents(getPeer(), getBlobKeyPeer(blobKey)));
     }
 
     /**

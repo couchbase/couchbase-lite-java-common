@@ -447,7 +447,7 @@ public class C4Replicator extends C4NativePeer {
 
     @NonNull
     public Set<String> getPendingDocIDs() throws LiteCoreException {
-        try (FLSliceResult result = new FLSliceResult(getPendingDocIds(getPeer()))) {
+        try (FLSliceResult result = FLSliceResult.getManagedSliceResult(getPendingDocIds(getPeer()))) {
             final FLValue slice = FLValue.fromData(result);
             return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray());
         }

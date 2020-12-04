@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.fleece;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -24,15 +25,68 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 
 
+/**
+ * Represent the encoder object whose ref is passed as a parameter or returned returned
+ * by the Core "init" call. The caller takes ownership of the "managed" version's peer
+ * and must call the close() method to release it. The "unmanaged" version's peer belongs to Core:
+ * it will be release by the native code.
+ */
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
-public class FLEncoder extends C4NativePeer implements AutoCloseable {
+public abstract class FLEncoder extends C4NativePeer implements AutoCloseable {
+
+    // unmanaged: the native code will free it
+    static final class UnmanagedFLEncoder extends FLEncoder {
+        UnmanagedFLEncoder(long handle) { super(handle); }
+
+        @Override
+        public void close() {
+            final long hdl = getPeerAndClear();
+            if (hdl == 0L) { return; }
+
+            setExtraInfo(null);
+            reset(hdl);
+        }
+    }
+
+    // managed: Java code is responsible for freeing it
+    static final class ManagedFLEncoder extends FLEncoder {
+        @Override
+        public void close() { free(); }
+
+        @SuppressWarnings("NoFinalizer")
+        @Override
+        protected void finalize() throws Throwable {
+            try {
+                if (free()) { Log.w(LogDomain.DATABASE, "FLEncoder was not closed: " + this); }
+            }
+            finally { super.finalize(); }
+        }
+
+        private boolean free() {
+            final long hdl = getPeerAndClear();
+            if (hdl == 0L) { return false; }
+
+            free(hdl);
+
+            return true;
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // Factory Methods
+    //-------------------------------------------------------------------------
+
+    public static FLEncoder getUnmanagedEncoder(long handle) { return new UnmanagedFLEncoder(handle); }
+
+    public static FLEncoder getManagedEncoder() { return new ManagedFLEncoder(); }
+
+
     //-------------------------------------------------------------------------
     // Member variables
     //-------------------------------------------------------------------------
-
-    private final boolean isCoreOwned;
 
     private Object extraInfo;
 
@@ -40,21 +94,28 @@ public class FLEncoder extends C4NativePeer implements AutoCloseable {
     // Constructors
     //-------------------------------------------------------------------------
 
-    public FLEncoder() { this(init(), false); }
+    private FLEncoder() { this(init()); }
 
-    /*
-     * Create a FLEncoder whose ownership may be passed to core.
-     * Use this method with arg "true" when the FLEncoder will be freed by native code.
-     */
-
-    public FLEncoder(long handle, boolean managed) {
-        super(handle);
-        this.isCoreOwned = managed;
-    }
+    private FLEncoder(long handle) { super(handle); }
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "FLEncoder{" + ClassUtils.objId(this) + "/" + getPeerUnchecked() + ": " + extraInfo + "}";
+    }
+
+    @Override
+    public abstract void close();
+
+    public <T> T getExtraInfo(@NonNull Class<T> klass) { return klass.cast(extraInfo); }
+
+    public void setExtraInfo(@Nullable Object info) { extraInfo = info; }
+
+    public boolean writeNull() { return writeNull(getPeer()); }
 
     public boolean writeString(String value) { return writeString(getPeer(), value); }
 
@@ -133,8 +194,6 @@ public class FLEncoder extends C4NativePeer implements AutoCloseable {
         return false;
     }
 
-    public boolean writeNull() { return writeNull(getPeer()); }
-
     public boolean write(Map<String, Object> map) {
         if (map == null) { beginDict(0); }
         else {
@@ -156,61 +215,30 @@ public class FLEncoder extends C4NativePeer implements AutoCloseable {
         return endArray();
     }
 
+    public void reset() { reset(getPeer()); }
+
     public byte[] finish() throws LiteCoreException { return finish(getPeer()); }
 
     @NonNull
     public FLSliceResult finish2() throws LiteCoreException {
-        return new FLSliceResult(finish2(getPeer()));
+        return FLSliceResult.getManagedSliceResult(finish2(getPeer()));
     }
 
     @NonNull
-    public FLSliceResult managedFinish2() throws LiteCoreException {
-        return new FLSliceResult(finish2(getPeer()), true);
+    public FLSliceResult finish2Unmanaged() throws LiteCoreException {
+        return FLSliceResult.getUnmanagedSliceResult(finish2(getPeer()));
     }
 
-    public Object getExtraInfo() { return extraInfo; }
-
-    public void setExtraInfo(Object info) { extraInfo = info; }
-
-    public void reset() { reset(getPeer()); }
-
-    public void close() { free(false); }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { free(true); }
-        finally { super.finalize(); }
-    }
-
-    //-------------------------------------------------------------------------
-    // private methods
-    //-------------------------------------------------------------------------
-
-    private void free(boolean shouldBeFree) {
-        final long hdl = getPeerAndClear();
-        if (hdl == 0L) { return; }
-
-        if (shouldBeFree) { Log.w(LogDomain.DATABASE, "FLEncoder was not closed: " + this); }
-
-        if (!isCoreOwned) { free(hdl); }
-        else {
-            reset(hdl);
-            extraInfo = null;
-        }
-    }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native long init(); // FLEncoder FLEncoder_New(void);
+    static native void free(long encoder);
 
-    private static native void free(long encoder);
+    static native void reset(long encoder);
+
+    private static native long init(); // FLEncoder FLEncoder_New(void);
 
     private static native boolean writeNull(long encoder);
 
@@ -241,6 +269,4 @@ public class FLEncoder extends C4NativePeer implements AutoCloseable {
     private static native byte[] finish(long encoder) throws LiteCoreException;
 
     private static native long finish2(long encoder) throws LiteCoreException;
-
-    private static native void reset(long encoder);
 }

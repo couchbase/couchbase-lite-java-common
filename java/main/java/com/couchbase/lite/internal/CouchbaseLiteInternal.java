@@ -150,7 +150,7 @@ public final class CouchbaseLiteInternal {
         try (InputStream is = CouchbaseLiteInternal.class.getResourceAsStream(ERRORS_PROPERTIES_PATH)) {
             errors.load(is);
         }
-        catch (IOException e) { Log.e(LogDomain.DATABASE, "Failed to load error messages!", e); }
+        catch (IOException e) { Log.i(LogDomain.DATABASE, "Failed to load error messages!", e); }
         return (Map<String, String>) (Map) errors;
     }
 

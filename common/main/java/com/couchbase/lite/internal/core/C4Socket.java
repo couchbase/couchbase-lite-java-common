@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.support.Log;
 
 
-@SuppressWarnings({"LineLength", "PMD.TooManyMethods", "unused"})
+@SuppressWarnings({"LineLength", "PMD.TooManyMethods"})
 public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
     // Constants

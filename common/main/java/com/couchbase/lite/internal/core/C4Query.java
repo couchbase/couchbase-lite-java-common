@@ -92,7 +92,7 @@ public class C4Query extends C4NativePeer {
 
     @VisibleForTesting
     C4QueryEnumerator run(@NonNull C4QueryOptions opts) throws LiteCoreException {
-        try (FLSliceResult params = new FLSliceResult()) { return run(opts, params); }
+        try (FLSliceResult params = FLSliceResult.getManagedSliceResult()) { return run(opts, params); }
     }
 
     //-------------------------------------------------------------------------

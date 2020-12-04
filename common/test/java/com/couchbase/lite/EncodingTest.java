@@ -136,7 +136,7 @@ public class EncodingTest extends BaseTest {
     private void testRoundTrip(Object item) throws LiteCoreException { testRoundTrip(item, item); }
 
     private void testRoundTrip(Object item, Object expected) throws LiteCoreException {
-        try (FLEncoder encoder = new FLEncoder()) {
+        try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
             assertTrue(encoder.writeValue(item));
 
             try (FLSliceResult slice = encoder.finish2()) {

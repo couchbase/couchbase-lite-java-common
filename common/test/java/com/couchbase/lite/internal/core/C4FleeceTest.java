@@ -39,7 +39,7 @@ public class C4FleeceTest extends C4BaseTest {
     public void testEncodeBytes() throws LiteCoreException {
         byte[] input = "Hello World!".getBytes(StandardCharsets.UTF_8);
 
-        try (FLEncoder enc = new FLEncoder()) {
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.writeData(input);
             byte[] optionsFleece = enc.finish();
             assertNotNull(optionsFleece);
@@ -59,7 +59,7 @@ public class C4FleeceTest extends C4BaseTest {
         Map<String, Object> map = new HashMap<>();
         map.put("bytes", input);
 
-        try (FLEncoder enc = new FLEncoder()) {
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.write(map);
             byte[] optionsFleece = enc.finish();
             assertNotNull(optionsFleece);

@@ -76,6 +76,7 @@ public final class Blob implements FLEncodable {
 
     // Max size of data that will be cached in memory with the CBLBlob
     private static final int MAX_CACHED_CONTENT_LENGTH = 8 * 1024;
+    private static final String MIME_UNKNOWN = "application/octet-stream";
 
 
     //---------------------------------------------
@@ -314,14 +315,20 @@ public final class Blob implements FLEncodable {
 
         // NOTE: length field might not be set if length is unknown.
         final Object len = properties.get(PROP_LENGTH);
-        if (len instanceof Number) { this.blobLength = ((Number) len).longValue(); }
-        this.blobDigest = (String) properties.get(PROP_DIGEST);
-        this.contentType = (String) properties.get(PROP_CONTENT_TYPE);
+        if (len instanceof Number) { blobLength = ((Number) len).longValue(); }
+        blobDigest = (String) properties.get(PROP_DIGEST);
+
+        String propType = (String) properties.get(PROP_CONTENT_TYPE);
+        if (propType == null) {
+            propType = MIME_UNKNOWN;
+            Log.w(LogDomain.DATABASE, "Blob type unspecified for blob %s.  Using '%s'", blobDigest, propType);
+        }
+        contentType = propType;
 
         final Object data = properties.get(PROP_DATA);
         if (data instanceof byte[]) { blobContent = (byte[]) data; }
 
-        if ((this.blobDigest == null) && (blobContent == null)) {
+        if ((blobDigest == null) && (blobContent == null)) {
             Log.w(DOMAIN, "Blob read from database has neither digest nor data.");
         }
     }
@@ -354,7 +361,7 @@ public final class Blob implements FLEncodable {
      * Closing or deleting the database before this call completes may cause it to fail.
      * <b>When called on a blob created from a stream (or a file path), this method will return null!</b>
      *
-     * @return a stream of of this blobs contents; null if none exsits or if this blob was initialized with a stream
+     * @return a stream of of this blobs contents; null if none exists or if this blob was initialized with a stream
      */
     @Nullable
     public InputStream getContentStream() {
@@ -415,9 +422,9 @@ public final class Blob implements FLEncodable {
     //FLEncodable
     @Override
     public void encodeTo(@NonNull FLEncoder encoder) {
-        final Object info = encoder.getExtraInfo();
+        final MutableDocument info = encoder.getExtraInfo(MutableDocument.class);
         if (info != null) {
-            final Database db = Preconditions.assertNotNull(((MutableDocument) info).getDatabase(), "db");
+            final Database db = Preconditions.assertNotNull(info.getDatabase(), "db");
             installInDatabase(db);
         }
 

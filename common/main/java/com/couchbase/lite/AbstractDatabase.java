@@ -866,15 +866,19 @@ abstract class AbstractDatabase {
 
     @Nullable
     String getUuid() {
+        byte[] uuid = null;
+        LiteCoreException err = null;
+
         synchronized (dbLock) {
-            if (isOpen()) {
-                byte[] uuid = null;
-                try { uuid = c4Database.getPublicUUID(); }
-                catch (LiteCoreException e) { Log.i(DOMAIN, "Failed retrieving database UUID", e); }
-                if (uuid != null) { return PlatformUtils.getEncoder().encodeToString(uuid); }
-            }
-            return null;
+            if (!isOpen()) { return null; }
+
+            try { uuid = c4Database.getPublicUUID(); }
+            catch (LiteCoreException e) { err = e; }
         }
+
+        if (err != null) { Log.w(DOMAIN, "Failed retrieving database UUID", err); }
+
+        return (uuid == null) ? null : PlatformUtils.getEncoder().encodeToString(uuid);
     }
 
     @Nullable
@@ -1083,7 +1087,7 @@ abstract class AbstractDatabase {
         try {
             synchronized (dbLock) { getC4DatabaseLocked().setCookie(uri, setCookieHeader); }
         }
-        catch (LiteCoreException e) { Log.e(DOMAIN, "Cannot save cookie for " + uri, e); }
+        catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot save cookie for " + uri, e); }
     }
 
     @Nullable
@@ -1091,7 +1095,7 @@ abstract class AbstractDatabase {
         try {
             synchronized (dbLock) { return getC4DatabaseLocked().getCookies(uri); }
         }
-        catch (LiteCoreException e) { Log.e(DOMAIN, "Cannot get cookies for " + uri, e); }
+        catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot get cookies for " + uri, e); }
         return null;
     }
 

@@ -218,21 +218,21 @@ abstract class AbstractQuery implements Query {
     // Protected level access
     //---------------------------------------------
 
-    @SuppressWarnings({"NoFinalizer", "SynchronizationOnLocalVariableOrMethodParameter"})
+    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         try {
             final C4Query query = c4query;
             if (query == null) { return; }
 
-            final Object lock = getDbLockUnchecked();
-            if (lock != null) {
-                synchronized (lock) { query.free(); }
-            }
-            else {
-                Log.w(LogDomain.DATABASE, "Could not get DB lock to free query");
-                query.free();
-            }
+            // Despite the fact that the documentation insists that this call be made
+            // while holding the database lock, doing so can block the finalizer thread
+            // causing it to abort.
+            // Jens Alfke says: in practice it should be ok.
+            // Jim Borden says: if the object is being finalized, it is not possible for client
+            //   code to affect the query: in this case, freeing wo/ the lock is ok.
+            //   That's how .NET does it.
+            query.free();
         }
         finally {
             super.finalize();
@@ -325,7 +325,7 @@ abstract class AbstractQuery implements Query {
     private String encodeAsJson() {
         try { return JsonUtils.toJson(asJson()).toString(); }
         catch (JSONException e) {
-            Log.w(DOMAIN, "Error when encoding the query as a json string", e);
+            Log.w(DOMAIN, "Error encoding a query as a json string", e);
         }
         return null;
     }
@@ -373,16 +373,5 @@ abstract class AbstractQuery implements Query {
         final Database db = getDatabase();
         if (db != null) { return db.getLock(); }
         throw new IllegalStateException("Cannot seize DB lock");
-    }
-
-    // called only from finalizer
-    private Object getDbLockUnchecked() {
-        final DataSource dSrc = from;
-        if (dSrc == null) { return null; }
-
-        final Object src = dSrc.getSource();
-        if (!(src instanceof Database)) { return null; }
-
-        return ((Database) src).getLock();
     }
 }
