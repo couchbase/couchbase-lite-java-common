@@ -138,7 +138,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             Log.v(TAG, "WebSocketListener opened with response " + response);
-            AbstractCBLWebSocket.this.webSocket = webSocket;
+            connected.getAndSet(true);
             receivedHTTPResponse(response);
             Log.i(TAG, "WebSocket CONNECTED!");
             opened();
@@ -165,6 +165,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             Log.v(TAG, "WebSocketListener closed with code " + code + ", reason " + reason);
+            connected.getAndSet(false);
             didClose(code, reason);
         }
 
@@ -176,6 +177,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             Log.w(TAG, "WebSocketListener failed with response " + response, t);
+            connected.getAndSet(false);
 
             // Invoked when a web socket has been closed due to an error reading from or writing to the network.
             // Both outgoing and incoming messages may have been lost. No further calls to this listener will be made.
@@ -206,9 +208,9 @@ public class AbstractCBLWebSocket extends C4Socket {
     @NonNull
     private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
         // timeouts: Core manages this: set no timeout, here.
-        .connectTimeout(16, TimeUnit.SECONDS)
-        .readTimeout(21, TimeUnit.SECONDS)
-        .writeTimeout(21, TimeUnit.SECONDS)
+        .connectTimeout(0, TimeUnit.SECONDS)
+        .readTimeout(0, TimeUnit.SECONDS)
+        .writeTimeout(0, TimeUnit.SECONDS)
         .pingInterval(10, TimeUnit.SECONDS)
         .retryOnConnectionFailure(false)
         // redirection
@@ -258,6 +260,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     private final AtomicBoolean closing = new AtomicBoolean(false);
+    private final AtomicBoolean connected  = new AtomicBoolean(false);
     private final OkHttpClient httpClient;
     private final CBLWebSocketListener wsListener;
     private final URI uri;
@@ -300,7 +303,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected void openSocket() {
         Log.v(TAG, String.format(Locale.ENGLISH, "CBLWebSocket is connecting to %s ...", uri));
-        httpClient.newWebSocket(newRequest(), wsListener);
+        webSocket = httpClient.newWebSocket(newRequest(), wsListener);
     }
 
     @Override
@@ -324,12 +327,18 @@ public class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected void requestClose(int status, String message) {
         if (webSocket == null) {
-            Log.w(TAG, "CBLWebSocket was not initialized before receiving close request.");
+            Log.w(TAG, "CBLWebSocket was not started before receiving close request.");
             return;
         }
 
         if (closing.getAndSet(true)) {
             Log.v(TAG, "CBLWebSocket already closing.");
+            return;
+        }
+
+        if (!connected.get()) {
+            Log.w(TAG, "CBLWebSocket was not initialized before receiving close request.");
+            webSocket.cancel();
             return;
         }
 
