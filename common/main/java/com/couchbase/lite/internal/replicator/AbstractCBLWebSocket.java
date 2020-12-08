@@ -80,6 +80,33 @@ public class AbstractCBLWebSocket extends C4Socket {
     private static final int HTTP_STATUS_MIN = 100;
     private static final int HTTP_STATUS_MAX = 600;
 
+    // A complimentary status
+    private class Status {
+        static final short INITIAL = 1;
+        static final short OPENED = 2;
+        static final short REQUEST_CLOSED = 3;
+
+        private short status = INITIAL;
+
+        synchronized short getAndSet(short set) {
+            short old = status;
+            status = set;
+            return old;
+        }
+
+        synchronized void set(short set) { status = set; }
+
+        synchronized short get() { return status; }
+
+        synchronized short compareAndSet(short expect, short update) {
+            short old = status;
+            if (status == expect) {
+                status = update;
+            }
+            return old;
+        }
+    }
+
     /**
      * Workaround to enable both TLS1.1 and TLS1.2 for Android API 16 - 19.
      * When starting to support from API 20, we could remove the workaround.
@@ -138,10 +165,19 @@ public class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             Log.v(TAG, "WebSocketListener opened with response " + response);
-            connected.getAndSet(true);
-            receivedHTTPResponse(response);
-            Log.i(TAG, "WebSocket CONNECTED!");
-            opened();
+            switch (status.compareAndSet(Status.INITIAL, Status.OPENED)) {
+                case Status.INITIAL:
+                    receivedHTTPResponse(response);
+                    Log.i(TAG, "WebSocket CONNECTED!");
+                    opened();
+                    break;
+                case Status.OPENED:
+                    Log.i(TAG, "WebSocket onOpen called when connection is on, which should not happend");
+                    break;
+                case Status.REQUEST_CLOSED:
+                    Log.i(TAG, "WebSocket connection established after request close");
+                    break;
+            }
         }
 
         @Override
@@ -165,7 +201,6 @@ public class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
             Log.v(TAG, "WebSocketListener closed with code " + code + ", reason " + reason);
-            connected.getAndSet(false);
             didClose(code, reason);
         }
 
@@ -177,7 +212,6 @@ public class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
             Log.w(TAG, "WebSocketListener failed with response " + response, t);
-            connected.getAndSet(false);
 
             // Invoked when a web socket has been closed due to an error reading from or writing to the network.
             // Both outgoing and incoming messages may have been lost. No further calls to this listener will be made.
@@ -260,7 +294,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     private final AtomicBoolean closing = new AtomicBoolean(false);
-    private final AtomicBoolean connected  = new AtomicBoolean(false);
+    public Status status = new Status();
     private final OkHttpClient httpClient;
     private final CBLWebSocketListener wsListener;
     private final URI uri;
@@ -336,7 +370,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             return;
         }
 
-        if (!connected.get()) {
+        if (this.status.getAndSet(Status.REQUEST_CLOSED) == Status.INITIAL) {
             Log.w(TAG, "CBLWebSocket was not initialized before receiving close request.");
             webSocket.cancel();
             return;
