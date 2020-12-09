@@ -94,10 +94,6 @@ public class AbstractCBLWebSocket extends C4Socket {
             return old;
         }
 
-        synchronized void set(short set) { status = set; }
-
-        synchronized short get() { return status; }
-
         synchronized short compareAndSet(short expect, short update) {
             short old = status;
             if (status == expect) {
@@ -294,7 +290,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     private final AtomicBoolean closing = new AtomicBoolean(false);
-    public Status status = new Status();
+    private final Status status = new Status();
     private final OkHttpClient httpClient;
     private final CBLWebSocketListener wsListener;
     private final URI uri;
@@ -361,7 +357,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected void requestClose(int status, String message) {
         if (webSocket == null) {
-            Log.w(TAG, "CBLWebSocket was not started before receiving close request.");
+            Log.w(TAG, "CBLWebSocket was not initialized before receiving close request.");
             return;
         }
 
@@ -371,7 +367,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         if (this.status.getAndSet(Status.REQUEST_CLOSED) == Status.INITIAL) {
-            Log.w(TAG, "CBLWebSocket was not initialized before receiving close request.");
+            Log.w(TAG, "CBLWebSocket connection was not established before receiving close request.");
             webSocket.cancel();
             return;
         }
