@@ -80,24 +80,24 @@ public class AbstractCBLWebSocket extends C4Socket {
     private static final int HTTP_STATUS_MIN = 100;
     private static final int HTTP_STATUS_MAX = 600;
 
-    // A complimentary status
-    private class Status {
+    // A complimentary state
+    private class State {
         static final short INITIAL = 1;
         static final short OPENED = 2;
         static final short REQUEST_CLOSED = 3;
 
-        private short status = INITIAL;
+        private short state = INITIAL;
 
         synchronized short getAndSet(short set) {
-            short old = status;
-            status = set;
+            short old = state;
+            state = set;
             return old;
         }
 
         synchronized short compareAndSet(short expect, short update) {
-            short old = status;
-            if (status == expect) {
-                status = update;
+            short old = state;
+            if (state == expect) {
+                state = update;
             }
             return old;
         }
@@ -161,16 +161,16 @@ public class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             Log.v(TAG, "WebSocketListener opened with response " + response);
-            switch (status.compareAndSet(Status.INITIAL, Status.OPENED)) {
-                case Status.INITIAL:
+            switch (state.compareAndSet(State.INITIAL, State.OPENED)) {
+                case State.INITIAL:
                     receivedHTTPResponse(response);
                     Log.i(TAG, "WebSocket CONNECTED!");
                     opened();
                     break;
-                case Status.OPENED:
+                case State.OPENED:
                     Log.i(TAG, "WebSocket onOpen called when connection is on, which should not happend");
                     break;
-                case Status.REQUEST_CLOSED:
+                case State.REQUEST_CLOSED:
                     Log.i(TAG, "WebSocket connection established after request close");
                     break;
             }
@@ -290,7 +290,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     private final AtomicBoolean closing = new AtomicBoolean(false);
-    private final Status status = new Status();
+    private final State state = new State();
     private final OkHttpClient httpClient;
     private final CBLWebSocketListener wsListener;
     private final URI uri;
@@ -366,7 +366,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             return;
         }
 
-        if (this.status.getAndSet(Status.REQUEST_CLOSED) == Status.INITIAL) {
+        if (state.getAndSet(State.REQUEST_CLOSED) == State.INITIAL) {
             Log.w(TAG, "CBLWebSocket connection was not established before receiving close request.");
             webSocket.cancel();
             return;
