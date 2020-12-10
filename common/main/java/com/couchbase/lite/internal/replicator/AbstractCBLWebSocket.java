@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
@@ -79,29 +78,6 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     private static final int HTTP_STATUS_MIN = 100;
     private static final int HTTP_STATUS_MAX = 600;
-
-    // A complimentary state
-    private class State {
-        static final short INITIAL = 1;
-        static final short OPENED = 2;
-        static final short REQUEST_CLOSED = 3;
-
-        private short state = INITIAL;
-
-        synchronized short getAndSet(short set) {
-            short old = state;
-            state = set;
-            return old;
-        }
-
-        synchronized short compareAndSet(short expect, short update) {
-            short old = state;
-            if (state == expect) {
-                state = update;
-            }
-            return old;
-        }
-    }
 
     /**
      * Workaround to enable both TLS1.1 and TLS1.2 for Android API 16 - 19.
@@ -289,7 +265,28 @@ public class AbstractCBLWebSocket extends C4Socket {
     // Member Variables
     //-------------------------------------------------------------------------
 
-    private final AtomicBoolean closing = new AtomicBoolean(false);
+    private class State {
+        static final short INITIAL = 1;
+        static final short OPENED = 2;
+        static final short REQUEST_CLOSED = 3;
+
+        private short state = INITIAL;
+
+        synchronized short getAndSet(short set) {
+            short old = state;
+            state = set;
+            return old;
+        }
+
+        synchronized short compareAndSet(short expect, short update) {
+            short old = state;
+            if (state == expect) {
+                state = update;
+            }
+            return old;
+        }
+    }
+
     private final State state = new State();
     private final OkHttpClient httpClient;
     private final CBLWebSocketListener wsListener;
@@ -361,15 +358,14 @@ public class AbstractCBLWebSocket extends C4Socket {
             return;
         }
 
-        if (closing.getAndSet(true)) {
-            Log.v(TAG, "CBLWebSocket already closing.");
-            return;
-        }
-
-        if (state.getAndSet(State.REQUEST_CLOSED) == State.INITIAL) {
-            Log.w(TAG, "CBLWebSocket connection was not established before receiving close request.");
-            webSocket.cancel();
-            return;
+        switch (state.getAndSet(State.REQUEST_CLOSED)) {
+            case State.INITIAL:
+                webSocket.cancel();
+                Log.w(TAG, "CBLWebSocket connection was not established before receiving close request.");
+                return;
+            case State.REQUEST_CLOSED:
+                Log.v(TAG, "CBLWebSocket already closing.");
+                return;
         }
 
         // Core will, apparently, randomly send HTTP statuses in this, purely WS, call.
