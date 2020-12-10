@@ -217,8 +217,6 @@ public class AbstractCBLWebSocket extends C4Socket {
         .connectTimeout(0, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.SECONDS)
         .writeTimeout(0, TimeUnit.SECONDS)
-        .pingInterval(10, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(false)
         // redirection
         .followRedirects(true)
         .followSslRedirects(true)
@@ -237,7 +235,8 @@ public class AbstractCBLWebSocket extends C4Socket {
         String path,
         byte[] options,
         @NonNull CBLCookieStore cookieStore,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener,
+        long pingInterval) {
         Log.v(TAG, "Creating a CBLWebSocket ...");
 
         Map<String, Object> fleeceOptions = null;
@@ -253,7 +252,7 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         try {
             return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions,
-                cookieStore, serverCertsListener);
+                cookieStore, serverCertsListener, pingInterval);
         }
         catch (Exception e) { Log.e(TAG, "Failed to instantiate CBLWebSocket", e); }
 
@@ -295,6 +294,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     private final CBLCookieStore cookieStore;
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
     private WebSocket webSocket;
+    private final long pingInterval;
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -308,7 +308,8 @@ public class AbstractCBLWebSocket extends C4Socket {
         String path,
         Map<String, Object> options,
         CBLCookieStore cookieStore,
-        Fn.Consumer<List<Certificate>> serverCertsListener)
+        Fn.Consumer<List<Certificate>> serverCertsListener,
+        long pingInterval)
         throws GeneralSecurityException, URISyntaxException {
         super(handle);
         this.uri = new URI(checkScheme(scheme), null, hostname, port, path, null, null);
@@ -317,6 +318,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         this.serverCertsListener = serverCertsListener;
         this.httpClient = setupOkHttpClient();
         this.wsListener = new CBLWebSocketListener();
+        this.pingInterval = pingInterval;
     }
 
     @Override
@@ -329,8 +331,16 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     @Override
     protected void openSocket() {
+        OkHttpClient okHttpClient = httpClient;
+        if (pingInterval > 0) {
+            okHttpClient = okHttpClient
+                .newBuilder()
+                .pingInterval(pingInterval, TimeUnit.MILLISECONDS)
+                .retryOnConnectionFailure(false)
+                .build();
+        }
         Log.v(TAG, String.format(Locale.ENGLISH, "CBLWebSocket is connecting to %s ...", uri));
-        webSocket = httpClient.newWebSocket(newRequest(), wsListener);
+        webSocket = okHttpClient.newWebSocket(newRequest(), wsListener);
     }
 
     @Override

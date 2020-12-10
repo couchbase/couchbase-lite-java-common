@@ -64,6 +64,7 @@ abstract class AbstractReplicatorConfiguration {
     private ReplicationFilter pullFilter;
     @Nullable
     private ConflictResolver conflictResolver;
+    private long pingInterval = 0;
 
     protected boolean readonly;
     protected final Endpoint target;
@@ -249,6 +250,20 @@ abstract class AbstractReplicatorConfiguration {
         return getReplicatorConfiguration();
     }
 
+    /**
+     * Sets the replicator websocket heartbeat interval, in milliseconds.
+     * Only allowed to be 0 or positive, no heartbeat will be sent if set to 0.
+     * The default value is 0.
+     * 
+     * @param pingInterval The ping interval in milliseconds
+     * @return this.
+     */
+    public final ReplicatorConfiguration setPingInterval(long pingInterval) {
+        checkReadOnly();
+        this.pingInterval = Preconditions.assertNotNegative(pingInterval, "pingInterval");
+        return getReplicatorConfiguration();
+    }
+
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -328,6 +343,12 @@ abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorType getReplicatorType() { return replicatorType; }
+
+    /**
+     * Return replicator websocket ping interval in milliseconds.
+     * 0 for no heartbeat.
+     */
+    public final long getPingInterval() { return pingInterval; }
 
     /**
      * Return the replication target to replicate with.
