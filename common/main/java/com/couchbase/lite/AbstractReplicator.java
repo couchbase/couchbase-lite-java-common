@@ -839,32 +839,20 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     @GuardedBy("lock")
     private C4ReplicatorStatus updateStatus(@NonNull C4ReplicatorStatus c4Status) {
-        final C4ReplicatorStatus c4ReplStatus = c4Status.copy();
+        final Status oldStatus = status;
+        status = new Status(c4Status);
 
-        CouchbaseLiteException error = null;
-        if (c4Status.getErrorCode() != 0) {
-            error = CBLStatus.toCouchbaseLiteException(
-                c4Status.getErrorDomain(),
-                c4Status.getErrorCode(),
-                c4Status.getErrorInternalInfo());
-            lastError = error;
-        }
+        if (c4Status.getErrorCode() != 0) { lastError = status.error; }
 
-        final ActivityLevel level = getActivityLevelFromC4(c4Status.getActivityLevel());
-
-        status = new Status(
-            level,
-            new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
-            error);
-
-        Log.i(DOMAIN, "%s is %s, progress %d/%d, error: %s",
+        Log.i(DOMAIN, "State changed for %s: %s => %s(%d/%d): %s",
             this,
-            level.toString(),
+            oldStatus.activityLevel,
+            status.activityLevel,
             c4Status.getProgressUnitsCompleted(),
             c4Status.getProgressUnitsTotal(),
-            error);
+            status.error);
 
-        return c4ReplStatus;
+        return c4Status.copy();
     }
 
     private void queueConflictResolution(@NonNull String docId, int flags) {
