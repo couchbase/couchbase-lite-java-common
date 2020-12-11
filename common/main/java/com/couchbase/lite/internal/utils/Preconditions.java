@@ -18,7 +18,7 @@ package com.couchbase.lite.internal.utils;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.util.List;
+import java.util.Collection;
 
 
 public final class Preconditions {
@@ -32,12 +32,12 @@ public final class Preconditions {
     }
 
     public static long assertPositive(long n, @NonNull String name) {
-        if (n <= 0) { throw new IllegalArgumentException(name + " must not be positive"); }
+        if (n <= 0) { throw new IllegalArgumentException(name + " must be positive"); }
         return n;
     }
 
-    public static long assertNotZero(long n, @NonNull String name) {
-        if (n == 0) { throw new IllegalArgumentException(name + " must not be 0"); }
+    public static long assertNegative(long n, @NonNull String name) {
+        if (n >= 0) { throw new IllegalArgumentException(name + " must be negative"); }
         return n;
     }
 
@@ -46,12 +46,17 @@ public final class Preconditions {
         return n;
     }
 
+    public static long assertNotZero(long n, @NonNull String name) {
+        if (n == 0) { throw new IllegalArgumentException(name + " must not be 0"); }
+        return n;
+    }
+
     public static void assertNotEmpty(String str, @NonNull String name) {
         if (StringUtils.isEmpty(str)) { throw new IllegalArgumentException(name + " must not be empty"); }
     }
 
     @NonNull
-    public static <T> List<T> assertNotEmpty(@Nullable List<T> obj, @NonNull String name) {
+    public static <K extends Collection<T>, T> K assertNotEmpty(@Nullable K obj, @NonNull String name) {
         if ((obj == null) || obj.isEmpty()) { throw new IllegalArgumentException(name + " must not be null or empty"); }
         return obj;
     }

@@ -17,28 +17,40 @@ package com.couchbase.lite.internal.core;
 
 import android.support.annotation.NonNull;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 
 /**
  * WARNING!
  * This class and its members are referenced by name, from native code.
  */
 public class C4DocumentEnded {
-    private String docID;               // Referenced from native code
-    private String revID;               // Referenced from native code
-    private int flags;                  // Referenced from native code
-    @SuppressFBWarnings("UUF_UNUSED_FIELD")
-    @SuppressWarnings("PMD.UnusedPrivateField")
-    private long sequence;              // Referenced from native code
-    private int errorDomain;            // Referenced from native code: C4Error.domain
-    private int errorCode;              // Referenced from native code: C4Error.code
-    private int errorInternalInfo;      // Referenced from native code: C4Error.internal_info
-    private boolean errorIsTransient;   // Referenced from native code:
+    private final String docID;
+    private final String revID;
+    private final int flags;
+    private final long sequence;
+    private final boolean errorIsTransient;
+    private final int errorDomain;
+    private final int errorCode;
+    private final int errorInternalInfo;
 
     // Called from native code
-    @SuppressWarnings("PMD.UnnecessaryConstructor")
-    public C4DocumentEnded() { }
+    public C4DocumentEnded(
+        String docID,
+        String revID,
+        int flags,
+        long sequence,
+        int errorDomain,
+        int errorCode,
+        int errorInternalInfo,
+        boolean errorIsTransient) {
+        this.docID = docID;
+        this.revID = revID;
+        this.flags = flags;
+        this.sequence = sequence;
+        this.errorDomain = errorDomain;
+        this.errorCode = errorCode;
+        this.errorInternalInfo = errorInternalInfo;
+        this.errorIsTransient = errorIsTransient;
+    }
 
     public String getDocID() { return docID; }
 
@@ -46,15 +58,17 @@ public class C4DocumentEnded {
 
     public int getFlags() { return flags; }
 
+    public long getSequence() { return sequence; }
+
     public int getErrorDomain() { return errorDomain; }
 
     public int getErrorCode() { return errorCode; }
 
     public int getErrorInternalInfo() { return errorInternalInfo; }
 
-    public C4Error getC4Error() { return new C4Error(errorDomain, errorCode, errorInternalInfo); }
-
     public boolean errorIsTransient() { return errorIsTransient; }
+
+    public C4Error getC4Error() { return new C4Error(errorDomain, errorCode, errorInternalInfo); }
 
     public boolean isConflicted() {
         return errorDomain == C4Constants.ErrorDomain.LITE_CORE

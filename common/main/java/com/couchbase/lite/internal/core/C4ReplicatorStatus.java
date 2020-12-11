@@ -17,6 +17,10 @@
 package com.couchbase.lite.internal.core;
 
 
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
+
+
 /**
  * WARNING!
  * This class and its members are referenced by name, from native code.
@@ -36,23 +40,19 @@ public final class C4ReplicatorStatus {
         private ActivityLevel() {}
     }
 
-    private final int activityLevel;            // Referenced from native code: C4ReplicatorStatus.ActivityLevel
-    private final long progressUnitsCompleted;  // Referenced from native code: C4Progress.unitsCompleted
-    private final long progressUnitsTotal;      // Referenced from native code: C4Progress.unitsTotal
-    private final long progressDocumentCount;   // Referenced from native code: C4Progress.documentCount
-    private final int errorDomain;              // Referenced from native code: C4Error.domain
-    private final int errorCode;                // Referenced from native code: C4Error.code
-    private final int errorInternalInfo;        // Referenced from native code: C4Error.internal_info
-
-    // Called from native code
-    public C4ReplicatorStatus() { this(-1, 0, 0, 0, 0, 0, 0); }
-
-    public C4ReplicatorStatus(int activityLevel) { this(activityLevel, 0, 0, 0, 0, 0, 0); }
+    private final int activityLevel;
+    private final long progressUnitsCompleted;
+    private final long progressUnitsTotal;
+    private final long progressDocumentCount;
+    private final int errorDomain;
+    private final int errorCode;
+    private final int errorInternalInfo;
 
     public C4ReplicatorStatus(int activityLevel, int errorDomain, int errorCode) {
         this(activityLevel, 0, 0, 0, errorDomain, errorCode, 0);
     }
 
+    // Called from native code
     public C4ReplicatorStatus(
         int activityLevel,
         long progressUnitsCompleted,
@@ -68,6 +68,9 @@ public final class C4ReplicatorStatus {
         this.errorDomain = errorDomain;
         this.errorCode = errorCode;
         this.errorInternalInfo = errorInternalInfo;
+        if ((activityLevel < ActivityLevel.STOPPED) || (activityLevel > ActivityLevel.BUSY)) {
+            Log.w(LogDomain.REPLICATOR, "Unrecognized activity level: " + activityLevel, new Exception());
+        }
     }
 
     public C4ReplicatorStatus copy() {
