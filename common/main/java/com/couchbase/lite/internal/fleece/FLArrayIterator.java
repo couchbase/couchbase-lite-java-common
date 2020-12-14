@@ -15,33 +15,72 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.Nullable;
+
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 
 
-public class FLArrayIterator extends C4NativePeer {
-    private final boolean managed;
+public abstract class FLArrayIterator extends C4NativePeer {
+
+    // unmanaged: the native code will free it
+    static final class UnmanagedFLArrayIterator extends FLArrayIterator {
+        UnmanagedFLArrayIterator(long peer) { super(peer); }
+
+        @Override
+        public void close() { getPeerAndClear(); }
+    }
+
+    // managed: Java code is responsible for freeing it
+    static final class ManagedFLArrayIterator extends FLArrayIterator {
+        ManagedFLArrayIterator() { super(init()); }
+
+        @Override
+        public void close() { closePeer(null); }
+
+        @SuppressWarnings("NoFinalizer")
+        @Override
+        protected void finalize() throws Throwable {
+            try { closePeer(LogDomain.DATABASE); }
+            finally { super.finalize(); }
+        }
+
+        private void closePeer(@Nullable LogDomain domain) {
+            final long peer = getPeerAndClear();
+            if (verifyPeerClosed(peer, domain)) { return; }
+
+            free(peer);
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // Factory Methods
+    //-------------------------------------------------------------------------
+
+    public static FLArrayIterator getUnmanagedArrayIterator(long peer) {
+        return new FLArrayIterator.UnmanagedFLArrayIterator(peer);
+    }
+
+    public static FLArrayIterator getManagedArrayIterator() {
+        return new FLArrayIterator.ManagedFLArrayIterator();
+    }
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
-    public FLArrayIterator() { this(init(), false); }
+    public FLArrayIterator() { super(init()); }
 
-    public FLArrayIterator(long handle) { this(handle, true); }
-
-    private FLArrayIterator(long handle, boolean managed) {
-        super(handle);
-        this.managed = managed;
-    }
+    public FLArrayIterator(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
 
     public void begin(FLArray array) {
-        final long handle = getPeer();
+        final long peer = getPeer();
         array.withContent(hdl -> {
-            begin(hdl, handle);
+            begin(hdl, peer);
             return null;
         });
     }
@@ -58,26 +97,6 @@ public class FLArrayIterator extends C4NativePeer {
         return hValue == 0L ? null : new FLValue(hValue);
     }
 
-    public void free() {
-        if (managed) { return; }
-
-        final long handle = getPeerAndClear();
-        if (handle == 0) { return; }
-
-        free(handle);
-    }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { free(); }
-        finally { super.finalize(); }
-    }
-
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
@@ -87,42 +106,42 @@ public class FLArrayIterator extends C4NativePeer {
      *
      * @return long (FLArrayIterator *)
      */
-    private static native long init();
+    static native long init();
+
+    /**
+     * Free FLArrayIterator instance
+     *
+     * @param peer (FLArrayIterator *)
+     */
+    static native void free(long peer);
 
     /**
      * Initializes a FLArrayIterator struct to iterate over an array.
      *
      * @param array (FLArray)
-     * @param itr   (FLArrayIterator *)
+     * @param peer  (FLArrayIterator *)
      */
-    private static native void begin(long array, long itr);
+    private static native void begin(long array, long peer);
 
     /**
      * Returns the current value being iterated over.
      *
-     * @param itr (FLArrayIterator *)
+     * @param peer (FLArrayIterator *)
      * @return long (FLValue)
      */
-    private static native long getValue(long itr);
+    private static native long getValue(long peer);
 
     /**
-     * @param itr    (FLArrayIterator *)
+     * @param peer   (FLArrayIterator *)
      * @param offset Array offset
      * @return long (FLValue)
      */
-    private static native long getValueAt(long itr, int offset);
+    private static native long getValueAt(long peer, int offset);
 
     /**
      * Advances the iterator to the next value, or returns false if at the end.
      *
-     * @param itr (FLArrayIterator *)
+     * @param peer (FLArrayIterator *)
      */
-    private static native boolean next(long itr);
-
-    /**
-     * Free FLArrayIterator instance
-     *
-     * @param itr (FLArrayIterator *)
-     */
-    private static native void free(long itr);
+    private static native boolean next(long peer);
 }

@@ -67,6 +67,8 @@ void litecore::jni::logError(const char *fmt, ...) {
     va_end(args);
 }
 
+extern "C" {
+
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4
 // ----------------------------------------------------------------------------
@@ -76,8 +78,12 @@ void litecore::jni::logError(const char *fmt, ...) {
  * Signature: (Ljava/lang/String;Ljava/lang/String;I)V
  */
 JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4_setenv(JNIEnv *env, jclass ignore, jstring jname, jstring jvalue,
-                                                        jint overwrite) {
+JNICALL Java_com_couchbase_lite_internal_core_C4_setenv(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jname,
+        jstring jvalue,
+        jint overwrite) {
     jstringSlice name(env, jname);
     jstringSlice value(env, jvalue);
 
@@ -152,8 +158,11 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_getLevel(JNIEnv *env, jclass
  * that domain at any time, including before Core creates it.
  */
 JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_setLevel(JNIEnv *env, jclass ignore, jstring jdomain,
-                                                             jint jlevel) {
+JNICALL Java_com_couchbase_lite_internal_core_C4Log_setLevel(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jdomain,
+        jint jlevel) {
     jstringSlice domain(env, jdomain);
     C4LogDomain logDomain = c4log_getDomain(domain.c_str(), true);
     c4log_setLevel(logDomain, (C4LogLevel) jlevel);
@@ -165,8 +174,12 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_setLevel(JNIEnv *env, jclass
  * Signature: (Ljava/lang/String;I;Ljava/lang/String)V
  */
 JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_log(JNIEnv *env, jclass ignore, jstring jdomain, jint jlevel,
-                                                        jstring jmessage) {
+JNICALL Java_com_couchbase_lite_internal_core_C4Log_log(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jdomain,
+        jint jlevel,
+        jstring jmessage) {
     jstringSlice message(env, jmessage);
 
     const char *domain = env->GetStringUTFChars(jdomain, nullptr);
@@ -201,9 +214,15 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_setBinaryFileLevel(JNIEnv *e
  * Signature: (Ljava/lang/String;IIJZLjava/lang/String;)V
  */
 JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(JNIEnv *env, jclass ignore, jstring jpath,
-                                                                      jint jlevel, jint jmaxrotatecount, jlong jmaxsize,
-                                                                      jboolean juseplaintext, jstring jheader) {
+JNICALL Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jpath,
+        jint jlevel,
+        jint jmaxrotatecount,
+        jlong jmaxsize,
+        jboolean juseplaintext,
+        jstring jheader) {
     jstringSlice path(env, jpath);
     jstringSlice header(env, jheader);
     C4LogFileOptions options{
@@ -221,7 +240,7 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(JNIEnv *en
     }
 }
 
-static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list args) {
+static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list ignore) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_EDETACHED) {
@@ -304,10 +323,13 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env
  * Signature: (Ljava/lang/String;[BII)[B
  */
 JNIEXPORT jbyteArray
-JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass ignore, jstring jpassword,
-                                                           jbyteArray jsalt,
-                                                           jint jiteration,
-                                                           jint jkeyLen) {
+JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jpassword,
+        jbyteArray jsalt,
+        jint jiteration,
+        jint jkeyLen) {
 
     // PBKDF2 (Password-Based Key Derivation Function 2)
     // https://en.wikipedia.org/wiki/PBKDF2
@@ -349,10 +371,17 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass i
         return nullptr;
     }
 
-    int status = 0;
+    int status;
     if ((status = mbedtls_md_setup(&ctx, info, 1)) == 0)
-        status = mbedtls_pkcs5_pbkdf2_hmac(&ctx, (const unsigned char *) password, (size_t) passwordSize,
-                                           salt, (size_t) saltSize, (unsigned) iteration, (uint32_t) keyLen, key);
+        status = mbedtls_pkcs5_pbkdf2_hmac(
+                &ctx,
+                (const unsigned char *) password,
+                (size_t) passwordSize,
+                salt,
+                (size_t) saltSize,
+                (unsigned) iteration,
+                (uint32_t) keyLen,
+                key);
 
     mbedtls_md_free(&ctx);
 
@@ -376,8 +405,11 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass i
  * Signature: (Ljava/lang/String;I)[B
  */
 JNIEXPORT jbyteArray
-JNICALL Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(JNIEnv *env, jclass ignore, jstring password,
-                                                                          jint algorithm) {
+JNICALL Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(
+        JNIEnv *env,
+        jclass ignore,
+        jstring password,
+        jint algorithm) {
     jstringSlice pwd(env, password);
 
     C4EncryptionKey key;
@@ -389,4 +421,5 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(JNIEnv
     env->SetByteArrayRegion(result, 0, keyLen, (jbyte *) &key.bytes);
 
     return result;
+}
 }

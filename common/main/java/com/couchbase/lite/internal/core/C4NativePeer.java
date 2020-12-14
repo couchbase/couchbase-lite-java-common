@@ -15,6 +15,10 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.GuardedBy;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.couchbase.lite.LiteCoreException;
@@ -29,64 +33,79 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * This approach doesn't actually solve the peer management problem.
  * It is still entirely possible that the peer whose handle is returned
  * by getPeer will be freed while the client is still using it.
- * <p>
- * It also exposes the native handle because anybody can call `get`.
+ * The lambda tricks are similarly vulnerable.
  */
-public abstract class C4NativePeer extends AtomicLong {
+public abstract class C4NativePeer extends AtomicLong implements AutoCloseable {
     private static final String HANDLE_NAME = "peer handle";
+
+    @GuardedBy("this")
     private Exception closedAt;
 
     protected C4NativePeer() {}
 
-    protected C4NativePeer(long handle) { setPeerHandle(handle); }
+    protected C4NativePeer(long peer) { setPeerHandle(peer); }
 
-    protected final void setPeer(long handle) { setPeerHandle(handle); }
+    @NonNull
+    @Override
+    public String toString() { return "NativePeer{" + Long.toHexString(get()) + "}"; }
 
-    protected final long getPeerUnchecked() { return get(); }
-
-    protected long getPeerAndClear() {
-        if (CouchbaseLiteInternal.isDebugging()) { closedAt = new Exception(); }
-        return getAndSet(0L);
-    }
+    protected final void setPeer(long peer) { setPeerHandle(peer); }
 
     protected final long getPeer() {
-        final long handle = get();
-        if (handle == 0) {
+        final long peer = get();
+        if (peer == 0) {
             logBadCall();
             throw new IllegalStateException("Operation on closed native peer");
         }
 
-        return handle;
+        return peer;
     }
 
-    // !!! This does not prevent the peer from being closed while the lambda is running
+    protected long getPeerAndClear() {
+        if (CouchbaseLiteInternal.isDebugging()) {
+            synchronized (this) { closedAt = new Exception(); }
+        }
+        return getAndSet(0L);
+    }
+
+    protected final long getPeerUnchecked() { return get(); }
+
     protected <T> T withPeer(T def, Fn.Function<Long, T> fn) {
-        final long handle = get();
-        if (handle == 0) {
+        final long peer = get();
+        if (peer == 0) {
             logBadCall();
             return def;
         }
 
-        return fn.apply(handle);
+        return fn.apply(peer);
     }
 
-    // !!! This does not prevent the peer from being closed while the lambda is running
     protected <T> T withPeerThrows(T def, Fn.FunctionThrows<Long, T, LiteCoreException> fn) throws LiteCoreException {
-        final long handle = get();
-        if (handle == 0) {
+        final long peer = get();
+        if (peer == 0) {
             logBadCall();
             return def;
         }
 
-        return fn.apply(handle);
+        return fn.apply(peer);
     }
 
-    private void setPeerHandle(long handle) {
-        Preconditions.assertZero(getAndSet(Preconditions.assertNotZero(handle, HANDLE_NAME)), HANDLE_NAME);
+    protected boolean verifyPeerClosed(long peer, @Nullable LogDomain domain) {
+        if (peer == 0L) { return true; }
+
+        if (domain != null) { Log.v(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName()); }
+
+        return false;
+    }
+
+    private void setPeerHandle(long peer) {
+        Preconditions.assertZero(getAndSet(Preconditions.assertNotZero(peer, HANDLE_NAME)), HANDLE_NAME);
     }
 
     private void logBadCall() {
         Log.e(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
-        if (closedAt != null) { Log.e(LogDomain.DATABASE, "Closed at", closedAt); }
+        final Exception closedLoc;
+        synchronized (this) { closedLoc = closedAt; }
+        if (closedLoc != null) { Log.e(LogDomain.DATABASE, "Closed at", closedLoc); }
     }
 }

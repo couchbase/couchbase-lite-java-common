@@ -55,12 +55,14 @@ public class StateMachine<T extends Enum<T>> {
 
         /**
          * Add arcs to the DAG.
+         * I believe that the use of varargs is, in fact, safe.
          *
          * @param source  of the arcs.
          * @param target1 the end of the first arc
          * @param targets the ends of the other arcs
          */
-        public void addTransition(@NonNull S source, @NonNull S target1, @NonNull S... targets) {
+        @SafeVarargs
+        public final void addTransition(@NonNull S source, @NonNull S target1, @NonNull S... targets) {
             if (source == errorState) {
                 throw new IllegalArgumentException("transitions from the error state are illegal");
             }
@@ -85,7 +87,10 @@ public class StateMachine<T extends Enum<T>> {
     @GuardedBy("transitions")
     private T state;
 
-    private StateMachine(@NonNull T initialState, @Nullable T errorState, @NonNull EnumMap<T, EnumSet<T>> transitions) {
+    protected StateMachine(
+        @NonNull T initialState,
+        @Nullable T errorState,
+        @NonNull EnumMap<T, EnumSet<T>> transitions) {
         state = initialState;
         this.errorState = errorState;
         this.transitions = transitions;
@@ -102,7 +107,8 @@ public class StateMachine<T extends Enum<T>> {
      * @param expected expected states.
      * @return true if the current state at the time of the call, is one of the expected states.
      */
-    public boolean checkState(@NonNull String loc, @NonNull T... expected) {
+    @SafeVarargs
+    public final boolean checkState(@NonNull String loc, @NonNull T... expected) {
         if (expected.length <= 0) { throw new IllegalArgumentException("no expected states specified"); }
 
         final T curState;
@@ -117,7 +123,7 @@ public class StateMachine<T extends Enum<T>> {
             Log.v(
                 TAG,
                 "StateMachine %s@%s expected state %s but found %s",
-                new Exception(),
+                new Exception("Call at:"),
                 this,
                 loc,
                 Arrays.toString(expected),
@@ -134,7 +140,7 @@ public class StateMachine<T extends Enum<T>> {
      *
      * @param loc       a string that identifies the location of the call
      * @param nextState the requested new state
-     * @return the previous state, if the transtion succeeds; null otherwise.
+     * @return the previous state, if the transition succeeds; null otherwise.
      */
     @Nullable
     public T setState(@NonNull String loc, @NonNull T nextState) {
@@ -151,7 +157,7 @@ public class StateMachine<T extends Enum<T>> {
         }
 
         if (legal) {
-            Log.d(TAG, "%s@%s: transition %s => %s", this, loc, nextState, prevState);
+            Log.d(TAG, "%s@%s: transition %s => %s", this, loc, prevState, nextState);
             return prevState;
         }
 
@@ -159,7 +165,7 @@ public class StateMachine<T extends Enum<T>> {
             Log.v(
                 TAG,
                 "%s@%s: transition to %s for %s => %s",
-                new Exception(),
+                new Exception("Call at:"),
                 this,
                 loc,
                 nextState,

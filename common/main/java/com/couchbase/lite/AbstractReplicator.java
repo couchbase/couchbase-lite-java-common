@@ -166,6 +166,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
             ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
         }
+
         private static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
             final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
             if (level != null) { return level; }
@@ -196,14 +197,14 @@ public abstract class AbstractReplicator extends InternalReplicator {
         // Constructors
         //---------------------------------------------
 
-        Status(@NonNull Status status) { this(status.activityLevel, status.progress, status.error); }
-
         Status(@NonNull C4ReplicatorStatus c4Status) {
             this(
                 getActivityLevelFromC4(c4Status.getActivityLevel()),
                 new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
                 (c4Status.getErrorCode() == 0) ? null : CBLStatus.convertC4Error(c4Status.getC4Error()));
         }
+
+        private Status(@NonNull Status status) { this(status.activityLevel, status.progress, status.error); }
 
         private Status(
             @NonNull ActivityLevel activityLevel,
@@ -602,20 +603,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
     protected abstract C4Replicator createReplicatorForTarget(Endpoint target) throws LiteCoreException;
 
     protected abstract void handleOffline(ActivityLevel prevState, boolean nowOnline);
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            final C4Replicator c4Repl = getC4Replicator();
-            if (c4Repl == null) { return; }
-
-            c4Repl.close();
-        }
-        finally {
-            super.finalize();
-        }
-    }
 
     /**
      * Create and return a c4Replicator targeting the passed URI

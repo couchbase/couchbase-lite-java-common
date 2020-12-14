@@ -90,7 +90,7 @@ public class C4BaseTest extends PlatformBaseTest {
 
             C4.setenv("TMPDIR", tmpDir, 1);
 
-            c4Database = new C4Database(
+            c4Database = C4Database.getDatabase(
                 dbDirPath,
                 getFlags(),
                 null,
@@ -112,10 +112,22 @@ public class C4BaseTest extends PlatformBaseTest {
         c4Database = null;
 
         if (db != null) {
-            try { db.close(); }
+            try { db.shut(); }
             catch (LiteCoreException e) { throw new IllegalStateException("Failed closing db", e); }
-            finally { db.free(); }
+            finally { db.close(); }
         }
+    }
+
+    ////////////////////////////////
+    // C4DocEnumerator
+    ////////////////////////////////
+
+    protected C4DocEnumerator enumerateChanges(C4Database db, long since, int flags) throws LiteCoreException {
+        return new C4DocEnumerator(db.getPeer(), since, flags);
+    }
+
+    protected C4DocEnumerator enumerateAllDocs(C4Database db, int flags) throws LiteCoreException {
+        return new C4DocEnumerator(db.getPeer(), flags);
     }
 
     protected void createRev(String docID, String revID, byte[] body) throws LiteCoreException {
@@ -155,12 +167,8 @@ public class C4BaseTest extends PlatformBaseTest {
     }
 
     protected void reopenDB() throws LiteCoreException {
-        if (c4Database != null) {
-            c4Database.close();
-            c4Database.free();
-            c4Database = null;
-        }
-        c4Database = new C4Database(
+        closeC4Database();
+        c4Database = C4Database.getDatabase(
             dbDirPath,
             getFlags(),
             null,
@@ -171,13 +179,15 @@ public class C4BaseTest extends PlatformBaseTest {
     }
 
     protected void reopenDBReadOnly() throws LiteCoreException {
-        if (c4Database != null) {
-            c4Database.close();
-            c4Database.free();
-            c4Database = null;
-        }
+        closeC4Database();
         int flag = getFlags() & ~C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.READ_ONLY;
-        c4Database = new C4Database(dbDirPath, flag, null, getVersioning(), encryptionAlgorithm(), encryptionKey());
+        c4Database = C4Database.getDatabase(
+            dbDirPath,
+            flag,
+            null,
+            getVersioning(),
+            encryptionAlgorithm(),
+            encryptionKey());
         assertNotNull(c4Database);
     }
 
@@ -224,8 +234,8 @@ public class C4BaseTest extends PlatformBaseTest {
                 true, false, history, true,
                 0, 0);
             assertNotNull(doc);
-            doc.free();
-            curDoc.free();
+            doc.close();
+            curDoc.close();
             commit = true;
         }
         finally {
@@ -262,14 +272,8 @@ public class C4BaseTest extends PlatformBaseTest {
                     try (FLSliceResult body = c4Database.encodeJSON(line.getBytes(StandardCharsets.UTF_8))) {
                         String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
 
-                        C4Document doc = c4Database.put(body, docID, 0,
-                            false, false,
-                            new String[0], true, 0, 0);
-                        try {
+                        try (C4Document doc = c4Database.put(body, docID, 0, false, false, new String[0], true, 0, 0)) {
                             assertNotNull(doc);
-                        }
-                        finally {
-                            doc.free();
                         }
                     }
 
@@ -295,7 +299,6 @@ public class C4BaseTest extends PlatformBaseTest {
     }
 
     private byte[] createFleeceBody(Map<String, Object> body) throws LiteCoreException {
-
         try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             if (body == null) { enc.beginDict(0); }
             else {
@@ -307,6 +310,14 @@ public class C4BaseTest extends PlatformBaseTest {
             }
             enc.endDict();
             return enc.finish();
+        }
+    }
+
+    private void closeC4Database() throws LiteCoreException {
+        if (c4Database != null) {
+            c4Database.shut();
+            c4Database.close();
+            c4Database = null;
         }
     }
 }

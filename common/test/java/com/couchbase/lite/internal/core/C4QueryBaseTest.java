@@ -33,12 +33,12 @@ public class C4QueryBaseTest extends C4BaseTest {
 
     @After
     public final void tearDownC4QueryBaseTest() {
-        if (query != null) { query.free(); }
+        if (query != null) { query.close(); }
     }
 
     protected final void compileSelect(String queryStr) throws LiteCoreException {
         if (query != null) {
-            query.free();
+            query.close();
             query = null;
         }
         query = c4Database.createQuery(queryStr);
@@ -64,7 +64,7 @@ public class C4QueryBaseTest extends C4BaseTest {
         json.append("}]");
 
         if (query != null) {
-            query.free();
+            query.close();
             query = null;
         }
         query = c4Database.createQuery(json.toString());
@@ -85,7 +85,7 @@ public class C4QueryBaseTest extends C4BaseTest {
             while (e.next()) { docIDs.add(e.getColumns().getValueAt(0).asString()); }
             return docIDs;
         }
-        finally { e.free(); }
+        finally { e.close(); }
     }
 
 
@@ -104,7 +104,7 @@ public class C4QueryBaseTest extends C4BaseTest {
                 matches.add(match);
             }
         }
-        finally { e.free(); }
+        finally { e.close(); }
 
 
         return matches;

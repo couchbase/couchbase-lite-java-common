@@ -43,12 +43,8 @@ class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
             if (obs == null) { return; }
             obs.close();
         }
-        finally {
-            super.finalize();
-        }
+        finally { super.finalize(); }
     }
 
-    private void postChange() {
-        postChange(new DocumentChange(db, docID));
-    }
+    private void postChange() { postChange(new DocumentChange(db, docID)); }
 }

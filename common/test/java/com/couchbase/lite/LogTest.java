@@ -621,7 +621,7 @@ public class LogTest extends BaseDbTest {
         int originalLogLevel = C4Log.getLevel(c4Domain);
         try {
             rawLogListener.reset();
-            ResultSet result = QueryBuilder.select(SelectResult.expression(Meta.id))
+            QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(baseTestDb))
                 .execute();
             int actualMinLevel = rawLogListener.getMinLevel();
@@ -629,7 +629,7 @@ public class LogTest extends BaseDbTest {
 
             C4Log.setLevels(actualMinLevel + 1, c4Domain);
             rawLogListener.reset();
-            result = QueryBuilder.select(SelectResult.expression(Meta.id))
+            QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(baseTestDb))
                 .execute();
             // If level > maxLevel, should be no logs
@@ -637,7 +637,7 @@ public class LogTest extends BaseDbTest {
 
             rawLogListener.reset();
             C4Log.setLevels(originalLogLevel, c4Domain);
-            result = QueryBuilder.select(SelectResult.expression(Meta.id))
+            QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(baseTestDb))
                 .execute();
             assertEquals(actualMinLevel, rawLogListener.getMinLevel());

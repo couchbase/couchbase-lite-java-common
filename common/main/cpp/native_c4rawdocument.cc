@@ -23,6 +23,10 @@ using namespace litecore::jni;
 
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4RawDocument
+//
+// THIS CODE FOR TESTING ONLY
+// Unfortunately, the build system depends on having all JNI code in the main
+// source tree.  Moving this class to the test tree would require major changes
 // ----------------------------------------------------------------------------
 
 /*

@@ -215,31 +215,6 @@ abstract class AbstractQuery implements Query {
     }
 
     //---------------------------------------------
-    // Protected level access
-    //---------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            final C4Query query = c4query;
-            if (query == null) { return; }
-
-            // Despite the fact that the documentation insists that this call be made
-            // while holding the database lock, doing so can block the finalizer thread
-            // causing it to abort.
-            // Jens Alfke says: in practice it should be ok.
-            // Jim Borden says: if the object is being finalized, it is not possible for client
-            //   code to affect the query: in this case, freeing wo/ the lock is ok.
-            //   That's how .NET does it.
-            query.free();
-        }
-        finally {
-            super.finalize();
-        }
-    }
-
-    //---------------------------------------------
     // Package level access
     //---------------------------------------------
 

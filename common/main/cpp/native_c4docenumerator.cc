@@ -23,28 +23,15 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+extern "C" {
+
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4DocEnumerator
+//
+// THIS CODE FOR TESTING ONLY
+// Unfortunately, the build system depends on having all JNI code in the main 
+// source tree.  Moving this class to the test tree would require major changes
 // ----------------------------------------------------------------------------
-/*
- * Class:     com_couchbase_lite_internal_core_C4DocEnumerator
- * Method:    close
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_close(JNIEnv *env, jclass ignore, jlong handle) {
-    c4enum_close((C4DocEnumerator *) handle);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4DocEnumerator
- * Method:    free
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_free(JNIEnv *env, jclass ignore, jlong handle) {
-    c4enum_free((C4DocEnumerator *) handle);
-}
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4DocEnumerator
@@ -52,8 +39,12 @@ Java_com_couchbase_lite_internal_core_C4DocEnumerator_free(JNIEnv *env, jclass i
  * Signature: (JJI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateChanges(JNIEnv *env, jclass ignore, jlong jdb,
-                                                             jlong since, jint jflags) {
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateChanges(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdb,
+        jlong since,
+        jint jflags) {
     const C4EnumeratorOptions options = {C4EnumeratorFlags(jflags)};
     C4Error error;
     C4DocEnumerator *e = c4db_enumerateChanges((C4Database *) jdb, (uint16_t) since, &options, &error);
@@ -68,8 +59,11 @@ Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateChanges(JNIEnv *e
  * Signature: (JI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateAllDocs(JNIEnv *env, jclass ignore, jlong jdb,
-                                                             jint jflags) {
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateAllDocs(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdb,
+        jint jflags) {
     const C4EnumeratorOptions options = {C4EnumeratorFlags(jflags)};
     C4Error error;
     C4DocEnumerator *e = c4db_enumerateAllDocs((C4Database *) jdb, &options, &error);
@@ -104,4 +98,15 @@ Java_com_couchbase_lite_internal_core_C4DocEnumerator_getDocument(JNIEnv *env, j
     if (!doc)
         throwError(env, error);
     return (jlong) doc;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4DocEnumerator
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4DocEnumerator_free(JNIEnv *env, jclass ignore, jlong handle) {
+    c4enum_free((C4DocEnumerator *) handle);
+}
 }

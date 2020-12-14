@@ -36,7 +36,7 @@ public final class CBLError {
         public static final int ASSERTION_FAILED = 1;                    // Internal assertion failure
         public static final int UNIMPLEMENTED = 2;                       // Oops, an unimplemented API call
         public static final int UNSUPPORTED_ENCRYPTION = 3;              // Unsupported encryption algorithm
-        public static final int BAD_REVISIONID = 4;                      // Invalid revision ID syntax
+        public static final int BAD_REVISION_ID = 4;                     // Invalid revision ID syntax
         public static final int CORRUPT_REVISION_DATA = 5;               // Revision contains corrupted/unreadable data
         public static final int NOT_OPEN = 6;                            // Database/KeyStore/index is not open
         public static final int NOT_FOUND = 7;                           // Document not found
@@ -53,7 +53,7 @@ public final class CBLError {
         public static final int NOT_IN_TRANSACTION = 17;                 // Function cannot be called while in a transaction
         public static final int TRANSACTION_NOT_CLOSED = 18;             // Database can't be closed while a transaction is open
         public static final int UNSUPPORTED = 19;                        // Operation not supported in this database
-        public static final int NOT_A_DATABSE_FILE = 20;                 // File is not a database, or encryption key is wrong
+        public static final int NOT_A_DATABASE_FILE = 20;                // File is not a database, or encryption key is wrong
 
         public static final int WRONG_FORMAT = 21;                       // Database exists but not in the format/storage requested
         public static final int CRYPTO = 22;                             // Encryption/decryption error

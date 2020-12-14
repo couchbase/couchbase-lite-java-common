@@ -16,12 +16,14 @@
 package com.couchbase.lite.internal.fleece;
 
 
+import android.support.annotation.CallSuper;
 import android.support.annotation.Nullable;
 
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 
 
-public class FLDictIterator extends C4NativePeer implements AutoCloseable {
+public class FLDictIterator extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -36,9 +38,9 @@ public class FLDictIterator extends C4NativePeer implements AutoCloseable {
     public long getCount() { return getCount(getPeer()); }
 
     public void begin(FLDict dict) {
-        final long handle = getPeer();
-        dict.withContent(hdl -> {
-            begin(hdl, handle);
+        final long peer = getPeer();
+        dict.withContent(dictPeer -> {
+            begin(dictPeer, peer);
             return null;
         });
     }
@@ -51,12 +53,9 @@ public class FLDictIterator extends C4NativePeer implements AutoCloseable {
 
     public boolean next() { return next(getPeer()); }
 
+    @CallSuper
     @Override
-    public void close() {
-        final long handle = getPeerAndClear();
-        if (handle == 0) { return; }
-        free(handle);
-    }
+    public void close() { closePeer(null); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -65,8 +64,19 @@ public class FLDictIterator extends C4NativePeer implements AutoCloseable {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { close(); }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
+    }
+
+    //-------------------------------------------------------------------------
+    // Private methods
+    //-------------------------------------------------------------------------
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        free(peer);
     }
 
     //-------------------------------------------------------------------------

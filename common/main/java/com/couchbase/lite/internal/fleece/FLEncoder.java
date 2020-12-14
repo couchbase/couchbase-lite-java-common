@@ -24,7 +24,6 @@ import java.util.Map;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 
 
@@ -35,11 +34,11 @@ import com.couchbase.lite.internal.utils.ClassUtils;
  * it will be release by the native code.
  */
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
-public abstract class FLEncoder extends C4NativePeer implements AutoCloseable {
+public abstract class FLEncoder extends C4NativePeer {
 
     // unmanaged: the native code will free it
     static final class UnmanagedFLEncoder extends FLEncoder {
-        UnmanagedFLEncoder(long handle) { super(handle); }
+        UnmanagedFLEncoder(long peer) { super(peer); }
 
         @Override
         public void close() {
@@ -53,25 +52,23 @@ public abstract class FLEncoder extends C4NativePeer implements AutoCloseable {
 
     // managed: Java code is responsible for freeing it
     static final class ManagedFLEncoder extends FLEncoder {
+        ManagedFLEncoder() { super(init()); }
+
         @Override
-        public void close() { free(); }
+        public void close() { closePeer(null); }
 
         @SuppressWarnings("NoFinalizer")
         @Override
         protected void finalize() throws Throwable {
-            try {
-                if (free()) { Log.w(LogDomain.DATABASE, "FLEncoder was not closed: " + this); }
-            }
+            try { closePeer(LogDomain.DATABASE); }
             finally { super.finalize(); }
         }
 
-        private boolean free() {
-            final long hdl = getPeerAndClear();
-            if (hdl == 0L) { return false; }
+        private void closePeer(@Nullable LogDomain domain) {
+            final long peer = getPeerAndClear();
+            if (verifyPeerClosed(peer, domain)) { return; }
 
-            free(hdl);
-
-            return true;
+            free(peer);
         }
     }
 
@@ -79,7 +76,7 @@ public abstract class FLEncoder extends C4NativePeer implements AutoCloseable {
     // Factory Methods
     //-------------------------------------------------------------------------
 
-    public static FLEncoder getUnmanagedEncoder(long handle) { return new UnmanagedFLEncoder(handle); }
+    public static FLEncoder getUnmanagedEncoder(long peer) { return new UnmanagedFLEncoder(peer); }
 
     public static FLEncoder getManagedEncoder() { return new ManagedFLEncoder(); }
 
@@ -91,12 +88,10 @@ public abstract class FLEncoder extends C4NativePeer implements AutoCloseable {
     private Object extraInfo;
 
     //-------------------------------------------------------------------------
-    // Constructors
+    // Constructor
     //-------------------------------------------------------------------------
 
-    private FLEncoder() { this(init()); }
-
-    private FLEncoder(long handle) { super(handle); }
+    private FLEncoder(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -105,7 +100,7 @@ public abstract class FLEncoder extends C4NativePeer implements AutoCloseable {
     @NonNull
     @Override
     public String toString() {
-        return "FLEncoder{" + ClassUtils.objId(this) + "/" + getPeerUnchecked() + ": " + extraInfo + "}";
+        return "FLEncoder{" + ClassUtils.objId(this) + "/" + super.toString() + ": " + extraInfo + "}";
     }
 
     @Override
@@ -234,11 +229,11 @@ public abstract class FLEncoder extends C4NativePeer implements AutoCloseable {
     // native methods
     //-------------------------------------------------------------------------
 
-    static native void free(long encoder);
+    static native long init(); // FLEncoder FLEncoder_New(void);
 
     static native void reset(long encoder);
 
-    private static native long init(); // FLEncoder FLEncoder_New(void);
+    static native void free(long encoder);
 
     private static native boolean writeNull(long encoder);
 

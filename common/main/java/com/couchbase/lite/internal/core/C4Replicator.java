@@ -16,6 +16,7 @@
 
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -45,7 +46,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * <li/> Messages sent to it from native code:  This object proxies those messages out to
  * various listeners.  Until a replicator object is removed from the REVERSE_LOOKUP_TABLE
  * forwarding such a message must work.
- * <li/> Calls to the native object:  These should work as long as the `handle` is non-zero.
+ * <li/> Calls to the native object:  These should work as long as the peer handle is non-zero.
  * This object must be careful never to forward a call to a native object once that object has been freed.
  * </ol>
  * <p>
@@ -84,7 +85,7 @@ public class C4Replicator extends C4NativePeer {
     public static final String REPLICATOR_OPTION_PROGRESS_LEVEL = "progress"; // If >=1, notify on every doc; if >=2, on every attachment (int)
     public static final String REPLICATOR_OPTION_DISABLE_DELTAS = "noDeltas";   ///< Disables delta sync: bool
     public static final String REPLICATOR_OPTION_MAX_RETRIES = "maxRetries";   ///< Max number of retry attempts (int)
-    public static final String REPLICATOR_OPTION_MAX_RETRY_INTERVAL = "maxRetryInterval";  ///< Max delay betw retries (secs)
+    public static final String REPLICATOR_OPTION_MAX_RETRY_INTERVAL = "maxRetryInterval";  ///< Max delay between retries (secs)
 
 
     public static final String REPLICATOR_OPTION_ROOT_CERTS = "rootCerts";  ///< Trusted root certs (data)
@@ -124,8 +125,8 @@ public class C4Replicator extends C4NativePeer {
     // This lock protects both of the maps below and the corresponding vector in the JNI code
     private static final Object CLASS_LOCK = new Object();
 
-    // Long: handle of C4Replicator native address
-    // C4Replicator: Java class holds handle
+    // Long: handle to C4Replicator's native peer
+    // C4Replicator: The Java peer (the instance holding the handle that is the key)
     @NonNull
     @GuardedBy("CLASS_LOCK")
     private static final Map<Long, C4Replicator> REVERSE_LOOKUP_TABLE = new HashMap<>();
@@ -135,11 +136,11 @@ public class C4Replicator extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    static void statusChangedCallback(long handle, @Nullable C4ReplicatorStatus status) {
-        final C4Replicator repl = getReplicatorForHandle(handle);
+    static void statusChangedCallback(long peer, @Nullable C4ReplicatorStatus status) {
+        final C4Replicator repl = getReplicatorForHandle(peer);
         Log.d(
             LogDomain.REPLICATOR,
-            "C4Replicator.statusChangedCallback @" + Long.toHexString(handle) + ", status: " + status);
+            "C4Replicator.statusChangedCallback @" + Long.toHexString(peer) + ", status: " + status);
         if (repl == null) { return; }
 
         final C4ReplicatorListener listener = repl.listener;
@@ -147,12 +148,12 @@ public class C4Replicator extends C4NativePeer {
     }
 
     // This method is called by reflection.  Don't change its signature.
-    static void documentEndedCallback(long handle, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
+    static void documentEndedCallback(long peer, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
         Log.d(
             LogDomain.REPLICATOR,
-            "C4Replicator.documentEndedCallback @" + Long.toHexString(handle) + ", pushing: " + pushing);
+            "C4Replicator.documentEndedCallback @" + Long.toHexString(peer) + ", pushing: " + pushing);
 
-        final C4Replicator repl = getReplicatorForHandle(handle);
+        final C4Replicator repl = getReplicatorForHandle(peer);
         if (repl == null) { return; }
 
         final C4ReplicatorListener listener = repl.listener;
@@ -246,7 +247,7 @@ public class C4Replicator extends C4NativePeer {
         synchronized (CLASS_LOCK) {
             replicator = new C4Replicator(
                 db,
-                otherLocalDB,
+                otherLocalDB.getHandle(),
                 push,
                 pull,
                 options,
@@ -275,7 +276,7 @@ public class C4Replicator extends C4NativePeer {
         synchronized (CLASS_LOCK) {
             replicator = new C4Replicator(
                 db,
-                openSocket,
+                openSocket.getHandle(),
                 push,
                 pull,
                 options,
@@ -292,21 +293,19 @@ public class C4Replicator extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @Nullable
-    private static C4Replicator getReplicatorForHandle(long handle) {
-        synchronized (CLASS_LOCK) { return REVERSE_LOOKUP_TABLE.get(handle); }
+    private static C4Replicator getReplicatorForHandle(long peer) {
+        synchronized (CLASS_LOCK) { return REVERSE_LOOKUP_TABLE.get(peer); }
     }
 
     @GuardedBy("CLASS_LOCK")
     private static void bind(@NonNull C4Replicator repl) {
         Preconditions.assertNotNull(repl, "repl");
-        final long handle = repl.getPeer();
+        final long peer = repl.getPeer();
         Log.d(
             LogDomain.REPLICATOR,
-            "Binding native replicator @0x" + Long.toHexString(handle) + " => " + ClassUtils.objId(repl));
-        REVERSE_LOOKUP_TABLE.put(handle, repl);
+            "Binding native replicator @0x" + Long.toHexString(peer) + " => " + ClassUtils.objId(repl));
+        REVERSE_LOOKUP_TABLE.put(peer, repl);
     }
-
-    private static void release(long handle) { REVERSE_LOOKUP_TABLE.remove(handle); }
 
 
     //-------------------------------------------------------------------------
@@ -377,7 +376,7 @@ public class C4Replicator extends C4NativePeer {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private C4Replicator(
         long db,
-        @NonNull C4Database otherLocalDB,
+        long targetDb,
         int push,
         int pull,
         @NonNull byte[] options,
@@ -388,7 +387,7 @@ public class C4Replicator extends C4NativePeer {
         throws LiteCoreException {
         super(createLocal(
             db,
-            otherLocalDB.getHandle(),
+            targetDb,
             push,
             pull,
             C4Socket.NO_FRAMING,
@@ -409,14 +408,14 @@ public class C4Replicator extends C4NativePeer {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private C4Replicator(
         long db,
-        @NonNull C4Socket openSocket,
+        long socket,
         int push,
         int pull,
         @Nullable byte[] options,
         @Nullable C4ReplicatorListener listener,
         @NonNull Object replicatorContext)
         throws LiteCoreException {
-        super(createWithSocket(db, openSocket.getHandle(), push, pull, replicatorContext, options));
+        super(createWithSocket(db, socket, push, pull, replicatorContext, options));
 
         this.socketFactoryContext = null;
 
@@ -430,10 +429,11 @@ public class C4Replicator extends C4NativePeer {
 
     public void stop() { stop(getPeer()); }
 
+    @CallSuper
+    @Override
     public void close() {
-        final long handle = getPeer();
-        if (handle == 0) { return; }
-        release(handle);
+        REVERSE_LOOKUP_TABLE.remove(getPeerUnchecked());
+        closePeer(null);
     }
 
     public void setOptions(@NonNull byte[] options) { setOptions(getPeer(), options); }
@@ -457,24 +457,27 @@ public class C4Replicator extends C4NativePeer {
 
     @NonNull
     @Override
-    public String toString() { return "C4Repl{" + ClassUtils.objId(this) + ", peer='" + getPeerUnchecked() + "'}"; }
+    public String toString() { return "C4Repl{" + ClassUtils.objId(this) + "/" + super.toString() + "'}"; }
 
     // Note: the reference in the REVERSE_LOOKUP_TABLE must already be gone, or we wouldn't be here...
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try {
-            final long handle = getPeerAndClear();
+        try { closePeer(LogDomain.REPLICATOR); }
+        finally { super.finalize(); }
+    }
 
-            if (handle != 0) {
-                stop(handle);
-                // !!! the two arguments to free may already be gone
-                free(handle, replicatorContext, socketFactoryContext);
-            }
-        }
-        finally {
-            super.finalize();
-        }
+    //-------------------------------------------------------------------------
+    // Private methods
+    //-------------------------------------------------------------------------
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        stop(peer);
+
+        free(peer, replicatorContext, socketFactoryContext);
     }
 
     //-------------------------------------------------------------------------
@@ -569,15 +572,15 @@ public class C4Replicator extends C4NativePeer {
     /**
      * Returns a list of string ids for pending documents.
      */
-    private static native long getPendingDocIds(long handle) throws LiteCoreException;
+    private static native long getPendingDocIds(long peer) throws LiteCoreException;
 
     /**
      * Returns true if there are documents that have not been resolved.
      */
-    private static native boolean isDocumentPending(long handle, String id) throws LiteCoreException;
+    private static native boolean isDocumentPending(long peer, String id) throws LiteCoreException;
 
     /**
      * Hint to core about the reachability of the target of this replicator.
      */
-    private static native void setHostReachable(long handle, boolean reachable);
+    private static native void setHostReachable(long peer, boolean reachable);
 }

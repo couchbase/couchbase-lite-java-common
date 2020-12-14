@@ -26,6 +26,7 @@ import java.util.Map;
 
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.MaintenanceType;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -41,10 +42,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.TooManyMethods",
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
-public class C4Database extends C4NativePeer {
-    /* NOTE: Enum values must match the ones in DataFile::MaintenanceType */
+public abstract class C4Database extends C4NativePeer {
+    // These enum values must match the ones in DataFile::MaintenanceType
     private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
-
     static {
         final Map<MaintenanceType, Integer> m = new HashMap<>();
         m.put(MaintenanceType.COMPACT, 0);
@@ -65,20 +65,56 @@ public class C4Database extends C4NativePeer {
         copy(sourcePath, destinationPath, flags, storageEngine, versioning, algorithm, encryptionKey);
     }
 
-    public static void rawFreeDocument(long rawDoc) throws LiteCoreException { rawFree(rawDoc); }
-
     public static void deleteDbAtPath(String path) throws LiteCoreException { deleteAtPath(path); }
+
+    @VisibleForTesting
+    static void rawFreeDocument(long rawDoc) throws LiteCoreException { rawFree(rawDoc); }
 
 
     //-------------------------------------------------------------------------
     // Member Variables
     //-------------------------------------------------------------------------
-    private final boolean shouldRetain; // true -> not release native object, false -> release by free()
+
+    // unmanaged: the native code will free it
+    static final class UnmanagedC4Database extends C4Database {
+        UnmanagedC4Database(long peer) { super(peer); }
+
+        @Override
+        public void close() { getPeerAndClear(); }
+    }
+
+    // managed: Java code is responsible for freeing it
+    static final class ManagedC4Database extends C4Database {
+        ManagedC4Database(long peer) { super(peer); }
+
+        @Override
+        public void close() { closePeer(null); }
+
+        @SuppressWarnings("NoFinalizer")
+        @Override
+        protected void finalize() throws Throwable {
+            try { closePeer(LogDomain.DATABASE); }
+            finally { super.finalize(); }
+        }
+
+        private void closePeer(@Nullable LogDomain domain) {
+            final long peer = getPeerAndClear();
+            if (verifyPeerClosed(peer, domain)) { return; }
+
+            free(peer);
+        }
+    }
+
 
     //-------------------------------------------------------------------------
-    // Constructor
+    // Factory Methods
     //-------------------------------------------------------------------------
-    public C4Database(
+
+    // unmanaged: someone else owns it
+    public static C4Database getUnmanagedDatabase(long peer) { return new UnmanagedC4Database(peer); }
+
+    // managed: Java code is responsible for freeing it
+    public static C4Database getDatabase(
         String path,
         int flags,
         String storageEngine,
@@ -86,15 +122,14 @@ public class C4Database extends C4NativePeer {
         int algorithm,
         byte[] encryptionKey)
         throws LiteCoreException {
-        this(open(path, flags, storageEngine, versioning, algorithm, encryptionKey), false);
+        return new ManagedC4Database(open(path, flags, storageEngine, versioning, algorithm, encryptionKey));
     }
 
-    public C4Database(long handle) { this(handle, true); }
+    //-------------------------------------------------------------------------
+    // Constructor
+    //-------------------------------------------------------------------------
 
-    private C4Database(long handle, boolean shouldRetain) {
-        super(handle);
-        this.shouldRetain = shouldRetain;
-    }
+    protected C4Database(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -102,24 +137,19 @@ public class C4Database extends C4NativePeer {
 
     // - Lifecycle
 
-    // called from finalizer
-    public void free() {
-        if (shouldRetain) { return; }
+    @Override
+    public abstract void close();
 
-        final long handle = getPeerAndClear();
-        if (handle == 0) { return; }
 
-        free(handle);
-    }
-
-    public void close() throws LiteCoreException { close(getPeer()); }
+    // This method closes but does not free the native peer.
+    // The name "close" is reserved for the AutoClosable method, which *does* free the peer.
+    public void shut() throws LiteCoreException { close(getPeer()); }
 
     public void delete() throws LiteCoreException { delete(getPeer()); }
 
     public void rekey(int keyType, byte[] newKey) throws LiteCoreException { rekey(getPeer(), keyType, newKey); }
 
     // - Accessors
-
 
     @Nullable
     public String getPath() { return getPath(getPeer()); }
@@ -156,45 +186,21 @@ public class C4Database extends C4NativePeer {
 
     public void endTransaction(boolean commit) throws LiteCoreException { endTransaction(getPeer(), commit); }
 
-    // - RawDocs Raw Documents
-
-    @VisibleForTesting
-    public C4RawDocument rawGet(String storeName, String docID) throws LiteCoreException {
-        return new C4RawDocument(rawGet(getPeer(), storeName, docID));
-    }
-
-    @VisibleForTesting
-    public void rawPut(String storeName, String key, String meta, byte[] body) throws LiteCoreException {
-        rawPut(getPeer(), storeName, key, meta, body);
-    }
-
     // c4Document+Fleece.h
 
     // - Fleece-related
-    // !!! This needs to hold both the document and the database locks
+    // !!! This must be called holding both the document and the database locks
     public FLEncoder getSharedFleeceEncoder() {
         return FLEncoder.getUnmanagedEncoder(getSharedFleeceEncoder(getPeer()));
     }
 
-    // NOTE: Should param be String instead of byte[]?
+    // ??? Should the param be String instead of byte[]?
     @VisibleForTesting
     public FLSliceResult encodeJSON(byte[] jsonData) throws LiteCoreException {
         return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), jsonData));
     }
 
     public final FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
-
-    ////////////////////////////////
-    // C4DocEnumerator
-    ////////////////////////////////
-
-    public C4DocEnumerator enumerateChanges(long since, int flags) throws LiteCoreException {
-        return new C4DocEnumerator(getPeer(), since, flags);
-    }
-
-    public C4DocEnumerator enumerateAllDocs(int flags) throws LiteCoreException {
-        return new C4DocEnumerator(getPeer(), flags);
-    }
 
     ////////////////////////////////
     // C4Document
@@ -306,7 +312,7 @@ public class C4Database extends C4NativePeer {
     ////////////////////////////////
 
     @NonNull
-    public C4BlobStore getBlobStore() throws LiteCoreException { return new C4BlobStore(getPeer()); }
+    public C4BlobStore getBlobStore() throws LiteCoreException { return C4BlobStore.getUnmanagedBlobStore(getPeer()); }
 
     ////////////////////////////////
     // C4Query
@@ -317,8 +323,12 @@ public class C4Database extends C4NativePeer {
     }
 
     public void createIndex(
-        String name, String expressionsJSON, int indexType, String language,
-        boolean ignoreDiacritics) throws LiteCoreException {
+        String name,
+        String expressionsJSON,
+        int indexType,
+        String language,
+        boolean ignoreDiacritics)
+        throws LiteCoreException {
         C4Query.createIndex(getPeer(), name, expressionsJSON, indexType, language, ignoreDiacritics);
     }
 
@@ -426,17 +436,6 @@ public class C4Database extends C4NativePeer {
     }
 
     //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { free(); }
-        finally { super.finalize(); }
-    }
-
-    //-------------------------------------------------------------------------
     // package access
     //-------------------------------------------------------------------------
 
@@ -446,9 +445,20 @@ public class C4Database extends C4NativePeer {
     //-------------------------------------------------------------------------
     // Native methods
     //-------------------------------------------------------------------------
+    @VisibleForTesting
+    static native long rawGet(long db, String storeName, String docID) throws LiteCoreException;
+
+    @VisibleForTesting
+    static native void rawPut(
+        long db,
+        String storeName,
+        String key,
+        String meta,
+        byte[] body)
+        throws LiteCoreException;
 
     // - Lifecycle
-    private static native long open(
+    static native long open(
         String path,
         int flags,
         String storageEngine,
@@ -456,6 +466,8 @@ public class C4Database extends C4NativePeer {
         int algorithm,
         byte[] encryptionKey)
         throws LiteCoreException;
+
+    static native void free(long db);
 
     private static native void copy(
         String sourcePath,
@@ -466,8 +478,6 @@ public class C4Database extends C4NativePeer {
         int algorithm,
         byte[] encryptionKey)
         throws LiteCoreException;
-
-    private static native void free(long db);
 
     private static native void close(long db) throws LiteCoreException;
 
@@ -514,16 +524,6 @@ public class C4Database extends C4NativePeer {
     // - Raw Documents (i.e. info or _local)
 
     private static native void rawFree(long rawDoc) throws LiteCoreException;
-
-    private static native long rawGet(long db, String storeName, String docID) throws LiteCoreException;
-
-    private static native void rawPut(
-        long db,
-        String storeName,
-        String key,
-        String meta,
-        byte[] body)
-        throws LiteCoreException;
 
     // - Cookie Store
 

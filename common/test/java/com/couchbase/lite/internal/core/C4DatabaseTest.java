@@ -57,7 +57,7 @@ public class C4DatabaseTest extends C4BaseTest {
     @Test
     public void testDatabaseErrorMessages() {
         try {
-            new C4Database("", 0, null, 0, 0, null);
+            C4Database.getDatabase("", 0, null, 0, 0, null);
             fail();
         }
         catch (LiteCoreException e) {
@@ -164,7 +164,7 @@ public class C4DatabaseTest extends C4BaseTest {
         assertFalse(bundleDir.exists());
         String bundlePath = bundleDir.getCanonicalPath();
 
-        C4Database bundle = new C4Database(
+        C4Database bundle = C4Database.getDatabase(
             bundlePath,
             flags,
             null,
@@ -173,12 +173,12 @@ public class C4DatabaseTest extends C4BaseTest {
             encryptionKey());
 
         assertNotNull(bundle);
+        bundle.shut();
         bundle.close();
-        bundle.free();
 
         // Reopen without 'create' flag:
         flags &= ~C4Constants.DatabaseFlags.CREATE;
-        bundle = new C4Database(
+        bundle = C4Database.getDatabase(
             bundlePath,
             flags,
             null,
@@ -186,8 +186,8 @@ public class C4DatabaseTest extends C4BaseTest {
             encryptionAlgorithm(),
             encryptionKey());
         assertNotNull(bundle);
+        bundle.shut();
         bundle.close();
-        bundle.free();
 
         FileUtils.eraseFileOrDir(bundlePath);
 
@@ -197,7 +197,7 @@ public class C4DatabaseTest extends C4BaseTest {
         // Open nonexistent bundle:
         try {
             String notExist = new File(getScratchDirectoryPath("bogus"), "no_such_bundle").getCanonicalPath();
-            new C4Database(notExist, flags, null, getVersioning(), encryptionAlgorithm(), encryptionKey());
+            C4Database.getDatabase(notExist, flags, null, getVersioning(), encryptionAlgorithm(), encryptionKey());
             fail();
         }
         catch (LiteCoreException e) {
@@ -215,23 +215,23 @@ public class C4DatabaseTest extends C4BaseTest {
         boolean commit = false;
         c4Database.beginTransaction();
         try {
-            c4Database.rawPut(store, key, meta, fleeceBody);
+            rawPut(c4Database, store, key, meta, fleeceBody);
             commit = true;
         }
         finally {
             c4Database.endTransaction(commit);
         }
 
-        C4RawDocument doc = c4Database.rawGet(store, key);
+        C4RawDocument doc = rawGet(c4Database, store, key);
         assertNotNull(doc);
         assertEquals(doc.key(), key);
         assertEquals(doc.meta(), meta);
         assertArrayEquals(doc.body(), fleeceBody);
-        doc.free();
+        doc.close();
 
         // Nonexistent:
         try {
-            c4Database.rawGet(store, "bogus");
+            rawGet(c4Database, store, "bogus");
             fail("Should not come here.");
         }
         catch (LiteCoreException ex) {
@@ -247,19 +247,18 @@ public class C4DatabaseTest extends C4BaseTest {
 
         assertEquals(99, c4Database.getDocumentCount());
 
-        C4Document doc;
         int i;
 
         // No start or end ID:
         int iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT;
         iteratorFlags &= ~C4Constants.EnumeratorFlags.INCLUDE_BODIES;
-        C4DocEnumerator e = c4Database.enumerateAllDocs(iteratorFlags);
-        assertNotNull(e);
-        try {
+
+        try (C4DocEnumerator e = enumerateAllDocs(c4Database, iteratorFlags)) {
+            assertNotNull(e);
             i = 1;
             while (e.next()) {
-                assertNotNull(doc = e.getDocument());
-                try {
+                try (C4Document doc = e.getDocument()) {
+                    assertNotNull(doc);
                     String docID = String.format(Locale.ENGLISH, "doc-%03d", i);
                     assertEquals(docID, doc.getDocID());
                     assertEquals(REV_ID_1, doc.getRevID());
@@ -271,14 +270,8 @@ public class C4DatabaseTest extends C4BaseTest {
                     assertArrayEquals(fleeceBody, doc.getSelectedBody());
                     i++;
                 }
-                finally {
-                    doc.free();
-                }
             }
             assertEquals(100, i);
-        }
-        finally {
-            e.free();
         }
     }
 
@@ -289,13 +282,12 @@ public class C4DatabaseTest extends C4BaseTest {
 
         // No start or end ID:
         int iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT;
-        C4DocEnumerator e = c4Database.enumerateAllDocs(iteratorFlags);
-        assertNotNull(e);
-        try {
-            C4Document doc;
+        try (C4DocEnumerator e = enumerateAllDocs(c4Database, iteratorFlags)) {
+            assertNotNull(e);
             int i = 1;
-            while ((doc = nextDocument(e)) != null) {
-                try {
+            while (true) {
+                try (C4Document doc = nextDocument(e)) {
+                    if (doc == null) { break; }
                     String docID = String.format(Locale.ENGLISH, "doc-%03d", i);
                     assertEquals(docID, doc.getDocID());
                     assertEquals(REV_ID_1, doc.getRevID());
@@ -305,14 +297,8 @@ public class C4DatabaseTest extends C4BaseTest {
                     assertEquals(C4Constants.DocumentFlags.EXISTS, doc.getFlags());
                     i++;
                 }
-                finally {
-                    doc.free();
-                }
             }
             assertEquals(100, i);
-        }
-        finally {
-            e.free();
         }
     }
 
@@ -324,53 +310,41 @@ public class C4DatabaseTest extends C4BaseTest {
             createRev(docID, REV_ID_1, fleeceBody);
         }
 
-        C4Document doc;
         long seq;
 
         // Since start:
         int iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT;
         iteratorFlags &= ~C4Constants.EnumeratorFlags.INCLUDE_BODIES;
-        C4DocEnumerator e = c4Database.enumerateChanges(0, iteratorFlags);
-        assertNotNull(e);
-        try {
+
+        try (C4DocEnumerator e = enumerateChanges(c4Database, 0, iteratorFlags)) {
+            assertNotNull(e);
             seq = 1;
-            while ((doc = nextDocument(e)) != null) {
-                try {
+            while (true) {
+                try (C4Document doc = nextDocument(e)) {
+                    if (doc == null) { break; }
                     String docID = String.format(Locale.ENGLISH, "doc-%03d", seq);
                     assertEquals(docID, doc.getDocID());
                     assertEquals(seq, doc.getSelectedSequence());
                     seq++;
                 }
-                finally {
-                    doc.free();
-                }
             }
             assertEquals(100L, seq);
-        }
-        finally {
-            e.free();
         }
 
         // Since 6:
-        e = c4Database.enumerateChanges(6, iteratorFlags);
-        assertNotNull(e);
-        try {
+        try (C4DocEnumerator e = enumerateChanges(c4Database, 6, iteratorFlags)) {
+            assertNotNull(e);
             seq = 7;
-            while ((doc = nextDocument(e)) != null) {
-                try {
+            while (true) {
+                try (C4Document doc = nextDocument(e)) {
+                    if (doc == null) { break; }
                     String docID = String.format(Locale.ENGLISH, "doc-%03d", seq);
                     assertEquals(docID, doc.getDocID());
                     assertEquals(seq, doc.getSelectedSequence());
                     seq++;
                 }
-                finally {
-                    doc.free();
-                }
             }
             assertEquals(100L, seq);
-        }
-        finally {
-            e.free();
         }
     }
 
@@ -580,7 +554,7 @@ public class C4DatabaseTest extends C4BaseTest {
             C4Constants.EncryptionAlgorithm.NONE,
             null);
 
-        C4Database nudb = new C4Database(
+        C4Database nudb = C4Database.getDatabase(
             nuPath.getCanonicalPath(),
             getFlags(),
             null,
@@ -591,7 +565,7 @@ public class C4DatabaseTest extends C4BaseTest {
         assertEquals(2, nudb.getDocumentCount());
         nudb.delete();
 
-        nudb = new C4Database(
+        nudb = C4Database.getDatabase(
             nuPath.getCanonicalPath(),
             getFlags(),
             null,
@@ -601,7 +575,7 @@ public class C4DatabaseTest extends C4BaseTest {
         assertNotNull(nudb);
         createRev(nudb, doc1ID, REV_ID_1, fleeceBody);
         assertEquals(1, nudb.getDocumentCount());
-        nudb.close();
+        nudb.shut();
 
         String originalDest = nuPath.getCanonicalPath();
 
@@ -621,7 +595,7 @@ public class C4DatabaseTest extends C4BaseTest {
             assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
         }
 
-        nudb = new C4Database(
+        nudb = C4Database.getDatabase(
             originalDest,
             getFlags(),
             null,
@@ -630,7 +604,7 @@ public class C4DatabaseTest extends C4BaseTest {
             null);
         assertNotNull(nudb);
         assertEquals(1, nudb.getDocumentCount());
-        nudb.close();
+        nudb.shut();
 
         srcPath += "bogus" + File.separator;
         nuPath = new File(originalDest);
@@ -648,7 +622,7 @@ public class C4DatabaseTest extends C4BaseTest {
             assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
         }
 
-        nudb = new C4Database(
+        nudb = C4Database.getDatabase(
             originalDest,
             getFlags(),
             null,
@@ -714,9 +688,17 @@ public class C4DatabaseTest extends C4BaseTest {
                 0);
         }
         assertNotNull(doc);
-        doc.free();
+        doc.close();
 
         return keys;
+    }
+
+    public C4RawDocument rawGet(C4Database db, String storeName, String docID) throws LiteCoreException {
+        return new C4RawDocument(C4Database.rawGet(db.getPeer(), storeName, docID));
+    }
+
+    public void rawPut(C4Database db, String storeName, String key, String meta, byte[] body) throws LiteCoreException {
+        C4Database.rawPut(db.getPeer(), storeName, key, meta, body);
     }
 }
 

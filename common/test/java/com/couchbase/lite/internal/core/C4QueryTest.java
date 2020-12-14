@@ -252,8 +252,8 @@ public class C4QueryTest extends C4QueryBaseTest {
                     C4Constants.RevisionFlags.DELETED, false,
                     false, history, true, 0, 0);
                 assertNotNull(updatedDoc);
-                doc.free();
-                updatedDoc.free();
+                doc.close();
+                updatedDoc.close();
                 commit = true;
             }
             finally {
@@ -274,7 +274,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             compileSelect(json5("['SELECT', {'WHAT': [['.name'], ['.gender']], 'LIMIT': 1}]"));
             C4QueryEnumerator e = query.run(new C4QueryOptions());
             while (e.next()) { assertEquals(0x00, e.getMissingColumns()); }
-            e.free();
+            e.close();
         }
 
         {
@@ -282,7 +282,7 @@ public class C4QueryTest extends C4QueryBaseTest {
                 + "1}]"));
             C4QueryEnumerator e = query.run(new C4QueryOptions());
             while (e.next()) { assertEquals(0x15, e.getMissingColumns()); }
-            e.free();
+            e.close();
         }
     }
 
@@ -455,7 +455,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             assertEquals(itr.getValue().asString(), expectedLast.get(i));
             i++;
         }
-        e.free();
+        e.close();
         assertEquals(3, i);
     }
 
@@ -480,7 +480,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             assertEquals(expectedLast.get(i), name.get("last").asString());
             i++;
         }
-        e.free();
+        e.close();
         assertEquals(3, i);
     }
 
@@ -499,7 +499,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             assertEquals(itr.getValue().asString(), "Zirk");
             i++;
         }
-        e.free();
+        e.close();
         assertEquals(1, i);
     }
 
@@ -530,7 +530,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             }
             i++;
         }
-        e.free();
+        e.close();
         assertEquals(expectedRowCount, i);
     }
 
@@ -556,7 +556,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             }
             i++;
         }
-        e.free();
+        e.close();
         assertEquals(3, i);
     }
 
@@ -583,7 +583,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
             assertEquals(C4Constants.LiteCoreError.INVALID_PARAMETER, ex.code);
         }
-        e.free();
+        e.close();
     }
 
     // - DB Query ANY nested
@@ -621,7 +621,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.beginTransaction();
         try { commit = true; }
         finally { c4Database.endTransaction(commit); }
-        e.free();
+        e.close();
 
     }
 }

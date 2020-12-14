@@ -72,7 +72,7 @@ public class C4BlobStoreTest extends C4BaseTest {
         if (store != null) {
             try { store.delete(); }
             catch (LiteCoreException e) { throw new IllegalStateException("Failed deleting blob store", e); }
-            finally { store.free(); }
+            finally { store.close(); }
         }
 
         if (blobDir != null) { FileUtils.eraseFileOrDir(blobDir); }

@@ -15,10 +15,12 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -37,7 +39,7 @@ public class C4Document extends C4NativePeer {
 
     C4Document(long db, long sequence) throws LiteCoreException { this(getBySequence(db, sequence)); }
 
-    C4Document(long handle) { super(handle); }
+    C4Document(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -118,6 +120,10 @@ public class C4Document extends C4NativePeer {
         return withPeerThrows(null, h -> bodyAsJSON(h, canonical));
     }
 
+    @CallSuper
+    @Override
+    public void close() { closePeer(null); }
+
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
@@ -125,7 +131,7 @@ public class C4Document extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { free(); }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
     }
 
@@ -136,14 +142,6 @@ public class C4Document extends C4NativePeer {
     // - Lifecycle
 
     byte[] getSelectedBody() { return withPeer(null, C4Document::getSelectedBody); }
-
-    @VisibleForTesting
-    void free() {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-
-        free(handle);
-    }
 
     // - Revisions
 
@@ -192,6 +190,13 @@ public class C4Document extends C4NativePeer {
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private boolean accessRemoved() { return isSelectedRevFlags(C4Constants.RevisionFlags.PURGED); }
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        free(peer);
+    }
 
     //-------------------------------------------------------------------------
     // native methods

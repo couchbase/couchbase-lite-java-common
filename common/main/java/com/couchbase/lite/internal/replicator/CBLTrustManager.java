@@ -39,7 +39,7 @@ public final class CBLTrustManager implements X509TrustManager {
     private final boolean acceptOnlySelfSignedServerCertificate;
 
     @NonNull
-    private final Fn.Consumer<List<Certificate>> serverCertslistener;
+    private final Fn.Consumer<List<Certificate>> serverCertsListener;
 
     @NonNull
     private final AtomicReference<X509TrustManager> defaultTrustManager = new AtomicReference<>();
@@ -47,21 +47,21 @@ public final class CBLTrustManager implements X509TrustManager {
     public CBLTrustManager(
         @Nullable byte[] pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertslistener) {
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
         this.pinnedServerCertificate = (pinnedServerCert != null ? pinnedServerCert.clone() : null);
         this.acceptOnlySelfSignedServerCertificate = acceptOnlySelfSignedServerCertificate;
-        this.serverCertslistener = serverCertslistener;
+        this.serverCertsListener = serverCertsListener;
     }
 
     @Override
-    public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+    public void checkClientTrusted(X509Certificate[] chain, String authType) {
         throw new UnsupportedOperationException("Checking Client Trust is a server operation");
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         try { doCheckServerTrusted(chain, authType); }
-        finally { serverCertslistener.accept(Collections.unmodifiableList(Arrays.asList(chain))); }
+        finally { serverCertsListener.accept(Collections.unmodifiableList(Arrays.asList(chain))); }
     }
 
     private void doCheckServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {

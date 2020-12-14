@@ -15,18 +15,26 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 
 
+/**
+ * Unfortunately, the build system depends on having all the classes with native methods
+ * in the main source tree.  Moving this class to the test tree would require major changes
+ */
+@VisibleForTesting
 public class C4RawDocument extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4RawDocument(long handle) { super(handle); }
+    C4RawDocument(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -40,11 +48,9 @@ public class C4RawDocument extends C4NativePeer {
 
     public byte[] body() { return body(getPeer()); }
 
-    public void free() throws LiteCoreException {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-        C4Database.rawFreeDocument(handle);
-    }
+    @CallSuper
+    @Override
+    public void close() throws LiteCoreException { closePeer(null); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -53,17 +59,28 @@ public class C4RawDocument extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { free(); }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
+    }
+
+    //-------------------------------------------------------------------------
+    // private methods
+    //-------------------------------------------------------------------------
+
+    private void closePeer(@Nullable LogDomain domain) throws LiteCoreException {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        C4Database.rawFreeDocument(peer);
     }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    static native String key(long rawDoc);
+    private static native String key(long peer);
 
-    static native String meta(long rawDoc);
+    private static native String meta(long peer);
 
-    static native byte[] body(long rawDoc);
+    private static native byte[] body(long peer);
 }

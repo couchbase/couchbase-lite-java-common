@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
@@ -22,7 +23,6 @@ import android.support.annotation.VisibleForTesting;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.support.Log;
 
 
 public class C4Query extends C4NativePeer {
@@ -37,12 +37,9 @@ public class C4Query extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    // Must be called holding the DB lock
-    public void free() {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-        free(handle);
-    }
+    @CallSuper
+    @Override
+    public void close() { closePeer(null); }
 
     //////// RUNNING QUERIES:
 
@@ -61,8 +58,7 @@ public class C4Query extends C4NativePeer {
 
     @SuppressWarnings("PMD.MethodReturnsInternalArray")
     public byte[] getFullTextMatched(C4FullTextMatch match) throws LiteCoreException {
-        final long matchPeer = match.handle;
-        return withPeerThrows(null, h -> getFullTextMatched(h, matchPeer));
+        return withPeerThrows(null, h -> getFullTextMatched(h, match.getPeer()));
     }
 
     //-------------------------------------------------------------------------
@@ -72,16 +68,8 @@ public class C4Query extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try {
-            final long handle = getPeerAndClear();
-            if (handle != 0L) {
-                Log.i(LogDomain.DATABASE, "Finalizing a C4Query that has not been freed: " + handle);
-                free(handle);
-            }
-        }
-        finally {
-            super.finalize();
-        }
+        try { closePeer(LogDomain.QUERY); }
+        finally { super.finalize(); }
     }
 
     //-------------------------------------------------------------------------
@@ -93,6 +81,25 @@ public class C4Query extends C4NativePeer {
     @VisibleForTesting
     C4QueryEnumerator run(@NonNull C4QueryOptions opts) throws LiteCoreException {
         try (FLSliceResult params = FLSliceResult.getManagedSliceResult()) { return run(opts, params); }
+    }
+
+    //-------------------------------------------------------------------------
+    // Private methods
+    //-------------------------------------------------------------------------
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        // Despite the fact that the documentation insists that this call be made
+        // while holding the database lock, doing so can block the finalizer thread
+        // causing it to abort.
+        // Jens Alfke says: in practice it should be ok.
+        // Jim Borden says:
+        //   If the object is being finalized, it is not possible for client
+        //   code to affect the query: in this case, freeing wo/ the lock is ok.
+        //   That's how .NET does it.
+        free(peer);
     }
 
     //-------------------------------------------------------------------------
@@ -123,31 +130,31 @@ public class C4Query extends C4NativePeer {
     /**
      * Free C4Query* instance
      *
-     * @param handle (C4Query*)
+     * @param peer (C4Query*)
      */
-    private static native void free(long handle);
+    private static native void free(long peer);
 
     /**
-     * @param handle (C4Query*)
+     * @param peer (C4Query*)
      * @return C4StringResult
      */
     @Nullable
-    private static native String explain(long handle);
+    private static native String explain(long peer);
 
     /**
      * Returns the number of columns (the values specified in the WHAT clause) in each row.
      *
-     * @param handle (C4Query*)
+     * @param peer (C4Query*)
      * @return the number of columns
      */
-    private static native int columnCount(long handle);
+    private static native int columnCount(long peer);
 
-    private static native long run(long handle, boolean rankFullText, /*FLSliceResult*/ long parameters)
+    private static native long run(long peer, boolean rankFullText, /*FLSliceResult*/ long parameters)
         throws LiteCoreException;
 
     /**
      * Given a docID and sequence number from the enumerator, returns the text that was emitted
      * during indexing.
      */
-    private static native byte[] getFullTextMatched(long handle, long fullTextMatch) throws LiteCoreException;
+    private static native byte[] getFullTextMatched(long peer, long fullTextMatch) throws LiteCoreException;
 }

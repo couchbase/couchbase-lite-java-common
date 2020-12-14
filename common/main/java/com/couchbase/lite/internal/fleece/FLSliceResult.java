@@ -16,10 +16,10 @@
 package com.couchbase.lite.internal.fleece;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 
 
@@ -29,13 +29,13 @@ import com.couchbase.lite.internal.utils.ClassUtils;
  * and must call the close() method to release it. The "unmanaged" version's peer belongs to Core:
  * it will be release by the native code.
  */
-public abstract class FLSliceResult extends C4NativePeer implements AutoCloseable {
+public abstract class FLSliceResult extends C4NativePeer {
 
     // unmanaged: the native code will free it
     static final class UnmanagedFLSliceResult extends FLSliceResult {
         UnmanagedFLSliceResult() { super(); }
 
-        UnmanagedFLSliceResult(long handle) { super(handle); }
+        UnmanagedFLSliceResult(long peer) { super(peer); }
 
         @Override
         public void close() { getPeerAndClear(); }
@@ -45,27 +45,23 @@ public abstract class FLSliceResult extends C4NativePeer implements AutoCloseabl
     static final class ManagedFLSliceResult extends FLSliceResult {
         ManagedFLSliceResult() { super(); }
 
-        ManagedFLSliceResult(long handle) { super(handle); }
+        ManagedFLSliceResult(long peer) { super(peer); }
 
         @Override
-        public void close() { free(); }
+        public void close() { closePeer(null); }
 
         @SuppressWarnings("NoFinalizer")
         @Override
         protected void finalize() throws Throwable {
-            try {
-                if (free()) { Log.i(LogDomain.DATABASE, "FLSliceResult was not closed: " + this); }
-            }
+            try { closePeer(LogDomain.DATABASE); }
             finally { super.finalize(); }
         }
 
-        private boolean free() {
-            final long hdl = getPeerAndClear();
-            if (hdl == 0L) { return false; }
+        private void closePeer(@Nullable LogDomain domain) {
+            final long peer = getPeerAndClear();
+            if (verifyPeerClosed(peer, domain)) { return; }
 
-            free(hdl);
-
-            return true;
+            free(peer);
         }
     }
 
@@ -75,20 +71,20 @@ public abstract class FLSliceResult extends C4NativePeer implements AutoCloseabl
 
     public static FLSliceResult getUnmanagedSliceResult() { return new UnmanagedFLSliceResult(); }
 
-    public static FLSliceResult getUnmanagedSliceResult(long handle) { return new UnmanagedFLSliceResult(handle); }
+    public static FLSliceResult getUnmanagedSliceResult(long peer) { return new UnmanagedFLSliceResult(peer); }
 
     public static FLSliceResult getManagedSliceResult() { return new ManagedFLSliceResult(); }
 
-    public static FLSliceResult getManagedSliceResult(long handle) { return new ManagedFLSliceResult(handle); }
+    public static FLSliceResult getManagedSliceResult(long peer) { return new ManagedFLSliceResult(peer); }
 
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
-    private FLSliceResult() { super(init()); }
+    private FLSliceResult() { this(init()); }
 
-    private FLSliceResult(long handle) { super(handle); }
+    private FLSliceResult(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // Public methods
@@ -96,7 +92,7 @@ public abstract class FLSliceResult extends C4NativePeer implements AutoCloseabl
 
     @NonNull
     @Override
-    public String toString() { return "FLSliceResult{" + ClassUtils.objId(this) + "/" + getPeerUnchecked() + "}"; }
+    public String toString() { return "FLSliceResult{" + ClassUtils.objId(this) + "/" + super.toString() + "}"; }
 
     @Override
     public abstract void close();

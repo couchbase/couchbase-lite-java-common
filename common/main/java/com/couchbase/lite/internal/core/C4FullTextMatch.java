@@ -19,45 +19,39 @@ import java.util.Arrays;
 import java.util.List;
 
 
-public class C4FullTextMatch {
-    static native long dataSource(long handle);
-
-    static native long property(long handle);
-
-    static native long term(long handle);
-
-    static native long start(long handle);
-
-    static native long length(long handle);
-    //-------------------------------------------------------------------------
-    // Member Variables
-    //-------------------------------------------------------------------------
-    final long handle; // hold pointer to C4FullTextMatch
+public class C4FullTextMatch extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
-    C4FullTextMatch(long handle) {
-        this.handle = handle;
-    }
+    C4FullTextMatch(long peer) { super(peer); }
 
-    public long dataSource() { return dataSource(handle); }
+    public long dataSource() { return dataSource(getPeerUnchecked()); }
 
-    public long property() { return property(handle); }
+    public long property() { return property(getPeerUnchecked()); }
 
-    public long term() {
-        return term(handle);
-    }
+    public long term() { return term(getPeerUnchecked()); }
 
-    public long start() {
-        return start(handle);
-    }
+    public long start() { return start(getPeerUnchecked()); }
 
-    public long length() {
-        return length(handle);
-    }
+    public long length() { return length(getPeerUnchecked()); }
 
-    public List<Long> toList() {
-        return Arrays.asList(dataSource(), property(), term(), start(), length());
-    }
+    public List<Long> toList() { return Arrays.asList(dataSource(), property(), term(), start(), length()); }
+
+    @Override
+    public void close() { }
+
+    //-------------------------------------------------------------------------
+    // Native methods
+    //-------------------------------------------------------------------------
+
+    private static native long dataSource(long peer);
+
+    private static native long property(long peer);
+
+    private static native long term(long peer);
+
+    private static native long start(long peer);
+
+    private static native long length(long peer);
 }

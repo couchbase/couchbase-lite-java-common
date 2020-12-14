@@ -65,7 +65,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                     String[] history = list.toArray(new String[0]);
                     C4Document doc = c4Database.put(json2fleece(json), docID, 0, true, false, history, true, 0, 0);
                     assertNotNull(doc);
-                    doc.free();
+                    doc.close();
                 }
                 commit = true;
             }
@@ -86,7 +86,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         // No start or end ID:
         int iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT;
         iteratorFlags &= ~C4Constants.EnumeratorFlags.INCLUDE_BODIES;
-        C4DocEnumerator e = c4Database.enumerateAllDocs(iteratorFlags);
+        C4DocEnumerator e = enumerateAllDocs(c4Database, iteratorFlags);
         C4Document doc;
         int i = 0;
         while ((doc = nextDocument(e)) != null) {
@@ -94,7 +94,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                 i++;
             }
             finally {
-                doc.free();
+                doc.close();
             }
         }
         assertEquals(DOC_NUM, i);

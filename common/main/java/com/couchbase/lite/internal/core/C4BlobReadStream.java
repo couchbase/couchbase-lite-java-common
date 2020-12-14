@@ -15,21 +15,24 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 
 
 /**
  * An open stream for reading data from a blob.
  */
-public class C4BlobReadStream extends C4NativePeer implements AutoCloseable {
+public class C4BlobReadStream extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4BlobReadStream(long handle) { super(handle); }
+    C4BlobReadStream(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -61,11 +64,9 @@ public class C4BlobReadStream extends C4NativePeer implements AutoCloseable {
     /**
      * Closes a read-stream.
      */
-    public void close() {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-        close(handle);
-    }
+    @CallSuper
+    @Override
+    public void close() { closePeer(null); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -73,20 +74,32 @@ public class C4BlobReadStream extends C4NativePeer implements AutoCloseable {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { close(); }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
+    }
+
+    //-------------------------------------------------------------------------
+    // private methods
+    //-------------------------------------------------------------------------
+
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        close(peer);
     }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
-    private static native byte[] read(long readStream, long maxBytesToRead) throws LiteCoreException;
+    private static native byte[] read(long peer, long maxBytesToRead) throws LiteCoreException;
 
-    private static native int read(long readStream, byte[] b, int offset, long maxBytesToRead) throws LiteCoreException;
+    private static native int read(long peer, byte[] b, int offset, long maxBytesToRead) throws LiteCoreException;
 
-    private static native long getLength(long readStream) throws LiteCoreException;
+    private static native long getLength(long peer) throws LiteCoreException;
 
-    private static native void seek(long readStream, long position) throws LiteCoreException;
+    private static native void seek(long peer, long position) throws LiteCoreException;
 
-    private static native void close(long readStream);
+    private static native void close(long peer);
 }

@@ -570,6 +570,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
         final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
         root = newRoot;
+
         synchronized (db.getLock()) { internalDict = (Dictionary) newRoot.asNative(); }
     }
 }

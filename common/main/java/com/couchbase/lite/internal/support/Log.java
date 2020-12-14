@@ -420,13 +420,12 @@ public final class Log {
                     break;
 
                 default:
-                    Log.i(LogDomain.DATABASE, "Unexepected log domain: " + domain);
+                    Log.i(LogDomain.DATABASE, "Unexpected log domain: " + domain);
                     break;
             }
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
     private static void log(
         @NonNull LogLevel level,
         @NonNull LogDomain domain,

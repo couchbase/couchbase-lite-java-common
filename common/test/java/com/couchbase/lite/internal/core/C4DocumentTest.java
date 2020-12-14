@@ -83,7 +83,7 @@ public class C4DocumentTest extends C4BaseTest {
         newRevID = "1-f00f00";
         assertFalse(doc.selectFirstPossibleAncestorOf(newRevID));
 
-        doc.free();
+        doc.close();
     }
 
     // - "Document CreateVersionedDoc"
@@ -92,7 +92,7 @@ public class C4DocumentTest extends C4BaseTest {
         // Try reading doc with mustExist=true, which should fail:
         try {
             C4Document doc = c4Database.get(DOC_ID, true);
-            doc.free();
+            doc.close();
             fail();
         }
         catch (LiteCoreException lce) {
@@ -107,7 +107,7 @@ public class C4DocumentTest extends C4BaseTest {
         assertEquals(DOC_ID, doc.getDocID());
         assertNull(doc.getRevID());
         assertNull(doc.getSelectedRevID());
-        doc.free();
+        doc.close();
 
         boolean commit = false;
         c4Database.beginTransaction();
@@ -117,7 +117,7 @@ public class C4DocumentTest extends C4BaseTest {
             assertEquals(REV_ID_1, doc.getRevID());
             assertEquals(REV_ID_1, doc.getSelectedRevID());
             assertArrayEquals(fleeceBody, doc.getSelectedBody());
-            doc.free();
+            doc.close();
             commit = true;
         }
         finally {
@@ -134,7 +134,7 @@ public class C4DocumentTest extends C4BaseTest {
         assertEquals(1, doc.getSelectedSequence());
         assertArrayEquals(fleeceBody, doc.getSelectedBody());
 
-        doc.free();
+        doc.close();
 
         // Get the doc by its sequence:
         doc = c4Database.getBySequence(1);
@@ -146,7 +146,7 @@ public class C4DocumentTest extends C4BaseTest {
         assertEquals(1, doc.getSelectedSequence());
         assertArrayEquals(fleeceBody, doc.getSelectedBody());
 
-        doc.free();
+        doc.close();
     }
 
     // - "Document CreateMultipleRevisions"
@@ -176,7 +176,7 @@ public class C4DocumentTest extends C4BaseTest {
         assertNull(doc.getSelectedBody());
         assertFalse(doc.hasRevisionBody());
         assertFalse(doc.selectParentRevision());
-        doc.free();
+        doc.close();
 
         // Add a 3rd revision:
         createRev(DOC_ID, REV_ID_3, kFleeceBody3);
@@ -191,7 +191,7 @@ public class C4DocumentTest extends C4BaseTest {
         assertEquals(2, doc.getSelectedSequence());
         assertArrayEquals(kFleeceBody2, doc.getSelectedBody());
         assertEquals(doc.getSelectedFlags(), C4Constants.RevisionFlags.KEEP_BODY);
-        doc.free();
+        doc.close();
 
         // Purge doc
         boolean commit = false;
@@ -207,7 +207,7 @@ public class C4DocumentTest extends C4BaseTest {
             c4Database.endTransaction(commit);
         }
 
-        doc.free();
+        doc.close();
     }
 
     // - "Document maxRevTreeDepth"
@@ -232,7 +232,7 @@ public class C4DocumentTest extends C4BaseTest {
                 String[] history = {doc.getRevID()};
                 C4Document savedDoc = c4Database.put(fleeceBody, doc.getDocID(), 0, false, false, history, true, 30, 0);
                 assertNotNull(savedDoc);
-                doc.free();
+                doc.close();
                 doc = savedDoc;
             }
             commit = true;
@@ -251,7 +251,7 @@ public class C4DocumentTest extends C4BaseTest {
         while (doc.selectParentRevision());
         Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, "Document rev tree depth is %d", nRevs));
         assertEquals(30, nRevs);
-        doc.free();
+        doc.close();
     }
 
     // - "Document Put"
@@ -268,7 +268,7 @@ public class C4DocumentTest extends C4BaseTest {
             assertEquals(kExpectedRevID, doc.getRevID());
             assertEquals(C4Constants.DocumentFlags.EXISTS, doc.getFlags());
             assertEquals(kExpectedRevID, doc.getSelectedRevID());
-            doc.free();
+            doc.close();
 
             // Update doc:
             String[] history = {kExpectedRevID};
@@ -280,7 +280,7 @@ public class C4DocumentTest extends C4BaseTest {
             assertEquals(kExpectedRevID2, doc.getRevID());
             assertEquals(C4Constants.DocumentFlags.EXISTS, doc.getFlags());
             assertEquals(kExpectedRevID2, doc.getSelectedRevID());
-            doc.free();
+            doc.close();
 
             // Insert existing rev that conflicts:
             String kConflictRevID = "2-deadbeef";
@@ -291,7 +291,7 @@ public class C4DocumentTest extends C4BaseTest {
             assertEquals(kExpectedRevID2, doc.getRevID());
             assertEquals(C4Constants.DocumentFlags.EXISTS | C4Constants.DocumentFlags.CONFLICTED, doc.getFlags());
             assertEquals(kConflictRevID, doc.getSelectedRevID());
-            doc.free();
+            doc.close();
 
             commit = true;
         }
@@ -334,7 +334,7 @@ public class C4DocumentTest extends C4BaseTest {
             assertNotNull(updatedDoc);
             assertEquals(kExpectedRevID, doc.getSelectedRevID());
             assertEquals(kExpectedRevID, doc.getRevID());
-            doc.free();
+            doc.close();
             doc = updatedDoc;
             commit = true;
         }
@@ -376,8 +376,8 @@ public class C4DocumentTest extends C4BaseTest {
             c4Database.endTransaction(false);
         }
 
-        doc.free();
-        doc2.free();
+        doc.close();
+        doc2.close();
     }
 
     // - "Document Conflict"
@@ -449,7 +449,7 @@ public class C4DocumentTest extends C4BaseTest {
 
             verification.verify(doc);
 
-            doc.free();
+            doc.close();
             commit = true;
         }
         finally {

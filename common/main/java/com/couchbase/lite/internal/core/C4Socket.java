@@ -63,7 +63,7 @@ public abstract class C4Socket extends C4NativePeer {
     // Static Variables
     //-------------------------------------------------------------------------
 
-    // Lookup table: the handle to a native socket object maps to its Java companion
+    // Lookup table: maps a handle to a peer native socket to its Java companion
     private static final Map<Long, C4Socket> HANDLES_TO_SOCKETS = Collections.synchronizedMap(new HashMap<>());
 
 
@@ -73,35 +73,35 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     static void open(
-        long handle,
+        long peer,
         Object context,
         @Nullable String scheme,
         @Nullable String hostname,
         int port,
         @Nullable String path,
         byte[] options) {
-        C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
-        Log.d(LOG_DOMAIN, "C4Socket.open @" + handle + ": " + socket + ", " + context);
+        C4Socket socket = HANDLES_TO_SOCKETS.get(peer);
+        Log.d(LOG_DOMAIN, "C4Socket.open @%x: %s, %s", peer, socket, context);
 
         if (socket == null) {
             if (!(context instanceof SocketFactory)) {
                 throw new IllegalArgumentException("Context is not a socket factory: " + context);
             }
-            socket = ((SocketFactory) context).createSocket(handle, scheme, hostname, port, path, options);
+            socket = ((SocketFactory) context).createSocket(peer, scheme, hostname, port, path, options);
         }
 
         socket.openSocket();
     }
 
     // This method is called by reflection.  Don't change its signature.
-    static void write(long handle, byte[] allocatedData) {
+    static void write(long peer, byte[] allocatedData) {
         if (allocatedData == null) {
-            Log.v(LOG_DOMAIN, "C4Socket.callback.write: allocatedData is null");
+            Log.v(LOG_DOMAIN, "C4Socket.write: allocatedData is null");
             return;
         }
 
-        final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
-        Log.d(LOG_DOMAIN, "C4Socket.write @" + handle + ": " + socket);
+        final C4Socket socket = HANDLES_TO_SOCKETS.get(peer);
+        Log.d(LOG_DOMAIN, "C4Socket.write @%x: %s", peer, socket);
         if (socket == null) { return; }
 
         socket.send(allocatedData);
@@ -109,9 +109,9 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     // NOTE: No further action is required?
-    static void completedReceive(long handle, long byteCount) {
-        final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
-        Log.d(LOG_DOMAIN, "C4Socket.completedReceive @" + handle + ": " + socket);
+    static void completedReceive(long peer, long byteCount) {
+        final C4Socket socket = HANDLES_TO_SOCKETS.get(peer);
+        Log.d(LOG_DOMAIN, "C4Socket.receive @%x: %s", peer, socket);
         if (socket == null) { return; }
 
         socket.completedReceive(byteCount);
@@ -119,18 +119,20 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     // NOTE: close(long) method should not be called.
-    static void close(long handle) {
-        final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
-        Log.d(LOG_DOMAIN, "C4Socket.close @" + handle + ": " + socket);
+    static void close(long peer) {
+        final C4Socket socket = HANDLES_TO_SOCKETS.get(peer);
+        Log.d(LOG_DOMAIN, "C4Socket.close @%x: %s", peer, socket);
         if (socket == null) { return; }
 
         socket.close();
     }
 
     // This method is called by reflection.  Don't change its signature.
-    static void requestClose(long handle, int status, @Nullable String message) {
-        final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
-        Log.d(LOG_DOMAIN, "C4Socket.requestClose @" + handle + ": " + socket + " #" + status + "(" + message + ")");
+    static void requestClose(long peer, int status, @Nullable String message) {
+        final C4Socket socket = HANDLES_TO_SOCKETS.get(peer);
+        Log.d(
+            LOG_DOMAIN,
+            "C4Socket.requestClose @%x: %s, (%d) %s", peer, socket, status, message);
         if (socket == null) { return; }
 
         socket.requestClose(status, message);
@@ -138,9 +140,9 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     // NOTE: close(long) method should not be called.
-    static void dispose(long handle) {
-        final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
-        Log.d(LOG_DOMAIN, "C4Socket.dispose @" + handle + ": " + socket);
+    static void dispose(long peer) {
+        final C4Socket socket = HANDLES_TO_SOCKETS.get(peer);
+        Log.d(LOG_DOMAIN, "C4Socket.dispose @%x: %s", peer, socket);
         if (socket == null) { return; }
 
         release(socket);
@@ -151,15 +153,15 @@ public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private static void bind(@NonNull C4Socket socket) {
-        final long handle = socket.getPeer();
-        HANDLES_TO_SOCKETS.put(handle, socket);
-        Log.d(LOG_DOMAIN, "C4Socket.bind @" + handle + ": " + HANDLES_TO_SOCKETS.size());
+        final long peer = socket.getPeer();
+        HANDLES_TO_SOCKETS.put(peer, socket);
+        Log.d(LOG_DOMAIN, "C4Socket.bind @%x: %d", peer, HANDLES_TO_SOCKETS.size());
     }
 
     private static void release(@NonNull C4Socket socket) {
-        final long handle = socket.getPeer();
-        HANDLES_TO_SOCKETS.remove(handle);
-        Log.d(LOG_DOMAIN, "C4Socket.release @" + handle + ": " + HANDLES_TO_SOCKETS.size());
+        final long peer = socket.getPeer();
+        HANDLES_TO_SOCKETS.remove(peer);
+        Log.d(LOG_DOMAIN, "C4Socket.release @%x: %d", peer, HANDLES_TO_SOCKETS.size());
     }
 
 
@@ -167,27 +169,33 @@ public abstract class C4Socket extends C4NativePeer {
     // constructors
     //-------------------------------------------------------------------------
 
-    protected C4Socket(long handle) {
-        super(handle);
+    protected C4Socket(long peer) {
+        super(peer);
         bind(this);
     }
 
+    // !!! This should be re-written.  There is a vector on the native side
+    // that is holding global refs to these objects.
     protected C4Socket(String schema, String host, int port, String path, int framing) {
         setPeer(fromNative(this, schema, host, port, path, framing));
         bind(this);
     }
 
-    //-------------------------------------------------------------------------
+    @NonNull
+    @Override
+    public String toString() { return "C4Socket{" + super.toString() + "}"; }
+
+//-------------------------------------------------------------------------
     // Abstract methods
     //-------------------------------------------------------------------------
+
+    public abstract void close();
 
     protected abstract void openSocket();
 
     protected abstract void send(byte[] allocatedData);
 
     protected abstract void completedReceive(long byteCount);
-
-    protected abstract void close();
 
     protected abstract void requestClose(int status, @Nullable String message);
 
@@ -198,43 +206,43 @@ public abstract class C4Socket extends C4NativePeer {
     protected boolean released() { return getPeerUnchecked() == 0L; }
 
     protected final void opened() {
-        final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.opened @%x", handle);
-        if (handle == 0) { return; }
-        opened(handle);
+        final long peer = getPeerUnchecked();
+        Log.d(LOG_DOMAIN, "C4Socket.opened @%x", peer);
+        if (peer == 0) { return; }
+        opened(peer);
     }
 
     protected final void completedWrite(long byteCount) {
-        final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.completedWrite @%x: %d", handle, byteCount);
-        if (handle == 0) { return; }
-        completedWrite(handle, byteCount);
+        final long peer = getPeerUnchecked();
+        Log.d(LOG_DOMAIN, "C4Socket.completedWrite @%x: %d", peer, byteCount);
+        if (peer == 0) { return; }
+        completedWrite(peer, byteCount);
     }
 
     protected final void received(byte[] data) {
-        final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.received @%x: %d", handle, data.length);
-        if (handle == 0) { return; }
-        received(handle, data);
+        final long peer = getPeerUnchecked();
+        Log.d(LOG_DOMAIN, "C4Socket.received @%x: %d", peer, data.length);
+        if (peer == 0) { return; }
+        received(peer, data);
     }
 
     protected final void closed(int errorDomain, int errorCode, String message) {
-        final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.closed @%x: %d", handle, errorCode);
-        if (handle == 0) { return; }
-        closed(handle, errorDomain, errorCode, message);
+        final long peer = getPeerUnchecked();
+        Log.d(LOG_DOMAIN, "C4Socket.closed @%x: %d", peer, errorCode);
+        if (peer == 0) { return; }
+        closed(peer, errorDomain, errorCode, message);
     }
 
     protected final void closeRequested(int status, String message) {
-        final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.closeRequested @%x: %d(%s)", handle, status, message);
-        if (handle == 0) { return; }
-        closeRequested(handle, status, message);
+        final long peer = getPeerUnchecked();
+        Log.d(LOG_DOMAIN, "C4Socket.closeRequested @%x: (%d)%s", peer, status, message);
+        if (peer == 0) { return; }
+        closeRequested(peer, status, message);
     }
 
     protected final void gotHTTPResponse(int httpStatus, byte[] responseHeadersFleece) {
         final long handle = getPeerUnchecked();
-        Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse  @%x: %d", handle, httpStatus);
+        Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse @%x: %d", handle, httpStatus);
         if (handle == 0) { return; }
         gotHTTPResponse(handle, httpStatus, responseHeadersFleece);
     }

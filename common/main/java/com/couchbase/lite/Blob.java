@@ -108,7 +108,7 @@ public final class Blob implements FLEncodable {
         public boolean markSupported() { return false; }
 
         @Override
-        public synchronized void mark(int readlimit) {
+        public synchronized void mark(int readLimit) {
             throw new UnsupportedOperationException("'mark()' not supported");
         }
 
@@ -187,7 +187,7 @@ public final class Blob implements FLEncodable {
             }
 
             if (store != null) {
-                store.free();
+                store.close();
                 store = null;
             }
         }
@@ -482,14 +482,12 @@ public final class Blob implements FLEncodable {
     protected void finalize() throws Throwable {
         try {
             final InputStream stream = blobContentStream;
-            if (stream != null) {
-                try { stream.close(); }
-                catch (IOException ignore) { }
-            }
+            if (stream == null) { return; }
+
+            try { stream.close(); }
+            catch (IOException ignore) { }
         }
-        finally {
-            super.finalize();
-        }
+        finally { super.finalize(); }
     }
 
     //---------------------------------------------
@@ -517,11 +515,8 @@ public final class Blob implements FLEncodable {
     private byte[] getContentFromDatabase() {
         Preconditions.assertNotNull(database, "database");
 
-        C4BlobStore blobStore = null;
-        // = null;
         final byte[] newContent;
-        try {
-            blobStore = database.getBlobStore();
+        try (C4BlobStore blobStore = database.getBlobStore()) {
             try (C4BlobKey key = new C4BlobKey(blobDigest);
                  FLSliceResult res = blobStore.getContents(key)) {
                 newContent = res.getBuf();
@@ -531,9 +526,6 @@ public final class Blob implements FLEncodable {
             final String msg = "Failed to read content from database for digest: " + blobDigest;
             Log.e(DOMAIN, msg, e);
             throw new IllegalStateException(msg, e);
-        }
-        finally {
-            if (blobStore != null) { blobStore.free(); }
         }
 
         // cache content if less than 8K
@@ -560,9 +552,7 @@ public final class Blob implements FLEncodable {
             throw new IllegalStateException(Log.lookupStandardMessage("BlobDifferentDatabase"));
         }
 
-        C4BlobStore store = null;
-        try {
-            store = db.getBlobStore();
+        try (C4BlobStore store = db.getBlobStore()) {
             try (C4BlobKey key = getBlobKey(store)) { this.blobDigest = key.toString(); }
             this.database = db;
         }
@@ -570,9 +560,6 @@ public final class Blob implements FLEncodable {
             this.database = null;
             this.blobDigest = null;
             throw new IllegalStateException("Failed reading blob content from database", e);
-        }
-        finally {
-            if (store != null) { store.free(); }
         }
     }
 

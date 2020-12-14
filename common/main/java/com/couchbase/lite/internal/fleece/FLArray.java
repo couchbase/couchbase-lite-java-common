@@ -23,15 +23,15 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class FLArray {
-    private final long handle; // pointer to FLArray
+    private final long peer; // pointer to FLArray
 
     //-------------------------------------------------------------------------
     // constructor
     //-------------------------------------------------------------------------
 
-    public FLArray(long handle) {
-        Preconditions.assertNotZero(handle, "handle");
-        this.handle = handle;
+    public FLArray(long peer) {
+        Preconditions.assertNotZero(peer, "peer");
+        this.peer = peer;
     }
 
     //-------------------------------------------------------------------------
@@ -39,11 +39,11 @@ public class FLArray {
     //-------------------------------------------------------------------------
 
     /**
-     * Returns the number of items in an array; 0 if handle is null.
+     * Returns the number of items in an array; 0 if peer is null.
      *
-     * @return the number of items in an array; 0 if handle is null.
+     * @return the number of items in an array; 0 if peer is null.
      */
-    public long count() { return count(handle); }
+    public long count() { return count(peer); }
 
     /**
      * Returns an value at an array index, or null if the index is out of range.
@@ -51,14 +51,14 @@ public class FLArray {
      * @param index index for value
      * @return the FLValue at index
      */
-    public FLValue get(long index) { return new FLValue(get(handle, index)); }
+    public FLValue get(long index) { return new FLValue(get(peer, index)); }
 
     public List<Object> asArray() { return asTypedArray(); }
 
     @SuppressWarnings("unchecked")
     public <T> List<T> asTypedArray() {
         final List<T> results = new ArrayList<>();
-        final FLArrayIterator itr = new FLArrayIterator();
+        final FLArrayIterator itr = FLArrayIterator.getManagedArrayIterator();
 
         itr.begin(this);
         FLValue value;
@@ -74,7 +74,7 @@ public class FLArray {
     // package level access
     //-------------------------------------------------------------------------
 
-    <T> T withContent(Fn.Function<Long, T> fn) { return fn.apply(handle); }
+    <T> T withContent(Fn.Function<Long, T> fn) { return fn.apply(peer); }
 
     //-------------------------------------------------------------------------
     // native methods

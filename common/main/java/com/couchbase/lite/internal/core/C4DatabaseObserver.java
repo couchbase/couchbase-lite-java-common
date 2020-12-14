@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
+import android.support.annotation.Nullable;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,8 +34,8 @@ public class C4DatabaseObserver extends C4NativePeer {
     // Static Variables
     //-------------------------------------------------------------------------
 
-    // Long: handle of C4DatabaseObserver native address
-    // C4DatabaseObserver: Java class holds handle
+    // Long: handle to C4DatabaseObserver's native peer
+    // C4DatabaseObserver: The Java peer (the instance holding the handle that is the key)
     private static final Map<Long, C4DatabaseObserver> REVERSE_LOOKUP_TABLE
         = Collections.synchronizedMap(new HashMap<>());
 
@@ -41,11 +44,10 @@ public class C4DatabaseObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    @SuppressWarnings("unused")
-    static void callback(long handle) {
-        Log.d(LogDomain.DATABASE, "C4DatabaseObserver.callback @" + Long.toHexString(handle));
+    static void callback(long peer) {
+        Log.d(LogDomain.DATABASE, "C4DatabaseObserver.callback @%x", peer);
 
-        final C4DatabaseObserver obs = REVERSE_LOOKUP_TABLE.get(handle);
+        final C4DatabaseObserver obs = REVERSE_LOOKUP_TABLE.get(peer);
         if (obs == null) { return; }
 
         final C4DatabaseObserverListener listener = obs.listener;
@@ -88,22 +90,28 @@ public class C4DatabaseObserver extends C4NativePeer {
 
     public C4DatabaseChange[] getChanges(int maxChanges) { return getChanges(getPeer(), maxChanges); }
 
+    @CallSuper
+    @Override
     public void close() {
-        final long handle = getPeer();
-        if (handle == 0L) { return; }
-        REVERSE_LOOKUP_TABLE.remove(handle);
+        REVERSE_LOOKUP_TABLE.remove(getPeerUnchecked());
+        closePeer(null);
     }
 
+    // This is whistling in the wind.  Unless the entry is removed
+    // from the REVERSE_LOOKUP_TABLE, we'll never get here.
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try {
-            final long handle = getPeerAndClear();
-            if (handle != 0) { free(handle); }
-        }
-        finally {
-            super.finalize();
-        }
+        try { closePeer(LogDomain.DATABASE); }
+        finally { super.finalize(); }
+    }
+
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        free(peer);
     }
 
     //-------------------------------------------------------------------------
@@ -112,9 +120,9 @@ public class C4DatabaseObserver extends C4NativePeer {
 
     private static native long create(long db);
 
-    private static native C4DatabaseChange[] getChanges(long observer, int maxChanges);
+    private static native C4DatabaseChange[] getChanges(long peer, int maxChanges);
 
-    private static native void free(long c4observer);
+    private static native void free(long peer);
 }
 
 

@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite;
 
-import javax.annotation.Nullable;
+import android.support.annotation.Nullable;
 
 
 public class Conflict {

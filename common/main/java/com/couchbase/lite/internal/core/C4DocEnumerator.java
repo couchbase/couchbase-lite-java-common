@@ -15,9 +15,19 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
+import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
+
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 
 
+/**
+ * Unfortunately, the build system depends on having all the classes with native methods
+ * in the main source tree.  Moving this class to the test tree would require major changes
+ */
+@VisibleForTesting
 public class C4DocEnumerator extends C4NativePeer {
 
     //-------------------------------------------------------------------------
@@ -29,7 +39,7 @@ public class C4DocEnumerator extends C4NativePeer {
 
     C4DocEnumerator(long db, int flags) throws LiteCoreException { this(enumerateAllDocs(db, flags)); }
 
-    private C4DocEnumerator(long handle) { super(handle); }
+    private C4DocEnumerator(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -41,13 +51,9 @@ public class C4DocEnumerator extends C4NativePeer {
 
     public boolean next() throws LiteCoreException { return next(getPeer()); }
 
-    public void close() { close(getPeer()); }
-
-    public void free() {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-        free(handle);
-    }
+    @CallSuper
+    @Override
+    public void close() { closePeer(null); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -56,23 +62,28 @@ public class C4DocEnumerator extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { free(); }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
+    }
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        free(peer);
     }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native void close(long e);
-
-    private static native void free(long e);
+    private static native long enumerateAllDocs(long db, int flags) throws LiteCoreException;
 
     private static native long enumerateChanges(long db, long since, int flags) throws LiteCoreException;
 
-    private static native long enumerateAllDocs(long db, int flags) throws LiteCoreException;
+    private static native boolean next(long peer) throws LiteCoreException;
 
-    private static native boolean next(long e) throws LiteCoreException;
+    private static native long getDocument(long peer) throws LiteCoreException;
 
-    private static native long getDocument(long e) throws LiteCoreException;
+    private static native void free(long peer);
 }

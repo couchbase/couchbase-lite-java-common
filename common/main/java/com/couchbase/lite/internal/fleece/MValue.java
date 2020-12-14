@@ -124,12 +124,13 @@ public class MValue implements Encodable {
     }
 
     //-------------------------------------------------------------------------
-    // Private methods
+    // Protected methods
     //-------------------------------------------------------------------------
+
+    // !!! What the heck is this??
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        // ??? WAT?
         try { nativeChangeSlot(null); }
         finally { super.finalize(); }
     }

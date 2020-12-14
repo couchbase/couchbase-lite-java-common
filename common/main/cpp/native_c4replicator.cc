@@ -58,7 +58,7 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
         m_C4Replicator_statusChangedCallback = env->GetStaticMethodID(
                 cls_C4Replicator,
                 "statusChangedCallback",
-                 "(JLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
+                "(JLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
         if (!m_C4Replicator_statusChangedCallback)
             return false;
 
@@ -335,6 +335,7 @@ static bool pushFilterFunction(C4String docID, C4String revID, C4RevisionFlags f
 }
 
 extern "C" {
+
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    create
@@ -372,8 +373,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_create(
     c4Address.port = (uint16_t) jport;
     c4Address.path = path;
 
-    C4SocketFactory socketFactory = {};
-    socketFactory = socket_factory();
+    C4SocketFactory socketFactory = socket_factory();
     socketFactory.context = storeContext(env, jSocketFactoryContext);
     socketFactory.framing = (C4SocketFraming) jframing;
 

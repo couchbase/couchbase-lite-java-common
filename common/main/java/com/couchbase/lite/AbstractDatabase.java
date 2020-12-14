@@ -325,7 +325,7 @@ abstract class AbstractDatabase {
     protected AbstractDatabase(long c4dbHandle) {
         CouchbaseLiteInternal.requireInit("Cannot create database");
 
-        this.c4Database = new C4Database(c4dbHandle);
+        this.c4Database = C4Database.getUnmanagedDatabase(c4dbHandle);
         this.path = c4Database.getPath();
 
         this.name = null;
@@ -715,7 +715,7 @@ abstract class AbstractDatabase {
     public void close() throws CouchbaseLiteException {
         Log.v(DOMAIN, "Closing %s at path %s", this, path);
         if (!isOpen()) { return; }
-        shutdown(C4Database::close);
+        shutdown(C4Database::shut);
     }
 
     /**
@@ -816,9 +816,7 @@ abstract class AbstractDatabase {
             shutdownActiveProcesses(activeProcesses);
             shutdownExecutors(postExecutor, queryExecutor, 0);
         }
-        finally {
-            super.finalize();
-        }
+        finally { super.finalize(); }
     }
 
     //---------------------------------------------
@@ -1145,7 +1143,7 @@ abstract class AbstractDatabase {
         Log.v(DOMAIN, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
-            return new C4Database(
+            return C4Database.getDatabase(
                 dbFile.getPath(),
                 getDatabaseFlags(),
                 null,
@@ -1154,7 +1152,7 @@ abstract class AbstractDatabase {
                 getEncryptionKey());
         }
         catch (LiteCoreException e) {
-            if (e.code == CBLError.Code.NOT_A_DATABSE_FILE) {
+            if (e.code == CBLError.Code.NOT_A_DATABASE_FILE) {
                 throw new CouchbaseLiteException(
                     "The provided encryption key was incorrect.",
                     e,
@@ -1637,7 +1635,7 @@ abstract class AbstractDatabase {
             for (int i = 0; ; i++) {
                 verifyActiveProcesses();
                 if ((i >= DB_CLOSE_MAX_RETRIES) && (closeLatch.getCount() > 0)) {
-                    throw new IllegalStateException("Shutdown failed");
+                    throw new CouchbaseLiteException("Shutdown failed", CBLError.Domain.CBLITE, CBLError.Code.BUSY);
                 }
                 if (closeLatch.await(DB_CLOSE_WAIT_SECS, TimeUnit.SECONDS)) { break; }
             }

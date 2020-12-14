@@ -15,9 +15,12 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 
 
@@ -34,7 +37,7 @@ public class C4QueryEnumerator extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4QueryEnumerator(long handle) { super(handle); }
+    C4QueryEnumerator(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -45,8 +48,8 @@ public class C4QueryEnumerator extends C4NativePeer {
     public long getRowCount() throws LiteCoreException { return getRowCount(getPeer()); }
 
     public C4QueryEnumerator refresh() throws LiteCoreException {
-        final long newHandle = refresh(getPeer());
-        return (newHandle == 0) ? null : new C4QueryEnumerator(newHandle);
+        final long newPeer = refresh(getPeer());
+        return (newPeer == 0) ? null : new C4QueryEnumerator(newPeer);
     }
 
     /**
@@ -54,7 +57,7 @@ public class C4QueryEnumerator extends C4NativePeer {
      * The columns of this result, in the same order as in the query's `WHAT` clause.
      * NOTE: FLArrayIterator is member variable of C4QueryEnumerator. Not necessary to release.
      */
-    public FLArrayIterator getColumns() { return new FLArrayIterator(getColumns(getPeer())); }
+    public FLArrayIterator getColumns() { return FLArrayIterator.getUnmanagedArrayIterator(getColumns(getPeer())); }
 
     /**
      * Returns a bitmap in which a 1 bit represents a column whose value is MISSING.
@@ -63,11 +66,9 @@ public class C4QueryEnumerator extends C4NativePeer {
      */
     public long getMissingColumns() { return getMissingColumns(getPeer()); }
 
-    public void free() {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-        free(handle);
-    }
+    @CallSuper
+    @Override
+    public void close() { closePeer(null); }
 
     @VisibleForTesting
     public boolean seek(long rowIndex) throws LiteCoreException { return seek(getPeer(), rowIndex); }
@@ -79,7 +80,7 @@ public class C4QueryEnumerator extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { free(); }
+        try { closePeer(LogDomain.QUERY); }
         finally { super.finalize(); }
     }
 
@@ -98,27 +99,38 @@ public class C4QueryEnumerator extends C4NativePeer {
     C4FullTextMatch getFullTextMatches(int idx) { return new C4FullTextMatch(getFullTextMatch(getPeer(), idx)); }
 
     //-------------------------------------------------------------------------
+    // Private methods
+    //-------------------------------------------------------------------------
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        free(peer);
+    }
+
+    //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native boolean next(long handle) throws LiteCoreException;
+    private static native boolean next(long peer) throws LiteCoreException;
 
-    private static native long getRowCount(long handle) throws LiteCoreException;
+    private static native long getRowCount(long peer) throws LiteCoreException;
 
-    private static native boolean seek(long handle, long rowIndex) throws LiteCoreException;
+    private static native boolean seek(long peer, long rowIndex) throws LiteCoreException;
 
-    private static native long refresh(long handle) throws LiteCoreException;
+    private static native long refresh(long peer) throws LiteCoreException;
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static native void close(long handle);
+    private static native void close(long peer);
 
-    private static native void free(long handle);
+    private static native void free(long peer);
 
-    private static native long getColumns(long handle);
+    private static native long getColumns(long peer);
 
-    private static native long getMissingColumns(long handle);
+    private static native long getMissingColumns(long peer);
 
-    private static native long getFullTextMatchCount(long handle);
+    private static native long getFullTextMatchCount(long peer);
 
-    private static native long getFullTextMatch(long handle, int idx);
+    private static native long getFullTextMatch(long peer, int idx);
 }

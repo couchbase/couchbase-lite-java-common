@@ -15,10 +15,12 @@
 //
 package com.couchbase.lite.internal.core;
 
- import android.support.annotation.NonNull;
- import android.support.annotation.Nullable;
+import android.support.annotation.CallSuper;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 
 
 /**
@@ -26,7 +28,7 @@ import com.couchbase.lite.LiteCoreException;
  * <p>
  * A raw SHA-1 digest used as the unique identifier of a blob.
  */
-public class C4BlobKey extends C4NativePeer implements AutoCloseable {
+public class C4BlobKey extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -37,18 +39,15 @@ public class C4BlobKey extends C4NativePeer implements AutoCloseable {
      */
     public C4BlobKey(@Nullable String str) throws LiteCoreException { this(fromString(str)); }
 
-    C4BlobKey(long handle) { super(handle); }
+    C4BlobKey(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
 
+    @CallSuper
     @Override
-    public void close() {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-        free(handle);
-    }
+    public void close() { closePeer(null); }
 
     /**
      * Encodes a blob key to a string of the form "sha1-"+base64.
@@ -56,7 +55,7 @@ public class C4BlobKey extends C4NativePeer implements AutoCloseable {
     @NonNull
     @Override
     public String toString() {
-        final String str = toString(getPeer());
+        final String str = toString(getPeerUnchecked());
         return (str != null) ? str : "unknown!!";
     }
 
@@ -67,7 +66,7 @@ public class C4BlobKey extends C4NativePeer implements AutoCloseable {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { close(); }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
     }
 
@@ -77,6 +76,17 @@ public class C4BlobKey extends C4NativePeer implements AutoCloseable {
 
     // !!! Exposes the peer handle
     long getHandle() { return getPeer(); }
+
+    //-------------------------------------------------------------------------
+    // private methods
+    //-------------------------------------------------------------------------
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        free(peer);
+    }
 
     //-------------------------------------------------------------------------
     // native methods
@@ -91,10 +101,10 @@ public class C4BlobKey extends C4NativePeer implements AutoCloseable {
      * Encodes a blob key to a string of the form "sha1-"+base64.
      */
     @Nullable
-    private static native String toString(long blobKey);
+    private static native String toString(long peer);
 
     /**
      * Release C4BlobKey
      */
-    private static native void free(long blobKey);
+    private static native void free(long peer);
 }

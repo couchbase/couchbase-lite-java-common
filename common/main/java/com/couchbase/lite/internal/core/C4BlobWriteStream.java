@@ -15,22 +15,25 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
  * An open stream for writing data to a blob.
  */
-public class C4BlobWriteStream extends C4NativePeer implements AutoCloseable {
+public class C4BlobWriteStream extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4BlobWriteStream(long handle) { super(handle); }
+    C4BlobWriteStream(long peer) { super(peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -79,11 +82,9 @@ public class C4BlobWriteStream extends C4NativePeer implements AutoCloseable {
      * Closes a blob write-stream. If c4stream_install was not already called, the temporary file
      * will be deleted without adding the blob to the store.
      */
-    public void close() {
-        final long handle = getPeerAndClear();
-        if (handle == 0L) { return; }
-        close(handle);
-    }
+    @CallSuper
+    @Override
+    public void close() { closePeer(null); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -92,19 +93,30 @@ public class C4BlobWriteStream extends C4NativePeer implements AutoCloseable {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { close(); }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
+    }
+
+    //-------------------------------------------------------------------------
+    // private methods
+    //-------------------------------------------------------------------------
+
+    private void closePeer(@Nullable LogDomain domain) {
+        final long peer = getPeerAndClear();
+        if (verifyPeerClosed(peer, domain)) { return; }
+
+        close(peer);
     }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native void write(long writeStream, byte[] bytes, int len) throws LiteCoreException;
+    private static native void write(long peer, byte[] bytes, int len) throws LiteCoreException;
 
-    private static native long computeBlobKey(long writeStream) throws LiteCoreException;
+    private static native long computeBlobKey(long peer) throws LiteCoreException;
 
-    private static native void install(long writeStream) throws LiteCoreException;
+    private static native void install(long peer) throws LiteCoreException;
 
-    private static native void close(long writeStream);
+    private static native void close(long peer);
 }

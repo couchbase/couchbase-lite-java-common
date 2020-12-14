@@ -15,8 +15,6 @@
 //
 package com.couchbase.lite;
 
-import android.support.annotation.NonNull;
-
 import java.util.concurrent.Executor;
 
 import org.junit.Test;
@@ -41,15 +39,8 @@ public class ReplicatorChangeListenerTokenTest {
 
     @Test
     public void testGetExecutor() {
-        Executor executor = new Executor() {
-            @Override
-            public void execute(Runnable runnable) { }
-        };
-
-        ReplicatorChangeListener listener = new ReplicatorChangeListener() {
-            @Override
-            public void changed(@NonNull ReplicatorChange change) { }
-        };
+        final Executor executor = runnable -> { };
+        final ReplicatorChangeListener listener = change -> { };
 
         // custom Executor
         ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);

@@ -23,6 +23,8 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+extern "C" {
+
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4QueryEnumerator
 // ----------------------------------------------------------------------------
@@ -72,8 +74,7 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getRowCount(JNIEnv *env,
  * Signature: (JJ)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_seek(JNIEnv *env, jclass ignore, jlong handle,
-                                                   jlong rowIndex) {
+Java_com_couchbase_lite_internal_core_C4QueryEnumerator_seek(JNIEnv *env, jclass ignore, jlong handle, jlong rowIndex) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return false;
@@ -108,7 +109,7 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_refresh(JNIEnv *env, jcl
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_close(JNIEnv *env, jclass ignore, jlong handle) {
+Java_com_couchbase_lite_internal_core_C4QueryEnumerator_close__J(JNIEnv *env, jclass ignore, jlong handle) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return;
@@ -147,8 +148,7 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getColumns(JNIEnv *env, 
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getMissingColumns(JNIEnv *env, jclass ignore,
-                                                                jlong handle) {
+Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getMissingColumns(JNIEnv *env, jclass ignore, jlong handle) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return 0L;
@@ -181,4 +181,4 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getFullTextMatch
         return 0L;
     return (jlong) &(e->fullTextMatches[(int) jidx]);
 }
-
+}

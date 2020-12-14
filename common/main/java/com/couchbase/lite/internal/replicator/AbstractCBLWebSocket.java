@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.replicator;
 
+import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -83,7 +84,7 @@ import com.couchbase.lite.internal.utils.StateMachine;
  * <li> there are no inbound connections
  * </ul>
  * This class is just a switch that routes things between OkHttp and Core.  Core does its callbacks via the
- * abstract methods defined in C4Socket and implemnted here.  OkHttp does its callbacks to the CBLWebSocketListener
+ * abstract methods defined in C4Socket and implemented here.  OkHttp does its callbacks to the CBLWebSocketListener
  * which proxies them directly to Core, via C4Socket.
  * The peculiar factory method returns an instance of the concrete subclass, CBLWebSocket.  There are different
  * sources for that class, for each of the CE/EE * platform variants of the platform.
@@ -226,7 +227,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public static final NativeContext<KeyManager> CLIENT_CERT_AUTH_KEY_MANAGER = new NativeContext<>();
+    private static final NativeContext<KeyManager> KEY_MANAGERS = new NativeContext<>();
 
     @NonNull
     private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
@@ -276,6 +277,13 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         return null;
     }
 
+
+    public static int addKeyManager(@NonNull KeyManager keyManager) {
+        final int token = AbstractCBLWebSocket.KEY_MANAGERS.reserveKey();
+        AbstractCBLWebSocket.KEY_MANAGERS.bind(token, keyManager);
+        return token;
+    }
+
     // OkHttp doesn't understand blip or blips
     private static String translateScheme(String scheme) {
         if (C4Replicator.C4_REPLICATOR_SCHEME_2.equalsIgnoreCase(scheme)) { return C4Replicator.WEBSOCKET_SCHEME; }
@@ -307,7 +315,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     protected AbstractCBLWebSocket(
-        long handle,
+        long peer,
         String scheme,
         String hostname,
         int port,
@@ -316,7 +324,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         CBLCookieStore cookieStore,
         Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException, URISyntaxException {
-        super(handle);
+        super(peer);
         this.uri = new URI(translateScheme(scheme), null, hostname, port, path, null, null);
         this.options = options;
         this.cookieStore = cookieStore;
@@ -339,6 +347,15 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
     // Abstract method implementation
     //-------------------------------------------------------------------------
+
+    // Core callback
+    // Core has closed the connection
+    @CallSuper
+    @Override
+    public final void close() {
+        Log.v(TAG, "%s:Core closed", state);
+        state.checkState("close", State.CLOSED);
+    }
 
     // Core callback, proxied to OkHTTP
     // Core needs a connection to the remote
@@ -389,14 +406,6 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
     @Override
     protected final void completedReceive(long n) { }
-
-    // Core callback, proxied to OkHTTP
-    // Core has closed the connection
-    @Override
-    protected final void close() {
-        Log.v(TAG, "%s:Core closed", state);
-        state.checkState("close", State.CLOSED);
-    }
 
     //-------------------------------------------------------------------------
     // package visible methods
@@ -600,15 +609,12 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         KeyManager clientCertAuthKeyManager = null;
         if (options != null) {
             // Pinned Certificate:
-            if (options.containsKey(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT)) {
-                pinnedServerCert = (byte[]) options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
-            }
+            Object opt = options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
+            if (opt instanceof byte[]) { pinnedServerCert = (byte[]) opt; }
 
             // Accept only self-signed server cert mode:
-            if (options.containsKey(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT)) {
-                acceptOnlySelfSignedServerCert
-                    = (boolean) options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
-            }
+            opt = options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
+            if (opt instanceof Boolean) { acceptOnlySelfSignedServerCert = (boolean) opt; }
 
             clientCertAuthKeyManager = getAuthenticator();
         }
@@ -635,18 +641,19 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     @SuppressWarnings("unchecked")
     private KeyManager getAuthenticator() {
-        final Map<String, Object> auth
-            = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-        if (auth == null) { return null; }
+        final Object opt = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+        if (!(opt instanceof Map)) { return null; }
+        final Map<String, Object> auth = (Map<String, Object>) opt;
 
         if (!C4Replicator.AUTH_TYPE_CLIENT_CERT.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) { return null; }
 
-        KeyManager keyAuthManager = null;
         final Object certKey = auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY);
-        if (certKey != null) { keyAuthManager = CLIENT_CERT_AUTH_KEY_MANAGER.getObjFromContext((long) certKey); }
-        if (keyAuthManager == null) { Log.i(TAG, "No key manager configured for client certificate authentication"); }
 
-        return keyAuthManager;
+        KeyManager keyManager = null;
+        if (certKey instanceof Long) { keyManager = KEY_MANAGERS.getObjFromContext((long) certKey); }
+        if (keyManager == null) { Log.i(TAG, "No key manager configured for client certificate authentication"); }
+
+        return keyManager;
     }
 }
 
