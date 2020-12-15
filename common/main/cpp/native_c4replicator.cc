@@ -184,7 +184,7 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
 
 static jobject toJavaObject(JNIEnv *env, C4ReplicatorStatus status) {
     jobject obj = env->NewObject(cls_C4ReplStatus, m_C4ReplStatus_init);
-    env->SetIntField(obj, f_C4ReplStatus_activityLevel, (int) (status.level == kC4Stopping ? kC4Stopped : status.level));
+    env->SetIntField(obj, f_C4ReplStatus_activityLevel, (int) status.level);
     env->SetLongField(obj, f_C4ReplStatus_progressUnitsCompleted, (jlong) status.progress.unitsCompleted);
     env->SetLongField(obj, f_C4ReplStatus_progressUnitsTotal, (jlong) status.progress.unitsTotal);
     env->SetLongField(obj, f_C4ReplStatus_progressDocumentCount, (jlong) status.progress.documentCount);
