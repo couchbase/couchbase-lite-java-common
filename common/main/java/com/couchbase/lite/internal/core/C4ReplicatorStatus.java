@@ -35,7 +35,7 @@ public final class C4ReplicatorStatus {
         public static final int CONNECTING = 2;
         public static final int IDLE = 3;
         public static final int BUSY = 4;
-        public static final int STOPPING = 5;
+        // STOPPING = 5 is not an externally exposed state
 
         private ActivityLevel() {}
     }

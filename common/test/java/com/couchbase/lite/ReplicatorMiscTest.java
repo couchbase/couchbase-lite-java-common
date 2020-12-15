@@ -151,24 +151,29 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testReplicatorStatus() {
         assertEquals(
             AbstractReplicator.ActivityLevel.UNKNOWN,
-            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.STOPPED - 1));
+            getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.STOPPED - 1));
         assertEquals(
             AbstractReplicator.ActivityLevel.STOPPED,
-            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.STOPPED));
+            getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.STOPPED));
         assertEquals(
             AbstractReplicator.ActivityLevel.OFFLINE,
-            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.OFFLINE));
+            getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.OFFLINE));
         assertEquals(
             AbstractReplicator.ActivityLevel.CONNECTING,
-            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.CONNECTING));
+            getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.CONNECTING));
         assertEquals(
             AbstractReplicator.ActivityLevel.IDLE,
-            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.IDLE));
+            getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.IDLE));
         assertEquals(
             AbstractReplicator.ActivityLevel.BUSY,
-            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.BUSY));
+            getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY));
         assertEquals(
             AbstractReplicator.ActivityLevel.UNKNOWN,
-            AbstractReplicator.getActivityLevelFromC4(C4ReplicatorStatus.ActivityLevel.BUSY + 1));
+            getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY + 1));
+    }
+
+    private AbstractReplicator.ActivityLevel getActivityLevelFor(int activityLevel) {
+        return new AbstractReplicator.Status(new C4ReplicatorStatus(activityLevel, 0, 0, 0, 0, 0, 0))
+            .getActivityLevel();
     }
 }

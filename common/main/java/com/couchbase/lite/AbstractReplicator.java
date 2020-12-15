@@ -124,7 +124,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
         // Constructors
         //---------------------------------------------
 
-        private Progress(long completed, long total) {
+        @VisibleForTesting
+        Progress(long completed, long total) {
             this.completed = completed;
             this.total = total;
         }
@@ -155,6 +156,32 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * Combined activity level and progress of a replicator.
      */
     public static final class Status {
+        private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
+        static {
+            final Map<Integer, ActivityLevel> m = new HashMap<>();
+            m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
+            m.put(C4ReplicatorStatus.ActivityLevel.OFFLINE, ActivityLevel.OFFLINE);
+            m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
+            m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
+            m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
+            ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
+        }
+        private static ActivityLevel getActivityLevelfromC4(int c4ActivityLevel) {
+            final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
+            if (level != null) { return level; }
+
+            Log.w(LogDomain.REPLICATOR, "Unrecognized replicator activity level: " + c4ActivityLevel);
+            return ActivityLevel.UNKNOWN;
+        }
+
+        static boolean isStopped(C4ReplicatorStatus c4Status) {
+            return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED;
+        }
+
+        static boolean isOffline(C4ReplicatorStatus c4Status) {
+            return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.OFFLINE;
+        }
+
         //---------------------------------------------
         // member variables
         //---------------------------------------------
@@ -169,10 +196,11 @@ public abstract class AbstractReplicator extends InternalReplicator {
         // Constructors
         //---------------------------------------------
 
-        // Note: c4Status.level is current matched with CBLReplicatorActivityLevel:
-        public Status(@NonNull C4ReplicatorStatus c4Status) {
+        Status(@NonNull Status status) { this(status.activityLevel, status.progress, status.error); }
+
+        Status(@NonNull C4ReplicatorStatus c4Status) {
             this(
-                getActivityLevelFromC4(c4Status.getActivityLevel()),
+                getActivityLevelfromC4(c4Status.getActivityLevel()),
                 new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
                 (c4Status.getErrorCode() == 0) ? null : CBLStatus.convertC4Error(c4Status.getC4Error()));
         }
@@ -210,8 +238,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
         public String toString() {
             return "Status{" + "activityLevel=" + activityLevel + ", progress=" + progress + ", error=" + error + '}';
         }
-
-        Status copy() { return new Status(activityLevel, progress.copy(), error); }
     }
 
 
@@ -282,27 +308,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
             dispatcher.execute(() -> replicator.documentEnded(pushing, documents));
         }
-    }
-
-    private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
-    static {
-        final Map<Integer, ActivityLevel> m = new HashMap<>();
-        m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
-        m.put(C4ReplicatorStatus.ActivityLevel.OFFLINE, ActivityLevel.OFFLINE);
-        m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
-        m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
-        m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
-        ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
-    }
-    @VisibleForTesting
-    @NonNull
-    static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
-        final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
-        if (level != null) { return level; }
-
-        Log.w(LogDomain.REPLICATOR, "Unrecognized replicator activity level: " + c4ActivityLevel);
-
-        return ActivityLevel.UNKNOWN;
     }
 
 
@@ -426,7 +431,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      */
     @NonNull
     public Status getStatus() {
-        synchronized (lock) { return status.copy(); }
+        synchronized (lock) { return new Status(status); }
     }
 
     /**
@@ -724,11 +729,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
                 "%s: status changed: (%d, %d) @%s",
                 this, pendingResolutions.size(), pendingStatusNotifications.size(), c4Status);
 
-            if (config.isContinuous()) {
-                handleOffline(
-                    status.getActivityLevel(),
-                    c4Status.getActivityLevel() != C4ReplicatorStatus.ActivityLevel.OFFLINE);
-            }
+            if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !Status.isOffline(c4Status)); }
 
             if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
@@ -742,10 +743,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
             tokens = new ArrayList<>(changeListenerTokens);
         }
 
-        if (c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED) {
-            // this will probably make this instance eligible for garbage collection...
-            getDatabase().removeActiveReplicator(this);
-        }
+        // this will probably make this instance eligible for garbage collection...
+        if (Status.isStopped(c4Status)) { getDatabase().removeActiveReplicator(this); }
 
         for (ReplicatorChangeListenerToken token: tokens) { token.notify(change); }
     }
