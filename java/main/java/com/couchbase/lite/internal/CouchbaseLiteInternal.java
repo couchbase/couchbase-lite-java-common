@@ -49,7 +49,7 @@ public final class CouchbaseLiteInternal {
 
     private static final String ERRORS_PROPERTIES_PATH = "/errors.properties";
     private static final String TEMP_DIR_NAME = "CouchbaseLiteTemp";
-    private static final String DEFAULT_ROOT_DIR_NAME = ".couchbase";
+    private static final String DEFAULT_ROOT_DIR_NAME = "";
 
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
 
@@ -156,18 +156,18 @@ public final class CouchbaseLiteInternal {
 
     @NonNull
     private static String verifyDir(@NonNull File dir) {
-        String path = dir.getAbsolutePath();
         try {
-            path = dir.getCanonicalPath();
+            final File canonicalDir = dir.getCanonicalFile();
+            final String path = canonicalDir.getPath();
 
-            if (!((dir.exists() || dir.mkdirs()) && dir.isDirectory())) {
+            if (!((canonicalDir.exists() || canonicalDir.mkdirs()) && canonicalDir.isDirectory())) {
                 throw new IOException("Cannot create directory: " + path);
             }
 
             return path;
         }
         catch (IOException e) {
-            throw new IllegalStateException("Cannot create or access temp directory at " + path, e);
+            throw new IllegalStateException("Cannot create or access temp directory at " + dir.getAbsolutePath(), e);
         }
     }
 
