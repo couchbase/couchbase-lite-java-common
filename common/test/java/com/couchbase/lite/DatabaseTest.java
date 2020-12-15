@@ -1270,6 +1270,10 @@ public class DatabaseTest extends BaseDbTest {
     public void testReOpenExistingDb() throws CouchbaseLiteException {
         final String dbName = getUniqueName("test-db");
 
+        // verify that the db directory is no longer in the misguided 2.8.0 subdirectory
+        final String dbDirectory = AbstractDatabaseConfiguration.getDbDirectory(null);
+        assertFalse(dbDirectory.endsWith(".couchbase"));
+
         Database db = null;
         try {
             db = new Database(dbName);

@@ -1745,7 +1745,7 @@ abstract class AbstractDatabase {
 
         final File defaultDir = new File(defaultDirPath);
 
-        // If this database doesn't exist in the 2.8 default dir, were'r done here.
+        // If this database doesn't exist in the 2.8 default dir, we're done here.
         final File twoDotEightDefaultDir = new File(defaultDir, ".couchbase");
         if (!exists(dbName, twoDotEightDefaultDir)) { return; }
 
