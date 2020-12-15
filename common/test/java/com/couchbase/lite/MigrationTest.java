@@ -24,6 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.ZipUtils;
 
@@ -45,7 +46,10 @@ public class MigrationTest extends BaseTest {
     }
 
     @After
-    public final void tearDownMigrationTest() { deleteDb(migrationTestDb); }
+    public final void tearDownMigrationTest() {
+        deleteDb(migrationTestDb);
+        FileUtils.eraseFileOrDir(dbDir);
+    }
 
     // TODO: 1.x DB's attachment is not automatically detected as blob
     // https://github.com/couchbase/couchbase-lite-android/issues/1237

@@ -1681,7 +1681,7 @@ abstract class AbstractDatabase {
         if (qExec != null) { qExec.stop(waitTime, TimeUnit.SECONDS); }
     }
 
-    // Fix the bug in 2.8.0 that caused databases created in the
+    // Fix the bug in 2.8.0 (CBL-1408) that caused databases created in the
     // default directory to be created in a *different* default directory.
     // The fix is to use the original "real" default dir (the one used by all pre 2.8.0 code)
     // and to copy a database from the "2.8" default directory into the "real" default
@@ -1697,7 +1697,7 @@ abstract class AbstractDatabase {
 
         final File defaultDir = new File(defaultDirPath);
 
-        // If this database doesn't exist in the 2.8 default dir, were'r done here.
+        // If this database doesn't exist in the 2.8 default dir, we're done here.
         final File twoDotEightDefaultDir = new File(defaultDir, ".couchbase");
         if (!exists(dbName, twoDotEightDefaultDir)) { return; }
 

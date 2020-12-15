@@ -124,7 +124,7 @@ public class SimpleDatabaseTest extends BaseTest {
             assertEquals(dbName, db.getName());
 
             final String path = new File(db.getPath()).getCanonicalPath();
-            assertTrue(path.endsWith(".cblite2"));
+            assertTrue(path.endsWith(AbstractDatabase.DB_EXTENSION));
             assertTrue(path.contains(dir.getPath()));
 
             assertEquals(0, db.getCount());

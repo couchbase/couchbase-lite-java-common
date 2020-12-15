@@ -1254,12 +1254,16 @@ public class DatabaseTest extends BaseDbTest {
     }
 
     // The following four tests verify, explicitly, the code that
-    // mitigates the 2.8.0 bug
+    // mitigates the 2.8.0 bug (CBL-1408)
     // There is one more test for this in DatabaseEncryptionTest
 
     @Test
     public void testReOpenExistingDb() throws CouchbaseLiteException {
         final String dbName = getUniqueName("test-db");
+
+        // verify that the db directory is no longer in the misguided 2.8.0 subdirectory
+        final String dbDirectory = AbstractDatabaseConfiguration.getDbDirectory(null);
+        assertFalse(dbDirectory.endsWith(".couchbase"));
 
         Database db = null;
         try {
