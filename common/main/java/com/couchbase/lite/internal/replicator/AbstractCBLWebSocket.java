@@ -235,6 +235,18 @@ public class AbstractCBLWebSocket extends C4Socket {
         String path,
         byte[] options,
         @NonNull CBLCookieStore cookieStore,
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
+        return createCBLWebSocket(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener, 0L);
+        }
+
+    public static CBLWebSocket createCBLWebSocket(
+        long handle,
+        String scheme,
+        String hostname,
+        int port,
+        String path,
+        byte[] options,
+        @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener,
         long pingInterval) {
         Log.v(TAG, "Creating a CBLWebSocket ...");
