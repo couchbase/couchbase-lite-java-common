@@ -72,7 +72,6 @@ public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    @SuppressWarnings("unused")
     static void open(
         long handle,
         Object context,
@@ -95,7 +94,6 @@ public abstract class C4Socket extends C4NativePeer {
     }
 
     // This method is called by reflection.  Don't change its signature.
-    @SuppressWarnings("unused")
     static void write(long handle, byte[] allocatedData) {
         if (allocatedData == null) {
             Log.v(LOG_DOMAIN, "C4Socket.callback.write: allocatedData is null");
@@ -111,7 +109,6 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     // NOTE: No further action is required?
-    @SuppressWarnings("unused")
     static void completedReceive(long handle, long byteCount) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.completedReceive @" + handle + ": " + socket);
@@ -122,7 +119,6 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     // NOTE: close(long) method should not be called.
-    @SuppressWarnings("unused")
     static void close(long handle) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.close @" + handle + ": " + socket);
@@ -132,7 +128,6 @@ public abstract class C4Socket extends C4NativePeer {
     }
 
     // This method is called by reflection.  Don't change its signature.
-    @SuppressWarnings("unused")
     static void requestClose(long handle, int status, @Nullable String message) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.requestClose @" + handle + ": " + socket + " #" + status + "(" + message + ")");
@@ -143,7 +138,6 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     // NOTE: close(long) method should not be called.
-    @SuppressWarnings("unused")
     static void dispose(long handle) {
         final C4Socket socket = HANDLES_TO_SOCKETS.get(handle);
         Log.d(LOG_DOMAIN, "C4Socket.dispose @" + handle + ": " + socket);
@@ -256,18 +250,19 @@ public abstract class C4Socket extends C4NativePeer {
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native void opened(long handle);
+    private static native void opened(long peer);
 
-    private static native void completedWrite(long handle, long byteCount);
+    private static native void completedWrite(long peer, long byteCount);
 
-    private static native void received(long handle, byte[] data);
+    private static native void received(long peer, byte[] data);
 
-    private static native void closed(long handle, int errorDomain, int errorCode, String message);
+    private static native void closed(long peer, int errorDomain, int errorCode, String message);
 
-    private static native void closeRequested(long handle, int status, String message);
+    private static native void closeRequested(long peer, int status, String message);
 
-    private static native void gotHTTPResponse(long handle, int httpStatus, byte[] responseHeadersFleece);
+    private static native void gotHTTPResponse(long peer, int httpStatus, byte[] responseHeadersFleece);
 
+    // wrap an existing Java C4Socket in a C-native C4Socket
     private static native long fromNative(
         Object nativeHandle,
         String schema,

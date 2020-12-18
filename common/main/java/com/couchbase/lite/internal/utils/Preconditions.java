@@ -25,12 +25,6 @@ public final class Preconditions {
 
     private Preconditions() {}
 
-    @NonNull
-    public static <T> T assertNotNull(@Nullable T obj, @NonNull String name) {
-        if (obj == null) { throw new IllegalArgumentException(name + " must not be null"); }
-        return obj;
-    }
-
     public static long assertPositive(long n, @NonNull String name) {
         if (n <= 0) { throw new IllegalArgumentException(name + " must be positive"); }
         return n;
@@ -38,6 +32,11 @@ public final class Preconditions {
 
     public static long assertNegative(long n, @NonNull String name) {
         if (n >= 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        return n;
+    }
+
+    public static long assertNotNegative(long n, @NonNull String name) {
+        if (n < 0) { throw new IllegalArgumentException(name + " must be negative"); }
         return n;
     }
 
@@ -49,6 +48,37 @@ public final class Preconditions {
     public static long assertNotZero(long n, @NonNull String name) {
         if (n == 0) { throw new IllegalArgumentException(name + " must not be 0"); }
         return n;
+    }
+
+    public static int assertPositive(int n, @NonNull String name) {
+        if (n <= 0) { throw new IllegalArgumentException(name + " must be positive"); }
+        return n;
+    }
+
+    public static int assertNegative(int n, @NonNull String name) {
+        if (n >= 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        return n;
+    }
+
+    public static int assertNotNegative(int n, @NonNull String name) {
+        if (n < 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        return n;
+    }
+
+    public static int assertZero(int n, @NonNull String name) {
+        if (n != 0) { throw new IllegalArgumentException(name + " must be 0"); }
+        return n;
+    }
+
+    public static int assertNotZero(int n, @NonNull String name) {
+        if (n == 0) { throw new IllegalArgumentException(name + " must not be 0"); }
+        return n;
+    }
+
+    @NonNull
+    public static <T> T assertNotNull(@Nullable T obj, @NonNull String name) {
+        if (obj == null) { throw new IllegalArgumentException(name + " must not be null"); }
+        return obj;
     }
 
     public static void assertNotEmpty(String str, @NonNull String name) {

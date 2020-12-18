@@ -15,9 +15,7 @@
 //
 package com.couchbase.lite.internal.replicator;
 
-import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.annotation.RequiresApi;
 import android.system.ErrnoException;
 
 import java.io.EOFException;
@@ -40,6 +38,7 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
     private static final int ECONNREFUSED = 111;  // java.net.ConnectException
 
 
+    // Framing is always MESSAGE_STREAM
     CBLWebSocket(
         long handle,
         String scheme,
@@ -55,9 +54,7 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
 
     @SuppressWarnings("PMD.CollapsibleIfStatements")
     protected boolean handleClose(@NonNull Throwable error) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (checkErrnoException(error)) { return true; }
-        }
+        if (checkErrnoException(error)) { return true; }
 
         // ConnectException
         if (error instanceof ConnectException) {
@@ -80,7 +77,6 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         return false;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private boolean checkErrnoException(@NonNull Throwable error) {
         Throwable cause = error.getCause();
         if (cause == null) { return false; }

@@ -166,7 +166,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
             ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
         }
-        private static ActivityLevel getActivityLevelfromC4(int c4ActivityLevel) {
+        private static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
             final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
             if (level != null) { return level; }
 
@@ -200,7 +200,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         Status(@NonNull C4ReplicatorStatus c4Status) {
             this(
-                getActivityLevelfromC4(c4Status.getActivityLevel()),
+                getActivityLevelFromC4(c4Status.getActivityLevel()),
                 new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
                 (c4Status.getErrorCode() == 0) ? null : CBLStatus.convertC4Error(c4Status.getC4Error()));
         }

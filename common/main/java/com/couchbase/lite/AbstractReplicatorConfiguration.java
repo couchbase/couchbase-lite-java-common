@@ -24,14 +24,16 @@ import java.util.Map;
 
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
+import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
  * Replicator configuration.
  */
-@SuppressWarnings("PMD.GodClass")
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
 abstract class AbstractReplicatorConfiguration {
+
     /**
      * Replicator type
      * PUSH_AND_PULL: Bidirectional; both push and pull
@@ -39,6 +41,7 @@ abstract class AbstractReplicatorConfiguration {
      * PULL: Pulling changes from the target
      */
     public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
+
 
     //---------------------------------------------
     // member variables
@@ -65,18 +68,28 @@ abstract class AbstractReplicatorConfiguration {
     private ReplicationFilter pullFilter;
     @Nullable
     private ConflictResolver conflictResolver;
+    private int maxRetries = -1;
+    private long maxRetryWaitTime = AbstractCBLWebSocket.DEFAULT_MAX_RETRY_WAIT_SEC;
+    private long heartbeat = AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC;
 
-    protected boolean readonly;
     protected final Endpoint target;
+    protected final boolean readonly;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
+    protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
+        this.database = Preconditions.assertNotNull(database, "database");
+        this.target = Preconditions.assertNotNull(target, "target");
+        this.readonly = false;
+        this.replicatorType = ReplicatorType.PUSH_AND_PULL;
+    }
+
+    protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config, boolean readonly) {
         Preconditions.assertNotNull(config, "config");
 
-        this.readonly = false;
+        this.readonly = readonly;
         this.database = config.database;
         this.target = config.target;
         this.replicatorType = config.replicatorType;
@@ -89,13 +102,9 @@ abstract class AbstractReplicatorConfiguration {
         this.pullFilter = config.pullFilter;
         this.pushFilter = config.pushFilter;
         this.conflictResolver = config.conflictResolver;
-    }
-
-    protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        this.database = Preconditions.assertNotNull(database, "database");
-        this.target = Preconditions.assertNotNull(target, "target");
-        this.readonly = false;
-        this.replicatorType = ReplicatorType.PUSH_AND_PULL;
+        this.maxRetries = config.maxRetries;
+        this.maxRetryWaitTime = config.maxRetryWaitTime;
+        this.heartbeat = config.heartbeat;
     }
 
     //---------------------------------------------
@@ -250,6 +259,31 @@ abstract class AbstractReplicatorConfiguration {
         return getReplicatorConfiguration();
     }
 
+    /**
+     * Set the max number of retry attempts made after a connection failure.
+     *
+     * @param maxRetries max retry attempts
+     */
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = Preconditions.assertNotNegative(maxRetries, "max retries");
+    }
+
+    /**
+     * Set the max time between retry attempts (exponential backoff).
+     *
+     * @param maxRetryWaitTime max retry attempts
+     */
+    public void setMaxRetryWaitTime(long maxRetryWaitTime) {
+        this.maxRetryWaitTime = Preconditions.assertPositive(maxRetryWaitTime, "max retry wait time");
+    }
+
+    /**
+     * Set the heartbeat interval, in seconds.
+     */
+    public void setHeartbeat(long heartbeat) {
+        this.heartbeat = Preconditions.assertPositive(heartbeat, "max retry wait time");
+    }
+
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -336,6 +370,31 @@ abstract class AbstractReplicatorConfiguration {
     @NonNull
     public final Endpoint getTarget() { return target; }
 
+    /**
+     * Return the max number of retry attempts made after connection failure.
+     */
+    public final int getMaxRetries() {
+        return (maxRetries >= 0)
+            ? maxRetries
+            : ((continuous)
+                ? AbstractCBLWebSocket.DEFAULT_ONE_SHOT_MAX_RETRIES
+                : AbstractCBLWebSocket.DEFAULT_CONTINUOUS_MAX_RETRIES);
+    }
+
+    /**
+     * Return the max time between retry attempts (exponential backoff).
+     *
+     * @return max retry wait time
+     */
+    public long getMaxRetryWaitTime() { return maxRetryWaitTime; }
+
+    /**
+     * Return the heartbeat interval, in seconds.
+     *
+     * @return heartbeat interval in seconds
+     */
+    public long getHeartbeat() { return heartbeat; }
+
     @NonNull
     @Override
     public String toString() {
@@ -385,9 +444,7 @@ abstract class AbstractReplicatorConfiguration {
     }
 
     final ReplicatorConfiguration readonlyCopy() {
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(getReplicatorConfiguration());
-        config.readonly = true;
-        return config;
+        return new ReplicatorConfiguration(getReplicatorConfiguration(), true);
     }
 
     protected Map<String, Object> effectiveOptions() {
@@ -407,6 +464,10 @@ abstract class AbstractReplicatorConfiguration {
         if ((channels != null) && (!channels.isEmpty())) {
             options.put(C4Replicator.REPLICATOR_OPTION_CHANNELS, channels);
         }
+
+        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, getMaxRetries());
+        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxRetryWaitTime);
+        options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, heartbeat);
 
         final Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:

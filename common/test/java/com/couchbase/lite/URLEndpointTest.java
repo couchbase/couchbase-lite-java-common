@@ -15,27 +15,20 @@
 //
 package com.couchbase.lite;
 
-import org.junit.Test;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import static org.junit.Assert.fail;
+import org.junit.Test;
+
 
 public class URLEndpointTest extends BaseTest {
     @Test
-    public void testEmbeddedUserCredentialIsNotAllowed() throws URISyntaxException {
-        // only username in user-info is ok.
-        URI url = new URI("ws://user@couchbase.com/sg");
-        new URLEndpoint(url);
+    public void testEmbeddedUserAllowed() throws URISyntaxException {
+        new URLEndpoint(new URI("ws://user@couchbase.com/sg"));
+    }
 
-        // containing password is not allowed
-        url = new URI("ws://user:pass@couchbase.com/sg");
-        try {
-            new URLEndpoint(url);
-            fail();
-        } catch (IllegalArgumentException e) {
-            // expected!
-        }
+    @Test(expected = IllegalArgumentException.class)
+    public void testEmbeddedPasswordNotAllowed() throws URISyntaxException {
+        new URLEndpoint(new URI("ws://user:pass@couchbase.com/sg"));
     }
 }
