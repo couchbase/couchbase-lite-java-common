@@ -48,9 +48,10 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         String path,
         Map<String, Object> options,
         CBLCookieStore cookieStore,
-        Fn.Consumer<List<Certificate>> serverCertsListener)
+        Fn.Consumer<List<Certificate>> serverCertsListener,
+        long pingInterval)
         throws GeneralSecurityException, URISyntaxException {
-        super(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener);
+        super(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener, pingInterval);
     }
 
     @SuppressWarnings("PMD.CollapsibleIfStatements")

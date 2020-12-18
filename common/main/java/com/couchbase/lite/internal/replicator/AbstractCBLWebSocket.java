@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
@@ -138,10 +137,19 @@ public class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
             Log.v(TAG, "WebSocketListener opened with response " + response);
-            AbstractCBLWebSocket.this.webSocket = webSocket;
-            receivedHTTPResponse(response);
-            Log.i(TAG, "WebSocket CONNECTED!");
-            opened();
+            switch (state.compareAndSet(State.INITIAL, State.OPENED)) {
+                case State.INITIAL:
+                    receivedHTTPResponse(response);
+                    Log.i(TAG, "WebSocket CONNECTED!");
+                    opened();
+                    break;
+                case State.OPENED:
+                    Log.i(TAG, "WebSocket onOpen called when connection is on, which should not happend");
+                    break;
+                case State.REQUEST_CLOSED:
+                    Log.i(TAG, "WebSocket connection established after request close");
+                    break;
+            }
         }
 
         @Override
@@ -228,6 +236,19 @@ public class AbstractCBLWebSocket extends C4Socket {
         byte[] options,
         @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
+        return createCBLWebSocket(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener, 0L);
+        }
+
+    public static CBLWebSocket createCBLWebSocket(
+        long handle,
+        String scheme,
+        String hostname,
+        int port,
+        String path,
+        byte[] options,
+        @NonNull CBLCookieStore cookieStore,
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener,
+        long pingInterval) {
         Log.v(TAG, "Creating a CBLWebSocket ...");
 
         Map<String, Object> fleeceOptions = null;
@@ -243,7 +264,7 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         try {
             return new CBLWebSocket(handle, scheme, hostname, port, path, fleeceOptions,
-                cookieStore, serverCertsListener);
+                cookieStore, serverCertsListener, pingInterval);
         }
         catch (Exception e) { Log.e(TAG, "Failed to instantiate CBLWebSocket", e); }
 
@@ -255,7 +276,29 @@ public class AbstractCBLWebSocket extends C4Socket {
     // Member Variables
     //-------------------------------------------------------------------------
 
-    private final AtomicBoolean closing = new AtomicBoolean(false);
+    private class State {
+        static final short INITIAL = 1;
+        static final short OPENED = 2;
+        static final short REQUEST_CLOSED = 3;
+
+        private short state = INITIAL;
+
+        synchronized short getAndSet(short set) {
+            short old = state;
+            state = set;
+            return old;
+        }
+
+        synchronized short compareAndSet(short expect, short update) {
+            short old = state;
+            if (state == expect) {
+                state = update;
+            }
+            return old;
+        }
+    }
+
+    private final State state = new State();
     private final OkHttpClient httpClient;
     private final CBLWebSocketListener wsListener;
     private final URI uri;
@@ -263,6 +306,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     private final CBLCookieStore cookieStore;
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
     private WebSocket webSocket;
+    private final long pingInterval;
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -276,7 +320,8 @@ public class AbstractCBLWebSocket extends C4Socket {
         String path,
         Map<String, Object> options,
         CBLCookieStore cookieStore,
-        Fn.Consumer<List<Certificate>> serverCertsListener)
+        Fn.Consumer<List<Certificate>> serverCertsListener,
+        long pingInterval)
         throws GeneralSecurityException, URISyntaxException {
         super(handle);
         this.uri = new URI(checkScheme(scheme), null, hostname, port, path, null, null);
@@ -285,6 +330,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         this.serverCertsListener = serverCertsListener;
         this.httpClient = setupOkHttpClient();
         this.wsListener = new CBLWebSocketListener();
+        this.pingInterval = pingInterval;
     }
 
     @Override
@@ -297,8 +343,16 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     @Override
     protected void openSocket() {
+        OkHttpClient okHttpClient = httpClient;
+        if (pingInterval > 0) {
+            okHttpClient = okHttpClient
+                .newBuilder()
+                .pingInterval(pingInterval, TimeUnit.MILLISECONDS)
+                .retryOnConnectionFailure(false)
+                .build();
+        }
         Log.v(TAG, String.format(Locale.ENGLISH, "CBLWebSocket is connecting to %s ...", uri));
-        httpClient.newWebSocket(newRequest(), wsListener);
+        webSocket = okHttpClient.newWebSocket(newRequest(), wsListener);
     }
 
     @Override
@@ -326,9 +380,14 @@ public class AbstractCBLWebSocket extends C4Socket {
             return;
         }
 
-        if (closing.getAndSet(true)) {
-            Log.v(TAG, "CBLWebSocket already closing.");
-            return;
+        switch (state.getAndSet(State.REQUEST_CLOSED)) {
+            case State.INITIAL:
+                webSocket.cancel();
+                Log.w(TAG, "CBLWebSocket connection was not established before receiving close request.");
+                return;
+            case State.REQUEST_CLOSED:
+                Log.v(TAG, "CBLWebSocket already closing.");
+                return;
         }
 
         // Core will, apparently, randomly send HTTP statuses in this, purely WS, call.
