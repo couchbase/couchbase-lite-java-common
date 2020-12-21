@@ -15,9 +15,10 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.concurrent.Executor;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -47,7 +48,7 @@ public class ReplicatorChangeListenerTokenTest {
 
         ReplicatorChangeListener listener = new ReplicatorChangeListener() {
             @Override
-            public void changed(@NotNull ReplicatorChange change) { }
+            public void changed(@NonNull ReplicatorChange change) { }
         };
 
         // custom Executor

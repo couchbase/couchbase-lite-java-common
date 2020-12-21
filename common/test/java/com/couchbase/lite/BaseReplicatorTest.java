@@ -15,12 +15,13 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.net.URI;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.concurrent.TimeUnit;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 
@@ -59,7 +60,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return repl.isDocumentPending(null);
     }
 
-    @NotNull
+    @NonNull
     protected final ReplicatorType getReplicatorType(boolean push, boolean pull) {
         return (push && pull)
             ? ReplicatorType.PUSH_AND_PULL
@@ -72,61 +73,65 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final Replicator testReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
 
     protected final ReplicatorConfiguration makeConfig(
+        Endpoint target,
         boolean push,
         boolean pull,
-        boolean continuous,
-        Endpoint target) {
-        return makeConfig(push, pull, continuous, target, null);
+        boolean continuous) {
+        return makeConfig(target, push, pull, continuous, null);
     }
 
     protected final ReplicatorConfiguration makeConfig(
+        Endpoint target,
         boolean push,
         boolean pull,
         boolean continuous,
-        Endpoint target,
         Certificate pinnedServerCert) {
-        return makeConfig(push, pull, continuous, baseTestDb, target, pinnedServerCert);
+        return makeConfig(baseTestDb, target, push, pull, continuous, pinnedServerCert);
     }
 
     protected final ReplicatorConfiguration makeConfig(
-        boolean push,
-        boolean pull,
-        boolean continuous,
-        Database source,
-        Endpoint target) {
-        return makeConfig(push, pull, continuous, source, target, null, null);
-    }
-
-    protected final ReplicatorConfiguration makeConfig(
-        boolean push,
-        boolean pull,
-        boolean continuous,
         Database source,
         Endpoint target,
+        boolean push,
+        boolean pull,
+        boolean continuous) {
+        return new ReplicatorConfiguration(source, target)
+            .setReplicatorType(getReplicatorType(push, pull))
+            .setContinuous(continuous)
+            .setHeartbeat(0L);
+    }
+
+    protected final ReplicatorConfiguration makeConfig(
+        Database source,
+        Endpoint target,
+        boolean push,
+        boolean pull,
+        boolean continuous,
         Certificate pinnedServerCert) {
-        return makeConfig(push, pull, continuous, source, target, pinnedServerCert, null);
-    }
-
-    protected final ReplicatorConfiguration makeConfig(
-        boolean push,
-        boolean pull,
-        boolean continuous,
-        Database source,
-        Endpoint target,
-        Certificate pinnedServerCert,
-        ConflictResolver resolver) {
-        ReplicatorConfiguration config = new ReplicatorConfiguration(source, target);
-        config.setReplicatorType(getReplicatorType(push, pull));
-        config.setContinuous(continuous);
+        final ReplicatorConfiguration config = makeConfig(source, target, push, pull, continuous);
 
         final byte[] pin;
-        try { pin = pinnedServerCert != null ? pinnedServerCert.getEncoded() : null; }
+        try { pin = (pinnedServerCert == null) ? null : pinnedServerCert.getEncoded(); }
         catch (CertificateEncodingException e) {
             throw new IllegalArgumentException("Invalid pinned server certificate", e);
         }
         config.setPinnedServerCertificate(pin);
 
+        return config;
+    }
+
+    protected final ReplicatorConfiguration makeConfig(
+        Database source,
+        Endpoint target,
+        boolean push,
+        boolean pull,
+        boolean continuous,
+        Certificate pinnedServerCert,
+        ConflictResolver resolver) {
+        ReplicatorConfiguration config = makeConfig(source, target, push, pull, continuous, pinnedServerCert);
+
         if (resolver != null) { config.setConflictResolver(resolver); }
+
         return config;
     }
 
@@ -141,10 +146,10 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         Certificate pinnedServerCert)
         throws CouchbaseLiteException {
         final ReplicatorConfiguration config = makeConfig(
+            new URLEndpoint(url),
             push,
             pull,
             continuous,
-            new URLEndpoint(url),
             pinnedServerCert);
         if (auth != null) { config.setAuthenticator(auth); }
         return run(config, expectedErrorCode, expectedErrorDomain, false, null);

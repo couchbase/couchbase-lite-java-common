@@ -75,14 +75,14 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStopBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(true, false, false, new URLEndpoint(new URI("wss://foo")))).stop();
+        testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), true, false, false)).stop();
     }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStatusBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(true, false, false, new URLEndpoint(new URI("wss://foo")))).getStatus();
+        testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), true, false, false)).getStatus();
     }
 
     @Test
@@ -105,7 +105,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testStartReplicatorWithClosedDb() throws URISyntaxException {
         Replicator replicator = testReplicator(
-            makeConfig(true, true, false, baseTestDb, new URLEndpoint(new URI("wss://foo")), null, null));
+            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), true, true, false, null, null));
 
         closeDb(baseTestDb);
 
@@ -119,7 +119,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
         Replicator replicator = testReplicator(
-            makeConfig(true, true, false, baseTestDb, new URLEndpoint(new URI("wss://foo")), null, null));
+            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), true, true, false, null, null));
 
         closeDb(baseTestDb);
 
@@ -136,7 +136,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         otherDB.save(doc);
 
         Replicator replicator = testReplicator(
-            makeConfig(true, true, false, baseTestDb, new URLEndpoint(new URI("wss://foo")), null, null));
+            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), true, true, false, null, null));
 
         closeDb(baseTestDb);
 

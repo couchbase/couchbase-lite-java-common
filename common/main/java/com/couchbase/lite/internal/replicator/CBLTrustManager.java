@@ -61,9 +61,7 @@ public final class CBLTrustManager implements X509TrustManager {
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         try { doCheckServerTrusted(chain, authType); }
-        finally {
-            serverCertslistener.accept(Collections.unmodifiableList(Arrays.asList(chain)));
-        }
+        finally { serverCertslistener.accept(Collections.unmodifiableList(Arrays.asList(chain))); }
     }
 
     private void doCheckServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {

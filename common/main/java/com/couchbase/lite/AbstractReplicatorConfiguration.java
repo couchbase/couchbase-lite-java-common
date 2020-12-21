@@ -264,8 +264,9 @@ abstract class AbstractReplicatorConfiguration {
      *
      * @param maxRetries max retry attempts
      */
-    public void setMaxRetries(int maxRetries) {
+    public final ReplicatorConfiguration setMaxRetries(int maxRetries) {
         this.maxRetries = Preconditions.assertNotNegative(maxRetries, "max retries");
+        return getReplicatorConfiguration();
     }
 
     /**
@@ -273,15 +274,17 @@ abstract class AbstractReplicatorConfiguration {
      *
      * @param maxRetryWaitTime max retry attempts
      */
-    public void setMaxRetryWaitTime(long maxRetryWaitTime) {
+    public final ReplicatorConfiguration setMaxRetryWaitTime(long maxRetryWaitTime) {
         this.maxRetryWaitTime = Preconditions.assertPositive(maxRetryWaitTime, "max retry wait time");
+        return getReplicatorConfiguration();
     }
 
     /**
      * Set the heartbeat interval, in seconds.
      */
-    public void setHeartbeat(long heartbeat) {
-        this.heartbeat = Preconditions.assertPositive(heartbeat, "max retry wait time");
+    public final ReplicatorConfiguration setHeartbeat(long heartbeat) {
+        this.heartbeat = Preconditions.assertNotNegative(heartbeat, "max retry wait time");
+        return getReplicatorConfiguration();
     }
 
     //---------------------------------------------

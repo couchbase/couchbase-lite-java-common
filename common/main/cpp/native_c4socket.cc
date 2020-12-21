@@ -267,7 +267,7 @@ static void socket_dispose(C4Socket *socket) {
     }
 }
 
-static const C4SocketFactory kSocketFactory{
+static const C4SocketFactory kSocketFactory {
         kC4NoFraming,               // framing
         nullptr,                    // context
         &socket_open,               // open

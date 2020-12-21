@@ -32,7 +32,6 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.jetbrains.annotations.NotNull;
 
 
 /**
@@ -177,7 +176,7 @@ final class NativeLibrary {
         return libs;
     }
 
-    @NotNull
+    @NonNull
     private static String getOSName() {
         final String osName = System.getProperty("os.name").toLowerCase(Locale.getDefault());
         if (osName.contains("linux")) { return "linux"; }

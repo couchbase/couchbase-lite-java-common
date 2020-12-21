@@ -16,10 +16,7 @@
 package com.couchbase.lite.internal;
 
 import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -37,7 +34,6 @@ import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.LogDomain;
@@ -93,59 +89,8 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     }
 
     /**
-     * Listener for API <= 20: use a BroadcastReceiver for updates and ActiveNetworkInfo for current status
-     */
-    private static final class ConnectivityListenerPre21 extends ConnectivityWatcher {
-        private final AtomicBoolean fallbackNetInfo = new AtomicBoolean(true);
-        private final BroadcastReceiver connectivityReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (!ConnectivityManager.CONNECTIVITY_ACTION.equals(intent.getAction())) { return; }
-
-                @SuppressWarnings("deprecation")
-                final NetworkInfo netInfo = intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
-                fallbackNetInfo.set((netInfo != null) && netInfo.isConnected());
-
-                onConnectivityChange(isConnected());
-            }
-        };
-
-        ConnectivityListenerPre21(AndroidConnectivityManager mgr) { super("<=20", mgr); }
-
-        @Override
-        public void start() {
-            CouchbaseLiteInternal.getContext().registerReceiver(
-                connectivityReceiver,
-                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-            Log.v(LogDomain.NETWORK, getLogMessage("Started"));
-        }
-
-        @Override
-        public void stop() {
-            CouchbaseLiteInternal.getContext().unregisterReceiver(connectivityReceiver);
-            Log.v(LogDomain.NETWORK, getLogMessage("Stopped"));
-        }
-
-        @Override
-        public boolean isConnected() {
-            final ConnectivityManager connectivityMgr = getSysMgr();
-            if (connectivityMgr == null) { return true; }
-
-            final NetworkInfo networkInfo = connectivityMgr.getActiveNetworkInfo();
-
-            if ((networkInfo != null) && networkInfo.isConnected()) { return true; }
-
-            // on some devices ConnectivityManager.getActiveNetworkInfo()
-            // does not provide the correct network state
-            // https://issuetracker.google.com/issues/37137911
-            return fallbackNetInfo.get();
-        }
-    }
-
-    /**
      * Base class for ConnectivityManager.NetworkCallback based Watchers.
      */
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private abstract static class CallbackConnectivityWatcher extends ConnectivityWatcher {
         protected final ConnectivityManager.NetworkCallback connectivityCallback =
             new ConnectivityManager.NetworkCallback() {
@@ -177,7 +122,6 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     /**
      * Listener for API 21 - 23: use a ConnectivityCallback for updates and ActiveNetworkInfo for status
      */
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private static final class ConnectivityListener21to23 extends CallbackConnectivityWatcher {
         ConnectivityListener21to23(AndroidConnectivityManager mgr) { super("21-23", mgr); }
 
@@ -329,10 +273,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
         ConnectivityWatcher connectivityListener = listener.get();
         if (connectivityListener != null) { return; }
 
-        if (androidVersion < Build.VERSION_CODES.LOLLIPOP) {
-            connectivityListener = new ConnectivityListenerPre21(this);
-        }
-        else if (androidVersion < Build.VERSION_CODES.N) {
+        if (androidVersion < Build.VERSION_CODES.N) {
             connectivityListener = new ConnectivityListener21to23(this);
         }
         else if (androidVersion < Build.VERSION_CODES.Q) {

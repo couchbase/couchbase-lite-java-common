@@ -15,13 +15,14 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -121,7 +122,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
 
-    @NotNull
+    @NonNull
     @Override
     public String getDatabaseDirectoryPath() { return CouchbaseLiteInternal.getDbDirectoryPath(); }
 
@@ -140,7 +141,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
     }
 
-    @NotNull
+    @NonNull
     private String getDirPath(File dir) {
         try {
             if (dir.exists() || dir.mkdirs()) { return dir.getCanonicalPath(); }

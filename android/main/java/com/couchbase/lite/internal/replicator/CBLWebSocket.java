@@ -52,7 +52,7 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         super(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener);
     }
 
-    @SuppressWarnings("PMD.CollapsibleIfStatements")
+    @Override
     protected boolean handleClose(@NonNull Throwable error) {
         if (checkErrnoException(error)) { return true; }
 
@@ -63,7 +63,7 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         }
 
         // SocketException
-        else if (error instanceof SocketException) {
+        if (error instanceof SocketException) {
             closed(C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
             return true;
         }

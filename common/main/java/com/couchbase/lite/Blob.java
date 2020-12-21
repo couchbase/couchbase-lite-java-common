@@ -28,7 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.jetbrains.annotations.NotNull;
 
 import com.couchbase.lite.internal.core.C4BlobKey;
 import com.couchbase.lite.internal.core.C4BlobReadStream;
@@ -577,7 +576,7 @@ public final class Blob implements FLEncodable {
         }
     }
 
-    @NotNull
+    @NonNull
     private C4BlobKey getBlobKey(C4BlobStore store) throws LiteCoreException, IOException {
         if (blobContent != null) { return store.create(blobContent); }
         if (blobContentStream != null) { return writeDatabaseFromInitStream(store); }

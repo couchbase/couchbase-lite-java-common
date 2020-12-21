@@ -39,4 +39,7 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         throws GeneralSecurityException, URISyntaxException {
         super(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener);
     }
+
+    @Override
+    protected boolean handleClose(@NonNull Throwable error) { return false; }
 }
