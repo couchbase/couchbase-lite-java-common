@@ -31,8 +31,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 
 /**
  * For extracting and loading native libraries for couchbase-lite-java.
@@ -40,7 +38,14 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 final class NativeLibrary {
     private NativeLibrary() { }
 
-    private static final String RESOURCE_BASE_DIR = "/libs";
+    private static final String JAVA_PATH_SEPARATOR = "/";
+
+    private static final String RESOURCE_BASE_DIR = "libs";
+
+    private static final String ARCH_X86 = "x86_64";
+    private static final String LIB_DIR_MAC = "macos";
+    private static final String LIB_DIR_LINUX = "linux";
+    private static final String LIB_DIR_WINDOWS = "windows";
 
     private static final String DIGEST_MD5 = "MD5";
 
@@ -64,31 +69,38 @@ final class NativeLibrary {
 
         if (LOADED.getAndSet(true)) { return; }
 
-        final MessageDigest md;
-        try { md = MessageDigest.getInstance(DIGEST_MD5); }
-        catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("Cannot find digest algorithm: " + DIGEST_MD5, e);
-        }
+        // get the OS id
+        final String osName = System.getProperty("os.name");
+        final String osDir = getOsDir(osName);
 
+        // get the resource path
+        final String resDirPath = JAVA_PATH_SEPARATOR + RESOURCE_BASE_DIR
+            + JAVA_PATH_SEPARATOR + osDir
+            + JAVA_PATH_SEPARATOR + ARCH_X86;
+
+        // get OS-appropriate names for the libraries
+        final List<String> libs = new ArrayList<>(LIBRARIES.size());
+        for (String lib: LIBRARIES) { libs.add(System.mapLibraryName(lib)); }
+
+        // buffer
         final byte[] buf = new byte[1024];
-
-        final String osName = getOSName();
-
-        final List<File> libs = getLibResources(osName);
 
         final File targetDir;
         try {
-            computeTargetDirectory(libs, buf, md);
             targetDir = new File(
                 CouchbaseLiteInternal.getTmpDirectoryPath(),
-                String.format("%032x", new BigInteger(1, md.digest())))
+                String.format("%032x", computeTargetDirectory(resDirPath, libs, buf)))
                 .getCanonicalFile();
         }
         catch (IOException e) { throw new IllegalStateException("Cannot compute target directory name", e); }
 
-        for (File lib: libs) {
+        for (String lib: libs) {
             final String libPath;
-            try { libPath = extract(osName, lib, targetDir, buf); }
+            try {
+                libPath = extract(lib, resDirPath, targetDir, buf);
+                // On non-windows systems set up permissions for the extracted native library.
+                if (!LIB_DIR_WINDOWS.equals(osDir)) { setPermissions(libPath); }
+            }
             catch (IOException e) {
                 throw new IllegalStateException("Cannot extract library resource: " + lib + " to " + targetDir, e);
             }
@@ -96,8 +108,7 @@ final class NativeLibrary {
             try { System.load(libPath); }
             catch (Throwable e) {
                 throw new IllegalStateException(
-                    "Cannot load native library " + libPath + "for "
-                        + System.getProperty("os.name") + "/" + System.getProperty("os.arch"),
+                    "Cannot load native library " + libPath + "for " + osName + "/" + System.getProperty("os.arch"),
                     e);
             }
         }
@@ -106,33 +117,59 @@ final class NativeLibrary {
     /**
      * Calculate the MD5 digest for all of the libraries.
      */
-    private static void computeTargetDirectory(
-        @NonNull List<File> libs,
-        @NonNull byte[] buf,
-        @NonNull MessageDigest md)
+    private static BigInteger computeTargetDirectory(
+        @NonNull String resDirPath,
+        @NonNull List<String> libs,
+        @NonNull byte[] buf)
         throws IOException {
-        for (File f: libs) {
-            final String path = f.getPath();
-            try (InputStream in = NativeLibrary.class.getResourceAsStream(path + "." + DIGEST_MD5)) {
+
+        // get a message digest for
+        final MessageDigest md;
+        try { md = MessageDigest.getInstance(DIGEST_MD5); }
+        catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("No such digest algorithm: " + DIGEST_MD5, e);
+        }
+
+        for (String lib: libs) {
+            final String path = resDirPath + JAVA_PATH_SEPARATOR + lib + "." + DIGEST_MD5;
+            try (InputStream in = NativeLibrary.class.getResourceAsStream(path)) {
                 if (in == null) { throw new IOException("Cannot find MD5 for library at " + path); }
                 int bytesRead;
                 while ((bytesRead = in.read(buf)) != -1) { md.update(buf, 0, bytesRead); }
             }
         }
+
+        return new BigInteger(1, md.digest());
     }
 
-    /**
-     * Extracts the given path to the native library in the resource directory into the target directory.
+    @NonNull
+    private static String getOsDir(@NonNull String osName) {
+        final String os = osName.toLowerCase(Locale.getDefault());
+        if (os.contains("mac")) { return LIB_DIR_MAC; }
+        if (os.contains(LIB_DIR_LINUX)) { return LIB_DIR_LINUX; }
+        if (os.contains(LIB_DIR_WINDOWS)) { return LIB_DIR_WINDOWS; }
+        throw new IllegalStateException("Unrecongnized OS: " + osName);
+    }
+
+    private static void setPermissions(String targetPath) throws IOException {
+        try { Runtime.getRuntime().exec(new String[] {"chmod", "755", targetPath}).waitFor(); }
+        catch (InterruptedException ignore) {
+            // nothing we can do about this.  Might as well try to proceed and see if it works.
+        }
+    }
+
+    /*
+     * Copy the named native library from a resource into the target directory.
      * If the native library already exists in the target library, the existing native library will be used.
      */
     @NonNull
     private static String extract(
-        @NonNull String osName,
-        @NonNull File lib,
+        @NonNull String lib,
+        @NonNull String resDirPath,
         @NonNull File targetDir,
         @NonNull byte[] buf)
         throws IOException {
-        final File targetFile = new File(targetDir, lib.getName());
+        final File targetFile = new File(targetDir, lib);
         final String targetPath = targetFile.getCanonicalPath();
         if (targetFile.exists()) { return targetPath; }
 
@@ -140,48 +177,15 @@ final class NativeLibrary {
             throw new IOException("Cannot create target directory: " + targetDir.getCanonicalPath());
         }
 
-        final String libResPath = lib.getPath();
+        final String resPath = resDirPath + JAVA_PATH_SEPARATOR + lib;
         try (
-            InputStream in = NativeLibrary.class.getResourceAsStream(libResPath);
+            InputStream in = NativeLibrary.class.getResourceAsStream(resPath);
             OutputStream out = Files.newOutputStream(targetFile.toPath())) {
-            if (in == null) { throw new IOException("Cannot find resource for native library at " + libResPath); }
+            if (in == null) { throw new IOException("Cannot find resource for native library at " + resPath); }
             int bytesRead;
             while ((bytesRead = in.read(buf)) != -1) { out.write(buf, 0, bytesRead); }
         }
 
-        // On non-windows systems set up permissions for the extracted native library.
-        if (!"windows".equals(osName)) {
-            try { Runtime.getRuntime().exec(new String[] {"chmod", "755", targetFile.getCanonicalPath()}).waitFor(); }
-            catch (InterruptedException ignore) {
-                // nothing we can do about this.  Might as well try to proceed and see if it works.
-            }
-        }
-
         return targetPath;
-    }
-
-    /**
-     * Returns the paths to the native library resources.
-     */
-    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    @NonNull
-    private static List<File> getLibResources(@NonNull String osName) {
-        final List<File> libs = new ArrayList<>(LIBRARIES.size());
-        for (String lib: LIBRARIES) {
-            File libFile = new File(RESOURCE_BASE_DIR, osName);
-            libFile = new File(libFile, "x86_64");
-            libFile = new File(libFile, System.mapLibraryName(lib));
-            libs.add(libFile);
-        }
-        return libs;
-    }
-
-    @NonNull
-    private static String getOSName() {
-        final String osName = System.getProperty("os.name").toLowerCase(Locale.getDefault());
-        if (osName.contains("linux")) { return "linux"; }
-        if (osName.contains("mac")) { return "macos"; }
-        if (osName.contains("mindows")) { return "windows"; }
-        return osName;
     }
 }
