@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.Nullable;
 import javax.net.ssl.KeyManager;
@@ -44,6 +43,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import okhttp3.Authenticator;
 import okhttp3.Challenge;
 import okhttp3.Cookie;
@@ -69,16 +69,32 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.StateMachine;
 
 
+@SuppressFBWarnings("SE_BAD_FIELD")
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessiveImports"})
 public class AbstractCBLWebSocket extends C4Socket {
     private static final LogDomain TAG = LogDomain.NETWORK;
+
+    public static final long DEFAULT_HEARTBEAT_SEC = 300L;
 
     private static final int MAX_AUTH_RETRIES = 3;
 
     private static final int HTTP_STATUS_MIN = 100;
     private static final int HTTP_STATUS_MAX = 600;
+
+    private enum State {INIT, CONNECTING, OPEN, CLOSING, CLOSED, FAILED}
+
+    private static final StateMachine.Builder<State> WS_STATE_BUILDER;
+    static {
+        final StateMachine.Builder<State> builder = new StateMachine.Builder<>(State.class, State.INIT, State.FAILED);
+        builder.addTransition(State.INIT, State.CONNECTING);
+        builder.addTransition(State.CONNECTING, State.OPEN, State.CLOSING);
+        builder.addTransition(State.OPEN, State.CLOSING, State.CLOSED);
+        builder.addTransition(State.CLOSING, State.CLOSED);
+        WS_STATE_BUILDER = builder;
+    }
 
     /**
      * Workaround to enable both TLS1.1 and TLS1.2 for Android API 16 - 19.
@@ -137,7 +153,10 @@ public class AbstractCBLWebSocket extends C4Socket {
     class CBLWebSocketListener extends WebSocketListener {
         @Override
         public void onOpen(WebSocket webSocket, Response response) {
-            Log.v(TAG, "WebSocketListener opened with response " + response);
+            Log.v(TAG, "%s:OkHTTP open: %s", state, response);
+
+            if (state.setState("Remote.onOpen", State.OPEN) == null) { return; }
+
             AbstractCBLWebSocket.this.webSocket = webSocket;
             receivedHTTPResponse(response);
             Log.i(TAG, "WebSocket CONNECTED!");
@@ -146,25 +165,37 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         @Override
         public void onMessage(WebSocket webSocket, String text) {
-            Log.v(TAG, "WebSocketListener received text string with length of " + text.length());
+            Log.v(TAG, "%s:OkHTTP text data: %d", state, text.length());
+
+            if (!state.checkState("Remote.onMessage", State.OPEN)) { return; }
+
             received(text.getBytes(StandardCharsets.UTF_8));
         }
 
         @Override
         public void onMessage(WebSocket webSocket, ByteString bytes) {
-            Log.v(TAG, "WebSocketListener received data of " + bytes.size() + " bytes");
+            Log.v(TAG, "%s:OkHTTP byte data: %d", state, bytes.size());
+
+            if (!state.checkState("Remote.onMessage", State.OPEN)) { return; }
+
             received(bytes.toByteArray());
         }
 
         @Override
         public void onClosing(WebSocket webSocket, int code, String reason) {
-            Log.v(TAG, "WebSocketListener is closing with code " + code + ", reason " + reason);
+            Log.v(TAG, "%s:OkHTTP closing: %s", state, reason);
+
+            if (state.setState("Remote.onClosing", State.CLOSING) == null) { return; }
+
             closeRequested(code, reason);
         }
 
         @Override
         public void onClosed(WebSocket webSocket, int code, String reason) {
-            Log.v(TAG, "WebSocketListener closed with code " + code + ", reason " + reason);
+            Log.v(TAG, "%s:OkHTTP closed: (%d) %s", state, code, reason);
+
+            if (!state.checkState("Remote.onClosed", State.CLOSED)) { return; }
+
             didClose(code, reason);
         }
 
@@ -175,7 +206,9 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         @Override
         public void onFailure(WebSocket webSocket, Throwable t, Response response) {
-            Log.w(TAG, "WebSocketListener failed with response " + response, t);
+            Log.v(TAG, "%s:OkHTTP failed: %s", state, response, t);
+
+            state.setState("Remote.onFailure", State.FAILED);
 
             // Invoked when a web socket has been closed due to an error reading from or writing to the network.
             // Both outgoing and incoming messages may have been lost. No further calls to this listener will be made.
@@ -209,6 +242,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         .connectTimeout(0, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.SECONDS)
         .writeTimeout(0, TimeUnit.SECONDS)
+        .pingInterval(DEFAULT_HEARTBEAT_SEC, TimeUnit.SECONDS)
         // redirection
         .followRedirects(true)
         .followSslRedirects(true)
@@ -255,13 +289,13 @@ public class AbstractCBLWebSocket extends C4Socket {
     // Member Variables
     //-------------------------------------------------------------------------
 
-    private final AtomicBoolean closing = new AtomicBoolean(false);
     private final OkHttpClient httpClient;
     private final CBLWebSocketListener wsListener;
     private final URI uri;
     private final Map<String, Object> options;
     private final CBLCookieStore cookieStore;
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
+    private final StateMachine<State> state = WS_STATE_BUILDER.build();
     private WebSocket webSocket;
 
     //-------------------------------------------------------------------------
@@ -297,12 +331,19 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     @Override
     protected void openSocket() {
-        Log.v(TAG, String.format(Locale.ENGLISH, "CBLWebSocket is connecting to %s ...", uri));
+        Log.v(TAG, "%s:Core connect: %s", state, uri);
+
+        if (state.setState("Core.openSocket", State.CONNECTING) == null) { return; }
+
         httpClient.newWebSocket(newRequest(), wsListener);
     }
 
     @Override
     protected void send(byte[] allocatedData) {
+        Log.v(TAG, "%s:Core send: %d", state, allocatedData.length);
+
+        if (!state.checkState("send", State.OPEN)) { return; }
+
         if (!webSocket.send(ByteString.of(allocatedData, 0, allocatedData.length))) {
             Log.e(TAG, "CBLWebSocket failed to send data of length = " + allocatedData.length);
             return;
@@ -321,15 +362,9 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     @Override
     protected void requestClose(int status, String message) {
-        if (webSocket == null) {
-            Log.w(TAG, "CBLWebSocket was not initialized before receiving close request.");
-            return;
-        }
+        Log.v(TAG, "%s:Core request close: %d", state, status);
 
-        if (closing.getAndSet(true)) {
-            Log.v(TAG, "CBLWebSocket already closing.");
-            return;
-        }
+        if (state.setState("Core.requestClose", State.CLOSED) == null) { return; }
 
         // Core will, apparently, randomly send HTTP statuses in this, purely WS, call.
         // Just recast them as policy errors.
@@ -394,7 +429,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         return new CookieJar() {
             @Override
             public void saveFromResponse(HttpUrl httpUrl, List<Cookie> cookies) {
-                for (Cookie cookie : cookies) {
+                for (Cookie cookie: cookies) {
                     cookieStore.setCookie(httpUrl.uri(), cookie.toString());
                 }
             }
