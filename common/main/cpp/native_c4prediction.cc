@@ -38,10 +38,13 @@ static C4SliceResult prediction(void* context, FLDict input, C4Database* c4db, C
     auto model = (jobject)context;
     jlong result = env->CallLongMethod(model, m_prediction, (jlong)input, (jlong)c4db);
 
+    auto resultSlice = *(C4SliceResult*) result;
+    free(reinterpret_cast<void *>(result));
+
     if (getEnvStat == JNI_EDETACHED)
         gJVM->DetachCurrentThread();
 
-    return *(C4SliceResult*)result;
+    return resultSlice;
 }
 
 static void unregistered(void* context) {
