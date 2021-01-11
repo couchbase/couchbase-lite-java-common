@@ -367,10 +367,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     /**
      * Start the replicator.
      * This method honors the flag set by the deprecated method <code>resetCheckpoint()</code>.
-     *
-     * @deprecated Use <code>start(boolean resetCheckpoint)</code> instead.
      */
-    @Deprecated
     public void start() { start(resetCheckpoint); }
 
     /**
