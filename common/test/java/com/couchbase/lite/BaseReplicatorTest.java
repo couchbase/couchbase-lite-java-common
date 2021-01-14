@@ -28,7 +28,7 @@ import org.junit.Before;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
 
-import static com.couchbase.lite.AbstractReplicatorConfiguration.ReplicatorType;
+import static com.couchbase.lite.AbstractReplicator.ReplicatorType;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -96,7 +96,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         boolean pull,
         boolean continuous) {
         return new ReplicatorConfiguration(source, target)
-            .setReplicatorType(getReplicatorType(push, pull))
+            .setType(getReplicatorType(push, pull))
             .setContinuous(continuous)
             .setHeartbeat(0L);
     }

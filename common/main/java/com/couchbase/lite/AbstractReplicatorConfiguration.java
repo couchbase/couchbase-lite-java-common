@@ -39,9 +39,11 @@ abstract class AbstractReplicatorConfiguration {
      * PUSH_AND_PULL: Bidirectional; both push and pull
      * PUSH: Pushing changes to the target
      * PULL: Pulling changes from the target
+     *
+     * @deprecated Use AbstractReplicator.ReplicatorType
      */
-    public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
-
+    @Deprecated
+    public enum ReplicatorType { PUSH_AND_PULL, PUSH, PULL; }
 
     //---------------------------------------------
     // member variables
@@ -50,7 +52,7 @@ abstract class AbstractReplicatorConfiguration {
     @NonNull
     private final Database database;
     @NonNull
-    private ReplicatorType replicatorType;
+    private AbstractReplicator.ReplicatorType type;
     private boolean continuous;
     @Nullable
     private Authenticator authenticator;
@@ -83,7 +85,7 @@ abstract class AbstractReplicatorConfiguration {
         this.database = Preconditions.assertNotNull(database, "database");
         this.target = Preconditions.assertNotNull(target, "target");
         this.readonly = false;
-        this.replicatorType = ReplicatorType.PUSH_AND_PULL;
+        this.type = AbstractReplicator.ReplicatorType.PUSH_AND_PULL;
     }
 
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config, boolean readonly) {
@@ -92,7 +94,7 @@ abstract class AbstractReplicatorConfiguration {
         this.readonly = readonly;
         this.database = config.database;
         this.target = config.target;
-        this.replicatorType = config.replicatorType;
+        this.type = config.type;
         this.continuous = config.continuous;
         this.authenticator = config.authenticator;
         this.pinnedServerCertificate = config.pinnedServerCertificate;
@@ -246,16 +248,45 @@ abstract class AbstractReplicatorConfiguration {
     }
 
     /**
-     * Sets the replicator type indicating the direction of the replicator.
+     * Old setter for replicator type, indicating the direction of the replicator.
      * The default value is .pushAndPull which is bi-directional.
      *
      * @param replicatorType The replicator type.
      * @return this.
+     * @deprecated Use setType(AbstractReplicator.ReplicatorType)
      */
+    @Deprecated
     @NonNull
     public final ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
         checkReadOnly();
-        this.replicatorType = Preconditions.assertNotNull(replicatorType, "replicatorType");
+        final AbstractReplicator.ReplicatorType type;
+        switch (Preconditions.assertNotNull(replicatorType, "replicatorType")) {
+            case PUSH_AND_PULL:
+                type = AbstractReplicator.ReplicatorType.PUSH_AND_PULL;
+                break;
+            case PUSH:
+                type = AbstractReplicator.ReplicatorType.PUSH;
+                break;
+            case PULL:
+                type = AbstractReplicator.ReplicatorType.PULL;
+                break;
+            default:
+                throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
+        }
+        return setType(type);
+    }
+
+    /**
+     * Sets the replicator type indicating the direction of the replicator.
+     * The default value is .pushAndPull which is bi-directional.
+     *
+     * @param type The replicator type.
+     * @return this.
+     */
+    @NonNull
+    public final ReplicatorConfiguration setType(@NonNull AbstractReplicator.ReplicatorType type) {
+        checkReadOnly();
+        this.type = Preconditions.assertNotNull(type, "replicatorType");
         return getReplicatorConfiguration();
     }
 
@@ -362,10 +393,30 @@ abstract class AbstractReplicatorConfiguration {
     public final ReplicationFilter getPushFilter() { return pushFilter; }
 
     /**
+     * Old getter for Replicator type indicating the direction of the replicator.
+     *
+     * @deprecated Use getType()
+     */
+    @Deprecated
+    @NonNull
+    public final ReplicatorType getReplicatorType() {
+        switch (type) {
+            case PUSH_AND_PULL:
+                return ReplicatorType.PUSH_AND_PULL;
+            case PUSH:
+                return ReplicatorType.PUSH;
+            case PULL:
+                return ReplicatorType.PULL;
+            default:
+                throw new IllegalStateException("Unrecognized replicator type: " + type);
+        }
+    }
+
+    /**
      * Return Replicator type indicating the direction of the replicator.
      */
     @NonNull
-    public final ReplicatorType getReplicatorType() { return replicatorType; }
+    public final AbstractReplicator.ReplicatorType getType() { return type; }
 
     /**
      * Return the replication target to replicate with.
@@ -405,7 +456,7 @@ abstract class AbstractReplicatorConfiguration {
         if (authenticator != null) { typeStr = typeStr + "@"; }
         if (conflictResolver != null) { typeStr = typeStr + "?"; }
         if (pinnedServerCertificate != null) { typeStr = typeStr + "!"; }
-        switch (replicatorType) {
+        switch (type) {
             case PUSH_AND_PULL:
                 typeStr = "<" + typeStr + ">";
                 break;
@@ -437,13 +488,13 @@ abstract class AbstractReplicatorConfiguration {
     abstract ReplicatorConfiguration getReplicatorConfiguration();
 
     boolean isPush() {
-        return replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
-            || replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH;
+        return type == AbstractReplicator.ReplicatorType.PUSH_AND_PULL
+            || type == AbstractReplicator.ReplicatorType.PUSH;
     }
 
     boolean isPull() {
-        return replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
-            || replicatorType == ReplicatorConfiguration.ReplicatorType.PULL;
+        return type == AbstractReplicator.ReplicatorType.PUSH_AND_PULL
+            || type == AbstractReplicator.ReplicatorType.PULL;
     }
 
     final ReplicatorConfiguration readonlyCopy() {
