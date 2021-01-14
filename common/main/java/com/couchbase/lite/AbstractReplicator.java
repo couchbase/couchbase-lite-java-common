@@ -106,11 +106,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         /**
          * The replication is actively transferring data.
          */
-        BUSY,
-        /**
-         * Unrecognized replication state.
-         */
-        UNKNOWN
+        BUSY
     }
 
 
@@ -180,7 +176,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
             if (level != null) { return level; }
 
             Log.w(LogDomain.REPLICATOR, "Unrecognized replicator activity level: " + c4ActivityLevel);
-            return ActivityLevel.UNKNOWN;
+
+            // Per @Pasin, unrecognized states report as busy.
+            return ActivityLevel.BUSY;
         }
 
         static boolean isStopped(C4ReplicatorStatus c4Status) {
