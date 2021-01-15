@@ -25,6 +25,7 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+
 // ----------------------------------------------------------------------------
 // Java_com_couchbase_lite_internal_core_C4Base
 // ----------------------------------------------------------------------------
@@ -61,5 +62,7 @@ Java_com_couchbase_lite_internal_core_C4Base_getMessage(JNIEnv *env, jclass igno
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Base_setTempDir
         (JNIEnv *env, jclass ignore, jstring jtempDir) {
     jstringSlice tempDir(env, jtempDir);
-    c4_setTempDir(tempDir);
+    C4Error error = {};
+    if (!c4_setTempDir(tempDir, &error))
+        throwError(env, error);
 }
