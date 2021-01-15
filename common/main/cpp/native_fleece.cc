@@ -479,6 +479,7 @@ Java_com_couchbase_lite_internal_fleece_FLSliceResult_initWithBytes(JNIEnv *env,
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_fleece_FLSliceResult_free(JNIEnv *env, jclass ignore, jlong jslice) {
     FLSliceResult_Release(*(FLSliceResult *) jslice);
+    free(reinterpret_cast<void *>(jslice));
 }
 
 /*

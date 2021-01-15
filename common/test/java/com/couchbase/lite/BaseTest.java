@@ -49,13 +49,11 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @AfterClass
     public static void tearDownBaseTestClass() {
-        String path = CouchbaseLiteInternal.getDbDirectoryPath();
-        Report.log(LogLevel.INFO, "Deleting db directory: " + path);
-        FileUtils.deleteContents(new File(path));
-        path = CouchbaseLiteInternal.getTmpDirectoryPath();
-        Report.log(LogLevel.INFO, "Deleting tmp directory: " + path);
-        FileUtils.deleteContents(new File(CouchbaseLiteInternal.getTmpDirectoryPath()));
-        Report.log(LogLevel.INFO, "Directories deleted");
+        File tmpDir = new File(CouchbaseLiteInternal.getTmpDirectoryPath()).getAbsoluteFile();
+        if (!tmpDir.exists()) { return; }
+
+        Report.log(LogLevel.INFO, "Deleting tmp directory contents: " + tmpDir);
+        FileUtils.deleteContents(tmpDir);
     }
 
     @Before
