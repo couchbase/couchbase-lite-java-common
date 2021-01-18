@@ -28,6 +28,7 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.TestUtils;
@@ -1260,6 +1261,14 @@ public class DatabaseTest extends BaseDbTest {
         // 3. delete by previously retrieved document
         baseTestDb.delete(doc);
         assertNull(baseTestDb.getDocument("doc"));
+    }
+
+    // At one point, setupDirectories called c4_setTmpDir.
+    // That function will now throw, if called twice.
+    // Verify that the call does not throw.
+    @Test
+    public void testSetupDirectories() {
+        CouchbaseLiteInternal.setupDirectories(CouchbaseLiteInternal.getTmpDirectoryPath() + "/foo");
     }
 
     // The following four tests verify, explicitly, the code that
