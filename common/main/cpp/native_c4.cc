@@ -298,9 +298,10 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env
             throwError(env, err);
         }
 
-        m_C4Log_logCallback = env->GetStaticMethodID(cls_C4Log,
-                                                     "logCallback",
-                                                     "(Ljava/lang/String;ILjava/lang/String;)V");
+        m_C4Log_logCallback = env->GetStaticMethodID(
+                cls_C4Log,
+                "logCallback",
+                "(Ljava/lang/String;ILjava/lang/String;)V");
 
         if (!m_C4Log_logCallback) {
             C4Error err = c4error_make(LiteCoreDomain, kC4ErrorUnexpectedError, {});

@@ -59,7 +59,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     @Before
     public final void setUpBaseTest() {
         // reset the directories
-        CouchbaseLiteInternal.setupDirectories(null);
+        CouchbaseLiteInternal.setDbDirectoryPath(null);
 
         Log.initLogging();
 

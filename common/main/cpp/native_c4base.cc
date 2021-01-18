@@ -25,6 +25,8 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+extern "C" {
+
 // ----------------------------------------------------------------------------
 // Java_com_couchbase_lite_internal_core_C4Base
 // ----------------------------------------------------------------------------
@@ -33,7 +35,8 @@ using namespace litecore::jni;
  * Method:    debug
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Base_debug(JNIEnv *env, jclass ignore) {
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Base_debug(JNIEnv *env, jclass ignore) {
     c4log_enableFatalExceptionBacktrace();
     c4log_getWarnOnErrors();
 }
@@ -44,8 +47,12 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Base_debug(JNIEnv
  * Signature: (III)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Base_getMessage(JNIEnv *env, jclass ignore, jint jdomain, jint jcode,
-                                                        jint jinfo) {
+Java_com_couchbase_lite_internal_core_C4Base_getMessage(
+        JNIEnv *env,
+        jclass ignore,
+        jint jdomain,
+        jint jcode,
+        jint jinfo) {
     C4Error c4err = {(C4ErrorDomain) jdomain, (int32_t) jcode, (int32_t) jinfo};
     C4StringResult msg = c4error_getMessage(c4err);
     jstring result = toJString(env, msg);
@@ -58,8 +65,11 @@ Java_com_couchbase_lite_internal_core_C4Base_getMessage(JNIEnv *env, jclass igno
  * Method:    setTempDir
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Base_setTempDir
-        (JNIEnv *env, jclass ignore, jstring jtempDir) {
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Base_setTempDir(JNIEnv *env, jclass ignore, jstring jtempDir) {
     jstringSlice tempDir(env, jtempDir);
-    c4_setTempDir(tempDir);
+    C4Error error = {};
+    if (!c4_setTempDir(tempDir, &error))
+        throwError(env, error);
+}
 }

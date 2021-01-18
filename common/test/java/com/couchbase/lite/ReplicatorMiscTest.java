@@ -150,7 +150,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testReplicatorStatus() {
         assertEquals(
-            AbstractReplicator.ActivityLevel.UNKNOWN,
+            AbstractReplicator.ActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.STOPPED - 1));
         assertEquals(
             AbstractReplicator.ActivityLevel.STOPPED,
@@ -168,7 +168,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             AbstractReplicator.ActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY));
         assertEquals(
-            AbstractReplicator.ActivityLevel.UNKNOWN,
+            AbstractReplicator.ActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY + 1));
     }
 

@@ -201,7 +201,7 @@ abstract class AbstractDatabase {
 
         // Setting the temp directory from the Database Configuration is deprecated and will go away:
 
-        CouchbaseLiteInternal.setupDirectories(config.getRootDirectory());
+        CouchbaseLiteInternal.setDbDirectoryPath(config.getRootDirectory());
 
         try {
             C4Database.copyDb(
@@ -297,10 +297,8 @@ abstract class AbstractDatabase {
         this.activeProcesses = new HashSet<>();
         this.docChangeNotifiers = new HashMap<>();
 
-        // !!! Verify use of the "tmp" directory
-        // It changes when the root directory changes.
         fixHydrogenBug(config, name);
-        CouchbaseLiteInternal.setupDirectories(config.getRootDirectory());
+        CouchbaseLiteInternal.setDbDirectoryPath(config.getRootDirectory());
 
         // Can't open the DB until the file system is set up.
         this.c4Database = openC4Db();

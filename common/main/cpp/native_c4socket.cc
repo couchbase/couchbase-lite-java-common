@@ -56,33 +56,23 @@ bool litecore::jni::initC4Socket(JNIEnv *env) {
         if (!m_C4Socket_open)
             return false;
 
-        m_C4Socket_write = env->GetStaticMethodID(cls_C4Socket,
-                                                  "write",
-                                                  "(J[B)V");
+        m_C4Socket_write = env->GetStaticMethodID(cls_C4Socket, "write", "(J[B)V");
         if (!m_C4Socket_write)
             return false;
 
-        m_C4Socket_completedReceive = env->GetStaticMethodID(cls_C4Socket,
-                                                             "completedReceive",
-                                                             "(JJ)V");
+        m_C4Socket_completedReceive = env->GetStaticMethodID(cls_C4Socket, "completedReceive", "(JJ)V");
         if (!m_C4Socket_completedReceive)
             return false;
 
-        m_C4Socket_close = env->GetStaticMethodID(cls_C4Socket,
-                                                  "close",
-                                                  "(J)V");
+        m_C4Socket_close = env->GetStaticMethodID(cls_C4Socket, "close", "(J)V");
         if (!m_C4Socket_close)
             return false;
 
-        m_C4Socket_requestClose = env->GetStaticMethodID(cls_C4Socket,
-                                                         "requestClose",
-                                                         "(JILjava/lang/String;)V");
+        m_C4Socket_requestClose = env->GetStaticMethodID(cls_C4Socket, "requestClose", "(JILjava/lang/String;)V");
         if (!m_C4Socket_requestClose)
             return false;
 
-        m_C4Socket_dispose = env->GetStaticMethodID(cls_C4Socket,
-                                                    "dispose",
-                                                    "(J)V");
+        m_C4Socket_dispose = env->GetStaticMethodID(cls_C4Socket, "dispose", "(J)V");
         if (!m_C4Socket_dispose)
             return false;
     }

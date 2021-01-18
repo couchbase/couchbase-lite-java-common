@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,6 +35,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.couchbase.lite.BuildConfig;
+import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.R;
 import com.couchbase.lite.internal.core.C4Base;
@@ -53,6 +53,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * is also used, occasionally, as the home for log files.
  */
 public final class CouchbaseLiteInternal {
+
     // Utility class
     private CouchbaseLiteInternal() {}
 
@@ -71,10 +72,11 @@ public final class CouchbaseLiteInternal {
     @SuppressWarnings("PMD.FieldNamingConventions")
     private static final boolean DEBUGGING = BuildConfig.CBL_DEBUG;
 
-    @GuardedBy("lock")
+    @GuardedBy("LOCK")
     private static String dbDirPath;
-    @GuardedBy("lock")
-    private static volatile String tmpDirPath;
+
+    @GuardedBy("LOCK")
+    private static String tmpDirPath;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
@@ -92,7 +94,7 @@ public final class CouchbaseLiteInternal {
 
         // Splitting initialization and registration is not really necessary here.
         // Do it to maintain code parity with the Java version, where it is necessary.
-        initDirectories(rootDirectoryPath);
+        setDbDirectoryPath(rootDirectoryPath);
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
@@ -138,40 +140,22 @@ public final class CouchbaseLiteInternal {
         return ctxt;
     }
 
-    @NonNull
-    public static String makeDbPath(@Nullable String rootDir) {
-        requireInit("Can't create DB path");
-        return verifyDir((rootDir != null) ? new File(rootDir) : getContext().getFilesDir());
-    }
-
-    @NonNull
-    public static String makeTmpPath(@Nullable String rootDir) {
-        requireInit("Can't create tmp dir path");
-        final File dir = (rootDir != null)
-            ? new File(rootDir, TEMP_DIR_NAME)
-            : getContext().getExternalFilesDir(TEMP_DIR_NAME);
-        if (dir == null) { throw new IllegalStateException("Tmp dir root is null"); }
-        return verifyDir(dir);
-    }
-
-    public static void setupDirectories(@Nullable String rootDirPath) {
+    public static void setDbDirectoryPath(@Nullable String rootDirPath) {
         requireInit("Can't set root directory");
-
-        synchronized (LOCK) {
-            // remember the current tmp dir
-            final String tmpPath = tmpDirPath;
-
-            initDirectories(rootDirPath);
-
-            // if the temp dir has changed, tell C4Base
-            if (!Objects.equals(tmpPath, tmpDirPath)) { setC4TmpDirPath(); }
-        }
+        final String dbPath = makeDbPath(rootDirPath);
+        synchronized (LOCK) { dbDirPath = dbPath; }
     }
 
     @NonNull
     public static String getDbDirectoryPath() {
         requireInit("Database directory not initialized");
         synchronized (LOCK) { return dbDirPath; }
+    }
+
+    @NonNull
+    public static String makeDbPath(@Nullable String rootDir) {
+        requireInit("Can't create DB path");
+        return verifyDir((rootDir != null) ? new File(rootDir) : getContext().getFilesDir());
     }
 
     @NonNull
@@ -211,17 +195,17 @@ public final class CouchbaseLiteInternal {
         throw new IllegalStateException("Cannot create or access directory at " + dir, err);
     }
 
-    private static void initDirectories(@Nullable String rootDirPath) {
-        final String dbPath = makeDbPath(rootDirPath);
-        final String tmpPath = makeTmpPath(rootDirPath);
+    private static void setC4TmpDirPath() {
+        final File dir = getContext().getExternalFilesDir(TEMP_DIR_NAME);
+        if (dir == null) { throw new IllegalStateException("Tmp dir root is null"); }
+        final String path = verifyDir(dir);
 
         synchronized (LOCK) {
-            tmpDirPath = tmpPath;
-            dbDirPath = dbPath;
+            try {
+                C4Base.setTempDir(path);
+                tmpDirPath = path;
+            }
+            catch (LiteCoreException e) { Log.w(LogDomain.DATABASE, "Failed to set tmp directory path", e); }
         }
-    }
-
-    private static void setC4TmpDirPath() {
-        synchronized (LOCK) { C4Base.setTempDir(tmpDirPath); }
     }
 }
