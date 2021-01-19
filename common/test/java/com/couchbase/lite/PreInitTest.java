@@ -19,14 +19,16 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
+
 
 public class PreInitTest extends PlatformBaseTest {
 
     @BeforeClass
-    public static void setUpPreInitTestClass() { deinitCouchbase(); }
+    public static void setUpPreInitTestClass() { CouchbaseLiteInternal.reset(false); }
 
     @AfterClass
-    public static void tearDownPreInitTest() { initCouchbase(); }
+    public static void tearDownPreInitTest() { CouchbaseLiteInternal.reset(true); }
 
     @Test(expected = IllegalStateException.class)
     public void testCreateDatabaseBeforeInit() throws CouchbaseLiteException {
