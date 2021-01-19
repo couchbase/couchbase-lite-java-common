@@ -93,7 +93,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         // Don't use makeConfig: it sets hartbeat to 0
         final ReplicatorConfiguration config
             = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
-            .setType(getReplicatorType(true, false))
+            .setReplicatorType(getReplicatorType(true, false))
             .setContinuous(false);
 
         final Replicator repl = testReplicator(config);

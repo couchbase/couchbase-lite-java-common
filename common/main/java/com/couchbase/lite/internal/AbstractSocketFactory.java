@@ -68,7 +68,7 @@ public abstract class AbstractSocketFactory {
                 cookieStore,
                 serverCertsListener);
 
-        if (socket != null) {
+        if (socket == null) {
             throw new UnsupportedOperationException("Unrecognized endpoint type: " + endpoint.getClass());
         }
 

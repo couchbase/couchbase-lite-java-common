@@ -17,7 +17,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import java.net.URI;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +27,6 @@ import org.junit.Before;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
 
-import static com.couchbase.lite.AbstractReplicator.ReplicatorType;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -61,12 +59,12 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     }
 
     @NonNull
-    protected final ReplicatorType getReplicatorType(boolean push, boolean pull) {
+    protected final AbstractReplicatorConfiguration.ReplicatorType getReplicatorType(boolean push, boolean pull) {
         return (push && pull)
-            ? ReplicatorType.PUSH_AND_PULL
+            ? AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
             : ((push)
-                ? ReplicatorType.PUSH
-                : ReplicatorType.PULL);
+                ? AbstractReplicatorConfiguration.ReplicatorType.PUSH
+                : AbstractReplicatorConfiguration.ReplicatorType.PULL);
     }
 
     // Don't let the NetworkConnectivityManager confuse tests
@@ -96,7 +94,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         boolean pull,
         boolean continuous) {
         return new ReplicatorConfiguration(source, target)
-            .setType(getReplicatorType(push, pull))
+            .setReplicatorType(getReplicatorType(push, pull))
             .setContinuous(continuous)
             .setHeartbeat(0L);
     }

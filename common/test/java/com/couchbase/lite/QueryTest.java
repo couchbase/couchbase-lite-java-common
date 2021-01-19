@@ -2920,7 +2920,6 @@ public class QueryTest extends BaseQueryTest {
 
         verifyQuery(query, (n, result) -> {
             final int i = n - 1;
-            android.util.Log.d("###", "@" + i + " local: " + expectedLocal.get(i) + " == " + result.getString(0));
             assertEquals(expectedUTC.get(i), result.getString(1));
         });
     }
