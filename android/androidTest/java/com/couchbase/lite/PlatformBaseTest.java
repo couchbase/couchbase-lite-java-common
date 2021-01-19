@@ -59,8 +59,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     static { initCouchbase(); }
     public static void initCouchbase() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
-    public static void deinitCouchbase() { CouchbaseLiteInternal.reset(); }
-
     @BeforeClass
     public static void setUpPlatformSuite() { android.util.Log.d(">>>>>>>>>>>>>>>>>>>>>>>>>", " Suite started"); }
 

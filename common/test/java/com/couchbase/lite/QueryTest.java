@@ -2591,7 +2591,6 @@ public class QueryTest extends BaseQueryTest {
             assertEquals(1, result.count());
             if (n == 1) { assertEquals("doc1", result.getString(0)); }
             else { assertEquals("doc2", result.getString(0)); }
-
         });
         assertEquals(2, numRows);
 
@@ -2605,7 +2604,6 @@ public class QueryTest extends BaseQueryTest {
             assertEquals(1, result.count());
             if (n == 1) { assertEquals("doc1", result.getString(0)); }
             else { assertEquals("doc4", result.getString(0)); }
-
         });
         assertEquals(2, numRows);
 
@@ -2891,41 +2889,39 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testMillisConversion() throws CouchbaseLiteException {
-        ArrayList<Number> millisToUse = new ArrayList<>();
-        millisToUse.add(499132800000L);
-        millisToUse.add(499137660000L);
-        millisToUse.add(499137690000L);
-        millisToUse.add(499137690500L);
-        millisToUse.add(499137690550L);
-        millisToUse.add(499137690555L);
+        final Number[] millis = new Number[] {
+            499132800000L,
+            499137660000L,
+            499137690000L,
+            499137690500L,
+            499137690550L,
+            499137690555L};
+
+        List<String> expectedUTC = Arrays.asList(
+            "1985-10-26T00:00:00Z",
+            "1985-10-26T01:21:00Z",
+            "1985-10-26T01:21:30Z",
+            "1985-10-26T01:21:30.500Z",
+            "1985-10-26T01:21:30.550Z",
+            "1985-10-26T01:21:30.555Z");
 
         ArrayList<String> expectedLocal = new ArrayList<>();
-        for (Number millis: millisToUse) {
-            MutableDocument doc = new MutableDocument();
-            doc.setNumber("timestamp", millis);
-            baseTestDb.save(doc);
-            expectedLocal.add(toLocal((long) millis));
+
+        for (Number t: millis) {
+            expectedLocal.add(toLocal((long) t));
+            baseTestDb.save(new MutableDocument().setNumber("timestamp", t));
         }
 
-        ArrayList<String> expectedUTC = new ArrayList<>();
-        expectedUTC.add("1985-10-26T00:00:00Z");
-        expectedUTC.add("1985-10-26T01:21:00Z");
-        expectedUTC.add("1985-10-26T01:21:30Z");
-        expectedUTC.add("1985-10-26T01:21:30.500Z");
-        expectedUTC.add("1985-10-26T01:21:30.550Z");
-        expectedUTC.add("1985-10-26T01:21:30.555Z");
-
-        SelectResult[] selections = new SelectResult[2];
-        selections[0] = SelectResult.expression(Function.millisToString(Expression.property("timestamp")));
-        selections[1] = SelectResult.expression(Function.millisToUTC(Expression.property("timestamp")));
-
-        Query query = QueryBuilder.select(selections)
+        Query query = QueryBuilder.select(
+            SelectResult.expression(Function.millisToString(Expression.property("timestamp"))),
+            SelectResult.expression(Function.millisToUTC(Expression.property("timestamp"))))
             .from(DataSource.database(baseTestDb))
             .orderBy(Ordering.property("timestamp").ascending());
 
         verifyQuery(query, (n, result) -> {
-            assertEquals(expectedLocal.get(n - 1), result.getString(0));
-            assertEquals(expectedUTC.get(n - 1), result.getString(1));
+            final int i = n - 1;
+            android.util.Log.d("###", "@" + i + " local: " + expectedLocal.get(i) + " == " + result.getString(0));
+            assertEquals(expectedUTC.get(i), result.getString(1));
         });
     }
 

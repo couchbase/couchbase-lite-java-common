@@ -127,7 +127,7 @@ public final class CouchbaseLiteInternal {
     }
 
     @VisibleForTesting
-    public static void reset() { INITIALIZED.set(false); }
+    public static void reset(boolean state) { INITIALIZED.set(state); }
 
     @VisibleForTesting
     @SuppressWarnings({"unchecked", "rawtypes"})
