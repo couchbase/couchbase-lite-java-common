@@ -92,7 +92,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testDefaultHeartbeat() throws URISyntaxException {
         final ReplicatorConfiguration config
             = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
-            .setType(getReplicatorType(true, false))
+            .setReplicatorType(getReplicatorType(true, false))
             .setContinuous(false);
 
         final Replicator repl = new Replicator(null, config);
@@ -111,7 +111,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testCustomHeartbeat() throws URISyntaxException {
         final ReplicatorConfiguration config
             = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
-            .setType(getReplicatorType(true, false))
+            .setReplicatorType(getReplicatorType(true, false))
             .setContinuous(false)
             .setHeartbeat(67L);
 

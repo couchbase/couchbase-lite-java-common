@@ -27,7 +27,6 @@ import org.junit.Before;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
 
-import static com.couchbase.lite.AbstractReplicator.ReplicatorType;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -61,12 +60,12 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     }
 
     @NotNull
-    protected final ReplicatorType getReplicatorType(boolean push, boolean pull) {
+    protected final AbstractReplicatorConfiguration.ReplicatorType getReplicatorType(boolean push, boolean pull) {
         return (push && pull)
-            ? ReplicatorType.PUSH_AND_PULL
+            ? AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
             : ((push)
-                ? ReplicatorType.PUSH
-                : ReplicatorType.PULL);
+                ? AbstractReplicatorConfiguration.ReplicatorType.PUSH
+                : AbstractReplicatorConfiguration.ReplicatorType.PULL);
     }
 
     // Don't let the NetworkConnectivityManager confuse tests
@@ -117,7 +116,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         Certificate pinnedServerCert,
         ConflictResolver resolver) {
         ReplicatorConfiguration config = new ReplicatorConfiguration(source, target);
-        config.setType(getReplicatorType(push, pull));
+        config.setReplicatorType(getReplicatorType(push, pull));
         config.setContinuous(continuous);
 
         final byte[] pin;
