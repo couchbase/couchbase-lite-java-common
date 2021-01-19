@@ -19,11 +19,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
+import com.couchbase.lite.internal.core.C4Socket;
+import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -83,6 +86,43 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testStatusBeforeStart() throws URISyntaxException {
         testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), true, false, false)).getStatus();
+    }
+
+    @Test
+    public void testDefaultHeartbeat() throws URISyntaxException {
+        // Don't use makeConfig: it sets hartbeat to 0
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
+            .setType(getReplicatorType(true, false))
+            .setContinuous(false);
+
+        final Replicator repl = testReplicator(config);
+
+        final AtomicReference<C4Socket> socketRef = new AtomicReference<>();
+        repl.getSocketFactory().setListener(socketRef::set);
+        try { run(repl); }
+        catch (CouchbaseLiteException ignore) { }
+
+        assertEquals(
+            AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000,
+            ((AbstractCBLWebSocket) socketRef.get()).getHttpClient().pingIntervalMillis());
+    }
+
+    @Test
+    public void testCustomHeartbeat() throws URISyntaxException {
+        final ReplicatorConfiguration config = makeConfig(new URLEndpoint(new URI("wss://foo")), true, false, false)
+            .setHeartbeat(67L);
+
+        Replicator repl = testReplicator(config);
+
+        final AtomicReference<C4Socket> socketRef = new AtomicReference<>();
+        repl.getSocketFactory().setListener(socketRef::set);
+        try { run(repl); }
+        catch (CouchbaseLiteException ignore) { }
+
+        assertEquals(
+            config.getHeartbeat() * 1000,
+            ((AbstractCBLWebSocket) socketRef.get()).getHttpClient().pingIntervalMillis());
     }
 
     @Test

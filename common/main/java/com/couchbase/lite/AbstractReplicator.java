@@ -80,7 +80,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * PUSH: Pushing changes to the target
      * PULL: Pulling changes from the target
      */
-    public enum ReplicatorType { PUSH_AND_PULL, PUSH, PULL; }
+    public enum ReplicatorType { PUSH_AND_PULL, PUSH, PULL }
 
     /**
      * Activity level of a replicator.
@@ -379,7 +379,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * Start the replicator.
      * This method honors the flag set by the deprecated method <code>resetCheckpoint()</code>.
      */
-
     public void start() { start(false); }
 
     /**
@@ -798,6 +797,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
     }
 
+    @VisibleForTesting
+    SocketFactory getSocketFactory() { return socketFactory; }
+
     //---------------------------------------------
     // Private methods
     //---------------------------------------------
@@ -866,7 +868,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     private byte[] getFleeceOptions() {
         final Map<String, Object> options = config.effectiveOptions();
-
         synchronized (lock) { options.put(C4Replicator.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value); }
 
         byte[] optionsFleece = null;

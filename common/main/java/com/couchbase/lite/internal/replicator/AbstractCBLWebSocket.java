@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.replicator;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -277,7 +278,6 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         return null;
     }
 
-
     public static int addKeyManager(@NonNull KeyManager keyManager) {
         final int token = AbstractCBLWebSocket.KEY_MANAGERS.reserveKey();
         AbstractCBLWebSocket.KEY_MANAGERS.bind(token, keyManager);
@@ -336,6 +336,9 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @Override
     @NonNull
     public String toString() { return "AbstractCBLWebSocket{" + uri + "}"; }
+
+    @VisibleForTesting
+    public OkHttpClient getHttpClient() { return httpClient; }
 
     //-------------------------------------------------------------------------
     // Abstract methods

@@ -135,26 +135,6 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return config;
     }
 
-    protected final Replicator run(
-        int expectedErrorCode,
-        String expectedErrorDomain,
-        URI url,
-        boolean push,
-        boolean pull,
-        boolean continuous,
-        Authenticator auth,
-        Certificate pinnedServerCert)
-        throws CouchbaseLiteException {
-        final ReplicatorConfiguration config = makeConfig(
-            new URLEndpoint(url),
-            push,
-            pull,
-            continuous,
-            pinnedServerCert);
-        if (auth != null) { config.setAuthenticator(auth); }
-        return run(config, expectedErrorCode, expectedErrorDomain, false, null);
-    }
-
     protected final Replicator run(ReplicatorConfiguration config) throws CouchbaseLiteException {
         return run(config, null);
     }

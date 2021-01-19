@@ -43,7 +43,7 @@ abstract class AbstractReplicatorConfiguration {
      * @deprecated Use AbstractReplicator.ReplicatorType
      */
     @Deprecated
-    public enum ReplicatorType { PUSH_AND_PULL, PUSH, PULL; }
+    public enum ReplicatorType { PUSH_AND_PULL, PUSH, PULL }
 
     //---------------------------------------------
     // member variables
@@ -109,6 +109,7 @@ abstract class AbstractReplicatorConfiguration {
         this.heartbeat = config.heartbeat;
     }
 
+
     //---------------------------------------------
     // Setters
     //---------------------------------------------
@@ -147,7 +148,7 @@ abstract class AbstractReplicatorConfiguration {
     /**
      * Sets the the conflict resolver.
      *
-     * @param conflictResolver The replicator type.
+     * @param conflictResolver A conflict resolver.
      * @return this.
      */
     @Nullable
@@ -260,7 +261,7 @@ abstract class AbstractReplicatorConfiguration {
     public final ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
         checkReadOnly();
         final AbstractReplicator.ReplicatorType type;
-        switch (Preconditions.assertNotNull(replicatorType, "replicatorType")) {
+        switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
             case PUSH_AND_PULL:
                 type = AbstractReplicator.ReplicatorType.PUSH_AND_PULL;
                 break;
@@ -286,7 +287,7 @@ abstract class AbstractReplicatorConfiguration {
     @NonNull
     public final ReplicatorConfiguration setType(@NonNull AbstractReplicator.ReplicatorType type) {
         checkReadOnly();
-        this.type = Preconditions.assertNotNull(type, "replicatorType");
+        this.type = Preconditions.assertNotNull(type, "replicator type");
         return getReplicatorConfiguration();
     }
 
@@ -303,7 +304,7 @@ abstract class AbstractReplicatorConfiguration {
     /**
      * Set the max time between retry attempts (exponential backoff).
      *
-     * @param maxRetryWaitTime max retry attempts
+     * @param maxRetryWaitTime max retry wait time
      */
     public final ReplicatorConfiguration setMaxRetryWaitTime(long maxRetryWaitTime) {
         this.maxRetryWaitTime = Preconditions.assertPositive(maxRetryWaitTime, "max retry wait time");
@@ -314,7 +315,7 @@ abstract class AbstractReplicatorConfiguration {
      * Set the heartbeat interval, in seconds.
      */
     public final ReplicatorConfiguration setHeartbeat(long heartbeat) {
-        this.heartbeat = Preconditions.assertNotNegative(heartbeat, "max retry wait time");
+        this.heartbeat = Preconditions.assertNotNegative(heartbeat, "heartbeat");
         return getReplicatorConfiguration();
     }
 
