@@ -115,16 +115,7 @@ public final class CouchbaseLiteInternal {
 
     public static void setupDirectories(@Nullable String rootDirPath) {
         requireInit("Can't set root directory");
-
-        synchronized (LOCK) {
-            // remember the current tmp dir
-            final String tmpPath = tmpDirPath;
-
-            initDirectories(rootDirPath);
-
-            // if the temp dir has changed, tell C4Base
-            if (!Objects.equals(tmpPath, tmpDirPath)) { setC4TmpDirPath(); }
-        }
+        synchronized (LOCK) { initDirectories(rootDirPath); }
     }
 
     @NonNull
