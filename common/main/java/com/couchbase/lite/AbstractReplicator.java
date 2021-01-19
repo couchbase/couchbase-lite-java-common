@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.net.URI;
 import java.security.cert.Certificate;
@@ -827,6 +828,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
         for (DocumentReplicationListenerToken token: tokens) { token.notify(update); }
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
     }
+
+    @VisibleForTesting
+    SocketFactory getSocketFactory() { return socketFactory; }
 
     //---------------------------------------------
     // Private methods

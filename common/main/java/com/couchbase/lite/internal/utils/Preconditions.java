@@ -36,6 +36,16 @@ public final class Preconditions {
         return n;
     }
 
+    public static int assertNotNegative(int n, @NonNull String name) {
+        if (n < 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        return n;
+    }
+
+    public static long assertNotNegative(long n, @NonNull String name) {
+        if (n < 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        return n;
+    }
+
     public static long assertNotZero(long n, @NonNull String name) {
         if (n == 0) { throw new IllegalArgumentException(name + " must not be 0"); }
         return n;
