@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -172,7 +171,7 @@ public final class CouchbaseLiteInternal {
     }
 
     @VisibleForTesting
-    public static void reset() { INITIALIZED.set(false); }
+    public static void reset(boolean state) { INITIALIZED.set(state); }
 
     @VisibleForTesting
     @NonNull

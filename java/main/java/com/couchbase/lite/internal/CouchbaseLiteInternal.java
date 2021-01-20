@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -131,7 +130,7 @@ public final class CouchbaseLiteInternal {
     }
 
     @VisibleForTesting
-    public static void reset() { INITIALIZED.set(false); }
+    public static void reset(boolean state) { INITIALIZED.set(state); }
 
     @VisibleForTesting
     @SuppressWarnings({"unchecked", "rawtypes"})

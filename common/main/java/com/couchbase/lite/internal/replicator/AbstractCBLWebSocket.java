@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.replicator;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -325,6 +326,9 @@ public class AbstractCBLWebSocket extends C4Socket {
     @NonNull
     public String toString() { return "AbstractCBLWebSocket{" + uri + "}"; }
 
+    @VisibleForTesting
+    public OkHttpClient getHttpClient() { return httpClient; }
+
     //-------------------------------------------------------------------------
     // Abstract method implementation
     //-------------------------------------------------------------------------
@@ -411,6 +415,10 @@ public class AbstractCBLWebSocket extends C4Socket {
 
     private OkHttpClient setupOkHttpClient() throws GeneralSecurityException {
         final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
+
+        // Heartbeat
+        final Number heartbeat = (Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
+        if (heartbeat != null) { builder.pingInterval((long) heartbeat, TimeUnit.SECONDS).build(); }
 
         // Authenticator
         final Authenticator authenticator = setupBasicAuthenticator();

@@ -58,8 +58,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     // for testing, use the current directory as the root
     public static void initCouchbase() { CouchbaseLite.init(); }
 
-    public static void deinitCouchbase() { CouchbaseLiteInternal.reset(); }
-
     @BeforeClass
     public static void setUpPlatformSuite() { System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> Suite started"); }
 

@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.net.URI;
 import java.security.cert.Certificate;
@@ -71,14 +72,6 @@ import com.couchbase.lite.internal.utils.StringUtils;
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.CyclomaticComplexity"})
 public abstract class AbstractReplicator extends InternalReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
-
-    /**
-     * Replicator type
-     * PUSH_AND_PULL: Bidirectional; both push and pull
-     * PUSH: Pushing changes to the target
-     * PULL: Pulling changes from the target
-     */
-    public enum ReplicatorType { PUSH_AND_PULL, PUSH, PULL }
 
     /**
      * Activity level of a replicator.
@@ -456,7 +449,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      */
     @NonNull
     public Set<String> getPendingDocumentIds() throws CouchbaseLiteException {
-        if (config.getType().equals(ReplicatorType.PULL)) {
+        if (config.getReplicatorType().equals(ReplicatorConfiguration.ReplicatorType.PULL)) {
             throw new CouchbaseLiteException(
                 "PullOnlyPendingDocIDs",
                 CBLError.Domain.CBLITE,
@@ -481,7 +474,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     public boolean isDocumentPending(@NonNull String docId) throws CouchbaseLiteException {
         Preconditions.assertNotNull(docId, "document ID");
 
-        if (config.getType().equals(ReplicatorType.PULL)) {
+        if (config.getReplicatorType().equals(ReplicatorConfiguration.ReplicatorType.PULL)) {
             throw new CouchbaseLiteException(
                 "PullOnlyPendingDocIDs",
                 CBLError.Domain.CBLITE,
@@ -827,6 +820,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
         for (DocumentReplicationListenerToken token: tokens) { token.notify(update); }
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
     }
+
+    @VisibleForTesting
+    SocketFactory getSocketFactory() { return socketFactory; }
 
     //---------------------------------------------
     // Private methods
