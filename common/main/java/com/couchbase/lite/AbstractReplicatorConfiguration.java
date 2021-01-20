@@ -67,8 +67,6 @@ public abstract class AbstractReplicatorConfiguration {
     private ReplicationFilter pullFilter;
     @Nullable
     private ConflictResolver conflictResolver;
-    private int maxRetries = -1;
-    private long maxRetryWaitTime = AbstractCBLWebSocket.DEFAULT_MAX_RETRY_WAIT_SEC;
     private long heartbeat = AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC;
 
     protected boolean readonly;
@@ -94,8 +92,6 @@ public abstract class AbstractReplicatorConfiguration {
         this.pullFilter = config.pullFilter;
         this.pushFilter = config.pushFilter;
         this.conflictResolver = config.conflictResolver;
-        this.maxRetries = config.maxRetries;
-        this.maxRetryWaitTime = config.maxRetryWaitTime;
         this.heartbeat = config.heartbeat;
     }
 
@@ -144,7 +140,7 @@ public abstract class AbstractReplicatorConfiguration {
     /**
      * Sets the the conflict resolver.
      *
-     * @param conflictResolver A conflict resolver.
+     * @param conflictResolver The replicator type.
      * @return this.
      */
     @Nullable
@@ -259,26 +255,6 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     /**
-     * Set the max number of retry attempts made after a connection failure.
-     *
-     * @param maxRetries max retry attempts
-     */
-    final ReplicatorConfiguration setMaxRetries(int maxRetries) {
-        this.maxRetries = Preconditions.assertNotNegative(maxRetries, "max retries");
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Set the max time between retry attempts (exponential backoff).
-     *
-     * @param maxRetryWaitTime max retry wait time
-     */
-    final ReplicatorConfiguration setMaxRetryWaitTime(long maxRetryWaitTime) {
-        this.maxRetryWaitTime = Preconditions.assertPositive(maxRetryWaitTime, "max retry wait time");
-        return getReplicatorConfiguration();
-    }
-
-    /**
      * Set the heartbeat interval, in seconds.
      */
     public final ReplicatorConfiguration setHeartbeat(long heartbeat) {
@@ -373,24 +349,6 @@ public abstract class AbstractReplicatorConfiguration {
     public final Endpoint getTarget() { return target; }
 
     /**
-     * Return the max number of retry attempts made after connection failure.
-     */
-    final int getMaxRetries() {
-        return (maxRetries >= 0)
-            ? maxRetries
-            : ((continuous)
-                ? AbstractCBLWebSocket.DEFAULT_ONE_SHOT_MAX_RETRIES
-                : AbstractCBLWebSocket.DEFAULT_CONTINUOUS_MAX_RETRIES);
-    }
-
-    /**
-     * Return the max time between retry attempts (exponential backoff).
-     *
-     * @return max retry wait time
-     */
-    long getMaxRetryWaitTime() { return maxRetryWaitTime; }
-
-    /**
      * Return the heartbeat interval, in seconds.
      *
      * @return heartbeat interval in seconds
@@ -416,13 +374,13 @@ public abstract class AbstractReplicatorConfiguration {
     abstract ReplicatorConfiguration getReplicatorConfiguration();
 
     boolean isPush() {
-        return replicatorType == ReplicatorType.PUSH_AND_PULL
-            || replicatorType == ReplicatorType.PUSH;
+        return replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
+            || replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH;
     }
 
     boolean isPull() {
-        return replicatorType == ReplicatorType.PUSH_AND_PULL
-            || replicatorType == ReplicatorType.PULL;
+        return replicatorType == ReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL
+            || replicatorType == ReplicatorConfiguration.ReplicatorType.PULL;
     }
 
     final ReplicatorConfiguration readonlyCopy() {
@@ -449,8 +407,6 @@ public abstract class AbstractReplicatorConfiguration {
             options.put(C4Replicator.REPLICATOR_OPTION_CHANNELS, channels);
         }
 
-        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, getMaxRetries());
-        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxRetryWaitTime);
         options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, heartbeat);
 
         final Map<String, Object> httpHeaders = new HashMap<>();

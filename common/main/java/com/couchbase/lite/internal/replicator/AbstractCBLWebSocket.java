@@ -78,9 +78,6 @@ import com.couchbase.lite.internal.utils.StateMachine;
 public class AbstractCBLWebSocket extends C4Socket {
     private static final LogDomain TAG = LogDomain.NETWORK;
 
-    public static final int DEFAULT_ONE_SHOT_MAX_RETRIES = 9;
-    public static final int DEFAULT_CONTINUOUS_MAX_RETRIES = Integer.MAX_VALUE;
-    public static final long DEFAULT_MAX_RETRY_WAIT_SEC = 300L;
     public static final long DEFAULT_HEARTBEAT_SEC = 300L;
 
     private static final int MAX_AUTH_RETRIES = 3;
