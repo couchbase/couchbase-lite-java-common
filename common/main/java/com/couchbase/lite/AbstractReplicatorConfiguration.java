@@ -40,7 +40,7 @@ public abstract class AbstractReplicatorConfiguration {
      * PUSH: Pushing changes to the target
      * PULL: Pulling changes from the target
      */
-    public enum ReplicatorType { PUSH_AND_PULL, PUSH, PULL }
+    public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
 
     //---------------------------------------------
     // member variables
@@ -263,7 +263,7 @@ public abstract class AbstractReplicatorConfiguration {
      *
      * @param maxRetries max retry attempts
      */
-    public final ReplicatorConfiguration setMaxRetries(int maxRetries) {
+    final ReplicatorConfiguration setMaxRetries(int maxRetries) {
         this.maxRetries = Preconditions.assertNotNegative(maxRetries, "max retries");
         return getReplicatorConfiguration();
     }
@@ -273,7 +273,7 @@ public abstract class AbstractReplicatorConfiguration {
      *
      * @param maxRetryWaitTime max retry wait time
      */
-    public final ReplicatorConfiguration setMaxRetryWaitTime(long maxRetryWaitTime) {
+    final ReplicatorConfiguration setMaxRetryWaitTime(long maxRetryWaitTime) {
         this.maxRetryWaitTime = Preconditions.assertPositive(maxRetryWaitTime, "max retry wait time");
         return getReplicatorConfiguration();
     }
@@ -375,7 +375,7 @@ public abstract class AbstractReplicatorConfiguration {
     /**
      * Return the max number of retry attempts made after connection failure.
      */
-    public final int getMaxRetries() {
+    final int getMaxRetries() {
         return (maxRetries >= 0)
             ? maxRetries
             : ((continuous)
@@ -388,7 +388,7 @@ public abstract class AbstractReplicatorConfiguration {
      *
      * @return max retry wait time
      */
-    public long getMaxRetryWaitTime() { return maxRetryWaitTime; }
+    long getMaxRetryWaitTime() { return maxRetryWaitTime; }
 
     /**
      * Return the heartbeat interval, in seconds.
