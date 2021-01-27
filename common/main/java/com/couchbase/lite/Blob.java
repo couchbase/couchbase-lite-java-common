@@ -419,6 +419,7 @@ public final class Blob implements FLEncodable {
     //---------------------------------------------
 
     //FLEncodable
+    // this should not be part of the public API.
     @Override
     public void encodeTo(@NonNull FLEncoder encoder) {
         final MutableDocument info = encoder.getExtraInfo(MutableDocument.class);

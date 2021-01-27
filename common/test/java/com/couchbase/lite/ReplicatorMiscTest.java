@@ -89,8 +89,29 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
+    public void testGetHeartbeatBeforeSet() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC, config.getHeartbeat());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetIllegalHeartbeat() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        config.setHeartbeat(-47);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetZeroHeartbeat() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        config.setHeartbeat(-47);
+    }
+
+    @Test
     public void testDefaultHeartbeat() throws URISyntaxException {
-        // Don't use makeConfig: it sets hartbeat to 0
+        // Don't use makeConfig: it sets heartbeat to 0
         final ReplicatorConfiguration config
             = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
             .setReplicatorType(getReplicatorType(true, false))
@@ -105,7 +126,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         assertEquals(
             AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000,
-            ((AbstractCBLWebSocket) socketRef.get()).getHttpClient().pingIntervalMillis());
+            ((AbstractCBLWebSocket) socketRef.get()).getOkHttpSocketFactory().pingIntervalMillis());
     }
 
     @Test
@@ -122,7 +143,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         assertEquals(
             config.getHeartbeat() * 1000,
-            ((AbstractCBLWebSocket) socketRef.get()).getHttpClient().pingIntervalMillis());
+            ((AbstractCBLWebSocket) socketRef.get()).getOkHttpSocketFactory().pingIntervalMillis());
     }
 
     @Test

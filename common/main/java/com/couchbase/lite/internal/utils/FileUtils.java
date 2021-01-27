@@ -31,6 +31,26 @@ import com.couchbase.lite.internal.support.Log;
 public final class FileUtils {
     private FileUtils() { }
 
+    @NonNull
+    public static File verifyDir(@NonNull String dirPath) {
+        Preconditions.assertNotNull(dirPath, "dirPath");
+        return verifyDir(new File(dirPath));
+    }
+
+    @NonNull
+    public static File verifyDir(@NonNull File dir) {
+        Preconditions.assertNotNull(dir, "directory");
+
+        IOException err = null;
+        try {
+            dir = new File(dir.getCanonicalPath());
+            if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return dir.getCanonicalFile(); }
+        }
+        catch (IOException e) { err = e; }
+
+        throw new IllegalStateException("Cannot create or access directory at " + dir, err);
+    }
+
     public static void copyFile(InputStream in, OutputStream out) throws IOException {
         final byte[] buffer = new byte[1024];
         int read;

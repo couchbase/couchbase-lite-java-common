@@ -26,6 +26,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
@@ -47,20 +52,28 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     protected ExecutionService.CloseableExecutor testSerialExecutor;
 
+    @BeforeClass
+    public static void setUpPlatformSuite() { Report.log(LogLevel.INFO, ">>>>>>>>>>>>>>>>>>>>>>>>> Suite started"); }
+
     @AfterClass
     public static void tearDownBaseTestClass() {
-        File tmpDir = new File(CouchbaseLiteInternal.getTmpDirectoryPath()).getAbsoluteFile();
-        if (!tmpDir.exists()) { return; }
+        final File scratchDir = new File(PlatformBaseTest.getScratchDirPath());
+        if (!scratchDir.exists()) { return; }
 
-        Report.log(LogLevel.INFO, "Deleting tmp directory contents: " + tmpDir);
-        FileUtils.deleteContents(tmpDir);
+        Report.log(LogLevel.INFO, "Deleting tmp directory contents: " + scratchDir);
+        FileUtils.deleteContents(scratchDir);
+
+        Report.log(LogLevel.INFO, "<<<<<<<<<<<<<<<<<<<<<<<<< Suite completed");
     }
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) { testName = description.getMethodName(); }
+    };
 
     @Before
     public final void setUpBaseTest() {
-        // reset the directories
-        CouchbaseLiteInternal.setDbDirectoryPath(null);
-
+        Report.log(LogLevel.INFO, ">>>>>>>>>>>>> Test started: " + testName);
         Log.initLogging();
 
         setupPlatform();
@@ -68,6 +81,8 @@ public abstract class BaseTest extends PlatformBaseTest {
         testFailure.set(null);
 
         testSerialExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
+
+        Report.log(LogLevel.INFO, "==== Test initialized: " + testName);
     }
 
     @After
@@ -76,7 +91,11 @@ public abstract class BaseTest extends PlatformBaseTest {
         boolean succeeded = false;
         if (testSerialExecutor != null) { succeeded = testSerialExecutor.stop(2, TimeUnit.SECONDS); }
         Report.log(LogLevel.INFO, "Executor stopped: " + succeeded);
+        Report.log(LogLevel.INFO, "<<<<<<<<<<<< Test completed: " + testName);
     }
+
+
+    private String testName;
 
     protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 24); }
 

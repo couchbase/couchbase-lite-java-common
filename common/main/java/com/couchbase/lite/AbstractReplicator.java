@@ -37,8 +37,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
@@ -120,8 +118,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         // Constructors
         //---------------------------------------------
 
-        @VisibleForTesting
-        Progress(long completed, long total) {
+        private Progress(long completed, long total) {
             this.completed = completed;
             this.total = total;
         }
@@ -143,8 +140,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
         @NonNull
         @Override
         public String toString() { return "Progress{" + "completed=" + completed + ", total=" + total + '}'; }
-
-        Progress copy() { return new Progress(completed, total); }
     }
 
 
@@ -255,49 +250,45 @@ public abstract class AbstractReplicator extends InternalReplicator {
         ReplicatorProgressLevel(int value) { this.value = value; }
     }
 
-
     // just queue everything up for in-order processing.
-    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    final class ReplicatorListener implements C4ReplicatorListener {
+    static final class ReplicatorListener implements C4ReplicatorListener {
+        private final Executor dispatcher;
+
+        ReplicatorListener(@NonNull Executor dispatcher) { this.dispatcher = dispatcher; }
+
         @Override
         public void statusChanged(
-            @Nullable C4Replicator repl,
+            @Nullable C4Replicator c4Repl,
             @Nullable C4ReplicatorStatus status,
-            @Nullable Object context) {
-            Log.v(DOMAIN, "C4ReplicatorListener.statusChanged, context: %s, status: %s", context, status);
+            @Nullable Object repl) {
+            Log.v(DOMAIN, "C4ReplicatorListener.statusChanged, repl: %s, status: %s", repl, status);
 
-            if (context == null) {
-                Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, context is null");
-                return;
-            }
+            final AbstractReplicator replicator = verifyReplicator(c4Repl, repl);
+            if (replicator == null) { return; }
 
             if (status == null) {
                 Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, status is null");
                 return;
             }
 
-            final AbstractReplicator replicator = (AbstractReplicator) context;
-            // this guarantees that repl != null
-            if (!replicator.isSameReplicator(repl)) { return; }
-
             dispatcher.execute(() -> replicator.c4StatusChanged(status));
         }
 
         @Override
         public void documentEnded(
-            @NonNull C4Replicator repl,
+            @NonNull C4Replicator c4Repl,
             boolean pushing,
             @Nullable C4DocumentEnded[] documents,
-            @Nullable Object context) {
-            Log.i(DOMAIN, "C4ReplicatorListener.documentEnded, context: %s, pushing: %s", context, pushing);
+            @Nullable Object repl) {
+            Log.i(DOMAIN, "C4ReplicatorListener.documentEnded, repl: %s, pushing: %s", repl, pushing);
 
-            if (context == null) {
-                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, context is null");
+            if (!(repl instanceof AbstractReplicator)) {
+                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, repl is null");
                 return;
             }
 
-            final AbstractReplicator replicator = (AbstractReplicator) context;
-            if (!replicator.isSameReplicator(repl)) { return; } // this handles repl == null
+            final AbstractReplicator replicator = verifyReplicator(c4Repl, repl);
+            if (replicator == null) { return; }
 
             if (documents == null) {
                 Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, documents is null");
@@ -305,6 +296,18 @@ public abstract class AbstractReplicator extends InternalReplicator {
             }
 
             dispatcher.execute(() -> replicator.documentEnded(pushing, documents));
+        }
+
+        @Nullable
+        private AbstractReplicator verifyReplicator(@Nullable C4Replicator c4Repl, @Nullable Object repl) {
+            final AbstractReplicator replicator
+                = (!(repl instanceof AbstractReplicator)) ? null : (AbstractReplicator) repl;
+
+            if ((replicator != null) && (c4Repl == replicator.getC4Replicator())) { return replicator; }
+
+            Log.w(DOMAIN, "C4ReplicatorListener: c4replicator and replicator don't match: " + c4Repl + " :: " + repl);
+
+            return null;
         }
     }
 
@@ -331,7 +334,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
     @NonNull
-    private final C4ReplicatorListener c4ReplListener = new ReplicatorListener();
+    private final C4ReplicatorListener c4ReplListener;
     @NonNull
     private final SocketFactory socketFactory;
 
@@ -364,6 +367,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         Preconditions.assertNotNull(config, "config");
         this.config = config.readonlyCopy();
         this.socketFactory = new SocketFactory(config, getCookieStore(), this::setServerCertificates);
+        this.c4ReplListener = new ReplicatorListener(dispatcher);
     }
 
     /**
@@ -384,7 +388,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         getDatabase().addActiveReplicator(this);
 
         final C4Replicator repl = getOrCreateC4Replicator();
-        synchronized (lock) {
+        synchronized (getLock()) {
             repl.start(resetCheckpoint);
 
             C4ReplicatorStatus status = repl.getStatus();
@@ -428,7 +432,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      */
     @NonNull
     public Status getStatus() {
-        synchronized (lock) { return new Status(status); }
+        synchronized (getLock()) { return new Status(status); }
     }
 
     /**
@@ -516,7 +520,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     public ListenerToken addChangeListener(Executor executor, @NonNull ReplicatorChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-        synchronized (lock) {
+        synchronized (getLock()) {
             final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
             changeListenerTokens.add(token);
             return token;
@@ -531,7 +535,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
 
-        synchronized (lock) {
+        synchronized (getLock()) {
             if (token instanceof ReplicatorChangeListenerToken) {
                 changeListenerTokens.remove(token);
                 return;
@@ -576,7 +580,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         @Nullable Executor executor,
         @NonNull DocumentReplicationListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-        synchronized (lock) {
+        synchronized (getLock()) {
             progressLevel = ReplicatorProgressLevel.PER_DOCUMENT;
             final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
             docEndedListenerTokens.add(token);
@@ -699,18 +703,17 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     @NonNull
     ActivityLevel getState() {
-        synchronized (lock) { return status.getActivityLevel(); }
+        synchronized (getLock()) { return status.getActivityLevel(); }
     }
 
     void c4StatusChanged(@NonNull C4ReplicatorStatus c4Status) {
         final ReplicatorChange change;
         final List<ReplicatorChangeListenerToken> tokens;
-
-        synchronized (lock) {
+        synchronized (getLock()) {
             Log.i(
                 DOMAIN,
-                "%s: status changed: (%d, %d) @%s",
-                this, pendingResolutions.size(), pendingStatusNotifications.size(), c4Status);
+                "status changed: (%d, %d) @%s for %s",
+                pendingResolutions.size(), pendingStatusNotifications.size(), c4Status, this);
 
             if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !Status.isOffline(c4Status)); }
 
@@ -764,7 +767,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         CouchbaseLiteException err) {
         Log.i(DOMAIN, "Conflict resolved: %s", err, docId);
         List<C4ReplicatorStatus> pendingNotifications = null;
-        synchronized (lock) {
+        synchronized (getLock()) {
             pendingResolutions.remove(task);
             // if no more resolutions, deliver any outstanding status notifications
             if (pendingResolutions.isEmpty()) {
@@ -783,11 +786,12 @@ public abstract class AbstractReplicator extends InternalReplicator {
     void notifyDocumentEnded(boolean pushing, List<ReplicatedDocument> docs) {
         final DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
         final List<DocumentReplicationListenerToken> tokens;
-        synchronized (lock) { tokens = new ArrayList<>(docEndedListenerTokens); }
+        synchronized (getLock()) { tokens = new ArrayList<>(docEndedListenerTokens); }
         for (DocumentReplicationListenerToken token: tokens) { token.notify(update); }
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
     }
 
+    @NonNull
     @VisibleForTesting
     SocketFactory getSocketFactory() { return socketFactory; }
 
@@ -819,9 +823,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
     }
 
-    @SuppressWarnings("NumberEquality")
-    private boolean isSameReplicator(C4Replicator repl) { return repl == getC4Replicator(); }
-
     @GuardedBy("lock")
     private C4ReplicatorStatus updateStatus(@NonNull C4ReplicatorStatus c4Status) {
         final Status oldStatus = status;
@@ -829,13 +830,13 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         if (c4Status.getErrorCode() != 0) { lastError = status.error; }
 
-        Log.i(DOMAIN, "State changed for %s: %s => %s(%d/%d): %s",
-            this,
+        Log.i(DOMAIN, "State changed %s => %s(%d/%d): %s for %s",
             oldStatus.activityLevel,
             status.activityLevel,
             c4Status.getProgressUnitsCompleted(),
             c4Status.getProgressUnitsTotal(),
-            status.error);
+            status.error,
+            this);
 
         return c4Status.copy();
     }
@@ -851,7 +852,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             public void accept(CouchbaseLiteException err) { onConflictResolved(this, docId, flags, err); }
         };
 
-        synchronized (lock) {
+        synchronized (getLock()) {
             executor.execute(() -> db.resolveReplicationConflict(resolver, docId, task));
             pendingResolutions.add(task);
         }
@@ -859,7 +860,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     private byte[] getFleeceOptions() {
         final Map<String, Object> options = config.effectiveOptions();
-        synchronized (lock) { options.put(C4Replicator.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value); }
+        synchronized (getLock()) { options.put(C4Replicator.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value); }
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {
@@ -874,7 +875,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     }
 
     private void setupFilters() {
-        synchronized (lock) {
+        synchronized (getLock()) {
             if (config.getPushFilter() != null) {
                 c4ReplPushFilter = (docID, revId, flags, dict, isPush, repl) ->
                     repl.filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);

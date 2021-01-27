@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.test.InstrumentationRegistry;
 
 import java.io.File;
@@ -24,20 +25,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
-
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.Report;
 
 
 /**
@@ -45,8 +36,12 @@ import com.couchbase.lite.internal.utils.Report;
  */
 public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
+
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
+
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
+
+    public static final String SCRATCH_DIR = "cbl-scratch";
 
     private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
     static {
@@ -55,55 +50,33 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    // this should probably go in the BaseTest but
-    // there are several tests (C4 tests) that are not subclasses
-    static { initCouchbase(); }
-    public static void initCouchbase() { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
+    static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
 
-    @BeforeClass
-    public static void setUpPlatformSuite() { android.util.Log.d(">>>>>>>>>>>>>>>>>>>>>>>>>", " Suite started"); }
-
-    @AfterClass
-    public static void tearDownBaseTestClass() { android.util.Log.d("<<<<<<<<<<<<<<<<<<<<<<<<<", " Suite completed"); }
-
-
-    private String tmpDirPath;
-    private String testName;
-
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) { testName = description.getMethodName(); }
-    };
-
-    @Before
-    public void setUpPlatformTest() { android.util.Log.d(">>>>>>>>>", " Test started: " + testName); }
-
-    @After
-    public void tearDownPlatformTest() { android.util.Log.d("<<<<<<<<<", " Test completed: " + testName); }
+    public static String getScratchDirPath() {
+        try {
+            return InstrumentationRegistry.getTargetContext()
+                .getExternalFilesDir(SCRATCH_DIR)
+                .getCanonicalPath();
+        }
+        catch (IOException e) { throw new IllegalStateException("Could not create scratch directory", e); }
+    }
 
     @Override
     public void setupPlatform() {
         final ConsoleLogger console = Database.log.getConsole();
         console.setLevel(LogLevel.DEBUG);
         console.setDomains(LogDomain.ALL_DOMAINS);
+    }
 
-        Report.log(LogLevel.INFO, "========= Test initialized: " + testName);
+    @Override
+    public final String getScratchDirectoryPath(@NonNull String name) {
+        try { return new File(getScratchDirPath(), name).getCanonicalPath(); }
+        catch (IOException e) { throw new IllegalStateException("cannot create scratch directory: " + name); }
     }
 
     @Override
     public void reloadStandardErrorMessages() {
         Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
-    }
-
-    @Override
-    public String getDatabaseDirectoryPath() { return CouchbaseLiteInternal.getDbDirectoryPath(); }
-
-    @Override
-    public String getScratchDirectoryPath(String name) {
-        if (tmpDirPath == null) { tmpDirPath = CouchbaseLiteInternal.getTmpDirectoryPath(); }
-
-        try { return new File(tmpDirPath, name).getCanonicalPath(); }
-        catch (IOException e) { throw new RuntimeException("Could not open tmp directory: " + name, e); }
     }
 
     @Override
@@ -113,7 +86,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
-    public void executeAsync(long delayMs, Runnable task) {
+    public final void executeAsync(long delayMs, Runnable task) {
         ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
     }

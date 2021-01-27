@@ -42,11 +42,12 @@ public abstract class FLEncoder extends C4NativePeer {
 
         @Override
         public void close() {
-            final long hdl = getPeerAndClear();
-            if (hdl == 0L) { return; }
-
-            setExtraInfo(null);
-            reset(hdl);
+            releasePeer(
+                null,
+                peer -> {
+                    setExtraInfo(null);
+                    reset(peer);
+                });
         }
     }
 
@@ -64,12 +65,7 @@ public abstract class FLEncoder extends C4NativePeer {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) {
-            final long peer = getPeerAndClear();
-            if (verifyPeerClosed(peer, domain)) { return; }
-
-            free(peer);
-        }
+        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, FLEncoder::free); }
     }
 
     //-------------------------------------------------------------------------

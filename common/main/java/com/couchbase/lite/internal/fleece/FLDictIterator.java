@@ -72,12 +72,7 @@ public class FLDictIterator extends C4NativePeer {
     // Private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) {
-        final long peer = getPeerAndClear();
-        if (verifyPeerClosed(peer, domain)) { return; }
-
-        free(peer);
-    }
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, FLDictIterator::free); }
 
     //-------------------------------------------------------------------------
     // native methods

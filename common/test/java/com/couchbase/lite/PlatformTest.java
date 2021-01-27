@@ -16,6 +16,9 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
+
 /**
  * Contains methods required for the tests to run on both Android and Java platforms.
  */
@@ -27,11 +30,8 @@ public interface PlatformTest {
     /* Reload the cross-platform error messages. */
     void reloadStandardErrorMessages();
 
-    /* Gets the directory for storing test databases. */
-    String getDatabaseDirectoryPath();
-
-    /* Gets the platform specific temp directory. */
-    String getScratchDirectoryPath(String name);
+    /* Get a scratch directory */
+    String getScratchDirectoryPath(@NonNull String name);
 
     /* Terminate the test with prejudice, on this platform */
     boolean handlePlatformSpecially(String tag);

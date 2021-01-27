@@ -24,6 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.ZipUtils;
@@ -42,7 +43,7 @@ public class MigrationTest extends BaseTest {
 
     @Before
     public final void setUpMigrationTest() {
-        dbDir = new File(getDatabaseDirectoryPath(), getUniqueName("migration-test-dir"));
+        dbDir = new File(CouchbaseLiteInternal.getRootDir(), getUniqueName("migration-test-dir"));
     }
 
     @After
@@ -111,6 +112,5 @@ public class MigrationTest extends BaseTest {
         final DatabaseConfiguration config = new DatabaseConfiguration();
         config.setDirectory(dbDir.getCanonicalPath());
         return new Database(DB_NAME, config);
-
     }
 }

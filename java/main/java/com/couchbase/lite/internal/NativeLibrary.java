@@ -64,7 +64,7 @@ final class NativeLibrary {
      * Extracts and loads native libraries.
      */
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
-    static void load() {
+    static void load(@NonNull File scratchDir) {
         CouchbaseLiteInternal.requireInit("Cannot load native libraries");
 
         if (LOADED.getAndSet(true)) { return; }
@@ -88,7 +88,7 @@ final class NativeLibrary {
         final File targetDir;
         try {
             targetDir = new File(
-                CouchbaseLiteInternal.getTmpDirectoryPath(),
+                scratchDir,
                 String.format("%032x", computeTargetDirectory(resDirPath, libs, buf)))
                 .getCanonicalFile();
         }

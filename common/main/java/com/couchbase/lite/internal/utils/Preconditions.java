@@ -26,17 +26,32 @@ public final class Preconditions {
     private Preconditions() {}
 
     public static long assertPositive(long n, @NonNull String name) {
-        if (n <= 0) { throw new IllegalArgumentException(name + " must be positive"); }
+        if (n <= 0) { throw new IllegalArgumentException(name + " must be >0"); }
+        return n;
+    }
+
+    public static int assertPositive(int n, @NonNull String name) {
+        if (n <= 0) { throw new IllegalArgumentException(name + " must be >0"); }
         return n;
     }
 
     public static long assertNegative(long n, @NonNull String name) {
-        if (n >= 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        if (n >= 0) { throw new IllegalArgumentException(name + " must be <0"); }
+        return n;
+    }
+
+    public static int assertNegative(int n, @NonNull String name) {
+        if (n >= 0) { throw new IllegalArgumentException(name + " must be <0"); }
         return n;
     }
 
     public static long assertNotNegative(long n, @NonNull String name) {
-        if (n < 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        if (n < 0) { throw new IllegalArgumentException(name + " must be >=0"); }
+        return n;
+    }
+
+    public static int assertNotNegative(int n, @NonNull String name) {
+        if (n < 0) { throw new IllegalArgumentException(name + " must be >=0"); }
         return n;
     }
 
@@ -45,28 +60,13 @@ public final class Preconditions {
         return n;
     }
 
-    public static long assertNotZero(long n, @NonNull String name) {
-        if (n == 0) { throw new IllegalArgumentException(name + " must not be 0"); }
-        return n;
-    }
-
-    public static int assertPositive(int n, @NonNull String name) {
-        if (n <= 0) { throw new IllegalArgumentException(name + " must be positive"); }
-        return n;
-    }
-
-    public static int assertNegative(int n, @NonNull String name) {
-        if (n >= 0) { throw new IllegalArgumentException(name + " must be negative"); }
-        return n;
-    }
-
-    public static int assertNotNegative(int n, @NonNull String name) {
-        if (n < 0) { throw new IllegalArgumentException(name + " must be negative"); }
-        return n;
-    }
-
     public static int assertZero(int n, @NonNull String name) {
         if (n != 0) { throw new IllegalArgumentException(name + " must be 0"); }
+        return n;
+    }
+
+    public static long assertNotZero(long n, @NonNull String name) {
+        if (n == 0) { throw new IllegalArgumentException(name + " must not be 0"); }
         return n;
     }
 

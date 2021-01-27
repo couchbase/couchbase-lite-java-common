@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite;
 
-import android.support.annotation.Nullable;
+import android.support.annotation.NonNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,23 +30,27 @@ public final class CouchbaseLite {
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      */
-    public static void init() { init(null); }
+    public static void init() { init(false); }
+
+    /**
+     * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     */
+    public static void init(boolean debug) {
+        final File curDir;
+        try { curDir = new File("").getCanonicalFile(); }
+        catch (IOException e) { throw new IllegalStateException("cannot find current directory", e); }
+        init(debug, curDir, new File(curDir, CouchbaseLiteInternal.TEMP_DIR_NAME));
+    }
 
     /**
      * Initialize CouchbaseLite library.
      * This method allows specifying a root directory for CBL files.
      *
-     * @param rootDirectory the root directory for CBL files
+     * @param debug      true if debugging
+     * @param rootDbDir  default directory for databases
+     * @param scratchDir scratch directory for SQLite
      */
-    public static void init(@Nullable File rootDirectory) {
-        String rootDirPath = null;
-        if (rootDirectory != null) {
-            try { rootDirPath = rootDirectory.getCanonicalPath(); }
-            catch (IOException e) {
-                throw new IllegalArgumentException("Could not get path for directory: " + rootDirectory, e);
-            }
-        }
-
-        CouchbaseLiteInternal.init(new MValueDelegate(), rootDirPath);
+    public static void init(boolean debug, @NonNull File rootDbDir, @NonNull File scratchDir) {
+        CouchbaseLiteInternal.init(new MValueDelegate(), debug, rootDbDir, scratchDir);
     }
 }

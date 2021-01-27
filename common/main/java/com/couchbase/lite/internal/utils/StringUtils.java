@@ -17,8 +17,10 @@ package com.couchbase.lite.internal.utils;
 
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Locale;
+import java.util.Map;
 
 
 public final class StringUtils {
@@ -29,7 +31,6 @@ public final class StringUtils {
 
     public static String getUniqueName(@NonNull String prefix, int len) { return prefix + '-' + randomString(len); }
 
-    @SuppressWarnings("ConstantConditions")
     public static String randomString(int len) {
         final char[] buf = new char[len];
         for (int idx = 0; idx < buf.length; ++idx) { buf[idx] = CHARS[MathUtils.RANDOM.get().nextInt(CHARS.length)]; }
@@ -55,5 +56,18 @@ public final class StringUtils {
             sb.append(token);
         }
         return sb.toString();
+    }
+
+    @NonNull
+    public static String toString(@Nullable Map<?, ?> map) {
+        final StringBuilder buf = new StringBuilder();
+        if (map != null) {
+            int i = 0;
+            for (Map.Entry<?, ?> entry: map.entrySet()) {
+                if (i++ > 0) { buf.append(", "); }
+                buf.append(entry.getKey()).append("=>").append(entry.getValue());
+            }
+        }
+        return buf.toString();
     }
 }

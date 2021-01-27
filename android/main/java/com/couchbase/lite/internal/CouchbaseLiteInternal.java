@@ -16,9 +16,7 @@
 package com.couchbase.lite.internal;
 
 import android.content.Context;
-import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.io.File;
@@ -34,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.couchbase.lite.BuildConfig;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.R;
@@ -42,6 +39,7 @@ import com.couchbase.lite.internal.core.C4Base;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -57,9 +55,9 @@ public final class CouchbaseLiteInternal {
     // Utility class
     private CouchbaseLiteInternal() {}
 
-    private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
+    public static final String SCRATCH_DIR_NAME = "CouchbaseLiteTemp";
 
-    private static final String TEMP_DIR_NAME = "CouchbaseLiteTemp";
+    private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
@@ -69,45 +67,52 @@ public final class CouchbaseLiteInternal {
 
     private static final Object LOCK = new Object();
 
-    @SuppressWarnings("PMD.FieldNamingConventions")
-    private static final boolean DEBUGGING = BuildConfig.CBL_DEBUG;
-
-    @GuardedBy("LOCK")
-    private static String dbDirPath;
-
-    @GuardedBy("LOCK")
-    private static String tmpDirPath;
+    private static volatile boolean debugging;
+    private static volatile File rootDir;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      */
     public static void init(
         @NonNull MValue.Delegate mValueDelegate,
-        @Nullable String rootDirectoryPath,
+        boolean debug,
+        @NonNull File rootDir,
+        @NonNull File scratchDir,
         @NonNull Context ctxt) {
-        Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
-        Preconditions.assertNotNull(ctxt, "context");
-
         if (INITIALIZED.getAndSet(true)) { return; }
 
-        CONTEXT.set(new SoftReference<>(ctxt.getApplicationContext()));
+        debugging = debug;
 
-        // Splitting initialization and registration is not really necessary here.
-        // Do it to maintain code parity with the Java version, where it is necessary.
-        setDbDirectoryPath(rootDirectoryPath);
+        CONTEXT.set(new SoftReference<>(Preconditions.assertNotNull(ctxt.getApplicationContext(), "context")));
+
+        Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
+
+        CouchbaseLiteInternal.rootDir = Preconditions.assertNotNull(FileUtils.verifyDir(rootDir), "rootDir");
+        final File scratch = Preconditions.assertNotNull(FileUtils.verifyDir(scratchDir), "scratchDir");
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
-        if (DEBUGGING) { C4Base.debug(); }
+        C4Base.debug(debug);
 
-        setC4TmpDirPath();
+        setC4TmpDirPath(scratch);
 
         MValue.registerDelegate(mValueDelegate);
 
         Log.initLogging(loadErrorMessages(ctxt));
     }
 
-    public static boolean isDebugging() { return DEBUGGING; }
+    public static boolean isDebugging() { return debugging; }
+
+    @NonNull
+    public static Context getContext() {
+        requireInit("Application context not initialized");
+        final SoftReference<Context> contextRef = CONTEXT.get();
+
+        final Context ctxt = contextRef.get();
+        if (ctxt == null) { throw new IllegalStateException("Context is null"); }
+
+        return ctxt;
+    }
 
     public static NetworkConnectivityManager getNetworkConnectivityManager() {
         final NetworkConnectivityManager connectivityMgr = CONNECTIVITY_MANAGER.get();
@@ -130,38 +135,9 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
-    public static Context getContext() {
-        requireInit("Application context not initialized");
-        final SoftReference<Context> contextRef = CONTEXT.get();
-
-        final Context ctxt = contextRef.get();
-        if (ctxt == null) { throw new IllegalStateException("Context is null"); }
-
-        return ctxt;
-    }
-
-    public static void setDbDirectoryPath(@Nullable String rootDirPath) {
-        requireInit("Can't set root directory");
-        final String dbPath = makeDbPath(rootDirPath);
-        synchronized (LOCK) { dbDirPath = dbPath; }
-    }
-
-    @NonNull
-    public static String getDbDirectoryPath() {
-        requireInit("Database directory not initialized");
-        synchronized (LOCK) { return dbDirPath; }
-    }
-
-    @NonNull
-    public static String makeDbPath(@Nullable String rootDir) {
+    public static File getRootDir() {
         requireInit("Can't create DB path");
-        return verifyDir((rootDir != null) ? new File(rootDir) : getContext().getFilesDir());
-    }
-
-    @NonNull
-    public static String getTmpDirectoryPath() {
-        requireInit("Database directory not initialized");
-        synchronized (LOCK) { return tmpDirPath; }
+        return rootDir;
     }
 
     @VisibleForTesting
@@ -184,28 +160,10 @@ public final class CouchbaseLiteInternal {
         return errorMessages;
     }
 
-    @NonNull
-    private static String verifyDir(@NonNull File dir) {
-        IOException err = null;
+    private static void setC4TmpDirPath(@NonNull File scratchDir) {
         try {
-            if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return dir.getCanonicalPath(); }
+            synchronized (LOCK) { C4Base.setTempDir(scratchDir.getAbsolutePath()); }
         }
-        catch (IOException e) { err = e; }
-
-        throw new IllegalStateException("Cannot create or access directory at " + dir, err);
-    }
-
-    private static void setC4TmpDirPath() {
-        final File dir = getContext().getExternalFilesDir(TEMP_DIR_NAME);
-        if (dir == null) { throw new IllegalStateException("Tmp dir root is null"); }
-        final String path = verifyDir(dir);
-
-        synchronized (LOCK) {
-            try {
-                C4Base.setTempDir(path);
-                tmpDirPath = path;
-            }
-            catch (LiteCoreException e) { Log.w(LogDomain.DATABASE, "Failed to set tmp directory path", e); }
-        }
+        catch (LiteCoreException e) { Log.w(LogDomain.DATABASE, "Failed to set c4TmpDir", e); }
     }
 }

@@ -82,13 +82,7 @@ public class C4BlobReadStream extends C4NativePeer {
     // private methods
     //-------------------------------------------------------------------------
 
-
-    private void closePeer(@Nullable LogDomain domain) {
-        final long peer = getPeerAndClear();
-        if (verifyPeerClosed(peer, domain)) { return; }
-
-        close(peer);
-    }
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4BlobReadStream::close); }
 
     //-------------------------------------------------------------------------
     // native methods

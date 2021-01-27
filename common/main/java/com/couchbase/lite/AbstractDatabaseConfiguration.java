@@ -19,12 +19,11 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 abstract class AbstractDatabaseConfiguration {
-    static String getDbDirectory(@Nullable String dir) { return CouchbaseLiteInternal.makeDbPath(dir); }
-
 
     //---------------------------------------------
     // member variables
@@ -32,7 +31,6 @@ abstract class AbstractDatabaseConfiguration {
 
     private final boolean readOnly;
 
-    private String rootDirectory;
     private String dbDirectory;
 
     //---------------------------------------------
@@ -42,7 +40,7 @@ abstract class AbstractDatabaseConfiguration {
     protected AbstractDatabaseConfiguration(@Nullable AbstractDatabaseConfiguration config, boolean readOnly) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
         this.readOnly = readOnly;
-        setRootDirectory((config == null) ? null : config.rootDirectory);
+        dbDirectory = (config != null) ? config.dbDirectory : getDefaultDbDirPath();
     }
 
     //---------------------------------------------
@@ -50,10 +48,29 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
 
     /**
+     * Set the canonical path of the directory to store the database in.
+     * If the directory doesn't already exist it will be created.
+     * If it cannot be created throw an IllegalStateException
+     *
+     * @param directory the directory
+     * @return this.
+     * @throws IllegalStateException if the directory does not exist anc cannot be created
+     */
+    @NonNull
+    public DatabaseConfiguration setDirectory(@NonNull String directory) {
+        Preconditions.assertNotNull(directory, "directory");
+        verifyWritable();
+
+        // a bunch of code assumes that this string is the *canonical* path to the directory
+        dbDirectory = FileUtils.verifyDir(directory).getAbsolutePath();
+
+        return getDatabaseConfiguration();
+    }
+
+    /**
      * Returns the path to the directory that contains the database.
      * If this path has not been set explicitly (see: <code>setDirectory</code> below),
-     * then it is the system default.  If it has been set explicitly, then it also contains
-     * the temporary directory that Couchbase uses as a scratch pad.
+     * then it is the system default.
      *
      * @return the database directory
      */
@@ -66,28 +83,12 @@ abstract class AbstractDatabaseConfiguration {
 
     protected abstract DatabaseConfiguration getDatabaseConfiguration();
 
-    protected boolean isReadOnly() { return readOnly; }
-
-    protected AbstractDatabaseConfiguration setDirectory(@NonNull String dir) {
-        Preconditions.assertNotNull(dir, "directory");
+    protected void verifyWritable() {
         if (readOnly) { throw new IllegalStateException("DatabaseConfiguration is readonly mode."); }
-
-        setRootDirectory(dir);
-
-        return this;
     }
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
-    DatabaseConfiguration readOnlyCopy() { return new DatabaseConfiguration(getDatabaseConfiguration(), true); }
-
-    String getRootDirectory() { return rootDirectory; }
 
     @VisibleForTesting
-    void setRootDirectory(@Nullable String dir) {
-        dbDirectory = getDbDirectory(dir);
-        rootDirectory = dir;
-    }
+    void resetDbDir() { dbDirectory = getDefaultDbDirPath(); }
+
+    private String getDefaultDbDirPath() { return CouchbaseLiteInternal.getRootDir().getAbsolutePath(); }
 }

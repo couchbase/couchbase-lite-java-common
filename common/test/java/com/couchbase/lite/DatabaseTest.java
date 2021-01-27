@@ -28,6 +28,7 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.TestUtils;
@@ -1262,7 +1263,7 @@ public class DatabaseTest extends BaseDbTest {
         final String dbName = getUniqueName("test-db");
 
         // verify that the db directory is no longer in the misguided 2.8.0 subdirectory
-        final String dbDirectory = AbstractDatabaseConfiguration.getDbDirectory(null);
+        final String dbDirectory = CouchbaseLiteInternal.getRootDir().getAbsolutePath();
         assertFalse(dbDirectory.endsWith(".couchbase"));
 
         Database db = null;
@@ -1288,9 +1289,10 @@ public class DatabaseTest extends BaseDbTest {
     }
 
     @Test
-    public void testReOpenExisting2Dot8DotOhDb() throws CouchbaseLiteException {
+    public void testReOpenExisting2Dot8DotOhDb() throws CouchbaseLiteException, IOException {
         final String dbName = getUniqueName("test-db");
-        final String twoDot8DotOhDirPath = AbstractDatabaseConfiguration.getDbDirectory(null) + "/.couchbase";
+        final String twoDot8DotOhDirPath
+            = new File(CouchbaseLiteInternal.getRootDir(), ".couchbase").getCanonicalPath();
 
         Database db = null;
         try {
@@ -1321,9 +1323,10 @@ public class DatabaseTest extends BaseDbTest {
     }
 
     @Test
-    public void testReOpenExisting2Dot8DotOhDbCopyFails() throws CouchbaseLiteException {
+    public void testReOpenExisting2Dot8DotOhDbCopyFails() throws CouchbaseLiteException, IOException {
         final String dbName = getUniqueName("test-db");
-        final String twoDot8DotOhDirPath = AbstractDatabaseConfiguration.getDbDirectory(null) + "/.couchbase";
+        final String twoDot8DotOhDirPath
+            = new File(CouchbaseLiteInternal.getRootDir(), ".couchbase").getCanonicalPath();
 
         Database db = null;
         try {
@@ -1352,7 +1355,7 @@ public class DatabaseTest extends BaseDbTest {
             assertTrue(AbstractDatabase.getDatabaseFile(twoDot8DotOhDir, dbName).exists());
             // the copy should not exist
             assertFalse(AbstractDatabase.getDatabaseFile(
-                new File(AbstractDatabaseConfiguration.getDbDirectory(null)),
+                CouchbaseLiteInternal.getRootDir(),
                 dbName)
                 .exists());
         }
@@ -1366,9 +1369,11 @@ public class DatabaseTest extends BaseDbTest {
     }
 
     @Test
-    public void testReOpenExistingLegacyAnd2Dot8DotOhDb() throws CouchbaseLiteException {
+    public void testReOpenExistingLegacyAnd2Dot8DotOhDb() throws CouchbaseLiteException, IOException {
         final String dbName = getUniqueName("test-db");
-        final String twoDot8DotOhDirPath = AbstractDatabaseConfiguration.getDbDirectory(null) + "/.couchbase";
+        final String twoDot8DotOhDirPath
+            = new File(CouchbaseLiteInternal.getRootDir(), ".couchbase").getCanonicalPath();
+
 
         Database db = null;
         try {

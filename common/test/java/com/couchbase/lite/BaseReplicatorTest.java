@@ -92,11 +92,14 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         Endpoint target,
         boolean push,
         boolean pull,
-        boolean continuous) {
-        return new ReplicatorConfiguration(source, target)
-            .setReplicatorType(getReplicatorType(push, pull))
-            .setContinuous(continuous)
-            .setHeartbeat(0L);
+        boolean continuous,
+        Certificate pinnedServerCert,
+        ConflictResolver resolver) {
+        ReplicatorConfiguration config = makeConfig(source, target, push, pull, continuous, pinnedServerCert);
+
+        if (resolver != null) { config.setConflictResolver(resolver); }
+
+        return config;
     }
 
     protected final ReplicatorConfiguration makeConfig(
@@ -118,19 +121,16 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return config;
     }
 
-    protected final ReplicatorConfiguration makeConfig(
+     protected final ReplicatorConfiguration makeConfig(
         Database source,
         Endpoint target,
         boolean push,
         boolean pull,
-        boolean continuous,
-        Certificate pinnedServerCert,
-        ConflictResolver resolver) {
-        ReplicatorConfiguration config = makeConfig(source, target, push, pull, continuous, pinnedServerCert);
-
-        if (resolver != null) { config.setConflictResolver(resolver); }
-
-        return config;
+        boolean continuous) {
+        return new ReplicatorConfiguration(source, target)
+            .setReplicatorType(getReplicatorType(push, pull))
+            .setContinuous(continuous)
+            .setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
     }
 
     protected final Replicator run(ReplicatorConfiguration config) throws CouchbaseLiteException {

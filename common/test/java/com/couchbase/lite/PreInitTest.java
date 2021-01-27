@@ -28,7 +28,7 @@ public class PreInitTest extends PlatformBaseTest {
     public static void setUpPreInitTestClass() { CouchbaseLiteInternal.reset(false); }
 
     @AfterClass
-    public static void tearDownPreInitTest() {  CouchbaseLiteInternal.reset(true); }
+    public static void tearDownPreInitTest() { CouchbaseLiteInternal.reset(true); }
 
     @Test(expected = IllegalStateException.class)
     public void testCreateDatabaseBeforeInit() throws CouchbaseLiteException {

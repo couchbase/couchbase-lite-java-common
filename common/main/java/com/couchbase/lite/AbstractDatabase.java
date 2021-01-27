@@ -154,7 +154,7 @@ abstract class AbstractDatabase {
     public static void delete(@NonNull String name, @Nullable File directory) throws CouchbaseLiteException {
         Preconditions.assertNotNull(name, "name");
 
-        if (directory == null) { directory = new File(AbstractDatabaseConfiguration.getDbDirectory(null)); }
+        if (directory == null) { directory = CouchbaseLiteInternal.getRootDir(); }
 
         if (!exists(name, directory)) {
             throw new CouchbaseLiteException(
@@ -198,10 +198,6 @@ abstract class AbstractDatabase {
         if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar) { fromPath += File.separator; }
         String toPath = getDatabaseFile(new File(config.getDirectory()), name).getPath();
         if (toPath.charAt(toPath.length() - 1) != File.separatorChar) { toPath += File.separator; }
-
-        // Setting the temp directory from the Database Configuration is deprecated and will go away:
-
-        CouchbaseLiteInternal.setDbDirectoryPath(config.getRootDirectory());
 
         try {
             C4Database.copyDb(
@@ -289,7 +285,7 @@ abstract class AbstractDatabase {
         this.name = name;
 
         // Copy configuration
-        this.config = config.readOnlyCopy();
+        this.config = new DatabaseConfiguration(config, true);
 
         this.postExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
         this.queryExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
@@ -298,7 +294,6 @@ abstract class AbstractDatabase {
         this.docChangeNotifiers = new HashMap<>();
 
         fixHydrogenBug(config, name);
-        CouchbaseLiteInternal.setDbDirectoryPath(config.getRootDirectory());
 
         // Can't open the DB until the file system is set up.
         this.c4Database = openC4Db();
@@ -361,7 +356,7 @@ abstract class AbstractDatabase {
      * @return the database's path.
      */
     public String getPath() {
-        synchronized (dbLock) { return (!isOpen()) ? null : path; }
+        synchronized (getLock()) { return (!isOpen()) ? null : path; }
     }
 
     /**
@@ -370,7 +365,7 @@ abstract class AbstractDatabase {
      * @return the number of documents in the database, 0 if database is closed.
      */
     public long getCount() {
-        synchronized (dbLock) { return (!isOpen()) ? 0L : c4Database.getDocumentCount(); }
+        synchronized (getLock()) { return (!isOpen()) ? 0L : c4Database.getDocumentCount(); }
     }
 
     /**
@@ -380,7 +375,7 @@ abstract class AbstractDatabase {
      * @return the READONLY copied config object
      */
     @NonNull
-    public DatabaseConfiguration getConfig() { return config.readOnlyCopy(); }
+    public DatabaseConfiguration getConfig() { return new DatabaseConfiguration(config, true); }
 
     /**
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
@@ -392,7 +387,7 @@ abstract class AbstractDatabase {
     public Document getDocument(@NonNull String id) {
         Preconditions.assertNotNull(id, "id");
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             mustBeOpen();
             try { return Document.getDocument((Database) this, id, false); }
             // only 404 - Not Found error throws CouchbaseLiteException
@@ -502,7 +497,7 @@ abstract class AbstractDatabase {
             throw new CouchbaseLiteException("DocumentNotFound", CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
         }
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             prepareDocument(document);
 
             try { purge(document.getId()); }
@@ -523,7 +518,7 @@ abstract class AbstractDatabase {
      */
     public void purge(@NonNull String id) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
-        synchronized (dbLock) { purgeLocked(id); }
+        synchronized (getLock()) { purgeLocked(id); }
     }
 
     // Database changes:
@@ -545,7 +540,7 @@ abstract class AbstractDatabase {
             return;
         }
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             try {
                 getC4DatabaseLocked().setExpiration(id, (expiration == null) ? 0 : expiration.getTime());
                 purgeStrategy.schedulePurge(0);
@@ -567,7 +562,7 @@ abstract class AbstractDatabase {
     public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             try {
                 if (getC4Document(id) == null) {
                     throw new CouchbaseLiteException(
@@ -595,7 +590,7 @@ abstract class AbstractDatabase {
     public <T extends Exception> void inBatch(@NonNull Fn.TaskThrows<T> task) throws CouchbaseLiteException, T {
         Preconditions.assertNotNull(task, "task");
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             final C4Database db = getC4DatabaseLocked();
             boolean commit = false;
             try {
@@ -644,7 +639,7 @@ abstract class AbstractDatabase {
     @NonNull
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             mustBeOpen();
             return addDatabaseChangeListenerLocked(executor, listener);
         }
@@ -658,7 +653,7 @@ abstract class AbstractDatabase {
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             if (token instanceof ChangeListenerToken) {
                 final ChangeListenerToken<?> changeListenerToken = (ChangeListenerToken<?>) token;
                 if (changeListenerToken.getKey() != null) {
@@ -698,7 +693,7 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(id, "id");
         Preconditions.assertNotNull(listener, "listener");
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             mustBeOpen();
             return addDocumentChangeListenerLocked(id, executor, listener);
         }
@@ -732,7 +727,7 @@ abstract class AbstractDatabase {
     @SuppressWarnings("unchecked")
     @NonNull
     public List<String> getIndexes() throws CouchbaseLiteException {
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             try { return (List<String>) getC4DatabaseLocked().getIndexes().asObject(); }
             catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         }
@@ -742,7 +737,7 @@ abstract class AbstractDatabase {
         Preconditions.assertNotNull(name, "name");
         final AbstractIndex index = (AbstractIndex) Preconditions.assertNotNull(idx, "index");
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             final C4Database c4Db = getC4DatabaseLocked();
             try {
                 final String json = JsonUtils.toJson(index.items()).toString();
@@ -764,14 +759,14 @@ abstract class AbstractDatabase {
 
 
     public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             try { getC4DatabaseLocked().deleteIndex(name); }
             catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         }
     }
 
     public boolean performMaintenance(MaintenanceType type) throws CouchbaseLiteException {
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             try { return getC4DatabaseLocked().performMaintenance(type); }
             catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         }
@@ -792,7 +787,7 @@ abstract class AbstractDatabase {
     // This method may return a closed database
     @NonNull
     protected C4Database getC4Database() {
-        synchronized (dbLock) { return getC4DatabaseLocked(); }
+        synchronized (getLock()) { return getC4DatabaseLocked(); }
     }
 
     @GuardedBy("dbLock")
@@ -838,7 +833,7 @@ abstract class AbstractDatabase {
 
     @NonNull
     C4BlobStore getBlobStore() throws LiteCoreException {
-        synchronized (dbLock) { return getC4DatabaseLocked().getBlobStore(); }
+        synchronized (getLock()) { return getC4DatabaseLocked().getBlobStore(); }
     }
 
     // Instead of clone()
@@ -849,13 +844,13 @@ abstract class AbstractDatabase {
     // WARNING: this is the state at the time of the call!
     // You must hold dbLock to keep the state from changing.
     boolean isOpen() {
-        synchronized (dbLock) { return c4Database != null; }
+        synchronized (getLock()) { return c4Database != null; }
     }
 
     // WARNING: guarantees state at the time of the call!
     // You must hold dbLock to keep the state from changing.
     void mustBeOpen() {
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             if (!isOpen()) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
         }
     }
@@ -865,7 +860,7 @@ abstract class AbstractDatabase {
         byte[] uuid = null;
         LiteCoreException err = null;
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             if (!isOpen()) { return null; }
 
             try { uuid = c4Database.getPublicUUID(); }
@@ -910,23 +905,23 @@ abstract class AbstractDatabase {
     }
 
     C4Query createQuery(@NonNull String json) throws LiteCoreException {
-        synchronized (dbLock) { return getC4DatabaseLocked().createQuery(json); }
+        synchronized (getLock()) { return getC4DatabaseLocked().createQuery(json); }
     }
 
     C4Document getC4Document(@NonNull String id) throws LiteCoreException {
-        synchronized (dbLock) { return getC4DatabaseLocked().get(id); }
+        synchronized (getLock()) { return getC4DatabaseLocked().get(id); }
     }
 
     FLEncoder getSharedFleeceEncoder() {
-        synchronized (dbLock) { return getC4DatabaseLocked().getSharedFleeceEncoder(); }
+        synchronized (getLock()) { return getC4DatabaseLocked().getSharedFleeceEncoder(); }
     }
 
     long getNextDocumentExpiration() {
-        synchronized (dbLock) { return getC4DatabaseLocked().nextDocExpiration(); }
+        synchronized (getLock()) { return getC4DatabaseLocked().nextDocExpiration(); }
     }
 
     long purgeExpiredDocs() {
-        synchronized (dbLock) { return getC4DatabaseLocked().purgeExpiredDocs(); }
+        synchronized (getLock()) { return getC4DatabaseLocked().purgeExpiredDocs(); }
     }
 
     @NonNull
@@ -934,7 +929,7 @@ abstract class AbstractDatabase {
         @NonNull ChangeNotifier<?> context,
         @NonNull String docID,
         @NonNull C4DocumentObserverListener listener) {
-        synchronized (dbLock) { return getC4DatabaseLocked().createDocumentObserver(docID, listener, context); }
+        synchronized (getLock()) { return getC4DatabaseLocked().createDocumentObserver(docID, listener, context); }
     }
 
     //////// REPLICATORS:
@@ -958,7 +953,7 @@ abstract class AbstractDatabase {
         int framing)
         throws LiteCoreException {
         final C4Replicator c4Repl;
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             c4Repl = getC4DatabaseLocked().createRemoteReplicator(
                 scheme,
                 host,
@@ -991,7 +986,7 @@ abstract class AbstractDatabase {
         @Nullable C4ReplicationFilter pullFilter)
         throws LiteCoreException {
         final C4Replicator c4Repl;
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             c4Repl = getC4DatabaseLocked().createLocalReplicator(
                 otherLocalDb.getC4Database(),
                 push,
@@ -1081,7 +1076,7 @@ abstract class AbstractDatabase {
 
     void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) {
         try {
-            synchronized (dbLock) { getC4DatabaseLocked().setCookie(uri, setCookieHeader); }
+            synchronized (getLock()) { getC4DatabaseLocked().setCookie(uri, setCookieHeader); }
         }
         catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot save cookie for " + uri, e); }
     }
@@ -1089,7 +1084,7 @@ abstract class AbstractDatabase {
     @Nullable
     String getCookies(@NonNull URI uri) {
         try {
-            synchronized (dbLock) { return getC4DatabaseLocked().getCookies(uri); }
+            synchronized (getLock()) { return getC4DatabaseLocked().getCookies(uri); }
         }
         catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot get cookies for " + uri, e); }
         return null;
@@ -1230,7 +1225,7 @@ abstract class AbstractDatabase {
     }
 
     private void postDatabaseChanged() {
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             if (!isOpen() || (c4DbObserver == null)) { return; }
 
             boolean external = false;
@@ -1271,7 +1266,7 @@ abstract class AbstractDatabase {
         throws CouchbaseLiteException, CBLInternalException {
         final Document localDoc;
         final Document remoteDoc;
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             localDoc = Document.getDocument((Database) this, docID);
             remoteDoc = getConflictingRevision(docID);
         }
@@ -1288,7 +1283,7 @@ abstract class AbstractDatabase {
                 remoteDoc);
         }
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             boolean commit = false;
             beginTransaction();
             try {
@@ -1430,7 +1425,7 @@ abstract class AbstractDatabase {
             }
 
             // Conflict
-            synchronized (dbLock) { oldDoc = Document.getDocument((Database) this, document.getId()); }
+            synchronized (getLock()) { oldDoc = Document.getDocument((Database) this, document.getId()); }
 
             try {
                 if (!handler.handle(document, (oldDoc.isDeleted()) ? null : oldDoc)) {
@@ -1469,7 +1464,7 @@ abstract class AbstractDatabase {
                 CBLError.Code.NOT_FOUND);
         }
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             prepareDocument(document);
 
             boolean commit = false;
@@ -1605,7 +1600,7 @@ abstract class AbstractDatabase {
 
     private void shutdown(Fn.ConsumerThrows<C4Database, LiteCoreException> onShut) throws CouchbaseLiteException {
         final C4Database c4Db;
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             c4Db = getC4DatabaseLocked();
             c4Database = null;
 
@@ -1640,7 +1635,7 @@ abstract class AbstractDatabase {
         }
         catch (InterruptedException ignore) { }
 
-        synchronized (dbLock) {
+        synchronized (getLock()) {
             try { onShut.accept(c4Db); }
             catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         }
@@ -1685,11 +1680,11 @@ abstract class AbstractDatabase {
     private void fixHydrogenBug(@NonNull DatabaseConfiguration config, @NonNull String dbName)
         throws CouchbaseLiteException {
         // This is the real default directory
-        final String defaultDirPath = AbstractDatabaseConfiguration.getDbDirectory(null);
+        final String defaultDirPath = CouchbaseLiteInternal.getRootDir().getAbsolutePath();
 
         // Check to see if the rootDirPath refers to the default directory.  If not, none of this is relevant.
         // Both rootDir and defaultDir are canonical, so string comparison should work.
-        if (!defaultDirPath.equals(AbstractDatabaseConfiguration.getDbDirectory(config.getDirectory()))) { return; }
+        if (!defaultDirPath.equals(config.getDirectory())) { return; }
 
         final File defaultDir = new File(defaultDirPath);
 

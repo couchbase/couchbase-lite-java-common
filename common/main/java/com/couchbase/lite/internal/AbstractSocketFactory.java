@@ -15,19 +15,25 @@
 //
 package com.couchbase.lite.internal;
 
+import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.util.List;
 
 import com.couchbase.lite.Endpoint;
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.URLEndpoint;
+import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4Socket;
-import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
+import com.couchbase.lite.internal.replicator.CBLWebSocket;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -43,6 +49,8 @@ public abstract class AbstractSocketFactory {
     @NonNull
     protected final Endpoint endpoint;
 
+    // Test instrumentation
+    @GuardedBy("endpoint")
     @Nullable
     private Fn.Consumer<C4Socket> listener;
 
@@ -55,23 +63,17 @@ public abstract class AbstractSocketFactory {
         this.serverCertsListener = serverCertsListener;
     }
 
-    public final C4Socket createSocket(long handle, String scheme, String host, int port, String path, byte[] opts) {
-        final C4Socket socket = (!(endpoint instanceof URLEndpoint))
-            ? createPlatformSocket(handle)
-            : AbstractCBLWebSocket.createCBLWebSocket(
-                handle,
-                scheme,
-                host,
-                port,
-                path,
-                opts,
-                cookieStore,
-                serverCertsListener);
+    public final C4Socket createSocket(long peer, String scheme, String host, int port, String path, byte[] opts) {
+        final C4Socket socket = (endpoint instanceof URLEndpoint)
+            ? createCBLWebSocket(peer, scheme, host, port, path, opts)
+            : createPlatformSocket(peer);
 
         if (socket == null) {
-            throw new UnsupportedOperationException("Unrecognized endpoint type: " + endpoint.getClass());
+            throw new UnsupportedOperationException("Cannot create endpoint: " + endpoint.getClass());
         }
 
+        // Test instrumentation
+        final Fn.Consumer<C4Socket> listener = getListener();
         if (listener != null) { listener.accept(socket); }
 
         return socket;
@@ -82,9 +84,41 @@ public abstract class AbstractSocketFactory {
     public String toString() { return "SocketFactory{" + "endpoint=" + endpoint + '}'; }
 
     @VisibleForTesting
-    public final void setListener(@Nullable Fn.Consumer<C4Socket> listener) { this.listener = listener; }
+    public final void setListener(@Nullable Fn.Consumer<C4Socket> listener) {
+        synchronized (endpoint) { this.listener = listener; }
+    }
 
     @Nullable
-    protected abstract C4Socket createPlatformSocket(long handle);
+    protected abstract C4Socket createPlatformSocket(long peer);
+
+    @Nullable
+    private C4Socket createCBLWebSocket(long peer, String scheme, String host, int port, String path, byte[] opts) {
+        final URI uri;
+        try { uri = new URI(translateScheme(scheme), null, host, port, path, null, null); }
+        catch (URISyntaxException e) {
+            Log.w(LogDomain.NETWORK, "Bad URI for socket: %s//%s:%d/%s", e, scheme, host, port, path);
+            return null;
+        }
+
+        try { return new CBLWebSocket(peer, uri, opts, cookieStore, serverCertsListener); }
+        catch (Exception e) { Log.w(LogDomain.NETWORK, "Failed to instantiate CBLWebSocket", e); }
+
+        return null;
+    }
+
+    // OkHttp doesn't understand blip or blips
+    private String translateScheme(String scheme) {
+        if (C4Replicator.C4_REPLICATOR_SCHEME_2.equalsIgnoreCase(scheme)) { return C4Replicator.WEBSOCKET_SCHEME; }
+
+        if (C4Replicator.C4_REPLICATOR_TLS_SCHEME_2.equalsIgnoreCase(scheme)) {
+            return C4Replicator.WEBSOCKET_SECURE_CONNECTION_SCHEME;
+        }
+
+        return scheme;
+    }
+
+    private Fn.Consumer<C4Socket> getListener() {
+        synchronized (endpoint) { return listener; }
+    }
 }
 

@@ -81,12 +81,7 @@ public class C4BlobKey extends C4NativePeer {
     // private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) {
-        final long peer = getPeerAndClear();
-        if (verifyPeerClosed(peer, domain)) { return; }
-
-        free(peer);
-    }
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4BlobKey::free); }
 
     //-------------------------------------------------------------------------
     // native methods

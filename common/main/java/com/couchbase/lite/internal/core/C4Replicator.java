@@ -276,7 +276,7 @@ public class C4Replicator extends C4NativePeer {
         synchronized (CLASS_LOCK) {
             replicator = new C4Replicator(
                 db,
-                openSocket.getHandle(),
+                openSocket.getPeerHandle(),
                 push,
                 pull,
                 options,
@@ -472,12 +472,12 @@ public class C4Replicator extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private void closePeer(@Nullable LogDomain domain) {
-        final long peer = getPeerAndClear();
-        if (verifyPeerClosed(peer, domain)) { return; }
-
-        stop(peer);
-
-        free(peer, replicatorContext, socketFactoryContext);
+        releasePeer(
+            domain,
+            peer -> {
+                stop(peer);
+                free(peer, replicatorContext, socketFactoryContext);
+            });
     }
 
     //-------------------------------------------------------------------------

@@ -15,25 +15,25 @@
 //
 package com.couchbase.lite.internal.replicator;
 
-import android.support.annotation.CallSuper;
+import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.concurrent.ThreadSafe;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -66,19 +66,19 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.StateMachine;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
- * This is all a bit odd.  Let me try to explain.
- * <p>
  * First of all, you need to know about ProtocolTypes.
- * Core knows all about WebSockets protocol.  It would be glad to be pretty much completely responsible
- * for a WS connection, if we could just send the bytes across some raw byte stream.  For better or worse, we
- * hired OkHTTP for this job. It is also very smart and *it* wants to handle the WS connection.  The solution,
+ * Core knows all about the WebSockets protocol.  It would be glad to be pretty much completely responsible
+ * for a WS connection, if we could just send the bytes across some raw byte stream.  For better or worse, though
+ * we hired OkHTTP for this job. It is also very smart and *it* wants to handle the WS connection.  The solution,
  * dating back to the dawn of time, is that we *always* use what Core, quite oddly, calls MESSAGE_STREAM protocol.
- * In this mode Core only hands us minimal state transition information, and only the basic information that
+ * In this mode Core hands us only minimal state transition information and the basic payload data that
  * must be transferred.
  * The comments in c4Socket.h are incredibly valuable.
+ * <p>
  * So, some assumptions.  If you are here:
  * <ul>
  * <li> you are talking MESSAGE_STREAM.
@@ -88,7 +88,7 @@ import com.couchbase.lite.internal.utils.StateMachine;
  * abstract methods defined in C4Socket and implemented here.  OkHttp does its callbacks to the CBLWebSocketListener
  * which proxies them directly to Core, via C4Socket.
  * The peculiar factory method returns an instance of the concrete subclass, CBLWebSocket.  There are different
- * sources for that class, for each of the CE/EE * platform variants of the platform.
+ * sources for that class, one for each of the (CE/EE x platform) variants of the product.
  * <p>
  * State transition:
  * Things kick off when Core calls openSocket.  We are now in the state CONNECTING.  In response, we ask OkHttp
@@ -103,6 +103,11 @@ import com.couchbase.lite.internal.utils.StateMachine;
  * it back to us, by calling close().
  * If it is Core that decides to close the connection, we get a call to requestClose().  That should result in a
  * call to CBLWebSocketListener.onClosed().
+ * <p>
+ * This class is going to cause deadlocks.  While C4Socket does not synchronise outbound messages (Core to remote)
+ * this class does.  Messages headed in either direction (to or from core) seize the object lock (from C4NativePeer).
+ * If message processing seizes any other locks, the two lock may be seized in the opposite order depending on which
+ * way the message is going.  This invites deadlock.
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.ExcessiveImports"})
 public abstract class AbstractCBLWebSocket extends C4Socket {
@@ -121,33 +126,26 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     private static final String CHALLENGE_BASIC = "Basic";
     private static final String HEADER_AUTH = "Authorization";
 
-    private enum State {INIT, CONNECTING, OPEN, CLOSING, CLOSED, FAILED}
+    private enum State {INIT, CONNECTING, OPEN, CLOSE_REQUESTED, CLOSING, CLOSED, FAILED}
 
-    private static final StateMachine.Builder<State> WS_STATE_BUILDER;
-    static {
-        final StateMachine.Builder<State> builder = new StateMachine.Builder<>(State.class, State.INIT, State.FAILED);
-        builder.addTransition(State.INIT, State.CONNECTING);
-        builder.addTransition(State.CONNECTING, State.OPEN, State.CLOSING);
-        builder.addTransition(State.OPEN, State.CLOSING, State.CLOSED);
-        builder.addTransition(State.CLOSING, State.CLOSED);
-        WS_STATE_BUILDER = builder;
-    }
+    //-------------------------------------------------------------------------
+    // Internal types
+    //-------------------------------------------------------------------------
 
-    final class Remote extends WebSocketListener {
+    @ThreadSafe
+    final class OkHttpRemote extends WebSocketListener {
 
         // OkHTTP callback, proxied to C4Socket
         // We have an open connection to the remote
         @Override
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
-            Log.v(TAG, "%s:OkHTTP open: %s", state, response);
-
-            if (state.setState("Remote.onOpen", State.OPEN) == null) { return; }
-
-            AbstractCBLWebSocket.this.webSocket = webSocket;
-            receivedHTTPResponse(response);
-
-            opened();
-
+            Log.v(TAG, "%s:OkHTTP open: %s", AbstractCBLWebSocket.this, response);
+            synchronized (getLock()) {
+                if (!state.setState(State.OPEN)) { return; }
+                AbstractCBLWebSocket.this.webSocket = webSocket;
+                receivedHTTPResponse(response);
+                opened();
+            }
             Log.i(TAG, "WebSocket OPEN");
         }
 
@@ -155,44 +153,44 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote sent data
         @Override
         public void onMessage(@NonNull WebSocket webSocket, String text) {
-            Log.v(TAG, "%s:OkHTTP text data: %d", state, text.length());
-
-            if (!state.checkState("Remote.onMessage", State.OPEN)) { return; }
-
-            received(text.getBytes(StandardCharsets.UTF_8));
+            Log.v(TAG, "%s:OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
+            synchronized (getLock()) {
+                if (!state.assertState(State.OPEN)) { return; }
+                received(text.getBytes(StandardCharsets.UTF_8));
+            }
         }
 
         // OkHTTP callback, proxied to C4Socket
         // Remote sent data
         @Override
         public void onMessage(@NonNull WebSocket webSocket, ByteString bytes) {
-            Log.v(TAG, "%s:OkHTTP byte data: %d", state, bytes.size());
-
-            if (!state.checkState("Remote.onMessage", State.OPEN)) { return; }
-
-            received(bytes.toByteArray());
+            Log.v(TAG, "%s:OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
+            synchronized (getLock()) {
+                if (!state.assertState(State.OPEN)) { return; }
+                received(bytes.toByteArray());
+            }
         }
 
         // OkHTTP callback, proxied to C4Socket
         // Remote wants to close the connection
         @Override
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            Log.v(TAG, "%s:OkHTTP closing: %s", state, reason);
-
-            if (state.setState("Remote.onClosing", State.CLOSING) == null) { return; }
-
-            closeRequested(code, reason);
+            Log.v(TAG, "%s:OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
+            synchronized (getLock()) {
+                if (!state.setState(State.CLOSING)) { return; }
+                closeRequested(code, reason);
+            }
         }
 
         // OkHTTP callback, proxied to C4Socket
         // Remote connection has been closed
         @Override
         public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            Log.v(TAG, "%s:OkHTTP closed: (%d) %s", state, code, reason);
-
-            if (!state.checkState("Remote.onClosed", State.CLOSED)) { return; }
-
-            connectionClosed(code, reason);
+            Log.v(TAG, "%s:OkHTTP closed: (%d) %s", AbstractCBLWebSocket.this, code, reason);
+            synchronized (getLock()) {
+                if (!state.setState(State.CLOSED)) { return; }
+                closeWithCode(code, reason);
+            }
         }
 
         // NOTE: from CBLStatus.mm
@@ -202,24 +200,58 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
         // OkHTTP callback, proxied to C4Socket
         // Remote connection failed
+        // Invoked when a web socket has been closed due to an error reading from or writing to the network.
+        // Outgoing and incoming messages may have been lost. OkHTTP will not make any more calls to this listener
         @Override
         public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, Response response) {
-            Log.v(TAG, "%s:OkHTTP failed: %s", state, response, err);
+            Log.v(TAG, "%s:OkHTTP failed: %s", AbstractCBLWebSocket.this, response, err);
 
-            state.setState("Remote.onFailure", State.FAILED);
+            synchronized (getLock()) {
+                state.setState(State.FAILED);
 
-            // Invoked when a web socket has been closed due to an error reading from or writing to the network.
-            // Both outgoing and incoming messages may have been lost. No further calls to this listener will be made.
-            if (response == null) {
-                connectionClosed(err);
-                return;
+                if (response == null) {
+                    closeWithError(err);
+                    return;
+                }
+
+                int httpStatus = response.code();
+                if (httpStatus == 101) { httpStatus = C4Socket.WS_STATUS_CLOSE_PROTOCOL_ERROR; }
+                else if ((httpStatus < 300) || (httpStatus >= 1000)) {
+                    httpStatus = C4Socket.WS_STATUS_CLOSE_POLICY_ERROR;
+                }
+
+                closeWithCode(httpStatus, response.message());
             }
+        }
+    }
 
-            int httpStatus = response.code();
-            if (httpStatus == 101) { httpStatus = C4Socket.WS_STATUS_CLOSE_PROTOCOL_ERROR; }
-            else if ((httpStatus < 300) || (httpStatus >= 1000)) { httpStatus = C4Socket.WS_STATUS_CLOSE_POLICY_ERROR; }
+    // Using the C4NativePeer lock to protect cookieStore may seem like overkill.  We have to use it anyway,
+    // for the (very necessary) call to assertState.  Might as well use it everywhere...
+    private class WebSocketCookieJar implements CookieJar {
+        @Override
+        public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
+            synchronized (getLock()) {
+                for (Cookie cookie: cookies) { cookieStore.setCookie(httpUrl.uri(), cookie.toString()); }
+            }
+        }
 
-            connectionClosed(httpStatus, response.message());
+        @NonNull
+        @Override
+        public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
+            final List<Cookie> cookies = new ArrayList<>();
+            synchronized (getLock()) {
+                if (!state.assertState(State.INIT, State.CONNECTING)) { return cookies; }
+
+                // Cookies from config
+                final String confCookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+                if (confCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, confCookies)); }
+
+                // Set cookies in the CookieStore
+                final String setCookies = cookieStore.getCookies(url.uri());
+                if (setCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, setCookies)); }
+
+                return cookies;
+            }
         }
     }
 
@@ -229,6 +261,14 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     @NonNull
     private static final NativeContext<KeyManager> KEY_MANAGERS = new NativeContext<>();
+
+    private static final StateMachine.Builder<State> WS_STATE_BUILDER
+        = new StateMachine.Builder<>(State.class, State.INIT, State.FAILED)
+        .addTransition(State.INIT, State.CONNECTING)
+        .addTransition(State.CONNECTING, State.OPEN, State.CLOSE_REQUESTED, State.CLOSING, State.CLOSED)
+        .addTransition(State.OPEN, State.CLOSE_REQUESTED, State.CLOSING, State.CLOSED)
+        .addTransition(State.CLOSE_REQUESTED, State.CLOSING, State.CLOSED)
+        .addTransition(State.CLOSING, State.CLOSED);
 
     @NonNull
     private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
@@ -243,56 +283,17 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
         // heartbeat
         .pingInterval(DEFAULT_HEARTBEAT_SEC, TimeUnit.SECONDS)
-// ???        .retryOnConnectionFailure(false)
+        // ??? .retryOnConnectionFailure(false)
         .build();
 
     //-------------------------------------------------------------------------
-    // Factory method
+    // Static methods
     //-------------------------------------------------------------------------
 
-    // Create an instance of the CBLWebSocket subclass
-    public static CBLWebSocket createCBLWebSocket(
-        long peer,
-        String scheme,
-        String hostname,
-        int port,
-        String path,
-        byte[] fleeceOptions,
-        @NonNull CBLCookieStore cookieStore,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
-        Log.v(TAG, "Creating CBLWebSocket@ %x: %s://%s:%d%s", peer, scheme, hostname, port, path);
-
-        try {
-            return new CBLWebSocket(
-                peer,
-                translateScheme(scheme),
-                hostname,
-                port,
-                path,
-                (fleeceOptions == null) ? null : FLValue.fromData(fleeceOptions).asDict(),
-                cookieStore,
-                serverCertsListener);
-        }
-        catch (Exception e) { Log.w(TAG, "Failed to instantiate CBLWebSocket", e); }
-
-        return null;
-    }
-
     public static int addKeyManager(@NonNull KeyManager keyManager) {
-        final int token = AbstractCBLWebSocket.KEY_MANAGERS.reserveKey();
-        AbstractCBLWebSocket.KEY_MANAGERS.bind(token, keyManager);
+        final int token = KEY_MANAGERS.reserveKey();
+        KEY_MANAGERS.bind(token, keyManager);
         return token;
-    }
-
-    // OkHttp doesn't understand blip or blips
-    private static String translateScheme(String scheme) {
-        if (C4Replicator.C4_REPLICATOR_SCHEME_2.equalsIgnoreCase(scheme)) { return C4Replicator.WEBSOCKET_SCHEME; }
-
-        if (C4Replicator.C4_REPLICATOR_TLS_SCHEME_2.equalsIgnoreCase(scheme)) {
-            return C4Replicator.WEBSOCKET_SECURE_CONNECTION_SCHEME;
-        }
-
-        return scheme;
     }
 
 
@@ -300,14 +301,19 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Member Variables
     //-------------------------------------------------------------------------
 
-    private final OkHttpClient httpClient;
-    private final Remote wsListener;
+    // assert these are thread-safe
     private final URI uri;
+    private final OkHttpRemote okHttpRemote;
+    private final OkHttpClient okHttpSocketFactory;
     private final Map<String, Object> options;
-    private final CBLCookieStore cookieStore;
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
-    private final StateMachine<State> state = WS_STATE_BUILDER.build();
 
+    @GuardedBy("getLock()")
+    private final StateMachine<State> state = WS_STATE_BUILDER.build();
+    @GuardedBy("getLock()")
+    private final CBLCookieStore cookieStore;
+
+    @GuardedBy("getLock()")
     private WebSocket webSocket;
 
     //-------------------------------------------------------------------------
@@ -316,29 +322,42 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     protected AbstractCBLWebSocket(
         long peer,
-        String scheme,
-        String hostname,
-        int port,
-        String path,
-        Map<String, Object> options,
-        CBLCookieStore cookieStore,
-        Fn.Consumer<List<Certificate>> serverCertsListener)
-        throws GeneralSecurityException, URISyntaxException {
+        @NonNull URI uri,
+        @Nullable byte[] opts,
+        @NonNull CBLCookieStore cookieStore,
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
+        throws GeneralSecurityException {
         super(peer);
-        this.uri = new URI(translateScheme(scheme), null, hostname, port, path, null, null);
-        this.options = options;
+        this.uri = uri;
+        this.options = (opts == null) ? null : Collections.unmodifiableMap(FLValue.fromData(opts).asDict());
         this.cookieStore = cookieStore;
         this.serverCertsListener = serverCertsListener;
-        this.httpClient = setupOkHttpClient();
-        this.wsListener = new Remote();
+        this.okHttpSocketFactory = setupOkHttpFactory();
+        this.okHttpRemote = new OkHttpRemote();
     }
 
     @Override
     @NonNull
-    public String toString() { return "AbstractCBLWebSocket{" + uri + "}"; }
+    public String toString() { return "CBLWebSocket{@" + super.toString() + ": " + uri + "}"; }
+
+    // Implementation of AutoClosable.close()
+    @Override
+    public void close() {
+        synchronized (getLock()) {
+            if (!state.setState(State.CLOSE_REQUESTED)) {
+                closeRequested(WS_STATUS_GOING_AWAY, "Closed by client");
+                return;
+            }
+            if (!state.setState(State.CLOSING)) {
+                closeWebSocket(WS_STATUS_GOING_AWAY, "Closed by client");
+                return;
+            }
+            state.setState(State.CLOSED);
+        }
+    }
 
     @VisibleForTesting
-    public OkHttpClient getHttpClient() { return httpClient; }
+    public final OkHttpClient getOkHttpSocketFactory() { return okHttpSocketFactory; }
 
     //-------------------------------------------------------------------------
     // Abstract methods
@@ -348,59 +367,36 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     protected abstract boolean handleClose(Throwable error);
 
     //-------------------------------------------------------------------------
-    // Abstract method implementation
+    // Implementations of abstract methods from C4Socket (Core to Remote)
+    //
+    // This is the synchronization that is going to get us into trouble
     //-------------------------------------------------------------------------
-
-    // Core callback
-    // Core has closed the connection
-    @CallSuper
-    @Override
-    public final void close() {
-        Log.v(TAG, "%s:Core closed", state);
-        state.checkState("close", State.CLOSED);
-    }
 
     // Core callback, proxied to OkHTTP
     // Core needs a connection to the remote
     @Override
     protected final void openSocket() {
-        Log.v(TAG, "%s:Core connect: %s", state, uri);
-
-        if (state.setState("Core.openSocket", State.CONNECTING) == null) { return; }
-
-        httpClient.newWebSocket(newRequest(), wsListener);
+        Log.v(TAG, "%s:Core connect: %s", this, uri);
+        synchronized (getLock()) {
+            if (!state.setState(State.CONNECTING)) { return; }
+            okHttpSocketFactory.newWebSocket(newRequest(), okHttpRemote);
+        }
     }
 
     // Core callback, proxied to OkHTTP
     // Core wants to transfer data to the remote
     @Override
     protected final void send(@NonNull byte[] allocatedData) {
-        Log.v(TAG, "%s:Core send: %d", state, allocatedData.length);
+        Log.v(TAG, "%s:Core send: %d", this, allocatedData.length);
+        synchronized (getLock()) {
+            if (!state.assertState(State.OPEN)) { return; }
 
-        if (!state.checkState("send", State.OPEN)) { return; }
+            if (!webSocket.send(ByteString.of(allocatedData, 0, allocatedData.length))) {
+                Log.i(TAG, "CBLWebSocket failed to send data of length = " + allocatedData.length);
+                return;
+            }
 
-        if (!webSocket.send(ByteString.of(allocatedData, 0, allocatedData.length))) {
-            Log.i(TAG, "CBLWebSocket failed to send data of length = " + allocatedData.length);
-            return;
-        }
-
-        completedWrite(allocatedData.length);
-    }
-
-    // Core callback, proxied to OkHTTP
-    // Core wants to break the connection
-    @Override
-    protected final void requestClose(int code, String message) {
-        Log.v(TAG, "%s:Core request close: %d", state, code);
-
-        if (state.setState("Core.requestClose", State.CLOSED) == null) { return; }
-
-        // We've told Core to leave the connection to us, so it might pass us the HTTP status
-        // If it does, we need to convert it to a WS status for the other side.
-        if ((code > HTTP_STATUS_MIN) && (code < HTTP_STATUS_MAX)) { code = C4Socket.WS_STATUS_CLOSE_POLICY_ERROR; }
-
-        if (!webSocket.close(code, message)) {
-            Log.i(TAG, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
+            completedWrite(allocatedData.length);
         }
     }
 
@@ -410,141 +406,29 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected final void completedReceive(long n) { }
 
-    //-------------------------------------------------------------------------
-    // package visible methods
-    //-------------------------------------------------------------------------
-
-    // http://www.ietf.org/rfc/rfc2617.txt
-    @Nullable
-    Request authenticate(@NonNull Response resp, @NonNull String user, @NonNull String pwd) {
-        Log.v(TAG, "CBLWebSocket authenticated for response " + resp);
-
-        // If failed 3 times, give up.
-        if (responseCount(resp) >= MAX_AUTH_RETRIES) { return null; }
-
-        final List<Challenge> challenges = resp.challenges();
-        Log.v(TAG, "CBLWebSocket received challenges " + challenges);
-        if (challenges == null) { return null; }
-
-        for (Challenge challenge: challenges) {
-            if (CHALLENGE_BASIC.equals(challenge.scheme())) {
-                return resp.request()
-                    .newBuilder()
-                    .header(HEADER_AUTH, Credentials.basic(user, pwd))
-                    .build();
-            }
+    // Core callback, proxied to OkHttp
+    // Core wants to break the connection
+    @Override
+    protected final void requestClose(int code, String message) {
+        Log.v(TAG, "%s:Core request close: %d", this, code);
+        synchronized (getLock()) {
+            if (!state.setState(State.CLOSING)) { return; }
+            closeWebSocket(code, message);
         }
-
-        return null;
     }
+
+    // Core callback.
+    // Used in byte stream mode: irrelevant here
+    @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
+    @Override
+    protected final void closeSocket() { }
 
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
 
-    private OkHttpClient setupOkHttpClient() throws GeneralSecurityException {
-        final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
-
-        // Heartbeat
-        final Number heartbeat = (Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
-        if (heartbeat != null) { builder.pingInterval((long) heartbeat, TimeUnit.SECONDS).build(); }
-
-        // Authenticator
-        final Authenticator authenticator = getBasicAuthenticator();
-        if (authenticator != null) { builder.authenticator(authenticator); }
-
-        // Cookies
-        builder.cookieJar(getCookieJar());
-
-        // Setup SSLFactory and trusted certificate (pinned certificate)
-        setupSSLSocketFactory(builder);
-
-        return builder.build();
-    }
-
-    private CookieJar getCookieJar() {
-        return new CookieJar() {
-            @Override
-            public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
-                for (Cookie cookie: cookies) {
-                    cookieStore.setCookie(httpUrl.uri(), cookie.toString());
-                }
-            }
-
-            @NonNull
-            @Override
-            public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
-                final List<Cookie> cookies = new ArrayList<>();
-
-                // Cookies from config
-                final String confCookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-                if (confCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, confCookies)); }
-
-                // Set cookies in the CookieStore
-                final String setCookies = cookieStore.getCookies(url.uri());
-                if (setCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, setCookies)); }
-
-                return cookies;
-            }
-        };
-    }
-
-    private Authenticator getBasicAuthenticator() {
-        if ((options == null) || !options.containsKey(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION)) { return null; }
-
-        @SuppressWarnings("unchecked") final Map<String, Object> auth
-            = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-        if (auth == null) { return null; }
-
-        final String authType = (String) auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
-        if (!C4Replicator.AUTH_TYPE_BASIC.equals(authType)) { return null; }
-
-        final String username = (String) auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
-        final String password = (String) auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
-        if ((username == null) || (password == null)) { return null; }
-
-        return (route, response) -> authenticate(response, username, password);
-    }
-
-    private int responseCount(Response response) {
-        int result = 1;
-        while ((response = response.priorResponse()) != null) { result++; }
-        return result;
-    }
-
-    private Request newRequest() {
-        final Request.Builder builder = new Request.Builder();
-
-        // Sets the URL target of this request.
-        builder.url(uri.toString());
-
-        // Set/update the "Host" header:
-        String host = uri.getHost();
-        if (uri.getPort() != -1) { host = String.format(Locale.ENGLISH, "%s:%d", host, uri.getPort()); }
-        builder.header("Host", host);
-
-        // Construct the HTTP request:
-        if (options == null) { return builder.build(); }
-
-        // Extra Headers
-        @SuppressWarnings("unchecked") final Map<String, Object> extraHeaders
-            = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
-        if (extraHeaders != null) {
-            for (Map.Entry<String, Object> entry: extraHeaders.entrySet()) {
-                builder.header(entry.getKey(), entry.getValue().toString());
-            }
-        }
-
-        // Configure WebSocket related headers:
-        final String protocols = (String) options.get(C4Replicator.SOCKET_OPTION_WS_PROTOCOLS);
-        if (protocols != null) { builder.header("Sec-WebSocket-Protocol", protocols); }
-
-        return builder.build();
-    }
-
-    @SuppressWarnings("PMD.PrematureDeclaration")
+    @GuardedBy("getLock()")
     private void receivedHTTPResponse(Response response) {
-        final int httpStatus = response.code();
         Log.v(TAG, "CBLWebSocket received HTTP response " + response);
 
         // Post the response headers to LiteCore:
@@ -559,34 +443,54 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
             enc.write(headers);
             headersFleece = enc.finish();
         }
-        catch (LiteCoreException e) { Log.w(TAG, "CBLWebSocket failed to encode response header", e); }
+        catch (LiteCoreException e) {
+            Log.w(TAG, "CBLWebSocket failed to encode response headers", e);
+            Log.d(TAG, StringUtils.toString(headers));
+        }
 
-        gotHTTPResponse(httpStatus, headersFleece);
+        gotHTTPResponse(response.code(), headersFleece);
     }
 
-    private void connectionClosed(int code, String reason) {
-        Log.v(TAG, "CBLWebSocket closed (%d): %s", code, reason);
+    // Close the OkHTTP connection to the remote
+    @GuardedBy("getLock()")
+    private void closeWebSocket(int code, String message) {
+        // never got opened...
+        if (webSocket == null) { return; }
 
+        // We've told Core to leave the connection to us, so it might pass us the HTTP status
+        // If it does, we need to convert it to a WS status for the other side.
+        if ((code > HTTP_STATUS_MIN) && (code < HTTP_STATUS_MAX)) { code = C4Socket.WS_STATUS_CLOSE_POLICY_ERROR; }
+
+        if (!webSocket.close(code, message)) {
+            Log.i(TAG, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
+        }
+    }
+
+    @GuardedBy("getLock()")
+    private void closeWithCode(int code, String reason) {
         if (code == C4Socket.WS_STATUS_CLOSE_NORMAL) {
-            connectionClosedNormally();
+            closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
             return;
         }
 
+        Log.i(TAG, "WebSocket CLOSED abnormally: " + code + "(" + reason + ")");
         closed(C4Constants.ErrorDomain.WEB_SOCKET, code, reason);
     }
 
-    private void connectionClosed(Throwable error) {
-        Log.v(TAG, "CBLWebSocket closed", error);
-
+    @GuardedBy("getLock()")
+    private void closeWithError(Throwable error) {
         if (error == null) {
-            connectionClosedNormally();
+            closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
             return;
         }
+
+        Log.i(TAG, "WebSocket CLOSED with error", error);
 
         if (handleClose(error)) { return; }
 
         // TLS Certificate error
-        int code = C4Socket.WS_STATUS_CLOSE_PROTOCOL_ERROR;
+        final int code;
+        int domain = C4Constants.ErrorDomain.NETWORK;
         if (error.getCause() instanceof CertificateException) { code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED; }
 
         // SSLPeerUnverifiedException
@@ -597,14 +501,80 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
         else if (error instanceof SSLHandshakeException) { code = C4Constants.NetworkError.TLS_HANDSHAKE_FAILED; }
 
-        closed(C4Constants.ErrorDomain.NETWORK, code, null);
+        else {
+            code = C4Socket.WS_STATUS_CLOSE_PROTOCOL_ERROR;
+            domain = C4Constants.ErrorDomain.WEB_SOCKET;
+        }
+
+        closed(domain, code, null);
     }
 
-    private void connectionClosedNormally() { closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null); }
+    private OkHttpClient setupOkHttpFactory() throws GeneralSecurityException {
+        final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
 
-    //-------------------------------------------------------------------------
-    // SSL Support
-    //-------------------------------------------------------------------------
+        // Heartbeat
+        final Number heartbeat = (Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
+        if (heartbeat != null) { builder.pingInterval((long) heartbeat, TimeUnit.SECONDS).build(); }
+
+        // Authenticator
+        final Authenticator authenticator = getBasicAuthenticator();
+        if (authenticator != null) { builder.authenticator(authenticator); }
+
+        // Cookies
+        builder.cookieJar(new WebSocketCookieJar());
+
+        // Setup SSLFactory and trusted certificate (pinned certificate)
+        setupSSLSocketFactory(builder);
+
+        return builder.build();
+    }
+
+    private Request newRequest() {
+        final Request.Builder builder = new Request.Builder();
+
+        // Sets the URL target of this request.
+        builder.url(uri.toString());
+
+        // Set/update the "Host" header:
+        String host = uri.getHost();
+        if (uri.getPort() >= 0) { host = host + ":" + uri.getPort(); }
+        builder.header("Host", host);
+
+        // Add any additional headers
+        if (options != null) {
+            final Object extraHeaders = options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+            if (extraHeaders instanceof Map<?, ?>) {
+                for (Map.Entry<?, ?> header: ((Map<?, ?>) extraHeaders).entrySet()) {
+                    builder.header(header.getKey().toString(), header.getValue().toString());
+                }
+            }
+
+            // Configure WebSocket related headers:
+            final Object protocols = options.get(C4Replicator.SOCKET_OPTION_WS_PROTOCOLS);
+            if (protocols instanceof String) { builder.header("Sec-WebSocket-Protocol", (String) protocols); }
+        }
+
+        // Construct the HTTP request
+        return builder.build();
+    }
+
+    private Authenticator getBasicAuthenticator() {
+        if (options == null) { return null; }
+
+        final Object obj = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+        if (!(obj instanceof Map)) { return null; }
+        final Map<?, ?> auth = (Map<?, ?>) obj;
+
+        final Object authType = auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
+        if (!C4Replicator.AUTH_TYPE_BASIC.equals(authType)) { return null; }
+
+        final Object username = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
+        if (!(username instanceof String)) { return null; }
+        final Object password = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
+        if (!(password instanceof String)) { return null; }
+
+        return (route, response) -> authenticate(response, (String) username, (String) password);
+    }
 
     private void setupSSLSocketFactory(OkHttpClient.Builder builder) throws GeneralSecurityException {
         byte[] pinnedServerCert = null;
@@ -642,21 +612,49 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private KeyManager getAuthenticator() {
         final Object opt = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
         if (!(opt instanceof Map)) { return null; }
-        final Map<String, Object> auth = (Map<String, Object>) opt;
+        final Map<?, ?> auth = (Map<?, ?>) opt;
 
         if (!C4Replicator.AUTH_TYPE_CLIENT_CERT.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) { return null; }
 
-        final Object certKey = auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY);
-
         KeyManager keyManager = null;
+        final Object certKey = auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY);
         if (certKey instanceof Long) { keyManager = KEY_MANAGERS.getObjFromContext((long) certKey); }
         if (keyManager == null) { Log.i(TAG, "No key manager configured for client certificate authentication"); }
 
         return keyManager;
+    }
+
+    // http://www.ietf.org/rfc/rfc2617.txt
+    @Nullable
+    private Request authenticate(@NonNull Response resp, @NonNull String user, @NonNull String pwd) {
+        Log.v(TAG, "CBLWebSocket.authenticate: " + resp);
+
+        // If failed 3 times, give up.
+        if (responseCount(resp) >= MAX_AUTH_RETRIES) { return null; }
+
+        final List<Challenge> challenges = resp.challenges();
+        Log.v(TAG, "CBLWebSocket challenges " + challenges);
+        if (challenges == null) { return null; }
+
+        for (Challenge challenge: challenges) {
+            if (CHALLENGE_BASIC.equals(challenge.scheme())) {
+                return resp.request()
+                    .newBuilder()
+                    .header(HEADER_AUTH, Credentials.basic(user, pwd))
+                    .build();
+            }
+        }
+
+        return null;
+    }
+
+    private int responseCount(Response response) {
+        int result = 1;
+        while ((response = response.priorResponse()) != null) { result++; }
+        return result;
     }
 }
 

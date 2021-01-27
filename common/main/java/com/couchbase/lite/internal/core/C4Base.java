@@ -28,7 +28,7 @@ public final class C4Base {
     // native methods
     //-------------------------------------------------------------------------
 
-    public static native void debug();
+    public static native void debug(boolean debugging);
 
     public static native void setTempDir(String tempDir) throws LiteCoreException;
 

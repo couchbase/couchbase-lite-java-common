@@ -16,16 +16,16 @@
 package com.couchbase.lite.internal.replicator;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.system.ErrnoException;
 
 import java.io.EOFException;
 import java.net.ConnectException;
 import java.net.SocketException;
-import java.net.URISyntaxException;
+import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.util.List;
-import java.util.Map;
 
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.utils.Fn;
@@ -39,17 +39,14 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
 
 
     // Framing is always MESSAGE_STREAM
-    CBLWebSocket(
-        long handle,
-        String scheme,
-        String hostname,
-        int port,
-        String path,
-        Map<String, Object> options,
-        CBLCookieStore cookieStore,
-        Fn.Consumer<List<Certificate>> serverCertsListener)
-        throws GeneralSecurityException, URISyntaxException {
-        super(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener);
+    public CBLWebSocket(
+        long peer,
+        @NonNull URI uri,
+        @Nullable byte[] opts,
+        @NonNull CBLCookieStore cookieStore,
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
+        throws GeneralSecurityException {
+        super(peer, uri, opts, cookieStore, serverCertsListener);
     }
 
     @Override

@@ -51,14 +51,14 @@ public class C4Query extends C4NativePeer {
     // - Creates a database index, to speed up subsequent queries.
 
     public C4QueryEnumerator run(@NonNull C4QueryOptions opts, @NonNull FLSliceResult params) throws LiteCoreException {
-        return withPeerThrows(
+        return withPeer(
             null,
             h -> new C4QueryEnumerator(run(h, opts.isRankFullText(), params.getHandle())));
     }
 
     @SuppressWarnings("PMD.MethodReturnsInternalArray")
     public byte[] getFullTextMatched(C4FullTextMatch match) throws LiteCoreException {
-        return withPeerThrows(null, h -> getFullTextMatched(h, match.getPeer()));
+        return withPeer(null, h -> getFullTextMatched(h, match.getPeer()));
     }
 
     //-------------------------------------------------------------------------
@@ -88,18 +88,15 @@ public class C4Query extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private void closePeer(@Nullable LogDomain domain) {
-        final long peer = getPeerAndClear();
-        if (verifyPeerClosed(peer, domain)) { return; }
-
-        // Despite the fact that the documentation insists that this call be made
-        // while holding the database lock, doing so can block the finalizer thread
-        // causing it to abort.
+        // Despite the fact that the documentation insists that the call to "free"
+        // be made while holding the database lock, doing so can block the finalizer
+        // thread causing it to abort.
         // Jens Alfke says: in practice it should be ok.
         // Jim Borden says:
         //   If the object is being finalized, it is not possible for client
         //   code to affect the query: in this case, freeing wo/ the lock is ok.
         //   That's how .NET does it.
-        free(peer);
+        releasePeer(domain, C4Query::free);
     }
 
     //-------------------------------------------------------------------------

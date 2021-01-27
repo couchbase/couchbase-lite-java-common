@@ -35,7 +35,7 @@ public abstract class C4BlobStore extends C4NativePeer {
         UnmanagedC4BlobStore(long peer) throws LiteCoreException { super(getBlobStore(peer)); }
 
         @Override
-        public void close() { getPeerAndClear(); }
+        public void close() { releasePeer(); }
     }
 
     // managed: Java code is responsible for freeing it
@@ -54,12 +54,7 @@ public abstract class C4BlobStore extends C4NativePeer {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) {
-            final long peer = getPeerAndClear();
-            if (verifyPeerClosed(peer, domain)) { return; }
-
-            freeStore(peer);
-        }
+        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4BlobStore::freeStore); }
     }
 
     //-------------------------------------------------------------------------
@@ -100,13 +95,7 @@ public abstract class C4BlobStore extends C4NativePeer {
     /**
      * Deletes the BlobStore's blobs and directory, and (if successful) frees the object.
      */
-    public void delete() throws LiteCoreException {
-        final long peer = getPeerAndClear();
-        if (peer == 0) { return; }
-
-        // NOTE: deleteStore() native method release memory.
-        deleteStore(peer);
-    }
+    public void delete() throws LiteCoreException { releasePeer(null, C4BlobStore::deleteStore); }
 
     /**
      * Gets the content size of a blob given its key. Returns -1 if it doesn't exist.

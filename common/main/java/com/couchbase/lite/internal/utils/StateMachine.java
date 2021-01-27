@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.utils;
 
-import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -27,6 +26,13 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
 
 
+/**
+ * A simple state machine.
+ * <p>
+ * This class is not thread safe!
+ *
+ * @param <T> states.
+ */
 public class StateMachine<T extends Enum<T>> {
     private static final LogDomain TAG = LogDomain.DATABASE;
 
@@ -48,9 +54,9 @@ public class StateMachine<T extends Enum<T>> {
          * @param errorState   The machine error state.
          */
         public Builder(@NonNull Class<S> klass, @NonNull S initialState, @Nullable S errorState) {
+            this.transitions = new EnumMap<>(klass);
             this.initialState = initialState;
             this.errorState = errorState;
-            transitions = new EnumMap<>(klass);
         }
 
         /**
@@ -59,15 +65,17 @@ public class StateMachine<T extends Enum<T>> {
          *
          * @param source  of the arcs.
          * @param target1 the end of the first arc
-         * @param targets the ends of the other arcs
+         * @param targets the ends of other arcs
          */
         @SafeVarargs
-        public final void addTransition(@NonNull S source, @NonNull S target1, @NonNull S... targets) {
+        public final Builder<S> addTransition(@NonNull S source, @NonNull S target1, @NonNull S... targets) {
             if (source == errorState) {
                 throw new IllegalArgumentException("transitions from the error state are illegal");
             }
 
             transitions.put(source, EnumSet.of(target1, targets));
+
+            return this;
         }
 
         /**
@@ -83,14 +91,10 @@ public class StateMachine<T extends Enum<T>> {
     private final T errorState;
     @NonNull
     private final EnumMap<T, EnumSet<T>> transitions;
-
-    @GuardedBy("transitions")
+    @NonNull
     private T state;
 
-    protected StateMachine(
-        @NonNull T initialState,
-        @Nullable T errorState,
-        @NonNull EnumMap<T, EnumSet<T>> transitions) {
+    private StateMachine(@NonNull T initialState, @Nullable T errorState, @NonNull EnumMap<T, EnumSet<T>> transitions) {
         state = initialState;
         this.errorState = errorState;
         this.transitions = transitions;
@@ -103,31 +107,25 @@ public class StateMachine<T extends Enum<T>> {
     /**
      * Verify expected state.
      *
-     * @param loc      a string that identifies the location of the call
      * @param expected expected states.
      * @return true if the current state at the time of the call, is one of the expected states.
      */
     @SafeVarargs
-    public final boolean checkState(@NonNull String loc, @NonNull T... expected) {
-        if (expected.length <= 0) { throw new IllegalArgumentException("no expected states specified"); }
+    public final boolean assertState(@NonNull T... expected) {
+        Preconditions.assertPositive(expected.length, "expected states length");
 
-        final T curState;
-        synchronized (transitions) {
-            curState = state;
-            for (T s: expected) {
-                if (s == curState) { return true; }
-            }
+        for (T s: expected) {
+            if (s == state) { return true; }
         }
 
-        if (curState != errorState) {
+        if (state != errorState) {
             Log.v(
                 TAG,
-                "StateMachine %s@%s expected state %s but found %s",
-                new Exception("Call at:"),
+                "StateMachine%s: unexpected state %s %s",
+                new Exception(),
                 this,
-                loc,
-                Arrays.toString(expected),
-                curState);
+                state,
+                Arrays.toString(expected));
         }
 
         return false;
@@ -138,42 +136,28 @@ public class StateMachine<T extends Enum<T>> {
      * If it is legal to transition to the new state, from the current state, do so,
      * returning the now-previous state.  If the transition is illegal do nothing and return null.
      *
-     * @param loc       a string that identifies the location of the call
      * @param nextState the requested new state
      * @return the previous state, if the transition succeeds; null otherwise.
      */
-    @Nullable
-    public T setState(@NonNull String loc, @NonNull T nextState) {
-        final T prevState;
-        final EnumSet<T> legalStates;
-        final boolean legal;
-        synchronized (transitions) {
-            prevState = state;
-
-            legalStates = transitions.get(prevState);
-            legal = ((nextState == errorState) || ((legalStates != null) && (legalStates.contains(nextState))));
-
-            if (legal) { state = nextState; }
+    public final boolean setState(@NonNull T nextState) {
+        final EnumSet<T> legalStates = transitions.get(state);
+        if ((nextState == errorState) || ((legalStates != null) && (legalStates.contains(nextState)))) {
+            Log.d(TAG, "StateMachine%s: transition %s => %s", this, state, nextState);
+            state = nextState;
+            return true;
         }
 
-        if (legal) {
-            Log.d(TAG, "%s@%s: transition %s => %s", this, loc, prevState, nextState);
-            return prevState;
-        }
-
-        if (prevState != errorState) {
+        if (state != errorState) {
             Log.v(
                 TAG,
-                "%s@%s: transition to %s for %s => %s",
-                new Exception("Call at:"),
+                "StateMachine%s: no transition: %s => %s %s",
+                new Exception(),
                 this,
-                loc,
+                state,
                 nextState,
-                prevState,
-                legalStates,
-                Thread.currentThread());
+                legalStates);
         }
 
-        return null;
+        return false;
     }
 }

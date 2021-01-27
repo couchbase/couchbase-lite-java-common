@@ -28,7 +28,7 @@ public abstract class FLArrayIterator extends C4NativePeer {
         UnmanagedFLArrayIterator(long peer) { super(peer); }
 
         @Override
-        public void close() { getPeerAndClear(); }
+        public void close() { releasePeer(); }
     }
 
     // managed: Java code is responsible for freeing it
@@ -45,12 +45,7 @@ public abstract class FLArrayIterator extends C4NativePeer {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) {
-            final long peer = getPeerAndClear();
-            if (verifyPeerClosed(peer, domain)) { return; }
-
-            free(peer);
-        }
+        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, FLArrayIterator::free); }
     }
 
     //-------------------------------------------------------------------------

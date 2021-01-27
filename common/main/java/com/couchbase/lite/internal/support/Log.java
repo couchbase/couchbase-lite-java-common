@@ -55,7 +55,7 @@ import com.couchbase.lite.internal.core.CBLVersion;
 public final class Log {
     private Log() { } // Utility class
 
-    public static final String LOG_HEADER = "Java: ";
+    public static final String LOG_HEADER = "[JAVA] ";
 
     private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
     static {

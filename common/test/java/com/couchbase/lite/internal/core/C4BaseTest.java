@@ -36,6 +36,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.PlatformBaseTest;
 import com.couchbase.lite.internal.CBLStatus;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -81,7 +82,7 @@ public class C4BaseTest extends PlatformBaseTest {
             tmpDir = getScratchDirectoryPath(tmpDirName);
             SCRATCH_DIRS.add(tmpDir);
 
-            rootDir = new File(getDatabaseDirectoryPath(), tmpDirName);
+            rootDir = new File(CouchbaseLiteInternal.getRootDir(), tmpDirName);
             SCRATCH_DIRS.add(rootDir.getCanonicalPath());
 
             dbDirPath = new File(rootDir, "cbl_core_test.sqlite3").getCanonicalPath();

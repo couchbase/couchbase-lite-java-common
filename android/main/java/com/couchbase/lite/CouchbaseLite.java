@@ -17,10 +17,8 @@ package com.couchbase.lite;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.io.File;
-import java.io.IOException;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
@@ -32,24 +30,26 @@ public final class CouchbaseLite {
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      */
-    public static void init(@NonNull Context ctxt) { init(ctxt, null); }
+    public static void init(@NonNull Context ctxt) { init(ctxt, BuildConfig.CBL_DEBUG); }
+
+    /**
+     * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     */
+    public static void init(@NonNull Context ctxt, boolean debug) {
+        init(ctxt, debug, ctxt.getFilesDir(), ctxt.getExternalFilesDir(CouchbaseLiteInternal.SCRATCH_DIR_NAME));
+    }
 
     /**
      * Initialize CouchbaseLite library.
      * This method allows specifying a root directory for CBL files.
      * Use this version with great caution.
      *
-     * @param rootDirectory the root directory for CBL files
+     * @param ctxt       Application context
+     * @param debug      true if debugging
+     * @param rootDbDir  default directory for databases
+     * @param scratchDir scratch directory for SQLite
      */
-    public static void init(@NonNull Context ctxt, @Nullable File rootDirectory) {
-        String rootDirPath = null;
-        if (rootDirectory != null) {
-            try { rootDirPath = rootDirectory.getCanonicalPath(); }
-            catch (IOException e) {
-                throw new IllegalArgumentException("Could not get path for directory: " + rootDirectory, e);
-            }
-        }
-
-        CouchbaseLiteInternal.init(new MValueDelegate(), rootDirPath, ctxt);
+    public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDbDir, @NonNull File scratchDir) {
+        CouchbaseLiteInternal.init(new MValueDelegate(), debug, rootDbDir, scratchDir, ctxt);
     }
 }

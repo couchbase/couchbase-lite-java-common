@@ -108,12 +108,7 @@ public class C4DocumentObserver extends C4NativePeer {
     // Private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) {
-        final long peer = getPeerAndClear();
-        if (verifyPeerClosed(peer, domain)) { return; }
-
-        free(peer);
-    }
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4DocumentObserver::free); }
 
 
     //-------------------------------------------------------------------------

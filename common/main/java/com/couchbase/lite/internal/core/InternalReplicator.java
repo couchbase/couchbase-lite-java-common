@@ -25,32 +25,34 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 
 @SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
 public abstract class InternalReplicator implements AutoCloseable {
-    protected final Object lock = new Object();
+    private final Object lock = new Object();
 
     @Nullable
     private C4Replicator c4Replicator;
 
-    protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
-        Log.d(
-            LogDomain.REPLICATOR,
-            "Binding c4 replicator " + ClassUtils.objId(c4Repl) + " => " + ClassUtils.objId(this));
-        synchronized (lock) { c4Replicator = c4Repl; }
-    }
-
-    @Nullable
-    protected C4Replicator getC4Replicator() {
-        synchronized (lock) { return c4Replicator; }
-    }
-
     @Override
     public void close() {
         final C4Replicator c4Repl;
-        synchronized (lock) {
+        synchronized (getLock()) {
             c4Repl = c4Replicator;
             c4Replicator = null;
         }
         closeC4Replicator(c4Repl);
     }
+
+    protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
+        Log.d(
+            LogDomain.REPLICATOR,
+            "Binding c4 replicator " + ClassUtils.objId(c4Repl) + " => " + ClassUtils.objId(this));
+        synchronized (getLock()) { c4Replicator = c4Repl; }
+    }
+
+    @Nullable
+    protected C4Replicator getC4Replicator() {
+        synchronized (getLock()) { return c4Replicator; }
+    }
+
+    protected Object getLock() { return lock; }
 
     @SuppressWarnings("NoFinalizer")
     @Override

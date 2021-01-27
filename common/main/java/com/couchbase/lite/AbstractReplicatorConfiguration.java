@@ -21,6 +21,9 @@ import android.support.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.internal.Util;
 
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
@@ -33,6 +36,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
 public abstract class AbstractReplicatorConfiguration {
+    /** This is a long time.  This many seconds, however, is less than Integer.MAX_INT millis */
+    public static final long DISABLE_HEARTBEAT = 35000L;
 
     /**
      * Replicator type
@@ -40,7 +45,7 @@ public abstract class AbstractReplicatorConfiguration {
      * PUSH: Pushing changes to the target
      * PULL: Pulling changes from the target
      */
-    public enum ReplicatorType { PUSH_AND_PULL, PUSH, PULL }
+    public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
 
     //---------------------------------------------
     // member variables
@@ -105,7 +110,6 @@ public abstract class AbstractReplicatorConfiguration {
         this.maxRetryWaitTime = config.maxRetryWaitTime;
         this.heartbeat = config.heartbeat;
     }
-
 
     //---------------------------------------------
     // Setters
@@ -283,7 +287,8 @@ public abstract class AbstractReplicatorConfiguration {
      * Set the heartbeat interval, in seconds.
      */
     public final ReplicatorConfiguration setHeartbeat(long heartbeat) {
-        this.heartbeat = Preconditions.assertNotNegative(heartbeat, "heartbeat");
+        Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS);
+        this.heartbeat = heartbeat;
         return getReplicatorConfiguration();
     }
 
@@ -398,28 +403,32 @@ public abstract class AbstractReplicatorConfiguration {
      */
     public long getHeartbeat() { return heartbeat; }
 
+    @SuppressWarnings("PMD.NPathComplexity")
     @NonNull
     @Override
     public String toString() {
-        String typeStr = continuous ? "*" : "=";
-        if (authenticator != null) { typeStr = typeStr + "@"; }
-        if (conflictResolver != null) { typeStr = typeStr + "?"; }
-        if (pinnedServerCertificate != null) { typeStr = typeStr + "!"; }
-        switch (replicatorType) {
-            case PUSH_AND_PULL:
-                typeStr = "<" + typeStr + ">";
-                break;
-            case PUSH:
-                typeStr = typeStr + ">";
-                break;
-            case PULL:
-                typeStr = "<" + typeStr;
-                break;
-        }
-        if (pullFilter != null) { typeStr = "|" + typeStr; }
-        if (pushFilter != null) { typeStr = typeStr + "|"; }
+        final StringBuilder buf = new StringBuilder();
 
-        return "ReplicatorConfig{" + database + typeStr + target + "}";
+        if (pullFilter != null) { buf.append('|'); }
+        if ((replicatorType == ReplicatorType.PULL) || (replicatorType == ReplicatorType.PUSH_AND_PULL)) {
+            buf.append('<');
+        }
+
+        buf.append(continuous ? '*' : '=');
+
+        if ((replicatorType == ReplicatorType.PUSH) || (replicatorType == ReplicatorType.PUSH_AND_PULL)) {
+            buf.append('>');
+        }
+        if (pushFilter != null) { buf.append('|'); }
+
+        buf.append('(');
+        if (authenticator != null) { buf.append('@'); }
+        if (pinnedServerCertificate != null) { buf.append('^'); }
+        buf.append(')');
+
+        if (conflictResolver != null) { buf.append('!'); }
+
+        return "ReplicatorConfig{" + database + buf.toString() + target + '}';
     }
 
     //---------------------------------------------

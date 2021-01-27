@@ -36,9 +36,10 @@ extern "C" {
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Base_debug(JNIEnv *env, jclass ignore) {
+Java_com_couchbase_lite_internal_core_C4Base_debug(JNIEnv *env, jclass ignore, jboolean debugging) {
     c4log_enableFatalExceptionBacktrace();
-    c4log_getWarnOnErrors();
+    if (debugging)
+        c4log_warnOnErrors(true);
 }
 
 /*

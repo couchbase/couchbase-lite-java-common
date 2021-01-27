@@ -75,7 +75,7 @@ public class SimpleDatabaseTest extends BaseTest {
 
     @Test
     public void testDatabaseConfigurationDefaultDirectory() throws CouchbaseLiteException, IOException {
-        final String expectedPath = CouchbaseLiteInternal.makeDbPath(null);
+        final String expectedPath = CouchbaseLiteInternal.getRootDir().getAbsolutePath();
 
         final DatabaseConfiguration config = new DatabaseConfiguration();
         assertEquals(config.getDirectory(), expectedPath);

@@ -94,13 +94,13 @@ public class C4Document extends C4NativePeer {
 
     public C4Document update(FLSliceResult body, int flags) throws LiteCoreException {
         final long bodyHandle = (body != null) ? body.getHandle() : 0;
-        final long newDoc = withPeerThrows(0L, h -> update2(h, bodyHandle, flags));
+        final long newDoc = withPeer(0L, h -> update2(h, bodyHandle, flags));
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
 
     @VisibleForTesting
     public C4Document update(byte[] body, int flags) throws LiteCoreException {
-        final long newDoc = withPeerThrows(0L, h -> update(h, body, flags));
+        final long newDoc = withPeer(0L, h -> update(h, body, flags));
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
 
@@ -117,7 +117,7 @@ public class C4Document extends C4NativePeer {
 
     @Nullable
     public String bodyAsJSON(boolean canonical) throws LiteCoreException {
-        return withPeerThrows(null, h -> bodyAsJSON(h, canonical));
+        return withPeer(null, h -> bodyAsJSON(h, canonical));
     }
 
     @CallSuper
@@ -176,7 +176,7 @@ public class C4Document extends C4NativePeer {
 
     @VisibleForTesting
     int purgeRevision(String revID) throws LiteCoreException {
-        return withPeerThrows(0, h -> purgeRevision(h, revID));
+        return withPeer(0, h -> purgeRevision(h, revID));
     }
 
     //-------------------------------------------------------------------------
@@ -191,12 +191,7 @@ public class C4Document extends C4NativePeer {
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private boolean accessRemoved() { return isSelectedRevFlags(C4Constants.RevisionFlags.PURGED); }
 
-    private void closePeer(@Nullable LogDomain domain) {
-        final long peer = getPeerAndClear();
-        if (verifyPeerClosed(peer, domain)) { return; }
-
-        free(peer);
-    }
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4Document::free); }
 
     //-------------------------------------------------------------------------
     // native methods

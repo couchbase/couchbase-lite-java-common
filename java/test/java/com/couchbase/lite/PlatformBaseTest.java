@@ -36,6 +36,8 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
@@ -43,16 +45,17 @@ import com.couchbase.lite.internal.utils.Fn;
  */
 public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Java";
+
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%&'()_+{}][=-.,;'ABCDEabcde";
+
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
-    private static final String TEST_DIR = ".test";
-    private static final File LOG_DIR = new File(TEST_DIR, "logs");
-    private static final File SCRATCH_DIR = new File(TEST_DIR, "scratch");
+
+    public static final String SCRATCH_DIR = "cbl-scratch";
+
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
     private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
-
     static {
         final Map<String, Fn.Provider<Boolean>> m = new HashMap<>();
         m.put("windows", () -> {
@@ -62,50 +65,23 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    // this should probably go in the BaseTest but
-    // there are several tests (C4 tests) that are not subclasses
-    static {
-        initCouchbase();
-        makeTestDir();
-    }
-
     private static LogFileConfiguration logConfig;
 
-    // for testing, use the current directory as the root
-    public static void initCouchbase() { CouchbaseLite.init(); }
+    static { CouchbaseLite.init(); }
 
-    @BeforeClass
-    public static void setUpPlatformSuite() { System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>> Suite started"); }
-
-    @AfterClass
-    public static void tearDownBaseTestClass() { System.out.println("<<<<<<<<<<<<<<<<<<<<<<<<< Suite completed"); }
-
-    private static boolean makeTestDir() {
-        boolean ok = false;
-        try { ok = new File(TEST_DIR).mkdirs(); }
-        catch (Exception ignore) { }
-        return ok;
+    public static String getScratchDirPath() {
+        try {
+            return new File(SCRATCH_DIR).getCanonicalPath();
+        }
+        catch (IOException e) { throw new IllegalStateException("Could not create scratch directory", e); }
     }
 
-
-    private String testName;
-
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) { testName = description.getMethodName(); }
-    };
-
-    @Before
-    public void setUpPlatformTest() { System.out.println(">>>>>>>>> Test started: " + testName); }
-
-    @After
-    public void tearDownPlatformTest() { System.out.println("<<<<<<<<< Test completed: " + testName); }
 
     // set up the file logger...
     @Override
     public void setupPlatform() {
         if (logConfig == null) {
-            logConfig = new LogFileConfiguration(getDirPath(LOG_DIR))
+            logConfig = new LogFileConfiguration(getScratchDirectoryPath("logs"))
                 .setUsePlaintext(true)
                 .setMaxSize(MAX_LOG_FILE_BYTES)
                 .setMaxRotateCount(MAX_LOG_FILES);
@@ -114,18 +90,16 @@ public abstract class PlatformBaseTest implements PlatformTest {
         final FileLogger fileLogger = Database.log.getFile();
         if (!logConfig.equals(fileLogger.getConfig())) { fileLogger.setConfig(logConfig); }
         fileLogger.setLevel(LogLevel.DEBUG);
-        Log.d(LogDomain.DATABASE, "========= Test initialized: %s", testName);
+    }
+
+    @Override
+    public final String getScratchDirectoryPath(@NonNull String name) {
+        try { return new File(getScratchDirPath(), name).getCanonicalPath(); }
+        catch (IOException e) { throw new IllegalStateException("cannot create scratch directory: " + name); }
     }
 
     @Override
     public void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
-
-    @NonNull
-    @Override
-    public String getDatabaseDirectoryPath() { return CouchbaseLiteInternal.getDbDirectoryPath(); }
-
-    @Override
-    public String getScratchDirectoryPath(String name) { return getDirPath(new File(SCRATCH_DIR, name)); }
 
     @Override
     public final boolean handlePlatformSpecially(String tag) {
@@ -137,15 +111,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public void executeAsync(long delayMs, Runnable task) {
         ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
-    }
-
-    @NonNull
-    private String getDirPath(File dir) {
-        try {
-            if (dir.exists() || dir.mkdirs()) { return dir.getCanonicalPath(); }
-            throw new IOException("Cannot create directory: " + dir);
-        }
-        catch (IOException e) { throw new IllegalStateException("Cannot create log directory", e); }
     }
 }
 

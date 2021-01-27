@@ -68,10 +68,7 @@ public class C4RawDocument extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private void closePeer(@Nullable LogDomain domain) throws LiteCoreException {
-        final long peer = getPeerAndClear();
-        if (verifyPeerClosed(peer, domain)) { return; }
-
-        C4Database.rawFreeDocument(peer);
+        releasePeer(domain, C4Database::rawFreeDocument);
     }
 
     //-------------------------------------------------------------------------
