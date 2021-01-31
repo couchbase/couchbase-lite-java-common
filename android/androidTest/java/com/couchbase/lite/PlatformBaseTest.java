@@ -37,6 +37,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Report;
 
 
 /**
@@ -82,8 +83,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     @Override
     public void setupPlatform() {
-        Database.log.getConsole().setLevel(LogLevel.DEBUG);
-        Log.d(LogDomain.DATABASE, "========= Test initialized: " + testName);
+        final ConsoleLogger console = Database.log.getConsole();
+        console.setLevel(LogLevel.DEBUG);
+        console.setDomains(LogDomain.ALL_DOMAINS);
+
+        Report.log(LogLevel.INFO, "========= Test initialized: " + testName);
     }
 
     @Override

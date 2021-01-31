@@ -74,7 +74,7 @@ public final class C4Log {
         // This is necessary because there is no way to tell when the log level is set on a custom logger.
         // The only way to find out is to ask it.  As each new message comes in from Core,
         // we find the min level for the console and custom loggers and, if necessary, reset the callback level.
-        final LogLevel newCallbackLevel = getCallbackLevel(level, custom);
+        final LogLevel newCallbackLevel = getCallbackLevel(console.getLevel(), custom);
         if (callbackLevel == newCallbackLevel) { return; }
 
         // This cannot be done synchronously because it will deadlock on the same mutex that is being held
