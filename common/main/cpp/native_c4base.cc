@@ -36,7 +36,7 @@ using namespace litecore::jni;
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Base_debug(JNIEnv *env, jclass ignore) {
     c4log_enableFatalExceptionBacktrace();
-    c4log_getWarnOnErrors();
+    c4log_warnOnErrors(true);
 }
 
 /*

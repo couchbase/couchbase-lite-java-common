@@ -258,7 +258,7 @@ public abstract class AbstractReplicatorConfiguration {
      * Set the heartbeat interval, in seconds.
      */
     public final ReplicatorConfiguration setHeartbeat(long heartbeat) {
-        this.heartbeat = Preconditions.assertNotNegative(heartbeat, "max retry wait time");
+        this.heartbeat = Preconditions.assertPositive(heartbeat, "heartbeat");
         return getReplicatorConfiguration();
     }
 

@@ -89,6 +89,27 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
+    public void testGetHeartbeatBeforeSet() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC, config.getHeartbeat());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetIllegalHeartbeat() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        config.setHeartbeat(-47);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetZeroHeartbeat() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        config.setHeartbeat(-47);
+    }
+
+    @Test
     public void testDefaultHeartbeat() throws URISyntaxException {
         final ReplicatorConfiguration config
             = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
