@@ -600,7 +600,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             return;
         }
 
-        closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
+        closed(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.UNEXPECTED_ERROR, null);
     }
 
     //-------------------------------------------------------------------------

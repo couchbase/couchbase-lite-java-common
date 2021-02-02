@@ -42,7 +42,7 @@ public final class Preconditions {
     }
 
     public static long assertNotNegative(long n, @NonNull String name) {
-        if (n < 0) { throw new IllegalArgumentException(name + " must must not be <0"); }
+        if (n < 0) { throw new IllegalArgumentException(name + " must not be <0"); }
         return n;
     }
 
