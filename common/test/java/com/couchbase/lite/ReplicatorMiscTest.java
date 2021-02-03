@@ -19,6 +19,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -29,6 +31,7 @@ import com.couchbase.lite.internal.core.C4Socket;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -89,22 +92,62 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
+    public void testGetHeartbeatBeforeSet() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC, config.getHeartbeat());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetIllegalHeartbeat() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        config.setHeartbeat(-47);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetZeroHeartbeat() throws URISyntaxException {
+        final ReplicatorConfiguration config
+            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        config.setHeartbeat(-47);
+    }
+
+    @Test
     public void testDefaultHeartbeat() throws URISyntaxException {
         final ReplicatorConfiguration config
             = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
             .setReplicatorType(getReplicatorType(true, false))
             .setContinuous(false);
 
-        final Replicator repl = new Replicator(null, config);
+        Replicator repl = new Replicator(null, config);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        repl.addChangeListener(status -> {
+            if (status.getStatus().getActivityLevel() == AbstractReplicator.ActivityLevel.BUSY) {
+                latch.countDown();
+            }
+        });
 
         final AtomicReference<C4Socket> socketRef = new AtomicReference<>();
-        repl.getSocketFactory().setListener(socketRef::set);
-        try { run(repl); }
-        catch (CouchbaseLiteException ignore) { }
+        repl.getSocketFactory().setListener(socket -> socketRef.compareAndSet(null, socket));
 
-        assertEquals(
-            AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000,
-            ((AbstractCBLWebSocket) socketRef.get()).getHttpClient().pingIntervalMillis());
+        repl.start();
+        try {
+            try { latch.await(STD_TIMEOUT_SECS, TimeUnit.SECONDS); }
+            catch (InterruptedException ignore) { }
+
+            final C4Socket c4socket = socketRef.get();
+            assertNotNull(c4socket);
+            assertTrue(c4socket instanceof AbstractCBLWebSocket);
+            final AbstractCBLWebSocket socket = (AbstractCBLWebSocket) c4socket;
+
+            assertEquals(
+                AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000,
+                socket.getHttpClient().pingIntervalMillis());
+        }
+        finally {
+            repl.stop();
+        }
     }
 
     @Test
@@ -117,14 +160,31 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         Replicator repl = new Replicator(null, config);
 
-        final AtomicReference<C4Socket> socketRef = new AtomicReference<>();
-        repl.getSocketFactory().setListener(socketRef::set);
-        try { run(repl); }
-        catch (CouchbaseLiteException ignore) { }
+        final CountDownLatch latch = new CountDownLatch(1);
+        repl.addChangeListener(status -> {
+            if (status.getStatus().getActivityLevel() == AbstractReplicator.ActivityLevel.BUSY) {
+                latch.countDown();
+            }
+        });
 
-        assertEquals(
-            config.getHeartbeat() * 1000,
-            ((AbstractCBLWebSocket) socketRef.get()).getHttpClient().pingIntervalMillis());
+        final AtomicReference<C4Socket> socketRef = new AtomicReference<>();
+        repl.getSocketFactory().setListener(socket -> socketRef.compareAndSet(null, socket));
+
+        repl.start();
+        try {
+            try { latch.await(STD_TIMEOUT_SECS, TimeUnit.SECONDS); }
+            catch (InterruptedException ignore) { }
+
+            final C4Socket c4socket = socketRef.get();
+            assertNotNull(c4socket);
+            assertTrue(c4socket instanceof AbstractCBLWebSocket);
+            final AbstractCBLWebSocket socket = (AbstractCBLWebSocket) c4socket;
+
+            assertEquals(config.getHeartbeat() * 1000, socket.getHttpClient().pingIntervalMillis());
+        }
+        finally {
+            repl.stop();
+        }
     }
 
     @Test

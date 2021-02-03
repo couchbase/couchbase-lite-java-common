@@ -32,17 +32,17 @@ public final class Preconditions {
     }
 
     public static long assertPositive(long n, @NonNull String name) {
-        if (n <= 0) { throw new IllegalArgumentException(name + " must not be positive"); }
+        if (n <= 0) { throw new IllegalArgumentException(name + " must be >0"); }
         return n;
     }
 
     public static int assertNotNegative(int n, @NonNull String name) {
-        if (n < 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        if (n < 0) { throw new IllegalArgumentException(name + " must not be <0"); }
         return n;
     }
 
     public static long assertNotNegative(long n, @NonNull String name) {
-        if (n < 0) { throw new IllegalArgumentException(name + " must be negative"); }
+        if (n < 0) { throw new IllegalArgumentException(name + " must not be <0"); }
         return n;
     }
 
@@ -57,7 +57,7 @@ public final class Preconditions {
     }
 
     public static void assertNotEmpty(String str, @NonNull String name) {
-        if (StringUtils.isEmpty(str)) { throw new IllegalArgumentException(name + " must not be empty"); }
+        if (StringUtils.isEmpty(str)) { throw new IllegalArgumentException(name + " must not be null or empty"); }
     }
 
     @NonNull
