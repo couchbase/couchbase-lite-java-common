@@ -21,6 +21,9 @@ import android.support.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.internal.Util;
 
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
@@ -258,7 +261,8 @@ public abstract class AbstractReplicatorConfiguration {
      * Set the heartbeat interval, in seconds.
      */
     public final ReplicatorConfiguration setHeartbeat(long heartbeat) {
-        this.heartbeat = Preconditions.assertPositive(heartbeat, "heartbeat");
+        Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS);
+        this.heartbeat = heartbeat;
         return getReplicatorConfiguration();
     }
 
