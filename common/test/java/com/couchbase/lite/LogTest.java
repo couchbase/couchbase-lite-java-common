@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,13 +70,13 @@ public class LogTest extends BaseDbTest {
         private LogLevel level;
 
         @Override
-        public void log(@NotNull LogLevel level, @NotNull LogDomain domain, @NotNull String message) {
+        public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
             if (level.compareTo(this.level) < 0) { return; }
             lineCounts.put(level, getLineCount(level) + 1);
             content.append(message);
         }
 
-        @NotNull
+        @NonNull
         @Override
         public LogLevel getLevel() { return level; }
 
@@ -671,7 +670,7 @@ public class LogTest extends BaseDbTest {
         Log.e(LogDomain.DATABASE, message);
     }
 
-    @NotNull
+    @NonNull
     private String getLogContents(File log) throws IOException {
         byte[] b = new byte[(int) log.length()];
         FileInputStream fileInputStream = new FileInputStream(log);
@@ -679,8 +678,8 @@ public class LogTest extends BaseDbTest {
         return new String(b, StandardCharsets.US_ASCII);
     }
 
-    @NotNull
-    private File getMostRecent(@NotNull File[] files) {
+    @NonNull
+    private File getMostRecent(@NonNull File[] files) {
         File lastModifiedFile = files[0];
         for (File log: files) {
             if (log.lastModified() > lastModifiedFile.lastModified()) { lastModifiedFile = log; }
@@ -688,7 +687,7 @@ public class LogTest extends BaseDbTest {
         return lastModifiedFile;
     }
 
-    @NotNull
+    @NonNull
     private File[] getLogFiles() {
         File[] files = getTempDir().listFiles();
         assertNotNull(files);

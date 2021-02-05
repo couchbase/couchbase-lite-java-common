@@ -1,10 +1,10 @@
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import org.jetbrains.annotations.NotNull;
 
 import com.couchbase.lite.internal.utils.Report;
 
@@ -39,7 +39,7 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
     }
 
     @Override
-    public void changed(@NotNull ReplicatorChange change) {
+    public void changed(@NonNull ReplicatorChange change) {
         Report.log(LogLevel.DEBUG, "Test replicator listener change: " + change);
         final Replicator.Status status = change.getStatus();
         try {

@@ -15,12 +15,13 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.net.URI;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.concurrent.TimeUnit;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 
@@ -59,7 +60,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return repl.isDocumentPending(null);
     }
 
-    @NotNull
+    @NonNull
     protected final AbstractReplicatorConfiguration.ReplicatorType getReplicatorType(boolean push, boolean pull) {
         return (push && pull)
             ? AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL

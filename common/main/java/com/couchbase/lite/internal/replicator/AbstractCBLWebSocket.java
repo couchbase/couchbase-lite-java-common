@@ -61,7 +61,6 @@ import okhttp3.Route;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
-import org.jetbrains.annotations.NotNull;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -158,7 +157,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     @ThreadSafe
     class CBLWebSocketListener extends WebSocketListener {
         @Override
-        public void onOpen(@NotNull WebSocket webSocket, @NotNull Response response) {
+        public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
             Log.v(TAG, "%s:OkHTTP open: %s", AbstractCBLWebSocket.this, response);
             synchronized (state) {
                 if (!state.setState(State.OPEN)) { return; }
@@ -170,7 +169,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         @Override
-        public void onMessage(@NotNull WebSocket webSocket, String text) {
+        public void onMessage(@NonNull WebSocket webSocket, String text) {
             Log.v(TAG, "%s:OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
             synchronized (state) {
                 if (!state.checkState(State.OPEN)) { return; }
@@ -179,7 +178,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         @Override
-        public void onMessage(@NotNull WebSocket webSocket, ByteString bytes) {
+        public void onMessage(@NonNull WebSocket webSocket, ByteString bytes) {
             Log.v(TAG, "%s:OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
             synchronized (state) {
                 if (!state.checkState(State.OPEN)) { return; }
@@ -188,7 +187,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         @Override
-        public void onClosing(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
+        public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.v(TAG, "%s:OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
             synchronized (state) {
                 if (!state.setState(State.CLOSE_REQUESTED)) { return; }
@@ -197,7 +196,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         @Override
-        public void onClosed(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
+        public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.v(TAG, "%s:OkHTTP closed: (%d) %s", AbstractCBLWebSocket.this, code, reason);
             synchronized (state) {
                 if (!state.setState(State.CLOSED)) { return; }
@@ -211,7 +210,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         // {kCFURLErrorNetworkConnectionLost,          {POSIXDomain, ECONNRESET}},
 
         @Override
-        public void onFailure(@NotNull WebSocket webSocket, @NotNull Throwable t, Response response) {
+        public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable t, Response response) {
             Log.v(TAG, "%s:OkHTTP failed: %s", AbstractCBLWebSocket.this, response, t);
             synchronized (state) {
                 state.setState(State.FAILED);
@@ -455,7 +454,7 @@ public class AbstractCBLWebSocket extends C4Socket {
     private CookieJar getCookieJar() {
         return new CookieJar() {
             @Override
-            public void saveFromResponse(@NotNull HttpUrl httpUrl, @NotNull List<Cookie> cookies) {
+            public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
                 synchronized (state) {
                     for (Cookie cookie: cookies) {
                         cookieStore.setCookie(httpUrl.uri(), cookie.toString());
@@ -465,7 +464,7 @@ public class AbstractCBLWebSocket extends C4Socket {
 
             @NonNull
             @Override
-            public List<Cookie> loadForRequest(@NotNull HttpUrl url) {
+            public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
                 final List<Cookie> cookies = new ArrayList<>();
                 synchronized (state) {
                     if (!state.checkState(State.INIT, State.CONNECTING)) { return cookies; }
