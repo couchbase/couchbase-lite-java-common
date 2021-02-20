@@ -139,7 +139,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // We have an open connection to the remote
         @Override
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
-            Log.v(TAG, "%s:OkHTTP open: %s", AbstractCBLWebSocket.this, response);
+            Log.v(TAG, "%s#OkHTTP open: %s", AbstractCBLWebSocket.this, response);
             synchronized (getLock()) {
                 if (!state.setState(State.OPEN)) { return; }
                 AbstractCBLWebSocket.this.webSocket = webSocket;
@@ -153,7 +153,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote sent data
         @Override
         public void onMessage(@NonNull WebSocket webSocket, String text) {
-            Log.v(TAG, "%s:OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
+            Log.v(TAG, "%s#OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
             synchronized (getLock()) {
                 if (!state.assertState(State.OPEN)) { return; }
                 received(text.getBytes(StandardCharsets.UTF_8));
@@ -164,7 +164,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote sent data
         @Override
         public void onMessage(@NonNull WebSocket webSocket, ByteString bytes) {
-            Log.v(TAG, "%s:OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
+            Log.v(TAG, "%s#OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
             synchronized (getLock()) {
                 if (!state.assertState(State.OPEN)) { return; }
                 received(bytes.toByteArray());
@@ -175,7 +175,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote wants to close the connection
         @Override
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            Log.v(TAG, "%s:OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
+            Log.v(TAG, "%s#OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
             synchronized (getLock()) {
                 if (!state.setState(State.CLOSE_REQUESTED)) { return; }
                 closeRequested(code, reason);
@@ -186,7 +186,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote connection has been closed
         @Override
         public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            Log.v(TAG, "%s:OkHTTP closed: (%d) %s", AbstractCBLWebSocket.this, code, reason);
+            Log.v(TAG, "%s#OkHTTP closed: (%d) %s", AbstractCBLWebSocket.this, code, reason);
             synchronized (getLock()) {
                 if (!state.setState(State.CLOSED)) { return; }
                 closeWithCode(code, reason);
@@ -204,7 +204,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Outgoing and incoming messages may have been lost. OkHTTP will not make any more calls to this listener
         @Override
         public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, Response response) {
-            Log.v(TAG, "%s:OkHTTP failed: %s", AbstractCBLWebSocket.this, response, err);
+            Log.v(TAG, "%s#OkHTTP failed: %s", err, AbstractCBLWebSocket.this, response);
 
             synchronized (getLock()) {
                 state.setState(State.FAILED);
@@ -376,7 +376,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Core needs a connection to the remote
     @Override
     protected final void openSocket() {
-        Log.v(TAG, "%s:Core connect: %s", this, uri);
+        Log.v(TAG, "%s#Core connect: %s", this, uri);
         synchronized (getLock()) {
             if (!state.setState(State.CONNECTING)) { return; }
             okHttpSocketFactory.newWebSocket(newRequest(), okHttpRemote);
@@ -387,7 +387,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Core wants to transfer data to the remote
     @Override
     protected final void send(@NonNull byte[] allocatedData) {
-        Log.v(TAG, "%s:Core send: %d", this, allocatedData.length);
+        Log.v(TAG, "%s#Core send: %d", this, allocatedData.length);
         synchronized (getLock()) {
             if (!state.assertState(State.OPEN)) { return; }
 
@@ -410,7 +410,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Core wants to break the connection
     @Override
     protected final void requestClose(int code, String message) {
-        Log.v(TAG, "%s:Core request close: %d", this, code);
+        Log.v(TAG, "%s#Core request close: %d", this, code);
         synchronized (getLock()) {
             if (!state.setState(State.CLOSING)) { return; }
             closeWebSocket(code, message);

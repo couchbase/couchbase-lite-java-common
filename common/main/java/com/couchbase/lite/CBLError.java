@@ -24,6 +24,7 @@ public final class CBLError {
         private Domain() {}
 
         public static final String CBLITE = "CouchbaseLite";
+        public static final String POSIX = "POSIXErrorDomain";
         public static final String SQLITE = "CouchbaseLite.SQLite";
         public static final String FLEECE = "CouchbaseLite.Fleece";
     }

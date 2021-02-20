@@ -70,7 +70,7 @@ public final class CBLStatus {
             case C4Constants.ErrorDomain.LITE_CORE:
                 break;
             case C4Constants.ErrorDomain.POSIX:
-                domain = "POSIXErrorDomain";
+                domain = CBLError.Domain.POSIX;
                 break;
             case C4Constants.ErrorDomain.SQLITE:
                 domain = CBLError.Domain.SQLITE;
