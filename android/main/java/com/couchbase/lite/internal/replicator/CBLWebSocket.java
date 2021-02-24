@@ -19,7 +19,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.system.ErrnoException;
 
-import java.io.EOFException;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.URI;
@@ -61,12 +60,6 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
 
         // SocketException
         if (error instanceof SocketException) {
-            closed(C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
-            return true;
-        }
-
-        // EOFException
-        if (error instanceof EOFException) {
             closed(C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
             return true;
         }

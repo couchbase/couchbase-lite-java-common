@@ -177,7 +177,6 @@ public final class C4Constants {
         public static final int CONFLICT = 8;                // Document update conflict
         public static final int INVALID_PARAMETER = 9;       // Invalid function parameter or struct value
         public static final int UNEXPECTED_ERROR = 10;       // Internal unexpected C++ exception
-
         public static final int CANT_OPEN_FILE = 11;         // Database file can't be opened; may not exist
         public static final int IO_ERROR = 12;               // File I/O error
         public static final int MEMORY_ERROR = 13;           // Memory allocation failed (out of memory?)
@@ -188,7 +187,6 @@ public final class C4Constants {
         public static final int TRANSACTION_NOT_CLOSED = 18; // Database can't be closed while a transaction is open
         public static final int UNSUPPORTED = 19;            // Operation not supported in this database
         public static final int NOT_A_DATABASE_FILE = 20;    // File is not a database, or encryption key is wrong
-
         public static final int WRONG_FORMAT = 21;           // Database exists but not in the format/storage requested
         public static final int CRYPTO = 22;                 // Encryption/decryption error
         public static final int INVALID_QUERY = 23;          // Invalid query
@@ -199,7 +197,6 @@ public final class C4Constants {
         public static final int DATABASE_TOO_NEW = 28;       // Database file format is newer than what I can open
         public static final int BAD_DOC_ID = 29;             // Invalid document ID
         public static final int CANT_UPGRADE_DATABASE = 30;  // Database can't be upgraded (unsupported dev version?)
-
         public static final int MAX_ERROR_CODES = CANT_UPGRADE_DATABASE;
     }
 
@@ -210,17 +207,60 @@ public final class C4Constants {
     public static final class NetworkError {
         private NetworkError() {}
 
-        public static final int DNS_FAILURE = 1;                // DNS lookup failed
-        public static final int UNKNOWN_HOST = 2;               // DNS server doesn't know the hostname
+        public static final int DNS_FAILURE = 1;               // DNS lookup failed
+        public static final int UNKNOWN_HOST = 2;              // DNS server doesn't know the hostname
         public static final int TIMEOUT = 3;
         public static final int INVALID_URL = 4;
         public static final int TOO_MANY_REDIRECTS = 5;
         public static final int TLS_HANDSHAKE_FAILED = 6;
         public static final int TLS_CERT_EXPIRED = 7;
-        public static final int TLS_CERT_UNTRUSTED = 8;         // Cert isn't trusted for other reason
+        public static final int TLS_CERT_UNTRUSTED = 8;        // Cert isn't trusted for other reason
         public static final int TLS_CLIENT_CERT_REQUIRED = 9;
-        public static final int TLS_CLIENT_CERT_REJECTED = 10;  // 10
-        public static final int TLS_CERT_UNKNOWN_ROOT = 11;     // Self-signed cert, or unknown anchor cert
-        public static final int INVALID_REDIRECT = 12;          // Attempted redirect to invalid replication endpoint
+        public static final int TLS_CLIENT_CERT_REJECTED = 10;
+        public static final int TLS_CERT_UNKNOWN_ROOT = 11;    // Self-signed cert, or unknown anchor cert
+        public static final int INVALID_REDIRECT = 12;         // Attempted redirect to invalid replication endpoint
+    }
+
+    public static final class HttpError {
+        private HttpError() {}
+
+        public static final int STATUS_MIN = 100;
+        public static final int SWITCH_PROTOCOL = 101;         // Switch from HTTP protocol (probably to web socket)
+        public static final int MULTIPLE_CHOICE = 300;         // Request has more than one possible response
+        public static final int AUTH_REQUIRED = 401;           // Missing or incorrect user authentication
+        public static final int FORBIDDEN = 403;               // User doesn't have permission to access resource
+        public static final int NOT_FOUND = 404;               // Resource not found
+        public static final int CONFLICT = 409;                // Update conflict
+        public static final int PROXY_AUTH_REQUIRED = 407;     // HTTP proxy requires authentication
+        public static final int ENTITY_TOO_LARGE = 413;        // Data is too large to upload
+        public static final int IM_A_TEAPOT = 418;             // HTCPCP/1.0 error (RFC 2324)
+        public static final int INTERNAL_SERVER_ERROR = 500;   // Something's wrong with the server
+        public static final int NOT_IMPLEMENTED = 501;         // Unimplemented server functionality
+        public static final int SERVICE_UNAVAILABLE = 503;     // Service is down temporarily(?)
+        public static final int STATUS_MAX = 600;
+    }
+
+    // errors in the WebSocket domain
+    // C4WebSocketCloseCode (c4Socket.h)
+    // These codes start at 1000, so that they
+    // cannot be confused with HTTP errors (which are always less than 600)
+    public static final class WebSocketError {
+        private WebSocketError() {}
+
+        public static final int NORMAL = 1000;
+        public static final int GOING_AWAY = 1001;             // Peer has to close, e.g. host app is quitting
+        public static final int PROTOCOL_ERROR = 1002;         // Protocol violation: invalid framing data
+        public static final int DATA_ERROR = 1003;             // Message payload cannot be handled
+        public static final int NO_CODE = 1005;                // Never sent, only received
+        public static final int ABNORMAL_CLOSE = 1006;         // Never sent, only received
+        public static final int BAD_MESSAGE_FORMAT = 1007;     // Unparsable message
+        public static final int POLICY_ERROR = 1008;           // Catch-all failure
+        public static final int MESSAGE_TO_BIG = 1009;         // Message too big
+        public static final int MISSING_EXTENSION = 1010;      // Peer doesn't provide a necessary extension
+        public static final int CANT_FULFILL = 1011;           // Can't fulfill request: "unexpected condition"
+        public static final int TLS_FAILURE = 1015;            // Never sent, only received
+        public static final int USER = 4000;                   // First unregistered code for free-form use
+        public static final int USER_TRANSIENT = 4001;         // User-defined transient error
+        public static final int USER_PERMANENT = 4002;         // User-defined permanent error
     }
 }

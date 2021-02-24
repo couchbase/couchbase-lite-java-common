@@ -51,26 +51,6 @@ public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
-
-    // C4WebSocketCloseCode (c4Socket.h)
-    // @formatter:off
-    public static final int WS_STATUS_CLOSE_NORMAL = 1000;
-    public static final int WS_STATUS_GOING_AWAY = 1001;               // Peer has to close, e.g. because host app is quitting
-    public static final int WS_STATUS_CLOSE_PROTOCOL_ERROR = 1002;     // Protocol violation: invalid framing data
-    public static final int WS_STATUS_CLOSE_DATA_ERROR = 1003;         // Message payload cannot be handled
-    public static final int WS_STATUS_CLOSE_NO_CODE = 1005;            // Never sent, only received
-    public static final int WS_STATUS_CLOSE_ABNORMAL = 1006;           // Never sent, only received
-    public static final int WS_STATUS_CLOSE_BAD_MESSAGE_FORMAT = 1007; // Unparsable message
-    public static final int WS_STATUS_CLOSE_POLICY_ERROR = 1008;       // Catch-all failure
-    public static final int WS_STATUS_CLOSE_MESSAGE_TO_BIG = 1009;     // Message too big
-    public static final int WS_STATUS_CLOSE_MISSING_EXTENSION = 1010;  // Peer doesn't provide a necessary extension
-    public static final int WS_STATUS_CLOSE_CANT_FULFILL = 1011;       // Can't fulfill request due to "unexpected condition"
-    public static final int WS_STATUS_CLOSE_TLS_FAILURE = 1015;        // Never sent, only received
-    public static final int WS_STATUS_CLOSE_USER = 4000;               // First unregistered code for free-form use
-    public static final int WS_STATUS_CLOSE_USER_TRANSIENT = WS_STATUS_CLOSE_USER + 1; // User-defined transient error
-    public static final int WS_STATUS_CLOSE_USER_PERMANENT = WS_STATUS_CLOSE_USER + 2; // User-defined permanent error
-    // @formatter:on
-
     private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
 
     // C4SocketFraming (c4Socket.h)

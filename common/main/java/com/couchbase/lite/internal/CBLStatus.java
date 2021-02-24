@@ -79,7 +79,7 @@ public final class CBLStatus {
                 domain = CBLError.Domain.FLEECE;
                 break;
             case C4Constants.ErrorDomain.NETWORK:
-                code += CBLError.Code.NETWORK_BASE;
+                code += CBLError.Code.NETWORK_OFFSET;
                 break;
             case C4Constants.ErrorDomain.WEB_SOCKET:
                 code += CBLError.Code.HTTP_BASE;

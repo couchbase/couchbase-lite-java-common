@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import java.io.EOFException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -120,9 +121,6 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     private static final int MAX_AUTH_RETRIES = 3;
 
-    private static final int HTTP_STATUS_MIN = 100;
-    private static final int HTTP_STATUS_MAX = 600;
-
     private static final String CHALLENGE_BASIC = "Basic";
     private static final String HEADER_AUTH = "Authorization";
 
@@ -205,7 +203,6 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, Response response) {
             Log.v(TAG, "%s#OkHTTP failed: %s", err, AbstractCBLWebSocket.this, response);
-
             synchronized (getLock()) {
                 state.setState(State.FAILED);
 
@@ -215,9 +212,12 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
                 }
 
                 int httpStatus = response.code();
-                if (httpStatus == 101) { httpStatus = C4Socket.WS_STATUS_CLOSE_PROTOCOL_ERROR; }
-                else if ((httpStatus < 300) || (httpStatus >= 1000)) {
-                    httpStatus = C4Socket.WS_STATUS_CLOSE_POLICY_ERROR;
+                if (httpStatus == C4Constants.HttpError.SWITCH_PROTOCOL) {
+                    httpStatus = C4Constants.WebSocketError.PROTOCOL_ERROR;
+                }
+                else if ((httpStatus < C4Constants.HttpError.MULTIPLE_CHOICE)
+                    || (httpStatus >= C4Constants.WebSocketError.NORMAL)) {
+                    httpStatus = C4Constants.WebSocketError.POLICY_ERROR;
                 }
 
                 closeWithCode(httpStatus, response.message());
@@ -345,11 +345,11 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     public void close() {
         synchronized (getLock()) {
             if (!state.setState(State.CLOSE_REQUESTED)) {
-                closeRequested(WS_STATUS_GOING_AWAY, "Closed by client");
+                closeRequested(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
                 return;
             }
             if (!state.setState(State.CLOSING)) {
-                closeWebSocket(WS_STATUS_GOING_AWAY, "Closed by client");
+                closeWebSocket(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
                 return;
             }
             state.setState(State.CLOSED);
@@ -459,7 +459,9 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
         // We've told Core to leave the connection to us, so it might pass us the HTTP status
         // If it does, we need to convert it to a WS status for the other side.
-        if ((code > HTTP_STATUS_MIN) && (code < HTTP_STATUS_MAX)) { code = C4Socket.WS_STATUS_CLOSE_POLICY_ERROR; }
+        if ((code > C4Constants.HttpError.STATUS_MIN) && (code < C4Constants.HttpError.STATUS_MAX)) {
+            code = C4Constants.WebSocketError.POLICY_ERROR;
+        }
 
         if (!webSocket.close(code, message)) {
             Log.i(TAG, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
@@ -468,7 +470,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     @GuardedBy("getLock()")
     private void closeWithCode(int code, String reason) {
-        if (code == C4Socket.WS_STATUS_CLOSE_NORMAL) {
+        if (code == C4Constants.WebSocketError.NORMAL) {
             closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
             return;
         }
@@ -488,10 +490,19 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
         if (handleClose(error)) { return; }
 
-        // TLS Certificate error
+
         final int code;
         int domain = C4Constants.ErrorDomain.NETWORK;
-        if (error.getCause() instanceof CertificateException) { code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED; }
+
+        if (error instanceof EOFException) {
+            domain = C4Constants.ErrorDomain.WEB_SOCKET;
+            code = C4Constants.WebSocketError.USER_TRANSIENT;
+        }
+
+        // TLS Certificate error
+        else if (error.getCause() instanceof CertificateException) {
+            code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED;
+        }
 
         // SSLPeerUnverifiedException
         else if (error instanceof SSLPeerUnverifiedException) { code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED; }
@@ -502,7 +513,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         else if (error instanceof SSLHandshakeException) { code = C4Constants.NetworkError.TLS_HANDSHAKE_FAILED; }
 
         else {
-            code = C4Socket.WS_STATUS_CLOSE_PROTOCOL_ERROR;
+            code = C4Constants.WebSocketError.PROTOCOL_ERROR;
             domain = C4Constants.ErrorDomain.WEB_SOCKET;
         }
 
