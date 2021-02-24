@@ -33,6 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class BaseReplicatorTest extends BaseDbTest {
     protected static final long STD_TIMEOUT_SECS = 5;
+    protected static final long LONG_TIMEOUT_SECS = 30;
 
     protected Replicator baseTestReplicator;
 
