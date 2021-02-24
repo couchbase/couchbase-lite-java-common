@@ -17,12 +17,14 @@ package com.couchbase.lite.internal.replicator;
 
 import android.support.annotation.NonNull;
 
+import java.io.EOFException;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -38,5 +40,16 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException, URISyntaxException {
         super(handle, scheme, hostname, port, path, options, cookieStore, serverCertsListener);
+    }
+
+    @Override
+    protected boolean handleClose(@NonNull Throwable error) {
+        // EOFException
+        if (error instanceof EOFException) {
+            closed(C4Constants.ErrorDomain.WEB_SOCKET, AbstractCBLWebSocket.WS_STATUS_CLOSE_USER_TRANSIENT, null);
+            return true;
+        }
+
+        return false;
     }
 }
