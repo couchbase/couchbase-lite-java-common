@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.replicator;
 import android.support.annotation.NonNull;
 
 import java.io.EOFException;
+import java.net.SocketException;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
@@ -43,10 +44,12 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
     }
 
     @Override
-    protected boolean handleClose(@NonNull Throwable error) {
-        // EOFException
-        if (error instanceof EOFException) {
-            closed(C4Constants.ErrorDomain.WEB_SOCKET, AbstractCBLWebSocket.WS_STATUS_CLOSE_USER_TRANSIENT, null);
+    protected boolean handleClose(@NonNull Throwable err) {
+        if ((err instanceof SocketException) || (err instanceof EOFException)) {
+            closed(
+                C4Constants.ErrorDomain.WEB_SOCKET,
+                AbstractCBLWebSocket.WS_STATUS_CLOSE_USER_TRANSIENT,
+                err.toString());
             return true;
         }
 
