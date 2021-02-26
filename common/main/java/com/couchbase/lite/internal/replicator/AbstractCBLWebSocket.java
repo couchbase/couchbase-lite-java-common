@@ -177,7 +177,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.v(TAG, "%s:OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
             synchronized (getLock()) {
-                if (!state.setState(State.CLOSING)) { return; }
+                if (!state.setState(State.CLOSE_REQUESTED)) { return; }
                 closeRequested(code, reason);
             }
         }
