@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 /**
  * The listener interface for receiving Replicator change events.
  */
+@FunctionalInterface
 public interface ReplicatorChangeListener {
     /**
      * The callback function from Replicator

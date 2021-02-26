@@ -91,6 +91,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         throws E {
         final long peer;
 
+        // !!! java.lang.NullPointerException: Null reference used for synchronization (monitor-enter)
         synchronized (lock) {
             peer = releasePeerLocked();
             if (peer == 0L) { return; }

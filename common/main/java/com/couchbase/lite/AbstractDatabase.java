@@ -1102,10 +1102,12 @@ abstract class AbstractDatabase {
 
     void registerProcess(ActiveProcess<?> process) {
         synchronized (activeProcesses) { activeProcesses.add(process); }
+        Log.d(DOMAIN, "Added active process(%s): %s", getName(), process);
     }
 
     <T> void unregisterProcess(T process) {
         synchronized (activeProcesses) { activeProcesses.remove(new ActiveProcess<>(process)); }
+        Log.d(DOMAIN, "Removed active process(%s): %s", getName(), process);
         verifyActiveProcesses();
     }
 
@@ -1594,7 +1596,7 @@ abstract class AbstractDatabase {
 
         final int activeProcessCount;
         synchronized (activeProcesses) { activeProcessCount = activeProcesses.size(); }
-        Log.v(DOMAIN, "Active processes: %d", activeProcessCount);
+        Log.v(DOMAIN, "Active processes(%s): %d", getName(), activeProcessCount);
         if (activeProcessCount <= 0) { closeLatch.countDown(); }
     }
 

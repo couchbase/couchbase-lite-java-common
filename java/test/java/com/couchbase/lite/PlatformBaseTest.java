@@ -23,21 +23,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
-
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.Report;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
@@ -70,9 +59,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     static { CouchbaseLite.init(); }
 
     public static String getScratchDirPath() {
-        try {
-            return new File(SCRATCH_DIR).getCanonicalPath();
-        }
+        try { return new File(SCRATCH_DIR).getCanonicalPath(); }
         catch (IOException e) { throw new IllegalStateException("Could not create scratch directory", e); }
     }
 
@@ -87,9 +74,15 @@ public abstract class PlatformBaseTest implements PlatformTest {
                 .setMaxRotateCount(MAX_LOG_FILES);
         }
 
-        final FileLogger fileLogger = Database.log.getFile();
+        final com.couchbase.lite.Log logger = Database.log;
+        final FileLogger fileLogger = logger.getFile();
         if (!logConfig.equals(fileLogger.getConfig())) { fileLogger.setConfig(logConfig); }
         fileLogger.setLevel(LogLevel.DEBUG);
+
+
+        final ConsoleLogger consoleLogger = logger.getConsole();
+        consoleLogger.setLevel(LogLevel.DEBUG);
+        consoleLogger.setDomains(LogDomain.ALL_DOMAINS);
     }
 
     @Override
