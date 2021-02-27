@@ -250,8 +250,8 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     /**
-     * Sets the replicator type indicating the direction of the replicator.
-     * The default value is .pushAndPull which is bi-directional.
+     * Sets the replicator type indicating the direction of the replication.
+     * The default value is ReplicatorType.PUSH_AND_PULL, bi-directional.
      *
      * @param replicatorType The replicator type.
      * @return this.

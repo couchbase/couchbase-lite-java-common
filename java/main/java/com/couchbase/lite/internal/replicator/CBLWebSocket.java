@@ -39,5 +39,5 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
     }
 
     @Override
-    protected boolean handleClose(@NonNull Throwable error) { return false; }
+    protected boolean handleClose(@NonNull Throwable err) { return false; }
 }

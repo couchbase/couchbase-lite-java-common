@@ -51,7 +51,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
-
     public static String getScratchDirPath() {
         try {
             return InstrumentationRegistry.getTargetContext()

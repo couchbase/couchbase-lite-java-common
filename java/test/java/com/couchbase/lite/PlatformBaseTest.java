@@ -79,7 +79,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
         if (!logConfig.equals(fileLogger.getConfig())) { fileLogger.setConfig(logConfig); }
         fileLogger.setLevel(LogLevel.DEBUG);
 
-
         final ConsoleLogger consoleLogger = logger.getConsole();
         consoleLogger.setLevel(LogLevel.DEBUG);
         consoleLogger.setDomains(LogDomain.ALL_DOMAINS);

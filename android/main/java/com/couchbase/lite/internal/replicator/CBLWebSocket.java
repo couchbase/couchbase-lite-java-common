@@ -19,8 +19,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.system.ErrnoException;
 
-import java.net.ConnectException;
-import java.net.SocketException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
@@ -31,12 +29,6 @@ import com.couchbase.lite.internal.utils.Fn;
 
 
 public class CBLWebSocket extends AbstractCBLWebSocket {
-    // Posix errno values with Android.
-    // from sysroot/usr/include/asm-generic/errno.h
-    private static final int ECONNRESET = 104;    // java.net.SocketException
-    private static final int ECONNREFUSED = 111;  // java.net.ConnectException
-
-
     // Framing is always MESSAGE_STREAM
     public CBLWebSocket(
         long peer,
@@ -50,32 +42,13 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
 
     @Override
     protected boolean handleClose(@NonNull Throwable error) {
-        if (checkErrnoException(error)) { return true; }
-
-        // ConnectException
-        if (error instanceof ConnectException) {
-            closed(C4Constants.ErrorDomain.POSIX, ECONNREFUSED, null);
-            return true;
-        }
-
-        // SocketException
-        if (error instanceof SocketException) {
-            closed(C4Constants.ErrorDomain.POSIX, ECONNRESET, null);
-            return true;
+        for (Throwable cause = error; cause != null; cause = cause.getCause()) {
+            if ((cause instanceof ErrnoException)) {
+                closed(C4Constants.ErrorDomain.POSIX, ((ErrnoException) cause).errno, error.toString());
+                return true;
+            }
         }
 
         return false;
-    }
-
-    private boolean checkErrnoException(@NonNull Throwable error) {
-        Throwable cause = error.getCause();
-        if (cause == null) { return false; }
-
-        cause = cause.getCause();
-        if (!(cause instanceof ErrnoException)) { return false; }
-
-        closed(C4Constants.ErrorDomain.POSIX, ((ErrnoException) cause).errno, null);
-
-        return true;
     }
 }

@@ -30,11 +30,6 @@ import okhttp3.HttpUrl;
  * Interface for CookieStore
  */
 public interface CBLCookieStore {
-    void setCookie(@NonNull URI uri, @NonNull String setCookieHeader);
-
-    @Nullable
-    String getCookies(@NonNull URI uri);
-
     /**
      * Parse request header "Cookie" in the format of "name=value;name=value..."
      * into OKHTTP Cookie used by AbstractCBLWebSocket.
@@ -49,4 +44,9 @@ public interface CBLCookieStore {
         }
         return cookieList;
     }
+
+    void setCookie(@NonNull URI uri, @NonNull String setCookieHeader);
+
+    @Nullable
+    String getCookies(@NonNull URI uri);
 }

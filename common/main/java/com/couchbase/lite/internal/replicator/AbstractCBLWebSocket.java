@@ -21,6 +21,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.io.EOFException;
+import java.net.SocketException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -487,37 +488,34 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
 
         Log.i(TAG, "WebSocket CLOSED with error", error);
-
         if (handleClose(error)) { return; }
-
 
         final int code;
         int domain = C4Constants.ErrorDomain.NETWORK;
 
-        if (error instanceof EOFException) {
+        final Throwable cause = error.getCause();
+
+        if ((error instanceof SocketException) || (error instanceof EOFException)) {
             domain = C4Constants.ErrorDomain.WEB_SOCKET;
             code = C4Constants.WebSocketError.USER_TRANSIENT;
         }
 
-        // TLS Certificate error
-        else if (error.getCause() instanceof CertificateException) {
-            code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED;
-        }
-
-        // SSLPeerUnverifiedException
-        else if (error instanceof SSLPeerUnverifiedException) { code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED; }
-
         // UnknownHostException - this is thrown when in Airplane mode or offline
         else if (error instanceof UnknownHostException) { code = C4Constants.NetworkError.UNKNOWN_HOST; }
 
+        else if (cause instanceof CertificateException) { code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED; }
+
         else if (error instanceof SSLHandshakeException) { code = C4Constants.NetworkError.TLS_HANDSHAKE_FAILED; }
 
+        else if (error instanceof SSLPeerUnverifiedException) { code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED; }
+
+        // default: no idea what happened.
         else {
-            code = C4Constants.WebSocketError.PROTOCOL_ERROR;
             domain = C4Constants.ErrorDomain.WEB_SOCKET;
+            code = C4Constants.WebSocketError.PROTOCOL_ERROR;
         }
 
-        closed(domain, code, null);
+        closed(domain, code, error.toString());
     }
 
     private OkHttpClient setupOkHttpFactory() throws GeneralSecurityException {

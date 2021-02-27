@@ -68,6 +68,13 @@ public class C4Query extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
+        // Despite the fact that the documentation insists that this call be made
+        // while holding the database lock, doing so can block the finalizer thread
+        // causing it to abort.
+        // Jens Alfke says: in practice it should be ok.
+        // Jim Borden says: if the object is being finalized, it is not possible for client
+        //   code to affect the query: in this case, freeing wo/ the lock is ok.
+        //   That's how .NET does it.
         try { closePeer(LogDomain.QUERY); }
         finally { super.finalize(); }
     }

@@ -216,7 +216,7 @@ public abstract class AbstractExecutionService implements ExecutionService {
          */
         @Override
         public boolean stop(long timeout, @NonNull TimeUnit unit) {
-            Preconditions.assertThat(timeout, "timeout must be >= 0", x -> x >= 0);
+            Preconditions.assertNotNegative(timeout, "timeout");
             Preconditions.assertNotNull(unit, "time unit");
 
             final CountDownLatch latch;
@@ -386,7 +386,7 @@ public abstract class AbstractExecutionService implements ExecutionService {
          */
         @Override
         public boolean stop(long timeout, @NonNull TimeUnit unit) {
-            Preconditions.assertThat(timeout, "timeout must be >= 0", x -> x >= 0);
+            Preconditions.assertNotNegative(timeout, "timeout");
             Preconditions.assertNotNull(unit, "time unit");
 
             final CountDownLatch latch;
