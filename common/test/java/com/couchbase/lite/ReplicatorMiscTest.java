@@ -78,14 +78,14 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStopBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), true, false, false)).stop();
+        testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)).stop();
     }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStatusBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), true, false, false)).getStatus();
+        testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)).getStatus();
     }
 
     @Test
@@ -114,7 +114,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         // Don't use makeConfig: it sets heartbeat to 0
         final ReplicatorConfiguration config
             = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
-            .setReplicatorType(getReplicatorType(true, false))
+            .setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PUSH)
             .setContinuous(false);
 
         final Replicator repl = testReplicator(config);
@@ -131,7 +131,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testCustomHeartbeat() throws URISyntaxException {
-        final ReplicatorConfiguration config = makeConfig(new URLEndpoint(new URI("wss://foo")), true, false, false)
+        final ReplicatorConfiguration config = makeConfig(new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)
             .setHeartbeat(67L);
 
         Replicator repl = testReplicator(config);
@@ -166,7 +166,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testStartReplicatorWithClosedDb() throws URISyntaxException {
         Replicator replicator = testReplicator(
-            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), true, true, false, null, null));
+            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, false, null, null));
 
         closeDb(baseTestDb);
 
@@ -180,7 +180,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
         Replicator replicator = testReplicator(
-            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), true, true, false, null, null));
+            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, false, null, null));
 
         closeDb(baseTestDb);
 
@@ -197,7 +197,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         otherDB.save(doc);
 
         Replicator replicator = testReplicator(
-            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), true, true, false, null, null));
+            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, false, null, null));
 
         closeDb(baseTestDb);
 
