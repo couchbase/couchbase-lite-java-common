@@ -30,7 +30,13 @@ import java.util.Map;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
+import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
@@ -40,6 +46,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Report;
@@ -56,40 +63,56 @@ public class C4BaseTest extends PlatformBaseTest {
     public static final String REV_ID_2 = "2-c001d00d";
     public static final String REV_ID_3 = "3-deadbeef";
 
-    protected C4Database c4Database;
-
-    protected String tmpDir;
-    protected File rootDir;
-    protected String dbDirPath;
-
-    protected byte[] fleeceBody;
 
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
+
+    @BeforeClass
+    public static void setUpC4BaseTestSuite() { BaseTest.setUpPlatformSuite(); }
 
     // This trickery is necessary because deleting a scratch directory
     // while logging can cause core to hang rolling non-existent files.
     @AfterClass
-    public static void tearDownC4BaseTestClass() {
+    public static void tearDownC4BaseTestSuite() {
         Report.log(LogLevel.INFO, "Deleting c4DB directories: " + SCRATCH_DIRS.size());
         for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
+        BaseTest.tearDownBaseTestSuite();
     }
 
 
+    protected C4Database c4Database;
+
+    protected File rootDir;
+    protected String dbName;
+    protected String dbDirPath;
+
+    protected byte[] fleeceBody;
+
+    private String testName;
+
+    @Rule
+    public TestRule watcher = new TestWatcher() {
+        protected void starting(Description description) { testName = description.getMethodName(); }
+    };
+
     @Before
     public final void setUpC4BaseTest() throws CouchbaseLiteException {
-        final String tmpDirName = StringUtils.getUniqueName("c4-test", 24);
+        Report.log(LogLevel.INFO, ">>>>>>>>>>>>> C4 Test started: " + testName);
+        Log.initLogging();
+
+        setupPlatform();
+
+        final String tmpDirName = StringUtils.getUniqueName("c4_test", 8);
         try {
-            tmpDir = getScratchDirectoryPath(tmpDirName);
+            String tmpDir = getScratchDirectoryPath(tmpDirName);
             SCRATCH_DIRS.add(tmpDir);
+            C4.setenv("TMPDIR", tmpDir, 1);
 
             rootDir = new File(CouchbaseLiteInternal.getRootDir(), tmpDirName);
             SCRATCH_DIRS.add(rootDir.getCanonicalPath());
 
-            dbDirPath = new File(rootDir, "cbl_core_test.sqlite3").getCanonicalPath();
-
+            dbName = StringUtils.getUniqueName("c4-test-db", 8);
+            dbDirPath = new File(rootDir, dbName).getCanonicalPath();
             if (!rootDir.mkdirs()) { throw new IOException("Can't create directory: " + rootDir); }
-
-            C4.setenv("TMPDIR", tmpDir, 1);
 
             c4Database = C4Database.getDatabase(
                 dbDirPath,
@@ -105,18 +128,19 @@ public class C4BaseTest extends PlatformBaseTest {
         }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
+        Report.log(LogLevel.INFO, "==== C4 Test initialized: " + testName);
     }
 
     @After
     public final void tearDownC4BaseTest() {
         final C4Database db = c4Database;
         c4Database = null;
-
         if (db != null) {
             try { db.shut(); }
             catch (LiteCoreException e) { throw new IllegalStateException("Failed closing db", e); }
             finally { db.close(); }
         }
+        Report.log(LogLevel.INFO, "<<<<<<<<<<<< C4 Test completed: " + testName);
     }
 
     ////////////////////////////////

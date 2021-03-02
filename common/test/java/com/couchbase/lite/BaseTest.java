@@ -56,7 +56,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     public static void setUpPlatformSuite() { Report.log(LogLevel.INFO, ">>>>>>>>>>>>>>>>>>>>>>>>> Suite started"); }
 
     @AfterClass
-    public static void tearDownBaseTestClass() {
+    public static void tearDownBaseTestSuite() {
         final File scratchDir = new File(PlatformBaseTest.getScratchDirPath());
         if (!scratchDir.exists()) { return; }
 
@@ -65,6 +65,9 @@ public abstract class BaseTest extends PlatformBaseTest {
 
         Report.log(LogLevel.INFO, "<<<<<<<<<<<<<<<<<<<<<<<<< Suite completed");
     }
+
+
+    private String testName;
 
     @Rule
     public TestRule watcher = new TestWatcher() {
@@ -93,9 +96,6 @@ public abstract class BaseTest extends PlatformBaseTest {
         Report.log(LogLevel.INFO, "Executor stopped: " + succeeded);
         Report.log(LogLevel.INFO, "<<<<<<<<<<<< Test completed: " + testName);
     }
-
-
-    private String testName;
 
     protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 24); }
 

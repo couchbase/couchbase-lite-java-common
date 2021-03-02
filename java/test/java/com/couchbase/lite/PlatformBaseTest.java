@@ -40,6 +40,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
 
     public static final String SCRATCH_DIR = "cbl-scratch";
+    public static final String LOG_DIR = "cbl-logs";
 
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
@@ -59,8 +60,9 @@ public abstract class PlatformBaseTest implements PlatformTest {
     static { CouchbaseLite.init(); }
 
     public static String getScratchDirPath() {
-        try { return new File(SCRATCH_DIR).getCanonicalPath(); }
-        catch (IOException e) { throw new IllegalStateException("Could not create scratch directory", e); }
+        final File scratchDir = new File(SCRATCH_DIR);
+        try { return scratchDir.getCanonicalPath(); }
+        catch (IOException e) { throw new IllegalStateException("Could not find scratch directory: " + scratchDir, e); }
     }
 
 
@@ -68,7 +70,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public void setupPlatform() {
         if (logConfig == null) {
-            logConfig = new LogFileConfiguration(getScratchDirectoryPath("logs"))
+            logConfig = new LogFileConfiguration(getScratchDirectoryPath(LOG_DIR))
                 .setUsePlaintext(true)
                 .setMaxSize(MAX_LOG_FILE_BYTES)
                 .setMaxRotateCount(MAX_LOG_FILES);
@@ -86,8 +88,16 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     @Override
     public final String getScratchDirectoryPath(@NonNull String name) {
-        try { return new File(getScratchDirPath(), name).getCanonicalPath(); }
-        catch (IOException e) { throw new IllegalStateException("cannot create scratch directory: " + name); }
+        String scratchPath = name;
+        try {
+            final File scratchDir = new File(getScratchDirPath(), name);
+            scratchPath = scratchDir.getCanonicalPath();
+            if (scratchDir.mkdirs() || (scratchDir.exists() && scratchDir.isDirectory())) { return scratchPath; }
+            throw new IOException("Cannot create directory");
+        }
+        catch (IOException e) {
+            throw new IllegalStateException("Failed creating scratch directory: " + scratchPath, e);
+        }
     }
 
     @Override

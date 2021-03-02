@@ -43,8 +43,8 @@ public final class FileUtils {
 
         IOException err = null;
         try {
-            dir = new File(dir.getCanonicalPath());
-            if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return dir.getCanonicalFile(); }
+            dir = dir.getCanonicalFile();
+            if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return dir; }
         }
         catch (IOException e) { err = e; }
 

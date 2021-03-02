@@ -173,6 +173,7 @@ public abstract class C4BlobStore extends C4NativePeer {
 
     private static native long getBlobStore(long db) throws LiteCoreException;
 
+    // !!! JNI bindings do not support c4blob_openStore() with an C4EncryptionKey
     private static native long openStore(String dirPath, long flags) throws LiteCoreException;
 
     private static native void deleteStore(long peer) throws LiteCoreException;

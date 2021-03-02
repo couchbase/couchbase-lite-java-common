@@ -45,6 +45,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public abstract class C4Database extends C4NativePeer {
     // These enum values must match the ones in DataFile::MaintenanceType
     private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
+
     static {
         final Map<MaintenanceType, Integer> m = new HashMap<>();
         m.put(MaintenanceType.COMPACT, 0);
@@ -132,13 +133,12 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Lifecycle
 
-    @Override
-    public abstract void close();
-
-
     // This method closes but does not free the native peer.
     // The name "close" is reserved for the AutoClosable method, which *does* free the peer.
     public void shut() throws LiteCoreException { close(getPeer()); }
+
+    @Override
+    public abstract void close();
 
     public void delete() throws LiteCoreException { delete(getPeer()); }
 
@@ -474,6 +474,8 @@ public abstract class C4Database extends C4NativePeer {
         byte[] encryptionKey)
         throws LiteCoreException;
 
+    // ??? this can go away?
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
     private static native void close(long db) throws LiteCoreException;
 
     private static native void delete(long db) throws LiteCoreException;

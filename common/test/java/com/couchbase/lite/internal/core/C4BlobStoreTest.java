@@ -33,6 +33,7 @@ import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -42,18 +43,13 @@ import static org.junit.Assert.fail;
 
 
 public class C4BlobStoreTest extends C4BaseTest {
-
-    //
-    // NOTE: JNI binding does not supports `c4blob_openStore()` with `C4EncryptionKey`
-    //
-
     private File blobDir;
     private C4BlobStore blobStore;
     private C4BlobKey bogusKey;
 
     @Before
     public final void setUpC4BlobStoreTest() throws CouchbaseLiteException {
-        blobDir = new File(tmpDir);
+        blobDir = new File(getScratchDirectoryPath(StringUtils.getUniqueName("cbl_blobs", 8)));
         try {
             blobStore = C4BlobStore.open(blobDir.getCanonicalPath(), C4Constants.DatabaseFlags.CREATE);
             bogusKey = new C4BlobKey("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");

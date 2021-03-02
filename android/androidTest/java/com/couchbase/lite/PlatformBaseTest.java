@@ -28,6 +28,7 @@ import java.util.Map;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -69,8 +70,8 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     @Override
     public final String getScratchDirectoryPath(@NonNull String name) {
-        try { return new File(getScratchDirPath(), name).getCanonicalPath(); }
-        catch (IOException e) { throw new IllegalStateException("cannot create scratch directory: " + name); }
+        try { return FileUtils.verifyDir(new File(getScratchDirPath(), name)).getCanonicalPath(); }
+        catch (IOException e) { throw new IllegalStateException("Failed creating scratch directory: " + name, e); }
     }
 
     @Override
