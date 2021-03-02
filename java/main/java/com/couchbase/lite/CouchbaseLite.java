@@ -39,7 +39,7 @@ public final class CouchbaseLite {
         final File curDir;
         try { curDir = new File("").getCanonicalFile(); }
         catch (IOException e) { throw new IllegalStateException("cannot find current directory", e); }
-        init(debug, curDir, new File(curDir, CouchbaseLiteInternal.TEMP_DIR_NAME));
+        init(debug, curDir, new File(curDir, CouchbaseLiteInternal.SCRATCH_DIR_NAME));
     }
 
     /**

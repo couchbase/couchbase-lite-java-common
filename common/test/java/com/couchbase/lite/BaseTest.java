@@ -19,6 +19,9 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,18 +56,27 @@ public abstract class BaseTest extends PlatformBaseTest {
     protected ExecutionService.CloseableExecutor testSerialExecutor;
 
     @BeforeClass
-    public static void setUpPlatformSuite() { Report.log(LogLevel.INFO, ">>>>>>>>>>>>>>>>>>>>>>>>> Suite started"); }
+    public static void setUpPlatformSuite() { Report.log(LogLevel.INFO, ">>>>>>>>>>>>>>>>>>>>>> Suite started"); }
 
     @AfterClass
     public static void tearDownBaseTestSuite() {
-        final File scratchDir = new File(PlatformBaseTest.getScratchDirPath());
-        if (!scratchDir.exists()) { return; }
+        for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
+        SCRATCH_DIRS.clear();
 
-        Report.log(LogLevel.INFO, "Deleting tmp directory contents: " + scratchDir);
-        FileUtils.deleteContents(scratchDir);
-
-        Report.log(LogLevel.INFO, "<<<<<<<<<<<<<<<<<<<<<<<<< Suite completed");
+        Report.log(LogLevel.INFO, "<<<<<<<<<<<<<<<<<<<<<< Suite completed");
     }
+
+    public static String getScratchDirPath(@NonNull String name) {
+        try {
+            String path = FileUtils.verifyDir(new File(CouchbaseLiteInternal.getScratchDir().getCanonicalPath(), name))
+                .getCanonicalPath();
+            SCRATCH_DIRS.add(path);
+            return path;
+        }
+        catch (IOException e) { throw new IllegalStateException("Failed creating scratch directory: " + name, e); }
+    }
+
+    private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
 
     private String testName;
@@ -97,9 +109,11 @@ public abstract class BaseTest extends PlatformBaseTest {
         Report.log(LogLevel.INFO, "<<<<<<<<<<<< Test completed: " + testName);
     }
 
-    protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 24); }
+    protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
 
-    // Prefer this method to any other way of creating a new database
+    public static String getScratchDirectoryPath(@NonNull String name) { return getScratchDirPath(name); }
+
+        // Prefer this method to any other way of creating a new database
     protected final Database createDb(@NonNull String name) throws CouchbaseLiteException {
         return createDb(name, null);
     }

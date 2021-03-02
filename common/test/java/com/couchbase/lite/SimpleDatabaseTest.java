@@ -39,7 +39,7 @@ public class SimpleDatabaseTest extends BaseTest {
 
         // Custom
         DatabaseConfiguration config2 = new DatabaseConfiguration();
-        String dbDir = getScratchDirectoryPath("tmp");
+        String dbDir = getScratchDirectoryPath(getUniqueName("tmp"));
         config2.setDirectory(dbDir);
         assertEquals(dbDir, config2.getDirectory());
     }

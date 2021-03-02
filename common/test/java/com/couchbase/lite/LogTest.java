@@ -115,15 +115,8 @@ public class LogTest extends BaseDbTest {
         public void reset() { minLevel = C4Constants.LogLevel.NONE; }
     }
 
-    private static final List<String> SCRATCH_DIRS = new ArrayList<>();
-
-    // This trickery is necessary because deleting a scratch directory
-    // while logging can cause core to hang rolling non-existent files.
     @AfterClass
-    public static void tearDownLogTestClass() {
-        Database.log.reset();
-        for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
-    }
+    public static void tearDownLogTestClass() { Database.log.reset(); }
 
 
     private String scratchDirPath;
@@ -131,7 +124,6 @@ public class LogTest extends BaseDbTest {
     @Before
     public final void setUpLogTest() {
         scratchDirPath = getScratchDirectoryPath(getUniqueName("log-dir"));
-        SCRATCH_DIRS.add(scratchDirPath);
 
         Log.initLogging();
         Database.log.reset();
@@ -456,7 +448,7 @@ public class LogTest extends BaseDbTest {
         assertEquals(config.usesPlaintext(), usePlainText);
         assertEquals(config.getDirectory(), scratchDirPath);
 
-        final String tempDir2 = getScratchDirectoryPath("logtest2");
+        final String tempDir2 = getScratchDirectoryPath(getUniqueName("logtest2"));
         LogFileConfiguration newConfig = new LogFileConfiguration(tempDir2, config);
         assertEquals(newConfig.getMaxRotateCount(), rotateCount);
         assertEquals(newConfig.getMaxSize(), maxSize);

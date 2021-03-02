@@ -69,6 +69,7 @@ public final class CouchbaseLiteInternal {
 
     private static volatile boolean debugging;
     private static volatile File rootDir;
+    private static volatile File scratchDir;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
@@ -88,13 +89,13 @@ public final class CouchbaseLiteInternal {
         Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
 
         CouchbaseLiteInternal.rootDir = Preconditions.assertNotNull(FileUtils.verifyDir(rootDir), "rootDir");
-        final File scratch = Preconditions.assertNotNull(FileUtils.verifyDir(scratchDir), "scratchDir");
+        CouchbaseLiteInternal.scratchDir = Preconditions.assertNotNull(FileUtils.verifyDir(scratchDir), "scratchDir");
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
         C4Base.debug(debug);
 
-        setC4TmpDirPath(scratch);
+        setC4TmpDirPath(scratchDir);
 
         MValue.registerDelegate(mValueDelegate);
 
@@ -138,6 +139,12 @@ public final class CouchbaseLiteInternal {
     public static File getRootDir() {
         requireInit("Can't create DB path");
         return rootDir;
+    }
+
+    @NonNull
+    public static File getScratchDir() {
+        requireInit("Can't create Scratch path");
+        return scratchDir;
     }
 
     @VisibleForTesting

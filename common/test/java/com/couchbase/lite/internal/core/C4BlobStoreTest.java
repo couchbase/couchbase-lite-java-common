@@ -33,7 +33,6 @@ import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -49,7 +48,7 @@ public class C4BlobStoreTest extends C4BaseTest {
 
     @Before
     public final void setUpC4BlobStoreTest() throws CouchbaseLiteException {
-        blobDir = new File(getScratchDirectoryPath(StringUtils.getUniqueName("cbl_blobs", 8)));
+        blobDir = new File(getScratchDirectoryPath(getUniqueName("cbl_blobs")));
         try {
             blobStore = C4BlobStore.open(blobDir.getCanonicalPath(), C4Constants.DatabaseFlags.CREATE);
             bogusKey = new C4BlobKey("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");

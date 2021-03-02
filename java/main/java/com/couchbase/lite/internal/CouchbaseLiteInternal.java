@@ -46,7 +46,7 @@ public final class CouchbaseLiteInternal {
     // Utility class
     private CouchbaseLiteInternal() {}
 
-    public static final String TEMP_DIR_NAME = "CouchbaseLiteTemp";
+    public static final String SCRATCH_DIR_NAME = "CouchbaseLiteTemp";
 
     private static final String ERRORS_PROPERTIES_PATH = "/errors.properties";
 
@@ -58,6 +58,7 @@ public final class CouchbaseLiteInternal {
 
     private static volatile boolean debugging;
     private static volatile File rootDir;
+    private static volatile File scratchDir;
 
     public static void init(
         @NonNull MValue.Delegate mValueDelegate,
@@ -71,13 +72,13 @@ public final class CouchbaseLiteInternal {
         Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
 
         CouchbaseLiteInternal.rootDir = Preconditions.assertNotNull(FileUtils.verifyDir(rootDir), "rootDir");
-        final File scratch = Preconditions.assertNotNull(FileUtils.verifyDir(scratchDir), "scratchDir");
+        CouchbaseLiteInternal.scratchDir = Preconditions.assertNotNull(FileUtils.verifyDir(scratchDir), "scratchDir");
 
-        NativeLibrary.load(scratch);
+        NativeLibrary.load(scratchDir);
 
         C4Base.debug(isDebugging());
 
-        setC4TmpDirPath(scratch);
+        setC4TmpDirPath(scratchDir);
 
         MValue.registerDelegate(mValueDelegate);
 
@@ -106,6 +107,12 @@ public final class CouchbaseLiteInternal {
     public static File getRootDir() {
         requireInit("Can't create DB path");
         return rootDir;
+    }
+
+    @NonNull
+    public static File getScratchDir() {
+        requireInit("Can't create Scratch path");
+        return scratchDir;
     }
 
     @VisibleForTesting

@@ -15,8 +15,6 @@
 //
 package com.couchbase.lite;
 
-import android.support.annotation.NonNull;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -26,6 +24,7 @@ import java.util.Map;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -39,8 +38,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
 
-    public static final String SCRATCH_DIR = "cbl-scratch";
-    public static final String LOG_DIR = "cbl-logs";
+    public static final String LOG_DIR = "logs";
 
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
@@ -59,18 +57,19 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     static { CouchbaseLite.init(); }
 
-    public static String getScratchDirPath() {
-        final File scratchDir = new File(SCRATCH_DIR);
-        try { return scratchDir.getCanonicalPath(); }
-        catch (IOException e) { throw new IllegalStateException("Could not find scratch directory: " + scratchDir, e); }
-    }
-
 
     // set up the file logger...
     @Override
     public void setupPlatform() {
         if (logConfig == null) {
-            logConfig = new LogFileConfiguration(getScratchDirectoryPath(LOG_DIR))
+            final String logDirPath;
+            try {
+                logDirPath = FileUtils.verifyDir(new File(new File("").getCanonicalFile(), LOG_DIR))
+                    .getCanonicalPath();
+            }
+            catch (IOException e) { throw new IllegalStateException("Could not find log directory", e); }
+
+            logConfig = new LogFileConfiguration(logDirPath)
                 .setUsePlaintext(true)
                 .setMaxSize(MAX_LOG_FILE_BYTES)
                 .setMaxRotateCount(MAX_LOG_FILES);
@@ -84,20 +83,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
         final ConsoleLogger consoleLogger = logger.getConsole();
         consoleLogger.setLevel(LogLevel.DEBUG);
         consoleLogger.setDomains(LogDomain.ALL_DOMAINS);
-    }
-
-    @Override
-    public final String getScratchDirectoryPath(@NonNull String name) {
-        String scratchPath = name;
-        try {
-            final File scratchDir = new File(getScratchDirPath(), name);
-            scratchPath = scratchDir.getCanonicalPath();
-            if (scratchDir.mkdirs() || (scratchDir.exists() && scratchDir.isDirectory())) { return scratchPath; }
-            throw new IOException("Cannot create directory");
-        }
-        catch (IOException e) {
-            throw new IllegalStateException("Failed creating scratch directory: " + scratchPath, e);
-        }
     }
 
     @Override
@@ -115,6 +100,3 @@ public abstract class PlatformBaseTest implements PlatformTest {
         executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
     }
 }
-
-
-

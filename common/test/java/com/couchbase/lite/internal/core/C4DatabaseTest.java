@@ -33,7 +33,6 @@ import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -153,7 +152,7 @@ public class C4DatabaseTest extends C4BaseTest {
     public void testDatabaseOpenBundle() throws LiteCoreException, IOException {
         int flags = getFlags();
 
-        File bundleDir = new File(getScratchDirectoryPath(StringUtils.getUniqueName("cbl_core_test_bundle", 24)));
+        File bundleDir = new File(getScratchDirectoryPath(getUniqueName("cbl_core_test")));
 
         // !!! for some reason, this file already exists on the Java platform...
         if (bundleDir.exists()) {
@@ -173,7 +172,7 @@ public class C4DatabaseTest extends C4BaseTest {
             encryptionKey());
 
         assertNotNull(bundle);
-        bundle.shut();
+        bundle.closeDb();
         bundle.close();
 
         // Reopen without 'create' flag:
@@ -186,7 +185,7 @@ public class C4DatabaseTest extends C4BaseTest {
             encryptionAlgorithm(),
             encryptionKey());
         assertNotNull(bundle);
-        bundle.shut();
+        bundle.closeDb();
         bundle.close();
 
         FileUtils.eraseFileOrDir(bundlePath);
@@ -215,14 +214,14 @@ public class C4DatabaseTest extends C4BaseTest {
         boolean commit = false;
         c4Database.beginTransaction();
         try {
-            rawPut(c4Database, store, key, meta, fleeceBody);
+            c4Database.rawPut(store, key, meta, fleeceBody);
             commit = true;
         }
         finally {
             c4Database.endTransaction(commit);
         }
 
-        C4RawDocument doc = rawGet(c4Database, store, key);
+        C4RawDocument doc = c4Database.rawGet(store, key);
         assertNotNull(doc);
         assertEquals(doc.key(), key);
         assertEquals(doc.meta(), meta);
@@ -231,7 +230,7 @@ public class C4DatabaseTest extends C4BaseTest {
 
         // Nonexistent:
         try {
-            rawGet(c4Database, store, "bogus");
+            c4Database.rawGet(store, "bogus");
             fail("Should not come here.");
         }
         catch (LiteCoreException ex) {
@@ -539,7 +538,7 @@ public class C4DatabaseTest extends C4BaseTest {
 
         String srcPath = c4Database.getPath();
 
-        final String dbName = StringUtils.getUniqueName("c4-db-test", 24) + DB_EXTENSION;
+        final String dbName = getUniqueName("c4-db-test") + DB_EXTENSION;
 
         File nuPath = new File(getScratchDirectoryPath(dbName));
         try { C4Database.deleteDbAtPath(nuPath.getCanonicalPath()); }
@@ -563,7 +562,7 @@ public class C4DatabaseTest extends C4BaseTest {
             null);
         assertNotNull(nudb);
         assertEquals(2, nudb.getDocumentCount());
-        nudb.delete();
+        nudb.deleteDb();
 
         nudb = C4Database.getDatabase(
             nuPath.getCanonicalPath(),
@@ -575,7 +574,7 @@ public class C4DatabaseTest extends C4BaseTest {
         assertNotNull(nudb);
         createRev(nudb, doc1ID, REV_ID_1, fleeceBody);
         assertEquals(1, nudb.getDocumentCount());
-        nudb.shut();
+        nudb.closeDb();
 
         String originalDest = nuPath.getCanonicalPath();
 
@@ -604,7 +603,7 @@ public class C4DatabaseTest extends C4BaseTest {
             null);
         assertNotNull(nudb);
         assertEquals(1, nudb.getDocumentCount());
-        nudb.shut();
+        nudb.closeDb();
 
         srcPath += "bogus" + File.separator;
         nuPath = new File(originalDest);
@@ -632,7 +631,7 @@ public class C4DatabaseTest extends C4BaseTest {
         assertNotNull(nudb);
         assertEquals(1, nudb.getDocumentCount());
 
-        nudb.delete();
+        nudb.deleteDb();
     }
 
     private void setupAllDocs() throws LiteCoreException {
@@ -674,7 +673,7 @@ public class C4DatabaseTest extends C4BaseTest {
         String jsonStr = json5(json.toString());
 
         final C4Document doc;
-        try (FLSliceResult body = c4Database.encodeJSON(jsonStr.getBytes(StandardCharsets.UTF_8))) {
+        try (FLSliceResult body = c4Database.encodeJSON(jsonStr)) {
             // Save document:
             doc = c4Database.put(
                 body,
@@ -691,14 +690,6 @@ public class C4DatabaseTest extends C4BaseTest {
         doc.close();
 
         return keys;
-    }
-
-    public C4RawDocument rawGet(C4Database db, String storeName, String docID) throws LiteCoreException {
-        return new C4RawDocument(C4Database.rawGet(db.getPeer(), storeName, docID));
-    }
-
-    public void rawPut(C4Database db, String storeName, String key, String meta, byte[] body) throws LiteCoreException {
-        C4Database.rawPut(db.getPeer(), storeName, key, meta, body);
     }
 }
 

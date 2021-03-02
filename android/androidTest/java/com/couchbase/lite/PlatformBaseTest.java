@@ -16,10 +16,8 @@
 package com.couchbase.lite;
 
 import android.os.Build;
-import android.support.annotation.NonNull;
 import android.support.test.InstrumentationRegistry;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -28,7 +26,6 @@ import java.util.Map;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -42,8 +39,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
 
-    public static final String SCRATCH_DIR = "cbl-scratch";
-
     private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
     static {
         final Map<String, Fn.Provider<Boolean>> m = new HashMap<>();
@@ -52,26 +47,13 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
-    public static String getScratchDirPath() {
-        try {
-            return InstrumentationRegistry.getTargetContext()
-                .getExternalFilesDir(SCRATCH_DIR)
-                .getCanonicalPath();
-        }
-        catch (IOException e) { throw new IllegalStateException("Could not create scratch directory", e); }
-    }
-
+    
+    
     @Override
     public void setupPlatform() {
         final ConsoleLogger console = Database.log.getConsole();
         console.setLevel(LogLevel.DEBUG);
         console.setDomains(LogDomain.ALL_DOMAINS);
-    }
-
-    @Override
-    public final String getScratchDirectoryPath(@NonNull String name) {
-        try { return FileUtils.verifyDir(new File(getScratchDirPath(), name)).getCanonicalPath(); }
-        catch (IOException e) { throw new IllegalStateException("Failed creating scratch directory: " + name, e); }
     }
 
     @Override

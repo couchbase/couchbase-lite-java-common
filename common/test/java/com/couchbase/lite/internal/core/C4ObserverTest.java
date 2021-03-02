@@ -141,7 +141,7 @@ public class C4ObserverTest extends C4BaseTest {
         createRev("A", "2-aaaa", fleeceBody);
         assertEquals(2, dbCallbackCalls.get());
 
-        otherdb.shut();
+        otherdb.closeDb();
         otherdb.close();
     }
 

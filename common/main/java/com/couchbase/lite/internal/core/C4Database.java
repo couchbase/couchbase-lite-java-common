@@ -20,6 +20,7 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,38 +44,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {
-    // These enum values must match the ones in DataFile::MaintenanceType
-    private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
-
-    static {
-        final Map<MaintenanceType, Integer> m = new HashMap<>();
-        m.put(MaintenanceType.COMPACT, 0);
-        m.put(MaintenanceType.REINDEX, 1);
-        m.put(MaintenanceType.INTEGRITY_CHECK, 2);
-        MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
-    }
-
-    public static void copyDb(
-        String sourcePath,
-        String destinationPath,
-        int flags,
-        String storageEngine,
-        int versioning,
-        int algorithm,
-        byte[] encryptionKey)
-        throws LiteCoreException {
-        copy(sourcePath, destinationPath, flags, storageEngine, versioning, algorithm, encryptionKey);
-    }
-
-    public static void deleteDbAtPath(String path) throws LiteCoreException { deleteAtPath(path); }
-
-    @VisibleForTesting
-    static void rawFreeDocument(long rawDoc) throws LiteCoreException { rawFree(rawDoc); }
-
-
-    //-------------------------------------------------------------------------
-    // Member Variables
-    //-------------------------------------------------------------------------
 
     // unmanaged: the native code will free it
     static final class UnmanagedC4Database extends C4Database {
@@ -100,6 +69,31 @@ public abstract class C4Database extends C4NativePeer {
 
         private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4Database::free); }
     }
+
+    // These enum values must match the ones in DataFile::MaintenanceType
+    private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
+    static {
+        final Map<MaintenanceType, Integer> m = new HashMap<>();
+        m.put(MaintenanceType.COMPACT, 0);
+        m.put(MaintenanceType.REINDEX, 1);
+        m.put(MaintenanceType.INTEGRITY_CHECK, 2);
+        MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
+    }
+    public static void copyDb(
+        String sourcePath,
+        String destinationPath,
+        int flags,
+        String storageEngine,
+        int versioning,
+        int algorithm,
+        byte[] encryptionKey)
+        throws LiteCoreException {
+        copy(sourcePath, destinationPath, flags, storageEngine, versioning, algorithm, encryptionKey);
+    }
+
+    public static void deleteDbAtPath(String path) throws LiteCoreException { deleteAtPath(path); }
+
+    static void rawFreeDocument(long rawDoc) throws LiteCoreException { rawFree(rawDoc); }
 
 
     //-------------------------------------------------------------------------
@@ -133,14 +127,15 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Lifecycle
 
-    // This method closes but does not free the native peer.
-    // The name "close" is reserved for the AutoClosable method, which *does* free the peer.
-    public void shut() throws LiteCoreException { close(getPeer()); }
-
     @Override
     public abstract void close();
 
-    public void delete() throws LiteCoreException { delete(getPeer()); }
+    // This method closes but does not free the native peer.
+    // The name "close" is reserved for the AutoClosable method, which *does* free the peer.
+    // !!! Revist this in the context of CBL-1718
+    public void closeDb() throws LiteCoreException { close(getPeer()); }
+
+    public void deleteDb() throws LiteCoreException { delete(getPeer()); }
 
     public void rekey(int keyType, byte[] newKey) throws LiteCoreException { rekey(getPeer(), keyType, newKey); }
 
@@ -151,29 +146,13 @@ public abstract class C4Database extends C4NativePeer {
 
     public long getDocumentCount() { return getDocumentCount(getPeer()); }
 
-    @VisibleForTesting
-    public long getLastSequence() { return getLastSequence(getPeer()); }
-
     public long nextDocExpiration() { return nextDocExpiration(getPeer()); }
 
     public long purgeExpiredDocs() { return purgeExpiredDocs(getPeer()); }
 
     public void purgeDoc(String docID) throws LiteCoreException { purgeDoc(getPeer(), docID); }
 
-    @VisibleForTesting
-    public int getMaxRevTreeDepth() { return getMaxRevTreeDepth(getPeer()); }
-
-    @VisibleForTesting
-    public void setMaxRevTreeDepth(int maxRevTreeDepth) { setMaxRevTreeDepth(getPeer(), maxRevTreeDepth); }
-
     public byte[] getPublicUUID() throws LiteCoreException { return getPublicUUID(getPeer()); }
-
-    @VisibleForTesting
-    public byte[] getPrivateUUID() throws LiteCoreException { return getPrivateUUID(getPeer()); }
-
-    // - Compaction
-
-    public void compact() throws LiteCoreException { compact(getPeer()); }
 
     // - Transactions
 
@@ -189,29 +168,11 @@ public abstract class C4Database extends C4NativePeer {
         return FLEncoder.getUnmanagedEncoder(getSharedFleeceEncoder(getPeer()));
     }
 
-    // ??? Should the param be String instead of byte[]?
-    @VisibleForTesting
-    public FLSliceResult encodeJSON(byte[] jsonData) throws LiteCoreException {
-        return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), jsonData));
-    }
-
-    public final FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
-
     ////////////////////////////////
     // C4Document
     ////////////////////////////////
 
     public C4Document get(String docID) throws LiteCoreException { return new C4Document(getPeer(), docID, true); }
-
-    @VisibleForTesting
-    public C4Document get(String docID, boolean mustExist) throws LiteCoreException {
-        return new C4Document(getPeer(), docID, mustExist);
-    }
-
-    @VisibleForTesting
-    public C4Document getBySequence(long sequence) throws LiteCoreException {
-        return new C4Document(getPeer(), sequence);
-    }
 
     // - Purging and Expiration
 
@@ -221,63 +182,6 @@ public abstract class C4Database extends C4NativePeer {
 
     public long getExpiration(String docID) throws LiteCoreException {
         return C4Document.getExpiration(getPeer(), docID);
-    }
-
-    // - Creating and Updating Documents
-
-    public C4Document put(
-        byte[] body,
-        String docID,
-        int revFlags,
-        boolean existingRevision,
-        boolean allowConflict,
-        String[] history,
-        boolean save,
-        int maxRevTreeDepth,
-        int remoteDBID)
-        throws LiteCoreException {
-        return new C4Document(C4Document.put(
-            getPeer(),
-            body,
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID));
-    }
-
-    @VisibleForTesting
-    public C4Document put(
-        FLSliceResult body, // C4Slice*
-        String docID,
-        int revFlags,
-        boolean existingRevision,
-        boolean allowConflict,
-        String[] history,
-        boolean save,
-        int maxRevTreeDepth,
-        int remoteDBID)
-        throws LiteCoreException {
-        return new C4Document(C4Document.put2(
-            getPeer(),
-            body.getHandle(),
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID));
-    }
-
-    @VisibleForTesting
-    @NonNull
-    public C4Document create(String docID, byte[] body, int revisionFlags) throws LiteCoreException {
-        return new C4Document(C4Document.create(getPeer(), docID, body, revisionFlags));
     }
 
     @NonNull
@@ -399,6 +303,7 @@ public abstract class C4Database extends C4NativePeer {
             replicatorContext);
     }
 
+    @NonNull
     public C4Replicator createTargetReplicator(
         @NonNull C4Socket openSocket,
         int push,
@@ -430,6 +335,11 @@ public abstract class C4Database extends C4NativePeer {
         return getCookies(getPeer(), uri.toString());
     }
 
+    @VisibleForTesting
+    public C4Document get(String docID, boolean mustExist) throws LiteCoreException {
+        return new C4Document(getPeer(), docID, mustExist);
+    }
+
     //-------------------------------------------------------------------------
     // package access
     //-------------------------------------------------------------------------
@@ -437,20 +347,100 @@ public abstract class C4Database extends C4NativePeer {
     // !!!  Exposes the peer handle
     long getHandle() { return getPeer(); }
 
+    @VisibleForTesting
+    C4Document create(String docID, byte[] body, int revisionFlags) throws LiteCoreException {
+        return new C4Document(C4Document.create(getPeer(), docID, body, revisionFlags));
+    }
+
+    @VisibleForTesting
+    void compact() throws LiteCoreException { compact(getPeer()); }
+
+    @VisibleForTesting
+    long getLastSequence() { return getLastSequence(getPeer()); }
+
+    @VisibleForTesting
+    int getMaxRevTreeDepth() { return getMaxRevTreeDepth(getPeer()); }
+
+    @VisibleForTesting
+    void setMaxRevTreeDepth(int maxRevTreeDepth) { setMaxRevTreeDepth(getPeer(), maxRevTreeDepth); }
+
+    @VisibleForTesting
+    byte[] getPrivateUUID() throws LiteCoreException { return getPrivateUUID(getPeer()); }
+
+    @VisibleForTesting
+    FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
+
+    // ???     @VisibleForTesting
+    FLSliceResult encodeJSON(String data) throws LiteCoreException {
+        return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @VisibleForTesting
+    C4Document getBySequence(long sequence) throws LiteCoreException { return new C4Document(getPeer(), sequence); }
+
+    @VisibleForTesting
+    public C4Document put(
+        byte[] body,
+        String docID,
+        int revFlags,
+        boolean existingRevision,
+        boolean allowConflict,
+        String[] history,
+        boolean save,
+        int maxRevTreeDepth,
+        int remoteDBID)
+        throws LiteCoreException {
+        return new C4Document(C4Document.put(
+            getPeer(),
+            body,
+            docID,
+            revFlags,
+            existingRevision,
+            allowConflict,
+            history,
+            save,
+            maxRevTreeDepth,
+            remoteDBID));
+    }
+
+    @VisibleForTesting
+    C4Document put(
+        FLSliceResult body, // C4Slice*
+        String docID,
+        int revFlags,
+        boolean existingRevision,
+        boolean allowConflict,
+        String[] history,
+        boolean save,
+        int maxRevTreeDepth,
+        int remoteDBID)
+        throws LiteCoreException {
+        return new C4Document(C4Document.put2(
+            getPeer(),
+            body.getHandle(),
+            docID,
+            revFlags,
+            existingRevision,
+            allowConflict,
+            history,
+            save,
+            maxRevTreeDepth,
+            remoteDBID));
+    }
+
+    @VisibleForTesting
+    void rawPut(String storeName, String key, String meta, byte[] body) throws LiteCoreException {
+        rawPut(getPeer(), storeName, key, meta, body);
+    }
+
+    @VisibleForTesting
+    C4RawDocument rawGet(String storeName, String docID) throws LiteCoreException {
+        return new C4RawDocument(rawGet(getPeer(), storeName, docID));
+    }
+
     //-------------------------------------------------------------------------
     // Native methods
     //-------------------------------------------------------------------------
-    @VisibleForTesting
-    static native long rawGet(long db, String storeName, String docID) throws LiteCoreException;
-
-    @VisibleForTesting
-    static native void rawPut(
-        long db,
-        String storeName,
-        String key,
-        String meta,
-        byte[] body)
-        throws LiteCoreException;
 
     // - Lifecycle
     static native long open(
@@ -463,6 +453,16 @@ public abstract class C4Database extends C4NativePeer {
         throws LiteCoreException;
 
     static native void free(long db);
+
+    private static native long rawGet(long db, String storeName, String docID) throws LiteCoreException;
+
+    private static native void rawPut(
+        long db,
+        String storeName,
+        String key,
+        String meta,
+        byte[] body)
+        throws LiteCoreException;
 
     private static native void copy(
         String sourcePath,

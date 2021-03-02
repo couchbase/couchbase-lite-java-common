@@ -708,7 +708,7 @@ abstract class AbstractDatabase {
     public void close() throws CouchbaseLiteException {
         Log.v(DOMAIN, "Closing %s at path %s", this, path);
         if (!isOpen()) { return; }
-        shutdown(C4Database::shut);
+        shutdown(C4Database::closeDb);
     }
 
     /**
@@ -720,7 +720,7 @@ abstract class AbstractDatabase {
      */
     public void delete() throws CouchbaseLiteException {
         Log.v(DOMAIN, "Deleting %s at path %s", this, path);
-        shutdown(C4Database::delete);
+        shutdown(C4Database::deleteDb);
     }
 
 

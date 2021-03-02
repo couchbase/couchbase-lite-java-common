@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.NonNull;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -63,20 +65,13 @@ public class C4BaseTest extends PlatformBaseTest {
     public static final String REV_ID_2 = "2-c001d00d";
     public static final String REV_ID_3 = "3-deadbeef";
 
-
-    private static final List<String> SCRATCH_DIRS = new ArrayList<>();
-
     @BeforeClass
     public static void setUpC4BaseTestSuite() { BaseTest.setUpPlatformSuite(); }
 
     // This trickery is necessary because deleting a scratch directory
     // while logging can cause core to hang rolling non-existent files.
     @AfterClass
-    public static void tearDownC4BaseTestSuite() {
-        Report.log(LogLevel.INFO, "Deleting c4DB directories: " + SCRATCH_DIRS.size());
-        for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
-        BaseTest.tearDownBaseTestSuite();
-    }
+    public static void tearDownC4BaseTestSuite() { BaseTest.tearDownBaseTestSuite(); }
 
 
     protected C4Database c4Database;
@@ -101,16 +96,14 @@ public class C4BaseTest extends PlatformBaseTest {
 
         setupPlatform();
 
-        final String tmpDirName = StringUtils.getUniqueName("c4_test", 8);
+        final String tmpDirName = getUniqueName("c4_test");
         try {
             String tmpDir = getScratchDirectoryPath(tmpDirName);
-            SCRATCH_DIRS.add(tmpDir);
             C4.setenv("TMPDIR", tmpDir, 1);
 
             rootDir = new File(CouchbaseLiteInternal.getRootDir(), tmpDirName);
-            SCRATCH_DIRS.add(rootDir.getCanonicalPath());
 
-            dbName = StringUtils.getUniqueName("c4-test-db", 8);
+            dbName = getUniqueName("c4-test-db");
             dbDirPath = new File(rootDir, dbName).getCanonicalPath();
             if (!rootDir.mkdirs()) { throw new IOException("Can't create directory: " + rootDir); }
 
@@ -128,6 +121,7 @@ public class C4BaseTest extends PlatformBaseTest {
         }
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
+
         Report.log(LogLevel.INFO, "==== C4 Test initialized: " + testName);
     }
 
@@ -136,16 +130,19 @@ public class C4BaseTest extends PlatformBaseTest {
         final C4Database db = c4Database;
         c4Database = null;
         if (db != null) {
-            try { db.shut(); }
+            try { db.closeDb(); }
             catch (LiteCoreException e) { throw new IllegalStateException("Failed closing db", e); }
             finally { db.close(); }
         }
+
+        FileUtils.eraseFileOrDir(rootDir);
+
         Report.log(LogLevel.INFO, "<<<<<<<<<<<< C4 Test completed: " + testName);
     }
 
-    ////////////////////////////////
-    // C4DocEnumerator
-    ////////////////////////////////
+    protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
+
+    protected String getScratchDirectoryPath(@NonNull String name) { return BaseTest.getScratchDirPath(name); }
 
     protected C4DocEnumerator enumerateChanges(C4Database db, long since, int flags) throws LiteCoreException {
         return new C4DocEnumerator(db.getPeer(), since, flags);
@@ -219,7 +216,7 @@ public class C4BaseTest extends PlatformBaseTest {
     protected byte[] json2fleece(String json) throws LiteCoreException {
         boolean commit = false;
         c4Database.beginTransaction();
-        try (FLSliceResult body = c4Database.encodeJSON(json5(json).getBytes(StandardCharsets.UTF_8))) {
+        try (FLSliceResult body = c4Database.encodeJSON(json5(json))) {
             byte[] bytes = body.getBuf();
             commit = true;
             return bytes;
@@ -294,7 +291,7 @@ public class C4BaseTest extends PlatformBaseTest {
             try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
                 String line;
                 while ((line = br.readLine()) != null) {
-                    try (FLSliceResult body = c4Database.encodeJSON(line.getBytes(StandardCharsets.UTF_8))) {
+                    try (FLSliceResult body = c4Database.encodeJSON(line)) {
                         String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
 
                         try (C4Document doc = c4Database.put(body, docID, 0, false, false, new String[0], true, 0, 0)) {
@@ -340,7 +337,7 @@ public class C4BaseTest extends PlatformBaseTest {
 
     private void closeC4Database() throws LiteCoreException {
         if (c4Database != null) {
-            c4Database.shut();
+            c4Database.closeDb();
             c4Database.close();
             c4Database = null;
         }
