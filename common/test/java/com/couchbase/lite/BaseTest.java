@@ -56,14 +56,14 @@ public abstract class BaseTest extends PlatformBaseTest {
     protected ExecutionService.CloseableExecutor testSerialExecutor;
 
     @BeforeClass
-    public static void setUpPlatformSuite() { Report.log(LogLevel.INFO, ">>>>>>>>>>>>>>>>>>>>>> Suite started"); }
+    public static void setUpPlatformSuite() { Report.log(LogLevel.INFO, ">>>>>>>>>>>> Suite started"); }
 
     @AfterClass
     public static void tearDownBaseTestSuite() {
         for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
         SCRATCH_DIRS.clear();
 
-        Report.log(LogLevel.INFO, "<<<<<<<<<<<<<<<<<<<<<< Suite completed");
+        Report.log(LogLevel.INFO, "<<<<<<<<<<<< Suite completed");
     }
 
     public static String getScratchDirPath(@NonNull String name) {
@@ -88,7 +88,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @Before
     public final void setUpBaseTest() {
-        Report.log(LogLevel.INFO, ">>>>>>>>>>>>> Test started: " + testName);
+        Report.log(LogLevel.INFO, ">>>>>>>> Test started: " + testName);
         Log.initLogging();
 
         setupPlatform();
@@ -102,11 +102,12 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @After
     public final void tearDownBaseTest() {
+        Report.log(LogLevel.INFO, "==== Test cleanup: " + testName);
         Report.log(LogLevel.INFO, "Stopping executor: " + testSerialExecutor);
         boolean succeeded = false;
         if (testSerialExecutor != null) { succeeded = testSerialExecutor.stop(2, TimeUnit.SECONDS); }
         Report.log(LogLevel.INFO, "Executor stopped: " + succeeded);
-        Report.log(LogLevel.INFO, "<<<<<<<<<<<< Test completed: " + testName);
+        Report.log(LogLevel.INFO, "<<<<<<<< Test completed: " + testName);
     }
 
     protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }

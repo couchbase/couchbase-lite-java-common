@@ -15,20 +15,35 @@
 //
 package com.couchbase.lite;
 
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.Report;
 
 
 public class PreInitTest extends PlatformBaseTest {
 
     @BeforeClass
-    public static void setUpPreInitTestClass() { CouchbaseLiteInternal.reset(false); }
+    public static void setUpPreInitTestSuite() {
+        BaseTest.setUpPlatformSuite();
+        CouchbaseLiteInternal.reset(false);
+    }
 
     @AfterClass
-    public static void tearDownPreInitTest() { CouchbaseLiteInternal.reset(true); }
+    public static void tearDownPreInitSuite() {
+        BaseTest.tearDownBaseTestSuite();
+        CouchbaseLiteInternal.reset(true);
+    }
+
+    @Before
+    public void setUpExecutionServiceTest() { Report.log(LogLevel.INFO, ">>>>>>>> Pre-init Test started"); }
+
+    @After
+    public void cleanUpExecutionServiceTest() { Report.log(LogLevel.INFO, "<<<<<<<< Pre-init Test completed"); }
 
     @Test(expected = IllegalStateException.class)
     public void testCreateDatabaseBeforeInit() throws CouchbaseLiteException {

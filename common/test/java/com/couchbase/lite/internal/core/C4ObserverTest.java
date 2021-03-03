@@ -142,7 +142,6 @@ public class C4ObserverTest extends C4BaseTest {
         assertEquals(2, dbCallbackCalls.get());
 
         otherdb.closeDb();
-        otherdb.close();
     }
 
     // - Multi-DBObservers

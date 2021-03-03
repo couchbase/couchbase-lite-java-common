@@ -509,7 +509,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_free(
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    start
- * Signature: (J)V
+ * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass ignore, jlong repl, jboolean restart) {
@@ -527,7 +527,11 @@ Java_com_couchbase_lite_internal_core_C4Replicator_stop(JNIEnv *env, jclass igno
 }
 
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_setOptions(JNIEnv *env, jclass clazz, jlong repl, jbyteArray joptions) {
+Java_com_couchbase_lite_internal_core_C4Replicator_setOptions(
+        JNIEnv *env,
+        jclass clazz,
+        jlong repl,
+        jbyteArray joptions) {
     jbyteArraySlice options(env, joptions, false);
     c4repl_setOptions((C4Replicator *) repl, options);
 }
@@ -546,7 +550,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    getPendingDocIDs
- * Signature: (J)Ljava/lang/Object;
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds(JNIEnv *env, jclass ignore, jlong repl) {
@@ -571,7 +575,11 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds(JNIEnv *env,
  * Signature: (JLjava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending(JNIEnv *env, jclass ignore, jlong repl, jstring jDocId) {
+Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending(
+        JNIEnv *env,
+        jclass ignore,
+        jlong repl,
+        jstring jDocId) {
     jstringSlice docId(env, jDocId);
 
     C4Error c4Error = {};
@@ -585,11 +593,31 @@ Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending(JNIEnv *env
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
- * Method:    setHostReachable
- * Signature: (JZ)Z
+ * Method:    setProgressLevel
+ * Signature: (JI)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_setHostReachable(JNIEnv *env, jclass ignore, jlong repl, jboolean reachable) {
+Java_com_couchbase_lite_internal_core_C4Replicator_setProgressLevel(
+        JNIEnv *env,
+        jclass ignore,
+        jlong repl,
+        jint level) {
+    C4Error c4Error = {};
+    if (!c4repl_setProgressLevel((C4Replicator *) repl, (C4ReplicatorProgressLevel) level, &c4Error))
+        throwError(env, c4Error);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Method:    setHostReachable
+ * Signature: (JZ)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Replicator_setHostReachable(
+        JNIEnv *env,
+        jclass ignore,
+        jlong repl,
+        jboolean reachable) {
     c4repl_setHostReachable((C4Replicator *) repl, (bool) reachable);
 }
 }

@@ -457,6 +457,8 @@ public class C4Replicator extends C4NativePeer {
         }
     }
 
+    public void setProgressLevel(int level) throws LiteCoreException { setProgressLevel(getPeer(), level); }
+
     public void setHostReachable(boolean reachable) { setHostReachable(getPeer(), reachable); }
 
     @NonNull

@@ -68,8 +68,6 @@ public class C4BaseTest extends PlatformBaseTest {
     @BeforeClass
     public static void setUpC4BaseTestSuite() { BaseTest.setUpPlatformSuite(); }
 
-    // This trickery is necessary because deleting a scratch directory
-    // while logging can cause core to hang rolling non-existent files.
     @AfterClass
     public static void tearDownC4BaseTestSuite() { BaseTest.tearDownBaseTestSuite(); }
 
@@ -91,7 +89,7 @@ public class C4BaseTest extends PlatformBaseTest {
 
     @Before
     public final void setUpC4BaseTest() throws CouchbaseLiteException {
-        Report.log(LogLevel.INFO, ">>>>>>>>>>>>> C4 Test started: " + testName);
+        Report.log(LogLevel.INFO, ">>>>>>>> C4 Test started: " + testName);
         Log.initLogging();
 
         setupPlatform();
@@ -126,18 +124,15 @@ public class C4BaseTest extends PlatformBaseTest {
     }
 
     @After
-    public final void tearDownC4BaseTest() {
+    public final void tearDownC4BaseTest() throws LiteCoreException {
+        Report.log(LogLevel.INFO, "==== C4 Test cleanup: " + testName);
         final C4Database db = c4Database;
         c4Database = null;
-        if (db != null) {
-            try { db.closeDb(); }
-            catch (LiteCoreException e) { throw new IllegalStateException("Failed closing db", e); }
-            finally { db.close(); }
-        }
+        if (db != null) { db.closeDb(); }
 
         FileUtils.eraseFileOrDir(rootDir);
 
-        Report.log(LogLevel.INFO, "<<<<<<<<<<<< C4 Test completed: " + testName);
+        Report.log(LogLevel.INFO, "<<<<<<<< C4 Test completed: " + testName);
     }
 
     protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
@@ -252,9 +247,7 @@ public class C4BaseTest extends PlatformBaseTest {
             revIDs.add(revID);
             if (curDoc.getRevID() != null) { revIDs.add(curDoc.getRevID()); }
             String[] history = revIDs.toArray(new String[0]);
-            C4Document doc = db.put(body, docID, flags,
-                true, false, history, true,
-                0, 0);
+            C4Document doc = db.put(body, docID, flags, true, false, history, true, 0, 0);
             assertNotNull(doc);
             doc.close();
             curDoc.close();
@@ -338,7 +331,6 @@ public class C4BaseTest extends PlatformBaseTest {
     private void closeC4Database() throws LiteCoreException {
         if (c4Database != null) {
             c4Database.closeDb();
-            c4Database.close();
             c4Database = null;
         }
     }

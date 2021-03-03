@@ -15,28 +15,36 @@
 //
 package com.couchbase.lite.internal
 
+import com.couchbase.lite.BaseTest
 import com.couchbase.lite.LogDomain
+import com.couchbase.lite.LogLevel
 import com.couchbase.lite.PlatformBaseTest
 import com.couchbase.lite.internal.support.Log
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
-import org.junit.Before
-import org.junit.Test
-import java.util.Stack
-import java.util.concurrent.ArrayBlockingQueue
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executor
-import java.util.concurrent.RejectedExecutionException
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
+import com.couchbase.lite.internal.utils.Report
+import org.junit.*
+import org.junit.Assert.*
+import java.util.*
+import java.util.concurrent.*
 
 private const val TIMEOUT_SEC = 5L
 private const val CAPACITY = AbstractExecutionService.MIN_CAPACITY * 2
 private const val THREADS = 3
 
 class ExecutionServiceTest : PlatformBaseTest() {
+    companion object {
+        @JvmStatic
+        @BeforeClass
+        fun setUpC4BaseTestSuite() {
+            BaseTest.setUpPlatformSuite()
+        }
+
+        @JvmStatic
+        @AfterClass
+        fun tearDownC4BaseTestSuite() {
+            BaseTest.tearDownBaseTestSuite()
+        }
+    }
+
     private val queue = ArrayBlockingQueue<Runnable>(CAPACITY)
 
     private val baseExecutor = ThreadPoolExecutor(THREADS, THREADS, 5, TimeUnit.SECONDS, queue)
@@ -63,9 +71,15 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
     @Before
     fun setUpExecutionServiceTest() {
+        Report.log(LogLevel.INFO, ">>>>>>>>>>>>> ExecutionService Test started")
         cblService = CouchbaseLiteInternal.getExecutionService()
     }
 
+    @After
+    fun cleanUpExecutionServiceTest() {
+        cblService = CouchbaseLiteInternal.getExecutionService()
+        Report.log(LogLevel.INFO, "<<<<<<<<<<<< ExecutionService Testcompleted")
+    }
 
     // Serial Executor tests
 
@@ -499,7 +513,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         cblService.postDelayedOnExecutor(
             delay,
             executor,
-            Runnable {
+            {
                 t = System.currentTimeMillis() - t
                 threads[1] = Thread.currentThread()
                 finishLatch.countDown()
@@ -525,7 +539,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         val task = cblService.postDelayedOnExecutor(
             100,
             baseService.concurrentExecutor,
-            Runnable { completed[0] = true })
+            { completed[0] = true })
 
         cblService.cancelDelayedTask(task)
 

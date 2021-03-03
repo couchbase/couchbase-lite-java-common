@@ -173,7 +173,6 @@ public class C4DatabaseTest extends C4BaseTest {
 
         assertNotNull(bundle);
         bundle.closeDb();
-        bundle.close();
 
         // Reopen without 'create' flag:
         flags &= ~C4Constants.DatabaseFlags.CREATE;
@@ -186,7 +185,6 @@ public class C4DatabaseTest extends C4BaseTest {
             encryptionKey());
         assertNotNull(bundle);
         bundle.closeDb();
-        bundle.close();
 
         FileUtils.eraseFileOrDir(bundlePath);
 
