@@ -233,23 +233,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
     }
 
-
-    /**
-     * An enum representing level of opt in on progress of replication
-     * OVERALL: No additional replication progress callback
-     * PER_DOCUMENT: >=1 Every document replication ended callback
-     * PER_ATTACHMENT: >=2 Every blob replication progress callback
-     */
-    enum ReplicatorProgressLevel {
-        OVERALL(0),
-        PER_DOCUMENT(1),
-        PER_ATTACHMENT(2);
-
-        private final int value;
-
-        ReplicatorProgressLevel(int value) { this.value = value; }
-    }
-
     // just queue everything up for in-order processing.
     static final class ReplicatorListener implements C4ReplicatorListener {
         private final Executor dispatcher;
@@ -341,9 +324,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @GuardedBy("lock")
     @NonNull
     private Status status = new Status(ActivityLevel.STOPPED, new Progress(0, 0), null);
-    @GuardedBy("lock")
-    @NonNull
-    private ReplicatorProgressLevel progressLevel = ReplicatorProgressLevel.OVERALL;
 
     @GuardedBy("lock")
     private C4ReplicationFilter c4ReplPushFilter;
@@ -372,7 +352,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     /**
      * Start the replicator.
-     * This method honors the flag set by the deprecated method <code>resetCheckpoint()</code>.
      */
     public void start() { start(false); }
 
@@ -523,31 +502,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
         synchronized (getLock()) {
             final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
             changeListenerTokens.add(token);
+            setProgressLevel();
             return token;
-        }
-    }
-
-    /**
-     * Remove the given ReplicatorChangeListener or DocumentReplicationListener from the this replicator.
-     *
-     * @param token returned by a previous call to addChangeListener or addDocumentListener.
-     */
-    public void removeChangeListener(@NonNull ListenerToken token) {
-        Preconditions.assertNotNull(token, "token");
-
-        synchronized (getLock()) {
-            if (token instanceof ReplicatorChangeListenerToken) {
-                changeListenerTokens.remove(token);
-                return;
-            }
-
-            if (token instanceof DocumentReplicationListenerToken) {
-                docEndedListenerTokens.remove(token);
-                if (docEndedListenerTokens.isEmpty()) { progressLevel = ReplicatorProgressLevel.OVERALL; }
-                return;
-            }
-
-            throw new IllegalArgumentException("unexpected token: " + token);
         }
     }
 
@@ -581,10 +537,25 @@ public abstract class AbstractReplicator extends InternalReplicator {
         @NonNull DocumentReplicationListener listener) {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (getLock()) {
-            progressLevel = ReplicatorProgressLevel.PER_DOCUMENT;
             final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
             docEndedListenerTokens.add(token);
+            setProgressLevel();
             return token;
+        }
+    }
+
+    /**
+     * Remove the given ReplicatorChangeListener or DocumentReplicationListener from the this replicator.
+     *
+     * @param token returned by a previous call to addChangeListener or addDocumentListener.
+     */
+    public void removeChangeListener(@NonNull ListenerToken token) {
+        Preconditions.assertNotNull(token, "token");
+        synchronized (getLock()) {
+            if (token instanceof ReplicatorChangeListenerToken) { changeListenerTokens.remove(token); }
+            else if (token instanceof DocumentReplicationListenerToken) { docEndedListenerTokens.remove(token); }
+            else { throw new IllegalArgumentException("unexpected token: " + token); }
+            setProgressLevel();
         }
     }
 
@@ -813,13 +784,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
             setupFilters();
             try {
                 c4Repl = createReplicatorForTarget(config.getTarget());
-                setC4Replicator(c4Repl);
+                synchronized (getLock()) {
+                    setC4Replicator(c4Repl);
+                    setProgressLevel();
+                }
+                return c4Repl;
             }
             catch (LiteCoreException e) {
                 throw new IllegalStateException("Could not create replicator", CBLStatus.convertException(e));
             }
-
-            return c4Repl;
         }
     }
 
@@ -860,7 +833,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     private byte[] getFleeceOptions() {
         final Map<String, Object> options = config.effectiveOptions();
-        synchronized (getLock()) { options.put(C4Replicator.REPLICATOR_OPTION_PROGRESS_LEVEL, progressLevel.value); }
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {
@@ -914,6 +886,21 @@ public abstract class AbstractReplicator extends InternalReplicator {
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
         return (filter != null) && filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
+    }
+
+    @GuardedBy("getLock()")
+    private void setProgressLevel() {
+        final C4Replicator c4Repl = getC4Replicator();
+        if (c4Repl == null) { return; }
+
+        try {
+            c4Repl.setProgressLevel(!docEndedListenerTokens.isEmpty()
+                ? C4Replicator.PROGRESS_PER_DOC
+                : C4Replicator.PROGRESS_OVERALL);
+        }
+        catch (LiteCoreException e) {
+            Log.w(LogDomain.REPLICATOR, "failed setting progress level");
+        }
     }
 
     private Database getDatabase() { return config.getDatabase(); }

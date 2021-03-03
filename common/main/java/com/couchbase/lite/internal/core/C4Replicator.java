@@ -117,6 +117,10 @@ public class C4Replicator extends C4NativePeer {
     public static final String AUTH_TYPE_CLIENT_CERT = "Client Cert";
     // @formatter:on
 
+    // values for enum C4ReplicatorProgressLevel
+    public static final int PROGRESS_OVERALL = 0;
+    public static final int PROGRESS_PER_DOC = 1;
+    public static final int PROGRESS_PER_ATTACHMENT = 2;
 
     //-------------------------------------------------------------------------
     // Static Variables
@@ -578,6 +582,11 @@ public class C4Replicator extends C4NativePeer {
      * Returns true if there are documents that have not been resolved.
      */
     private static native boolean isDocumentPending(long peer, String id) throws LiteCoreException;
+
+    /**
+     * Set the core progress callback level.
+     */
+    private static native void setProgressLevel(long peer, int progressLevel) throws LiteCoreException;
 
     /**
      * Hint to core about the reachability of the target of this replicator.
