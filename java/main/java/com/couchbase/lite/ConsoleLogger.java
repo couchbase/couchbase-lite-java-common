@@ -28,7 +28,7 @@ import java.util.Collections;
  */
 public class ConsoleLogger extends AbstractConsoleLogger {
     private static final String LOG_TAG = "/CouchbaseLite/";
-    private static final int THREAD_FIELD_LEN = 5;
+    private static final int THREAD_FIELD_LEN = 7;
     private static final String THREAD_FIELD_PAD = String.join("", Collections.nCopies(THREAD_FIELD_LEN, " "));
     private static final ThreadLocal<DateTimeFormatter> TS_FORMAT
         = ThreadLocal.withInitial(() -> DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS"));
