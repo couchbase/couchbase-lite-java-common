@@ -115,7 +115,7 @@ public abstract class C4Socket extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void requestClose(long peer, int status, @Nullable String message) {
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.requestClose @%x: %s, (%d) %s", peer, socket, status, message);
+        Log.d(LOG_DOMAIN, "C4Socket.requestClose @%x: %s, (%d) '%s'", peer, socket, status, message);
         if (socket != null) { socket.requestClose(status, message); }
     }
 
@@ -253,7 +253,7 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { closeRequested(peer, status, message); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.closeRequested @%x: (%d)%s", peer, status, message);
+        Log.d(LOG_DOMAIN, "C4Socket.closeRequested @%x: (%d) '%s'", peer, status, message);
     }
 
     protected final void closed(int errorDomain, int errorCode, String message) {
@@ -284,7 +284,7 @@ public abstract class C4Socket extends C4NativePeer {
             if (!closing && (peer != 0)) { closed(peer, domain, code, msg); }
             closing = true;
         }
-        Log.d(LOG_DOMAIN, "C4Socket.closed @%x: (%d.%d)%s", peer, domain, code, msg);
+        Log.d(LOG_DOMAIN, "C4Socket.closed @%x: (%d,%d) '%s'", peer, domain, code, msg);
     }
 
     //-------------------------------------------------------------------------

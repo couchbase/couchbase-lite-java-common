@@ -413,7 +413,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     protected final void requestClose(int code, String message) {
         Log.v(TAG, "%s#Core request close: %d", this, code);
         synchronized (getLock()) {
-            if (!state.setState(State.CLOSING)) { return; }
+            if (!state.setState(State.CLOSE_REQUESTED)) { return; }
             closeWebSocket(code, message);
         }
     }

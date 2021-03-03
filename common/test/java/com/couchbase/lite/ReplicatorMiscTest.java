@@ -19,6 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -78,14 +79,20 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStopBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)).stop();
+        testReplicator(makeConfig(
+            new URLEndpoint(new URI("wss://foo")),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH, false))
+            .stop();
     }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStatusBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)).getStatus();
+        testReplicator(makeConfig(
+            new URLEndpoint(new URI("wss://foo")),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH, false))
+            .getStatus();
     }
 
     @Test
@@ -131,19 +138,20 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testCustomHeartbeat() throws URISyntaxException {
-        final ReplicatorConfiguration config = makeConfig(new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)
+        final ReplicatorConfiguration config = makeConfig(
+            new URLEndpoint(new URI("wss://foo")),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)
             .setHeartbeat(67L);
 
         Replicator repl = testReplicator(config);
 
-        final AtomicReference<C4Socket> socketRef = new AtomicReference<>();
-        repl.getSocketFactory().setListener(socketRef::set);
+        final AtomicInteger heartbeat = new AtomicInteger();
+        repl.getSocketFactory().setListener(sf ->
+            heartbeat.compareAndSet(0, ((AbstractCBLWebSocket) sf).getOkHttpSocketFactory().pingIntervalMillis()));
         try { run(repl); }
         catch (CouchbaseLiteException ignore) { }
 
-        assertEquals(
-            config.getHeartbeat() * 1000,
-            ((AbstractCBLWebSocket) socketRef.get()).getOkHttpSocketFactory().pingIntervalMillis());
+        assertEquals(config.getHeartbeat() * 1000, heartbeat.get());
     }
 
     @Test
@@ -165,8 +173,10 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // CBL-1218
     @Test
     public void testStartReplicatorWithClosedDb() throws URISyntaxException {
-        Replicator replicator = testReplicator(
-            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, false, null, null));
+        Replicator replicator = testReplicator(makeConfig(
+            baseTestDb,
+            new URLEndpoint(new URI("wss://foo")),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, false, null, null));
 
         closeDb(baseTestDb);
 
@@ -179,8 +189,13 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // CBL-1218
     @Test
     public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
-        Replicator replicator = testReplicator(
-            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, false, null, null));
+        Replicator replicator = testReplicator(makeConfig(
+            baseTestDb,
+            new URLEndpoint(new URI("wss://foo")),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL,
+            false,
+            null,
+            null));
 
         closeDb(baseTestDb);
 
@@ -197,7 +212,13 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         otherDB.save(doc);
 
         Replicator replicator = testReplicator(
-            makeConfig(baseTestDb, new URLEndpoint(new URI("wss://foo")), AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, false, null, null));
+            makeConfig(
+                baseTestDb,
+                new URLEndpoint(new URI("wss://foo")),
+                AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL,
+                false,
+                null,
+                null));
 
         closeDb(baseTestDb);
 

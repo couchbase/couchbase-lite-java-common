@@ -55,7 +55,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     private static LogFileConfiguration logConfig;
 
-    static { CouchbaseLite.init(); }
+    static { CouchbaseLite.init(true); }
 
 
     // set up the file logger...

@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
+
 
 /**
  * A class for sending log messages to standard output stream.
@@ -35,7 +37,9 @@ public class ConsoleLogger extends AbstractConsoleLogger {
 
 
     public static PrintStream getLogStream(@NonNull LogLevel level) {
-        return ((level == LogLevel.WARNING) || (level == LogLevel.ERROR)) ? System.err : System.out;
+        return ((CouchbaseLiteInternal.isDebugging()) || (LogLevel.WARNING.compareTo(level) > 0))
+            ? System.out
+            : System.err;
     }
 
     public static String formatLog(@NonNull LogLevel level, @NonNull String domain, @NonNull String message) {

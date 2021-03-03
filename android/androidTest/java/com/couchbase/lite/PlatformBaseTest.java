@@ -46,7 +46,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext()); }
+    static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext(), true); }
     
     
     @Override

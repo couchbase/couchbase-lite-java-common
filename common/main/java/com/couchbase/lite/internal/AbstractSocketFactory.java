@@ -68,9 +68,7 @@ public abstract class AbstractSocketFactory {
             ? createCBLWebSocket(peer, scheme, host, port, path, opts)
             : createPlatformSocket(peer);
 
-        if (socket == null) {
-            throw new UnsupportedOperationException("Cannot create endpoint: " + endpoint.getClass());
-        }
+        if (socket == null) { throw new UnsupportedOperationException("Can't create endpoint: " + endpoint); }
 
         // Test instrumentation
         final Fn.Consumer<C4Socket> listener = getListener();
