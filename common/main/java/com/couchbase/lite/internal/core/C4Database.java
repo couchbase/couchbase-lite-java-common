@@ -127,15 +127,21 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Lifecycle
 
+    // The meaning of "close" changes at this level.
+    // C4Database is AutoCloseable: this call frees it.
+    // Database is not AutoCloseable.  In it, "close" means close the database.
     @Override
     public abstract void close();
 
-    // This method closes but does not free the native peer.
-    // The name "close" is reserved for the AutoClosable method, which *does* free the peer.
-    // !!! Revist this in the context of CBL-1718
-    public void closeDb() throws LiteCoreException { close(getPeer()); }
+     public void closeDb() throws LiteCoreException {
+         close(getPeer());
+         close();
+     }
 
-    public void deleteDb() throws LiteCoreException { delete(getPeer()); }
+    public void deleteDb() throws LiteCoreException {
+         delete(getPeer());
+         close();
+     }
 
     public void rekey(int keyType, byte[] newKey) throws LiteCoreException { rekey(getPeer(), keyType, newKey); }
 
@@ -163,7 +169,7 @@ public abstract class C4Database extends C4NativePeer {
     // c4Document+Fleece.h
 
     // - Fleece-related
-    // !!! This must be called holding both the document and the database locks
+    // This must be called holding both the document and the database locks!
     public FLEncoder getSharedFleeceEncoder() {
         return FLEncoder.getUnmanagedEncoder(getSharedFleeceEncoder(getPeer()));
     }
@@ -370,7 +376,7 @@ public abstract class C4Database extends C4NativePeer {
     @VisibleForTesting
     FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
 
-    // ???     @VisibleForTesting
+    @VisibleForTesting
     FLSliceResult encodeJSON(String data) throws LiteCoreException {
         return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8)));
     }
@@ -474,7 +480,6 @@ public abstract class C4Database extends C4NativePeer {
         byte[] encryptionKey)
         throws LiteCoreException;
 
-    // ??? this can go away?
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private static native void close(long db) throws LiteCoreException;
 
