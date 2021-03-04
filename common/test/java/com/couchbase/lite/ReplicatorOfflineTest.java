@@ -36,8 +36,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         }
 
         Endpoint target = getRemoteTargetEndpoint();
-        ReplicatorConfiguration config
-            = makeConfig(baseTestDb, target, AbstractReplicatorConfiguration.ReplicatorType.PULL, true);
+        ReplicatorConfiguration config = makeConfig(baseTestDb, target, Replicator.Type.PULL, true);
         Replicator repl = testReplicator(config);
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
@@ -62,9 +61,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         // this test crashes the test suite on Android <21
         if (handlePlatformSpecially("android<21")) { fail("Websockets not supported on Android v < 21"); }
 
-        Endpoint endpoint = getRemoteTargetEndpoint();
-        Replicator repl = testReplicator(
-            makeConfig(endpoint, AbstractReplicatorConfiguration.ReplicatorType.PUSH, false));
+        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false));
         final CountDownLatch stopped = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(
             testSerialExecutor,
@@ -79,10 +76,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddNullDocumentReplicationListener() throws URISyntaxException {
-        Replicator repl = testReplicator(makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
-            true));
+        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true));
 
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
         assertNotNull(token);
@@ -92,10 +86,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddNullDocumentReplicationListenerWithExecutor() throws URISyntaxException {
-        Replicator repl = testReplicator(makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
-            true));
+        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true));
 
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
         assertNotNull(token);
@@ -105,19 +96,12 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddNullChangeListener() throws Exception {
-        testReplicator(makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
-            true))
-            .addChangeListener(null);
+        testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true)).addChangeListener(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullChangeListenerWithExecutor() throws Exception {
-        testReplicator(makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
-            true))
+        testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true))
             .addChangeListener(testSerialExecutor, null);
     }
 }

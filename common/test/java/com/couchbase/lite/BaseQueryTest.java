@@ -24,9 +24,7 @@ import static org.junit.Assert.assertEquals;
 
 public abstract class BaseQueryTest extends BaseDbTest {
     @FunctionalInterface
-    public interface QueryResult {
-        void check(int n, Result result) throws CouchbaseLiteException;
-    }
+    public interface QueryResult { void check(int n, Result result); }
 
     protected final String createNumberedDocInBaseTestDb(int i, int num) throws CouchbaseLiteException {
         String docID = "doc" + i;
@@ -67,7 +65,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
         return counter1;
     }
 
-    private final int verifyQueryWithEnumerator(Query query, QueryResult queryResult) throws CouchbaseLiteException {
+    private int verifyQueryWithEnumerator(Query query, QueryResult queryResult) throws CouchbaseLiteException {
         int n = 0;
         ResultSet rs = query.execute();
         Result result;

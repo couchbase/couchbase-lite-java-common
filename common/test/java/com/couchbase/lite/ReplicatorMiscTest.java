@@ -52,9 +52,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalStateException.class)
     public void testEditReadOnlyConfiguration() throws Exception {
-        baseTestReplicator = testReplicator(makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH, true)
+        baseTestReplicator = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true)
             .setContinuous(false));
 
         baseTestReplicator.getConfig().setContinuous(true);
@@ -103,20 +101,14 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStopBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH, false))
-            .stop();
+        testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false)).stop();
     }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStatusBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH, false))
-            .getStatus();
+        testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false)).getStatus();
     }
 
     @Test
@@ -127,21 +119,19 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testSetIllegalHeartbeat() throws URISyntaxException {
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setHeartbeat(-47);
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(-47);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSetZeroHeartbeat() throws URISyntaxException {
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setHeartbeat(0);
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(0);
     }
 
     @Test
     public void testDefaultHeartbeat() throws URISyntaxException {
         // Don't use makeConfig: it sets heartbeat to 0
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PUSH)
+            .setType(Replicator.Type.PUSH)
             .setContinuous(false);
 
         final Replicator repl = testReplicator(config);
@@ -158,9 +148,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testCustomHeartbeat() throws URISyntaxException {
-        final ReplicatorConfiguration config = makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)
+        final ReplicatorConfiguration config = makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false)
             .setHeartbeat(67L);
 
         Replicator repl = testReplicator(config);
@@ -177,11 +165,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testStopWhileConnecting() throws URISyntaxException {
-        final ReplicatorConfiguration config = makeConfig(
-            getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
-            false);
-        Replicator repl = testReplicator(config);
+        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false));
 
         final CountDownLatch latch = new CountDownLatch(1);
         repl.addChangeListener(status -> {
@@ -223,7 +207,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         Replicator replicator = testReplicator(makeConfig(
             baseTestDb,
             getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL,
+            Replicator.Type.PUSH_AND_PULL,
             false,
             null,
             null));
@@ -239,7 +223,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         Replicator replicator = testReplicator(makeConfig(
             baseTestDb,
             getRemoteTargetEndpoint(),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL,
+            Replicator.Type.PUSH_AND_PULL,
             false,
             null,
             null));
@@ -259,7 +243,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             makeConfig(
                 baseTestDb,
                 getRemoteTargetEndpoint(),
-                AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL,
+                Replicator.Type.PUSH_AND_PULL,
                 false,
                 null,
                 null));

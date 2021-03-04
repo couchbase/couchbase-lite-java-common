@@ -72,6 +72,15 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
     /**
+     * The replication direction
+     * <p>
+     * PUSH_AND_PULL: Bidirectional; both push and pull
+     * PUSH: Pushing changes to the target
+     * PULL: Pulling changes from the target
+     */
+    public enum Type {PUSH_AND_PULL, PUSH, PULL}
+
+    /**
      * Activity level of a replicator.
      */
     public enum ActivityLevel {
@@ -157,7 +166,6 @@ public abstract class AbstractReplicator extends InternalReplicator {
             m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
             ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
         }
-
         private static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
             final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
             if (level != null) { return level; }
@@ -435,7 +443,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      */
     @NonNull
     public Set<String> getPendingDocumentIds() throws CouchbaseLiteException {
-        if (config.getReplicatorType().equals(ReplicatorConfiguration.ReplicatorType.PULL)) {
+        if (config.getType().equals(Type.PULL)) {
             throw new CouchbaseLiteException(
                 "PullOnlyPendingDocIDs",
                 CBLError.Domain.CBLITE,
@@ -460,7 +468,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     public boolean isDocumentPending(@NonNull String docId) throws CouchbaseLiteException {
         Preconditions.assertNotNull(docId, "document ID");
 
-        if (config.getReplicatorType().equals(ReplicatorConfiguration.ReplicatorType.PULL)) {
+        if (config.getType().equals(Type.PULL)) {
             throw new CouchbaseLiteException(
                 "PullOnlyPendingDocIDs",
                 CBLError.Domain.CBLITE,
@@ -905,8 +913,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
         try {
             c4Repl.setProgressLevel(
                 docEndedListeners.isEmpty()
-                ? C4Replicator.PROGRESS_OVERALL
-                : C4Replicator.PROGRESS_PER_DOC);
+                    ? C4Replicator.PROGRESS_OVERALL
+                    : C4Replicator.PROGRESS_PER_DOC);
         }
         catch (LiteCoreException e) {
             Log.w(LogDomain.REPLICATOR, "failed setting progress level");

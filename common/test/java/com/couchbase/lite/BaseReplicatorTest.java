@@ -70,14 +70,14 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
     protected final ReplicatorConfiguration makeConfig(
         Endpoint target,
-        AbstractReplicatorConfiguration.ReplicatorType type,
+        Replicator.Type type,
         boolean continuous) {
         return makeConfig(target, type, continuous, null);
     }
 
     protected final ReplicatorConfiguration makeConfig(
         Endpoint target,
-        AbstractReplicatorConfiguration.ReplicatorType type,
+        Replicator.Type type,
         boolean continuous,
         Certificate pinnedServerCert) {
         return makeConfig(baseTestDb, target, type, continuous, pinnedServerCert);
@@ -86,7 +86,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final ReplicatorConfiguration makeConfig(
         Database source,
         Endpoint target,
-        AbstractReplicatorConfiguration.ReplicatorType type,
+        Replicator.Type type,
         boolean continuous,
         Certificate pinnedServerCert,
         ConflictResolver resolver) {
@@ -100,7 +100,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final ReplicatorConfiguration makeConfig(
         Database source,
         Endpoint target,
-        AbstractReplicatorConfiguration.ReplicatorType type,
+        Replicator.Type type,
         boolean continuous,
         Certificate pinnedServerCert) {
         final ReplicatorConfiguration config = makeConfig(source, target, type, continuous);
@@ -118,10 +118,10 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final ReplicatorConfiguration makeConfig(
         Database source,
         Endpoint target,
-        AbstractReplicatorConfiguration.ReplicatorType type,
+        Replicator.Type type,
         boolean continuous) {
         return new ReplicatorConfiguration(source, target)
-            .setReplicatorType(type)
+            .setType(type)
             .setContinuous(continuous)
             .setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
     }

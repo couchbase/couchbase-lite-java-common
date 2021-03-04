@@ -133,15 +133,21 @@ public abstract class C4Database extends C4NativePeer {
     @Override
     public abstract void close();
 
-     public void closeDb() throws LiteCoreException {
-         close(getPeer());
-         close();
-     }
+    // This is subtle
+    // The call to close() will fail horribly if the db is currently in a transaction.
+    // On the other hand, the call to close(peer) with throw an exception if the db is in a transaction.
+    // That means that close() will never be called and the failure will be reported normally.
+    // The finalizer will backstop this rare case, so that the Database doesn't leak.
+    public void closeDb() throws LiteCoreException {
+        close(getPeer());
+        close();
+    }
 
+    // This is subtle: see above.
     public void deleteDb() throws LiteCoreException {
-         delete(getPeer());
-         close();
-     }
+        delete(getPeer());
+        close();
+    }
 
     public void rekey(int keyType, byte[] newKey) throws LiteCoreException { rekey(getPeer(), keyType, newKey); }
 
