@@ -31,6 +31,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -67,10 +68,12 @@ public class C4MutableFleeceTest extends C4BaseTest {
     public final void setUpC4MutableFleeceTest() {
         delegate = MValue.getRegisteredDelegate();
         MValue.registerDelegate(new MValueDelegate());
+        BaseTest.logTestInitializationComplete("C4MutableFleece");
     }
 
     @After
     public final void tearDownC4MutableFleeceTest() {
+        BaseTest.logTestTeardownBegun("C4MutableFleece");
         if (delegate != null) { MValue.registerDelegate(delegate); }
     }
 
@@ -398,6 +401,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             }
         }
     }
+
     private FLSliceResult encode(Object obj) throws LiteCoreException {
         try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.writeValue(obj);

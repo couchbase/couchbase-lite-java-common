@@ -18,7 +18,6 @@ package com.couchbase.lite;
 import android.os.Build;
 import android.support.test.InstrumentationRegistry;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,8 +46,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext(), true); }
-    
-    
     @Override
     public void setupPlatform() {
         final ConsoleLogger console = Database.log.getConsole();

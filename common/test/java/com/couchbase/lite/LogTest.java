@@ -12,12 +12,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,9 +25,8 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.FlakyTest;
+import com.couchbase.lite.internal.utils.Fn;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
@@ -127,7 +125,12 @@ public class LogTest extends BaseDbTest {
 
         Log.initLogging();
         Database.log.reset();
+
+        BaseTest.logTestInitializationComplete("Log");
     }
+
+    @After
+    public final void tearDownLogTest() { BaseTest.logTestTeardownBegun("Log"); }
 
     @FlakyTest
     @Test

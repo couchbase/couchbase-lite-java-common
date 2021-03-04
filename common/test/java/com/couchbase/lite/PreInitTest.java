@@ -35,8 +35,8 @@ public class PreInitTest extends PlatformBaseTest {
 
     @AfterClass
     public static void tearDownPreInitSuite() {
-        BaseTest.tearDownBaseTestSuite();
         CouchbaseLiteInternal.reset(true);
+        BaseTest.tearDownBaseTestSuite();
     }
 
     @Before

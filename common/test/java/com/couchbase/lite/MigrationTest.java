@@ -44,10 +44,12 @@ public class MigrationTest extends BaseTest {
     @Before
     public final void setUpMigrationTest() {
         dbDir = new File(CouchbaseLiteInternal.getRootDir(), getUniqueName("migration-test-dir"));
+        BaseTest.logTestInitializationComplete("Migration");
     }
 
     @After
     public final void tearDownMigrationTest() {
+        BaseTest.logTestTeardownBegun("Log");
         deleteDb(migrationTestDb);
         FileUtils.eraseFileOrDir(dbDir);
     }

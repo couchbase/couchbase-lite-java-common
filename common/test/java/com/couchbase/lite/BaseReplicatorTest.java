@@ -45,12 +45,14 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         Report.log(LogLevel.INFO, "Create other DB: " + otherDB);
         assertNotNull(otherDB);
         assertTrue(otherDB.isOpen());
+        BaseTest.logTestInitializationComplete("Replicator");
     }
 
     @After
     public final void tearDownBaseReplicatorTest() {
-        Report.log(LogLevel.INFO, "Delete other DB: " + otherDB);
+        BaseTest.logTestTeardownBegun("Replicator");
         deleteDb(otherDB);
+        Report.log(LogLevel.INFO, "Deleted other DB: " + otherDB);
     }
 
     protected final URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {

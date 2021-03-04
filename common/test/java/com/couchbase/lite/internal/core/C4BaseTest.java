@@ -120,12 +120,12 @@ public class C4BaseTest extends PlatformBaseTest {
         catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
 
-        Report.log(LogLevel.INFO, "==== C4 Test initialized: " + testName);
+        BaseTest.logTestInitializationComplete("C4");
     }
 
     @After
     public final void tearDownC4BaseTest() throws LiteCoreException {
-        Report.log(LogLevel.INFO, "==== C4 Test cleanup: " + testName);
+        BaseTest.logTestTeardownBegun("C4");
         final C4Database db = c4Database;
         c4Database = null;
         if (db != null) { db.closeDb(); }

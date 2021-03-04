@@ -18,9 +18,11 @@ package com.couchbase.lite.internal.core;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 
@@ -31,7 +33,11 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     @Before
     public final void setUpC4CollatedQueryTest() throws CouchbaseLiteException {
         importJSONLinesSafely("iTunesMusicLibrary.json");
+        BaseTest.logTestInitializationComplete("C4CollatedQuery");
     }
+
+    @After
+    public final void tearDownC4CollatedQueryTest() { BaseTest.logTestTeardownBegun("C4CollatedQuery"); }
 
     //-------------------------------------------------------------------------
     // tests

@@ -21,9 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
@@ -39,8 +41,15 @@ import static org.junit.Assert.fail;
 
 
 public class C4QueryTest extends C4QueryBaseTest {
+
     @Before
-    public final void setUpC4QueryTest() throws CouchbaseLiteException { importJSONLinesSafely("names_100.json"); }
+    public final void setUpC4QueryTest() throws CouchbaseLiteException {
+        importJSONLinesSafely("names_100.json");
+        BaseTest.logTestInitializationComplete("C4Query");
+    }
+
+    @After
+    public final void tearDownC4QueryTest() { BaseTest.logTestTeardownBegun("C4Query"); }
 
     //-------------------------------------------------------------------------
     // tests
@@ -259,7 +268,6 @@ public class C4QueryTest extends C4QueryBaseTest {
             finally {
                 c4Database.endTransaction(commit);
             }
-
         }
 
         // Now run a query that would have returned the deleted doc, if it weren't deleted:
@@ -305,7 +313,6 @@ public class C4QueryTest extends C4QueryBaseTest {
             Arrays.asList(Arrays.asList(44L, 0L, 0L, 12L, 3L)),
             Arrays.asList(Arrays.asList(52L, 0L, 0L, 11L, 3L))
         ), runFTS());
-
     }
 
     // - Full-text multiple properties
@@ -622,6 +629,5 @@ public class C4QueryTest extends C4QueryBaseTest {
         try { commit = true; }
         finally { c4Database.endTransaction(commit); }
         e.close();
-
     }
 }

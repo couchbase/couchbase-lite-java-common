@@ -23,6 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.LiteCoreException;
 
 import static org.junit.Assert.assertEquals;
@@ -36,10 +37,15 @@ public class C4ObserverTest extends C4BaseTest {
     private AtomicInteger dbCallbackCalls;
 
     @Before
-    public final void setUpC4ObserverTest() { dbCallbackCalls = new AtomicInteger(0); }
+    public final void setUpC4ObserverTest() {
+        dbCallbackCalls = new AtomicInteger(0);
+        BaseTest.logTestInitializationComplete("C4Observer");
+    }
 
     @After
     public final void tearDownC4ObserverTest() {
+        BaseTest.logTestTeardownBegun("C4Observer");
+
         if (dbObserver != null) { dbObserver.close(); }
         if (docObserver != null) { docObserver.close(); }
     }

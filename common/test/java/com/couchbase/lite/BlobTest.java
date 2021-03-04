@@ -23,14 +23,15 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.IOUtils;
+import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.StringUtils;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
@@ -49,7 +50,13 @@ public class BlobTest extends BaseDbTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
-    public final void setUpBlobTest() { localBlobContent = StringUtils.randomString(100); }
+    public final void setUpBlobTest() {
+        localBlobContent = StringUtils.randomString(100);
+        BaseTest.logTestInitializationComplete("Blob");
+    }
+
+    @After
+    public final void tearDownBlobTest() { BaseTest.logTestTeardownBegun("Blob"); }
 
     @Test
     public void testEquals() throws CouchbaseLiteException {

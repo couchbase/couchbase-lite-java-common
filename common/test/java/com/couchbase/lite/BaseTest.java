@@ -66,6 +66,14 @@ public abstract class BaseTest extends PlatformBaseTest {
         Report.log(LogLevel.INFO, "<<<<<<<<<<<< Suite completed");
     }
 
+    public static void logTestInitializationComplete(@NonNull String testName) {
+        Report.log(LogLevel.INFO, "==== %s test initialized", testName);
+    }
+
+    public static void logTestTeardownBegun(@NonNull String testName) {
+        Report.log(LogLevel.INFO, "==== %s  test teardown", testName);
+    }
+
     public static String getScratchDirPath(@NonNull String name) {
         try {
             String path = FileUtils.verifyDir(new File(CouchbaseLiteInternal.getScratchDir().getCanonicalPath(), name))
@@ -97,16 +105,17 @@ public abstract class BaseTest extends PlatformBaseTest {
 
         testSerialExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
-        Report.log(LogLevel.INFO, "==== Test initialized: " + testName);
+        logTestInitializationComplete("Base");
     }
 
     @After
     public final void tearDownBaseTest() {
-        Report.log(LogLevel.INFO, "==== Test cleanup: " + testName);
-        Report.log(LogLevel.INFO, "Stopping executor: " + testSerialExecutor);
+        logTestTeardownBegun("Base");
+
         boolean succeeded = false;
         if (testSerialExecutor != null) { succeeded = testSerialExecutor.stop(2, TimeUnit.SECONDS); }
         Report.log(LogLevel.INFO, "Executor stopped: " + succeeded);
+
         Report.log(LogLevel.INFO, "<<<<<<<< Test completed: " + testName);
     }
 

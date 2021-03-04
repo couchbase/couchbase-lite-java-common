@@ -83,12 +83,14 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
     @Before
     fun setUpExecutionServiceTest() {
-        Report.log(LogLevel.INFO, ">>>>>>>>>>>>> ExecutionService Test started")
+        Report.log(LogLevel.INFO, ">>>>>>>>>>>>> ExecutionService test started")
         cblService = CouchbaseLiteInternal.getExecutionService()
+        BaseTest.logTestInitializationComplete("ExecutionService")
     }
 
     @After
     fun cleanUpExecutionServiceTest() {
+        BaseTest.logTestTeardownBegun("ExecutionService")
         cblService = CouchbaseLiteInternal.getExecutionService()
         Report.log(LogLevel.INFO, "<<<<<<<<<<<< ExecutionService Test completed")
     }

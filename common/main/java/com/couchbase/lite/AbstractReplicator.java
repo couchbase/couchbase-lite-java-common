@@ -157,6 +157,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
             ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
         }
+
         private static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
             final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
             if (level != null) { return level; }
@@ -670,6 +671,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     // Some of these are package protected only to avoid a synthetic accessor
     //---------------------------------------------
 
+    @VisibleForTesting
     CouchbaseLiteException getLastError() { return lastError; }
 
     @NonNull
@@ -783,6 +785,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
             if (c4Repl != null) {
                 c4Repl.setOptions(getFleeceOptions());
+                // ??? This is probably a bug.  SetOptions should not clear the progress level
+                setProgressLevel();
                 return c4Repl;
             }
 
@@ -899,7 +903,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
         if (c4Repl == null) { return; }
 
         try {
-            c4Repl.setProgressLevel(docEndedListeners.isEmpty()
+            c4Repl.setProgressLevel(
+                docEndedListeners.isEmpty()
                 ? C4Replicator.PROGRESS_OVERALL
                 : C4Replicator.PROGRESS_PER_DOC);
         }
