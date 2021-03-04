@@ -28,7 +28,10 @@ public interface MutableDictionaryInterface extends DictionaryInterface {
     // Set JSON or platform dictionary as a content.
 
     @NonNull
-    MutableDictionaryInterface setData(Map<String, Object> data);
+    MutableDictionaryInterface setData(@NonNull Map<String, Object> data);
+
+    @NonNull
+    MutableDictionaryInterface setJSON(@NonNull String json);
 
     // set
 

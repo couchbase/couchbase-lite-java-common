@@ -449,6 +449,12 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         return dict;
     }
 
+    @NonNull
+    @Override
+    public String toJSON() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     /**
      * Tests whether a projecting result key exists or not.
      *

@@ -38,41 +38,45 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     /**
      * Constructs a new empty Array object.
      */
-    public MutableArray() {
-        super();
-    }
+    public MutableArray() { super(); }
 
     /**
-     * Constructs a new Array object with an array content. Allowed value types are List, Date,
-     * Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
-     * only the above types.
+     * Creates a new MutableArray with content from the passed List.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types.
      *
-     * @param data the array object.
+     * @param data the document content list
      */
-    public MutableArray(List<Object> data) {
+    public MutableArray(@NonNull List<Object> data) {
         super();
         setData(data);
     }
 
-    // to create copy
-    MutableArray(MArray mArray, boolean isMutable) {
-        super(mArray, isMutable);
+    /**
+     * Creates a new MutableArray with content from the passed JSON string.
+     *
+     * @param json the array content as a JSON string.
+     */
+    public MutableArray(@NonNull String json) {
+        super();
+        setJSON(json);
     }
 
+    // to create copy
+    MutableArray(MArray mArray, boolean isMutable) { super(mArray, isMutable); }
+
     // Call from native method
-    MutableArray(MValue mv, MCollection parent) {
-        super(mv, parent);
-    }
+    MutableArray(MValue mv, MCollection parent) { super(mv, parent); }
 
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
 
     /**
-     * Set an array as a content. Allowed value types are List, Date,
-     * Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
-     * only the above types. Setting the new array content will replace the current data
-     * including the existing Array and Dictionary objects.
+     * Populate an array with content from a Map.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types. Setting the new dictionary content will
+     * replace the current data including the existing Array and Dictionary objects.
      *
      * @param data the array
      * @return The self object
@@ -82,9 +86,24 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray setData(List<Object> data) {
         synchronized (lock) {
             internalArray.clear();
-            for (Object obj : data) { internalArray.append(Fleece.toCBLObject(obj)); }
+            for (Object obj: data) { internalArray.append(Fleece.toCBLObject(obj)); }
             return this;
         }
+    }
+
+    /**
+     * Populate an array with content from a JSON string.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types. Setting the new dictionary content will
+     * replace the current data including the existing Array and Dictionary objects.
+     *
+     * @param json the dictionary object.
+     * @return this Document instance
+     */
+    @NonNull
+    @Override
+    public MutableArray setJSON(@NonNull String json) {
+        throw new UnsupportedOperationException("not yet implemented");
     }
 
     /**

@@ -382,6 +382,11 @@ public final class Blob implements FLEncodable {
     @NonNull
     public String getContentType() { return contentType; }
 
+    @NonNull
+    public String toJSON() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     /**
      * The number of byte of content this blob contains.
      *
@@ -413,10 +418,6 @@ public final class Blob implements FLEncodable {
         props.put(PROP_CONTENT_TYPE, contentType);
         return props;
     }
-
-    //---------------------------------------------
-    // Override
-    //---------------------------------------------
 
     //FLEncodable
     // this should not be part of the public API.

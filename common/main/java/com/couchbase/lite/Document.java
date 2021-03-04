@@ -364,6 +364,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Override
     public Map<String, Object> toMap() { return getContent().toMap(); }
 
+    @NonNull
+    @Override
+    public String toJSON() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     /**
      * Tests whether a property exists or not.
      * This can be less expensive than getValue(String),

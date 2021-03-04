@@ -45,12 +45,12 @@ public final class MutableDocument extends Document implements MutableDictionary
     public MutableDocument() { this((String) null); }
 
     /**
-     * Creates a new Document object with the given ID. If a null ID value is given, the document
+     * Creates a new Document object with the given ID.  If the id is null, the document
      * will be created with a new random UUID. The created document will be
      * saved into a database when you call the Database's save(Document) method with the document
      * object given.
      *
-     * @param id the document ID.
+     * @param id the document ID or null.
      */
     public MutableDocument(@Nullable String id) { this(null, id, null); }
 
@@ -66,8 +66,8 @@ public final class MutableDocument extends Document implements MutableDictionary
     public MutableDocument(@NonNull Map<String, Object> data) { this(null, data); }
 
     /**
-     * Initializes a new Document object with a given ID and the dictionary as the content.
-     * If a null ID value is given, the document will be created with a new random UUID.
+     * Creates a new Document with a given ID and content from the passed Map.
+     * If the id is null, the document will be created with a new random UUID.
      * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
      * The List and Map must contain only the above types.
      * The created document will be saved into a database when you call
@@ -79,6 +79,20 @@ public final class MutableDocument extends Document implements MutableDictionary
     public MutableDocument(@Nullable String id, Map<String, Object> data) {
         this(null, id, null);
         setData(data);
+    }
+
+    /**
+     * Creates a new Document with the given ID and content from the passed JSON string.
+     * If the id is null, the document will be created with a new random UUID. The created document will be
+     * saved into a database when you call the Database's save(Document) method with the document
+     * object given.
+     *
+     * @param id   the document ID or null.
+     * @param json the document content as a JSON string.
+     */
+    public MutableDocument(@Nullable String id, @NonNull String json) {
+        this(null, id, null);
+        setJSON(json);
     }
 
     protected MutableDocument(@NonNull Document doc) {
@@ -118,18 +132,34 @@ public final class MutableDocument extends Document implements MutableDictionary
     //---------------------------------------------
 
     /**
-     * Set a dictionary as a content. Allowed value types are List, Date, Map, Number, null, String,
-     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
-     * Setting the new dictionary content will replace the current data including the existing Array
-     * and Dictionary objects.
+     * Populate a document with content from a Map.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types. Setting the new dictionary content will
+     * replace the current data including the existing Array and Dictionary objects.
      *
      * @param data the dictionary object.
      * @return this Document instance
      */
     @NonNull
     @Override
-    public MutableDocument setData(Map<String, Object> data) {
+    public MutableDocument setData(@NonNull Map<String, Object> data) {
         getMutableContent().setData(data);
+        return this;
+    }
+
+    /**
+     * Populate a document with content from a JSON string.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types. Setting the new dictionary content will
+     * replace the current data including the existing Array and Dictionary objects.
+     *
+     * @param json the dictionary object.
+     * @return this Document instance
+     */
+    @NonNull
+    @Override
+    public MutableDocument setJSON(@NonNull String json) {
+        getMutableContent().setJSON(json);
         return this;
     }
 

@@ -68,5 +68,8 @@ public interface DictionaryInterface {
     @NonNull
     Map<String, Object> toMap();
 
+    @NonNull
+    String toJSON();
+
     boolean contains(@NonNull String key);
 }

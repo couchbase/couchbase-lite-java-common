@@ -54,4 +54,7 @@ interface ArrayInterface {
 
     @NonNull
     List<Object> toList();
+
+    @NonNull
+    String toJSON();
 }

@@ -22,11 +22,14 @@ import java.util.List;
 
 
 /**
- * Note: MutableArrayInterface is an internal interface. sThis should not be public.
+ * Note: MutableArrayInterface is an internal interface. This should not be public.
  */
 interface MutableArrayInterface extends ArrayInterface {
     @NonNull
-    MutableArrayInterface setData(List<Object> data);
+    MutableArrayInterface setData(@NonNull List<Object> data);
+
+    @NonNull
+    MutableArrayInterface setJSON(@NonNull String json);
 
     // set
 

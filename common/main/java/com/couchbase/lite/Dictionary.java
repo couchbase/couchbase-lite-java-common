@@ -292,6 +292,12 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         return result;
     }
 
+    @NonNull
+    @Override
+    public String toJSON() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     /**
      * Tests whether a property exists or not.
      * This can be less expensive than getValue(String), because it does not have to allocate an Object for the

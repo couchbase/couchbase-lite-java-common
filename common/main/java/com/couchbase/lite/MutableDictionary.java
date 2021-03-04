@@ -40,13 +40,20 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     public MutableDictionary() { }
 
     /**
-     * Initializes a new CBLDictionary object with dictionary content. Allowed value types are List,
-     * Date, Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
-     * only the above types.
+     * Creates a new MutableDictionary with content from the passed Map.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types.
      *
-     * @param data the dictionary object.
+     * @param data the dictionary content map.
      */
-    public MutableDictionary(Map<String, Object> data) { setData(data); }
+    public MutableDictionary(@NonNull Map<String, Object> data) { setData(data); }
+
+    /**
+     * Creates a new MutableDictionary with content from the passed JSON string.
+     *
+     * @param json the dictionary content as a JSON string.
+     */
+    public MutableDictionary(@NonNull String json) { setJSON(json); }
 
     // to create copy of dictionary
     MutableDictionary(MDict mDict, boolean isMutable) { super(mDict, isMutable); }
@@ -58,24 +65,39 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     //---------------------------------------------
 
     /**
-     * Set a dictionary as a content. Allowed value types are List, Date, Map, Number, null, String,
-     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
-     * Setting the new dictionary content will replace the current data including the existing Array
-     * and Dictionary objects.
+     * Populate a dictionary with content from a Map.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types. Setting the new dictionary content will
+     * replace the current data including the existing Array and Dictionary objects.
      *
      * @param data the dictionary object.
      * @return The self object.
      */
     @NonNull
     @Override
-    public MutableDictionary setData(Map<String, Object> data) {
+    public MutableDictionary setData(@NonNull Map<String, Object> data) {
         synchronized (lock) {
             internalDict.clear();
-            for (Map.Entry<String, Object> entry : data.entrySet()) {
+            for (Map.Entry<String, Object> entry: data.entrySet()) {
                 internalDict.set(entry.getKey(), new MValue(Fleece.toCBLObject(entry.getValue())));
             }
             return this;
         }
+    }
+
+    /**
+     * Populate a dictionary with content from a JSON string.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * The List and Map must contain only the above types. Setting the new dictionary content will
+     * replace the current data including the existing Array and Dictionary objects.
+     *
+     * @param json the dictionary object.
+     * @return this Document instance
+     */
+    @NonNull
+    @Override
+    public MutableDocument setJSON(@NonNull String json) {
+        throw new UnsupportedOperationException("not yet implemented");
     }
 
     /**
