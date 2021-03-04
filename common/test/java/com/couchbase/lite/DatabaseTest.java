@@ -798,12 +798,6 @@ public class DatabaseTest extends BaseDbTest {
         final String dbDirPath = getScratchDirectoryPath(dirName);
         final File dbDir = new File(dbDirPath);
 
-        // !!! for some reason, this file already exists on the Java platform...
-        if (!dbDir.exists()) {
-            Report.log(LogLevel.WARNING, "DB dir exists: " + dbDir);
-            dbDir.mkdirs();
-        }
-
         assertFalse(Database.exists(dirName, dbDir));
 
         // create db with custom directory

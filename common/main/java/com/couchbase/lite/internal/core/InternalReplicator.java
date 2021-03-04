@@ -43,7 +43,7 @@ public abstract class InternalReplicator implements AutoCloseable {
     protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
         Log.d(
             LogDomain.REPLICATOR,
-            "Binding c4 replicator " + ClassUtils.objId(c4Repl) + " => " + ClassUtils.objId(this));
+            "Setting c4 replicator " + ClassUtils.objId(c4Repl) + " for replicator " + ClassUtils.objId(this));
         synchronized (getLock()) { c4Replicator = c4Repl; }
     }
 

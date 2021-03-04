@@ -21,10 +21,22 @@ import com.couchbase.lite.LogLevel
 import com.couchbase.lite.PlatformBaseTest
 import com.couchbase.lite.internal.support.Log
 import com.couchbase.lite.internal.utils.Report
-import org.junit.*
-import org.junit.Assert.*
-import java.util.*
-import java.util.concurrent.*
+import org.junit.After
+import org.junit.AfterClass
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
+import org.junit.Before
+import org.junit.BeforeClass
+import org.junit.Test
+import java.util.Stack
+import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 
 private const val TIMEOUT_SEC = 5L
 private const val CAPACITY = AbstractExecutionService.MIN_CAPACITY * 2
@@ -78,7 +90,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
     @After
     fun cleanUpExecutionServiceTest() {
         cblService = CouchbaseLiteInternal.getExecutionService()
-        Report.log(LogLevel.INFO, "<<<<<<<<<<<< ExecutionService Testcompleted")
+        Report.log(LogLevel.INFO, "<<<<<<<<<<<< ExecutionService Test completed")
     }
 
     // Serial Executor tests

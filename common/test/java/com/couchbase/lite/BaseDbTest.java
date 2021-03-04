@@ -48,14 +48,14 @@ public abstract class BaseDbTest extends BaseTest {
     @Before
     public final void setUpBaseDbTest() throws CouchbaseLiteException {
         baseTestDb = createDb("base-db");
-        Report.log(LogLevel.INFO, "Create base test DB: " + baseTestDb);
+        Report.log(LogLevel.INFO, "Created base test DB: " + baseTestDb);
         assertNotNull(baseTestDb);
         assertTrue(baseTestDb.isOpen());
     }
 
     @After
     public final void tearDownBaseDbTest() {
-        Report.log(LogLevel.INFO, "Delete base test DB: " + baseTestDb);
+        Report.log(LogLevel.INFO, "Deleting base test DB: " + baseTestDb);
         deleteDb(baseTestDb);
     }
 

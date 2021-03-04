@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +51,10 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     public final void tearDownBaseReplicatorTest() {
         Report.log(LogLevel.INFO, "Delete other DB: " + otherDB);
         deleteDb(otherDB);
+    }
+
+    protected final URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {
+        return new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
     }
 
     // helper method allows kotlin to call isDocumentPending(null)

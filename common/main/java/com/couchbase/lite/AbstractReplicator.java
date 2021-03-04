@@ -308,9 +308,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
     private final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
     @GuardedBy("lock")
-    private final Set<ReplicatorChangeListenerToken> changeListenerTokens = new HashSet<>();
+    private final Set<ReplicatorChangeListenerToken> changeListeners = new HashSet<>();
     @GuardedBy("lock")
-    private final Set<DocumentReplicationListenerToken> docEndedListenerTokens = new HashSet<>();
+    private final Set<DocumentReplicationListenerToken> docEndedListeners = new HashSet<>();
 
     @NonNull
     private final Set<Fn.Consumer<CouchbaseLiteException>> pendingResolutions = new HashSet<>();
@@ -501,7 +501,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (getLock()) {
             final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
-            changeListenerTokens.add(token);
+            changeListeners.add(token);
             setProgressLevel();
             return token;
         }
@@ -538,7 +538,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (getLock()) {
             final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
-            docEndedListenerTokens.add(token);
+            docEndedListeners.add(token);
             setProgressLevel();
             return token;
         }
@@ -552,8 +552,8 @@ public abstract class AbstractReplicator extends InternalReplicator {
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
         synchronized (getLock()) {
-            if (token instanceof ReplicatorChangeListenerToken) { changeListenerTokens.remove(token); }
-            else if (token instanceof DocumentReplicationListenerToken) { docEndedListenerTokens.remove(token); }
+            if (token instanceof ReplicatorChangeListenerToken) { changeListeners.remove(token); }
+            else if (token instanceof DocumentReplicationListenerToken) { docEndedListeners.remove(token); }
             else { throw new IllegalArgumentException("unexpected token: " + token); }
             setProgressLevel();
         }
@@ -697,7 +697,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             // Post notification
             // Replicator.getStatus() creates a copy of Status.
             change = new ReplicatorChange((Replicator) this, this.getStatus());
-            tokens = new ArrayList<>(changeListenerTokens);
+            tokens = new ArrayList<>(changeListeners);
         }
 
         // this will probably make this instance eligible for garbage collection...
@@ -757,7 +757,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     void notifyDocumentEnded(boolean pushing, List<ReplicatedDocument> docs) {
         final DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
         final List<DocumentReplicationListenerToken> tokens;
-        synchronized (getLock()) { tokens = new ArrayList<>(docEndedListenerTokens); }
+        synchronized (getLock()) { tokens = new ArrayList<>(docEndedListeners); }
         for (DocumentReplicationListenerToken token: tokens) { token.notify(update); }
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
     }
@@ -765,6 +765,11 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     @VisibleForTesting
     SocketFactory getSocketFactory() { return socketFactory; }
+
+    @VisibleForTesting
+    int getListenerCount() {
+        synchronized (getLock()) { return changeListeners.size() + docEndedListeners.size(); }
+    }
 
     //---------------------------------------------
     // Private methods
@@ -894,9 +899,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
         if (c4Repl == null) { return; }
 
         try {
-            c4Repl.setProgressLevel(!docEndedListenerTokens.isEmpty()
-                ? C4Replicator.PROGRESS_PER_DOC
-                : C4Replicator.PROGRESS_OVERALL);
+            c4Repl.setProgressLevel(docEndedListeners.isEmpty()
+                ? C4Replicator.PROGRESS_OVERALL
+                : C4Replicator.PROGRESS_PER_DOC);
         }
         catch (LiteCoreException e) {
             Log.w(LogDomain.REPLICATOR, "failed setting progress level");
@@ -923,7 +928,10 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
             @Nullable
             @Override
-            public String getCookies(@NonNull URI uri) { return getDatabase().getCookies(uri); }
+            public String getCookies(@NonNull URI uri) {
+                final Database db = getDatabase();
+                return (!db.isOpen()) ? null : db.getCookies(uri);
+            }
         };
     }
 

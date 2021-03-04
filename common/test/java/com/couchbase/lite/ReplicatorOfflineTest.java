@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -31,16 +30,6 @@ import static org.junit.Assert.fail;
 public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test
-    public void testEditReadOnlyConfiguration() throws Exception {
-        Endpoint endpoint = getRemoteTargetEndpoint();
-        ReplicatorConfiguration config = makeConfig(endpoint, AbstractReplicatorConfiguration.ReplicatorType.PUSH, true);
-        config.setContinuous(false);
-        baseTestReplicator = testReplicator(config);
-
-        assertThrows(IllegalStateException.class, () -> baseTestReplicator.getConfig().setContinuous(true));
-    }
-
-    @Test
     public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
         // this test crashes the test suite on Android <21
         if (handlePlatformSpecially("android<21")) {
@@ -48,7 +37,8 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         }
 
         Endpoint target = getRemoteTargetEndpoint();
-        ReplicatorConfiguration config = makeConfig(baseTestDb, target, AbstractReplicatorConfiguration.ReplicatorType.PULL, true);
+        ReplicatorConfiguration config
+            = makeConfig(baseTestDb, target, AbstractReplicatorConfiguration.ReplicatorType.PULL, true);
         Replicator repl = testReplicator(config);
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
@@ -71,12 +61,11 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testStartSingleShotReplicatorInOffline() throws URISyntaxException, InterruptedException {
         // this test crashes the test suite on Android <21
-        if (handlePlatformSpecially("android<21")) {
-            fail("Websockets not supported on Android v < 21");
-        }
+        if (handlePlatformSpecially("android<21")) { fail("Websockets not supported on Android v < 21"); }
 
         Endpoint endpoint = getRemoteTargetEndpoint();
-        Replicator repl = testReplicator(makeConfig(endpoint, AbstractReplicatorConfiguration.ReplicatorType.PUSH, false));
+        Replicator repl = testReplicator(
+            makeConfig(endpoint, AbstractReplicatorConfiguration.ReplicatorType.PUSH, false));
         final CountDownLatch stopped = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(
             testSerialExecutor,
@@ -89,31 +78,47 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         repl.removeChangeListener(token);
     }
 
-    @Test
-    public void testDocumentChangeListenerToken() throws Exception {
-        Endpoint endpoint = getRemoteTargetEndpoint();
-        Replicator repl = testReplicator(makeConfig(endpoint, AbstractReplicatorConfiguration.ReplicatorType.PUSH, false));
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddNullDocumentReplicationListener() throws URISyntaxException {
+        Replicator repl = testReplicator(makeConfig(
+            getRemoteTargetEndpoint(),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
+            true));
+
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
         assertNotNull(token);
 
-        assertThrows(IllegalArgumentException.class, () -> repl.addDocumentReplicationListener(null));
-
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> repl.addDocumentReplicationListener(testSerialExecutor, null));
+        repl.addDocumentReplicationListener(null);
     }
 
-     @Test
-    public void testChangeListenerEmptyArg() throws Exception {
-        Endpoint endpoint = getRemoteTargetEndpoint();
-        Replicator repl = testReplicator(makeConfig(endpoint, AbstractReplicatorConfiguration.ReplicatorType.PUSH, true));
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddNullDocumentReplicationListenerWithExecutor() throws URISyntaxException {
+        Replicator repl = testReplicator(makeConfig(
+            getRemoteTargetEndpoint(),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
+            true));
 
-        assertThrows(IllegalArgumentException.class, () -> repl.addChangeListener(null));
+        ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
+        assertNotNull(token);
 
-        assertThrows(IllegalArgumentException.class, () -> repl.addChangeListener(testSerialExecutor, null));
+        repl.addDocumentReplicationListener(testSerialExecutor, null);
     }
 
-    private URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {
-        return new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddNullChangeListener() throws Exception {
+        testReplicator(makeConfig(
+            getRemoteTargetEndpoint(),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
+            true))
+            .addChangeListener(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullChangeListenerWithExecutor() throws Exception {
+        testReplicator(makeConfig(
+            getRemoteTargetEndpoint(),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
+            true))
+            .addChangeListener(testSerialExecutor, null);
     }
 }

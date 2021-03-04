@@ -15,26 +15,50 @@
 //
 package com.couchbase.lite;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
-import com.couchbase.lite.internal.core.C4Socket;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
 public class ReplicatorMiscTest extends BaseReplicatorTest {
+
+    @Test
+    public void testGetExecutor() {
+        final Executor executor = runnable -> { };
+        final ReplicatorChangeListener listener = change -> { };
+
+        // custom Executor
+        ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
+        assertEquals(executor, token.getExecutor());
+
+        // UI thread Executor
+        token = new ReplicatorChangeListenerToken(null, listener);
+        assertEquals(CouchbaseLiteInternal.getExecutionService().getMainExecutor(), token.getExecutor());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testEditReadOnlyConfiguration() throws Exception {
+        baseTestReplicator = testReplicator(makeConfig(
+            getRemoteTargetEndpoint(),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH, true)
+            .setContinuous(false));
+
+        baseTestReplicator.getConfig().setContinuous(true);
+    }
 
     @Test
     public void testReplicatorChange() {
@@ -80,7 +104,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testStopBeforeStart() throws URISyntaxException {
         testReplicator(makeConfig(
-            new URLEndpoint(new URI("wss://foo")),
+            getRemoteTargetEndpoint(),
             AbstractReplicatorConfiguration.ReplicatorType.PUSH, false))
             .stop();
     }
@@ -90,56 +114,52 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testStatusBeforeStart() throws URISyntaxException {
         testReplicator(makeConfig(
-            new URLEndpoint(new URI("wss://foo")),
+            getRemoteTargetEndpoint(),
             AbstractReplicatorConfiguration.ReplicatorType.PUSH, false))
             .getStatus();
     }
 
     @Test
     public void testGetHeartbeatBeforeSet() throws URISyntaxException {
-        final ReplicatorConfiguration config
-            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint());
         assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC, config.getHeartbeat());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSetIllegalHeartbeat() throws URISyntaxException {
-        final ReplicatorConfiguration config
-            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
-        config.setHeartbeat(-47);
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
+            .setHeartbeat(-47);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSetZeroHeartbeat() throws URISyntaxException {
-        final ReplicatorConfiguration config
-            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")));
-        config.setHeartbeat(-47);
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
+            .setHeartbeat(0);
     }
 
     @Test
     public void testDefaultHeartbeat() throws URISyntaxException {
         // Don't use makeConfig: it sets heartbeat to 0
-        final ReplicatorConfiguration config
-            = new ReplicatorConfiguration(baseTestDb, new URLEndpoint(new URI("wss://foo")))
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
             .setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PUSH)
             .setContinuous(false);
 
         final Replicator repl = testReplicator(config);
 
-        final AtomicReference<C4Socket> socketRef = new AtomicReference<>();
-        repl.getSocketFactory().setListener(socketRef::set);
+        final AtomicInteger heartbeat = new AtomicInteger();
+        repl.getSocketFactory().setListener(sf ->
+            heartbeat.compareAndSet(0, ((AbstractCBLWebSocket) sf).getOkHttpSocketFactory().pingIntervalMillis()));
+
         try { run(repl); }
         catch (CouchbaseLiteException ignore) { }
 
-        assertEquals(
-            AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000,
-            ((AbstractCBLWebSocket) socketRef.get()).getOkHttpSocketFactory().pingIntervalMillis());
+        assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000, heartbeat.get());
     }
 
     @Test
     public void testCustomHeartbeat() throws URISyntaxException {
         final ReplicatorConfiguration config = makeConfig(
-            new URLEndpoint(new URI("wss://foo")),
+            getRemoteTargetEndpoint(),
             AbstractReplicatorConfiguration.ReplicatorType.PUSH, false)
             .setHeartbeat(67L);
 
@@ -148,10 +168,37 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         final AtomicInteger heartbeat = new AtomicInteger();
         repl.getSocketFactory().setListener(sf ->
             heartbeat.compareAndSet(0, ((AbstractCBLWebSocket) sf).getOkHttpSocketFactory().pingIntervalMillis()));
+
         try { run(repl); }
         catch (CouchbaseLiteException ignore) { }
 
         assertEquals(config.getHeartbeat() * 1000, heartbeat.get());
+    }
+
+    @Test
+    public void testStopWhileConnecting() throws URISyntaxException {
+        final ReplicatorConfiguration config = makeConfig(
+            getRemoteTargetEndpoint(),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH,
+            false);
+        Replicator repl = testReplicator(config);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        repl.addChangeListener(status -> {
+            if (status.getStatus().getActivityLevel() == AbstractReplicator.ActivityLevel.CONNECTING) {
+                repl.stop();
+                latch.countDown();
+            }
+        });
+
+        repl.start();
+        try {
+            try { latch.await(STD_TIMEOUT_SECS, TimeUnit.SECONDS); }
+            catch (InterruptedException ignore) { }
+        }
+        finally {
+            repl.stop();
+        }
     }
 
     @Test
@@ -171,27 +218,11 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     // CBL-1218
-    @Test
+    @Test(expected = IllegalStateException.class)
     public void testStartReplicatorWithClosedDb() throws URISyntaxException {
         Replicator replicator = testReplicator(makeConfig(
             baseTestDb,
-            new URLEndpoint(new URI("wss://foo")),
-            AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, false, null, null));
-
-        closeDb(baseTestDb);
-
-        try { replicator.start(false); }
-        catch (IllegalStateException ignore) { return; }
-
-        fail("Should fail on closed db");
-    }
-
-    // CBL-1218
-    @Test
-    public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
-        Replicator replicator = testReplicator(makeConfig(
-            baseTestDb,
-            new URLEndpoint(new URI("wss://foo")),
+            getRemoteTargetEndpoint(),
             AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL,
             false,
             null,
@@ -199,14 +230,27 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(baseTestDb);
 
-        try { replicator.getPendingDocumentIds(); }
-        catch (IllegalStateException ignore) { return; }
-
-        fail("Should fail on closed db");
+        replicator.start(false);
     }
 
     // CBL-1218
-    @Test
+    @Test(expected = IllegalStateException.class)
+    public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
+        Replicator replicator = testReplicator(makeConfig(
+            baseTestDb,
+            getRemoteTargetEndpoint(),
+            AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL,
+            false,
+            null,
+            null));
+
+        closeDb(baseTestDb);
+
+        replicator.getPendingDocumentIds();
+    }
+
+    // CBL-1218
+    @Test(expected = IllegalStateException.class)
     public void testGetPendingDocIdsWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
         MutableDocument doc = new MutableDocument();
         otherDB.save(doc);
@@ -214,7 +258,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         Replicator replicator = testReplicator(
             makeConfig(
                 baseTestDb,
-                new URLEndpoint(new URI("wss://foo")),
+                getRemoteTargetEndpoint(),
                 AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL,
                 false,
                 null,
@@ -222,10 +266,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(baseTestDb);
 
-        try { replicator.isDocumentPending(doc.getId()); }
-        catch (IllegalStateException ignore) { return; }
-
-        fail("Should fail on closed db");
+        replicator.isDocumentPending(doc.getId());
     }
 
     // CBL-1441

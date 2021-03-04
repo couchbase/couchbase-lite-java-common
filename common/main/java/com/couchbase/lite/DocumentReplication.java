@@ -64,7 +64,7 @@ public final class DocumentReplication {
 
     @Override
     @NonNull
-    public String toString() { return "DocumentReplication{repl=" + replicator + ",#docs=" + documents.size() + "}"; }
+    public String toString() { return "DocumentReplication{repl=" + replicator + ", #docs=" + documents.size() + "}"; }
 }
 
 

@@ -36,7 +36,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
 public abstract class AbstractReplicatorConfiguration {
-    /** This is a long time.  This many seconds, however, is less than Integer.MAX_INT millis */
+    /**
+     * This is a long time.  This many seconds, however, is less than Integer.MAX_INT millis
+     */
     public static final long DISABLE_HEARTBEAT = 35000L;
 
     /**
@@ -285,9 +287,10 @@ public abstract class AbstractReplicatorConfiguration {
 
     /**
      * Set the heartbeat interval, in seconds.
+     * Must be positive and less than Integer.MAX_VALUE milliseconds
      */
     public final ReplicatorConfiguration setHeartbeat(long heartbeat) {
-        Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS);
+        Util.checkDuration("heartbeat", Preconditions.assertPositive(heartbeat, "heartbeat"), TimeUnit.SECONDS);
         this.heartbeat = heartbeat;
         return getReplicatorConfiguration();
     }

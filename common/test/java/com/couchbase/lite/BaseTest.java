@@ -114,7 +114,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     public static String getScratchDirectoryPath(@NonNull String name) { return getScratchDirPath(name); }
 
-        // Prefer this method to any other way of creating a new database
+    // Prefer this method to any other way of creating a new database
     protected final Database createDb(@NonNull String name) throws CouchbaseLiteException {
         return createDb(name, null);
     }

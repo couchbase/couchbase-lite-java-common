@@ -547,7 +547,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
-    @SuppressWarnings("NumberEquality")
     @GuardedBy("lock")
     private void updateC4DocumentLocked(@Nullable C4Document c4Doc) {
         if (c4Document == c4Doc) { return; }
