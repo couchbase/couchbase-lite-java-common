@@ -571,7 +571,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
 
         final Database db = getDatabase();
-        if (db == null) { throw new IllegalStateException(""); }
+        if (db == null) { throw new IllegalStateException("document has not been saved to a database"); }
 
         final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
         root = newRoot;

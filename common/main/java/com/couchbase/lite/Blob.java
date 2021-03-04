@@ -193,6 +193,11 @@ public final class Blob implements FLEncodable {
         }
     }
 
+    public static boolean isBlob(Map<String, ?> map) {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
