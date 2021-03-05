@@ -16,12 +16,15 @@
 package com.couchbase.lite.internal.fleece;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.jetbrains.annotations.NotNull;
 
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -34,11 +37,11 @@ public class MDict extends MCollection implements Iterable<String> {
     private long valCount;
 
 
-    public void initInSlot(MValue mv, MCollection parent) {
+    public void initInSlot(@NonNull MValue mv, @Nullable MCollection parent) {
         initInSlot(mv, parent, parent != null && parent.hasMutableChildren());
     }
 
-    public void initAsCopyOf(MDict d, boolean isMutable) {
+    public void initAsCopyOf(@NonNull MDict d, boolean isMutable) {
         super.initAsCopyOf(d, isMutable);
         flDict = d.flDict;
         valueMap = new HashMap<>(d.valueMap);
@@ -60,7 +63,7 @@ public class MDict extends MCollection implements Iterable<String> {
     /* Encodable */
 
     @Override
-    public void encodeTo(FLEncoder enc) {
+    public void encodeTo(@NonNull FLEncoder enc) {
         if (!isMutated()) {
             if (flDict != null) { enc.writeValue(flDict); }
             else {
@@ -191,7 +194,7 @@ public class MDict extends MCollection implements Iterable<String> {
     //---------------------------------------------
 
     @Override
-    protected void initInSlot(MValue mv, MCollection parent, boolean isMutable) {
+    protected void initInSlot(@NotNull @NonNull MValue mv, @Nullable MCollection parent, boolean isMutable) {
         super.initInSlot(mv, parent, isMutable);
         if (flDict != null) { throw new IllegalStateException("flDict is not null"); }
 

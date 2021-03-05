@@ -757,7 +757,6 @@ abstract class AbstractDatabase {
         }
     }
 
-
     public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
         synchronized (getLock()) {
             try { getC4DatabaseLocked().deleteIndex(name); }
@@ -772,9 +771,14 @@ abstract class AbstractDatabase {
         }
     }
 
-    //---------------------------------------------
-    // Override public method
-    //---------------------------------------------
+    public void saveBlob(@NonNull Blob blob) throws CouchbaseLiteException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
+    @NonNull
+    public Blob getBlob(@NonNull Map<String, ?> props) throws CouchbaseLiteException {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
 
     @NonNull
     @Override

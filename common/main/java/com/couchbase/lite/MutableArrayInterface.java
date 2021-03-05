@@ -16,28 +16,30 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Date;
 import java.util.List;
 
 
 /**
- * Note: MutableArrayInterface is an internal interface. sThis should not be public.
+ * Note: MutableArrayInterface is an internal interface: it must not be public.
  */
 interface MutableArrayInterface extends ArrayInterface {
+
+    @Nullable
+    @Override
+    MutableArrayInterface getArray(int index);
+    @Nullable
+    @Override
+    MutableDictionaryInterface getDictionary(int index);
+
+    // remove
+
     @NonNull
-    MutableArrayInterface setData(List<Object> data);
+    MutableArrayInterface remove(int value);
 
     // set
-
-    @NonNull
-    MutableArrayInterface setValue(int index, Object value);
-
-    @NonNull
-    MutableArrayInterface setString(int index, String value);
-
-    @NonNull
-    MutableArrayInterface setNumber(int index, Number value);
 
     @NonNull
     MutableArrayInterface setInt(int index, int value);
@@ -55,27 +57,33 @@ interface MutableArrayInterface extends ArrayInterface {
     MutableArrayInterface setBoolean(int index, boolean value);
 
     @NonNull
-    MutableArrayInterface setBlob(int index, Blob value);
+    MutableArrayInterface setDate(int index, @Nullable Date value);
 
     @NonNull
-    MutableArrayInterface setDate(int index, Date value);
+    MutableArrayInterface setBlob(int index, @Nullable Blob value);
 
     @NonNull
-    MutableArrayInterface setArray(int index, Array value);
+    MutableArrayInterface setArray(int index, @Nullable Array value);
 
     @NonNull
-    MutableArrayInterface setDictionary(int index, Dictionary value);
+    MutableArrayInterface setDictionary(int index, @Nullable Dictionary value);
+
+    @NonNull
+    MutableArrayInterface setString(int index, @Nullable String value);
+
+    @NonNull
+    MutableArrayInterface setNumber(int index, @Nullable Number value);
+
+    @NonNull
+    MutableArrayInterface setValue(int index, @Nullable Object value);
+
+    @NonNull
+    MutableArrayInterface setData(@NonNull List<Object> data);
+
+    @NonNull
+    MutableArrayInterface setJSON(@NonNull String json);
 
     // add
-
-    @NonNull
-    MutableArrayInterface addValue(Object value);
-
-    @NonNull
-    MutableArrayInterface addString(String value);
-
-    @NonNull
-    MutableArrayInterface addNumber(Number value);
 
     @NonNull
     MutableArrayInterface addInt(int value);
@@ -93,27 +101,27 @@ interface MutableArrayInterface extends ArrayInterface {
     MutableArrayInterface addBoolean(boolean value);
 
     @NonNull
-    MutableArrayInterface addBlob(Blob value);
+    MutableArrayInterface addString(@Nullable String value);
 
     @NonNull
-    MutableArrayInterface addDate(Date value);
+    MutableArrayInterface addNumber(@Nullable Number value);
 
     @NonNull
-    MutableArrayInterface addArray(Array value);
+    MutableArrayInterface addDate(@Nullable Date value);
 
     @NonNull
-    MutableArrayInterface addDictionary(Dictionary value);
+    MutableArrayInterface addBlob(@Nullable Blob value);
+
+    @NonNull
+    MutableArrayInterface addArray(@Nullable Array value);
+
+    @NonNull
+    MutableArrayInterface addDictionary(@Nullable Dictionary value);
+
+    @NonNull
+    MutableArrayInterface addValue(@Nullable Object value);
 
     // insert
-
-    @NonNull
-    MutableArrayInterface insertValue(int index, Object value);
-
-    @NonNull
-    MutableArrayInterface insertString(int index, String value);
-
-    @NonNull
-    MutableArrayInterface insertNumber(int index, Number value);
 
     @NonNull
     MutableArrayInterface insertInt(int index, int value);
@@ -131,25 +139,23 @@ interface MutableArrayInterface extends ArrayInterface {
     MutableArrayInterface insertBoolean(int index, boolean value);
 
     @NonNull
-    MutableArrayInterface insertBlob(int index, Blob value);
+    MutableArrayInterface insertDate(int index, @Nullable Date value);
 
     @NonNull
-    MutableArrayInterface insertDate(int index, Date value);
+    MutableArrayInterface insertBlob(int index, @Nullable Blob value);
 
     @NonNull
-    MutableArrayInterface insertArray(int index, Array value);
+    MutableArrayInterface insertNumber(int index, @Nullable Number value);
 
     @NonNull
-    MutableArrayInterface insertDictionary(int index, Dictionary value);
-
-    // remove
+    MutableArrayInterface insertString(int index, @Nullable String value);
 
     @NonNull
-    MutableArrayInterface remove(int value);
+    MutableArrayInterface insertArray(int index, @Nullable Array value);
 
-    // overridden
+    @NonNull
+    MutableArrayInterface insertDictionary(int index, @Nullable Dictionary value);
 
-    MutableArrayInterface getArray(int index);
-
-    MutableDictionaryInterface getDictionary(int index);
+    @NonNull
+    MutableArrayInterface insertValue(int index, @Nullable Object value);
 }

@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Date;
 import java.util.List;
@@ -27,13 +28,6 @@ import java.util.List;
 interface ArrayInterface {
     int count();
 
-    // Array, Blob, Boolean, Dictionary, Number, String
-    Object getValue(int index);
-
-    String getString(int index);
-
-    Number getNumber(int index);
-
     int getInt(int index);
 
     long getLong(int index);
@@ -44,14 +38,30 @@ interface ArrayInterface {
 
     boolean getBoolean(int index);
 
-    Blob getBlob(int index);
+    @Nullable
+    Number getNumber(int index);
 
+    @Nullable
+    String getString(int index);
+
+    @Nullable
     Date getDate(int index);
 
+    @Nullable
+    Blob getBlob(int index);
+
+    @Nullable
     ArrayInterface getArray(int index);
 
+    @Nullable
     DictionaryInterface getDictionary(int index);
+
+    @Nullable
+    Object getValue(int index);
 
     @NonNull
     List<Object> toList();
+
+    @NonNull
+    String toJSON();
 }

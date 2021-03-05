@@ -18,6 +18,8 @@ package com.couchbase.lite.internal.fleece;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jetbrains.annotations.NotNull;
+
 
 public class MArray extends MCollection {
     private List<MValue> values = new ArrayList<>();
@@ -29,7 +31,7 @@ public class MArray extends MCollection {
     }
 
     @Override
-    protected void initInSlot(MValue mv, MCollection parent, boolean isMutable) {
+    protected void initInSlot(@NotNull MValue mv, MCollection parent, boolean isMutable) {
         super.initInSlot(mv, parent, isMutable);
         if (baseArray != null) { throw new IllegalStateException("base array is not null."); }
 

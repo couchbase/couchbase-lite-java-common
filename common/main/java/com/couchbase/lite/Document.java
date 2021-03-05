@@ -364,6 +364,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Override
     public Map<String, Object> toMap() { return getContent().toMap(); }
 
+    @NonNull
+    @Override
+    public String toJSON() {
+        throw new UnsupportedOperationException("Not yet implemented");
+    }
+
     /**
      * Tests whether a property exists or not.
      * This can be less expensive than getValue(String),
@@ -393,7 +399,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) { return true; }
         if (!(o instanceof Document)) { return false; }
 
@@ -565,7 +571,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
 
         final Database db = getDatabase();
-        if (db == null) { throw new IllegalStateException(""); }
+        if (db == null) { throw new IllegalStateException("document has not been saved to a database"); }
 
         final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
         root = newRoot;

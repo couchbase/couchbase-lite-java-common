@@ -17,6 +17,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Date;
 import java.util.List;
@@ -38,53 +39,74 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     /**
      * Constructs a new empty Array object.
      */
-    public MutableArray() {
-        super();
-    }
+    public MutableArray() { super(); }
 
     /**
-     * Constructs a new Array object with an array content. Allowed value types are List, Date,
-     * Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
-     * only the above types.
+     * Creates a new MutableArray with content from the passed List.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.
      *
-     * @param data the array object.
+     * @param data the document content list
      */
-    public MutableArray(List<Object> data) {
+    public MutableArray(@NonNull List<Object> data) {
         super();
         setData(data);
     }
 
-    // to create copy
-    MutableArray(MArray mArray, boolean isMutable) {
-        super(mArray, isMutable);
+    /**
+     * Creates a new MutableArray with content from the passed JSON string.
+     *
+     * @param json the array content as a JSON string.
+     */
+    public MutableArray(@NonNull String json) {
+        super();
+        setJSON(json);
     }
 
+    // to create copy
+    MutableArray(@NonNull MArray mArray, boolean isMutable) { super(mArray, isMutable); }
+
     // Call from native method
-    MutableArray(MValue mv, MCollection parent) {
-        super(mv, parent);
-    }
+    MutableArray(@NonNull MValue mv, @Nullable MCollection parent) { super(mv, parent); }
 
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
 
     /**
-     * Set an array as a content. Allowed value types are List, Date,
-     * Map, Number, null, String, Array, Blob, and Dictionary. The List and Map must contain
-     * only the above types. Setting the new array content will replace the current data
-     * including the existing Array and Dictionary objects.
+     * Populate an array with content from a Map.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.
+     * Setting the array content will replace the current data including
+     * any existing Array and Dictionary objects.
      *
      * @param data the array
      * @return The self object
      */
     @NonNull
     @Override
-    public MutableArray setData(List<Object> data) {
+    public MutableArray setData(@NonNull List<Object> data) {
         synchronized (lock) {
             internalArray.clear();
-            for (Object obj : data) { internalArray.append(Fleece.toCBLObject(obj)); }
+            for (Object obj: data) { internalArray.append(Fleece.toCBLObject(obj)); }
             return this;
         }
+    }
+
+    /**
+     * Populate an array with content from a JSON string.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.
+     * Setting the array content will replace the current data including
+     * any existing Array and Dictionary objects.
+     *
+     * @param json the dictionary object.
+     * @return this Document instance
+     */
+    @NonNull
+    @Override
+    public MutableArray setJSON(@NonNull String json) {
+        throw new UnsupportedOperationException("not yet implemented");
     }
 
     /**
@@ -96,7 +118,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setValue(int index, Object value) {
+    public MutableArray setValue(int index, @Nullable Object value) {
         synchronized (lock) {
             if (Fleece.valueWouldChange(value, internalArray.get(index), internalArray)
                 && (!internalArray.set(index, Fleece.toCBLObject(value)))) {
@@ -115,9 +137,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setString(int index, String value) {
-        return setValue(index, value);
-    }
+    public MutableArray setString(int index, @Nullable String value) { return setValue(index, value); }
 
     /**
      * Sets an NSNumber object at the given index.
@@ -128,9 +148,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setNumber(int index, Number value) {
-        return setValue(index, value);
-    }
+    public MutableArray setNumber(int index, @Nullable Number value) { return setValue(index, value); }
 
     /**
      * Sets an integer value at the given index.
@@ -141,9 +159,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setInt(int index, int value) {
-        return setValue(index, value);
-    }
+    public MutableArray setInt(int index, int value) { return setValue(index, value); }
 
     /**
      * Sets an integer value at the given index.
@@ -154,9 +170,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setLong(int index, long value) {
-        return setValue(index, value);
-    }
+    public MutableArray setLong(int index, long value) { return setValue(index, value); }
 
     /**
      * Sets a float value at the given index.
@@ -167,9 +181,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setFloat(int index, float value) {
-        return setValue(index, value);
-    }
+    public MutableArray setFloat(int index, float value) { return setValue(index, value); }
 
     /**
      * Sets a double value at the given index.
@@ -180,9 +192,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setDouble(int index, double value) {
-        return setValue(index, value);
-    }
+    public MutableArray setDouble(int index, double value) { return setValue(index, value); }
 
     /**
      * Sets a boolean value at the given index.
@@ -193,9 +203,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setBoolean(int index, boolean value) {
-        return setValue(index, value);
-    }
+    public MutableArray setBoolean(int index, boolean value) { return setValue(index, value); }
 
     /**
      * Sets a Blob object at the given index.
@@ -206,9 +214,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setBlob(int index, Blob value) {
-        return setValue(index, value);
-    }
+    public MutableArray setBlob(int index, @Nullable Blob value) { return setValue(index, value); }
 
     /**
      * Sets a Date object at the given index.
@@ -219,7 +225,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setDate(int index, Date value) {
+    public MutableArray setDate(int index, @Nullable Date value) {
         return setValue(index, value);
     }
 
@@ -232,9 +238,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setArray(int index, Array value) {
-        return setValue(index, value);
-    }
+    public MutableArray setArray(int index, @Nullable Array value) { return setValue(index, value); }
 
     /**
      * Sets a Dictionary object at the given index.
@@ -245,9 +249,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setDictionary(int index, Dictionary value) {
-        return setValue(index, value);
-    }
+    public MutableArray setDictionary(int index, @Nullable Dictionary value) { return setValue(index, value); }
 
     /**
      * Adds an object to the end of the array.
@@ -257,7 +259,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addValue(Object value) {
+    public MutableArray addValue(@Nullable Object value) {
         synchronized (lock) {
             internalArray.append(Fleece.toCBLObject(value));
             return this;
@@ -272,9 +274,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addString(String value) {
-        return addValue(value);
-    }
+    public MutableArray addString(@Nullable String value) { return addValue(value); }
 
     /**
      * Adds a Number object to the end of the array.
@@ -284,9 +284,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addNumber(Number value) {
-        return addValue(value);
-    }
+    public MutableArray addNumber(@Nullable Number value) { return addValue(value); }
 
     /**
      * Adds an integer value to the end of the array.
@@ -296,9 +294,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addInt(int value) {
-        return addValue(value);
-    }
+    public MutableArray addInt(int value) { return addValue(value); }
 
     /**
      * Adds a long value to the end of the array.
@@ -308,9 +304,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addLong(long value) {
-        return addValue(value);
-    }
+    public MutableArray addLong(long value) { return addValue(value); }
 
     /**
      * Adds a float value to the end of the array.
@@ -320,9 +314,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addFloat(float value) {
-        return addValue(value);
-    }
+    public MutableArray addFloat(float value) { return addValue(value); }
 
     /**
      * Adds a double value to the end of the array.
@@ -332,9 +324,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addDouble(double value) {
-        return addValue(value);
-    }
+    public MutableArray addDouble(double value) { return addValue(value); }
 
     /**
      * Adds a boolean value to the end of the array.
@@ -344,9 +334,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addBoolean(boolean value) {
-        return addValue(value);
-    }
+    public MutableArray addBoolean(boolean value) { return addValue(value); }
 
     /**
      * Adds a Blob object to the end of the array.
@@ -356,9 +344,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addBlob(Blob value) {
-        return addValue(value);
-    }
+    public MutableArray addBlob(@Nullable Blob value) { return addValue(value); }
 
     /**
      * Adds a Date object to the end of the array.
@@ -368,9 +354,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addDate(Date value) {
-        return addValue(value);
-    }
+    public MutableArray addDate(@Nullable Date value) { return addValue(value); }
 
     /**
      * Adds an Array object to the end of the array.
@@ -380,9 +364,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addArray(Array value) {
-        return addValue(value);
-    }
+    public MutableArray addArray(@Nullable Array value) { return addValue(value); }
 
     /**
      * Adds a Dictionary object to the end of the array.
@@ -392,9 +374,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addDictionary(Dictionary value) {
-        return addValue(value);
-    }
+    public MutableArray addDictionary(@Nullable Dictionary value) { return addValue(value); }
 
     /**
      * Inserts an object at the given index.
@@ -405,7 +385,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertValue(int index, Object value) {
+    public MutableArray insertValue(int index, @Nullable Object value) {
         synchronized (lock) {
             if (!internalArray.insert(index, Fleece.toCBLObject(value))) { throwRangeException(index); }
             return this;
@@ -421,9 +401,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertString(int index, String value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertString(int index, @Nullable String value) { return insertValue(index, value); }
 
     /**
      * Inserts a Number object at the given index.
@@ -434,9 +412,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertNumber(int index, Number value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertNumber(int index, @Nullable Number value) { return insertValue(index, value); }
 
     /**
      * Inserts an integer value at the given index.
@@ -447,9 +423,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertInt(int index, int value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertInt(int index, int value) { return insertValue(index, value); }
 
     /**
      * Inserts a long value at the given index.
@@ -460,9 +434,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertLong(int index, long value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertLong(int index, long value) { return insertValue(index, value); }
 
     /**
      * Inserts a float value at the given index.
@@ -473,9 +445,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertFloat(int index, float value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertFloat(int index, float value) { return insertValue(index, value); }
 
     /**
      * Inserts a double value at the given index.
@@ -486,9 +456,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertDouble(int index, double value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertDouble(int index, double value) { return insertValue(index, value); }
 
     /**
      * Inserts a boolean value at the given index.
@@ -499,9 +467,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertBoolean(int index, boolean value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertBoolean(int index, boolean value) { return insertValue(index, value); }
 
     /**
      * Inserts a Blob object at the given index.
@@ -512,9 +478,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertBlob(int index, Blob value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertBlob(int index, @Nullable Blob value) { return insertValue(index, value); }
 
     /**
      * Inserts a Date object at the given index.
@@ -525,9 +489,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertDate(int index, Date value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertDate(int index, @Nullable Date value) { return insertValue(index, value); }
 
     /**
      * Inserts an Array object at the given index.
@@ -538,9 +500,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertArray(int index, Array value) {
-        return insertValue(index, value);
-    }
+    public MutableArray insertArray(int index, @Nullable Array value) { return insertValue(index, value); }
 
     /**
      * Inserts a Dictionary object at the given index.
@@ -551,7 +511,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertDictionary(int index, Dictionary value) {
+    public MutableArray insertDictionary(int index, @Nullable Dictionary value) {
         return insertValue(index, value);
     }
 
@@ -576,10 +536,9 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param index the index. This value must not exceed the bounds of the array.
      * @return the Array object.
      */
+    @Nullable
     @Override
-    public MutableArray getArray(int index) {
-        return (MutableArray) super.getArray(index);
-    }
+    public MutableArray getArray(int index) { return (MutableArray) super.getArray(index); }
 
     /**
      * Gets a Dictionary at the given index. Return null if the value is not an dictionary.
@@ -587,8 +546,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param index the index. This value must not exceed the bounds of the array.
      * @return the Dictionary object.
      */
+    @Nullable
     @Override
-    public MutableDictionary getDictionary(int index) {
-        return (MutableDictionary) super.getDictionary(index);
-    }
+    public MutableDictionary getDictionary(int index) { return (MutableDictionary) super.getDictionary(index); }
 }
