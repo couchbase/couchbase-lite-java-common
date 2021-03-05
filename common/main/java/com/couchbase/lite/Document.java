@@ -399,7 +399,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) { return true; }
         if (!(o instanceof Document)) { return false; }
 

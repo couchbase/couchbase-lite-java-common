@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Date;
 import java.util.Map;
@@ -42,7 +43,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     /**
      * Creates a new MutableDictionary with content from the passed Map.
      * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
-     * The List and Map must contain only the above types.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.
      *
      * @param data the dictionary content map.
      */
@@ -56,9 +57,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     public MutableDictionary(@NonNull String json) { setJSON(json); }
 
     // to create copy of dictionary
-    MutableDictionary(MDict mDict, boolean isMutable) { super(mDict, isMutable); }
+    MutableDictionary(@NonNull MDict mDict, boolean isMutable) { super(mDict, isMutable); }
 
-    MutableDictionary(MValue mv, MCollection parent) { super(mv, parent); }
+    MutableDictionary(@NonNull MValue mv, @Nullable MCollection parent) { super(mv, parent); }
 
     //---------------------------------------------
     // API - public methods
@@ -67,8 +68,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     /**
      * Populate a dictionary with content from a Map.
      * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
-     * The List and Map must contain only the above types. Setting the new dictionary content will
-     * replace the current data including the existing Array and Dictionary objects.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.
+     * Setting the dictionary content will replace the current data including
+     * any existing Array and Dictionary objects.
      *
      * @param data the dictionary object.
      * @return The self object.
@@ -87,9 +89,8 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
 
     /**
      * Populate a dictionary with content from a JSON string.
-     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
-     * The List and Map must contain only the above types. Setting the new dictionary content will
-     * replace the current data including the existing Array and Dictionary objects.
+     * Setting the dictionary content will replace the current data including
+     * any existing Array and Dictionary objects.
      *
      * @param json the dictionary object.
      * @return this Document instance
@@ -101,9 +102,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     }
 
     /**
-     * Set an object value by key. Allowed value types are List, Date, Map, Number, null, String,
-     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
-     * An Date object will be converted to an ISO-8601 format string.
+     * Set an object value by key.
+     * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.
      *
      * @param key   the key.
      * @param value the object value.
@@ -111,7 +112,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setValue(@NonNull String key, Object value) {
+    public MutableDictionary setValue(@NonNull String key, @Nullable Object value) {
         Preconditions.assertNotNull(key, "key");
         synchronized (lock) {
             final MValue oldValue = internalDict.get(key);
@@ -130,7 +131,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setString(@NonNull String key, String value) { return setValue(key, value); }
+    public MutableDictionary setString(@NonNull String key, @Nullable String value) { return setValue(key, value); }
 
     /**
      * Set a Number value for the given key.
@@ -141,7 +142,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setNumber(@NonNull String key, Number value) { return setValue(key, value); }
+    public MutableDictionary setNumber(@NonNull String key, @Nullable Number value) { return setValue(key, value); }
 
     /**
      * Set an int value for the given key.
@@ -265,6 +266,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param key the key.
      * @return the Array object.
      */
+    @Nullable
     @Override
     public MutableArray getArray(@NonNull String key) { return (MutableArray) super.getArray(key); }
 
@@ -275,6 +277,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param key the key.
      * @return the Dictionary object or null if the key doesn't exist.
      */
+    @Nullable
     @Override
     public MutableDictionary getDictionary(@NonNull String key) { return (MutableDictionary) super.getDictionary(key); }
 

@@ -312,7 +312,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Object overrides
     //-------------------------------------------------------------------------
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) { return true; }
         if (!(o instanceof Array)) { return false; }
 

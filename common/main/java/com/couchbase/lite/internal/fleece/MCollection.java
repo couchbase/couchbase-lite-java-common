@@ -15,9 +15,13 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.VisibleForTesting;
 
+import edu.umd.cs.findbugs.annotations.Nullable;
+
 import com.couchbase.lite.internal.DbContext;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public abstract class MCollection implements Encodable {
@@ -76,11 +80,9 @@ public abstract class MCollection implements Encodable {
         }
     }
 
-    protected void initInSlot(MValue slot, MCollection parent, boolean isMutable) {
-        if (slot == null) { throw new IllegalArgumentException("slot cannot be null."); }
-        if (context != MContext.NULL) { throw new IllegalStateException("Current context is not MContext.Null"); }
-
-        this.slot = slot;
+    protected void initInSlot(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
+        if (context != MContext.NULL) { throw new IllegalStateException("Current context must be MContext.Null"); }
+        this.slot = Preconditions.assertNotNull(slot, "slot");
         this.parent = parent;
         this.mutable = isMutable;
         mutableChildren = isMutable;

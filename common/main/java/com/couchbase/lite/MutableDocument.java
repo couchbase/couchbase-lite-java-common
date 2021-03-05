@@ -45,7 +45,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     public MutableDocument() { this((String) null); }
 
     /**
-     * Creates a new Document object with the given ID.  If the id is null, the document
+     * Creates a new Document with the given ID.  If the id is null, the document
      * will be created with a new random UUID. The created document will be
      * saved into a database when you call the Database's save(Document) method with the document
      * object given.
@@ -55,9 +55,9 @@ public final class MutableDocument extends Document implements MutableDictionary
     public MutableDocument(@Nullable String id) { this(null, id, null); }
 
     /**
-     * Initializes a new CBLDocument object with a new random UUID and the dictionary as the content.
+     * Creates a new Document with a new random UUID and the dictionary as the content.
      * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
-     * List and Map containers must contain only the above types.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.
      * The created document will be saved into a database when you call Database.save(Document)
      * with this document object.
      *
@@ -76,16 +76,16 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param id   the document ID.
      * @param data the Map object
      */
-    public MutableDocument(@Nullable String id, Map<String, Object> data) {
+    public MutableDocument(@Nullable String id, @NonNull Map<String, Object> data) {
         this(null, id, null);
-        setData(data);
+        if (data != null) { setData(data); }
     }
 
     /**
      * Creates a new Document with the given ID and content from the passed JSON string.
-     * If the id is null, the document will be created with a new random UUID. The created document will be
-     * saved into a database when you call the Database's save(Document) method with the document
-     * object given.
+     * If the id is null, the document will be created with a new random UUID.
+     * The created document will be saved into a database when you call the Database's
+     * save(Document) method with the document object given.
      *
      * @param id   the document ID or null.
      * @param json the document content as a JSON string.
@@ -134,8 +134,9 @@ public final class MutableDocument extends Document implements MutableDictionary
     /**
      * Populate a document with content from a Map.
      * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
-     * The List and Map must contain only the above types. Setting the new dictionary content will
-     * replace the current data including the existing Array and Dictionary objects.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.  Setting the
+     * document content will replace the current data including the existing Array and Dictionary
+     * objects.
      *
      * @param data the dictionary object.
      * @return this Document instance
@@ -150,8 +151,9 @@ public final class MutableDocument extends Document implements MutableDictionary
     /**
      * Populate a document with content from a JSON string.
      * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
-     * The List and Map must contain only the above types. Setting the new dictionary content will
-     * replace the current data including the existing Array and Dictionary objects.
+     * If present, Lists, Maps and Dictionaries may contain only the above types.  Setting the
+     * document content will replace the current data including the existing Array and Dictionary
+     * objects.
      *
      * @param json the dictionary object.
      * @return this Document instance
@@ -165,8 +167,8 @@ public final class MutableDocument extends Document implements MutableDictionary
 
     /**
      * Set an object value by key. Allowed value types are List, Date, Map, Number, null, String,
-     * Array, Blob, and Dictionary. The List and Map must contain only the above types.
-     * An Date object will be converted to an ISO-8601 format string.
+     * Array, Blob, and Dictionary. If present, Lists, Maps and Dictionaries may contain only
+     * the above types. An Date object will be converted to an ISO-8601 format string.
      *
      * @param key   the key.
      * @param value the Object value.
@@ -174,7 +176,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @NonNull
     @Override
-    public MutableDocument setValue(@NonNull String key, Object value) {
+    public MutableDocument setValue(@NonNull String key, @Nullable Object value) {
         getMutableContent().setValue(key, value);
         return this;
     }
@@ -188,7 +190,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @NonNull
     @Override
-    public MutableDocument setString(@NonNull String key, String value) { return setValue(key, value); }
+    public MutableDocument setString(@NonNull String key, @Nullable String value) { return setValue(key, value); }
 
     /**
      * Set a Number value for the given key
@@ -199,7 +201,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @NonNull
     @Override
-    public MutableDocument setNumber(@NonNull String key, Number value) { return setValue(key, value); }
+    public MutableDocument setNumber(@NonNull String key, @Nullable Number value) { return setValue(key, value); }
 
     /**
      * Set a integer value for the given key
@@ -265,7 +267,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @NonNull
     @Override
-    public MutableDocument setBlob(@NonNull String key, Blob value) { return setValue(key, value); }
+    public MutableDocument setBlob(@NonNull String key, @Nullable Blob value) { return setValue(key, value); }
 
     /**
      * Set a Date value for the given key
@@ -276,7 +278,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @NonNull
     @Override
-    public MutableDocument setDate(@NonNull String key, Date value) { return setValue(key, value); }
+    public MutableDocument setDate(@NonNull String key, @Nullable Date value) { return setValue(key, value); }
 
     /**
      * Set an Array value for the given key
@@ -287,7 +289,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @NonNull
     @Override
-    public MutableDocument setArray(@NonNull String key, Array value) { return setValue(key, value); }
+    public MutableDocument setArray(@NonNull String key, @Nullable Array value) { return setValue(key, value); }
 
     /**
      * Set a Dictionary value for the given key
@@ -298,7 +300,9 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @NonNull
     @Override
-    public MutableDocument setDictionary(@NonNull String key, Dictionary value) { return setValue(key, value); }
+    public MutableDocument setDictionary(@NonNull String key, @Nullable Dictionary value) {
+        return setValue(key, value);
+    }
 
     /**
      * Removes the mapping for a key from this Dictionary
@@ -320,6 +324,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the key.
      * @return the Array object.
      */
+    @Nullable
     @Override
     public MutableArray getArray(@NonNull String key) { return getMutableContent().getArray(key); }
 
@@ -330,6 +335,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param key the key.
      * @return the Dictionary object or null if the key doesn't exist.
      */
+    @Nullable
     @Override
     public MutableDictionary getDictionary(@NonNull String key) { return getMutableContent().getDictionary(key); }
 
@@ -346,5 +352,6 @@ public final class MutableDocument extends Document implements MutableDictionary
 
     private boolean isChanged() { return getMutableContent().isChanged(); }
 
+    @NonNull
     private MutableDictionary getMutableContent() { return (MutableDictionary) getContent(); }
 }

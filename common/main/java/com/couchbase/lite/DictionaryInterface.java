@@ -29,19 +29,7 @@ import java.util.Map;
 public interface DictionaryInterface {
     int count();
 
-    // Return a COPY of all keys
-    @NonNull
-    List<String> getKeys();
-
-    // Array, Blob, Boolean, Dictionary, Number, String
-    @Nullable
-    Object getValue(@NonNull String key);
-
-    @Nullable
-    String getString(@NonNull String key);
-
-    @Nullable
-    Number getNumber(@NonNull String key);
+    boolean contains(@NonNull String key);
 
     int getInt(@NonNull String key);
 
@@ -54,10 +42,16 @@ public interface DictionaryInterface {
     boolean getBoolean(@NonNull String key);
 
     @Nullable
-    Blob getBlob(@NonNull String key);
+    Number getNumber(@NonNull String key);
+
+    @Nullable
+    String getString(@NonNull String key);
 
     @Nullable
     Date getDate(@NonNull String key);
+
+    @Nullable
+    Blob getBlob(@NonNull String key);
 
     @Nullable
     ArrayInterface getArray(@NonNull String key);
@@ -65,11 +59,16 @@ public interface DictionaryInterface {
     @Nullable
     DictionaryInterface getDictionary(@NonNull String key);
 
+    @Nullable
+    Object getValue(@NonNull String key);
+
+    // Return a COPY of all keys
+    @NonNull
+    List<String> getKeys();
+
     @NonNull
     Map<String, Object> toMap();
 
     @NonNull
     String toJSON();
-
-    boolean contains(@NonNull String key);
 }

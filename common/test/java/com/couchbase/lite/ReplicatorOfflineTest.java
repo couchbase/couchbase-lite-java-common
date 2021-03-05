@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

@@ -51,18 +51,19 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Constructors
     //-------------------------------------------------------------------------
 
+    // ??? Consolidate these?
     Dictionary() {
         internalDict = new MDict();
         lock = getDbLock();
     }
 
-    Dictionary(MValue mv, MCollection parent) {
+    Dictionary(@NonNull MValue mv, @Nullable MCollection parent) {
         internalDict = new MDict();
         internalDict.initInSlot(mv, parent);
         lock = getDbLock();
     }
 
-    Dictionary(MDict mDict, boolean isMutable) {
+    Dictionary(@NonNull MDict mDict, boolean isMutable) {
         internalDict = new MDict();
         internalDict.initAsCopyOf(mDict, isMutable);
         lock = getDbLock();
@@ -330,7 +331,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * encodeTo(FlEncoder) is internal method. Please don't use this method.
      */
     @Override
-    public void encodeTo(FLEncoder enc) { internalDict.encodeTo(enc); }
+    public void encodeTo(@NonNull FLEncoder enc) { internalDict.encodeTo(enc); }
 
     //---------------------------------------------
     // Iterable implementation
@@ -341,7 +342,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     public Iterator<String> iterator() { return getKeys().iterator(); }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) { return true; }
         if (!(o instanceof Dictionary)) { return false; }
 
@@ -367,7 +368,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public int hashCode() {
         int h = 0;
-        for (String key : this) { h += hashCode(key, getValue(key)); }
+        for (String key : this) {
+            final Object value = getValue(key);
+            h += key.hashCode() ^ ((value == null) ? 0 : value.hashCode());
+        }
         return h;
     }
 
@@ -398,6 +402,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // package level access
     //---------------------------------------------
 
+    @NonNull
     MCollection toMCollection() { return internalDict; }
 
     //---------------------------------------------
@@ -412,10 +417,5 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
             if (db != null) { return db.getLock(); }
         }
         return new Object();
-    }
-
-    // hashCode for pair of key and value
-    private int hashCode(String key, Object value) {
-        return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode());
     }
 }

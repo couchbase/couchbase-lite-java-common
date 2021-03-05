@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import edu.umd.cs.findbugs.annotations.Nullable;
+
 import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
@@ -39,7 +41,7 @@ final class Fleece {
         // As a simplification we assume that array and dict values are always different,
         // to avoid a possibly expensive comparison.
         final FLValue val = oldValue.getValue();
-        final int oldType =  (val != null) ? val.getType() : FLConstants.ValueType.UNDEFINED;
+        final int oldType = (val != null) ? val.getType() : FLConstants.ValueType.UNDEFINED;
         if (oldType == FLConstants.ValueType.UNDEFINED
             || oldType == FLConstants.ValueType.DICT
             || oldType == FLConstants.ValueType.ARRAY) {
@@ -54,45 +56,30 @@ final class Fleece {
     }
 
     @SuppressWarnings("unchecked")
-    static Object toCBLObject(Object value) {
-        if (value instanceof MutableDictionary) {
+    static Object toCBLObject(@Nullable Object value) {
+        if ((value == null)
+            || (value instanceof Boolean)
+            || (value instanceof Number)
+            || (value instanceof String)
+            || (value instanceof Blob)
+            || (value instanceof MutableArray)
+            || (value instanceof MutableDictionary)) {
             return value;
         }
-        else if (value instanceof Dictionary) {
-            return ((Dictionary) value).toMutable();
-        }
-        else if (value instanceof MutableArray) {
-            return value;
-        }
-        else if (value instanceof Array) {
-            return ((Array) value).toMutable();
-        }
-        else if (value instanceof Map) {
-            return new MutableDictionary((Map<String, Object>) value);
-        }
-        else if (value instanceof List) {
-            return new MutableArray((List<Object>) value);
-        }
-        else if (value instanceof Date) {
-            return DateUtils.toJson((Date) value);
-        }
-        else {
-            if (!(value == null ||
-                value instanceof String ||
-                value instanceof Number ||
-                value instanceof Boolean ||
-                value instanceof Blob)) {
-                throw new IllegalArgumentException(
-                    Log.formatStandardMessage(
-                        "InvalidValueToBeDeserialized",
-                        value.getClass().getSimpleName(),
-                        SUPPORTED_TYPES));
-            }
-        }
-        return value;
+        else if (value instanceof Dictionary) { return ((Dictionary) value).toMutable(); }
+        else if (value instanceof Array) { return ((Array) value).toMutable(); }
+        else if (value instanceof Map) { return new MutableDictionary((Map<String, Object>) value); }
+        else if (value instanceof List) { return new MutableArray((List<Object>) value); }
+        else if (value instanceof Date) { return DateUtils.toJson((Date) value); }
+
+        throw new IllegalArgumentException(
+            Log.formatStandardMessage(
+                "InvalidValueToBeDeserialized",
+                value.getClass().getSimpleName(),
+                SUPPORTED_TYPES));
     }
 
-    static Object toObject(Object value) {
+    static Object toObject(@Nullable Object value) {
         if (value == null) { return null; }
         else if (value instanceof Dictionary) { return ((Dictionary) value).toMap(); }
         else if (value instanceof Array) { return ((Array) value).toList(); }
