@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -27,27 +30,140 @@ import org.json.JSONObject;
 
 
 public final class JsonUtils {
-    @SuppressWarnings("unchecked")
-    public static JSONObject toJson(Map<String, Object> map) throws JSONException {
+    private JsonUtils() { }
+
+    @SuppressWarnings("PMD.AvoidStringBufferField")
+    public static class Marshaller {
+        private final StringBuilder buf = new StringBuilder();
+
+        public Marshaller writeValue(@Nullable Object val) throws JSONException {
+            if (val == null) { writeNull(); }
+            else if (val instanceof Boolean) { writeBoolean((Boolean) val); }
+            else if (val instanceof Number) { writeNumber((Number) val); }
+            else if (val instanceof String) { writeString((String) val); }
+            else if (val instanceof List<?>) { writeArray((List<?>) val); }
+            else if (val instanceof Map<?, ?>) { writeMap((Map<?, ?>) val); }
+            return this;
+        }
+
+        public Marshaller writeArray(@Nullable List<?> list) throws JSONException {
+            if (list == null) {
+                writeValue(null);
+                return this;
+            }
+
+            boolean first = true;
+            startArray();
+            for (Object item: list) {
+                if (first) { first = false; }
+                else { nextMember(); }
+                writeValue(item);
+            }
+            endArray();
+
+            return this;
+        }
+
+        public Marshaller writeMap(@Nullable Map<?, ?> map) throws JSONException {
+            if (map == null) {
+                writeValue(null);
+                return this;
+            }
+
+            boolean first = true;
+            startObject();
+            for (Map.Entry<?, ?> entry: map.entrySet()) {
+                final Object k = entry.getKey();
+                if (k == null) { throw new JSONException("Object key is null"); }
+
+                if (first) { first = false; }
+                else { nextMember(); }
+
+                writeKey(k.toString());
+                writeValue(entry.getValue());
+            }
+            endObject();
+
+            return this;
+        }
+
+        public Marshaller startObject() {
+            buf.append('{');
+            return this;
+        }
+
+        public Marshaller writeKey(@Nullable String key) {
+            buf.append('"').append(key).append("\":");
+            return this;
+        }
+
+        public Marshaller endObject() {
+            buf.append('}');
+            return this;
+        }
+
+        public Marshaller startArray() {
+            buf.append('[');
+            return this;
+        }
+
+        public Marshaller endArray() {
+            buf.append(']');
+            return this;
+        }
+
+        public Marshaller nextMember() {
+            buf.append(',');
+            return this;
+        }
+
+        public Marshaller writeString(String val) {
+            buf.append('"').append(val).append('"');
+            return this;
+        }
+
+        public Marshaller writeNumber(Number val) {
+            buf.append(val);
+            return this;
+        }
+
+        public Marshaller writeBoolean(Boolean val) {
+            buf.append((val) ? "true" : "false");
+            return this;
+        }
+
+        public Marshaller writeNull() {
+            buf.append("null");
+            return this;
+        }
+
+        @NonNull
+        public String toString() { return buf.toString(); }
+    }
+
+    public static JSONObject toJson(Map<?, ?> map) throws JSONException {
         if (map == null) { return null; }
         final JSONObject json = new JSONObject();
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
-            if (entry.getValue() == null) { json.put(entry.getKey(), JSONObject.NULL); }
-            else if (entry.getValue() instanceof Map) { json.put(entry.getKey(), toJson((Map) entry.getValue())); }
-            else if (entry.getValue() instanceof List) { json.put(entry.getKey(), toJson((List) entry.getValue())); }
-            else { json.put(entry.getKey(), entry.getValue()); }
+        for (Map.Entry<?, ?> entry: map.entrySet()) {
+            final Object k = entry.getKey();
+            if (k == null) { throw new JSONException("Object key is null"); }
+            final String key = k.toString();
+            final Object val = entry.getValue();
+            if (val == null) { json.put(key, JSONObject.NULL); }
+            else if (val instanceof Map<?, ?>) { json.put(key, toJson((Map<?, ?>) val)); }
+            else if (val instanceof List<?>) { json.put(key, toJson((List<?>) val)); }
+            else { json.put(key, val); }
         }
         return json;
     }
 
-    @SuppressWarnings("unchecked")
-    public static JSONArray toJson(List<Object> list) throws JSONException {
+    public static JSONArray toJson(List<?> list) throws JSONException {
         if (list == null) { return null; }
         final JSONArray json = new JSONArray();
-        for (Object value : list) {
+        for (Object value: list) {
             if (value == null) { json.put(JSONObject.NULL); }
-            else if (value instanceof Map) { json.put(toJson((Map<String, Object>) value)); }
-            else if (value instanceof List) { json.put(toJson((List<Object>) value)); }
+            else if (value instanceof Map<?, ?>) { json.put(toJson((Map<?, ?>) value)); }
+            else if (value instanceof List<?>) { json.put(toJson((List<?>) value)); }
             else { json.put(value); }
         }
         return json;
@@ -78,6 +194,4 @@ public final class JsonUtils {
         }
         return result;
     }
-
-    private JsonUtils() { }
 }

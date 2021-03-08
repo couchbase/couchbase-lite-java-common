@@ -38,6 +38,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.JsonUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -73,7 +74,7 @@ public final class Blob implements FLEncodable {
     static final String PROP_REVPOS = "revpos";
 
 
-    // Max size of data that will be cached in memory with the CBLBlob
+    // Max size of data that will be cached in memory with the Blob
     private static final int MAX_CACHED_CONTENT_LENGTH = 8 * 1024;
     private static final String MIME_UNKNOWN = "application/octet-stream";
 
@@ -109,12 +110,12 @@ public final class Blob implements FLEncodable {
 
         @Override
         public synchronized void mark(int readLimit) {
-            throw new UnsupportedOperationException("'mark()' not supported");
+            throw new UnsupportedOperationException("'mark()' not supported for Blob stream");
         }
 
         @Override
         public synchronized void reset() {
-            throw new UnsupportedOperationException("'reset()' not supported");
+            throw new UnsupportedOperationException("'reset()' not supported for Blob stream");
         }
 
         @Override
@@ -193,9 +194,7 @@ public final class Blob implements FLEncodable {
         }
     }
 
-    public static boolean isBlob(Map<String, ?> map) {
-        throw new UnsupportedOperationException("Not yet implemented");
-    }
+    public static boolean isBlob(Map<String, ?> map) { return TYPE_BLOB.equals(map.get(META_PROP_TYPE)); }
 
 
     //---------------------------------------------
@@ -207,25 +206,25 @@ public final class Blob implements FLEncodable {
     // A blob loaded from the database will have database, properties, and digest unless invalid
 
     /**
-     * The type of content this CBLBlob represents; by convention this is a MIME type.
+     * The type of content this Blob represents; by convention this is a MIME type.
      */
     @NonNull
     private final String contentType;
 
     /**
-     * The binary length of this CBLBlob.
+     * The binary length of this Blob.
      */
     private long blobLength;
 
     /**
-     * The contents of a CBLBlob as a block of memory.
+     * The contents of a Blob as a block of memory.
      * Assert((blobContentStream == null) || (blobContent == null))
      */
     @Nullable
     private byte[] blobContent;
 
     /**
-     * The contents of a CBLBlob as a stream.
+     * The contents of a Blob as a stream.
      * Assert((blobContentStream == null) || (blobContent == null))
      */
     @Nullable
@@ -238,14 +237,14 @@ public final class Blob implements FLEncodable {
     private Database database;
 
     /**
-     * The cryptographic digest of this CBLBlob's contents, which uniquely identifies it.
+     * The cryptographic digest of this Blob's contents, which uniquely identifies it,
+     * or null if the blob has not yet been written to a database.
      */
     @Nullable
     private String blobDigest;
 
     /**
-     * The metadata associated with this CBLBlob.
-     * Only in blob read from database
+     * The metadata associated with this Blob, or null if it was not read from a database
      */
     @Nullable
     private Map<String, Object> properties;
@@ -389,7 +388,34 @@ public final class Blob implements FLEncodable {
 
     @NonNull
     public String toJSON() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        if (blobDigest == null) {
+            throw new IllegalStateException("toJSON() may be used only after a Blob has not been saved in a database");
+        }
+
+        return new JsonUtils.Marshaller()
+            .startObject()
+
+            .writeKey(META_PROP_TYPE)
+            .writeString(TYPE_BLOB)
+            .nextMember()
+
+            .writeKey(PROP_DIGEST)
+            .writeString(blobDigest)
+            .nextMember()
+
+            .writeKey(PROP_LENGTH)
+            .writeNumber(blobLength)
+            .nextMember()
+
+            .writeKey(PROP_CONTENT_TYPE)
+            .writeString(contentType)
+            .nextMember()
+
+            .writeKey(PROP_DIGEST)
+            .writeString(blobDigest)
+
+            .endObject()
+            .toString();
     }
 
     /**
@@ -415,7 +441,7 @@ public final class Blob implements FLEncodable {
     @NonNull
     public Map<String, Object> getProperties() {
         // Blob read from database;
-        if (properties != null) { return properties; }
+        if (properties != null) { return new HashMap<>(properties); }
 
         final Map<String, Object> props = new HashMap<>();
         props.put(PROP_DIGEST, blobDigest);
@@ -424,22 +450,33 @@ public final class Blob implements FLEncodable {
         return props;
     }
 
-    //FLEncodable
-    // this should not be part of the public API.
+    // FLEncodable
+    // !!! This should not be part of the public API.
     @Override
     public void encodeTo(@NonNull FLEncoder encoder) {
         final MutableDocument info = encoder.getExtraInfo(MutableDocument.class);
-        if (info != null) {
-            final Database db = Preconditions.assertNotNull(info.getDatabase(), "db");
-            installInDatabase(db);
+        if (info != null) { installInDatabase(Preconditions.assertNotNull(info.getDatabase(), "db")); }
+
+        encoder.beginDict(4);
+
+        encoder.writeKey(META_PROP_TYPE);
+        encoder.writeValue(TYPE_BLOB);
+
+        encoder.writeKey(PROP_LENGTH);
+        encoder.writeValue(blobLength);
+
+        encoder.writeKey(PROP_CONTENT_TYPE);
+        encoder.writeValue(contentType);
+
+        if (blobDigest != null) {
+            encoder.writeKey(PROP_DIGEST);
+            encoder.writeValue(blobDigest);
+        }
+        else {
+            encoder.writeKey(PROP_DATA);
+            encoder.writeValue(getContent());
         }
 
-        final Map<String, Object> dict = getJsonRepresentation();
-        encoder.beginDict(dict.size());
-        for (Map.Entry<String, Object> entry: dict.entrySet()) {
-            encoder.writeKey(entry.getKey());
-            encoder.writeValue(entry.getValue());
-        }
         encoder.endDict();
     }
 
@@ -575,16 +612,6 @@ public final class Blob implements FLEncodable {
         if (blobContent != null) { return store.create(blobContent); }
         if (blobContentStream != null) { return writeDatabaseFromInitStream(store); }
         throw new IllegalStateException(Log.lookupStandardMessage("BlobContentNull"));
-    }
-
-    private Map<String, Object> getJsonRepresentation() {
-        final Map<String, Object> json = new HashMap<>(getProperties());
-        json.put(META_PROP_TYPE, TYPE_BLOB);
-
-        if (blobDigest != null) { json.put(PROP_DIGEST, blobDigest); }
-        else { json.put(PROP_DATA, getContent()); }
-
-        return json;
     }
 
     @SuppressFBWarnings("DE_MIGHT_IGNORE")

@@ -452,7 +452,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public String toJSON() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
     }
 
     /**

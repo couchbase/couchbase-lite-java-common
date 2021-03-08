@@ -98,7 +98,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @NonNull
     @Override
     public MutableDocument setJSON(@NonNull String json) {
-        throw new UnsupportedOperationException("not yet implemented");
+        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
     }
 
     /**

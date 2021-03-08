@@ -772,12 +772,12 @@ abstract class AbstractDatabase {
     }
 
     public void saveBlob(@NonNull Blob blob) throws CouchbaseLiteException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
     }
 
     @NonNull
     public Blob getBlob(@NonNull Map<String, ?> props) throws CouchbaseLiteException {
-        throw new UnsupportedOperationException("Not yet implemented");
+        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
     }
 
     @NonNull

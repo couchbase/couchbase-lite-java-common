@@ -55,7 +55,8 @@ public final class CBLTrustManager implements X509TrustManager {
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) {
-        throw new UnsupportedOperationException("Checking Client Trust is a server operation");
+        throw new UnsupportedOperationException(
+            "checkClientTrusted(X509Certificate[], String) not supported for client");
     }
 
     @Override
@@ -91,7 +92,8 @@ public final class CBLTrustManager implements X509TrustManager {
             if (!Arrays.equals(pinnedServerCertificate, cert.getEncoded())) {
                 throw new CertificateException("Server certificate does not match pinned certificate");
             }
-        } else {
+        }
+        else {
             // Accept only self-signed certificate:
             if (chain.length > 1 || !isSelfSignedCertificate(cert)) {
                 throw new CertificateException("Server certificate is not self-signed");
@@ -149,9 +151,10 @@ public final class CBLTrustManager implements X509TrustManager {
         try {
             cert.verify(cert.getPublicKey());
             return true;
-        } catch (CertificateException | NoSuchAlgorithmException |
-                 InvalidKeyException | NoSuchProviderException |
-                 SignatureException e) {
+        }
+        catch (CertificateException | NoSuchAlgorithmException |
+            InvalidKeyException | NoSuchProviderException |
+            SignatureException e) {
             return false;
         }
     }

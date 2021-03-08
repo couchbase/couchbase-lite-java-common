@@ -190,7 +190,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public MutableDocument toMutable() {
         synchronized (lock) {
             if (revId != null) {
-                throw new UnsupportedOperationException("Documents from a replication filter may not be edited.");
+                throw new UnsupportedOperationException("Editing replication filter documents not supported");
             }
         }
         return new MutableDocument(this);
@@ -367,7 +367,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @NonNull
     @Override
     public String toJSON() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
     }
 
     /**

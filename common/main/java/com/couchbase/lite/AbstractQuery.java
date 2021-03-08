@@ -299,9 +299,7 @@ abstract class AbstractQuery implements Query {
 
     private String encodeAsJson() {
         try { return JsonUtils.toJson(asJson()).toString(); }
-        catch (JSONException e) {
-            Log.w(DOMAIN, "Error encoding a query as a json string", e);
-        }
+        catch (JSONException e) { Log.w(DOMAIN, "Error encoding a query as a json string", e); }
         return null;
     }
 

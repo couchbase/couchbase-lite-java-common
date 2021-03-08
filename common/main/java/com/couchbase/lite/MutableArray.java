@@ -106,7 +106,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray setJSON(@NonNull String json) {
-        throw new UnsupportedOperationException("not yet implemented");
+        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
     }
 
     /**

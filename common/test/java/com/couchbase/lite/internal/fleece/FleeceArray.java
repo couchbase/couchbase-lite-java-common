@@ -68,16 +68,20 @@ public class FleeceArray implements List<Object>, Encodable {
         @Override
         public Object previous() {
             int i = cursor - 1;
-            if (i < 0) { throw new NoSuchElementException(); }
+            if (i < 0) { throw new NoSuchElementException("Access out of bounds: " + i); }
             cursor = i;
             return get(i);
         }
 
         @Override
-        public void set(Object e) { throw new UnsupportedOperationException(); }
+        public void set(Object e) {
+            throw new UnsupportedOperationException("set(Object) not supported for FleeceArray iterator");
+        }
 
         @Override
-        public void add(Object e) { throw new UnsupportedOperationException(); }
+        public void add(Object e) {
+            throw new UnsupportedOperationException("add(Object) not supported for FleeceArray iterator");
+        }
     }
 
     //---------------------------------------------
@@ -122,7 +126,7 @@ public class FleeceArray implements List<Object>, Encodable {
     @Override
     public Object get(int i) {
         MValue val = mArray.get(i);
-        if (val.isEmpty()) { throw new IndexOutOfBoundsException(); }
+        if (val.isEmpty()) { throw new IndexOutOfBoundsException("Index out of bounds: " + i); }
         return val.asNative(mArray);
     }
 
@@ -150,48 +154,72 @@ public class FleeceArray implements List<Object>, Encodable {
     @Override
     @NonNull
     public ListIterator<Object> listIterator(int index) {
-        if (index < 0 || index > size()) { throw new IndexOutOfBoundsException("Index: " + index); }
+        if ((index < 0) || (index > size())) { throw new IndexOutOfBoundsException("Index out of bounds: " + index); }
         return new ListItr(index);
     }
 
     @Override
-    public boolean contains(Object o) { throw new UnsupportedOperationException(); }
+    public boolean contains(Object o) {
+        throw new UnsupportedOperationException("contains(Object) not supported for FleeceArray");
+    }
 
     @Override
     @NonNull
-    public Object[] toArray() { throw new UnsupportedOperationException(); }
+    public Object[] toArray() {
+        throw new UnsupportedOperationException("toArray() not supported for FleeceArray");
+    }
 
     @Override
     @NonNull
-    public <T> T[] toArray(@NonNull T[] ts) { throw new UnsupportedOperationException(); }
+    public <T> T[] toArray(@NonNull T[] ts) {
+        throw new UnsupportedOperationException("toArray(T[]) not supported for FleeceArray");
+    }
 
     @Override
-    public int indexOf(Object o) { throw new UnsupportedOperationException(); }
+    public int indexOf(Object o) {
+        throw new UnsupportedOperationException("indexOf(Object) not supported for FleeceArray");
+    }
 
     @Override
-    public int lastIndexOf(Object o) { throw new UnsupportedOperationException(); }
+    public int lastIndexOf(Object o) {
+        throw new UnsupportedOperationException("lastIndexOf(Object) not supported for FleeceArray");
+    }
 
     @Override
     @NonNull
-    public List<Object> subList(int i, int i1) { throw new UnsupportedOperationException(); }
+    public List<Object> subList(int i, int i1) {
+        throw new UnsupportedOperationException("subList(int, int) not supported for FleeceArray");
+    }
 
     @Override
-    public boolean remove(Object o) { throw new UnsupportedOperationException(); }
+    public boolean remove(Object o) {
+        throw new UnsupportedOperationException("remove(Object) not supported for FleeceArray");
+    }
 
     @Override
-    public boolean containsAll(    @NonNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+    public boolean containsAll(@NonNull Collection<?> collection) {
+        throw new UnsupportedOperationException("containsAll(Collection<?>) not supported for FleeceArray");
+    }
 
     @Override
-    public boolean addAll(@NonNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+    public boolean addAll(@NonNull Collection<?> collection) {
+        throw new UnsupportedOperationException("addAll(Collection<?>) not supported for FleeceArray");
+    }
 
     @Override
-    public boolean addAll(int i, @NonNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+    public boolean addAll(int i, @NonNull Collection<?> collection) {
+        throw new UnsupportedOperationException("addAll(Collection<?>) not supported for FleeceArray");
+    }
 
     @Override
-    public boolean removeAll(@NonNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+    public boolean removeAll(@NonNull Collection<?> collection) {
+        throw new UnsupportedOperationException("removeAll(Collection<?>) not supported for FleeceArray");
+    }
 
     @Override
-    public boolean retainAll(@NonNull Collection<?> collection) { throw new UnsupportedOperationException(); }
+    public boolean retainAll(@NonNull Collection<?> collection) {
+        throw new UnsupportedOperationException("retainAll(Collection<?>) not supported for FleeceArray");
+    }
 
     // Implementation of FLEncodable
     @Override
@@ -207,6 +235,6 @@ public class FleeceArray implements List<Object>, Encodable {
     MCollection toMCollection() { return mArray; }
 
     private void requireMutable() {
-        if (!mArray.isMutable()) { throw new IllegalStateException(); }
+        if (!mArray.isMutable()) { throw new IllegalStateException("Call to FleeceArray.requireMutable"); }
     }
 }

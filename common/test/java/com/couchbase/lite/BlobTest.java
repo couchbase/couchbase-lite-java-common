@@ -311,23 +311,18 @@ public class BlobTest extends BaseDbTest {
     }
 
     @SuppressWarnings("ConstantConditions")
-    @Test
-    public void testBlobConstructorsWithEmptyArgs() throws IOException {
-        byte[] bytes;
-        String contentType = "image/png";
+    @Test(expected = IllegalArgumentException.class)
+    public void testBlobCtorWithNullContentType() { new Blob(null, new byte[] {5, 6, 7, 8}); }
 
-        InputStream is = PlatformUtils.getAsset("attachment.png");
-        try { bytes = IOUtils.toByteArray(is); }
-        finally { is.close(); }
+    @SuppressWarnings("ConstantConditions")
+    @Test(expected = IllegalArgumentException.class)
+    public void testBlobCtorWithNullContent() { new Blob("image/png", (byte[]) null); }
 
-        assertThrows(IllegalArgumentException.class, () -> new Blob(null, bytes));
+    @SuppressWarnings("ConstantConditions")
+    @Test(expected = IllegalArgumentException.class)
+    public void testBlobCtorWithStreamAndNullContentType() { new Blob(null, PlatformUtils.getAsset("attachment.png")); }
 
-        assertThrows(IllegalArgumentException.class, () -> new Blob(contentType, (byte[]) null));
-
-        assertThrows(IllegalArgumentException.class, () -> new Blob(null, is));
-
-        assertThrows(IllegalArgumentException.class, () -> new Blob(contentType, (InputStream) null));
-
-        assertThrows(IllegalArgumentException.class, () -> new Blob(contentType, (InputStream) null));
-    }
+    @SuppressWarnings("ConstantConditions")
+    @Test(expected = IllegalArgumentException.class)
+    public void testBlobCtorsWithNullStream() { new Blob("image/png", (InputStream) null); }
 }

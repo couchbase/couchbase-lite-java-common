@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.utils
 
+import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.utils.StringUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -22,7 +23,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 
-class StringUtilsTest {
+class StringUtilsTest : BaseTest() {
 
     @Test
     fun testIsEmpty() {

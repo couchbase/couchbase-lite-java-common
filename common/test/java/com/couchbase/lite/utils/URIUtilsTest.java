@@ -20,13 +20,14 @@ import java.net.URISyntaxException;
 
 import org.junit.Test;
 
+import com.couchbase.lite.BaseTest;
+
 import static org.junit.Assert.assertEquals;
 
 
-public class URIUtilsTest {
+public class URIUtilsTest extends BaseTest {
     @Test
     public void testGetPort() throws URISyntaxException {
-        URI uri = new URI("ws://foo.couchbase.com/db");
-        assertEquals(-1, uri.getPort());
+        assertEquals(-1, new URI("ws://foo.couchbase.com/db").getPort());
     }
 }

@@ -21,6 +21,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jetbrains.annotations.NotNull;
+
 
 // This class and its constructor are referenced by name, from native code.
 public class FleeceDict implements Map<String, Object>, Encodable {
@@ -89,26 +91,33 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     @Override
     public void clear() { dict.clear(); }
 
+    @NotNull
     @Override
-    public Set<String> keySet() { return new HashSet<String>(dict.getKeys()); }
+    public Set<String> keySet() { return new HashSet<>(dict.getKeys()); }
 
+    @NotNull
     @Override
     public Set<Entry<String, Object>> entrySet() {
         Set<Entry<String, Object>> entrySet = new HashSet<>();
-        for (String key : dict.getKeys()) {
-            entrySet.add(new AbstractMap.SimpleEntry<String, Object>(key, get(key)));
-        }
+        for (String key: dict.getKeys()) { entrySet.add(new AbstractMap.SimpleEntry<>(key, get(key))); }
         return entrySet;
     }
 
     @Override
-    public boolean containsValue(Object o) { throw new UnsupportedOperationException(); }
+    public boolean containsValue(Object o) {
+        throw new UnsupportedOperationException("containsValue(Object) not supported for FleeceDict");
+    }
 
     @Override
-    public void putAll(Map<? extends String, ?> map) { throw new UnsupportedOperationException(); }
+    public void putAll(@NotNull Map<? extends String, ?> map) {
+        throw new UnsupportedOperationException("putAll(Map) not supported for FleeceDict");
+    }
 
+    @NotNull
     @Override
-    public Collection<Object> values() { throw new UnsupportedOperationException(); }
+    public Collection<Object> values() {
+        throw new UnsupportedOperationException("values() not supported for FleeceDict");
+    }
 
     public boolean isMutated() { return dict.isMutated(); }
 
