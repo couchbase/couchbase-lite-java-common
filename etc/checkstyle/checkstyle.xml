@@ -138,8 +138,10 @@
         <!-- Checks that the clone() method is not overridden (because it is terrible) -->
         <module name="NoClone"/>
 
-        <!-- Verifies that there are no finalize() methods defined in a class. -->
+        <!-- Verifies that there are no finalize() methods defined in a class.
+        Disabled because there are a butload of finalizers in this codebase
         <module name="NoFinalizer"/>
+        -->
 
         <!-- Checks there is only one statement per line. -->
         <module name="OneStatementPerLine"/>
@@ -176,7 +178,6 @@
         <module name="GenericWhitespace"/>
 
         <!-- Ensures fields declaration order
-
         Disabled because it does not allow the separation of statics
         <module name="DeclarationOrder" />
          -->
@@ -300,7 +301,7 @@
             <property name="option"
                 value="bottom"/>
             <message key="import.ordering"
-                value="Wrong order for ''{0}'' import. Order should be: android, java, javax, dagger, com, net, org. Each group should be separated by a single blank line."/>
+                value="Wrong order for ''{0}'' import. Order should be: android, java, javax, com, net, org. Each group should be separated by a single blank line."/>
         </module>
 
         <module name="NeedBraces">
@@ -327,7 +328,14 @@
                 value="Public static final fields (constants) are ALL_CAPS_WITH_UNDERSCORES."/>
         </module>
 
+        <module name="RegexpSinglelineJava">
+            <property name="format" value="@NotNull"/>
+            <property name="message" value="Use @NonNull instead of @NotNull."/>
+        </module>
+
         <!--
+        Disabled because this codebase is full of it.
+        Should go through with sed, sometime, and fix it.
         <module name="RegexpSinglelineJava">
             <property name="format" value="^\s*//(?!noinspection)\S"/>
             <property name="message" value="// is not followed by whitespace."/>

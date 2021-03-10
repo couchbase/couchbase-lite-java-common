@@ -24,8 +24,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.jetbrains.annotations.NotNull;
-
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -194,7 +192,7 @@ public class MDict extends MCollection implements Iterable<String> {
     //---------------------------------------------
 
     @Override
-    protected void initInSlot(@NotNull @NonNull MValue mv, @Nullable MCollection parent, boolean isMutable) {
+    protected void initInSlot(@NonNull MValue mv, @Nullable MCollection parent, boolean isMutable) {
         super.initInSlot(mv, parent, isMutable);
         if (flDict != null) { throw new IllegalStateException("flDict is not null"); }
 
