@@ -37,10 +37,7 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     //---------------------------------------------
 
     // Call from native method
-    FleeceDict(MValue mv, MCollection parent) {
-        dict = new MDict();
-        dict.initInSlot(mv, parent);
-    }
+    FleeceDict(MValue mv, MCollection parent) { dict = new MDict(mv, parent); }
 
     //---------------------------------------------
     // Public methods

@@ -97,8 +97,12 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDocument setJSON(@NonNull String json) {
-        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
+    public MutableDictionary setJSON(@NonNull String json) {
+        synchronized (lock) {
+            internalDict.clear();
+            // !!!JSON: NOT YET IMPLEMENTED
+            return this;
+        }
     }
 
     /**

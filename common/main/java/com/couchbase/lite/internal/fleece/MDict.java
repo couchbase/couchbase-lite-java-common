@@ -35,15 +35,22 @@ public class MDict extends MCollection implements Iterable<String> {
     private long valCount;
 
 
-    public void initInSlot(@NonNull MValue mv, @Nullable MCollection parent) {
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+
+    public MDict() {}
+
+
+    public MDict(@NonNull MValue mv, @Nullable MCollection parent) {
         initInSlot(mv, parent, parent != null && parent.hasMutableChildren());
     }
 
-    public void initAsCopyOf(@NonNull MDict d, boolean isMutable) {
-        super.initAsCopyOf(d, isMutable);
-        flDict = d.flDict;
-        valueMap = new HashMap<>(d.valueMap);
-        valCount = d.valCount;
+    public MDict(@NonNull MDict mDict, boolean isMutable) {
+        super.initAsCopyOf(mDict, isMutable);
+        flDict = mDict.flDict;
+        valueMap = new HashMap<>(mDict.valueMap);
+        valCount = mDict.valCount;
     }
 
     //---------------------------------------------
@@ -71,6 +78,7 @@ public class MDict extends MCollection implements Iterable<String> {
         }
         else {
             enc.beginDict(valCount);
+
             for (Map.Entry<String, MValue> entry: valueMap.entrySet()) {
                 final MValue value = entry.getValue();
                 if (!value.isEmpty()) {
@@ -92,6 +100,7 @@ public class MDict extends MCollection implements Iterable<String> {
                     }
                 }
             }
+
             enc.endDict();
         }
     }

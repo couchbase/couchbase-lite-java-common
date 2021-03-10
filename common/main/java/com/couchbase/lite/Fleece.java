@@ -37,21 +37,17 @@ final class Fleece {
     private static final String SUPPORTED_TYPES
         = "MutableDictionary, Dictionary, MutableArray, Array, Map, List, Date, String, Number, Boolean, Blob or null";
 
-    // As a simplification we assume that array and dict values are always different,
-    // to avoid a possibly expensive comparison.
+    // Assume that array and dict values are always different to avoid expensive comparisons.
     static boolean valueWouldChange(Object newValue, MValue oldValue, MCollection container) {
         final FLValue val = oldValue.getValue();
 
         final int oldType = (val != null) ? val.getType() : FLConstants.ValueType.UNDEFINED;
-        if (oldType == FLConstants.ValueType.UNDEFINED
-            || oldType == FLConstants.ValueType.DICT
-            || oldType == FLConstants.ValueType.ARRAY) {
-            return true;
-        }
-
-        if (newValue instanceof Array || newValue instanceof Dictionary) { return true; }
-
-        return !Objects.equals(newValue, oldValue.asNative(container));
+        return ((oldType == FLConstants.ValueType.UNDEFINED)
+            || (oldType == FLConstants.ValueType.DICT)
+            || (newValue instanceof Dictionary)
+            || (oldType == FLConstants.ValueType.ARRAY)
+            || (newValue instanceof Array)
+            || !Objects.equals(newValue, oldValue.asNative(container)));
     }
 
     @SuppressWarnings("unchecked")

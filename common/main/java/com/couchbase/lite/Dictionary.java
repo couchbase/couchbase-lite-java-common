@@ -51,21 +51,14 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Constructors
     //-------------------------------------------------------------------------
 
-    // ??? Consolidate these?
-    Dictionary() {
-        internalDict = new MDict();
-        lock = getDbLock();
-    }
+    Dictionary() { this(new MDict()); }
 
-    Dictionary(@NonNull MValue mv, @Nullable MCollection parent) {
-        internalDict = new MDict();
-        internalDict.initInSlot(mv, parent);
-        lock = getDbLock();
-    }
+    Dictionary(@NonNull MValue mv, @Nullable MCollection parent) { this(new MDict(mv, parent)); }
 
-    Dictionary(@NonNull MDict mDict, boolean isMutable) {
-        internalDict = new MDict();
-        internalDict.initAsCopyOf(mDict, isMutable);
+    Dictionary(@NonNull MDict mDict, boolean isMutable) { this(new MDict(mDict, isMutable)); }
+
+    private Dictionary(@NonNull MDict internalDict) {
+        this.internalDict = internalDict;
         lock = getDbLock();
     }
 
@@ -73,9 +66,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // API - public methods
     //-------------------------------------------------------------------------
 
-    //-------------------------------------------------------------------------
-    // Implementation of ReadOnlyDictionaryInterface
-    //-------------------------------------------------------------------------
+    //////// Implementation of ReadOnlyDictionaryInterface
 
     /**
      * Gets a number of the entries in the dictionary.
@@ -286,7 +277,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     public Map<String, Object> toMap() {
         final Map<String, Object> result = new HashMap<>();
         synchronized (lock) {
-            for (String key : internalDict) {
+            for (String key: internalDict) {
                 result.put(key, Fleece.toObject(internalDict.get(key).asNative(internalDict)));
             }
         }
@@ -313,29 +304,16 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         synchronized (lock) { return !internalDict.get(key).isEmpty(); }
     }
 
-    /**
-     * Return a mutable copy of the dictionary
-     *
-     * @return the MutableDictionary instance
-     */
-    @NonNull
-    public MutableDictionary toMutable() {
-        synchronized (lock) { return new MutableDictionary(internalDict, true); }
-    }
-
-    //-------------------------------------------------------------------------
-    // Implementation of FLEncodable
-    //-------------------------------------------------------------------------
+    //////// Implementation of FLEncodable
 
     /**
-     * encodeTo(FlEncoder) is internal method. Please don't use this method.
+     * Internal method: Do not use.
      */
+    // Public because of the FLEncodable interface
     @Override
     public void encodeTo(@NonNull FLEncoder enc) { internalDict.encodeTo(enc); }
 
-    //---------------------------------------------
-    // Iterable implementation
-    //---------------------------------------------
+    //////// Iterable implementation
 
     @NonNull
     @Override
@@ -349,7 +327,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         final Dictionary m = (Dictionary) o;
 
         if (m.count() != count()) { return false; }
-        for (String key : this) {
+        for (String key: this) {
             final Object value = getValue(key);
             if (value != null) {
                 if (!value.equals(m.getValue(key))) { return false; }
@@ -361,14 +339,12 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         return true;
     }
 
-    //---------------------------------------------
-    // Override
-    //---------------------------------------------
+    //////// Object
 
     @Override
     public int hashCode() {
         int h = 0;
-        for (String key : this) {
+        for (String key: this) {
             final Object value = getValue(key);
             h += key.hashCode() ^ ((value == null) ? 0 : value.hashCode());
         }
@@ -384,12 +360,22 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
             .append((internalDict.isMutated()) ? '!' : '.')
             .append(')');
         boolean first = true;
-        for (String key : getKeys()) {
+        for (String key: getKeys()) {
             if (first) { first = false; }
             else { buf.append(','); }
             buf.append(key).append("=>").append(getValue(key));
         }
         return buf.append('}').toString();
+    }
+
+    /**
+     * Return a mutable copy of the dictionary
+     *
+     * @return the MutableDictionary instance
+     */
+    @NonNull
+    public MutableDictionary toMutable() {
+        synchronized (lock) { return new MutableDictionary(internalDict, true); }
     }
 
     //---------------------------------------------
