@@ -39,7 +39,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     /**
      * Constructs a new empty Array object.
      */
-    public MutableArray() { super(); }
+    public MutableArray() { }
 
     /**
      * Creates a new MutableArray with content from the passed List.
@@ -48,20 +48,14 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      *
      * @param data the document content list
      */
-    public MutableArray(@NonNull List<Object> data) {
-        super();
-        setData(data);
-    }
+    public MutableArray(@NonNull List<Object> data) { setData(data); }
 
     /**
      * Creates a new MutableArray with content from the passed JSON string.
      *
      * @param json the array content as a JSON string.
      */
-    public MutableArray(@NonNull String json) {
-        super();
-        setJSON(json);
-    }
+    public MutableArray(@NonNull String json) { setJSON(json); }
 
     // to create copy
     MutableArray(@NonNull MArray mArray, boolean isMutable) { super(mArray, isMutable); }

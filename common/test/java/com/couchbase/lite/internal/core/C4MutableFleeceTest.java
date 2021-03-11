@@ -36,11 +36,11 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.fleece.FleeceDict;
+import com.couchbase.lite.internal.fleece.TestDictionary;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.fleece.MValue;
-import com.couchbase.lite.internal.fleece.MValueDelegate;
+import com.couchbase.lite.internal.fleece.TestMValueDelegate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -67,7 +67,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
     @Before
     public final void setUpC4MutableFleeceTest() {
         delegate = MValue.getRegisteredDelegate();
-        MValue.registerDelegate(new MValueDelegate());
+        MValue.registerDelegate(new TestMValueDelegate());
         BaseTest.logTestInitializationComplete("C4MutableFleece");
     }
 
@@ -239,7 +239,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             assertNotNull(obj);
             assertTrue(obj instanceof Map);
             Map<String, Object> dict = (Map<String, Object>) obj;
-            assertFalse(((FleeceDict) dict).isMutated());
+            assertFalse(((TestDictionary) dict).isMutated());
             assertEquals(Arrays.asList("array", "dict", "greeting"), sortedKeys(dict));
             assertEquals("hi", dict.get("greeting"));
             assertNull(dict.get("x"));
@@ -258,12 +258,12 @@ public class C4MutableFleeceTest extends C4BaseTest {
             assertEquals(212L, nested.get("boil"));
             assertNull(nested.get("freeze"));
             verifyDictIterator(nested);
-            assertFalse(((FleeceDict) nested).isMutated());
-            assertFalse(((FleeceDict) dict).isMutated());
+            assertFalse(((TestDictionary) nested).isMutated());
+            assertFalse(((TestDictionary) dict).isMutated());
 
             nested.put("freeze", Arrays.asList(32L, "Fahrenheit"));
-            assertTrue(((FleeceDict) nested).isMutated());
-            assertTrue(((FleeceDict) dict).isMutated());
+            assertTrue(((TestDictionary) nested).isMutated());
+            assertTrue(((TestDictionary) dict).isMutated());
             assertEquals(32L, nested.remove("melt"));
             expected.clear();
             expected.put("freeze", Arrays.asList(32L, "Fahrenheit"));

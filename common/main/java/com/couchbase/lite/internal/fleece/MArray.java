@@ -21,29 +21,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+// ??? Why isn't this iterable?
 public class MArray extends MCollection {
     private List<MValue> values = new ArrayList<>();
 
     private FLArray baseArray;
 
     public void initInSlot(MValue mv, MCollection parent) {
-        initInSlot(mv, parent, parent != null && parent.hasMutableChildren());
-    }
-
-    @Override
-    protected void initInSlot(@NonNull MValue mv, MCollection parent, boolean isMutable) {
-        super.initInSlot(mv, parent, isMutable);
-        if (baseArray != null) { throw new IllegalStateException("base array is not null."); }
-
-        final FLValue value = mv.getValue();
-        if (value != null) {
-            baseArray = value.asFLArray();
-            resize(baseArray.count());
-        }
-        else {
-            baseArray = null;
-            resize(0);
-        }
+        initInSlot(mv, parent, (parent != null) && parent.hasMutableChildren());
     }
 
     public void initAsCopyOf(MArray array, boolean isMutable) {
@@ -52,18 +37,9 @@ public class MArray extends MCollection {
         values = array != null ? new ArrayList<>(array.values) : new ArrayList<>();
     }
 
-    /* Properties */
+    public FLArray getBaseArray() { return baseArray; }
 
-    public long count() {
-        return values.size();
-    }
-
-
-    public FLArray getBaseArray() {
-        return baseArray;
-    }
-
-    /* Public Methods */
+    public long count() { return values.size(); }
 
     /**
      * Returns a reference to the MValue of the item at the given index.
@@ -88,6 +64,7 @@ public class MArray extends MCollection {
 
         mutate();
         values.set((int) index, new MValue(value));
+
         return true;
     }
 
@@ -100,12 +77,11 @@ public class MArray extends MCollection {
 
         mutate();
         values.add((int) index, new MValue(value));
+
         return true;
     }
 
-    public boolean append(Object value) {
-        return insert(count(), value);
-    }
+    public boolean append(Object value) { return insert(count(), value); }
 
     public boolean remove(long start, long num) {
         if (!isMutable()) { throw new IllegalStateException("Cannot remove items in a non-mutable MArray"); }
@@ -120,12 +96,11 @@ public class MArray extends MCollection {
 
         mutate();
         values.subList((int) start, (int) end).clear();
+
         return true;
     }
 
-    public boolean remove(long index) {
-        return remove(index, 1);
-    }
+    public boolean remove(long index) { return remove(index, 1); }
 
     public boolean clear() {
         if (!isMutable()) { throw new IllegalStateException("Cannot clear items in a non-mutable MArray"); }
@@ -134,10 +109,47 @@ public class MArray extends MCollection {
 
         mutate();
         values.clear();
+
         return true;
     }
 
-    /* Private Methods */
+    /* Encodable */
+
+    public void encodeTo(FLEncoder enc) {
+        if (!isMutated()) {
+            if (baseArray == null) {
+                enc.beginArray(0);
+                enc.endArray();
+            }
+            else { enc.writeValue(baseArray); }
+        }
+        else {
+            enc.beginArray(count());
+            long i = 0;
+            for (MValue value: values) {
+                if (value.isEmpty()) { enc.writeValue(baseArray.get(i)); }
+                else { value.encodeTo(enc); }
+                i++;
+            }
+            enc.endArray();
+        }
+    }
+
+    @Override
+    protected void initInSlot(@NonNull MValue mv, MCollection parent, boolean isMutable) {
+        super.initInSlot(mv, parent, isMutable);
+        if (baseArray != null) { throw new IllegalStateException("base array is not null."); }
+
+        final FLValue value = mv.getValue();
+        if (value == null) {
+            baseArray = null;
+            resize(0);
+            return;
+        }
+
+        baseArray = value.asFLArray();
+        resize(baseArray.count());
+    }
 
     void resize(long newSize) {
         final int count = values.size();
@@ -152,29 +164,7 @@ public class MArray extends MCollection {
 
         final int size = values.size();
         for (int i = 0; i < size; i++) {
-            if (values.get(i).isEmpty()) {
-                values.set(i, new MValue(baseArray.get(i)));
-            }
-        }
-    }
-
-    public void encodeTo(FLEncoder enc) {
-        if (!isMutated()) {
-            if (baseArray == null) {
-                enc.beginArray(0);
-                enc.endArray();
-            }
-            else { enc.writeValue(baseArray); }
-        }
-        else {
-            enc.beginArray(count());
-            long i = 0;
-            for (MValue value : values) {
-                if (value.isEmpty()) { enc.writeValue(baseArray.get(i)); }
-                else { value.encodeTo(enc); }
-                i++;
-            }
-            enc.endArray();
+            if (values.get(i).isEmpty()) { values.set(i, new MValue(baseArray.get(i))); }
         }
     }
 }

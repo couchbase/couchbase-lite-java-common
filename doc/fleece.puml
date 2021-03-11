@@ -1,0 +1,171 @@
+@startuml
+
+
+package "Java" #DDDDDD {
+interface Map<String, Object> << Java >>
+interface List<Object> << Java >>
+class Object
+}
+
+class NativePeer
+
+
+package "Encoder" #DDDDDD {
+interface Encodable
+Encodable : encodeTo()
+
+interface FLEncodable
+FLEncodable : encodeTo()
+
+class FLEncoder
+NativePeer <|-- FLEncoder
+FLEncoder : bool write...()
+}
+
+
+package "Native Fleece" #DDDDDD {
+class FLDict
+NativePeer <|-- FLDict
+FLDict : FLValue toFLValue()
+FLDict : FLValue get(String)
+FLDict : Map<String, Object> asDict()
+
+class FLArray
+NativePeer <|-- FLArray
+FLArray : FLValue get(long)
+FLArray : List<T> asTypedArray()
+
+class FLValue
+NativePeer <|-- FLValue
+FLValue : int getType()
+FLValue : bool is...()
+FLValue : byte[] asData()
+FLValue : FLArray asFLArray()
+FLValue : List<Object> asArray()
+FLValue : List<T> asTypedArray
+FLValue : FLDict asFLDict()
+FLValue : Map<String, Object> asDict()
+FLValue : T as...()
+FLValue : String toStr()
+FLValue : String toJSON()
+
+class FLSliceResult
+NativePeer <|-- FLSliceResult
+}
+
+
+package "Mutable Fleece" #DDDDDD {
+interface Delegate
+Delegate : Object toNative(MValue, MCollection, bool)
+Delegate : MCollectioncollectionFromNative(Object)
+Delegate : void encodeNative(FLEncoder, Object)
+
+class MValueDelegate
+Delegate <|-- MValueDelegate
+
+class MContext
+
+abstract MCollection
+Encodable <|-- MCollection
+MCollection *-- MValue
+MCollection *-- MCollection
+MCollection *-- MContext
+
+class MValue
+Encodable <|-- MValue
+MValue *-- MValueDelegate
+MValue *-- FLValue
+MValue *- Object
+MValue : bool isMutated()
+MValue : FLValue getValue()
+MValue : Object asNative(MCollection)
+
+class MArray
+MCollection <|-- MArray
+MArray : void initInSlot(MValue, MCollection)
+MArray : void initAsCopyOf(MArray, bool)
+MArray : MValue get(int)
+MArray : bool set(int, Object)
+
+class MDict
+MCollection <|-- MDict
+MDict : void initInSlot(MValue, MCollection)
+MDict : MValue get(String)
+MDict : bool set(String, Object)
+
+class MRoot
+MCollection <|-- MRoot
+MRoot *-- MValue
+}
+
+package "Documents and Results" #DDDDDD {
+interface DictionaryInterface
+DictionaryInterface : <T> get...(String)
+DictionaryInterface : String toJSON()
+
+interface ArrayInterface
+ArrayInterface : T get...(int)
+ArrayInterface : String toJSON()
+
+class Array
+FLEncodable <|-- Array
+ArrayInterface <|-- Array
+Array *-- MArray
+Array : MutableArray toMutable()
+
+class Dictionary
+FLEncodable <|-- Dictionary
+DictionaryInterface <|-- Dictionary
+Dictionary *-- MDict
+Dictionary : MutableDictionary toMutable()
+
+class Blob
+FLEncodable <|-- Blob
+
+class Document
+DictionaryInterface <|-- Document
+
+class Result
+ArrayInterface <|-- Result
+DictionaryInterface <|-- Result
+}
+
+package "Mutable Documents" #DDDDDD {
+interface MutableDictionaryInterface
+DictionaryInterface <|--  MutableDictionaryInterface
+DictionaryInterface : set...(String, <T>)
+
+interface MutableArrayInterface
+ArrayInterface <|-- MutableArrayInterface
+MutableArrayInterface : set...(int, <T>)
+
+class MutableArray
+MutableArrayInterface <|-- MutableArray
+Array <|-- MutableArray
+
+class MutableDictionary
+MutableDictionaryInterface <|-- MutableDictionary
+Dictionary <|-- MutableDictionary
+
+class MutableDocument
+MutableDictionaryInterface <|-- MutableDocument
+Document <|-- MutableDocument
+}
+
+
+package "Testing" #DDDDDD {
+class TestMValueDelegate
+Delegate <|-- TestMValueDelegate
+
+class TestArray
+Encodable <|-- TestArray
+List  <|-- TestArray
+TestArray *-- MArray
+
+class TestDictionary
+Encodable <|-- TestDictionary
+Map <|-- TestDictionary
+TestDictionary *-- MDict
+}
+
+@enduml

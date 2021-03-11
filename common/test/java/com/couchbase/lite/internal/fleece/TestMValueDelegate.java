@@ -17,13 +17,11 @@ package com.couchbase.lite.internal.fleece;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-@VisibleForTesting
-public class MValueDelegate implements MValue.Delegate {
+public class TestMValueDelegate implements MValue.Delegate {
 
     //-------------------------------------------------------------------------
     // Public methods
@@ -36,10 +34,10 @@ public class MValueDelegate implements MValue.Delegate {
         switch (type) {
             case FLConstants.ValueType.ARRAY:
                 cacheIt.set(true);
-                return new FleeceArray(mv, parent);
+                return new TestArray(mv, parent);
             case FLConstants.ValueType.DICT:
                 cacheIt.set(true);
-                return new FleeceDict(mv, parent);
+                return new TestDictionary(mv, parent);
             default:
                 return value.asObject();
         }
@@ -48,8 +46,8 @@ public class MValueDelegate implements MValue.Delegate {
     @Nullable
     @Override
     public MCollection collectionFromNative(@Nullable Object object) {
-        if (object instanceof FleeceDict) { return ((FleeceDict) object).toMCollection(); }
-        else if (object instanceof FleeceArray) { return ((FleeceArray) object).toMCollection(); }
+        if (object instanceof TestDictionary) { return ((TestDictionary) object).toMCollection(); }
+        else if (object instanceof TestArray) { return ((TestArray) object).toMCollection(); }
         else { return null; }
     }
 

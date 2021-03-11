@@ -23,9 +23,8 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-
-// This class and its constructor are referenced by name, from native code.
-public class FleeceArray implements List<Object>, Encodable {
+// Simplified com.couchbase.lite.Array, for testing
+public class TestArray implements List<Object>, Encodable {
     //---------------------------------------------
     // Internal classes
     //---------------------------------------------
@@ -95,7 +94,7 @@ public class FleeceArray implements List<Object>, Encodable {
     //---------------------------------------------
 
     // Call from native method
-    FleeceArray(MValue mv, MCollection parent) {
+    TestArray(MValue mv, MCollection parent) {
         mArray = new MArray();
         mArray.initInSlot(mv, parent);
     }

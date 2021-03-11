@@ -56,10 +56,102 @@ public class MDict extends MCollection implements Iterable<String> {
     // Public methods
     //---------------------------------------------
 
-    /* Properties */
     public long count() { return valCount; }
 
+    @NonNull
+    public MValue get(String key) {
+        Preconditions.assertNotNull(key, "key");
+
+        final MValue v = valueMap.get(key);
+        if (v != null) { return v; }
+
+        final FLValue value = flDict != null ? flDict.get(key) : null;
+        return (value == null) ? MValue.EMPTY : setInMap(key, new MValue(value));
+    }
+
+    public boolean set(String key, MValue value) {
+        Preconditions.assertNotNull(key, "key");
+        Preconditions.assertThat(this, "Cannot call set on a non-mutable MDict", MCollection::isMutable);
+
+        final MValue oValue = valueMap.get(key);
+        if (oValue != null) {
+            // Found in valueMap; update value:
+            if (value.isEmpty() && oValue.isEmpty()) { return true; }
+            mutate();
+            valCount += (value.isEmpty() ? 0 : 1) - (oValue.isEmpty() ? 0 : 1);
+            valueMap.put(key, value);
+        }
+        else {
+            // Not found; check flDict:
+            if (flDict != null && flDict.get(key) != null) {
+                if (value.isEmpty()) { valCount--; }
+            }
+            else {
+                if (value.isEmpty()) { return true; }
+                else { valCount++; }
+            }
+
+            mutate();
+            setInMap(key, value);
+        }
+
+        return true;
+    }
+
+    public boolean contains(String key) {
+        Preconditions.assertNotNull(key, "key");
+        final MValue mValue = valueMap.get(key);
+        return (mValue != null) ? !mValue.isEmpty() : ((flDict != null) && (flDict.get(key) != null));
+    }
+
+    public List<String> getKeys() {
+        final List<String> keys = new ArrayList<>();
+        for (Map.Entry<String, MValue> entry: valueMap.entrySet()) {
+            if (!entry.getValue().isEmpty()) { keys.add(entry.getKey()); }
+        }
+
+        if ((flDict != null) && (flDict.count() > 0)) {
+            try (FLDictIterator itr = new FLDictIterator()) {
+                itr.begin(flDict);
+                String key;
+                while ((key = itr.getKeyString()) != null) {
+                    if (!valueMap.containsKey(key)) { keys.add(key); }
+                    itr.next();
+                }
+            }
+        }
+
+        return keys;
+    }
+
+    public boolean remove(String key) { return set(key, MValue.EMPTY); }
+
+    public boolean clear() {
+        Preconditions.assertThat(this, "Cannot call set on a non-mutable MDict", MCollection::isMutable);
+
+        if (valCount == 0) { return true; }
+
+        mutate();
+        valueMap.clear();
+
+        if ((flDict != null) && (flDict.count() > 0)) {
+            try (FLDictIterator itr = new FLDictIterator()) {
+                itr.begin(flDict);
+                String key;
+                while ((key = itr.getKeyString()) != null) {
+                    valueMap.put(key, MValue.EMPTY);
+                    itr.next();
+                }
+            }
+        }
+
+        valCount = 0;
+
+        return true;
+    }
+
     /* Iterable */
+
     @NonNull
     @Override
     public Iterator<String> iterator() { return getKeys().iterator(); }
@@ -104,97 +196,6 @@ public class MDict extends MCollection implements Iterable<String> {
         }
     }
 
-    public boolean clear() {
-        Preconditions.assertThat(this, "Cannot call set on a non-mutable MDict", MCollection::isMutable);
-
-        if (valCount == 0) { return true; }
-
-        mutate();
-        valueMap.clear();
-
-        if ((flDict != null) && (flDict.count() > 0)) {
-            try (FLDictIterator itr = new FLDictIterator()) {
-                itr.begin(flDict);
-                String key;
-                while ((key = itr.getKeyString()) != null) {
-                    valueMap.put(key, MValue.EMPTY);
-                    itr.next();
-                }
-            }
-        }
-
-        valCount = 0;
-
-        return true;
-    }
-
-    public boolean contains(String key) {
-        Preconditions.assertNotNull(key, "key");
-        final MValue v = valueMap.get(key);
-        return (v != null) ? !v.isEmpty() : ((flDict != null) && (flDict.get(key) != null));
-    }
-
-    public List<String> getKeys() {
-        final List<String> keys = new ArrayList<>();
-        for (Map.Entry<String, MValue> entry: valueMap.entrySet()) {
-            if (!entry.getValue().isEmpty()) { keys.add(entry.getKey()); }
-        }
-
-        if ((flDict != null) && (flDict.count() > 0)) {
-            try (FLDictIterator itr = new FLDictIterator()) {
-                itr.begin(flDict);
-                String key;
-                while ((key = itr.getKeyString()) != null) {
-                    if (!valueMap.containsKey(key)) { keys.add(key); }
-                    itr.next();
-                }
-            }
-        }
-
-        return keys;
-    }
-
-    public boolean remove(String key) { return set(key, MValue.EMPTY); }
-
-    @NonNull
-    public MValue get(String key) {
-        Preconditions.assertNotNull(key, "key");
-
-        final MValue v = valueMap.get(key);
-        if (v != null) { return v; }
-
-        final FLValue value = flDict != null ? flDict.get(key) : null;
-        return (value == null) ? MValue.EMPTY : setInMap(key, new MValue(value));
-    }
-
-    public boolean set(String key, MValue value) {
-        Preconditions.assertNotNull(key, "key");
-        Preconditions.assertThat(this, "Cannot call set on a non-mutable MDict", MCollection::isMutable);
-
-        final MValue oValue = valueMap.get(key);
-        if (oValue != null) {
-            // Found in valueMap; update value:
-            if (value.isEmpty() && oValue.isEmpty()) { return true; }
-            mutate();
-            valCount += (value.isEmpty() ? 0 : 1) - (oValue.isEmpty() ? 0 : 1);
-            valueMap.put(key, value);
-        }
-        else {
-            // Not found; check flDict:
-            if (flDict != null && flDict.get(key) != null) {
-                if (value.isEmpty()) { valCount--; }
-            }
-            else {
-                if (value.isEmpty()) { return true; }
-                else { valCount++; }
-            }
-
-            mutate();
-            setInMap(key, value);
-        }
-        return true;
-    }
-
     //---------------------------------------------
     // Protected methods
     //---------------------------------------------
@@ -205,14 +206,14 @@ public class MDict extends MCollection implements Iterable<String> {
         if (flDict != null) { throw new IllegalStateException("flDict is not null"); }
 
         final FLValue value = mv.getValue();
-        if (value != null) {
-            flDict = value.asFLDict();
-            valCount = flDict.count();
-        }
-        else {
+        if (value == null) {
             flDict = null;
             valCount = 0;
+            return;
         }
+
+        flDict = value.asFLDict();
+        valCount = flDict.count();
     }
 
     //---------------------------------------------

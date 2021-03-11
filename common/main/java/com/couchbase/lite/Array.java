@@ -95,6 +95,16 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //---------------------------------------------
 
     /**
+     * Return a mutable copy of the array
+     *
+     * @return the MutableArray instance
+     */
+    @NonNull
+    public MutableArray toMutable() {
+        synchronized (lock) { return new MutableArray(internalArray, true); }
+    }
+
+    /**
      * Gets a number of the items in the array.
      *
      * @return the size of the array
@@ -332,20 +342,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         int h = 1;
         for (Object o: this) { h = 31 * h + (o == null ? 0 : o.hashCode()); }
         return h;
-    }
-
-    //-------------------------------------------------------------------------
-    // Other public
-    //-------------------------------------------------------------------------
-
-    /**
-     * Return a mutable copy of the array
-     *
-     * @return the MutableArray instance
-     */
-    @NonNull
-    public MutableArray toMutable() {
-        synchronized (lock) { return new MutableArray(internalArray, true); }
     }
 
     //-------------------------------------------------------------------------

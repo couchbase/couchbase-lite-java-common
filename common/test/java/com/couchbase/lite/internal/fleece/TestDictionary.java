@@ -24,8 +24,8 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 
 
-// This class and its constructor are referenced by name, from native code.
-public class FleeceDict implements Map<String, Object>, Encodable {
+// Simplified com.couchbase.lite.Dictionary, for testing
+public class TestDictionary implements Map<String, Object>, Encodable {
     //---------------------------------------------
     // Data members
     //---------------------------------------------
@@ -37,7 +37,7 @@ public class FleeceDict implements Map<String, Object>, Encodable {
     //---------------------------------------------
 
     // Call from native method
-    FleeceDict(MValue mv, MCollection parent) { dict = new MDict(mv, parent); }
+    TestDictionary(MValue mv, MCollection parent) { dict = new MDict(mv, parent); }
 
     //---------------------------------------------
     // Public methods
