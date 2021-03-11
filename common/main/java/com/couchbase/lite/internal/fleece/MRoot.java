@@ -27,7 +27,7 @@ public class MRoot extends MCollection {
     // Data members
     //---------------------------------------------
 
-    private final MValue slot;
+    private final MValue data;
 
     //---------------------------------------------
     // Constructors
@@ -35,13 +35,13 @@ public class MRoot extends MCollection {
 
     public MRoot(DbContext context, FLValue value, boolean isMutable) {
         super(context, isMutable);
-        slot = new MValue(value);
+        data = new MValue(value);
     }
 
     @VisibleForTesting
     public MRoot(MContext context, FLValue value) {
         super(context);
-        slot = new MValue(value);
+        data = new MValue(value);
     }
 
     //---------------------------------------------
@@ -49,15 +49,15 @@ public class MRoot extends MCollection {
     //---------------------------------------------
 
     @Override
-    public void encodeTo(FLEncoder enc) { slot.encodeTo(enc); }
+    public void encodeTo(FLEncoder enc) { data.encodeTo(enc); }
 
-    public boolean isMutated() { return slot.isMutated(); }
+    public boolean isMutated() { return data.isMutated(); }
 
-    public Object asNative() { return slot.asNative(this); }
+    public Object asNative() { return data.asNative(this); }
 
     public FLSliceResult encode() throws LiteCoreException {
         try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
-            slot.encodeTo(encoder);
+            data.encodeTo(encoder);
             return encoder.finish2();
         }
     }

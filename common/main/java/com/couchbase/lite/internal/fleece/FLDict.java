@@ -30,10 +30,7 @@ public class FLDict {
     // Constructor
     //-------------------------------------------------------------------------
 
-    public FLDict(long handle) {
-        Preconditions.assertNotZero(handle, "handle");
-        this.handle = handle;
-    }
+    public FLDict(long handle) { this.handle = Preconditions.assertNotZero(handle, "handle"); }
 
     //-------------------------------------------------------------------------
     // public methods

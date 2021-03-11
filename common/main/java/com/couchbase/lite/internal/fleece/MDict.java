@@ -41,7 +41,6 @@ public class MDict extends MCollection implements Iterable<String> {
 
     public MDict() {}
 
-
     public MDict(@NonNull MValue mv, @Nullable MCollection parent) {
         initInSlot(mv, parent, parent != null && parent.hasMutableChildren());
     }

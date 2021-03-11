@@ -124,7 +124,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray setValue(int index, @Nullable Object value) {
         synchronized (lock) {
-            if (Fleece.valueWouldChange(value, internalArray.get(index), internalArray)
+            if (Fleece.willMutate(value, internalArray.get(index), internalArray)
                 && (!internalArray.set(index, Fleece.toCBLObject(value)))) {
                 throwRangeException(index);
             }

@@ -66,6 +66,16 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // API - public methods
     //-------------------------------------------------------------------------
 
+    /**
+     * Return a mutable copy of the dictionary
+     *
+     * @return the MutableDictionary instance
+     */
+    @NonNull
+    public MutableDictionary toMutable() {
+        synchronized (lock) { return new MutableDictionary(internalDict, true); }
+    }
+
     //////// Implementation of ReadOnlyDictionaryInterface
 
     /**
@@ -366,16 +376,6 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
             buf.append(key).append("=>").append(getValue(key));
         }
         return buf.append('}').toString();
-    }
-
-    /**
-     * Return a mutable copy of the dictionary
-     *
-     * @return the MutableDictionary instance
-     */
-    @NonNull
-    public MutableDictionary toMutable() {
-        synchronized (lock) { return new MutableDictionary(internalDict, true); }
     }
 
     //---------------------------------------------

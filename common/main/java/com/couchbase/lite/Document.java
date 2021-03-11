@@ -42,7 +42,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity"})
 public class Document implements DictionaryInterface, Iterable<String> {
-    // !!! This code is from v1.x. Replace with c4rev_getGeneration().
+    // ??? This code is from v1.x. Replace with c4rev_getGeneration().
     private static long generationFromRevID(String revID) {
         long generation = 0;
         final long length = Math.min(revID == null ? 0 : revID.length(), 9);
@@ -89,8 +89,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
     private final String id;
     private final boolean mutable;
 
-    // note that while internalDict is guarded by lock, the content of the Dictionary is not.
+    // ctors set this by calling updateDictionaryLocked
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
+    @SuppressWarnings("NotNullFieldNotInitialized")
+    // while internalDict is guarded by lock, the content of the Dictionary is not.
     @GuardedBy("lock")
+    @NonNull
     private Dictionary internalDict;
 
     @GuardedBy("lock")
@@ -101,6 +105,9 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Nullable
     private Database database;
 
+
+    @SuppressFBWarnings("URF_UNREAD_FIELD")
+    @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField", "FieldCanBeLocal"})
     @GuardedBy("lock")
     @Nullable
     private FLDict data;
@@ -112,7 +119,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Nullable
     private MRoot root;
 
-    // This nasty little hack is set when a document is created by a replication filter,
+    // ??? This nasty little hack is set when a document is created by a replication filter,
     // without a c4doc.  Since that is the only place it is set, it is *also* used
     // in toMutable, as a flag meaning that this document was obtained from a replication filter,
     // to prevent modification of a doc while the replication is running.
@@ -135,9 +142,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
     // This constructor is used in replicator filters, to hack together a doc from its Fleece representation
     Document(@NonNull Database database, @NonNull String id, @Nullable String revId, @Nullable FLDict body) {
         this(database, id, null, false);
-        this.data = body;
         this.revId = revId;
-        updateDictionaryLocked(false);
+        setContentLocked(body, false);
     }
 
     //---------------------------------------------
@@ -463,7 +469,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     final boolean isMutable() { return mutable; }
 
-    // !!! should use c4rev_getGeneration
+    // ??? should use c4rev_getGeneration
     long generation() { return generationFromRevID(getRevisionID()); }
 
     final boolean isEmpty() { return getContent().isEmpty(); }
@@ -548,8 +554,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     private void setC4Document(@Nullable C4Document c4doc, boolean mutable) {
         synchronized (lock) {
             updateC4DocumentLocked(c4doc);
-            data = ((c4doc == null) || c4doc.deleted()) ? null : c4doc.getSelectedBody2();
-            updateDictionaryLocked(mutable);
+            setContentLocked(((c4doc == null) || c4doc.deleted()) ? null : c4doc.getSelectedBody2(), mutable);
         }
     }
 
@@ -557,16 +562,17 @@ public class Document implements DictionaryInterface, Iterable<String> {
     private void updateC4DocumentLocked(@Nullable C4Document c4Doc) {
         if (c4Document == c4Doc) { return; }
 
-        if (c4Doc != null) { revId = null; }
-
         c4Document = c4Doc;
+        if (c4Doc != null) { revId = null; }
     }
 
     @GuardedBy("lock")
-    private void updateDictionaryLocked(boolean mutable) {
+    private void setContentLocked(@Nullable FLDict data, boolean mutable) {
+        this.data = data;
+
         if (data == null) {
-            root = null;
-            internalDict = mutable ? new MutableDictionary() : new Dictionary();
+            this.root = null;
+            this.internalDict = mutable ? new MutableDictionary() : new Dictionary();
             return;
         }
 

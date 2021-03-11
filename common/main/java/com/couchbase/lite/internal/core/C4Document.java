@@ -65,7 +65,7 @@ public class C4Document extends C4NativePeer {
     public long getSelectedSequence() { return withPeer(0L, C4Document::getSelectedSequence); }
 
     public FLDict getSelectedBody2() {
-        final long value = withPeer(null, C4Document::getSelectedBody2);
+        final long value = withPeer(0L, C4Document::getSelectedBody2);
         return value == 0 ? null : new FLDict(value);
     }
 

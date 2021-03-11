@@ -119,9 +119,10 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     public MutableDictionary setValue(@NonNull String key, @Nullable Object value) {
         Preconditions.assertNotNull(key, "key");
         synchronized (lock) {
-            final MValue oldValue = internalDict.get(key);
             value = Fleece.toCBLObject(value);
-            if (Fleece.valueWouldChange(value, oldValue, internalDict)) { internalDict.set(key, new MValue(value)); }
+            if (Fleece.willMutate(value, internalDict.get(key), internalDict)) {
+                internalDict.set(key, new MValue(value));
+            }
             return this;
         }
     }

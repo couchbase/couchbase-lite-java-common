@@ -38,7 +38,7 @@ final class Fleece {
         = "MutableDictionary, Dictionary, MutableArray, Array, Map, List, Date, String, Number, Boolean, Blob or null";
 
     // Assume that array and dict values are always different to avoid expensive comparisons.
-    static boolean valueWouldChange(Object newValue, MValue oldValue, MCollection container) {
+    static boolean willMutate(Object newValue, MValue oldValue, MCollection container) {
         final FLValue val = oldValue.getValue();
 
         final int oldType = (val != null) ? val.getType() : FLConstants.ValueType.UNDEFINED;
@@ -61,10 +61,10 @@ final class Fleece {
             || (value instanceof MutableDictionary)) {
             return value;
         }
-        else if (value instanceof Dictionary) { return ((Dictionary) value).toMutable(); }
-        else if (value instanceof Array) { return ((Array) value).toMutable(); }
         else if (value instanceof Map) { return new MutableDictionary((Map<String, Object>) value); }
+        else if (value instanceof Dictionary) { return ((Dictionary) value).toMutable(); }
         else if (value instanceof List) { return new MutableArray((List<Object>) value); }
+        else if (value instanceof Array) { return ((Array) value).toMutable(); }
         else if (value instanceof Date) { return DateUtils.toJson((Date) value); }
 
         throw new IllegalArgumentException(
