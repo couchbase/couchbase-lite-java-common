@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.fleece;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,15 +46,15 @@ public abstract class FLEncoder extends C4NativePeer {
             releasePeer(
                 null,
                 peer -> {
-                    setExtraInfo(null);
+                    synchronized (arguments) { arguments.clear(); }
                     reset(peer);
                 });
         }
     }
 
     // managed: Java code is responsible for freeing it
-    static final class ManagedFLEncoder extends FLEncoder {
-        ManagedFLEncoder() { super(init()); }
+    static class ManagedFLEncoder extends FLEncoder {
+        ManagedFLEncoder(long peer) { super(peer); }
 
         @Override
         public void close() { closePeer(null); }
@@ -72,16 +73,18 @@ public abstract class FLEncoder extends C4NativePeer {
     // Factory Methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     public static FLEncoder getUnmanagedEncoder(long peer) { return new UnmanagedFLEncoder(peer); }
 
-    public static FLEncoder getManagedEncoder() { return new ManagedFLEncoder(); }
+    @NonNull
+    public static FLEncoder getManagedEncoder() { return new ManagedFLEncoder(newFleeceEncoder()); }
 
 
     //-------------------------------------------------------------------------
     // Member variables
     //-------------------------------------------------------------------------
 
-    private Object extraInfo;
+    protected final Map<String, Object> arguments = new HashMap<>();
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -96,15 +99,22 @@ public abstract class FLEncoder extends C4NativePeer {
     @NonNull
     @Override
     public String toString() {
-        return "FLEncoder{" + ClassUtils.objId(this) + "/" + super.toString() + ": " + extraInfo + "}";
+        return "FLEncoder{" + ClassUtils.objId(this) + "/" + super.toString() + ": " + arguments + "}";
     }
 
+    // remove the Exception from the signature.
     @Override
     public abstract void close();
 
-    public <T> T getExtraInfo(@NonNull Class<T> klass) { return klass.cast(extraInfo); }
+    public FLEncoder setArg(@NonNull String key, @Nullable Object arg) {
+        synchronized (arguments) { arguments.put(key, arg); }
+        return this;
+    }
 
-    public void setExtraInfo(@Nullable Object info) { extraInfo = info; }
+    @Nullable
+    public Object getArg(@NonNull String key) {
+        synchronized (arguments) { return arguments.get(key); }
+    }
 
     public boolean writeNull() { return writeNull(getPeer()); }
 
@@ -225,11 +235,11 @@ public abstract class FLEncoder extends C4NativePeer {
     // native methods
     //-------------------------------------------------------------------------
 
-    static native long init(); // FLEncoder FLEncoder_New(void);
-
-    static native void reset(long encoder);
+    static native long newFleeceEncoder();
 
     static native void free(long encoder);
+
+    static native void reset(long encoder);
 
     private static native boolean writeNull(long encoder);
 

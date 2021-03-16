@@ -706,17 +706,17 @@ public class QueryTest extends BaseQueryTest {
             assertEquals(docID3, docID4);
             assertEquals(docID4, expectedDocIDs[n - 1]);
 
-            assertEquals((long) n, seq1);
-            assertEquals((long) n, seq2);
-            assertEquals((long) n, seq3);
-            assertEquals((long) n, seq4);
+            assertEquals(n, seq1);
+            assertEquals(n, seq2);
+            assertEquals(n, seq3);
+            assertEquals(n, seq4);
 
             assertEquals(revId1, revId2);
             assertEquals(revId2, revId3);
             assertEquals(revId3, revId4);
             assertEquals(revId4, baseTestDb.getDocument(docID1).getRevisionID());
 
-            assertEquals((long) n, number);
+            assertEquals(n, number);
         });
         assertEquals(5, numRows);
     }
@@ -731,9 +731,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(this.baseTestDb))
             .where(Meta.id.equalTo(Expression.string(doc.getId())));
 
-        int numRows = verifyQuery(query, (n, result) -> {
-            assertEquals(doc.getRevisionID(), result.getString(0));
-        });
+        int numRows = verifyQuery(query, (n, result) -> assertEquals(doc.getRevisionID(), result.getString(0)));
 
         assertEquals(1, numRows);
     }
@@ -753,9 +751,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(this.baseTestDb))
             .where(Meta.id.equalTo(Expression.string(doc.getId())));
 
-        int numRows = verifyQuery(query, (n, result) -> {
-            assertEquals(revId, result.getString(0));
-        });
+        int numRows = verifyQuery(query, (n, result) -> assertEquals(revId, result.getString(0)));
 
         assertEquals(1, numRows);
     }
@@ -770,9 +766,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(this.baseTestDb))
             .where(Meta.revisionID.equalTo(Expression.string(doc.getRevisionID())));
 
-        int numRows = verifyQuery(query, (n, result) -> {
-            assertEquals(doc.getId(), result.getString(0));
-        });
+        int numRows = verifyQuery(query, (n, result) -> assertEquals(doc.getId(), result.getString(0)));
 
         assertEquals(1, numRows);
     }
@@ -792,9 +786,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(this.baseTestDb))
             .where(Meta.deleted.equalTo(Expression.booleanValue(true)));
 
-        int numRows = verifyQuery(query, (n, result) -> {
-            assertEquals(dbDoc.getRevisionID(), result.getString(0));
-        });
+        int numRows = verifyQuery(query, (n, result) -> assertEquals(dbDoc.getRevisionID(), result.getString(0)));
 
         assertEquals(1, numRows);
     }
@@ -1617,7 +1609,7 @@ public class QueryTest extends BaseQueryTest {
         verifyQuery(query, (n, result) -> {
             Map<String, Object> maps = result.toMap();
             assertNotNull(maps);
-            Map<String, Object> map = (Map<String, Object>) maps.get(dbName);
+            Map<?, ?> map = (Map<?, ?>) maps.get(dbName);
             assertNotNull(map);
             if ("There are 45 states in the US.".equals(map.get("question"))) {
                 assertFalse((Boolean) map.get("answer"));
@@ -2517,7 +2509,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     // https://forums.couchbase.com/t/
-    //     how-to-be-notifed-that-docuemnt-is-changed-but-livequerys-query-isnt-catching-it-anymore/16199/9
+    //     how-to-be-notifed-that-document-is-changed-but-livequerys-query-isnt-catching-it-anymore/16199/9
     @Test
     public void testLiveQueryNotification() throws CouchbaseLiteException, InterruptedException {
         // save doc1 with number1 -> 5
@@ -2897,7 +2889,7 @@ public class QueryTest extends BaseQueryTest {
             499137690550L,
             499137690555L};
 
-        List<String> expectedUTC = Arrays.asList(
+        final List<String> expectedUTC = Arrays.asList(
             "1985-10-26T00:00:00Z",
             "1985-10-26T01:21:00Z",
             "1985-10-26T01:21:30Z",
@@ -2905,12 +2897,9 @@ public class QueryTest extends BaseQueryTest {
             "1985-10-26T01:21:30.550Z",
             "1985-10-26T01:21:30.555Z");
 
-        ArrayList<String> expectedLocal = new ArrayList<>();
+        //ArrayList<String> expectedLocal = new ArrayList<>();
 
-        for (Number t: millis) {
-            expectedLocal.add(toLocal((long) t));
-            baseTestDb.save(new MutableDocument().setNumber("timestamp", t));
-        }
+        for (Number t: millis) {  baseTestDb.save(new MutableDocument().setNumber("timestamp", t)); }
 
         Query query = QueryBuilder.select(
             SelectResult.expression(Function.millisToString(Expression.property("timestamp"))),

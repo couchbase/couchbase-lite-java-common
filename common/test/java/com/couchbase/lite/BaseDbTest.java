@@ -28,9 +28,8 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 
-import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.JsonUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Report;
 
@@ -120,7 +119,7 @@ public abstract class BaseDbTest extends BaseTest {
         doc.setValue("one", 1);
         doc.setValue("minus_one", -1);
         doc.setValue("one_dot_one", 1.1);
-        doc.setValue("date", DateUtils.fromJson(TEST_DATE));
+        doc.setValue("date", JSONUtils.toDate(TEST_DATE));
         doc.setValue("null", null);
 
         // Dictionary:
@@ -149,7 +148,7 @@ public abstract class BaseDbTest extends BaseTest {
         doc.setInt("one", 1);
         doc.setLong("minus_one", -1);
         doc.setDouble("one_dot_one", 1.1);
-        doc.setDate("date", DateUtils.fromJson(TEST_DATE));
+        doc.setDate("date", JSONUtils.toDate(TEST_DATE));
         doc.setString("null", null);
 
         // Dictionary:
@@ -177,7 +176,7 @@ public abstract class BaseDbTest extends BaseTest {
                 if (line.trim().isEmpty()) { continue; }
 
                 MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%03d", n++));
-                doc.setData(JsonUtils.fromJson(new JSONObject(line)));
+                doc.setData(JSONUtils.fromJSON(new JSONObject(line)));
 
                 saveDocInBaseTestDb(doc);
             }

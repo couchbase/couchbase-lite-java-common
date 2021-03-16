@@ -18,19 +18,32 @@ package com.couchbase.lite.internal.utils;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 
-public final class JsonUtils {
-    private JsonUtils() { }
+public final class JSONUtils {
+    private JSONUtils() { }
+
+    private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+        protected synchronized SimpleDateFormat initialValue() {
+            final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
+            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+            return sdf;
+        }
+    };
 
     @SuppressWarnings("PMD.AvoidStringBufferField")
     public static class Marshaller {
@@ -41,6 +54,7 @@ public final class JsonUtils {
             else if (val instanceof Boolean) { writeBoolean((Boolean) val); }
             else if (val instanceof Number) { writeNumber((Number) val); }
             else if (val instanceof String) { writeString((String) val); }
+            else if (val instanceof Date) { writeString(toJSON((Date) val)); }
             else if (val instanceof List<?>) { writeArray((List<?>) val); }
             else if (val instanceof Map<?, ?>) { writeMap((Map<?, ?>) val); }
             return this;
@@ -117,6 +131,11 @@ public final class JsonUtils {
             return this;
         }
 
+        public Marshaller writeJSON(String val) {
+            buf.append(val);
+            return this;
+        }
+
         public Marshaller writeString(String val) {
             buf.append('"').append(val).append('"');
             return this;
@@ -141,7 +160,7 @@ public final class JsonUtils {
         public String toString() { return buf.toString(); }
     }
 
-    public static JSONObject toJson(Map<?, ?> map) throws JSONException {
+    public static JSONObject toJSON(Map<?, ?> map) throws JSONException {
         if (map == null) { return null; }
         final JSONObject json = new JSONObject();
         for (Map.Entry<?, ?> entry: map.entrySet()) {
@@ -150,48 +169,59 @@ public final class JsonUtils {
             final String key = k.toString();
             final Object val = entry.getValue();
             if (val == null) { json.put(key, JSONObject.NULL); }
-            else if (val instanceof Map<?, ?>) { json.put(key, toJson((Map<?, ?>) val)); }
-            else if (val instanceof List<?>) { json.put(key, toJson((List<?>) val)); }
+            else if (val instanceof Map<?, ?>) { json.put(key, toJSON((Map<?, ?>) val)); }
+            else if (val instanceof List<?>) { json.put(key, toJSON((List<?>) val)); }
             else { json.put(key, val); }
         }
         return json;
     }
 
-    public static JSONArray toJson(List<?> list) throws JSONException {
+    public static JSONArray toJSON(List<?> list) throws JSONException {
         if (list == null) { return null; }
         final JSONArray json = new JSONArray();
         for (Object value: list) {
             if (value == null) { json.put(JSONObject.NULL); }
-            else if (value instanceof Map<?, ?>) { json.put(toJson((Map<?, ?>) value)); }
-            else if (value instanceof List<?>) { json.put(toJson((List<?>) value)); }
+            else if (value instanceof Map<?, ?>) { json.put(toJSON((Map<?, ?>) value)); }
+            else if (value instanceof List<?>) { json.put(toJSON((List<?>) value)); }
             else { json.put(value); }
         }
         return json;
     }
 
-    public static Map<String, Object> fromJson(JSONObject json) throws JSONException {
+    public static String toJSON(Date date) { return DATE_FORMAT.get().format(date); }
+
+    public static Map<String, Object> fromJSON(JSONObject json) throws JSONException {
         if (json == null) { return null; }
         final Map<String, Object> result = new HashMap<>();
         final Iterator<String> itr = json.keys();
         while (itr.hasNext()) {
             final String key = itr.next();
             final Object value = json.get(key);
-            if (value instanceof JSONObject) { result.put(key, fromJson((JSONObject) value)); }
-            else if (value instanceof JSONArray) { result.put(key, fromJson((JSONArray) value)); }
+            if (value instanceof JSONObject) { result.put(key, fromJSON((JSONObject) value)); }
+            else if (value instanceof JSONArray) { result.put(key, fromJSON((JSONArray) value)); }
             else { result.put(key, value); }
         }
         return result;
     }
 
-    public static List<Object> fromJson(JSONArray json) throws JSONException {
+    public static List<Object> fromJSON(JSONArray json) throws JSONException {
         if (json == null) { return null; }
         final List<Object> result = new ArrayList<>();
         for (int i = 0; i < json.length(); i++) {
             final Object value = json.get(i);
-            if (value instanceof JSONObject) { result.add(fromJson((JSONObject) value)); }
-            else if (value instanceof JSONArray) { result.add(fromJson((JSONArray) value)); }
+            if (value instanceof JSONObject) { result.add(fromJSON((JSONObject) value)); }
+            else if (value instanceof JSONArray) { result.add(fromJSON((JSONArray) value)); }
             else { result.add(value); }
         }
         return result;
+    }
+
+    public static Date toDate(String json) {
+        if (json == null) { return null; }
+
+        try { return DATE_FORMAT.get().parse(json); }
+        catch (ParseException ignore) { }
+
+        return null;
     }
 }

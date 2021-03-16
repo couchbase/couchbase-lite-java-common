@@ -28,6 +28,7 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+extern "C" {
 // ----------------------------------------------------------------------------
 // FLArray
 // ----------------------------------------------------------------------------
@@ -390,7 +391,7 @@ Java_com_couchbase_lite_internal_fleece_FLValue_isUnsigned(JNIEnv *env, jclass i
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_FLValue_JSON5ToJSON(JNIEnv *env, jclass ignore, jstring jjson5) {
+Java_com_couchbase_lite_internal_fleece_FLValue_json5toJson(JNIEnv *env, jclass ignore, jstring jjson5) {
     jstringSlice json5(env, jjson5);
     FLError error = kFLNoError;
     FLStringResult json = FLJSON5_ToJSON(json5, nullptr, nullptr, &error);
@@ -488,4 +489,4 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_fleece_FLSliceResult_getSize(JNIEnv *env, jclass ignore, jlong jslice) {
     return (jlong) ((FLSliceResult *) jslice)->size;
 }
-
+}

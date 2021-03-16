@@ -16,7 +16,7 @@
 package com.couchbase.lite.utils
 
 import com.couchbase.lite.BaseTest
-import com.couchbase.lite.internal.utils.JsonUtils
+import com.couchbase.lite.internal.utils.JSONUtils
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -28,24 +28,21 @@ class JsonUtilsTest : BaseTest() {
     @Test
     fun testMarshaller() {
         val map = HashMap<String, Any?>()
-        map.put("x1", null)
-        map.put("b1", true)
-        map.put("n1", 47)
-        map.put("s1", "one")
-        map.put("l1", listOf(null, false, 48.48F, "two", listOf<Any?>("i1"), mapOf("k1" to "v1")))
-        map.put(
-            "m1",
-            mapOf(
-                "x2" to null,
-                "b2" to true,
-                "n2" to 49.49,
-                "s2" to "three",
-                "l2" to listOf<Any?>("i2"),
-                "m2" to mapOf("k2" to "v2")
-            )
+        map["x1"] = null
+        map["b1"] = true
+        map["n1"] = 47
+        map["s1"] = "one"
+        map["l1"] = listOf(null, false, 48.48F, "two", listOf<Any?>("i1"), mapOf("k1" to "v1"))
+        map["m1"] = mapOf(
+            "x2" to null,
+            "b2" to true,
+            "n2" to 49.49,
+            "s2" to "three",
+            "l2" to listOf<Any?>("i2"),
+            "m2" to mapOf("k2" to "v2")
         )
 
-        val json = JSONObject(JsonUtils.Marshaller().writeValue(map).toString())
+        val json = JSONObject(JSONUtils.Marshaller().writeValue(map).toString())
         assertEquals(JSONObject.NULL, json.get("x1"))
         assertTrue(json.optBoolean("b1"))
         assertEquals(47, json.optInt("n1"))

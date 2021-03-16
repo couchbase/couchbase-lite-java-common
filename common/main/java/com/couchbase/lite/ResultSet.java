@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.support.Log;
@@ -31,7 +30,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * A result set representing the _query result. The result set is an iterator of
+ * A result set representing the query result. The result set is an iterator of
  * the {@code Result} objects.
  */
 public class ResultSet implements Iterable<Result> {
@@ -156,7 +155,7 @@ public class ResultSet implements Iterable<Result> {
                 return (newEnum == null) ? null : new ResultSet(query, newEnum, columnNames);
             }
             catch (LiteCoreException e) {
-                throw CBLStatus.convertException(e);
+                throw CouchbaseLiteException.convertException(e);
             }
         }
     }

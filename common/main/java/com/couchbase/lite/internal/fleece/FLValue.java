@@ -48,7 +48,7 @@ public class FLValue {
      * @throws LiteCoreException on parse failure
      */
     @Nullable
-    public static String json5ToJson(String json5) throws LiteCoreException { return JSON5ToJSON(json5); }
+    public static String getJSONForJSON5(String json5) throws LiteCoreException { return json5toJson(json5); }
 
     @NonNull
     public static FLValue fromData(byte[] data) { return new FLValue(fromTrustedData(data)); }
@@ -286,8 +286,7 @@ public class FLValue {
 
     private static native long asDict(long value);
 
-    @SuppressWarnings({"MethodName", "PMD.MethodNamingConventions"})
     @Nullable
-    private static native String JSON5ToJSON(String json5) throws LiteCoreException;
+    private static native String json5toJson(String json5) throws LiteCoreException;
 }
 

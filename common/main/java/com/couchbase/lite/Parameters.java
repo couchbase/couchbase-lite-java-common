@@ -211,6 +211,7 @@ public final class Parameters {
 
     FLSliceResult encode() throws LiteCoreException {
         try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
+            encoder.setArg(Blob.ENCODER_ARG_QUERY_PARAM, true);
             encoder.write(map);
             return encoder.finish2();
         }

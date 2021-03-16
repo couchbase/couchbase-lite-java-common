@@ -27,11 +27,12 @@ import java.util.Map;
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.JSONEncoder;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MDict;
 import com.couchbase.lite.internal.fleece.MValue;
-import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -134,7 +135,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Nullable
     @Override
     public Number getNumber(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
+        Preconditions.assertNotEmpty(key, "key");
         synchronized (lock) { return CBLConverter.asNumber(internalDict.get(key).asNative(internalDict)); }
     }
 
@@ -238,8 +239,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Nullable
     @Override
     public Date getDate(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        return DateUtils.fromJson(getString(key));
+        return JSONUtils.toDate(getString(Preconditions.assertNotNull(key, "key")));
     }
 
     /**
@@ -297,7 +297,15 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @NonNull
     @Override
     public String toJSON() {
-        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
+        try (JSONEncoder encoder = new JSONEncoder()) {
+            internalDict.encodeTo(encoder);
+            return encoder.finishJSON();
+        }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException(
+                "Failed marshalling Dictionary to JSON",
+                CouchbaseLiteException.convertException(e));
+        }
     }
 
     /**

@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.BuildConfig;
 
-@SuppressWarnings({"PMD.ClassNamingConventions", "PMD.FieldNamingConventions"})
+@SuppressWarnings("PMD.ClassNamingConventions")
 public final class CBLVersion {
     private CBLVersion() {}
 

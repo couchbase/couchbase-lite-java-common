@@ -54,6 +54,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      *
      * @param json the dictionary content as a JSON string.
      */
+    // !!!JSON: NOT YET IMPLEMENTED
     public MutableDictionary(@NonNull String json) { setJSON(json); }
 
     // to create copy of dictionary
@@ -81,7 +82,11 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
         synchronized (lock) {
             internalDict.clear();
             for (Map.Entry<String, Object> entry: data.entrySet()) {
-                internalDict.set(entry.getKey(), new MValue(Fleece.toCBLObject(entry.getValue())));
+                final Object obj = entry.getValue();
+                checkSelf(obj);
+                internalDict.set(
+                    Preconditions.assertNotNull(entry.getKey(), "data key"),
+                    new MValue(Fleece.toCBLObject(entry.getValue())));
             }
             return this;
         }
@@ -95,12 +100,13 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param json the dictionary object.
      * @return this Document instance
      */
+    // !!!JSON: NOT YET IMPLEMENTED
     @NonNull
     @Override
     public MutableDictionary setJSON(@NonNull String json) {
         synchronized (lock) {
             internalDict.clear();
-            // !!!JSON: NOT YET IMPLEMENTED
+
             return this;
         }
     }
@@ -118,6 +124,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary setValue(@NonNull String key, @Nullable Object value) {
         Preconditions.assertNotNull(key, "key");
+        checkSelf(value);
         synchronized (lock) {
             value = Fleece.toCBLObject(value);
             if (Fleece.willMutate(value, internalDict.get(key), internalDict)) {
@@ -246,7 +253,10 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setDictionary(@NonNull String key, Dictionary value) { return setValue(key, value); }
+    public MutableDictionary setDictionary(@NonNull String key, Dictionary value) {
+        checkSelf(value);
+        return setValue(key, value);
+    }
 
     /**
      * Removes the mapping for a key from this Dictionary
@@ -286,8 +296,15 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary getDictionary(@NonNull String key) { return (MutableDictionary) super.getDictionary(key); }
 
+    @NonNull
+    @Override
+    public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
 
     protected boolean isChanged() {
         synchronized (lock) { return internalDict.isMutated(); }
+    }
+
+    private void checkSelf(Object value) {
+        if (value == this) { throw new IllegalArgumentException("Dictionaries cannot ba added to themselves"); }
     }
 }

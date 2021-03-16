@@ -176,6 +176,7 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Fleece-related
     // This must be called holding both the document and the database locks!
+    @NonNull
     public FLEncoder getSharedFleeceEncoder() {
         return FLEncoder.getUnmanagedEncoder(getSharedFleeceEncoder(getPeer()));
     }

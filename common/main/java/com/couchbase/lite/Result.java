@@ -30,8 +30,9 @@ import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.fleece.JSONEncoder;
 import com.couchbase.lite.internal.fleece.MRoot;
-import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -201,7 +202,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public Date getDate(int index) {
         checkBounds(index);
-        return DateUtils.fromJson(getString(index));
+        return JSONUtils.toDate(getString(index));
     }
 
     /**
@@ -239,8 +240,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public List<Object> toList() {
+        final int nVals = count();
         final List<Object> array = new ArrayList<>();
-        for (int i = 0; i < count(); i++) { array.add(values.get(i).asObject()); }
+        for (int i = 0; i < nVals; i++) { array.add(values.get(i).asObject()); }
         return array;
     }
 
@@ -440,11 +442,12 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public Map<String, Object> toMap() {
-        final List<Object> values = toList();
+        final int nVals = values.size();
         final Map<String, Object> dict = new HashMap<>();
         for (String name: rs.getColumnNames()) {
-            final int index = indexForColumnName(name);
-            if (index >= 0) { dict.put(name, values.get(index)); }
+            final int i = indexForColumnName(name);
+            if ((i < 0) || (i >= nVals)) { continue; }
+            dict.put(name, values.get(i).asObject());
         }
         return dict;
     }
@@ -452,7 +455,38 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public String toJSON() {
-        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
+        final JSONUtils.Marshaller json = new JSONUtils.Marshaller();
+        final int nVals = values.size();
+        boolean first = true;
+
+        json.startObject();
+        try {
+            for (String columnName: rs.getColumnNames()) {
+                final int i = indexForColumnName(columnName);
+                if ((i < 0) || (i >= nVals)) { continue; }
+
+                if (!first) { json.nextMember(); }
+
+                json.writeKey(columnName);
+
+                // !!! This should just be enc.reset(). Unfortunately that doesn't appear to work.
+                try (JSONEncoder enc = new JSONEncoder()) {
+                    enc.writeValue(values.get(i));
+                    enc.reset();
+                    json.writeJSON(enc.finishJSON());
+                }
+
+                first = false;
+            }
+        }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException(
+                "Failed marshalling Document to JSON",
+                CouchbaseLiteException.convertException(e));
+        }
+        finally { json.endObject(); }
+
+        return json.toString();
     }
 
     /**
@@ -484,15 +518,12 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     // private access
     //---------------------------------------------
 
-    // - (NSInteger) indexForColumnName: (NSString*)name
     private int indexForColumnName(String name) {
         final int index = rs.getColumnIndex(name);
         if (index < 0) { return -1; }
         return ((missingColumns & (1 << index)) == 0) ? index : -1;
     }
 
-    // - (id) fleeceValueToObjectAtIndex: (NSUInteger)index
-    // bounds have already been checked
     private Object fleeceValueToObject(int index) {
         final FLValue value = values.get(index);
         if (value == null) { return null; }

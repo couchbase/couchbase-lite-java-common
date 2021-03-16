@@ -28,14 +28,14 @@ import java.util.Map;
 
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
-import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
  * The expression used in constructing a query.
  */
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.FieldNamingConventions"})
+@SuppressWarnings("PMD.TooManyMethods")
 public abstract class Expression {
     private static final String PARAM_EXPRESSION = "expression";
 
@@ -58,7 +58,7 @@ public abstract class Expression {
         @Nullable
         @SuppressWarnings("unchecked")
         private Object asJSON(@Nullable Object value) {
-            if (value instanceof Date) { return DateUtils.toJson((Date) value); }
+            if (value instanceof Date) { return JSONUtils.toJSON((Date) value); }
             else if (value instanceof Map) { return mapAsJSON((Map<String, Object>) value); }
             else if (value instanceof List) { return listAsJSON((List<Object>) value); }
             else if (value instanceof Expression) { return ((Expression) value).asJSON(); }
@@ -123,6 +123,7 @@ public abstract class Expression {
         }
     }
 
+    @SuppressWarnings("PMD.FieldNamingConventions")
     static final class BinaryExpression extends Expression {
         private enum OpType {
             Add,
@@ -234,6 +235,7 @@ public abstract class Expression {
     // Compound Expression
     //---------------------------------------------
     static final class CompoundExpression extends Expression {
+        @SuppressWarnings("PMD.FieldNamingConventions")
         private enum OpType {And, Or, Not}
 
         @NonNull
@@ -273,6 +275,7 @@ public abstract class Expression {
     // Unary Expression
     //---------------------------------------------
     static final class UnaryExpression extends Expression {
+        @SuppressWarnings("PMD.FieldNamingConventions")
         private enum OpType {Missing, NotMissing, NotNull, Null}
 
         @NonNull

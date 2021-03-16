@@ -31,6 +31,7 @@ import com.couchbase.lite.internal.fleece.MValue;
  * MutableArray provides access to array data.
  * This class and its constructor are referenced by name, from native code.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public final class MutableArray extends Array implements MutableArrayInterface {
     //---------------------------------------------
     // Constructors
@@ -55,6 +56,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      *
      * @param json the array content as a JSON string.
      */
+    // !!!JSON: NOT YET IMPLEMENTED
     public MutableArray(@NonNull String json) { setJSON(json); }
 
     // to create copy
@@ -82,7 +84,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray setData(@NonNull List<Object> data) {
         synchronized (lock) {
             internalArray.clear();
-            for (Object obj: data) { internalArray.append(Fleece.toCBLObject(obj)); }
+            for (Object obj: data) {
+                checkSelf(obj);
+                internalArray.append(Fleece.toCBLObject(obj));
+            }
             return this;
         }
     }
@@ -97,12 +102,13 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param json the dictionary object.
      * @return this Document instance
      */
+    // !!!JSON: NOT YET IMPLEMENTED
     @NonNull
     @Override
     public MutableArray setJSON(@NonNull String json) {
         synchronized (lock) {
             internalArray.clear();
-            // !!!JSON: NOT YET IMPLEMENTED
+
             return this;
         }
     }
@@ -117,6 +123,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray setValue(int index, @Nullable Object value) {
+        checkSelf(value);
         synchronized (lock) {
             if (Fleece.willMutate(value, internalArray.get(index), internalArray)
                 && (!internalArray.set(index, Fleece.toCBLObject(value)))) {
@@ -236,7 +243,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setArray(int index, @Nullable Array value) { return setValue(index, value); }
+    public MutableArray setArray(int index, @Nullable Array value) {
+        checkSelf(value);
+        return setValue(index, value);
+    }
 
     /**
      * Sets a Dictionary object at the given index.
@@ -258,6 +268,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray addValue(@Nullable Object value) {
+        checkSelf(value);
         synchronized (lock) {
             internalArray.append(Fleece.toCBLObject(value));
             return this;
@@ -362,7 +373,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray addArray(@Nullable Array value) { return addValue(value); }
+    public MutableArray addArray(@Nullable Array value) {
+        checkSelf(value);
+        return addValue(value);
+    }
 
     /**
      * Adds a Dictionary object to the end of the array.
@@ -384,6 +398,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray insertValue(int index, @Nullable Object value) {
+        checkSelf(value);
         synchronized (lock) {
             if (!internalArray.insert(index, Fleece.toCBLObject(value))) { throwRangeException(index); }
             return this;
@@ -498,7 +513,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray insertArray(int index, @Nullable Array value) { return insertValue(index, value); }
+    public MutableArray insertArray(int index, @Nullable Array value) {
+        checkSelf(value);
+        return insertValue(index, value);
+    }
 
     /**
      * Inserts a Dictionary object at the given index.
@@ -538,6 +556,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray getArray(int index) { return (MutableArray) super.getArray(index); }
 
+    @NonNull
+    @Override
+    public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
+
     /**
      * Gets a Dictionary at the given index. Return null if the value is not an dictionary.
      *
@@ -547,4 +569,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Nullable
     @Override
     public MutableDictionary getDictionary(int index) { return (MutableDictionary) super.getDictionary(index); }
+
+    private void checkSelf(Object value) {
+        if (value == this) { throw new IllegalArgumentException("Arrays cannot ba added to themselves"); }
+    }
 }

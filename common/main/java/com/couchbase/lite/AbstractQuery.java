@@ -17,6 +17,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -27,14 +28,13 @@ import java.util.concurrent.Executor;
 
 import org.json.JSONException;
 
-import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryOptions;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
-import com.couchbase.lite.internal.utils.JsonUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -138,7 +138,7 @@ abstract class AbstractQuery implements Query {
             return new ResultSet(this, c4enum, columnNames);
         }
         catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
+            throw CouchbaseLiteException.convertException(e);
         }
     }
 
@@ -211,7 +211,7 @@ abstract class AbstractQuery implements Query {
     @NonNull
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ",json=" + asJson() + "}";
+        return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ",json=" + marshalAsJSONSafely() + "}";
     }
 
     //---------------------------------------------
@@ -262,14 +262,14 @@ abstract class AbstractQuery implements Query {
 
     @GuardedBy("lock")
     private C4Query prepQueryLocked() throws CouchbaseLiteException {
-        final String json = encodeAsJson();
+        final String json = marshalAsJSONSafely();
         Log.v(DOMAIN, "Encoded query: %s", json);
         if (json == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
 
         if (columnNames == null) { columnNames = getColumnNames(); }
 
         try { return getDatabase().createQuery(json); }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     // https://issues.couchbase.com/browse/CBL-21
@@ -297,49 +297,96 @@ abstract class AbstractQuery implements Query {
         return map;
     }
 
-    private String encodeAsJson() {
-        try { return JsonUtils.toJson(asJson()).toString(); }
-        catch (JSONException e) { Log.w(DOMAIN, "Error encoding a query as a json string", e); }
+    @Nullable
+    private String marshalAsJSONSafely() {
+        try { return marshalAsJSON(); }
+        catch (JSONException e) { Log.w(LogDomain.QUERY, "Failed marshalling query as JSON query", e); }
         return null;
     }
 
-    @SuppressWarnings({"unchecked", "PMD.NPathComplexity"})
-    private Map<String, Object> asJson() {
-        final Map<String, Object> json = new HashMap<>();
+    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.NPathComplexity", "PMD.AvoidDeeplyNestedIfStmts"})
+    @NonNull
+    private String marshalAsJSON() throws JSONException {
+        final JSONUtils.Marshaller json = new JSONUtils.Marshaller();
+
+        boolean first = true;
+        json.startObject();
 
         // DISTINCT:
-        if (select != null && select.isDistinct()) { json.put("DISTINCT", true); }
+        if (select != null && select.isDistinct()) {
+            json.writeKey("DISTINCT");
+            json.writeBoolean(true);
+            first = false;
+        }
 
         // result-columns / SELECT-RESULTS
-        if (select != null && select.hasSelectResults()) { json.put("WHAT", select.asJSON()); }
+        if (select != null && select.hasSelectResults()) {
+            if (!first) { json.nextMember(); }
+            json.writeKey("WHAT");
+            json.writeValue(select.asJSON());
+            first = false;
+        }
 
-        // JOIN:
-        final List<Object> f = new ArrayList<>();
+        final List<Object> froms = new ArrayList<>();
+
         final Map<String, Object> as = from.asJSON();
-        if (!as.isEmpty()) { f.add(as); }
+        if (!as.isEmpty()) { froms.add(as); }
 
-        if (joins != null) { f.addAll((List<Object>) joins.asJSON()); }
+        if (joins != null) { froms.addAll((List<?>) joins.asJSON()); }
 
-        if (!f.isEmpty()) { json.put("FROM", f); }
+        if (!froms.isEmpty()) {
+            if (!first) { json.nextMember(); }
+            json.writeKey("FROM");
+            json.writeArray(froms);
+            first = false;
+        }
 
-        if (where != null) { json.put("WHERE", where.asJSON()); }
+        if (where != null) {
+            if (!first) { json.nextMember(); }
+            json.writeKey("WHERE");
+            json.writeValue(where.asJSON());
+            first = false;
+        }
 
-        if (groupBy != null) { json.put("GROUP_BY", groupBy.asJSON()); }
+        if (groupBy != null) {
+            if (!first) { json.nextMember(); }
+            json.writeKey("GROUP_BY");
+            json.writeValue(groupBy.asJSON());
+            first = false;
+        }
 
         if (having != null) {
             final Object havingJson = having.asJSON();
-            if (havingJson != null) { json.put("HAVING", havingJson); }
+            if (havingJson != null) {
+                if (!first) { json.nextMember(); }
+                json.writeKey("HAVING");
+                json.writeValue(havingJson);
+                first = false;
+            }
         }
 
-        if (orderBy != null) { json.put("ORDER_BY", orderBy.asJSON()); }
+        if (orderBy != null) {
+            if (!first) { json.nextMember(); }
+            json.writeKey("ORDER_BY");
+            json.writeArray((List<?>) orderBy.asJSON());
+            first = false;
+        }
 
         if (limit != null) {
-            final List<Object> list = (List<Object>) limit.asJSON();
-            json.put("LIMIT", list.get(0));
-            if (list.size() > 1) { json.put("OFFSET", list.get(1)); }
+            final List<Object> limits = (List<Object>) limit.asJSON();
+            if (!first) { json.nextMember(); }
+            json.writeKey("LIMIT");
+            json.writeValue(limits.get(0));
+            if (limits.size() > 1) {
+                json.nextMember();
+                json.writeKey("OFFSET");
+                json.writeValue(limits.get(1));
+            }
         }
 
-        return json;
+        json.endObject();
+
+        return json.toString();
     }
 
     private Object getDbLock() {

@@ -28,7 +28,7 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 
 
 final class Fleece {
@@ -65,7 +65,7 @@ final class Fleece {
         else if (value instanceof Dictionary) { return ((Dictionary) value).toMutable(); }
         else if (value instanceof List) { return new MutableArray((List<Object>) value); }
         else if (value instanceof Array) { return ((Array) value).toMutable(); }
-        else if (value instanceof Date) { return DateUtils.toJson((Date) value); }
+        else if (value instanceof Date) { return JSONUtils.toJSON((Date) value); }
 
         throw new IllegalArgumentException(
             Log.formatStandardMessage(

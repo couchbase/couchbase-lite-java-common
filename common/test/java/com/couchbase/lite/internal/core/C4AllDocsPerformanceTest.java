@@ -28,7 +28,6 @@ import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StopWatch;
 
@@ -75,7 +74,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                 c4Database.endTransaction(commit);
             }
         }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
         assertEquals(DOC_NUM, c4Database.getDocumentCount());
 

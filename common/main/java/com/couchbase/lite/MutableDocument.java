@@ -55,7 +55,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     public MutableDocument(@Nullable String id) { this(null, id, null); }
 
     /**
-     * Creates a new Document with a new random UUID and the dictionary as the content.
+     * Creates a new Document with a new random UUID and the map as the content.
      * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
      * If present, Lists, Maps and Dictionaries may contain only the above types.
      * The created document will be saved into a database when you call Database.save(Document)
@@ -338,6 +338,12 @@ public final class MutableDocument extends Document implements MutableDictionary
     @Nullable
     @Override
     public MutableDictionary getDictionary(@NonNull String key) { return getMutableContent().getDictionary(key); }
+
+    @NonNull
+    @Override
+    public String toJSON() {
+        throw new IllegalStateException("Mutable objects may not be encoded as JSON");
+    }
 
     //---------------------------------------------
     // Package level access

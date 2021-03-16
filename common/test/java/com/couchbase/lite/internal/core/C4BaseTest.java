@@ -43,7 +43,6 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.PlatformBaseTest;
-import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -117,7 +116,7 @@ public class C4BaseTest extends PlatformBaseTest {
             body.put("ans*wer", 42);
             fleeceBody = createFleeceBody(body);
         }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
 
         BaseTest.logTestInitializationComplete("C4");
@@ -169,7 +168,7 @@ public class C4BaseTest extends PlatformBaseTest {
 
     protected long importJSONLinesSafely(String name) throws CouchbaseLiteException {
         try { return importJSONLines(name); }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error importing JSON", e); }
     }
 
@@ -224,7 +223,7 @@ public class C4BaseTest extends PlatformBaseTest {
     protected String json5(String input) {
         String json = null;
         try {
-            json = FLValue.json5ToJson(input);
+            json = FLValue.getJSONForJSON5(input);
         }
         catch (LiteCoreException e) {
             fail(e.getMessage());

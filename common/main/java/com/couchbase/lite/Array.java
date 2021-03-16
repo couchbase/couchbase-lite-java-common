@@ -27,11 +27,12 @@ import java.util.Objects;
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.JSONEncoder;
 import com.couchbase.lite.internal.fleece.MArray;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MValue;
-import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 
 
 /**
@@ -244,7 +245,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @Nullable
     @Override
-    public Date getDate(int index) { return DateUtils.fromJson(getString(index)); }
+    public Date getDate(int index) { return JSONUtils.toDate(getString(index)); }
 
     /**
      * Gets a Array at the given index. Return null if the value is not an array.
@@ -298,7 +299,15 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @NonNull
     @Override
     public String toJSON() {
-        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
+        try (JSONEncoder encoder = new JSONEncoder()) {
+            internalArray.encodeTo(encoder);
+            return encoder.finishJSON();
+        }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException(
+                "Failed marshalling Array to JSON",
+                CouchbaseLiteException.convertException(e));
+        }
     }
 
     //---------------------------------------------

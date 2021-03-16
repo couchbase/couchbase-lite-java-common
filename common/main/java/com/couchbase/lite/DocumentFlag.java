@@ -33,11 +33,7 @@ public enum DocumentFlag {
 
     private final int rawValue;
 
-    DocumentFlag(int rawValue) {
-        this.rawValue = rawValue;
-    }
+    DocumentFlag(int rawValue) { this.rawValue = rawValue; }
 
-    public int rawValue() {
-        return rawValue;
-    }
+    public int rawValue() { return rawValue; }
 }

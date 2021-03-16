@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 
 import org.junit.Test;
 
@@ -28,9 +28,9 @@ public class MiscTest {
     @Test
     public void testJSONDateRoundTrip() {
         String dateStr1 = "2017-02-05T18:14:06.347Z";
-        Date date1 = DateUtils.fromJson(dateStr1);
-        String dateStr2 = DateUtils.toJson(date1);
-        Date date2 = DateUtils.fromJson(dateStr2);
+        Date date1 = JSONUtils.toDate(dateStr1);
+        String dateStr2 = JSONUtils.toJSON(date1);
+        Date date2 = JSONUtils.toDate(dateStr2);
         assertEquals(date1, date2);
         assertEquals(date1.getTime(), date2.getTime());
     }

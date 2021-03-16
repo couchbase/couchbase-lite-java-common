@@ -38,26 +38,31 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
-import com.couchbase.lite.internal.utils.JsonUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.internal.utils.Volatile;
 
 
 /**
- * A Couchbase Lite Blob. A Blob appears as a property of a Document:
- * it contains arbitrary binary data, tagged with MIME type.
- * Blobs can be arbitrarily large, although some operations may require that the entire
- * content be loaded into memory.  The document's raw JSON form only contains
- * the Blob's metadata (type, length and digest of the data) in small object.
- * The data itself is stored externally to the document, keyed by the digest.)
+ * A Couchbase Lite Blob.
+ * A Blob appears as a property of a Document and contains arbitrary binary data, tagged with MIME type.
+ * Blobs can be arbitrarily large, although some operations may require that the entire content be loaded into memory.
+ * The containing document's JSON contains only the Blob's metadata (type, length and digest).  The data itself
+ * is stored in a file whose name is the content digest (like git).
  * <p>
  **/
-@SuppressWarnings("PMD.GodClass")
+// This class should be re-implemented as a wrapper that delegates to one of three internal implementations:
+// content in memory, content in stream, content in DB.
+@SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity"})
 public final class Blob implements FLEncodable {
 
     //---------------------------------------------
     // Constants
     //---------------------------------------------
     private static final LogDomain DOMAIN = LogDomain.DATABASE;
+
+    public static final String ENCODER_ARG_DB = "BLOB.db";
+    public static final String ENCODER_ARG_QUERY_PARAM = "BLOB.queryParam";
 
     /**
      * The sub-document property that identifies it as a special type of object.
@@ -355,6 +360,8 @@ public final class Blob implements FLEncodable {
 
         if (database != null) { return getContentFromDatabase(); }
 
+        if (blobDigest == null) { Log.w(LogDomain.DATABASE, "Blob with digest %s has no database", blobDigest); }
+
         return null;
     }
 
@@ -375,6 +382,8 @@ public final class Blob implements FLEncodable {
 
         if (database != null) { return getStreamFromDatabase(database); }
 
+        if (blobDigest == null) { Log.w(LogDomain.DATABASE, "Blob with digest %s has no database", blobDigest); }
+
         return null;
     }
 
@@ -389,10 +398,10 @@ public final class Blob implements FLEncodable {
     @NonNull
     public String toJSON() {
         if (blobDigest == null) {
-            throw new IllegalStateException("toJSON() may be used only after a Blob has not been saved in a database");
+            throw new IllegalStateException("A Blob may be encoded as JSON only after it has been saved in a database");
         }
 
-        return new JsonUtils.Marshaller()
+        return new JSONUtils.Marshaller()
             .startObject()
 
             .writeKey(META_PROP_TYPE)
@@ -450,12 +459,18 @@ public final class Blob implements FLEncodable {
         return props;
     }
 
-    // FLEncodable
-    // !!! This should not be part of the public API.
+
+    /**
+     * This method is not part of the public API: Do not use it.
+     *
+     * @param encoder The FLEncoder to which to encode this object.
+     */
+    @Volatile
     @Override
     public void encodeTo(@NonNull FLEncoder encoder) {
-        final MutableDocument info = encoder.getExtraInfo(MutableDocument.class);
-        if (info != null) { installInDatabase(Preconditions.assertNotNull(info.getDatabase(), "db")); }
+        final boolean isQueryParam = encoder.getArg(ENCODER_ARG_QUERY_PARAM) != null;
+
+        if (!isQueryParam) { installInDatabase(encoder.getArg(ENCODER_ARG_DB)); }
 
         encoder.beginDict(4);
 
@@ -472,7 +487,9 @@ public final class Blob implements FLEncodable {
             encoder.writeKey(PROP_DIGEST);
             encoder.writeValue(blobDigest);
         }
-        else {
+
+        // ??? all of content in memory, again...
+        if (isQueryParam) {
             encoder.writeKey(PROP_DATA);
             encoder.writeValue(getContent());
         }
@@ -488,7 +505,7 @@ public final class Blob implements FLEncodable {
     @NonNull
     @Override
     public String toString() {
-        return "Blob{" + ClassUtils.objId(this) + ",type=" + contentType + ",len=" + length() + "}";
+        return "Blob{" + ClassUtils.objId(this) + ": " + blobDigest + "(" + contentType + ", " + length() + ")}";
     }
 
     /**
@@ -580,29 +597,39 @@ public final class Blob implements FLEncodable {
 
     @NonNull
     private InputStream getStreamFromDatabase(@NonNull Database db) {
-        try (C4BlobKey key = new C4BlobKey(blobDigest)) {
-            return new BlobInputStream(key, db.getBlobStore());
-        }
+        try (C4BlobKey key = new C4BlobKey(blobDigest)) { return new BlobInputStream(key, db.getBlobStore()); }
         catch (IllegalArgumentException | LiteCoreException e) {
             throw new IllegalStateException("Failed opening blobContent stream.", e);
         }
     }
 
-    private void installInDatabase(@NonNull Database db) {
-        Preconditions.assertNotNull(db, "database");
+    private void installInDatabase(@Nullable Object dbArg) {
+        if (database == null) {
+            // blob has not been saved: dbArg must be a db in which to save it.
+            if (!(dbArg instanceof Database)) { throw new IllegalStateException("No database for Blob save"); }
+        }
+        else {
+            // blob has already been saved.
+            if ((dbArg == null) || database.equals(dbArg)) {
+                if (blobDigest != null) { return; }
+                throw new IllegalStateException("Blob has no digest");
+            }
 
-        if (database != null) {
-            if (this.database == db) { return; }
+            // attempt to save the blob in the wrong db;
             throw new IllegalStateException(Log.lookupStandardMessage("BlobDifferentDatabase"));
         }
 
-        try (C4BlobStore store = db.getBlobStore()) {
-            try (C4BlobKey key = getBlobKey(store)) { this.blobDigest = key.toString(); }
-            this.database = db;
+        database = (Database) dbArg;
+
+        // blob was saved using Database.saveBlob();
+        if (blobDigest != null) { return; }
+
+        try (C4BlobStore store = database.getBlobStore(); C4BlobKey key = getBlobKey(store)) {
+            this.blobDigest = key.toString();
         }
         catch (Exception e) {
-            this.database = null;
-            this.blobDigest = null;
+            database = null;
+            blobDigest = null;
             throw new IllegalStateException("Failed reading blob content from database", e);
         }
     }

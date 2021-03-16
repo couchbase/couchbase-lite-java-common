@@ -139,7 +139,7 @@ public class LoadTest extends BaseDbTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1447
     @Test
     @LoadIntegrationTest
-    public void testGlobalReferenceExcceded() throws InterruptedException, CouchbaseLiteException {
+    public void testGlobalReferenceExceeded() {
         long start = System.currentTimeMillis();
 
         // final int n = 20000; // num of docs;
@@ -161,7 +161,7 @@ public class LoadTest extends BaseDbTest {
 
         assertEquals(ITERATIONS, baseTestDb.getCount());
 
-        logPerformanceStats("testGlobalReferenceExcceded()", (System.currentTimeMillis() - start));
+        logPerformanceStats("testGlobalReferenceExceeded()", (System.currentTimeMillis() - start));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1610
@@ -176,26 +176,22 @@ public class LoadTest extends BaseDbTest {
 
         long start = System.currentTimeMillis();
 
-        final int N = 2000;
-
-        for (int i = 0; i < N; i++) {
+        for (int i = 0; i < 2000; i++) {
             map.put("index", i);
-            assertTrue(updateMap(map, i, (long) i));
+            assertTrue(updateMap(map, i, i));
         }
 
         logPerformanceStats("testUpdate2()", (System.currentTimeMillis() - start));
     }
 
-    private boolean updateMap(Map map, int i, long l) {
+    private boolean updateMap(Map<String, ?> map, int i, long l) {
         Document doc = baseTestDb.getDocument(map.get("ID").toString());
         if (doc == null) { return false; }
         MutableDocument newDoc = doc.toMutable();
         newDoc.setValue("map", map);
         newDoc.setInt("int", i);
         newDoc.setLong("long", l);
-        try {
-            baseTestDb.save(newDoc);
-        }
+        try { baseTestDb.save(newDoc); }
         catch (CouchbaseLiteException e) {
             Report.log(LogLevel.ERROR, "DB is not responding", e);
             return false;
@@ -203,10 +199,10 @@ public class LoadTest extends BaseDbTest {
         return true;
     }
 
-    private void addRevisions(final int revisions, final boolean retriveNewDoc) throws CouchbaseLiteException {
+    private void addRevisions(final int revisions, final boolean retrieveNewDoc) throws CouchbaseLiteException {
         baseTestDb.inBatch(() -> {
             MutableDocument mDoc = new MutableDocument("doc");
-            if (retriveNewDoc) { updateDocWithGetDocument(mDoc, revisions); }
+            if (retrieveNewDoc) { updateDocWithGetDocument(mDoc, revisions); }
             else { updateDoc(mDoc, revisions); }
         });
 

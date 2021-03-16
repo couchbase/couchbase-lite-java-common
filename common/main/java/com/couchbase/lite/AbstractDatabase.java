@@ -38,7 +38,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.json.JSONException;
 
 import com.couchbase.lite.internal.CBLInternalException;
-import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.SocketFactory;
@@ -61,7 +60,7 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.JsonUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -169,7 +168,7 @@ abstract class AbstractDatabase {
             C4Database.deleteDbAtPath(path.getPath());
         }
         catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
+            throw CouchbaseLiteException.convertException(e);
         }
     }
 
@@ -211,7 +210,7 @@ abstract class AbstractDatabase {
         }
         catch (LiteCoreException e) {
             FileUtils.eraseFileOrDir(toPath);
-            throw CBLStatus.convertException(e);
+            throw CouchbaseLiteException.convertException(e);
         }
     }
 
@@ -546,7 +545,7 @@ abstract class AbstractDatabase {
                 purgeStrategy.schedulePurge(0);
             }
             catch (LiteCoreException e) {
-                throw CBLStatus.convertException(e);
+                throw CouchbaseLiteException.convertException(e);
             }
         }
     }
@@ -574,7 +573,7 @@ abstract class AbstractDatabase {
                 return (timestamp == 0) ? null : new Date(timestamp);
             }
             catch (LiteCoreException e) {
-                throw CBLStatus.convertException(e);
+                throw CouchbaseLiteException.convertException(e);
             }
         }
     }
@@ -604,7 +603,7 @@ abstract class AbstractDatabase {
                 }
             }
             catch (LiteCoreException e) {
-                throw CBLStatus.convertException(e);
+                throw CouchbaseLiteException.convertException(e);
             }
         }
 
@@ -729,7 +728,7 @@ abstract class AbstractDatabase {
     public List<String> getIndexes() throws CouchbaseLiteException {
         synchronized (getLock()) {
             try { return (List<String>) getC4DatabaseLocked().getIndexes().asObject(); }
-            catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
 
@@ -740,7 +739,7 @@ abstract class AbstractDatabase {
         synchronized (getLock()) {
             final C4Database c4Db = getC4DatabaseLocked();
             try {
-                final String json = JsonUtils.toJson(index.items()).toString();
+                final String json = JSONUtils.toJSON(index.items()).toString();
                 c4Db.createIndex(
                     name,
                     json,
@@ -748,36 +747,35 @@ abstract class AbstractDatabase {
                     index.language(),
                     index.ignoreAccents());
             }
-            catch (LiteCoreException e) {
-                throw CBLStatus.convertException(e);
-            }
-            catch (JSONException e) {
-                throw new CouchbaseLiteException("Error encoding JSON", e);
-            }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+            catch (JSONException e) { throw new CouchbaseLiteException("Error encoding JSON", e); }
         }
     }
 
     public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
         synchronized (getLock()) {
             try { getC4DatabaseLocked().deleteIndex(name); }
-            catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
 
     public boolean performMaintenance(MaintenanceType type) throws CouchbaseLiteException {
         synchronized (getLock()) {
             try { return getC4DatabaseLocked().performMaintenance(type); }
-            catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
 
+    // !!!JSON: NOT YET IMPLEMENTED
     public void saveBlob(@NonNull Blob blob) throws CouchbaseLiteException {
-        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
+        mustBeOpen();
     }
 
+    // !!!JSON: NOT YET IMPLEMENTED
     @NonNull
     public Blob getBlob(@NonNull Map<String, ?> props) throws CouchbaseLiteException {
-        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
+        mustBeOpen();
+        return new Blob("foo", new byte[] {});
     }
 
     @NonNull
@@ -916,6 +914,7 @@ abstract class AbstractDatabase {
         synchronized (getLock()) { return getC4DatabaseLocked().get(id); }
     }
 
+    @NonNull
     FLEncoder getSharedFleeceEncoder() {
         synchronized (getLock()) { return getC4DatabaseLocked().getSharedFleeceEncoder(); }
     }
@@ -1128,13 +1127,13 @@ abstract class AbstractDatabase {
     @GuardedBy("dbLock")
     private void beginTransaction() throws CouchbaseLiteException {
         try { getC4DatabaseLocked().beginTransaction(); }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     @GuardedBy("dbLock")
     private void endTransaction(boolean commit) throws CouchbaseLiteException {
         try { getC4DatabaseLocked().endTransaction(commit); }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     private C4Database openC4Db() throws CouchbaseLiteException {
@@ -1163,7 +1162,7 @@ abstract class AbstractDatabase {
                 throw new CouchbaseLiteException("CreateDBDirectoryFailed", e, CBLError.Domain.CBLITE, e.code);
             }
 
-            throw CBLStatus.convertException(e);
+            throw CouchbaseLiteException.convertException(e);
         }
     }
 
@@ -1310,7 +1309,7 @@ abstract class AbstractDatabase {
                 throw new CBLInternalException(CBLInternalException.FAILED_SELECTING_CONFLICTING_REVISION, msg);
             }
         }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
         return remoteDoc;
     }
@@ -1406,7 +1405,7 @@ abstract class AbstractDatabase {
             Log.v(DOMAIN, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
         }
         catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
+            throw CouchbaseLiteException.convertException(e);
         }
     }
 
@@ -1516,7 +1515,7 @@ abstract class AbstractDatabase {
             }
 
             // here if the save failed.
-            throw CBLStatus.convertException(e);
+            throw CouchbaseLiteException.convertException(e);
         }
 
         // here if deleting and the curDoc has already been deleted
@@ -1558,7 +1557,7 @@ abstract class AbstractDatabase {
             document.replaceC4Document(c4Doc);
         }
         catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
+            throw CouchbaseLiteException.convertException(e);
         }
         finally {
             if (body != null) { body.close(); }
@@ -1574,7 +1573,7 @@ abstract class AbstractDatabase {
             commit = true;
         }
         catch (LiteCoreException e) {
-            throw CBLStatus.convertException(e);
+            throw CouchbaseLiteException.convertException(e);
         }
         finally {
             endTransaction(commit);
@@ -1643,7 +1642,7 @@ abstract class AbstractDatabase {
 
         synchronized (getLock()) {
             try { onShut.accept(c4Db); }
-            catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
 
         shutdownExecutors(postExecutor, queryExecutor, EXECUTOR_CLOSE_MAX_WAIT_SECS);

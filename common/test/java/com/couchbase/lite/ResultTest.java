@@ -21,12 +21,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 
-import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -59,31 +61,35 @@ public class ResultTest extends BaseQueryTest {
             Query query = generateQuery(baseTestDb, docID);
 
             // run query
-            int rows = verifyQuery(query, false, (n, r) -> {
-                assertEquals(13, r.count());
+            int rows = verifyQuery(
+                query,
+                false,
+                (n, r) -> {
+                    assertEquals(13, r.count());
 
-                assertNull(r.getValue("null"));
-                assertEquals(true, r.getValue("true"));
-                assertEquals(false, r.getValue("false"));
-                assertEquals("string", r.getValue("string"));
-                assertEquals(0L, r.getValue("zero"));
-                assertEquals(1L, r.getValue("one"));
-                assertEquals(-1L, r.getValue("minus_one"));
-                assertEquals(1.1, r.getValue("one_dot_one"));
-                assertEquals(TEST_DATE, r.getValue("date"));
-                assertTrue(r.getValue("dict") instanceof Dictionary);
-                assertTrue(r.getValue("array") instanceof Array);
-                assertTrue(r.getValue("blob") instanceof Blob);
-                assertNull(r.getValue("non_existing_key"));
+                    assertNull(r.getValue("null"));
+                    assertEquals(true, r.getValue("true"));
+                    assertEquals(false, r.getValue("false"));
+                    assertEquals("string", r.getValue("string"));
+                    assertEquals(0L, r.getValue("zero"));
+                    assertEquals(1L, r.getValue("one"));
+                    assertEquals(-1L, r.getValue("minus_one"));
+                    assertEquals(1.1, r.getValue("one_dot_one"));
+                    assertEquals(TEST_DATE, r.getValue("date"));
+                    assertTrue(r.getValue("dict") instanceof Dictionary);
+                    assertTrue(r.getValue("array") instanceof Array);
+                    assertTrue(r.getValue("blob") instanceof Blob);
+                    assertNull(r.getValue("non_existing_key"));
 
-                TestUtils.assertThrows(IllegalArgumentException.class, () -> r.getValue(null));
+                    TestUtils.assertThrows(IllegalArgumentException.class, () -> r.getValue(null));
 
-                assertNull(r.getValue("not_in_query_select"));
-            });
+                    assertNull(r.getValue("not_in_query_select"));
+                });
 
             assertEquals(1, rows);
         }
     }
+
 
     @Test
     public void testGetValue() throws CouchbaseLiteException {
@@ -583,7 +589,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getDate("one"));
                 assertNull(r.getDate("minus_one"));
                 assertNull(r.getDate("one_dot_one"));
-                assertEquals(TEST_DATE, DateUtils.toJson(r.getDate("date")));
+                assertEquals(TEST_DATE, JSONUtils.toJSON(r.getDate("date")));
                 assertNull(r.getDate("dict"));
                 assertNull(r.getDate("array"));
                 assertNull(r.getDate("blob"));
@@ -615,7 +621,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getDate(5));
                 assertNull(r.getDate(6));
                 assertNull(r.getDate(7));
-                assertEquals(TEST_DATE, DateUtils.toJson(r.getDate(8)));
+                assertEquals(TEST_DATE, JSONUtils.toJSON(r.getDate(8)));
                 assertNull(r.getDate(9));
                 assertNull(r.getDate(10));
                 assertNull(r.getDate(11));
@@ -929,6 +935,32 @@ public class ResultTest extends BaseQueryTest {
         }
     }
 
+    @Test
+    public void testResultToJSON() throws CouchbaseLiteException, JSONException {
+        MutableDocument mDoc = new MutableDocument();
+        populateData(mDoc);
+        saveDocInBaseTestDb(mDoc);
+
+        ResultSet results = generateQuery(baseTestDb, mDoc.getId()).execute();
+
+        Result result;
+        while ((result = results.next()) != null) {
+            JSONObject json = new JSONObject(result.toJSON());
+            assertEquals(12, json.length());
+            assertEquals(JSONObject.NULL, json.get("null"));
+            assertEquals(true, json.get("true"));
+            assertEquals(false, json.get("false"));
+            assertEquals("string", json.get("string"));
+            assertEquals(0L, json.getLong("zero"));
+            assertEquals(1L, json.getLong("one"));
+            assertEquals(-1L, json.getLong("minus_one"));
+            assertEquals(1.1, json.getDouble("one_dot_one"), 0.001);
+            assertEquals(TEST_DATE, json.get("date"));
+            assertEquals(JSONArray.class, json.get("array").getClass());
+            assertEquals(JSONObject.class, json.get("dict").getClass());
+        }
+    }
+
     private Query generateQuery(Database db, String docID) {
         Expression exDocID = Expression.string(docID);
         return QueryBuilder.select(
@@ -950,11 +982,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     private String prepareData(int i) throws CouchbaseLiteException {
-        String docID = String.format(Locale.ENGLISH, "doc%d", i);
-        MutableDocument mDoc = new MutableDocument(docID);
+        MutableDocument mDoc = new MutableDocument("doc" + i);
         if (i % 2 == 1) { populateData(mDoc); }
         else { populateDataByTypedSetter(mDoc); }
         saveDocInBaseTestDb(mDoc);
-        return docID;
+        return mDoc.getId();
     }
 }

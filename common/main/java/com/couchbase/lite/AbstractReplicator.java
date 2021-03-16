@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.SocketFactory;
@@ -202,7 +201,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             this(
                 getActivityLevelFromC4(c4Status.getActivityLevel()),
                 new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
-                (c4Status.getErrorCode() == 0) ? null : CBLStatus.convertC4Error(c4Status.getC4Error()));
+                (c4Status.getErrorCode() == 0) ? null : CouchbaseLiteException.convertC4Error(c4Status.getC4Error()));
         }
 
         private Status(@NonNull Status status) { this(status.activityLevel, status.progress, status.error); }
@@ -452,7 +451,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
         final Set<String> pending;
         try { pending = getOrCreateC4Replicator().getPendingDocIDs(); }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e, "Failed fetching pending documentIds"); }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(e, "Failed fetching pending documentIds");
+        }
 
         if (pending == null) { throw new IllegalStateException("Pending doc ids is unexpectedly null"); }
 
@@ -476,7 +477,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
 
         try { return getOrCreateC4Replicator().isDocumentPending(docId); }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e, "Failed getting document pending status"); }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(e, "Failed getting document pending status");
+        }
     }
 
     /**
@@ -731,7 +734,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
                     continue;
                 }
 
-                error = CBLStatus.convertC4Error(c4Error);
+                error = CouchbaseLiteException.convertC4Error(c4Error);
             }
 
             unconflictedDocs.add(new ReplicatedDocument(docId, docEnd.getFlags(), error, docEnd.errorIsTransient()));
@@ -808,7 +811,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
                 return c4Repl;
             }
             catch (LiteCoreException e) {
-                throw new IllegalStateException("Could not create replicator", CBLStatus.convertException(e));
+                throw new IllegalStateException(
+                    "Could not create replicator",
+                    CouchbaseLiteException.convertException(e));
             }
         }
     }

@@ -30,10 +30,14 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.couchbase.lite.internal.utils.DateUtils;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.lite.internal.utils.TestUtils;
 
@@ -48,6 +52,120 @@ import static org.junit.Assert.assertTrue;
 
 
 public class DocumentTest extends BaseDbTest {
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRecursiveArray() {
+        MutableArray array = new MutableArray();
+        array.addArray(array);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRecursiveDictionary() {
+        MutableDictionary dict = new MutableDictionary();
+        dict.setDictionary("k1", dict);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testMutableArrayToJSON() { new MutableArray().toJSON(); }
+
+    @Test(expected = IllegalStateException.class)
+    public void testMutableDictionaryToJSON() { new MutableDictionary().toJSON(); }
+
+    @Test(expected = IllegalStateException.class)
+    public void testUnsavedBlobToJSON() {
+        new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)).toJSON();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testMutableDocToJSON() { new MutableDocument().toJSON(); }
+
+    @Test
+    public void testArrayToJSON() throws CouchbaseLiteException, JSONException {
+        MutableDocument mDoc = new MutableDocument().setArray("array", makeArray());
+        saveDocInBaseTestDb(mDoc);
+        verifyArray(new JSONArray(baseTestDb.getDocument(mDoc.getId()).getArray("array").toJSON()));
+    }
+
+    @Test
+    public void testDictionaryToJSON() throws CouchbaseLiteException, JSONException {
+        MutableDocument mDoc = new MutableDocument().setDictionary("dict", makeDict());
+        saveDocInBaseTestDb(mDoc);
+        verifyDict(new JSONObject(baseTestDb.getDocument(mDoc.getId()).getDictionary("dict").toJSON()));
+    }
+
+    @Test
+    public void testBlobToJSON() throws CouchbaseLiteException, JSONException {
+        Blob blob = new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8));
+        MutableDocument mDoc = new MutableDocument().setBlob("blob", blob);
+        saveDocInBaseTestDb(mDoc);
+        verifyBlob(blob, new JSONObject(blob.toJSON()));
+    }
+
+    @Test
+    public void testDocToJSON() throws CouchbaseLiteException, JSONException {
+        final MutableArray array = makeArray();
+        final MutableDictionary dict = makeDict();
+        final Blob blob = new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8));
+
+        // Document
+        final MutableDocument mDoc = new MutableDocument();
+        mDoc.setValue("v2", null);
+        mDoc.setBoolean("b3", true);
+        mDoc.setBoolean("b4", false);
+        mDoc.setInt("i4", 0);
+        mDoc.setInt("i5", Integer.MIN_VALUE);
+        mDoc.setInt("i6", Integer.MAX_VALUE);
+        mDoc.setLong("l4", 0L);
+        mDoc.setLong("l5", Long.MIN_VALUE);
+        mDoc.setLong("l6", Long.MAX_VALUE);
+        mDoc.setFloat("f4", 0.0F);
+        mDoc.setFloat("f5", Float.MIN_VALUE);
+        mDoc.setFloat("f6", Float.MAX_VALUE);
+        mDoc.setDouble("d4", 0.0);
+        mDoc.setDouble("d5", Double.MIN_VALUE);
+        mDoc.setDouble("d6", Double.MAX_VALUE);
+        mDoc.setNumber("n3", 1);
+        mDoc.setNumber("n4", Float.MIN_VALUE);
+        mDoc.setString("s3", null);
+        mDoc.setString("s4", "Hersh");
+        mDoc.setDate("m2", JSONUtils.toDate(TEST_DATE));
+        mDoc.setArray("a2", array);
+        mDoc.setDictionary("c2", dict);
+        mDoc.setBlob("blob", blob);
+
+        baseTestDb.save(mDoc);
+
+        final Document sDoc = baseTestDb.getDocument(mDoc.getId());
+
+        final JSONObject jDoc = new JSONObject(sDoc.toJSON());
+
+        assertEquals(23, jDoc.length());
+        assertEquals(JSONObject.NULL, jDoc.get("v2"));
+        assertEquals(sDoc.getBoolean("b3"), jDoc.get("b3"));
+        assertEquals(sDoc.getBoolean("b4"), jDoc.get("b4"));
+        assertEquals(sDoc.getInt("i4"), jDoc.get("i4"));
+        assertEquals(sDoc.getInt("i5"), jDoc.get("i5"));
+        assertEquals(sDoc.getInt("i6"), jDoc.get("i6"));
+        assertEquals(sDoc.getLong("l4"), jDoc.getLong("l4"));
+        assertEquals(sDoc.getLong("l5"), jDoc.get("l5"));
+        assertEquals(sDoc.getLong("l6"), jDoc.get("l6"));
+        assertEquals(sDoc.getFloat("f4"), jDoc.getDouble("f4"), 0.001);
+        assertEquals(sDoc.getFloat("f5"), jDoc.getDouble("f5"), 0.001);
+        assertEquals(sDoc.getFloat("f6"), jDoc.getDouble("f6"), 1.0E38);
+        assertEquals(sDoc.getDouble("d4"), jDoc.getDouble("d4"), 0.001);
+        assertEquals(sDoc.getDouble("d5"), jDoc.getDouble("d5"), 0.001);
+        assertEquals(sDoc.getDouble("d6"), jDoc.getDouble("d6"), 1);
+        assertEquals(sDoc.getNumber("n3"), jDoc.getLong("n3"));
+        assertEquals((float) sDoc.getNumber("n4"), jDoc.getDouble("n4"), 0.001);
+        assertEquals("null", jDoc.getString("s3"));
+        assertEquals(sDoc.getString("s4"), jDoc.getString("s4"));
+        assertEquals(sDoc.getDate("m2"), JSONUtils.toDate(jDoc.getString("m2")));
+
+        verifyArray(jDoc.getJSONArray("a2"));
+        verifyDict(jDoc.getJSONObject("c2"));
+        verifyBlob(blob, jDoc.getJSONObject("blob"));
+    }
+
     @Test
     public void testCreateDoc() throws CouchbaseLiteException {
         MutableDocument doc1a = new MutableDocument();
@@ -779,14 +897,14 @@ public class DocumentTest extends BaseDbTest {
         MutableDocument mDoc = new MutableDocument("doc1");
 
         Date date = new Date();
-        final String dateStr = DateUtils.toJson(date);
+        final String dateStr = JSONUtils.toJSON(date);
         assertTrue(dateStr.length() > 0);
         mDoc.setValue("date", date);
 
         Document doc = saveDocInBaseTestDb(mDoc, d -> {
             assertEquals(dateStr, d.getValue("date"));
             assertEquals(dateStr, d.getString("date"));
-            assertEquals(dateStr, DateUtils.toJson(d.getDate("date")));
+            assertEquals(dateStr, JSONUtils.toJSON(d.getDate("date")));
         });
 
         // Update:
@@ -795,13 +913,13 @@ public class DocumentTest extends BaseDbTest {
         cal.setTime(date);
         cal.add(Calendar.SECOND, 60);
         Date nuDate = cal.getTime();
-        final String nuDateStr = DateUtils.toJson(nuDate);
+        final String nuDateStr = JSONUtils.toJSON(nuDate);
         mDoc.setValue("date", nuDate);
 
         saveDocInBaseTestDb(mDoc, d -> {
             assertEquals(nuDateStr, d.getValue("date"));
             assertEquals(nuDateStr, d.getString("date"));
-            assertEquals(nuDateStr, DateUtils.toJson(d.getDate("date")));
+            assertEquals(nuDateStr, JSONUtils.toJSON(d.getDate("date")));
         });
     }
 
@@ -821,7 +939,7 @@ public class DocumentTest extends BaseDbTest {
                 assertNull(d.getDate("one"));
                 assertNull(d.getDate("minus_one"));
                 assertNull(d.getDate("one_dot_one"));
-                assertEquals(TEST_DATE, DateUtils.toJson(d.getDate("date")));
+                assertEquals(TEST_DATE, JSONUtils.toJSON(d.getDate("date")));
                 assertNull(d.getDate("dict"));
                 assertNull(d.getDate("array"));
                 assertNull(d.getDate("blob"));
@@ -1436,8 +1554,8 @@ public class DocumentTest extends BaseDbTest {
         expected.put("one", 1);
         expected.put("minus_one", -1);
         expected.put("one_dot_one", 1.1);
-        // TODO: Should be Date or String?
-        //expected.put("date", DateUtils.fromJson(TEST_DATE));
+        // TODO: Should be Date or String ?
+        // expected.put("date", DateUtils.fromJSONString(TEST_DATE));
         expected.put("date", TEST_DATE);
         expected.put("null", null);
 
@@ -1651,25 +1769,24 @@ public class DocumentTest extends BaseDbTest {
     }
 
     @Test
-    public void testDocumentChangeOnDocumentPurged()
-        throws Exception {
-        Date dto1 = new Date(System.currentTimeMillis() + 1000L);
-        MutableDocument doc1 = new MutableDocument("doc1");
-        doc1.setValue("theanswer", 18);
-        baseTestDb.save(doc1);
+    public void testDocumentChangeOnDocumentPurged() throws CouchbaseLiteException, InterruptedException {
+        baseTestDb.save(new MutableDocument("doc1").setValue("theanswer", 18));
 
-        // purge doc
         final CountDownLatch latch = new CountDownLatch(1);
-        DocumentChangeListener changeListener = change -> {
-            assertNotNull(change);
-            assertEquals("doc1", change.getDocumentID());
-            assertEquals(1, latch.getCount());
-            latch.countDown();
-        };
-        ListenerToken token = baseTestDb.addDocumentChangeListener("doc1", changeListener);
-        baseTestDb.setDocumentExpiration("doc1", dto1);
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        baseTestDb.removeChangeListener(token);
+        ListenerToken token = baseTestDb.addDocumentChangeListener(
+            "doc1",
+            change -> {
+                try {
+                    assertNotNull(change);
+                    assertEquals("doc1", change.getDocumentID());
+                }
+                finally { latch.countDown(); }
+            });
+
+        baseTestDb.setDocumentExpiration("doc1", new Date(System.currentTimeMillis() + 100));
+
+        try { assertTrue(latch.await(2, TimeUnit.SECONDS)); }
+        finally { baseTestDb.removeChangeListener(token); }
     }
 
     @Test
@@ -1746,7 +1863,7 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testSetExpirationOnDoc() throws Exception {
-        Date dto3 = new Date(System.currentTimeMillis() + 3000L);
+        long now = System.currentTimeMillis();
 
         MutableDocument doc1 = new MutableDocument("doc1");
         doc1.setInt("answer", 12);
@@ -1758,15 +1875,16 @@ public class DocumentTest extends BaseDbTest {
         doc2.setValue("question", "What is six plus six?");
         saveDocInBaseTestDb(doc2);
 
-        baseTestDb.setDocumentExpiration("doc2", new Date(System.currentTimeMillis())); //expire now
+        baseTestDb.setDocumentExpiration("doc1", new Date(now));
+        baseTestDb.setDocumentExpiration("doc2", new Date(now + (2 * 1000L)));
+
         Thread.sleep(500);
-        assertNull(baseTestDb.getDocument("doc2"));
-
-        baseTestDb.setDocumentExpiration("doc1", dto3);
-
-        Thread.sleep(4 * 1000); // sleep 4 sec
-
         assertNull(baseTestDb.getDocument("doc1"));
+        assertNotNull(baseTestDb.getDocument("doc2"));
+
+        Thread.sleep(2 * 1000); // sleep 2 sec
+        assertNull(baseTestDb.getDocument("doc1"));
+        assertNull(baseTestDb.getDocument("doc2"));
     }
 
     @Test
@@ -2162,8 +2280,6 @@ public class DocumentTest extends BaseDbTest {
             Document anotherDoc1a = sameDB.getDocument("doc1");
             assertEquals(anotherDoc1a, sDoc1a);
             assertEquals(sDoc1a, anotherDoc1a);
-
-
         }
         finally {
             closeDb(sameDB);
@@ -2519,5 +2635,145 @@ public class DocumentTest extends BaseDbTest {
 
         assertEquals(docRevID, doc.getRevisionID());
         assertNotEquals(docRevID, mdoc.getRevisionID());
+    }
+
+    @NotNull
+    private MutableArray makeArray() {
+        // A small array
+        final MutableArray simpleArray = new MutableArray();
+        simpleArray.addInt(54);
+        simpleArray.addString("Joplin");
+
+        // A small dictionary
+        final MutableDictionary simpleDict = new MutableDictionary();
+        simpleDict.setInt("i0", 58);
+        simpleDict.setString("s0", "Winehouse");
+
+        final MutableArray array = new MutableArray();
+        array.addValue(null);
+        array.addBoolean(true);
+        array.addBoolean(false);
+        array.addInt(0);
+        array.addInt(Integer.MIN_VALUE);
+        array.addInt(Integer.MAX_VALUE);
+        array.addLong(0L);
+        array.addLong(Long.MIN_VALUE);
+        array.addLong(Long.MAX_VALUE);
+        array.addFloat(0.0F);
+        array.addFloat(Float.MIN_VALUE);
+        array.addFloat(Float.MAX_VALUE);
+        array.addDouble(0.0F);
+        array.addDouble(Double.MIN_VALUE);
+        array.addDouble(Double.MAX_VALUE);
+        array.addNumber(0);
+        array.addNumber(Float.MIN_VALUE);
+        array.addString(null);
+        array.addString("Quatro");
+        array.addDate(JSONUtils.toDate(TEST_DATE));
+        array.addArray(simpleArray);
+        array.addDictionary(simpleDict);
+
+        return array;
+    }
+
+    private void verifyArray(JSONArray jArray) throws JSONException {
+        assertEquals(22, jArray.length());
+        assertEquals(JSONObject.NULL, jArray.get(0));
+        assertEquals(true, jArray.get(1));
+        assertEquals(false, jArray.get(2));
+        assertEquals(0, jArray.get(3));
+        assertEquals(Integer.MIN_VALUE, jArray.get(4));
+        assertEquals(Integer.MAX_VALUE, jArray.get(5));
+        assertEquals(0, jArray.get(6));
+        assertEquals(Long.MIN_VALUE, jArray.get(7));
+        assertEquals(Long.MAX_VALUE, jArray.get(8));
+        assertEquals(0.0F, jArray.getDouble(9), 0.001);
+        assertEquals(Float.MIN_VALUE, jArray.getDouble(10), 0.001);
+        assertEquals(Float.MAX_VALUE, jArray.getDouble(11), 1.0E38);
+        assertEquals(0.0, jArray.getDouble(12), 0.001);
+        assertEquals(Double.MIN_VALUE, jArray.getDouble(13), 0.001);
+        assertEquals(Double.MAX_VALUE, jArray.getDouble(14), 1);
+        assertEquals(0, jArray.getLong(15));
+        assertEquals(Float.MIN_VALUE, jArray.getDouble(16), 0.001);
+        assertEquals("null", jArray.getString(17));
+        assertEquals("Quatro", jArray.get(18));
+        assertEquals(TEST_DATE, jArray.get(19));
+        assertEquals(JSONArray.class, jArray.get(20).getClass());
+        assertEquals(JSONObject.class, jArray.get(21).getClass());
+    }
+
+    @NotNull
+    private MutableDictionary makeDict() {
+        // A small array
+        final MutableArray simpleArray = new MutableArray();
+        simpleArray.addInt(54);
+        simpleArray.addString("Joplin");
+
+        // A small dictionary
+        final MutableDictionary simpleDict = new MutableDictionary();
+        simpleDict.setInt("i0", 58);
+        simpleDict.setString("s0", "Winehouse");
+
+        // Dictionary:
+        final MutableDictionary dict = new MutableDictionary();
+        dict.setValue("v1", null);
+        dict.setBoolean("b1", true);
+        dict.setBoolean("b2", false);
+        dict.setInt("i1", 0);
+        dict.setInt("i2", Integer.MIN_VALUE);
+        dict.setInt("i3", Integer.MAX_VALUE);
+        dict.setLong("l1", 0L);
+        dict.setLong("l2", Long.MIN_VALUE);
+        dict.setLong("l3", Long.MAX_VALUE);
+        dict.setFloat("f1", 0.0F);
+        dict.setFloat("f2", Float.MIN_VALUE);
+        dict.setFloat("f3", Float.MAX_VALUE);
+        dict.setDouble("d1", 0.0F);
+        dict.setDouble("d2", Double.MIN_VALUE);
+        dict.setDouble("d3", Double.MAX_VALUE);
+        dict.setNumber("n1", 0);
+        dict.setNumber("n2", Float.MIN_VALUE);
+        dict.setString("s1", null);
+        dict.setString("s2", "Jett");
+        dict.setDate("m1", JSONUtils.toDate(TEST_DATE));
+        dict.setArray("a1", simpleArray);
+        dict.setDictionary("c1", simpleDict);
+
+        return dict;
+    }
+
+    private void verifyDict(JSONObject jObj) throws JSONException {
+        assertEquals(22, jObj.length());
+        assertEquals(JSONObject.NULL, jObj.get("v1"));
+        assertEquals(true, jObj.get("b1"));
+        assertEquals(false, jObj.get("b2"));
+        assertEquals(0, jObj.get("i1"));
+        assertEquals(Integer.MIN_VALUE, jObj.get("i2"));
+        assertEquals(Integer.MAX_VALUE, jObj.get("i3"));
+        assertEquals(0, jObj.getLong("l1"));
+        assertEquals(Long.MIN_VALUE, jObj.get("l2"));
+        assertEquals(Long.MAX_VALUE, jObj.get("l3"));
+        assertEquals(0.0F, jObj.getDouble("f1"), 0.001);
+        assertEquals(Float.MIN_VALUE, jObj.getDouble("f2"), 0.001);
+        assertEquals(Float.MAX_VALUE, jObj.getDouble("f3"), 1.0E38);
+        assertEquals(0.0, jObj.getDouble("d1"), 0.001);
+        assertEquals(Double.MIN_VALUE, jObj.getDouble("d2"), 0.001);
+        assertEquals(Double.MAX_VALUE, jObj.getDouble("d3"), 1);
+        assertEquals(0, jObj.getLong("n1"));
+        assertEquals(Float.MIN_VALUE, jObj.getDouble("n2"), 0.001);
+        assertEquals("null", jObj.getString("s1"));
+        assertEquals("Jett", jObj.getString("s2"));
+        assertEquals(TEST_DATE, jObj.getString("m1"));
+        assertEquals(JSONArray.class, jObj.get("a1").getClass());
+        assertEquals(JSONObject.class, jObj.get("c1").getClass());
+    }
+
+
+    private void verifyBlob(Blob blob, JSONObject jBlob) throws JSONException {
+        assertEquals(4, jBlob.length());
+        assertEquals(Blob.TYPE_BLOB, jBlob.get(Blob.META_PROP_TYPE));
+        assertEquals(blob.digest(), jBlob.get(Blob.PROP_DIGEST));
+        assertEquals(blob.length(), jBlob.getLong(Blob.PROP_LENGTH));
+        assertEquals(blob.getContentType(), jBlob.get(Blob.PROP_CONTENT_TYPE));
     }
 }

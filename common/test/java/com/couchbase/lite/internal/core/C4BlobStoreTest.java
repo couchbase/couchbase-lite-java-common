@@ -30,7 +30,6 @@ import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
@@ -54,7 +53,7 @@ public class C4BlobStoreTest extends C4BaseTest {
             blobStore = C4BlobStore.open(blobDir.getCanonicalPath(), C4Constants.DatabaseFlags.CREATE);
             bogusKey = new C4BlobKey("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");
         }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
 
         BaseTest.logTestInitializationComplete("C4BlobStore");

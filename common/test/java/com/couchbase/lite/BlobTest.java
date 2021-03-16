@@ -39,7 +39,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 
 // There are other blob tests in test suites...
@@ -232,7 +231,6 @@ public class BlobTest extends BaseDbTest {
         assertArrayEquals(content, bytes);
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void testBlobFromFileURL() throws IOException {
         String contentType = "image/png";
@@ -263,25 +261,21 @@ public class BlobTest extends BaseDbTest {
     @FlakyTest
     @Test
     public void testBlobReadFunctions() throws IOException {
-        byte[] bytes;
+        byte[] data;
+        try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
 
-        try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) {
-            bytes = IOUtils.toByteArray(is);
-        }
+        Blob blob = new Blob("application/json", data);
+        assertEquals(blob.getContentStream().read(), data[0]);
 
-        Blob blob = new Blob("application/json", bytes);
-        assertTrue(blob.toString().matches("Blob\\{@0x\\w{6,8},type=application/json,len=67[12]\\d{4}\\}"));
-        assertEquals(blob.getContentStream().read(), bytes[0]);
+        blob = new Blob("application/json", data);
+        byte[] blobContent = new byte[data.length];
+        blob.getContentStream().read(blobContent, 0, data.length);
+        assertArrayEquals(blobContent, data);
 
-        blob = new Blob("application/json", bytes);
-        byte[] bytesReadFromBlob = new byte[bytes.length];
-        blob.getContentStream().read(bytesReadFromBlob, 0, bytes.length);
-        assertArrayEquals(bytesReadFromBlob, bytes);
-
-        blob = new Blob("application/json", bytes);
+        blob = new Blob("application/json", data);
         InputStream iStream = blob.getContentStream();
-        iStream.skip(2);
-        assertEquals(iStream.read(), bytes[2]);
+        iStream.skip(17);
+        assertEquals(iStream.read(), data[17]);
     }
 
     @Test
@@ -310,19 +304,15 @@ public class BlobTest extends BaseDbTest {
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test(expected = IllegalArgumentException.class)
     public void testBlobCtorWithNullContentType() { new Blob(null, new byte[] {5, 6, 7, 8}); }
 
-    @SuppressWarnings("ConstantConditions")
     @Test(expected = IllegalArgumentException.class)
     public void testBlobCtorWithNullContent() { new Blob("image/png", (byte[]) null); }
 
-    @SuppressWarnings("ConstantConditions")
     @Test(expected = IllegalArgumentException.class)
     public void testBlobCtorWithStreamAndNullContentType() { new Blob(null, PlatformUtils.getAsset("attachment.png")); }
 
-    @SuppressWarnings("ConstantConditions")
     @Test(expected = IllegalArgumentException.class)
     public void testBlobCtorsWithNullStream() { new Blob("image/png", (InputStream) null); }
 }

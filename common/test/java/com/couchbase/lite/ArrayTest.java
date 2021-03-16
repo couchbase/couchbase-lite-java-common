@@ -28,8 +28,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.couchbase.lite.internal.utils.DateUtils;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.TestUtils;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
@@ -825,7 +825,7 @@ public class ArrayTest extends BaseDbTest {
                 assertNull(a.getDate(4));
                 assertNull(a.getDate(5));
                 assertNull(a.getDate(6));
-                assertEquals(TEST_DATE, DateUtils.toJson(a.getDate(7)));
+                assertEquals(TEST_DATE, JSONUtils.toJSON(a.getDate(7)));
                 assertNull(a.getDate(8));
                 assertNull(a.getDate(9));
                 assertNull(a.getDate(10));
@@ -1889,7 +1889,7 @@ public class ArrayTest extends BaseDbTest {
         list.add(-1);
         list.add(1.1);
 
-        list.add(DateUtils.fromJson(TEST_DATE));
+        list.add(JSONUtils.toDate(TEST_DATE));
         list.add(null);
 
         // Dictionary

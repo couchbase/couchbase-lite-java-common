@@ -32,6 +32,18 @@ public final class Report {
 
     private static final String DOMAIN = "CouchbaseLite/TEST";
 
+    public static void log(@NonNull String message) {
+        Report.log(LogLevel.INFO, message, (Throwable) null);
+    }
+
+    public static void log(@NonNull String template, Object... args) {
+        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args));
+    }
+
+    public static void log(@Nullable Throwable err, @NonNull String template, Object... args) {
+        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args), err);
+    }
+
     public static void log(@NonNull LogLevel level, @NonNull String message) {
         Report.log(level, message, (Throwable) null);
     }

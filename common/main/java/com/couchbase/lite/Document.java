@@ -26,12 +26,12 @@ import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import com.couchbase.lite.internal.CBLStatus;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.JSONEncoder;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -68,7 +68,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         // ??? c4Doc can be closed/freed?
         final C4Document c4Doc;
         try { c4Doc = database.getC4Document(id); }
-        catch (LiteCoreException e) { throw CBLStatus.convertException(e); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
         if (includeDeleted || ((c4Doc.getFlags() & C4Constants.DocumentFlags.DELETED) == 0)) {
             return new Document(database, id, c4Doc, false);
@@ -373,8 +373,19 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @NonNull
     @Override
     public String toJSON() {
-        throw new UnsupportedOperationException("!!!JSON: NOT YET IMPLEMENTED");
+        if (isEmpty()) { return ""; }
+
+        try (JSONEncoder encoder = new JSONEncoder()) {
+            getContent().encodeTo(encoder);
+            return encoder.finishJSON();
+        }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException(
+                "Failed marshalling Document to JSON",
+                CouchbaseLiteException.convertException(e));
+        }
     }
+
 
     /**
      * Tests whether a property exists or not.
@@ -539,7 +550,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         if (db == null) { throw new IllegalStateException("encode called with null database"); }
 
         try (FLEncoder encoder = db.getSharedFleeceEncoder()) {
-            encoder.setExtraInfo(this);
+            encoder.setArg(Blob.ENCODER_ARG_DB, getDatabase());
             getContent().encodeTo(encoder);
             return encoder.finish2();
         }
@@ -571,8 +582,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
         this.data = data;
 
         if (data == null) {
-            this.root = null;
-            this.internalDict = mutable ? new MutableDictionary() : new Dictionary();
+            root = null;
+            internalDict = mutable ? new MutableDictionary() : new Dictionary();
             return;
         }
 
