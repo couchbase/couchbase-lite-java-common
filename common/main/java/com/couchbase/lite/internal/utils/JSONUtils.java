@@ -162,6 +162,7 @@ public final class JSONUtils {
 
     public static JSONObject toJSON(Map<?, ?> map) throws JSONException {
         if (map == null) { return null; }
+
         final JSONObject json = new JSONObject();
         for (Map.Entry<?, ?> entry: map.entrySet()) {
             final Object k = entry.getKey();
@@ -173,11 +174,13 @@ public final class JSONUtils {
             else if (val instanceof List<?>) { json.put(key, toJSON((List<?>) val)); }
             else { json.put(key, val); }
         }
+
         return json;
     }
 
     public static JSONArray toJSON(List<?> list) throws JSONException {
         if (list == null) { return null; }
+
         final JSONArray json = new JSONArray();
         for (Object value: list) {
             if (value == null) { json.put(JSONObject.NULL); }
@@ -185,6 +188,7 @@ public final class JSONUtils {
             else if (value instanceof List<?>) { json.put(toJSON((List<?>) value)); }
             else { json.put(value); }
         }
+
         return json;
     }
 
@@ -192,6 +196,7 @@ public final class JSONUtils {
 
     public static Map<String, Object> fromJSON(JSONObject json) throws JSONException {
         if (json == null) { return null; }
+
         final Map<String, Object> result = new HashMap<>();
         final Iterator<String> itr = json.keys();
         while (itr.hasNext()) {
@@ -201,11 +206,13 @@ public final class JSONUtils {
             else if (value instanceof JSONArray) { result.put(key, fromJSON((JSONArray) value)); }
             else { result.put(key, value); }
         }
+
         return result;
     }
 
     public static List<Object> fromJSON(JSONArray json) throws JSONException {
         if (json == null) { return null; }
+
         final List<Object> result = new ArrayList<>();
         for (int i = 0; i < json.length(); i++) {
             final Object value = json.get(i);
@@ -213,6 +220,7 @@ public final class JSONUtils {
             else if (value instanceof JSONArray) { result.add(fromJSON((JSONArray) value)); }
             else { result.add(value); }
         }
+
         return result;
     }
 
