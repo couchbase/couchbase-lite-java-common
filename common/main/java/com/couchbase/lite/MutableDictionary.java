@@ -21,9 +21,13 @@ import android.support.annotation.Nullable;
 import java.util.Date;
 import java.util.Map;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MDict;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -54,8 +58,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      *
      * @param json the dictionary content as a JSON string.
      */
-    // !!!JSON: NOT YET IMPLEMENTED
-    public MutableDictionary(@NonNull String json) { setJSON(json); }
+     public MutableDictionary(@NonNull String json) { setJSON(json); }
 
     // to create copy of dictionary
     MutableDictionary(@NonNull MDict mDict, boolean isMutable) { super(mDict, isMutable); }
@@ -86,7 +89,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
                 checkSelf(obj);
                 internalDict.set(
                     Preconditions.assertNotNull(entry.getKey(), "data key"),
-                    new MValue(Fleece.toCBLObject(entry.getValue())));
+                    new MValue(Fleece.toCBLObject(obj)));
             }
             return this;
         }
@@ -100,13 +103,14 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param json the dictionary object.
      * @return this Document instance
      */
-    // !!!JSON: NOT YET IMPLEMENTED
+    // !!! This is a ridiculously expensive way to do this...
     @NonNull
     @Override
     public MutableDictionary setJSON(@NonNull String json) {
         synchronized (lock) {
             internalDict.clear();
-
+            try { setData(JSONUtils.fromJSON(new JSONObject(json))); }
+            catch (JSONException e) { throw new IllegalArgumentException("Failed parsing JSON", e); }
             return this;
         }
     }

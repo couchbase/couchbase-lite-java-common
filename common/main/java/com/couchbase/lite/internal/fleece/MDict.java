@@ -65,13 +65,13 @@ public class MDict extends MCollection implements Iterable<String> {
         final MValue v = valueMap.get(key);
         if (v != null) { return v; }
 
-        final FLValue value = flDict != null ? flDict.get(key) : null;
+        final FLValue value = (flDict == null) ? null: flDict.get(key);
         return (value == null) ? MValue.EMPTY : setInMap(key, new MValue(value));
     }
 
     public boolean set(String key, MValue value) {
         Preconditions.assertNotNull(key, "key");
-        Preconditions.assertThat(this, "Cannot call set on a non-mutable MDict", MCollection::isMutable);
+        Preconditions.assertThat(this, "Cannot call set() on an immutable MDict", MCollection::isMutable);
 
         final MValue oValue = valueMap.get(key);
         if (oValue != null) {

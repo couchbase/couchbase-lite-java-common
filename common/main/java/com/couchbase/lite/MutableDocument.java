@@ -158,6 +158,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param json the dictionary object.
      * @return this Document instance
      */
+
     @NonNull
     @Override
     public MutableDocument setJSON(@NonNull String json) {
@@ -341,9 +342,7 @@ public final class MutableDocument extends Document implements MutableDictionary
 
     @NonNull
     @Override
-    public String toJSON() {
-        throw new IllegalStateException("Mutable objects may not be encoded as JSON");
-    }
+    public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
 
     //---------------------------------------------
     // Package level access

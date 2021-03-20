@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Fn;
@@ -43,7 +47,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class ArrayTest extends BaseDbTest {
+    @Test(expected = IllegalStateException.class)
+    public void testMutableArrayToJSON() { new MutableArray().toJSON(); }
+
     @Test
     public void testCreate() throws CouchbaseLiteException {
         MutableArray array = new MutableArray();
@@ -74,6 +82,12 @@ public class ArrayTest extends BaseDbTest {
 
         Document savedDoc = saveDocInBaseTestDb(doc);
         assertEquals(data, savedDoc.getArray("array").toList());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRecursiveArray() {
+        MutableArray array = new MutableArray();
+        array.addArray(array);
     }
 
     @Test
@@ -577,7 +591,6 @@ public class ArrayTest extends BaseDbTest {
 
     @Test
     public void testGetInteger() throws CouchbaseLiteException {
-        // ??? WTF?
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -600,7 +613,6 @@ public class ArrayTest extends BaseDbTest {
                 assertEquals(0, a.getInt(10));
                 assertEquals(0, a.getInt(11));
             });
-            break;
         }
     }
 
@@ -825,7 +837,7 @@ public class ArrayTest extends BaseDbTest {
                 assertNull(a.getDate(4));
                 assertNull(a.getDate(5));
                 assertNull(a.getDate(6));
-                assertEquals(TEST_DATE, JSONUtils.toJSON(a.getDate(7)));
+                assertEquals(TEST_DATE, JSONUtils.toJSONString(a.getDate(7)));
                 assertNull(a.getDate(8));
                 assertNull(a.getDate(9));
                 assertNull(a.getDate(10));
@@ -902,8 +914,7 @@ public class ArrayTest extends BaseDbTest {
         array3.addValue("c");
 
         MutableDocument doc = new MutableDocument("doc1");
-        save(doc, "array", array1, a -> {
-            Array a1 = a;
+        save(doc, "array", array1, a1 -> {
             assertEquals(1, a1.count());
             Array a2 = a1.getArray(0);
             assertEquals(1, a2.count());
@@ -989,7 +1000,7 @@ public class ArrayTest extends BaseDbTest {
 
         List<Object> result = new ArrayList<>();
         int counter = 0;
-        for (Object item : array) {
+        for (Object item: array) {
             assertNotNull(item);
             result.add(item);
             counter++;
@@ -1004,7 +1015,7 @@ public class ArrayTest extends BaseDbTest {
         content = array.toList();
 
         result = new ArrayList<>();
-        for (Object item : array) {
+        for (Object item: array) {
             assertNotNull(item);
             result.add(item);
         }
@@ -1016,7 +1027,7 @@ public class ArrayTest extends BaseDbTest {
         final List<Object> c = content;
         save(doc, "array", array, array1 -> {
             List<Object> r = new ArrayList<>();
-            for (Object item : array1) {
+            for (Object item: array1) {
                 assertNotNull(item);
                 r.add(item);
             }
@@ -1024,8 +1035,8 @@ public class ArrayTest extends BaseDbTest {
         });
     }
 
-    // TODO: MArray has isMutaed() method, but unable to check mutated to mutated.
-    // @Test
+    @Ignore("TODO: MArray has isMutated() method, but unable to check mutated to mutated.")
+    @Test
     public void testArrayEnumerationWithDataModification() throws CouchbaseLiteException {
         final MutableArray array1 = new MutableArray();
         for (int i = 0; i < 2; i++) { array1.addValue(i); }
@@ -1093,6 +1104,7 @@ public class ArrayTest extends BaseDbTest {
         });
     }
 
+    @SuppressWarnings("AssertBetweenInconvertibleTypes")
     @Test
     public void testEquals() throws CouchbaseLiteException {
 
@@ -1231,7 +1243,6 @@ public class ArrayTest extends BaseDbTest {
 
     @Test
     public void testHashCode() throws CouchbaseLiteException {
-
         // mArray1 and mArray2 have exactly same data
         // mArray3 is different
         // mArray4 is different
@@ -1304,7 +1315,7 @@ public class ArrayTest extends BaseDbTest {
 
         assertNotEquals(0, array3.hashCode());
         assertNotEquals(array3.hashCode(), new Object().hashCode());
-        assertNotEquals(array3.hashCode(), new Integer(1).hashCode());
+        assertNotEquals(array3.hashCode(), Integer.valueOf(1).hashCode());
         assertNotEquals(array3.hashCode(), new HashMap<>().hashCode());
         assertNotEquals(array3.hashCode(), new MutableDictionary().hashCode());
         assertNotEquals(array3.hashCode(), new MutableArray().hashCode());
@@ -1879,6 +1890,48 @@ public class ArrayTest extends BaseDbTest {
         });
     }
 
+    ///////////////  JSON tests
+
+    // JSON 3.4
+    @Test
+    public void testArrayToJSON() throws CouchbaseLiteException, JSONException {
+        MutableDocument mDoc = new MutableDocument().setArray("array", makeArray());
+        saveDocInBaseTestDb(mDoc);
+        verifyArray(new JSONArray(baseTestDb.getDocument(mDoc.getId()).getArray("array").toJSON()));
+    }
+
+    // JSON 3.7.?
+    @Test(expected = IllegalStateException.class)
+    public void testArrayToJSONBeforeSave() { new MutableArray().toJSON(); }
+
+    // JSON 3.7.a-b
+    @Test
+    public void testArrayFromJSON() throws JSONException, IOException, CouchbaseLiteException {
+        MutableArray mArray = new MutableArray(readJSONResource("array.json"));
+        MutableDocument mDoc = new MutableDocument().setArray("array", mArray);
+        saveDocInBaseTestDb(mDoc);
+        Array dbArray = baseTestDb.getDocument(mDoc.getId()).getArray("array");
+        verifyArray(dbArray);
+        verifyArray(new JSONArray(dbArray.toJSON()));
+    }
+
+    // JSON 3.7.c.1
+    @Test(expected = IllegalArgumentException.class)
+    public void testArrayFromBadJSON1() { new MutableArray("["); }
+
+    // JSON 3.7.c.2
+    @Test(expected = IllegalArgumentException.class)
+    public void testArrayFromBadJSON2() { new MutableArray("[ab cd]"); }
+
+    // JSON 3.7.d
+    @Test(expected = IllegalArgumentException.class)
+    public void testDictFromArray() throws IOException {
+        new MutableArray(readJSONResource("dictionary.json"));
+    }
+
+
+    ///////////////  Tooling
+
     private List<Object> arrayOfAllTypes() {
         List<Object> list = new ArrayList<>();
         list.add(true);
@@ -1912,12 +1965,13 @@ public class ArrayTest extends BaseDbTest {
 
     private void populateData(MutableArray array) {
         List<Object> data = arrayOfAllTypes();
-        for (Object o : data) { array.addValue(o); }
+        for (Object o: data) { array.addValue(o); }
     }
 
+    @SuppressWarnings("UnnecessaryUnboxing")
     private void populateDataByType(MutableArray array) {
         List<Object> data = arrayOfAllTypes();
-        for (Object o : data) {
+        for (Object o: data) {
             if (o instanceof Integer) { array.addInt(((Integer) o).intValue()); }
             else if (o instanceof Long) { array.addLong(((Long) o).longValue()); }
             else if (o instanceof Float) { array.addFloat(((Float) o).floatValue()); }

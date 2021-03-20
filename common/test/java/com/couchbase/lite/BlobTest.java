@@ -22,7 +22,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,6 +43,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 
 // There are other blob tests in test suites...
@@ -56,6 +61,18 @@ public class BlobTest extends BaseDbTest {
 
     @After
     public final void tearDownBlobTest() { BaseTest.logTestTeardownBegun("Blob"); }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBlobCtorWithNullContentType() { new Blob(null, new byte[] {5, 6, 7, 8}); }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBlobCtorWithNullContent() { new Blob("image/png", (byte[]) null); }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBlobCtorWithStreamAndNullContentType() { new Blob(null, PlatformUtils.getAsset("attachment.png")); }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBlobCtorsWithNullStream() { new Blob("image/png", (InputStream) null); }
 
     @Test
     public void testEquals() throws CouchbaseLiteException {
@@ -136,7 +153,6 @@ public class BlobTest extends BaseDbTest {
         assertEquals(blob1a.hashCode(), data1c.hashCode());
         assertEquals(data1c.hashCode(), blob1a.hashCode());
     }
-
 
     @Test
     public void testBlobContentBytes() throws IOException, CouchbaseLiteException {
@@ -304,15 +320,130 @@ public class BlobTest extends BaseDbTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBlobCtorWithNullContentType() { new Blob(null, new byte[] {5, 6, 7, 8}); }
+    // 3.1.a
+    @Test
+    public void testDbSaveBlob() throws CouchbaseLiteException, JSONException {
+        Blob blob = makeBlob();
+        baseTestDb.saveBlob(blob);
+        verifyBlob(new JSONObject(blob.toJSON()));
+    }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBlobCtorWithNullContent() { new Blob("image/png", (byte[]) null); }
+    // 3.1.b
+    @Test
+    public void testDbGetBlob() throws CouchbaseLiteException {
+        Map<String, Object> props = getSpecForSavedBlob();
+        props.put(Blob.PROP_CONTENT_TYPE, "text/plain");
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBlobCtorWithStreamAndNullContentType() { new Blob(null, PlatformUtils.getAsset("attachment.png")); }
+        Blob dbBlob = baseTestDb.getBlob(props);
 
+        verifyBlob(dbBlob);
+        assertEquals(BLOB_CONTENT, new String(dbBlob.getContent()));
+    }
+
+    // 3.1.c
+    @Test(expected = IllegalStateException.class)
+    public void testUnsavedBlobToJSON() { makeBlob().toJSON(); }
+
+    // 3.1.d
+    @Test
+    public void testDbGetNonexistentBlob() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
+        props.put(Blob.PROP_DIGEST, "sha1-C+ThisIsTheWayWeMakeItFail=");
+        assertNull(baseTestDb.getBlob(props));
+    }
+
+    // 3.1.e.0: empty
     @Test(expected = IllegalArgumentException.class)
-    public void testBlobCtorsWithNullStream() { new Blob("image/png", (InputStream) null); }
+    public void testDbGetNotBlob0() throws CouchbaseLiteException {
+        Blob blob = makeBlob();
+        baseTestDb.saveBlob(blob);
+
+        assertNull(baseTestDb.getBlob(new HashMap<>()));
+    }
+
+    // 3.1.e.1: missing digest
+    @Test(expected = IllegalArgumentException.class)
+    public void testDbGetNotBlob1() throws CouchbaseLiteException {
+        Map<String, Object> props = getSpecForSavedBlob();
+        props.remove(Blob.PROP_DIGEST);
+
+        assertNull(baseTestDb.getBlob(props));
+    }
+
+    // 3.1.e.2: missing meta-type
+    @Test(expected = IllegalArgumentException.class)
+    public void testDbGetNotBlob2() throws CouchbaseLiteException {
+        Map<String, Object> props = getSpecForSavedBlob();
+        props.remove(Blob.META_PROP_TYPE);
+
+        assertNull(baseTestDb.getBlob(props));
+    }
+
+    // 3.1.e.3: length is not a number
+    @Test(expected = IllegalArgumentException.class)
+    public void testDbGetNotBlob3() throws CouchbaseLiteException {
+        Map<String, Object> props = getSpecForSavedBlob();
+        props.put(Blob.PROP_LENGTH, "42");
+
+        assertNull(baseTestDb.getBlob(props));
+    }
+
+    // 3.1.e.4: bad content type
+    @Test(expected = IllegalArgumentException.class)
+    public void testDbGetNotBlob4() throws CouchbaseLiteException {
+        Map<String, Object> props = getSpecForSavedBlob();
+        props.put(Blob.PROP_CONTENT_TYPE, new Object());
+
+        assertNull(baseTestDb.getBlob(props));
+    }
+
+    // 3.1.e.5: extra arg
+    @Test(expected = IllegalArgumentException.class)
+    public void testDbGetNotBlob5() throws CouchbaseLiteException {
+        Map<String, Object> props = getSpecForSavedBlob();
+        props.put("foo", "bar");
+
+        assertNull(baseTestDb.getBlob(props));
+    }
+
+    // 3.1.f
+    @Test
+    public void testBlobInDocument() throws CouchbaseLiteException, JSONException {
+        MutableDocument mDoc = new MutableDocument();
+        mDoc.setBlob("blob", makeBlob());
+        saveDocInBaseTestDb(mDoc);
+
+        Blob dbBlob = baseTestDb.getDocument(mDoc.getId()).getBlob("blob");
+
+        verifyBlob(dbBlob);
+
+        verifyBlob(new JSONObject(dbBlob.toJSON()));
+    }
+
+    // 3.1.g
+    @Test
+    public void testBlobGoneAfterCompact() throws CouchbaseLiteException {
+        Blob blob = makeBlob();
+        baseTestDb.saveBlob(blob);
+
+        baseTestDb.performMaintenance(MaintenanceType.COMPACT);
+
+        Map<String, Object> props = new HashMap<>();
+        props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
+        props.put(Blob.PROP_DIGEST, blob.digest());
+
+        assertNull(baseTestDb.getBlob(props));
+    }
+
+    private Map<String, Object> getSpecForSavedBlob() throws CouchbaseLiteException {
+        Blob blob = makeBlob();
+        baseTestDb.saveBlob(blob);
+
+        Map<String, Object> props = new HashMap<>();
+        props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
+        props.put(Blob.PROP_DIGEST, blob.digest());
+
+        return props;
+    }
 }

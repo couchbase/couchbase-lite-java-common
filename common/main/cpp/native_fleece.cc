@@ -25,6 +25,8 @@
 #include "com_couchbase_lite_internal_fleece_FLEncoder.h"
 #include "com_couchbase_lite_internal_fleece_FLSliceResult.h"
 
+#pragma ide diagnostic ignored "UnusedLocalVariable"
+
 using namespace litecore;
 using namespace litecore::jni;
 
@@ -49,8 +51,11 @@ Java_com_couchbase_lite_internal_fleece_FLArray_count(JNIEnv *env, jclass ignore
  * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLArray_get(JNIEnv *env, jclass ignore, jlong jarray,
-                                                    jlong jindex) {
+Java_com_couchbase_lite_internal_fleece_FLArray_get(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jarray,
+        jlong jindex) {
     return (jlong) FLArray_Get((FLArray) jarray, (uint32_t) jindex);
 }
 
@@ -73,8 +78,7 @@ Java_com_couchbase_lite_internal_fleece_FLArrayIterator_init(JNIEnv *env, jclass
  * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_FLArrayIterator_begin(JNIEnv *env, jclass ignore, jlong jarray,
-                                                              jlong jitr) {
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_begin(JNIEnv *env, jclass ignore, jlong jarray, jlong jitr) {
     FLArrayIterator_Begin((FLArray) jarray, (FLArrayIterator *) jitr);
 }
 
@@ -94,8 +98,11 @@ Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValue(JNIEnv *env, jc
  * Signature: (JI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValueAt(JNIEnv *env, jclass ignore, jlong jitr,
-                                                                   jint offset) {
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValueAt(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jitr,
+        jint offset) {
     return (jlong) FLArrayIterator_GetValueAt((FLArrayIterator *) jitr, (uint32_t) offset);
 }
 
@@ -139,10 +146,11 @@ Java_com_couchbase_lite_internal_fleece_FLDict_count(JNIEnv *env, jclass ignore,
  * Signature: (J[B)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDict_get(JNIEnv *env,
-                                                   jclass ignore,
-                                                   jlong jdict,
-                                                   jbyteArray jkeystring) {
+Java_com_couchbase_lite_internal_fleece_FLDict_get(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdict,
+        jbyteArray jkeystring) {
     jbyteArraySlice key(env, jkeystring);
     return (jlong) FLDict_Get((FLDict) jdict, (C4Slice) key);
 }
@@ -167,8 +175,7 @@ Java_com_couchbase_lite_internal_fleece_FLDictIterator_init(JNIEnv *env, jclass 
  * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDictIterator_begin(JNIEnv *env, jclass ignore, jlong jdict,
-                                                             jlong jitr) {
+Java_com_couchbase_lite_internal_fleece_FLDictIterator_begin(JNIEnv *env, jclass ignore, jlong jdict, jlong jitr) {
     FLDictIterator_Begin((FLDict) jdict, (FLDictIterator *) jitr);
 }
 

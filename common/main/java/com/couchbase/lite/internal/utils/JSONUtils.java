@@ -54,7 +54,7 @@ public final class JSONUtils {
             else if (val instanceof Boolean) { writeBoolean((Boolean) val); }
             else if (val instanceof Number) { writeNumber((Number) val); }
             else if (val instanceof String) { writeString((String) val); }
-            else if (val instanceof Date) { writeString(toJSON((Date) val)); }
+            else if (val instanceof Date) { writeString(toJSONString((Date) val)); }
             else if (val instanceof List<?>) { writeArray((List<?>) val); }
             else if (val instanceof Map<?, ?>) { writeMap((Map<?, ?>) val); }
             return this;
@@ -164,17 +164,7 @@ public final class JSONUtils {
         if (map == null) { return null; }
 
         final JSONObject json = new JSONObject();
-        for (Map.Entry<?, ?> entry: map.entrySet()) {
-            final Object k = entry.getKey();
-            if (k == null) { throw new JSONException("Object key is null"); }
-            final String key = k.toString();
-            final Object val = entry.getValue();
-            if (val == null) { json.put(key, JSONObject.NULL); }
-            else if (val instanceof Map<?, ?>) { json.put(key, toJSON((Map<?, ?>) val)); }
-            else if (val instanceof List<?>) { json.put(key, toJSON((List<?>) val)); }
-            else { json.put(key, val); }
-        }
-
+        for (Map.Entry<?, ?> entry: map.entrySet()) { json.put(entry.getKey().toString(), toJSON(entry.getValue())); }
         return json;
     }
 
@@ -182,17 +172,19 @@ public final class JSONUtils {
         if (list == null) { return null; }
 
         final JSONArray json = new JSONArray();
-        for (Object value: list) {
-            if (value == null) { json.put(JSONObject.NULL); }
-            else if (value instanceof Map<?, ?>) { json.put(toJSON((Map<?, ?>) value)); }
-            else if (value instanceof List<?>) { json.put(toJSON((List<?>) value)); }
-            else { json.put(value); }
-        }
+        for (Object value: list) { json.put(toJSON(value)); }
 
         return json;
     }
 
-    public static String toJSON(Date date) { return DATE_FORMAT.get().format(date); }
+    public static String toJSONString(Date date) { return DATE_FORMAT.get().format(date); }
+
+    public static Object toJSON(Object val) throws JSONException {
+        if (val instanceof Map<?, ?>) { val = toJSON((Map<?, ?>) val); }
+        else if (val instanceof List<?>) { val = toJSON((List<?>) val); }
+        else if (val == null) { val = JSONObject.NULL; }
+        return val;
+    }
 
     public static Map<String, Object> fromJSON(JSONObject json) throws JSONException {
         if (json == null) { return null; }
@@ -201,10 +193,7 @@ public final class JSONUtils {
         final Iterator<String> itr = json.keys();
         while (itr.hasNext()) {
             final String key = itr.next();
-            final Object value = json.get(key);
-            if (value instanceof JSONObject) { result.put(key, fromJSON((JSONObject) value)); }
-            else if (value instanceof JSONArray) { result.put(key, fromJSON((JSONArray) value)); }
-            else { result.put(key, value); }
+            result.put(key, fromJSON(json.get(key)));
         }
 
         return result;
@@ -214,14 +203,16 @@ public final class JSONUtils {
         if (json == null) { return null; }
 
         final List<Object> result = new ArrayList<>();
-        for (int i = 0; i < json.length(); i++) {
-            final Object value = json.get(i);
-            if (value instanceof JSONObject) { result.add(fromJSON((JSONObject) value)); }
-            else if (value instanceof JSONArray) { result.add(fromJSON((JSONArray) value)); }
-            else { result.add(value); }
-        }
+        for (int i = 0; i < json.length(); i++) { result.add(fromJSON(json.get(i))); }
 
         return result;
+    }
+
+    private static Object fromJSON(Object value) throws JSONException {
+        if (value instanceof JSONObject) { value = fromJSON((JSONObject) value); }
+        else if (value instanceof JSONArray) { value = fromJSON((JSONArray) value); }
+        else if (value == JSONObject.NULL) { value = null; }
+        return value;
     }
 
     public static Date toDate(String json) {

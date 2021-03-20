@@ -21,6 +21,8 @@
 #include "com_couchbase_lite_internal_core_C4Database.h"
 #include "native_glue.hh"
 
+#pragma ide diagnostic ignored "UnusedLocalVariable"
+
 using namespace litecore;
 using namespace litecore::jni;
 
@@ -170,16 +172,6 @@ Java_com_couchbase_lite_internal_core_C4Database_getPath(JNIEnv *env, jclass ign
     jstring ret = toJString(env, slice);
     c4slice_free(slice);
     return ret;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    getConfig
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getConfig(JNIEnv *env, jclass ignore, jlong jdb) {
-    return (jlong) c4db_getConfig((C4Database *) jdb);
 }
 
 /*

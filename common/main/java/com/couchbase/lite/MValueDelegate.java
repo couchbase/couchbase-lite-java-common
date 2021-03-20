@@ -99,6 +99,16 @@ final class MValueDelegate implements MValue.Delegate {
         else { return new Dictionary(mv, parent); }
     }
 
+    @Nullable
+    private Object createSpecialObjectOfType(@Nullable String type, @NonNull FLDict props, @NonNull DbContext ctxt) {
+        return (!Blob.TYPE_BLOB.equals(type)) ? null : createBlob(props, ctxt);
+    }
+
+    @NonNull
+    private Object createBlob(@NonNull FLDict props, @NonNull DbContext ctxt) {
+        return new Blob(Preconditions.assertNotNull(ctxt.getDatabase(), "database"), props.asDict());
+    }
+
     // At some point in the past, attachments were dictionaries in a top-level
     // element named "_attachments". Those dictionaries contained at least the
     // properties listed here.
@@ -109,18 +119,5 @@ final class MValueDelegate implements MValue.Delegate {
             && (flDict.get(Blob.PROP_LENGTH) != null)
             && (flDict.get(Blob.PROP_STUB) != null)
             && (flDict.get(Blob.PROP_REVPOS) != null);
-    }
-
-    @Nullable
-    private Object createSpecialObjectOfType(
-        @Nullable String type,
-        @NonNull FLDict properties,
-        @NonNull DbContext context) {
-        return (!Blob.TYPE_BLOB.equals(type)) ? null : createBlob(properties, context);
-    }
-
-    @NonNull
-    private Object createBlob(@NonNull FLDict properties, @NonNull DbContext context) {
-        return new Blob(Preconditions.assertNotNull(context.getDatabase(), "database"), properties.asDict());
     }
 }

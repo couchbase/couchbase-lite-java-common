@@ -31,8 +31,8 @@ import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.fleece.JSONEncoder;
 import com.couchbase.lite.internal.fleece.MRoot;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -370,20 +370,19 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Override
     public Map<String, Object> toMap() { return getContent().toMap(); }
 
-    @NonNull
+    @Nullable
     @Override
     public String toJSON() {
-        if (isEmpty()) { return ""; }
-
-        try (JSONEncoder encoder = new JSONEncoder()) {
-            getContent().encodeTo(encoder);
-            return encoder.finishJSON();
+        try {
+            synchronized (lock) {
+                if (c4Document != null) { return c4Document.bodyAsJSON(true); }
+            }
         }
         catch (LiteCoreException e) {
-            throw new IllegalStateException(
-                "Failed marshalling Document to JSON",
-                CouchbaseLiteException.convertException(e));
+            Log.d(LogDomain.DATABASE, "Failed encoding document", CouchbaseLiteException.convertException(e));
         }
+
+        return null;
     }
 
 

@@ -18,44 +18,12 @@
 #include "native_glue.hh"
 #include "com_couchbase_lite_internal_fleece_FLEncoder.h"
 
+#pragma ide diagnostic ignored "UnusedLocalVariable"
+
 using namespace litecore;
 using namespace litecore::jni;
 
 extern "C" {
-// ----------------------------------------------------------------------------
-// JsonEncoder
-// ----------------------------------------------------------------------------
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
- * Method:    init
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_JSONEncoder_newJSONEncoder(JNIEnv *env, jclass ignore) {
-    return (jlong) FLEncoder_NewWithOptions(kFLEncodeJSON, 0, false);;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
- * Method:    init
- * Signature: (J)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_JSONEncoder_finishJSON(JNIEnv *env, jclass ignore, jlong jenc) {
-    FLError error = kFLNoError;
-    FLSliceResult result = FLEncoder_Finish((FLEncoder) jenc, &error);
-    if (error != kFLNoError)
-        throwError(env, {FleeceDomain, error});
-
-    jstring json = toJString(env, result);
-
-    FLSliceResult_Release(result);
-
-    return json;
-}
-
-
 // ----------------------------------------------------------------------------
 // FLEncoder
 // ----------------------------------------------------------------------------
@@ -296,5 +264,38 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_finish2(JNIEnv *env, jclass ig
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_fleece_FLEncoder_reset(JNIEnv *env, jclass ignore, jlong jenc) {
     FLEncoder_Reset((FLEncoder) jenc);
+}
+
+// ----------------------------------------------------------------------------
+// JsonEncoder
+// ----------------------------------------------------------------------------
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Method:    init
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_fleece_JSONEncoder_newJSONEncoder(JNIEnv *env, jclass ignore) {
+    return (jlong) FLEncoder_NewWithOptions(kFLEncodeJSON, 0, false);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Method:    init
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_fleece_JSONEncoder_finishJSON(JNIEnv *env, jclass ignore, jlong jenc) {
+    FLError error = kFLNoError;
+    FLSliceResult result = FLEncoder_Finish((FLEncoder) jenc, &error);
+    if (error != kFLNoError)
+        throwError(env, {FleeceDomain, error});
+
+    jstring json = toJString(env, result);
+
+    FLSliceResult_Release(result);
+
+    return json;
 }
 }

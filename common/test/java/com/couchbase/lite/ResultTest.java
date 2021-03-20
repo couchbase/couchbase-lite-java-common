@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -589,7 +588,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getDate("one"));
                 assertNull(r.getDate("minus_one"));
                 assertNull(r.getDate("one_dot_one"));
-                assertEquals(TEST_DATE, JSONUtils.toJSON(r.getDate("date")));
+                assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate("date")));
                 assertNull(r.getDate("dict"));
                 assertNull(r.getDate("array"));
                 assertNull(r.getDate("blob"));
@@ -621,7 +620,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getDate(5));
                 assertNull(r.getDate(6));
                 assertNull(r.getDate(7));
-                assertEquals(TEST_DATE, JSONUtils.toJSON(r.getDate(8)));
+                assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate(8)));
                 assertNull(r.getDate(9));
                 assertNull(r.getDate(10));
                 assertNull(r.getDate(11));
@@ -935,31 +934,35 @@ public class ResultTest extends BaseQueryTest {
         }
     }
 
+    ///////////////  JSON tests
+
+    // JSON 3.4
     @Test
     public void testResultToJSON() throws CouchbaseLiteException, JSONException {
-        MutableDocument mDoc = new MutableDocument();
-        populateData(mDoc);
-        saveDocInBaseTestDb(mDoc);
-
-        ResultSet results = generateQuery(baseTestDb, mDoc.getId()).execute();
-
-        Result result;
-        while ((result = results.next()) != null) {
-            JSONObject json = new JSONObject(result.toJSON());
-            assertEquals(12, json.length());
-            assertEquals(JSONObject.NULL, json.get("null"));
-            assertEquals(true, json.get("true"));
-            assertEquals(false, json.get("false"));
-            assertEquals("string", json.get("string"));
-            assertEquals(0L, json.getLong("zero"));
-            assertEquals(1L, json.getLong("one"));
-            assertEquals(-1L, json.getLong("minus_one"));
-            assertEquals(1.1, json.getDouble("one_dot_one"), 0.001);
-            assertEquals(TEST_DATE, json.get("date"));
-            assertEquals(JSONArray.class, json.get("array").getClass());
-            assertEquals(JSONObject.class, json.get("dict").getClass());
+        for (int i = 0; i < 5; i++) {
+            MutableDocument mDoc = makeDocument();
+            mDoc.setString("id", "jsonQuery-" + i);
+            saveDocInBaseTestDb(mDoc);
         }
+
+        SelectResult[] projection = new SelectResult[29];
+        for (int i = 1; i <= 29; i++) { projection[i-1] = SelectResult.property("doc-" + i); }
+
+        ResultSet results = QueryBuilder.select(projection)
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property("id").equalTo(Expression.string("jsonQuery-4")))
+            .execute();
+
+        Result result = results.next();
+        assertNotNull(result);
+        assertNull(results.next());
+
+        verifyDocument(result);
+        verifyDocument(new JSONObject(result.toJSON()));
     }
+
+
+    ///////////////  Tooling
 
     private Query generateQuery(Database db, String docID) {
         Expression exDocID = Expression.string(docID);

@@ -199,7 +199,24 @@ public final class Blob implements FLEncodable {
         }
     }
 
-    public static boolean isBlob(Map<String, ?> map) { return TYPE_BLOB.equals(map.get(META_PROP_TYPE)); }
+    public static boolean isBlob(@Nullable Map<String, ?> props) {
+        if ((props == null) || (!(props.get(PROP_DIGEST) instanceof String))) { return false; }
+
+        if (!TYPE_BLOB.equals(props.get(META_PROP_TYPE))) { return false; }
+        int nProps = 2;
+
+        if (props.containsKey(PROP_CONTENT_TYPE)) {
+            if (!(props.get(PROP_CONTENT_TYPE) instanceof String)) { return false; }
+            nProps++;
+        }
+
+        if (props.containsKey(PROP_LENGTH)) {
+            if (!(props.get(PROP_LENGTH) instanceof Number)) { return false; }
+            nProps++;
+        }
+
+        return nProps == props.size();
+    }
 
 
     //---------------------------------------------
@@ -321,10 +338,11 @@ public final class Blob implements FLEncodable {
         this.properties = new HashMap<>(properties);
         this.properties.remove(META_PROP_TYPE);
 
+        blobDigest = (String) properties.get(PROP_DIGEST);
+
         // NOTE: length field might not be set if length is unknown.
         final Object len = properties.get(PROP_LENGTH);
         if (len instanceof Number) { blobLength = ((Number) len).longValue(); }
-        blobDigest = (String) properties.get(PROP_DIGEST);
 
         String propType = (String) properties.get(PROP_CONTENT_TYPE);
         if (propType == null) {
@@ -552,6 +570,50 @@ public final class Blob implements FLEncodable {
     }
 
     //---------------------------------------------
+    // Package protected
+    //---------------------------------------------
+
+    long updateSize() {
+        if (database == null) { return -1; }
+        try (C4BlobStore store = database.getBlobStore(); C4BlobKey key = new C4BlobKey(blobDigest)) {
+            final long storedSize = store.getSize(key);
+            if (storedSize >= 0) { blobLength = storedSize; }
+            return storedSize;
+        }
+        catch (LiteCoreException ignore) { }
+        return -1;
+    }
+
+    void installInDatabase(@Nullable Database db) {
+        if (database != null) {
+            // attempt to save the blob in the wrong db;
+            if ((db != null) && (!database.equals(db))) {
+                throw new IllegalStateException(Log.lookupStandardMessage("BlobDifferentDatabase"));
+            }
+
+            // saved but no digest???
+            if (blobDigest == null) { throw new IllegalStateException("Blob has no digest"); }
+
+            // blob has already been saved.
+            return;
+        }
+
+        database = (Database) db;
+
+        // blob was saved using Database.saveBlob();
+        if (blobDigest != null) { return; }
+
+        try (C4BlobStore store = database.getBlobStore(); C4BlobKey key = getBlobKey(store)) {
+            this.blobDigest = key.toString();
+        }
+        catch (Exception e) {
+            database = null;
+            blobDigest = null;
+            throw new IllegalStateException("Failed reading blob content from database", e);
+        }
+    }
+
+    //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
@@ -569,6 +631,14 @@ public final class Blob implements FLEncodable {
         blobLength = 0;
         blobContent = null;
         blobContentStream = stream;
+    }
+
+    private void installInDatabase(@Nullable Object dbArg) {
+        // blob has not been saved: dbArg must be a db in which to save it.
+        if ((database == null) && (!(dbArg instanceof Database))) {
+            throw new IllegalStateException("No database for Blob save");
+        }
+        installInDatabase((Database) dbArg);
     }
 
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
@@ -600,37 +670,6 @@ public final class Blob implements FLEncodable {
         try (C4BlobKey key = new C4BlobKey(blobDigest)) { return new BlobInputStream(key, db.getBlobStore()); }
         catch (IllegalArgumentException | LiteCoreException e) {
             throw new IllegalStateException("Failed opening blobContent stream.", e);
-        }
-    }
-
-    private void installInDatabase(@Nullable Object dbArg) {
-        if (database == null) {
-            // blob has not been saved: dbArg must be a db in which to save it.
-            if (!(dbArg instanceof Database)) { throw new IllegalStateException("No database for Blob save"); }
-        }
-        else {
-            // blob has already been saved.
-            if ((dbArg == null) || database.equals(dbArg)) {
-                if (blobDigest != null) { return; }
-                throw new IllegalStateException("Blob has no digest");
-            }
-
-            // attempt to save the blob in the wrong db;
-            throw new IllegalStateException(Log.lookupStandardMessage("BlobDifferentDatabase"));
-        }
-
-        database = (Database) dbArg;
-
-        // blob was saved using Database.saveBlob();
-        if (blobDigest != null) { return; }
-
-        try (C4BlobStore store = database.getBlobStore(); C4BlobKey key = getBlobKey(store)) {
-            this.blobDigest = key.toString();
-        }
-        catch (Exception e) {
-            database = null;
-            blobDigest = null;
-            throw new IllegalStateException("Failed reading blob content from database", e);
         }
     }
 

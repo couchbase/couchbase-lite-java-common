@@ -60,6 +60,7 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -766,16 +767,22 @@ abstract class AbstractDatabase {
         }
     }
 
-    // !!!JSON: NOT YET IMPLEMENTED
+    @Internal("This method is not part of the public API: it is for internal use only")
     public void saveBlob(@NonNull Blob blob) throws CouchbaseLiteException {
         mustBeOpen();
+        blob.installInDatabase((Database) this);
     }
 
-    // !!!JSON: NOT YET IMPLEMENTED
-    @NonNull
-    public Blob getBlob(@NonNull Map<String, ?> props) throws CouchbaseLiteException {
+    @Internal("This method is not part of the public API: it is for internal use only")
+    @Nullable
+    public Blob getBlob(@NonNull Map<String, Object> props) {
         mustBeOpen();
-        return new Blob("foo", new byte[] {});
+
+        if (!Blob.isBlob(props)) { throw new IllegalArgumentException("getBlob arg does not specify a blob"); }
+
+        final Blob blob = new Blob((Database) this, props);
+
+        return (blob.updateSize() < 0) ? null : blob;
     }
 
     @NonNull

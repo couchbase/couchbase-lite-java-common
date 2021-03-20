@@ -141,14 +141,12 @@ public class MValue implements Encodable {
 
     @Nullable
     private Object toNative(@NonNull MValue mv, @Nullable MCollection parent, @NonNull AtomicBoolean cacheIt) {
-        Preconditions.assertNotNull(MValue.delegate, "delegate");
-        return delegate.toNative(mv, parent, cacheIt);
+        return Preconditions.assertNotNull(delegate, "delegate").toNative(mv, parent, cacheIt);
     }
 
     @Nullable
     private MCollection collectionFromNative(@Nullable Object obj) {
-        Preconditions.assertNotNull(MValue.delegate, "delegate");
-        return delegate.collectionFromNative(obj);
+        return Preconditions.assertNotNull(delegate, "delegate").collectionFromNative(obj);
     }
 
     private void nativeChangeSlot(@Nullable MValue newSlot) {
@@ -157,7 +155,6 @@ public class MValue implements Encodable {
     }
 
     private void encodeNative(@NonNull FLEncoder encoder, @Nullable Object object) {
-        Preconditions.assertNotNull(MValue.delegate, "delegate");
-        delegate.encodeNative(encoder, object);
+        Preconditions.assertNotNull(delegate, "delegate").encodeNative(encoder, object);
     }
 }

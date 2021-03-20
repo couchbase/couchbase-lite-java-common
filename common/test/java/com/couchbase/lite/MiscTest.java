@@ -29,7 +29,7 @@ public class MiscTest {
     public void testJSONDateRoundTrip() {
         String dateStr1 = "2017-02-05T18:14:06.347Z";
         Date date1 = JSONUtils.toDate(dateStr1);
-        String dateStr2 = JSONUtils.toJSON(date1);
+        String dateStr2 = JSONUtils.toJSONString(date1);
         Date date2 = JSONUtils.toDate(dateStr2);
         assertEquals(date1, date2);
         assertEquals(date1.getTime(), date2.getTime());

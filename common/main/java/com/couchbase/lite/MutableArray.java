@@ -22,9 +22,13 @@ import android.support.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+
 import com.couchbase.lite.internal.fleece.MArray;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.utils.JSONUtils;
 
 
 /**
@@ -56,7 +60,6 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      *
      * @param json the array content as a JSON string.
      */
-    // !!!JSON: NOT YET IMPLEMENTED
     public MutableArray(@NonNull String json) { setJSON(json); }
 
     // to create copy
@@ -102,13 +105,14 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param json the dictionary object.
      * @return this Document instance
      */
-    // !!!JSON: NOT YET IMPLEMENTED
+    // !!! This is a ridiculously expensive way to do this...
     @NonNull
     @Override
     public MutableArray setJSON(@NonNull String json) {
         synchronized (lock) {
             internalArray.clear();
-
+            try { setData(JSONUtils.fromJSON(new JSONArray(json))); }
+            catch (JSONException e) { throw new IllegalArgumentException("Failed parsing JSON", e); }
             return this;
         }
     }

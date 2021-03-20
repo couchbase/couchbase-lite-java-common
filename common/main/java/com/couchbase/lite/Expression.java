@@ -58,7 +58,7 @@ public abstract class Expression {
         @Nullable
         @SuppressWarnings("unchecked")
         private Object asJSON(@Nullable Object value) {
-            if (value instanceof Date) { return JSONUtils.toJSON((Date) value); }
+            if (value instanceof Date) { return JSONUtils.toJSONString((Date) value); }
             else if (value instanceof Map) { return mapAsJSON((Map<String, Object>) value); }
             else if (value instanceof List) { return listAsJSON((List<Object>) value); }
             else if (value instanceof Expression) { return ((Expression) value).asJSON(); }

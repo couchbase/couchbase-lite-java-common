@@ -60,7 +60,7 @@ public class MArray extends MCollection {
     public boolean set(long index, Object value) {
         if (!isMutable()) { throw new IllegalStateException("Cannot set items in a non-mutable MArray"); }
 
-        if (index < 0 || index >= count()) { return false; }
+        if ((index < 0) || (index >= count())) { return false; }
 
         mutate();
         values.set((int) index, new MValue(value));

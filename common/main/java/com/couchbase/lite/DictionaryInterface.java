@@ -69,6 +69,6 @@ public interface DictionaryInterface {
     @NonNull
     Map<String, Object> toMap();
 
-    @NonNull
+    @Nullable
     String toJSON();
 }

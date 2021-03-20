@@ -140,7 +140,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     public String getString(int index) {
         synchronized (lock) {
             final Object obj = getMValue(internalArray, index).asNative(internalArray);
-            return obj instanceof String ? (String) obj : null;
+            return !(obj instanceof String) ? null : (String) obj;
         }
     }
 
@@ -229,7 +229,10 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @Nullable
     @Override
     public Blob getBlob(int index) {
-        synchronized (lock) { return (Blob) getMValue(internalArray, index).asNative(internalArray); }
+        synchronized (lock) {
+            final Object obj = getMValue(internalArray, index).asNative(internalArray);
+            return !(obj instanceof Blob) ? null : (Blob) obj;
+        }
     }
 
     /**
@@ -258,7 +261,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     public Array getArray(int index) {
         synchronized (lock) {
             final Object obj = getMValue(internalArray, index).asNative(internalArray);
-            return (obj instanceof Array) ? (Array) obj : null;
+            return !(obj instanceof Array) ? null : (Array) obj;
         }
     }
 
@@ -273,7 +276,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     public Dictionary getDictionary(int index) {
         synchronized (lock) {
             final Object obj = getMValue(internalArray, index).asNative(internalArray);
-            return (obj instanceof Dictionary) ? (Dictionary) obj : null;
+            return !(obj instanceof Dictionary) ? null : (Dictionary) obj;
         }
     }
 

@@ -99,7 +99,16 @@ public abstract class FLEncoder extends C4NativePeer {
     @NonNull
     @Override
     public String toString() {
-        return "FLEncoder{" + ClassUtils.objId(this) + "/" + super.toString() + ": " + arguments + "}";
+        final StringBuilder buf = new StringBuilder("FLEncoder{")
+            .append(ClassUtils.objId(this)).append('/').append(super.toString())
+            .append('[');
+        boolean first = true;
+        for (Map.Entry arg: arguments.entrySet()) {
+            if (first) { first = false; }
+            else { buf.append(','); }
+            buf.append(arg.getKey()).append("=>").append(arg.getValue());
+        }
+        return buf.append("]}").toString();
     }
 
     // remove the Exception from the signature.

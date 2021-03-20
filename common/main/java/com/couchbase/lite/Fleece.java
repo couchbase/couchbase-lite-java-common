@@ -65,7 +65,7 @@ final class Fleece {
         else if (value instanceof Dictionary) { return ((Dictionary) value).toMutable(); }
         else if (value instanceof List) { return new MutableArray((List<Object>) value); }
         else if (value instanceof Array) { return ((Array) value).toMutable(); }
-        else if (value instanceof Date) { return JSONUtils.toJSON((Date) value); }
+        else if (value instanceof Date) { return JSONUtils.toJSONString((Date) value); }
 
         throw new IllegalArgumentException(
             Log.formatStandardMessage(

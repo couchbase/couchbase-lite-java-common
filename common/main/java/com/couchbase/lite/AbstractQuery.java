@@ -373,7 +373,7 @@ abstract class AbstractQuery implements Query {
         }
 
         if (limit != null) {
-            final List<Object> limits = (List<Object>) limit.asJSON();
+            final List<?> limits = (List<?>) limit.asJSON();
             if (!first) { json.nextMember(); }
             json.writeKey("LIMIT");
             json.writeValue(limits.get(0));

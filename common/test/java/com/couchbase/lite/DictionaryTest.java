@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -23,12 +24,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -49,8 +55,14 @@ public class DictionaryTest extends BaseDbTest {
         assertEquals(new HashMap<String, Object>(), doc.getDictionary("address").toMap());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testRecursiveDictionary() {
+        MutableDictionary dict = new MutableDictionary();
+        dict.setDictionary("k1", dict);
+    }
+
     @Test
-    public void testCreateDictionaryWithNSDictionary() throws CouchbaseLiteException {
+    public void testCreateDictionaryWithMap() throws CouchbaseLiteException {
         Map<String, Object> dict = new HashMap<>();
         dict.put("street", "1 Main street");
         dict.put("city", "Mountain View");
@@ -78,13 +90,13 @@ public class DictionaryTest extends BaseDbTest {
         assertEquals(0.0f, mDict.getFloat("key"), 0.0f);
         assertEquals(0.0, mDict.getDouble("key"), 0.0);
         assertFalse(mDict.getBoolean("key"));
-        assertTrue(mDict.getBlob("key") == null);
-        assertTrue(mDict.getDate("key") == null);
-        assertTrue(mDict.getNumber("key") == null);
-        assertTrue(mDict.getValue("key") == null);
-        assertTrue(mDict.getString("key") == null);
-        assertTrue(mDict.getDictionary("key") == null);
-        assertTrue(mDict.getArray("key") == null);
+        assertNull(mDict.getBlob("key"));
+        assertNull(mDict.getDate("key"));
+        assertNull(mDict.getNumber("key"));
+        assertNull(mDict.getValue("key"));
+        assertNull(mDict.getString("key"));
+        assertNull(mDict.getDictionary("key"));
+        assertNull(mDict.getArray("key"));
         assertEquals(new HashMap<String, Object>(), mDict.toMap());
 
         MutableDocument mDoc = new MutableDocument("doc1");
@@ -98,13 +110,13 @@ public class DictionaryTest extends BaseDbTest {
         assertEquals(0.0f, dict.getFloat("key"), 0.0f);
         assertEquals(0.0, dict.getDouble("key"), 0.0);
         assertFalse(dict.getBoolean("key"));
-        assertTrue(dict.getBlob("key") == null);
-        assertTrue(dict.getDate("key") == null);
-        assertTrue(dict.getNumber("key") == null);
-        assertTrue(dict.getValue("key") == null);
-        assertTrue(dict.getString("key") == null);
-        assertTrue(dict.getDictionary("key") == null);
-        assertTrue(dict.getArray("key") == null);
+        assertNull(dict.getBlob("key"));
+        assertNull(dict.getDate("key"));
+        assertNull(dict.getNumber("key"));
+        assertNull(dict.getValue("key"));
+        assertNull(dict.getString("key"));
+        assertNull(dict.getDictionary("key"));
+        assertNull(dict.getArray("key"));
         assertEquals(new HashMap<String, Object>(), dict.toMap());
     }
 
@@ -142,7 +154,7 @@ public class DictionaryTest extends BaseDbTest {
 
         Document savedDoc = saveDocInBaseTestDb(doc);
 
-        assertTrue(level1 != savedDoc.getDictionary("level1"));
+        assertNotSame(level1, savedDoc.getDictionary("level1"));
         assertEquals(dict, savedDoc.toMap());
     }
 
@@ -219,12 +231,12 @@ public class DictionaryTest extends BaseDbTest {
 
         // Check profile2:
         assertEquals("Daniel Tiger", profile2.getValue("name"));
-        assertTrue(null == profile2.getValue("age"));
+        assertNull(profile2.getValue("age"));
 
         // Save:
         Document savedDoc = saveDocInBaseTestDb(doc);
 
-        assertTrue(profile2 != savedDoc.getDictionary("profile"));
+        assertNotSame(profile2, savedDoc.getDictionary("profile"));
         Dictionary savedDict = savedDoc.getDictionary("profile");
         assertEquals("Daniel Tiger", savedDict.getValue("name"));
     }
@@ -292,7 +304,7 @@ public class DictionaryTest extends BaseDbTest {
 
         Map<String, Object> result = new HashMap<>();
         int count = 0;
-        for (String key : dict) {
+        for (String key: dict) {
             result.put(key, dict.getValue(key));
             count++;
         }
@@ -307,7 +319,7 @@ public class DictionaryTest extends BaseDbTest {
 
         result = new HashMap<>();
         count = 0;
-        for (String key : dict) {
+        for (String key: dict) {
             result.put(key, dict.getValue(key));
             count++;
         }
@@ -322,7 +334,7 @@ public class DictionaryTest extends BaseDbTest {
             Map<String, Object> result1 = new HashMap<>();
             int count1 = 0;
             Dictionary dictObj = doc1.getDictionary("dict");
-            for (String key : dictObj) {
+            for (String key: dictObj) {
                 result1.put(key, dict.getValue(key));
                 count1++;
             }
@@ -331,8 +343,8 @@ public class DictionaryTest extends BaseDbTest {
         });
     }
 
-    // TODO: MDict has isMuated() method, but unable to check mutated to mutated.
-    // @Test
+    @Ignore("MDict has isMutated() method, but unable to check mutated to mutated.")
+    @Test
     public void testDictionaryEnumerationWithDataModification() throws CouchbaseLiteException {
         MutableDictionary dict = new MutableDictionary();
         for (int i = 0; i < 2; i++) { dict.setValue(String.format(Locale.ENGLISH, "key%d", i), i); }
@@ -475,96 +487,96 @@ public class DictionaryTest extends BaseDbTest {
         Dictionary dict5 = doc.getDictionary("dict5");
 
         // compare dict1, dict2, mdict1, and mdict2
-        assertTrue(dict1.equals(dict1));
-        assertTrue(dict2.equals(dict2));
-        assertTrue(dict1.equals(dict2));
-        assertTrue(dict2.equals(dict1));
-        assertTrue(dict1.equals(dict1.toMutable()));
-        assertTrue(dict1.equals(dict2.toMutable()));
-        assertTrue(dict1.toMutable().equals(dict1));
-        assertTrue(dict2.toMutable().equals(dict1));
-        assertTrue(dict1.equals(mDict1));
-        assertTrue(dict1.equals(mDict2));
-        assertTrue(dict2.equals(mDict1));
-        assertTrue(dict2.equals(mDict2));
-        assertTrue(mDict1.equals(dict1));
-        assertTrue(mDict2.equals(dict1));
-        assertTrue(mDict1.equals(dict2));
-        assertTrue(mDict2.equals(dict2));
-        assertTrue(mDict1.equals(mDict1));
-        assertTrue(mDict2.equals(mDict2));
-        assertTrue(mDict1.equals(mDict1));
-        assertTrue(mDict2.equals(mDict2));
+        assertEquals(dict1, dict1);
+        assertEquals(dict2, dict2);
+        assertEquals(dict1, dict2);
+        assertEquals(dict2, dict1);
+        assertEquals(dict1, dict1.toMutable());
+        assertEquals(dict1, dict2.toMutable());
+        assertEquals(dict1.toMutable(), dict1);
+        assertEquals(dict2.toMutable(), dict1);
+        assertEquals(dict1, mDict1);
+        assertEquals(dict1, mDict2);
+        assertEquals(dict2, mDict1);
+        assertEquals(dict2, mDict2);
+        assertEquals(mDict1, dict1);
+        assertEquals(mDict2, dict1);
+        assertEquals(mDict1, dict2);
+        assertEquals(mDict2, dict2);
+        assertEquals(mDict1, mDict1);
+        assertEquals(mDict2, mDict2);
+        assertEquals(mDict1, mDict1);
+        assertEquals(mDict2, mDict2);
 
         // compare dict1, dict3, mdict1, and mdict3
-        assertTrue(dict3.equals(dict3));
-        assertFalse(dict1.equals(dict3));
-        assertFalse(dict3.equals(dict1));
-        assertFalse(dict1.equals(dict3.toMutable()));
-        assertFalse(dict3.toMutable().equals(dict1));
-        assertFalse(dict1.equals(mDict3));
-        assertFalse(dict3.equals(mDict1));
-        assertTrue(dict3.equals(mDict3));
-        assertFalse(mDict3.equals(dict1));
-        assertFalse(mDict1.equals(dict3));
-        assertTrue(mDict3.equals(dict3));
-        assertTrue(mDict3.equals(mDict3));
-        assertTrue(mDict3.equals(mDict3));
+        assertEquals(dict3, dict3);
+        assertNotEquals(dict1, dict3);
+        assertNotEquals(dict3, dict1);
+        assertNotEquals(dict1, dict3.toMutable());
+        assertNotEquals(dict3.toMutable(), dict1);
+        assertNotEquals(dict1, mDict3);
+        assertNotEquals(dict3, mDict1);
+        assertEquals(dict3, mDict3);
+        assertNotEquals(mDict3, dict1);
+        assertNotEquals(mDict1, dict3);
+        assertEquals(mDict3, dict3);
+        assertEquals(mDict3, mDict3);
+        assertEquals(mDict3, mDict3);
 
         // compare dict1, dict4, mdict1, and mdict4
-        assertTrue(dict4.equals(dict4));
-        assertFalse(dict1.equals(dict4));
-        assertFalse(dict4.equals(dict1));
-        assertFalse(dict1.equals(dict4.toMutable()));
-        assertFalse(dict4.toMutable().equals(dict1));
-        assertFalse(dict1.equals(mDict4));
-        assertFalse(dict4.equals(mDict1));
-        assertTrue(dict4.equals(mDict4));
-        assertFalse(mDict4.equals(dict1));
-        assertFalse(mDict1.equals(dict4));
-        assertTrue(mDict4.equals(dict4));
-        assertTrue(mDict4.equals(mDict4));
-        assertTrue(mDict4.equals(mDict4));
+        assertEquals(dict4, dict4);
+        assertNotEquals(dict1, dict4);
+        assertNotEquals(dict4, dict1);
+        assertNotEquals(dict1, dict4.toMutable());
+        assertNotEquals(dict4.toMutable(), dict1);
+        assertNotEquals(dict1, mDict4);
+        assertNotEquals(dict4, mDict1);
+        assertEquals(dict4, mDict4);
+        assertNotEquals(mDict4, dict1);
+        assertNotEquals(mDict1, dict4);
+        assertEquals(mDict4, dict4);
+        assertEquals(mDict4, mDict4);
+        assertEquals(mDict4, mDict4);
 
         // compare dict3, dict4, mdict3, and mdict4
-        assertFalse(dict3.equals(dict4));
-        assertFalse(dict4.equals(dict3));
-        assertFalse(dict3.equals(dict4.toMutable()));
-        assertFalse(dict4.toMutable().equals(dict3));
-        assertFalse(dict3.equals(mDict4));
-        assertFalse(dict4.equals(mDict3));
-        assertFalse(mDict4.equals(dict3));
-        assertFalse(mDict3.equals(dict4));
+        assertNotEquals(dict3, dict4);
+        assertNotEquals(dict4, dict3);
+        assertNotEquals(dict3, dict4.toMutable());
+        assertNotEquals(dict4.toMutable(), dict3);
+        assertNotEquals(dict3, mDict4);
+        assertNotEquals(dict4, mDict3);
+        assertNotEquals(mDict4, dict3);
+        assertNotEquals(mDict3, dict4);
 
         // compare dict3, dict5, mdict3, and mdict5
-        assertFalse(dict3.equals(dict5));
-        assertFalse(dict5.equals(dict3));
-        assertFalse(dict3.equals(dict5.toMutable()));
-        assertFalse(dict5.toMutable().equals(dict3));
-        assertFalse(dict3.equals(mDict5));
-        assertFalse(dict5.equals(mDict3));
-        assertFalse(mDict5.equals(dict3));
-        assertFalse(mDict3.equals(dict5));
+        assertNotEquals(dict3, dict5);
+        assertNotEquals(dict5, dict3);
+        assertNotEquals(dict3, dict5.toMutable());
+        assertNotEquals(dict5.toMutable(), dict3);
+        assertNotEquals(dict3, mDict5);
+        assertNotEquals(dict5, mDict3);
+        assertNotEquals(mDict5, dict3);
+        assertNotEquals(mDict3, dict5);
 
         // compare dict5, dict4, mDict5, and mdict4
-        assertFalse(dict5.equals(dict4));
-        assertFalse(dict4.equals(dict5));
-        assertFalse(dict5.equals(dict4.toMutable()));
-        assertFalse(dict4.toMutable().equals(dict5));
-        assertFalse(dict5.equals(mDict4));
-        assertFalse(dict4.equals(mDict5));
-        assertFalse(mDict4.equals(dict5));
-        assertFalse(mDict5.equals(dict4));
+        assertNotEquals(dict5, dict4);
+        assertNotEquals(dict4, dict5);
+        assertNotEquals(dict5, dict4.toMutable());
+        assertNotEquals(dict4.toMutable(), dict5);
+        assertNotEquals(dict5, mDict4);
+        assertNotEquals(dict4, mDict5);
+        assertNotEquals(mDict4, dict5);
+        assertNotEquals(mDict5, dict4);
 
         // against other type
-        assertFalse(dict3.equals(null));
-        assertFalse(dict3.equals(new Object()));
-        assertFalse(dict3.equals(1));
-        assertFalse(dict3.equals(new HashMap<>()));
-        assertFalse(dict3.equals(new MutableDictionary()));
-        assertFalse(dict3.equals(new MutableArray()));
-        assertFalse(dict3.equals(doc));
-        assertFalse(dict3.equals(mDoc));
+        assertNotEquals(null, dict3);
+        assertNotEquals(dict3, new Object());
+        assertNotEquals(1, dict3);
+        assertNotEquals(dict3, new HashMap<>());
+        assertNotEquals(dict3, new MutableDictionary());
+        assertNotEquals(dict3, new MutableArray());
+        assertNotEquals(dict3, doc);
+        assertNotEquals(dict3, mDoc);
     }
 
     @Test
@@ -606,8 +618,6 @@ public class DictionaryTest extends BaseDbTest {
         Dictionary dict1 = doc.getDictionary("dict1");
         Dictionary dict2 = doc.getDictionary("dict2");
         Dictionary dict3 = doc.getDictionary("dict3");
-        Dictionary dict4 = doc.getDictionary("dict4");
-        Dictionary dict5 = doc.getDictionary("dict5");
 
         assertEquals(dict1.hashCode(), dict1.hashCode());
         assertEquals(dict1.hashCode(), dict2.hashCode());
@@ -619,31 +629,31 @@ public class DictionaryTest extends BaseDbTest {
         assertEquals(dict2.hashCode(), mDict1.hashCode());
         assertEquals(dict2.hashCode(), mDict2.hashCode());
 
-        assertFalse(dict3.hashCode() == dict1.hashCode());
-        assertFalse(dict3.hashCode() == dict2.hashCode());
-        assertFalse(dict3.hashCode() == dict1.toMutable().hashCode());
-        assertFalse(dict3.hashCode() == dict2.toMutable().hashCode());
-        assertFalse(dict3.hashCode() == mDict1.hashCode());
-        assertFalse(dict3.hashCode() == mDict2.hashCode());
-        assertFalse(mDict3.hashCode() == dict1.hashCode());
-        assertFalse(mDict3.hashCode() == dict2.hashCode());
-        assertFalse(mDict3.hashCode() == dict1.toMutable().hashCode());
-        assertFalse(mDict3.hashCode() == dict2.toMutable().hashCode());
-        assertFalse(mDict3.hashCode() == mDict1.hashCode());
-        assertFalse(mDict3.hashCode() == mDict2.hashCode());
+        assertNotEquals(dict3.hashCode(), dict1.hashCode());
+        assertNotEquals(dict3.hashCode(), dict2.hashCode());
+        assertNotEquals(dict3.hashCode(), dict1.toMutable().hashCode());
+        assertNotEquals(dict3.hashCode(), dict2.toMutable().hashCode());
+        assertNotEquals(dict3.hashCode(), mDict1.hashCode());
+        assertNotEquals(dict3.hashCode(), mDict2.hashCode());
+        assertNotEquals(mDict3.hashCode(), dict1.hashCode());
+        assertNotEquals(mDict3.hashCode(), dict2.hashCode());
+        assertNotEquals(mDict3.hashCode(), dict1.toMutable().hashCode());
+        assertNotEquals(mDict3.hashCode(), dict2.toMutable().hashCode());
+        assertNotEquals(mDict3.hashCode(), mDict1.hashCode());
+        assertNotEquals(mDict3.hashCode(), mDict2.hashCode());
 
-        assertFalse(dict3.hashCode() == 0);
-        assertFalse(dict3.hashCode() == new Object().hashCode());
-        assertFalse(dict3.hashCode() == new Integer(1).hashCode());
-        assertFalse(dict3.hashCode() == new HashMap<>().hashCode());
-        assertFalse(dict3.hashCode() == new MutableDictionary().hashCode());
-        assertFalse(dict3.hashCode() == new MutableArray().hashCode());
-        assertFalse(mDict3.hashCode() == doc.hashCode());
-        assertFalse(mDict3.hashCode() == mDoc.hashCode());
-        assertFalse(mDict3.hashCode() == dict1.toMutable().hashCode());
-        assertFalse(mDict3.hashCode() == dict2.toMutable().hashCode());
-        assertFalse(mDict3.hashCode() == mDict1.hashCode());
-        assertFalse(mDict3.hashCode() == mDict2.hashCode());
+        assertNotEquals(0, dict3.hashCode());
+        assertNotEquals(dict3.hashCode(), new Object().hashCode());
+        assertNotEquals(dict3.hashCode(), new Integer(1).hashCode());
+        assertNotEquals(dict3.hashCode(), new HashMap<>().hashCode());
+        assertNotEquals(dict3.hashCode(), new MutableDictionary().hashCode());
+        assertNotEquals(dict3.hashCode(), new MutableArray().hashCode());
+        assertNotEquals(mDict3.hashCode(), doc.hashCode());
+        assertNotEquals(mDict3.hashCode(), mDoc.hashCode());
+        assertNotEquals(mDict3.hashCode(), dict1.toMutable().hashCode());
+        assertNotEquals(mDict3.hashCode(), dict2.toMutable().hashCode());
+        assertNotEquals(mDict3.hashCode(), mDict1.hashCode());
+        assertNotEquals(mDict3.hashCode(), mDict2.hashCode());
     }
 
     @Test
@@ -670,8 +680,8 @@ public class DictionaryTest extends BaseDbTest {
         assertNotNull(dict.getDictionary("nestedDict"));
 
         Dictionary nestedDict = dict.getDictionary("nestedDict");
-        assertTrue(nestedDict.equals(mNestedDict));
-        assertTrue(dict.equals(mDict));
+        assertEquals(nestedDict, mNestedDict);
+        assertEquals(dict, mDict);
     }
 
     @Test
@@ -702,8 +712,8 @@ public class DictionaryTest extends BaseDbTest {
         assertThrows(IndexOutOfBoundsException.class, () -> assertNull(array.getArray(4)));
 
         Array nestedArray = array.getArray(3);
-        assertTrue(nestedArray.equals(mNestedArray));
-        assertTrue(array.equals(mArray));
+        assertEquals(nestedArray, mNestedArray);
+        assertEquals(array, mArray);
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1518
@@ -747,5 +757,49 @@ public class DictionaryTest extends BaseDbTest {
         assertEquals(2, array.count());
         assertEquals("hello", array.getString(0));
         assertEquals("world", array.getString(1));
+    }
+
+
+    ///////////////  JSON tests
+
+    // JSON 3.3
+    @Test
+    public void testDictToJSON() throws CouchbaseLiteException, JSONException {
+        MutableDocument mDoc = new MutableDocument().setDictionary("dict", makeDict());
+        saveDocInBaseTestDb(mDoc);
+        verifyDict(new JSONObject(baseTestDb.getDocument(mDoc.getId()).getDictionary("dict").toJSON()));
+    }
+
+    // JSON 3.6.?
+    @Test(expected = IllegalStateException.class)
+    public void testDictToJSONBeforeSave() { new MutableDictionary().toJSON(); }
+
+    // JSON 3.5.a-b
+    @Test
+    public void testDictFromJSON() throws JSONException, IOException, CouchbaseLiteException {
+        MutableDictionary mDict = new MutableDictionary(readJSONResource("dictionary.json"));
+        MutableDocument mDoc = new MutableDocument().setDictionary("dict", mDict);
+        saveDocInBaseTestDb(mDoc);
+        Dictionary dbDict = baseTestDb.getDocument(mDoc.getId()).getDictionary("dict");
+        verifyDict(dbDict);
+        verifyDict(new JSONObject(dbDict.toJSON()));
+    }
+
+    // JSON 3.6.c.1
+    @Test(expected = IllegalArgumentException.class)
+    public void testDictFromBadJSON1() { new MutableDictionary("{"); }
+
+    // JSON 3.6.c.2
+    @Test(expected = IllegalArgumentException.class)
+    public void testDictFromBadJSON2() { new MutableDictionary("{ab cd: \"xyz\"}"); }
+
+    // JSON 3.6.c.3
+    @Test(expected = IllegalArgumentException.class)
+    public void testDictFromBadJSON3() { new MutableDictionary("{ab: \"xyz\" cd: \"xyz\"}"); }
+
+    // JSON 3.6.d
+    @Test(expected = IllegalArgumentException.class)
+    public void testDictFromArray() throws JSONException, IOException, CouchbaseLiteException {
+        new MutableDocument("fromJSON", readJSONResource("array.json"));
     }
 }

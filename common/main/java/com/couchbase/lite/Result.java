@@ -69,7 +69,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //--------------------------------------------
 
     /**
-     * Return A number of the projecting values in the result.
+     * @return the number of the values in the result.
      */
     @Override
     public int count() { return rs.getColumnCount(); }
@@ -79,169 +79,169 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
 
     /**
-     * The projecting result value at the given index.
+     * The result value at the given index.
      *
-     * @param index The select result index as a Object.
-     * @return The value.
+     * @param index the index of the required value.
+     * @return the value.
      */
     @Override
     public Object getValue(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         return fleeceValueToObject(index);
     }
 
     /**
-     * The projecting result value at the given index as a String object
+     * The result at the given index as a String
      *
-     * @param index The select result index.
-     * @return The String object.
+     * @param index the index of the required value.
+     * @return a String value.
      */
     @Override
     public String getString(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final Object obj = fleeceValueToObject(index);
-        return obj instanceof String ? (String) obj : null;
+        return !(obj instanceof String) ? null : (String) obj;
     }
 
     /**
-     * The projecting result value at the given index as a Number object
+     * The result  at the given index as a Number
      *
-     * @param index The select result index.
-     * @return The Number object.
+     * @param index the index of the required value.
+     * @return a Number value.
      */
     @Override
     public Number getNumber(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         return CBLConverter.asNumber(fleeceValueToObject(index));
     }
 
     /**
-     * The projecting result value at the given index as a integer value
+     * The result at the given index as an int
      *
-     * @param index The select result index.
-     * @return The integer value.
+     * @param index the index of the required value.
+     * @return an int value.
      */
     @Override
     public int getInt(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final FLValue flValue = values.get(index);
-        return flValue != null ? (int) flValue.asInt() : 0;
+        return (flValue == null) ? 0 : (int) flValue.asInt();
     }
 
     /**
-     * The projecting result value at the given index as a long value
+     * The result at the given index as a long
      *
-     * @param index The select result index.
-     * @return The long value.
+     * @param index the index of the required value.
+     * @return a long value.
      */
     @Override
     public long getLong(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final FLValue flValue = values.get(index);
-        return flValue != null ? flValue.asInt() : 0L;
+        return (flValue == null) ? 0L : flValue.asInt();
     }
 
     /**
-     * The projecting result value at the given index  as a float value
+     * The result at the given index as a float
      *
-     * @param index The select result index.
-     * @return The float value.
+     * @param index the index of the required value.
+     * @return a float value.
      */
     @Override
     public float getFloat(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final FLValue flValue = values.get(index);
-        return flValue != null ? flValue.asFloat() : 0.0F;
+        return (flValue == null) ? 0.0F : flValue.asFloat();
     }
 
     /**
-     * The projecting result value at the given index  as a double value
+     * The result at the given index as a double
      *
-     * @param index The select result index.
-     * @return The double value.
+     * @param index the index of the required value.
+     * @return a double value.
      */
     @Override
     public double getDouble(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final FLValue flValue = values.get(index);
-        return flValue != null ? flValue.asDouble() : 0.0;
+        return (flValue == null) ? 0.0 : flValue.asDouble();
     }
 
     /**
-     * The projecting result value at the given index  as a boolean value
+     * The result at the given index as a boolean
      *
-     * @param index The select result index.
-     * @return The boolean value.
+     * @param index the index of the required value.
+     * @return a boolean value.
      */
     @Override
     public boolean getBoolean(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final FLValue flValue = values.get(index);
-        return flValue != null && flValue.asBool();
+        return (flValue != null) && flValue.asBool();
     }
 
     /**
-     * The projecting result value at the given index  as a Blob object
+     * The result at the given index as a Blob
      *
-     * @param index The select result index.
-     * @return The Blob object.
+     * @param index the index of the required value.
+     * @return a Blob.
      */
     @Override
     public Blob getBlob(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final Object obj = fleeceValueToObject(index);
-        return obj instanceof Blob ? (Blob) obj : null;
+        return !(obj instanceof Blob) ? null : (Blob) obj;
     }
 
     /**
-     * The projecting result value at the given index  as an Array object
+     * The result at the given index as a Date
      *
-     * @param index The select result index.
-     * @return The object.
+     * @param index the index of the required value.
+     * @return a Date.
      */
     @Override
     public Date getDate(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         return JSONUtils.toDate(getString(index));
     }
 
     /**
-     * The projecting result value at the given index as a Array object
+     * The result at the given index as an Array
      *
-     * @param index The select result index.
-     * @return The object.
+     * @param index the index of the required value.
+     * @return an Array.
      */
     @Override
     public Array getArray(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final Object obj = fleeceValueToObject(index);
-        return obj instanceof Array ? (Array) obj : null;
+        return !(obj instanceof Array) ? null : (Array) obj;
     }
 
     /**
-     * The projecting result value at the given index  as a Dictionary object
+     * The result at the given index as a Dictionary
      *
-     * @param index The select result index.
-     * @return The object.
+     * @param index the index of the required value.
+     * @return a Dictionary.
      */
     @Override
     public Dictionary getDictionary(int index) {
-        checkBounds(index);
+        assertInBounds(index);
         final Object obj = fleeceValueToObject(index);
-        return obj instanceof Dictionary ? (Dictionary) obj : null;
+        return !(obj instanceof Dictionary) ? null : (Dictionary) obj;
     }
 
     /**
-     * Gets all values as an List. The value types of the values contained
-     * in the returned List object are Array, Blob, Dictionary, Number types, String, and null.
+     * Gets all values as a List. The types of the values contained in the returned List
+     * are Array, Blob, Dictionary, Number types, String, and null.
      *
-     * @return The List representing all values.
+     * @return a List containing all values.
      */
     @NonNull
     @Override
     public List<Object> toList() {
         final int nVals = count();
-        final List<Object> array = new ArrayList<>();
+        final List<Object> array = new ArrayList<>(nVals);
         for (int i = 0; i < nVals; i++) { array.add(values.get(i).asObject()); }
         return array;
     }
@@ -251,14 +251,14 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
 
     /**
-     * Return All projecting keys
+     * @return a list of keys
      */
     @NonNull
     @Override
     public List<String> getKeys() { return rs.getColumnNames(); }
 
     /**
-     * The projecting result value for the given key as a Object
+     * The result value for the given key as a Object
      * Returns null if the key doesn't exist.
      *
      * @param key The select result key.
@@ -267,13 +267,12 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Object getValue(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getValue(index) : null;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? null : getValue(index);
     }
 
     /**
-     * The projecting result value for the given key as a String object
+     * The result value for the given key as a String object
      * Returns null if the key doesn't exist.
      *
      * @param key The select result key.
@@ -282,9 +281,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public String getString(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getString(index) : null;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? null : getString(index);
     }
 
     /**
@@ -297,9 +295,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Number getNumber(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getNumber(index) : null;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? null : getNumber(index);
     }
 
     /**
@@ -311,9 +308,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public int getInt(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getInt(index) : 0;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? 0 : getInt(index);
     }
 
     /**
@@ -325,9 +321,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public long getLong(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getLong(index) : 0L;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? 0L : getLong(index);
     }
 
     /**
@@ -339,9 +334,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public float getFloat(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getFloat(index) : 0.0f;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? 0.0F : getFloat(index);
     }
 
     /**
@@ -353,9 +347,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public double getDouble(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getDouble(index) : 0.0;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? 0.0 : getDouble(index);
     }
 
     /**
@@ -367,9 +360,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public boolean getBoolean(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 && getBoolean(index);
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return isInBounds(index) && getBoolean(index);
     }
 
     /**
@@ -382,9 +374,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Blob getBlob(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getBlob(index) : null;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? null : getBlob(index);
     }
 
     /**
@@ -397,9 +388,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Date getDate(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getDate(index) : null;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? null : getDate(index);
     }
 
     /**
@@ -412,9 +402,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Array getArray(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getArray(index) : null;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? null : getArray(index);
     }
 
     /**
@@ -427,9 +416,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Dictionary getDictionary(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        final int index = indexForColumnName(key);
-        return index >= 0 ? getDictionary(index) : null;
+        final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
+        return (!isInBounds(index)) ? null : getDictionary(index);
     }
 
     /**
@@ -443,7 +431,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public Map<String, Object> toMap() {
         final int nVals = values.size();
-        final Map<String, Object> dict = new HashMap<>();
+        final Map<String, Object> dict = new HashMap<>(nVals);
         for (String name: rs.getColumnNames()) {
             final int i = indexForColumnName(name);
             if ((i < 0) || (i >= nVals)) { continue; }
@@ -455,38 +443,25 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public String toJSON() {
-        final JSONUtils.Marshaller json = new JSONUtils.Marshaller();
         final int nVals = values.size();
-        boolean first = true;
 
-        json.startObject();
-        try {
+        try (JSONEncoder enc = new JSONEncoder()) {
+            enc.beginDict(nVals);
             for (String columnName: rs.getColumnNames()) {
                 final int i = indexForColumnName(columnName);
                 if ((i < 0) || (i >= nVals)) { continue; }
 
-                if (!first) { json.nextMember(); }
-
-                json.writeKey(columnName);
-
-                // !!! This should just be enc.reset(). Unfortunately that doesn't appear to work.
-                try (JSONEncoder enc = new JSONEncoder()) {
-                    enc.writeValue(values.get(i));
-                    enc.reset();
-                    json.writeJSON(enc.finishJSON());
-                }
-
-                first = false;
+                enc.writeKey(columnName);
+                enc.writeValue(values.get(i));
             }
+            enc.endDict();
+            return enc.finishJSON();
         }
         catch (LiteCoreException e) {
             throw new IllegalStateException(
                 "Failed marshalling Document to JSON",
                 CouchbaseLiteException.convertException(e));
         }
-        finally { json.endObject(); }
-
-        return json.toString();
     }
 
     /**
@@ -497,8 +472,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public boolean contains(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        return indexForColumnName(key) >= 0;
+        return isInBounds(indexForColumnName(Preconditions.assertNotNull(key, "key")));
     }
 
     //---------------------------------------------
@@ -538,10 +512,11 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         return values;
     }
 
-    private void checkBounds(int index) {
-        final int max = count();
-        if ((index < 0) || (index >= max)) {
-            throw new ArrayIndexOutOfBoundsException("index " + index + " must be between 0 and " + max);
+    private boolean isInBounds(int index) { return (index >= 0) && (index < count()); }
+
+    private void assertInBounds(int index) {
+        if (!isInBounds(index)) {
+            throw new ArrayIndexOutOfBoundsException("index " + index + " must be between 0 and " + count());
         }
     }
 }
