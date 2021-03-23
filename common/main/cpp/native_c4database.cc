@@ -52,7 +52,7 @@ Java_com_couchbase_lite_internal_core_C4Database_open(
     C4DatabaseConfig config{};
     config.flags = (C4DatabaseFlags) jflags;
     config.storageEngine = kC4SQLiteStorageEngine;
-    config.versioning = kC4RevisionTrees;
+    config.versioning = kC4TreeVersioning;
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))
         return 0;
 
@@ -84,7 +84,7 @@ Java_com_couchbase_lite_internal_core_C4Database_copy(
     C4DatabaseConfig config{};
     config.flags = (C4DatabaseFlags) jflags;
     config.storageEngine = kC4SQLiteStorageEngine;
-    config.versioning = kC4RevisionTrees;
+    config.versioning = kC4TreeVersioning;
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))
         return;
 

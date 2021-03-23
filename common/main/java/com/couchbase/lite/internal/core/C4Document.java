@@ -139,11 +139,11 @@ public class C4Document extends C4NativePeer {
     // package protected methods
     //-------------------------------------------------------------------------
 
-    // - Lifecycle
-
+    @VisibleForTesting
     byte[] getSelectedBody() { return withPeer(null, C4Document::getSelectedBody); }
 
-    // - Revisions
+    @VisibleForTesting
+    int purgeRevision(String revID) throws LiteCoreException { return withPeer(0, h -> purgeRevision(h, revID)); }
 
     @VisibleForTesting
     boolean selectCurrentRevision() { return withPeer(false, C4Document::selectCurrentRevision); }
@@ -158,25 +158,8 @@ public class C4Document extends C4NativePeer {
     boolean selectParentRevision() { return withPeer(false, C4Document::selectParentRevision); }
 
     @VisibleForTesting
-    boolean selectFirstPossibleAncestorOf(String revID) {
-        return withPeer(false, h -> selectFirstPossibleAncestorOf(h, revID));
-    }
-
-    @VisibleForTesting
-    boolean selectNextPossibleAncestorOf(String revID) {
-        return withPeer(false, h -> selectNextPossibleAncestorOf(h, revID));
-    }
-
-    @VisibleForTesting
     boolean selectCommonAncestorRevision(String revID1, String revID2) {
         return withPeer(false, h -> selectCommonAncestorRevision(h, revID1, revID2));
-    }
-
-    // - Purging and Expiration
-
-    @VisibleForTesting
-    int purgeRevision(String revID) throws LiteCoreException {
-        return withPeer(0, h -> purgeRevision(h, revID));
     }
 
     //-------------------------------------------------------------------------
@@ -287,10 +270,6 @@ public class C4Document extends C4NativePeer {
         boolean includeDeleted,
         boolean withBody)
         throws LiteCoreException;
-
-    private static native boolean selectFirstPossibleAncestorOf(long doc, String revID);
-
-    private static native boolean selectNextPossibleAncestorOf(long doc, String revID);
 
     private static native boolean selectCommonAncestorRevision(long doc, String revID1, String revID2);
 

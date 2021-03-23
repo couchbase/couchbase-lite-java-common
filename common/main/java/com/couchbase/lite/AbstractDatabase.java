@@ -1150,7 +1150,7 @@ abstract class AbstractDatabase {
         try {
             return C4Database.getDatabase(
                 dbFile.getPath(),
-                getDatabaseFlags(),
+                DEFAULT_DATABASE_FLAGS,
                 null,
                 C4Constants.DocumentVersioning.REVISION_TREES,
                 getEncryptionAlgorithm(),
@@ -1172,8 +1172,6 @@ abstract class AbstractDatabase {
             throw CouchbaseLiteException.convertException(e);
         }
     }
-
-    private int getDatabaseFlags() { return DEFAULT_DATABASE_FLAGS; }
 
     //////// DOCUMENTS:
 
@@ -1244,8 +1242,9 @@ abstract class AbstractDatabase {
             int nChanges;
             List<String> docIDs = new ArrayList<>();
             do {
-                // Read changes in batches of kMaxChanges:
+                // Read changes in batches of MAX_CHANGES
                 final C4DatabaseChange[] c4DbChanges = c4DbObserver.getChanges(MAX_CHANGES);
+
                 nChanges = (c4DbChanges == null) ? 0 : c4DbChanges.length;
                 final boolean newExternal = (nChanges > 0) && c4DbChanges[0].isExternal();
                 if ((!docIDs.isEmpty()) && ((nChanges <= 0) || (external != newExternal) || (docIDs.size() > 1000))) {

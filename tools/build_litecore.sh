@@ -100,45 +100,40 @@ mkdir -p $OS
 pushd $OS > /dev/null
 
 
-case $OS in
-   linux)
-      # untested
-      if [[ $LIB == LiteCore ]]; then
-         cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 ../..
-
-         make -j $JOBS LiteCore
-         cp -f libLiteCore.so $OUTPUT_DIR
-
-         make -j $JOBS mbedcrypto
-         cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
-      fi
-
-      # works on centos6
-      if [[ $LIB == mbedcrypto ]]; then
-         cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
-         make -j $JOBS mbedx509 mbedcrypto mbedtls
-         cp -f $MBEDTLS_LIB $OUTPUT_DIR
-      fi
+case $LIB in
+   # works on centos6 and several version of OSX
+   mbedcrypto)
+      cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
+      make -j $JOBS mbedx509 mbedcrypto mbedtls
+      cp -f $MBEDTLS_LIB $OUTPUT_DIR
       ;;
 
-   # works on several OSX versions
-   macos)
-      if [[ $LIB == LiteCore ]]; then
-         cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
+   LiteCore)
+      case $OS in
+         # untested
+         linux)
+            cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_C_COMPILER_WORKS=1 -DCMAKE_CXX_COMPILER_WORKS=1 ../..
 
-         make -j $JOBS LiteCore
-         strip -x libLiteCore.dylib
-         cp -f libLiteCore.dylib $OUTPUT_DIR
+            make -j $JOBS LiteCore
+            cp -f libLiteCore.so $OUTPUT_DIR
 
-         make -j $JOBS mbedcrypto
-         cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
-      fi
+            make -j $JOBS mbedcrypto
+            cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
+            ;;
 
-      if [[ $LIB == mbedcrypto ]]; then
-         cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
-         make -j $JOBS mbedx509 mbedcrypto mbedtls
-         cp -f $MBEDTLS_LIB $OUTPUT_DIR
-      fi
+         # works on several OSX versions
+         macos)
+            echo "OSX: -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
+            cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
+
+            make -j $JOBS LiteCore
+            strip -x libLiteCore.dylib
+            cp -f libLiteCore.dylib $OUTPUT_DIR
+
+            make -j $JOBS mbedcrypto
+            cp -f $MBEDTLS_DIR/$MBEDTLS_LIB $OUTPUT_DIR
+            ;;
+      esac  
       ;;
 esac
 

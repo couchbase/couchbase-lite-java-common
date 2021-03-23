@@ -58,34 +58,6 @@ public class C4DocumentTest extends C4BaseTest {
     @Test
     public void testFleeceDocs() throws LiteCoreException, IOException { importJSONLines("names_100.json"); }
 
-    // - "Document PossibleAncestors"
-    @Test
-    public void testPossibleAncestors() throws LiteCoreException {
-        createRev(DOC_ID, REV_ID_1, fleeceBody);
-        createRev(DOC_ID, REV_ID_2, fleeceBody);
-        createRev(DOC_ID, REV_ID_3, fleeceBody);
-
-        C4Document doc = c4Database.get(DOC_ID, true);
-        assertNotNull(doc);
-
-        String newRevID = "3-f00f00";
-        assertTrue(doc.selectFirstPossibleAncestorOf(newRevID));
-        assertEquals(REV_ID_2, doc.getSelectedRevID());
-        assertTrue(doc.selectNextPossibleAncestorOf(newRevID));
-        assertEquals(REV_ID_1, doc.getSelectedRevID());
-        assertFalse(doc.selectNextPossibleAncestorOf(newRevID));
-
-        newRevID = "2-f00f00";
-        assertTrue(doc.selectFirstPossibleAncestorOf(newRevID));
-        assertEquals(REV_ID_1, doc.getSelectedRevID());
-        assertFalse(doc.selectNextPossibleAncestorOf(newRevID));
-
-        newRevID = "1-f00f00";
-        assertFalse(doc.selectFirstPossibleAncestorOf(newRevID));
-
-        doc.close();
-    }
-
     // - "Document CreateVersionedDoc"
     @Test
     public void testCreateVersionedDoc() throws LiteCoreException {

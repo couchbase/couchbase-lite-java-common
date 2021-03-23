@@ -118,7 +118,7 @@ Java_com_couchbase_lite_internal_core_C4Document_getSelectedSequence(JNIEnv *env
 JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_getSelectedBody(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
-    return toJByteArray(env, doc->selectedRev.body);
+    return toJByteArray(env, c4doc_getRevisionBody(doc));
 }
 
 /*
@@ -130,7 +130,7 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_getSelectedBody2(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     FLDict root = nullptr;
-    C4Slice body = doc->selectedRev.body;
+    C4Slice body = c4doc_getRevisionBody(doc);
     if (body.size > 0)
         root = FLValue_AsDict(FLValue_FromData({body.buf, body.size}, kFLTrusted));
     return (jlong) root;
@@ -151,9 +151,10 @@ Java_com_couchbase_lite_internal_core_C4Document_get(
     jstringSlice docID(env, jdocID);
 
     C4Error error;
-    C4Document *doc = c4doc_get((C4Database *) jdb, docID, mustExist, &error);
+    C4Document *doc = c4db_getDoc((C4Database *) jdb, docID, mustExist, kDocGetAll, &error);
     if (doc == nullptr)
         throwError(env, error);
+
     return (jlong) doc;
 }
 
@@ -268,36 +269,6 @@ Java_com_couchbase_lite_internal_core_C4Document_selectNextLeafRevision(
     C4Error error;
     if (!c4doc_selectNextLeafRevision((C4Document *) jdoc, jincludeDeleted, jwithBody, &error))
         throwError(env, error);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    selectFirstPossibleAncestorOf
- * Signature: (JLjava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_selectFirstPossibleAncestorOf(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdoc,
-        jstring jrevID) {
-    jstringSlice revID(env, jrevID);
-    return (jboolean) c4doc_selectFirstPossibleAncestorOf((C4Document *) jdoc, revID);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    selectNextPossibleAncestorOf
- * Signature: (JLjava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_selectNextPossibleAncestorOf(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdoc,
-        jstring jrevID) {
-    jstringSlice revID(env, jrevID);
-    return (jboolean) c4doc_selectNextPossibleAncestorOf((C4Document *) jdoc, revID);
 }
 
 /*

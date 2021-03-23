@@ -15,21 +15,43 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
-public class C4DatabaseChange {
-    private String docID;
-    private String revID;
-    private long sequence;
-    private long bodySize;
-    private boolean external;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.support.Log;
+
+
+public final class C4DatabaseChange {
+    private final String docID;
+    private final String revID;
+    private final long sequence;
+    private final boolean external;
+
+    // This method is called by reflection.  Don't change its signature.
+    public static C4DatabaseChange createC4DatabaseChange(
+        @Nullable String docId,
+        @Nullable String revId,
+        long seq,
+        boolean ext) {
+        if ((docId != null) && (revId != null)) { return new C4DatabaseChange(docId, revId, seq, ext); }
+
+        Log.i(LogDomain.DATABASE, "Bad db change notification: (%s, %s)", docId, revId);
+        return null;
+    }
+
+    private C4DatabaseChange(@Nullable String docID, @NonNull String revID, long seq, boolean ext) {
+        this.docID = docID;
+        this.revID = revID;
+        this.sequence = seq;
+        this.external = ext;
+    }
 
     public String getDocID() { return docID; }
 
     public String getRevID() { return revID; }
 
     public long getSequence() { return sequence; }
-
-    public long getBodySize() { return bodySize; }
 
     public boolean isExternal() { return external; }
 }
