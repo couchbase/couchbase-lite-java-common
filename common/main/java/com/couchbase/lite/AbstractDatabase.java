@@ -18,9 +18,9 @@ package com.couchbase.lite;
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -93,9 +93,6 @@ abstract class AbstractDatabase {
 
     private static final LogDomain DOMAIN = LogDomain.DATABASE;
 
-    @VisibleForTesting
-    static final String DB_EXTENSION = ".cblite2";
-
     private static final int MAX_CHANGES = 100;
 
     private static final int DB_CLOSE_WAIT_SECS = 6; // > Core replicator timeout
@@ -163,14 +160,10 @@ abstract class AbstractDatabase {
                 CBLError.Code.NOT_FOUND);
         }
 
-        final File path = getDatabaseFile(directory, name);
-        try {
-            Log.v(DOMAIN, "Delete database %s at %s", name, path.toString());
-            C4Database.deleteDbAtPath(path.getPath());
-        }
-        catch (LiteCoreException e) {
-            throw CouchbaseLiteException.convertException(e);
-        }
+        Log.v(DOMAIN, "Delete database %s in %s", name, directory);
+        try { C4Database.deleteNamedDb(name, directory.getCanonicalPath()); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        catch (IOException e) { throw new CouchbaseLiteException("No canonical path for " + directory, e); }
     }
 
     /**
@@ -183,7 +176,7 @@ abstract class AbstractDatabase {
     public static boolean exists(@NonNull String name, @NonNull File directory) {
         Preconditions.assertNotNull(name, "name");
         Preconditions.assertNotNull(directory, "directory");
-        return getDatabaseFile(directory, name).exists();
+        return C4Database.getDatabaseFile(directory, name).exists();
     }
 
     protected static void copy(
@@ -196,7 +189,7 @@ abstract class AbstractDatabase {
 
         String fromPath = path.getPath();
         if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar) { fromPath += File.separator; }
-        String toPath = getDatabaseFile(new File(config.getDirectory()), name).getPath();
+        String toPath = C4Database.getDatabaseFile(new File(config.getDirectory()), name).getPath();
         if (toPath.charAt(toPath.length() - 1) != File.separatorChar) { toPath += File.separator; }
 
         try {
@@ -213,11 +206,6 @@ abstract class AbstractDatabase {
             FileUtils.eraseFileOrDir(toPath);
             throw CouchbaseLiteException.convertException(e);
         }
-    }
-
-    @VisibleForTesting
-    static File getDatabaseFile(File dir, String name) {
-        return new File(dir, name.replaceAll("/", ":") + DB_EXTENSION);
     }
 
 
@@ -297,7 +285,7 @@ abstract class AbstractDatabase {
 
         // Can't open the DB until the file system is set up.
         this.c4Database = openC4Db();
-        this.path = c4Database.getPath();
+        this.path = c4Database.getDbPath();
 
         // Initialize a shared keys:
         this.sharedKeys = new SharedKeys(c4Database);
@@ -319,7 +307,7 @@ abstract class AbstractDatabase {
         CouchbaseLiteInternal.requireInit("Cannot create database");
 
         this.c4Database = C4Database.getUnmanagedDatabase(c4dbHandle);
-        this.path = c4Database.getPath();
+        this.path = c4Database.getDbPath();
 
         this.name = null;
 
@@ -768,7 +756,7 @@ abstract class AbstractDatabase {
     }
 
     @Internal("This method is not part of the public API: it is for internal use only")
-    public void saveBlob(@NonNull Blob blob) throws CouchbaseLiteException {
+    public void saveBlob(@NonNull Blob blob) {
         mustBeOpen();
         blob.installInDatabase((Database) this);
     }
@@ -1144,7 +1132,7 @@ abstract class AbstractDatabase {
     }
 
     private C4Database openC4Db() throws CouchbaseLiteException {
-        final File dbFile = getDatabaseFile(new File(config.getDirectory()), this.name);
+        final File dbFile = C4Database.getDatabaseFile(new File(config.getDirectory()), this.name);
         Log.v(DOMAIN, "Opening %s at path %s", this, dbFile.getPath());
 
         try {
@@ -1712,13 +1700,13 @@ abstract class AbstractDatabase {
 
         // This database is in the 2.8 default dir but not in the real
         // default dir.  Copy it to where it belongs.
-        final File twoDotEightDb = getDatabaseFile(twoDotEightDefaultDir, dbName);
+        final File twoDotEightDb = C4Database.getDatabaseFile(twoDotEightDefaultDir, dbName);
         try { Database.copy(twoDotEightDb, dbName, config); }
         catch (CouchbaseLiteException e) {
             // Per review: If the copy fails, delete the partial DB
             // and throw an exception.  This is a poison pill.
             // The db can only be opened by explicitly specifying 2.8.0 directory.
-            try { FileUtils.eraseFileOrDir(getDatabaseFile(defaultDir, dbName)); }
+            try { FileUtils.eraseFileOrDir(C4Database.getDatabaseFile(defaultDir, dbName)); }
             catch (Exception ignore) { }
             throw e;
         }

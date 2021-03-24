@@ -29,10 +29,8 @@ import java.util.Set;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.internal.utils.Report;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -43,9 +41,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
-/**
- * Ported from c4DatabaseTest.cc
- */
 public class C4DatabaseTest extends C4BaseTest {
 
     static C4Document nextDocument(C4DocEnumerator e) throws LiteCoreException {
@@ -119,8 +114,13 @@ public class C4DatabaseTest extends C4BaseTest {
     // - Database deletion lock
     @Test
     public void testDatabaseDeletionLock() {
+        // Try it using the C4Db's idea of the location of the db
         try {
-            C4Database.deleteDbAtPath(c4Database.getPath());
+            final String name = c4Database.getDbName();
+            assertNotNull(name);
+            final String dir = c4Database.getDbDirectory();
+            assertNotNull(dir);
+            C4Database.deleteNamedDb(name, dir);
             fail();
         }
         catch (LiteCoreException e) {
@@ -128,8 +128,11 @@ public class C4DatabaseTest extends C4BaseTest {
             assertEquals(C4Constants.LiteCoreError.BUSY, e.code);
         }
 
+        // Try it using our idea of the location of the db
         try {
-            C4Database.deleteDbAtPath(dbDirPath);
+            final String dir = new File(dbPath).getParent();
+            assertNotNull(dir);
+            C4Database.deleteNamedDb(dbName, dir);
             fail();
         }
         catch (LiteCoreException e) {
@@ -150,51 +153,55 @@ public class C4DatabaseTest extends C4BaseTest {
     // - "Database OpenBundle"
     @Test
     public void testDatabaseOpenBundle() throws LiteCoreException, IOException {
-        int flags = getFlags();
+        final String scratchDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
+        final String bundlePath = new File(scratchDirPath, "db").getCanonicalPath();
 
-        File bundleDir = new File(getScratchDirectoryPath(getUniqueName("cbl_core_test")));
+        final int flags = C4Constants.DatabaseFlags.SHARED_KEYS;
+        try {
+            C4Database bundle = null;
 
-        // !!! for some reason, this file already exists on the Java platform...
-        if (bundleDir.exists()) {
-            Report.log(LogLevel.WARNING, "Bundle dir exists: " + bundleDir);
-            FileUtils.eraseFileOrDir(bundleDir);
+            // Open nonexistent bundle with the create flag.
+            try {
+                bundle = C4Database.getDatabase(
+                    bundlePath,
+                    flags | C4Constants.DatabaseFlags.CREATE,
+                    null,
+                    getVersioning(),
+                    encryptionAlgorithm(),
+                    encryptionKey());
+
+                assertNotNull(bundle);
+            }
+            finally {
+                if (bundle != null) {
+                    bundle.closeDb();
+                    bundle = null;
+                }
+            }
+
+            // Reopen without 'create' flag:
+            try {
+                bundle = C4Database.getDatabase(
+                    bundlePath,
+                    flags,
+                    null,
+                    getVersioning(),
+                    encryptionAlgorithm(),
+                    encryptionKey());
+
+                assertNotNull(bundle);
+            }
+            finally {
+                if (bundle != null) { bundle.closeDb(); }
+            }
+        }
+        finally {
+            FileUtils.eraseFileOrDir(scratchDirPath);
         }
 
-        assertFalse(bundleDir.exists());
-        String bundlePath = bundleDir.getCanonicalPath();
-
-        C4Database bundle = C4Database.getDatabase(
-            bundlePath,
-            flags,
-            null,
-            getVersioning(),
-            encryptionAlgorithm(),
-            encryptionKey());
-
-        assertNotNull(bundle);
-        bundle.closeDb();
-
-        // Reopen without 'create' flag:
-        flags &= ~C4Constants.DatabaseFlags.CREATE;
-        bundle = C4Database.getDatabase(
-            bundlePath,
-            flags,
-            null,
-            getVersioning(),
-            encryptionAlgorithm(),
-            encryptionKey());
-        assertNotNull(bundle);
-        bundle.closeDb();
-
-        FileUtils.eraseFileOrDir(bundlePath);
-
-        // Reopen with wrong storage type:
-        // NOTE: Not supported
-
-        // Open nonexistent bundle:
+        // Open nonexistent bundle without the create flag.
         try {
-            String notExist = new File(getScratchDirectoryPath("bogus"), "no_such_bundle").getCanonicalPath();
-            C4Database.getDatabase(notExist, flags, null, getVersioning(), encryptionAlgorithm(), encryptionKey());
+            C4Database.getDatabase(bundlePath, flags, null, getVersioning(), encryptionAlgorithm(), encryptionKey());
             fail();
         }
         catch (LiteCoreException e) {
@@ -525,6 +532,7 @@ public class C4DatabaseTest extends C4BaseTest {
         }
     }
 
+
     // - "Database copy"
     @Test
     public void testDatabaseCopy() throws LiteCoreException, IOException {
@@ -534,17 +542,14 @@ public class C4DatabaseTest extends C4BaseTest {
         createRev(doc1ID, REV_ID_1, fleeceBody);
         createRev(doc2ID, REV_ID_1, fleeceBody);
 
-        String srcPath = c4Database.getPath();
+        String srcPath = c4Database.getDbPath();
 
-        final String dbName = getUniqueName("c4-db-test") + DB_EXTENSION;
-
-        File nuPath = new File(getScratchDirectoryPath(dbName));
-        try { C4Database.deleteDbAtPath(nuPath.getCanonicalPath()); }
-        catch (LiteCoreException e) { assertEquals(0, e.code); }
+        final String scratchDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
+        final String nuPath = new File(scratchDirPath, "foo" + C4Database.DB_EXTENSION).getCanonicalPath();
 
         C4Database.copyDb(
             srcPath,
-            nuPath.getCanonicalPath(),
+            nuPath,
             getFlags(),
             null,
             C4Constants.DocumentVersioning.REVISION_TREES,
@@ -552,7 +557,7 @@ public class C4DatabaseTest extends C4BaseTest {
             null);
 
         C4Database nudb = C4Database.getDatabase(
-            nuPath.getCanonicalPath(),
+            nuPath,
             getFlags(),
             null,
             C4Constants.DocumentVersioning.REVISION_TREES,
@@ -563,7 +568,7 @@ public class C4DatabaseTest extends C4BaseTest {
         nudb.deleteDb();
 
         nudb = C4Database.getDatabase(
-            nuPath.getCanonicalPath(),
+            nuPath,
             getFlags(),
             null,
             C4Constants.DocumentVersioning.REVISION_TREES,
@@ -574,13 +579,10 @@ public class C4DatabaseTest extends C4BaseTest {
         assertEquals(1, nudb.getDocumentCount());
         nudb.closeDb();
 
-        String originalDest = nuPath.getCanonicalPath();
-
-        nuPath = new File(new File(getScratchDirectoryPath("bogus"), "zqx3"), dbName);
         try {
             C4Database.copyDb(
                 srcPath,
-                nuPath.getCanonicalPath(),
+                new File(new File(scratchDirPath, "zqx3"), "db" + C4Database.DB_EXTENSION).getCanonicalPath(),
                 getFlags(),
                 null,
                 C4Constants.DocumentVersioning.REVISION_TREES,
@@ -593,7 +595,7 @@ public class C4DatabaseTest extends C4BaseTest {
         }
 
         nudb = C4Database.getDatabase(
-            originalDest,
+            nuPath,
             getFlags(),
             null,
             C4Constants.DocumentVersioning.REVISION_TREES,
@@ -604,10 +606,11 @@ public class C4DatabaseTest extends C4BaseTest {
         nudb.closeDb();
 
         srcPath += "bogus" + File.separator;
-        nuPath = new File(originalDest);
         try {
             // call to c4db_copy will internally throw an exception
-            C4Database.copyDb(srcPath, nuPath.getCanonicalPath(),
+            C4Database.copyDb(
+                srcPath,
+                nuPath,
                 getFlags(),
                 null,
                 C4Constants.DocumentVersioning.REVISION_TREES,
@@ -620,7 +623,7 @@ public class C4DatabaseTest extends C4BaseTest {
         }
 
         nudb = C4Database.getDatabase(
-            originalDest,
+            nuPath,
             getFlags(),
             null,
             C4Constants.DocumentVersioning.REVISION_TREES,

@@ -36,8 +36,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%&'()_+{}][=-.,;'ABCDEabcde";
 
-    public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
-
     public static final String LOG_DIR = "logs";
 
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots

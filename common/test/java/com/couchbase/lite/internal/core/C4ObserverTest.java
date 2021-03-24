@@ -117,7 +117,7 @@ public class C4ObserverTest extends C4BaseTest {
         checkChanges(Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
 
         C4Database otherdb = C4Database.getDatabase(
-            dbDirPath,
+            dbPath,
             getFlags(),
             null,
             getVersioning(),

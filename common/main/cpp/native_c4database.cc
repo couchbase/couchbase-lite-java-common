@@ -133,10 +133,11 @@ Java_com_couchbase_lite_internal_core_C4Database_delete(JNIEnv *env, jclass igno
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_deleteAtPath(JNIEnv *env, jclass ignore, jstring jpath) {
-    jstringSlice path(env, jpath);
+Java_com_couchbase_lite_internal_core_C4Database_deleteNamed(JNIEnv *env, jclass ignore, jstring name, jstring dir) {
+    jstringSlice dbName(env, name);
+    jstringSlice inDirectory(env, dir);
     C4Error error;
-    if (!c4db_deleteAtPath(path, &error))
+    if (!c4db_deleteNamed(dbName, inDirectory, &error))
         throwError(env, error);
 }
 

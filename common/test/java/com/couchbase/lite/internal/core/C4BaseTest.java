@@ -75,7 +75,7 @@ public class C4BaseTest extends PlatformBaseTest {
 
     protected File rootDir;
     protected String dbName;
-    protected String dbDirPath;
+    protected String dbPath;
 
     protected byte[] fleeceBody;
 
@@ -93,19 +93,18 @@ public class C4BaseTest extends PlatformBaseTest {
 
         setupPlatform();
 
-        final String tmpDirName = getUniqueName("c4_test");
+        final String testDirName = getUniqueName("c4_test");
         try {
-            String tmpDir = getScratchDirectoryPath(tmpDirName);
-            C4.setenv("TMPDIR", tmpDir, 1);
+            C4.setenv("TMPDIR", getScratchDirectoryPath(testDirName), 1);
 
-            rootDir = new File(CouchbaseLiteInternal.getRootDir(), tmpDirName);
-
-            dbName = getUniqueName("c4-test-db");
-            dbDirPath = new File(rootDir, dbName).getCanonicalPath();
+            rootDir = new File(CouchbaseLiteInternal.getRootDir(), testDirName);
             if (!rootDir.mkdirs()) { throw new IOException("Can't create directory: " + rootDir); }
 
+            dbName = getUniqueName("c4-test-db");
+            dbPath = new File(rootDir, dbName + C4Database.DB_EXTENSION).getCanonicalPath();
+
             c4Database = C4Database.getDatabase(
-                dbDirPath,
+                dbPath,
                 getFlags(),
                 null,
                 getVersioning(),
@@ -185,7 +184,7 @@ public class C4BaseTest extends PlatformBaseTest {
     protected void reopenDB() throws LiteCoreException {
         closeC4Database();
         c4Database = C4Database.getDatabase(
-            dbDirPath,
+            dbPath,
             getFlags(),
             null,
             getVersioning(),
@@ -198,7 +197,7 @@ public class C4BaseTest extends PlatformBaseTest {
         closeC4Database();
         int flag = getFlags() & ~C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.READ_ONLY;
         c4Database = C4Database.getDatabase(
-            dbDirPath,
+            dbPath,
             flag,
             null,
             getVersioning(),

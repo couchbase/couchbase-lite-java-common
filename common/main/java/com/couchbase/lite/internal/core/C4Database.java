@@ -19,11 +19,14 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LiteCoreException;
@@ -44,6 +47,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {
+
+    @VisibleForTesting
+    public static final String DB_EXTENSION = ".cblite2";
 
     // unmanaged: the native code will free it
     static final class UnmanagedC4Database extends C4Database {
@@ -91,7 +97,15 @@ public abstract class C4Database extends C4NativePeer {
         copy(sourcePath, destinationPath, flags, storageEngine, versioning, algorithm, encryptionKey);
     }
 
-    public static void deleteDbAtPath(String path) throws LiteCoreException { deleteAtPath(path); }
+    // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair
+    public static void deleteNamedDb(@NonNull String name, @NonNull String dir) throws LiteCoreException {
+        deleteNamed(name, dir);
+    }
+
+    @NonNull
+    public static File getDatabaseFile(@NonNull File directory, @NonNull String name) {
+        return new File(directory, name.replaceAll("/", ":") + DB_EXTENSION);
+    }
 
     static void rawFreeDocument(long rawDoc) throws LiteCoreException { rawFree(rawDoc); }
 
@@ -115,6 +129,13 @@ public abstract class C4Database extends C4NativePeer {
         return new ManagedC4Database(open(path, flags, storageEngine, versioning, algorithm, encryptionKey));
     }
 
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
+
+    final AtomicReference<File> dbFile = new AtomicReference<>();
+
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
@@ -125,17 +146,50 @@ public abstract class C4Database extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    // - Lifecycle
-
     // The meaning of "close" changes at this level.
     // C4Database is AutoCloseable: this call frees it.
     // Database is not AutoCloseable.  In it, "close" means close the database.
     @Override
     public abstract void close();
 
+    // this is the full name of the database directory, e.g., /foo/bar.cblite
+    @Nullable
+    public String getDbPath() {
+        final File file = getDbFile();
+        return (file == null) ? null : file.getPath() + File.separator;
+    }
+
+    @Nullable
+    public String getDbDirectory() {
+        final File file = getDbFile();
+        return (file == null) ? null : file.getParent();
+    }
+
+    @Nullable
+    public String getDbFileName() {
+        final File file = getDbFile();
+        return (file == null) ? null : file.getName();
+    }
+
+    @Nullable
+    public String getDbName() {
+        String dbFileName = getDbFileName();
+        if (dbFileName == null) { return null; }
+
+        if (dbFileName.endsWith(DB_EXTENSION)) {
+            dbFileName = dbFileName.substring(0, dbFileName.length() - DB_EXTENSION.length());
+        }
+
+        return dbFileName;
+    }
+
+    public void rekey(int keyType, byte[] newKey) throws LiteCoreException { rekey(getPeer(), keyType, newKey); }
+
+    // - Lifecycle
+
     // This is subtle
     // The call to close() will fail horribly if the db is currently in a transaction.
-    // On the other hand, the call to close(peer) with throw an exception if the db is in a transaction.
+    // On the other hand, the call to close(peer) will throw an exception if the db is in a transaction.
     // That means that close() will never be called and the failure will be reported normally.
     // The finalizer will backstop this rare case, so that the Database doesn't leak.
     public void closeDb() throws LiteCoreException {
@@ -149,12 +203,7 @@ public abstract class C4Database extends C4NativePeer {
         close();
     }
 
-    public void rekey(int keyType, byte[] newKey) throws LiteCoreException { rekey(getPeer(), keyType, newKey); }
-
     // - Accessors
-
-    @Nullable
-    public String getPath() { return getPath(getPeer()); }
 
     public long getDocumentCount() { return getDocumentCount(getPeer()); }
 
@@ -452,6 +501,24 @@ public abstract class C4Database extends C4NativePeer {
     }
 
     //-------------------------------------------------------------------------
+    // Private methods
+    //-------------------------------------------------------------------------
+
+    @Nullable
+    private File getDbFile() {
+        final File file = dbFile.get();
+        if (file != null) { return file; }
+
+        final String path = getPath(getPeer());
+        if (path == null) { return null; }
+
+        try { dbFile.compareAndSet(null, new File(path).getCanonicalFile()); }
+        catch (IOException ignore) { }
+
+        return dbFile.get();
+    }
+
+    //-------------------------------------------------------------------------
     // Native methods
     //-------------------------------------------------------------------------
 
@@ -492,12 +559,11 @@ public abstract class C4Database extends C4NativePeer {
 
     private static native void delete(long db) throws LiteCoreException;
 
-    private static native void deleteAtPath(String path) throws LiteCoreException;
+    private static native void deleteNamed(@NonNull String name, @NonNull String dir) throws LiteCoreException;
 
     private static native void rekey(long db, int keyType, byte[] newKey) throws LiteCoreException;
 
     // - Accessors
-
 
     @Nullable
     private static native String getPath(long db);

@@ -37,6 +37,7 @@ import org.junit.runner.Description;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
+import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
@@ -76,7 +77,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     public static String getScratchDirPath(@NonNull String name) {
         try {
-            String path = FileUtils.verifyDir(new File(CouchbaseLiteInternal.getScratchDir().getCanonicalPath(), name))
+            String path = FileUtils.verifyDir(new File(CouchbaseLiteInternal.getScratchDir().getCanonicalFile(), name))
                 .getCanonicalPath();
             SCRATCH_DIRS.add(path);
             return path;
@@ -133,7 +134,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         throws CouchbaseLiteException {
         if (config == null) { config = new DatabaseConfiguration(); }
         final String dbName = getUniqueName(name);
-        final File dbDir = new File(config.getDirectory(), dbName + DB_EXTENSION);
+        final File dbDir = new File(config.getDirectory(), dbName + C4Database.DB_EXTENSION);
         assertFalse(dbDir.exists());
         final Database db = new Database(dbName, config);
         assertTrue(dbDir.exists());

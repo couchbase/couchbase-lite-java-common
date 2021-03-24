@@ -29,8 +29,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
@@ -1336,7 +1336,7 @@ public class DatabaseTest extends BaseDbTest {
             db = null;
 
             final File twoDot8DotOhDir = new File(twoDot8DotOhDirPath);
-            FileUtils.deleteContents(AbstractDatabase.getDatabaseFile(twoDot8DotOhDir, dbName));
+            FileUtils.deleteContents(C4Database.getDatabaseFile(twoDot8DotOhDir, dbName));
 
             // this should try to copy the db created above, but fail
             try {
@@ -1346,9 +1346,9 @@ public class DatabaseTest extends BaseDbTest {
             catch (CouchbaseLiteException ignore) { }
 
             // the (uncopyable) 2.8.0 db should still exist
-            assertTrue(AbstractDatabase.getDatabaseFile(twoDot8DotOhDir, dbName).exists());
+            assertTrue(C4Database.getDatabaseFile(twoDot8DotOhDir, dbName).exists());
             // the copy should not exist
-            assertFalse(AbstractDatabase.getDatabaseFile(
+            assertFalse(C4Database.getDatabaseFile(
                 CouchbaseLiteInternal.getRootDir(),
                 dbName)
                 .exists());
@@ -1425,7 +1425,7 @@ public class DatabaseTest extends BaseDbTest {
     private Database verifyDb(Database db) {
         try {
             assertNotNull(db);
-            assertTrue(new File(db.getPath()).getCanonicalPath().endsWith(DB_EXTENSION));
+            assertTrue(new File(db.getPath()).getCanonicalPath().endsWith(C4Database.DB_EXTENSION));
 
             return db;
         }

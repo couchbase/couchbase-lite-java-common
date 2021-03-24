@@ -32,6 +32,6 @@ public class FullTextFunctionTest {
         Object obj = expr.asJSON();
         assertNotNull(obj);
         assertTrue(obj instanceof List);
-        assertEquals((List<Object>) Arrays.asList((Object) "RANK()", (Object) "abc"), (List<Object>) obj);
+        assertEquals((List<?>) Arrays.asList((Object) "RANK()", (Object) "abc"), (List<?>) obj);
     }
 }

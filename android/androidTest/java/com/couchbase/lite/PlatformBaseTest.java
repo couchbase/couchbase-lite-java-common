@@ -36,8 +36,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
 
-    public static final String DB_EXTENSION = AbstractDatabase.DB_EXTENSION;
-
     private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
     static {
         final Map<String, Fn.Provider<Boolean>> m = new HashMap<>();

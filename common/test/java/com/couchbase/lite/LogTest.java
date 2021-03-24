@@ -37,10 +37,13 @@ import static org.junit.Assert.assertTrue;
 
 
 public class LogTest extends BaseDbTest {
-    private static class BasicLogger implements Logger {
+    private static class SimpleLogger implements Logger {
+        private final String prefix;
         private LogLevel level;
         private LogDomain domain;
         private String message;
+
+        SimpleLogger(@Nullable String prefix) { this.prefix = prefix; }
 
         @NonNull
         @Override
@@ -48,6 +51,9 @@ public class LogTest extends BaseDbTest {
 
         @Override
         public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+            // ignore extraneous logs
+            if ((prefix != null) && !message.startsWith(Log.LOG_HEADER + prefix)) { return; }
+
             this.level = level;
             this.domain = domain;
             this.message = message;
@@ -363,14 +369,16 @@ public class LogTest extends BaseDbTest {
     public void testBasicLogFormatting() {
         String nl = System.lineSeparator();
 
-        BasicLogger logger = new BasicLogger();
+        SimpleLogger logger = new SimpleLogger("TEST DEBUG");
         Database.log.setCustom(logger);
 
         Log.d(LogDomain.DATABASE, "TEST DEBUG");
         assertEquals(Log.LOG_HEADER + "TEST DEBUG", logger.message);
 
         Log.d(LogDomain.DATABASE, "TEST DEBUG", new Exception("whoops"));
-        assertTrue(logger.message.startsWith(
+        String msg = logger.message;
+        assertNotNull(msg);
+        assertTrue(msg.startsWith(
             Log.LOG_HEADER + "TEST DEBUG" + nl + "java.lang.Exception: whoops" + System.lineSeparator()));
 
         // test formatting, including argument ordering
@@ -378,7 +386,9 @@ public class LogTest extends BaseDbTest {
         assertEquals(Log.LOG_HEADER + "TEST DEBUG arg 1 3.00", logger.message);
 
         Log.d(LogDomain.DATABASE, "TEST DEBUG %2$s %1$d %3$.2f", new Exception("whoops"), 1, "arg", 3.0F);
-        assertTrue(logger.message.startsWith(
+        msg = logger.message;
+        assertNotNull(msg);
+        assertTrue(msg.startsWith(
             Log.LOG_HEADER + "TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
     }
 
@@ -529,11 +539,13 @@ public class LogTest extends BaseDbTest {
         try {
             Log.initLogging(stdErr);
 
-            BasicLogger logger = new BasicLogger();
+            SimpleLogger logger = new SimpleLogger("TEST DEBUG");
             Database.log.setCustom(logger);
 
             Log.d(LogDomain.DATABASE, "FOO", new Exception("whoops"), 1, "arg", 3.0F);
-            assertTrue(logger.message.startsWith(
+            String msg = logger.message;
+            assertNotNull(msg);
+            assertTrue(msg.startsWith(
                 Log.LOG_HEADER + "TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
         }
         finally {

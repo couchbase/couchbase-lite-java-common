@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.core.C4Database;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -124,7 +125,7 @@ public class SimpleDatabaseTest extends BaseTest {
             assertEquals(dbName, db.getName());
 
             final String path = new File(db.getPath()).getCanonicalPath();
-            assertTrue(path.endsWith(AbstractDatabase.DB_EXTENSION));
+            assertTrue(path.endsWith(C4Database.DB_EXTENSION));
             assertTrue(path.contains(dir.getPath()));
 
             assertEquals(0, db.getCount());
