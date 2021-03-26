@@ -66,30 +66,30 @@ Java_com_couchbase_lite_internal_core_C4Database_open(
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    copy
- * Signature: (Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;II[B)Z
+ * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II[B)Z
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_copy(
         JNIEnv *env,
         jclass ignore,
-        jstring jFromPath,
-        jstring jToPath,
+        jstring jfromPath,
+        jstring jparentDir,
+        jstring jname,
         jint jflags,
-        jstring storageEngine,
-        jint versioning,
         jint encryptionAlg,
         jbyteArray encryptionKey) {
-    jstringSlice fromPath(env, jFromPath);
-    jstringSlice toPath(env, jToPath);
-    C4DatabaseConfig config{};
+    jstringSlice fromPath(env, jfromPath);
+    jstringSlice parentDir(env, jparentDir);
+    jstringSlice name(env, jname);
+
+    C4DatabaseConfig2 config{};
+    config.parentDirectory = parentDir;
     config.flags = (C4DatabaseFlags) jflags;
-    config.storageEngine = kC4SQLiteStorageEngine;
-    config.versioning = kC4TreeVersioning;
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))
         return;
 
     C4Error error;
-    if (!c4db_copy(fromPath, toPath, &config, &error))
+    if (!c4db_copyNamed(fromPath, name, &config, &error))
         throwError(env, error);
 }
 

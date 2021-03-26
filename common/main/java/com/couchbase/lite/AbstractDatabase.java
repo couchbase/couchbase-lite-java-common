@@ -161,7 +161,7 @@ abstract class AbstractDatabase {
         }
 
         Log.v(DOMAIN, "Delete database %s in %s", name, directory);
-        try { C4Database.deleteNamedDb(name, directory.getCanonicalPath()); }
+        try { C4Database.deleteNamedDb(directory.getCanonicalPath(), name); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new CouchbaseLiteException("No canonical path for " + directory, e); }
     }
@@ -187,25 +187,22 @@ abstract class AbstractDatabase {
         byte[] encryptionKey)
         throws CouchbaseLiteException {
 
-        String fromPath = path.getPath();
-        if (fromPath.charAt(fromPath.length() - 1) != File.separatorChar) { fromPath += File.separator; }
-        String toPath = C4Database.getDatabaseFile(new File(config.getDirectory()), name).getPath();
-        if (toPath.charAt(toPath.length() - 1) != File.separatorChar) { toPath += File.separator; }
-
+        CouchbaseLiteException err;
         try {
             C4Database.copyDb(
-                fromPath,
-                toPath,
+                path.getCanonicalPath(),
+                config.getDirectory(),
+                name,
                 DEFAULT_DATABASE_FLAGS,
-                null,
-                C4Constants.DocumentVersioning.REVISION_TREES,
                 algorithm,
                 encryptionKey);
+            return;
         }
-        catch (LiteCoreException e) {
-            FileUtils.eraseFileOrDir(toPath);
-            throw CouchbaseLiteException.convertException(e);
-        }
+        catch (LiteCoreException e) { err = CouchbaseLiteException.convertException(e); }
+        catch (IOException e) { err = new CouchbaseLiteException("Failed creating canonical path for " + path, e); }
+
+        C4Database.eraseDatabaseFile(config.getDirectory(), name);
+        throw err;
     }
 
 

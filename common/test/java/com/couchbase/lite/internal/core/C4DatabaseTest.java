@@ -120,7 +120,7 @@ public class C4DatabaseTest extends C4BaseTest {
             assertNotNull(name);
             final String dir = c4Database.getDbDirectory();
             assertNotNull(dir);
-            C4Database.deleteNamedDb(name, dir);
+            C4Database.deleteNamedDb(dir, name);
             fail();
         }
         catch (LiteCoreException e) {
@@ -132,7 +132,7 @@ public class C4DatabaseTest extends C4BaseTest {
         try {
             final String dir = new File(dbPath).getParent();
             assertNotNull(dir);
-            C4Database.deleteNamedDb(dbName, dir);
+            C4Database.deleteNamedDb(dir, dbName);
             fail();
         }
         catch (LiteCoreException e) {
@@ -532,107 +532,120 @@ public class C4DatabaseTest extends C4BaseTest {
         }
     }
 
-
-    // - "Database copy"
     @Test
-    public void testDatabaseCopy() throws LiteCoreException, IOException {
+    public void testDatabaseCopySucceeds() throws LiteCoreException, IOException {
         String doc1ID = "doc001";
         String doc2ID = "doc002";
 
         createRev(doc1ID, REV_ID_1, fleeceBody);
         createRev(doc2ID, REV_ID_1, fleeceBody);
 
-        String srcPath = c4Database.getDbPath();
+        final String srcDbPath = c4Database.getDbPath();
 
-        final String scratchDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
-        final String nuPath = new File(scratchDirPath, "foo" + C4Database.DB_EXTENSION).getCanonicalPath();
+        final String dbName = getUniqueName("c4_copy_test_db");
+        final String dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
+        final String destDbPath = C4Database.getDatabaseFile(new File(dstParentDirPath), dbName).getCanonicalPath();
 
         C4Database.copyDb(
-            srcPath,
-            nuPath,
+            srcDbPath,
+            dstParentDirPath,
+            dbName,
+            getFlags(),
+            C4Constants.EncryptionAlgorithm.NONE,
+            null);
+
+        final C4Database copyDb = C4Database.getDatabase(
+            destDbPath,
             getFlags(),
             null,
             C4Constants.DocumentVersioning.REVISION_TREES,
             C4Constants.EncryptionAlgorithm.NONE,
             null);
 
-        C4Database nudb = C4Database.getDatabase(
-            nuPath,
-            getFlags(),
-            null,
-            C4Constants.DocumentVersioning.REVISION_TREES,
-            C4Constants.EncryptionAlgorithm.NONE,
-            null);
-        assertNotNull(nudb);
-        assertEquals(2, nudb.getDocumentCount());
-        nudb.deleteDb();
+        assertNotNull(copyDb);
+        assertEquals(2, copyDb.getDocumentCount());
+    }
 
-        nudb = C4Database.getDatabase(
-            nuPath,
+    @Test
+    public void testDatabaseCopyToNonexistentDirectoryFails() {
+        try {
+            C4Database.copyDb(
+                c4Database.getDbPath(),
+                new File(new File(getScratchDirectoryPath(getUniqueName("a")), "aa"), "aaa").getPath(),
+                getUniqueName("c4_copy_test_db"),
+                getFlags(),
+                C4Constants.EncryptionAlgorithm.NONE,
+                null);
+            fail("Copy to non-existent directory should fail");
+        }
+        catch (LiteCoreException ex) {
+            assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
+            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
+        }
+    }
+
+    @Test
+    public void testDatabaseCopyFromNonexistentDbFails() {
+        try {
+            C4Database.copyDb(
+                new File(new File(c4Database.getDbPath()).getParentFile(), "x" + C4Database.DB_EXTENSION).getPath(),
+                getScratchDirectoryPath(getUniqueName("c4_test_2")),
+                getUniqueName("c4_copy_test_db"),
+                getFlags(),
+                C4Constants.EncryptionAlgorithm.NONE,
+                null);
+            fail("Copy from non-existent database should fail");
+        }
+        catch (LiteCoreException ex) {
+            assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
+            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
+        }
+    }
+
+    @Test
+    public void testDatabaseCopyToExistingDBFails() throws LiteCoreException, IOException {
+        createRev("doc001", REV_ID_1, fleeceBody);
+        createRev("doc002", REV_ID_1, fleeceBody);
+
+        final String srcDbPath = c4Database.getDbPath();
+
+        final String dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
+        final String destDbPath = C4Database.getDatabaseFile(new File(dstParentDirPath), dbName).getCanonicalPath();
+
+        C4Database targetDb = C4Database.getDatabase(
+            destDbPath,
             getFlags(),
             null,
             C4Constants.DocumentVersioning.REVISION_TREES,
             C4Constants.EncryptionAlgorithm.NONE,
             null);
-        assertNotNull(nudb);
-        createRev(nudb, doc1ID, REV_ID_1, fleeceBody);
-        assertEquals(1, nudb.getDocumentCount());
-        nudb.closeDb();
+        createRev(targetDb, "doc001", REV_ID_1, fleeceBody);
+        assertEquals(1, targetDb.getDocumentCount());
+        targetDb.close();
 
         try {
             C4Database.copyDb(
-                srcPath,
-                new File(new File(scratchDirPath, "zqx3"), "db" + C4Database.DB_EXTENSION).getCanonicalPath(),
+                srcDbPath,
+                dstParentDirPath,
+                dbName,
                 getFlags(),
-                null,
-                C4Constants.DocumentVersioning.REVISION_TREES,
                 C4Constants.EncryptionAlgorithm.NONE,
                 null);
-            fail("expected call to c4db_copy to throw an exception");
         }
         catch (LiteCoreException ex) {
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
+            assertEquals(C4Constants.ErrorDomain.POSIX, ex.domain);
+            assertEquals(C4Constants.PosixError.EEXIST, ex.code);
         }
 
-        nudb = C4Database.getDatabase(
-            nuPath,
+        targetDb = C4Database.getDatabase(
+            destDbPath,
             getFlags(),
             null,
             C4Constants.DocumentVersioning.REVISION_TREES,
             C4Constants.EncryptionAlgorithm.NONE,
             null);
-        assertNotNull(nudb);
-        assertEquals(1, nudb.getDocumentCount());
-        nudb.closeDb();
-
-        srcPath += "bogus" + File.separator;
-        try {
-            // call to c4db_copy will internally throw an exception
-            C4Database.copyDb(
-                srcPath,
-                nuPath,
-                getFlags(),
-                null,
-                C4Constants.DocumentVersioning.REVISION_TREES,
-                C4Constants.EncryptionAlgorithm.NONE,
-                null);
-            fail();
-        }
-        catch (LiteCoreException ex) {
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
-        }
-
-        nudb = C4Database.getDatabase(
-            nuPath,
-            getFlags(),
-            null,
-            C4Constants.DocumentVersioning.REVISION_TREES,
-            C4Constants.EncryptionAlgorithm.NONE,
-            null);
-        assertNotNull(nudb);
-        assertEquals(1, nudb.getDocumentCount());
-
-        nudb.deleteDb();
+        assertEquals(1, targetDb.getDocumentCount());
+        targetDb.close();
     }
 
     private void setupAllDocs() throws LiteCoreException {

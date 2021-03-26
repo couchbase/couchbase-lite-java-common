@@ -53,7 +53,7 @@ Java_com_couchbase_lite_internal_core_C4Base_getMessage(
         jint jdomain,
         jint jcode,
         jint jinfo) {
-    C4Error c4err = {(C4ErrorDomain) jdomain, static_cast<int>(jcode),  static_cast<unsigned int>(jinfo)};
+    C4Error c4err = {(C4ErrorDomain) jdomain, (int) jcode,  (unsigned int) jinfo};
     C4StringResult msg = c4error_getMessage(c4err);
     jstring result = toJString(env, msg);
     c4slice_free(msg);

@@ -163,7 +163,7 @@ public final class C4Constants {
         public static final int MAX_ERROR_DOMAINS = WEB_SOCKET;
     }
 
-    // LiteCoreDomain error codes:
+    // LiteCore Domain error codes:
     public static final class LiteCoreError {
         private LiteCoreError() {}
 
@@ -198,6 +198,12 @@ public final class C4Constants {
         public static final int BAD_DOC_ID = 29;             // Invalid document ID
         public static final int CANT_UPGRADE_DATABASE = 30;  // Database can't be upgraded (unsupported dev version?)
         public static final int MAX_ERROR_CODES = CANT_UPGRADE_DATABASE;
+    }
+
+    // Posix Domain error codes:
+    public static final class PosixError {
+        private PosixError() {}
+        public static final int EEXIST = 17;
     }
 
     /**

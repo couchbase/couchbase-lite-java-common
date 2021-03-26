@@ -37,6 +37,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -86,20 +87,27 @@ public abstract class C4Database extends C4NativePeer {
         MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
     }
     public static void copyDb(
-        String sourcePath,
-        String destinationPath,
+        @NonNull String sourcePath,
+        @NonNull String parentDir,
+        @NonNull String name,
         int flags,
-        String storageEngine,
-        int versioning,
         int algorithm,
-        byte[] encryptionKey)
+        @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        copy(sourcePath, destinationPath, flags, storageEngine, versioning, algorithm, encryptionKey);
+        if (sourcePath.charAt(sourcePath.length() - 1) != File.separatorChar) { sourcePath += File.separator; }
+
+        if (parentDir.charAt(parentDir.length() - 1) != File.separatorChar) { parentDir += File.separator; }
+
+        copy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
     }
 
     // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair
-    public static void deleteNamedDb(@NonNull String name, @NonNull String dir) throws LiteCoreException {
-        deleteNamed(name, dir);
+    public static void deleteNamedDb(@NonNull String directory, @NonNull String name) throws LiteCoreException {
+        deleteNamed(name, directory);
+    }
+
+    public static void eraseDatabaseFile(@NonNull String directory, @NonNull String name) {
+        FileUtils.eraseFileOrDir(getDatabaseFile(new File(directory), name));
     }
 
     @NonNull
@@ -546,10 +554,9 @@ public abstract class C4Database extends C4NativePeer {
 
     private static native void copy(
         String sourcePath,
-        String destinationPath,
+        String parentDir,
+        String name,
         int flags,
-        String storageEngine,
-        int versioning,
         int algorithm,
         byte[] encryptionKey)
         throws LiteCoreException;
