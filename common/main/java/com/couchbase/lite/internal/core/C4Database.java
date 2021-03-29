@@ -37,7 +37,6 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -86,6 +85,7 @@ public abstract class C4Database extends C4NativePeer {
         m.put(MaintenanceType.INTEGRITY_CHECK, 2);
         MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
     }
+
     public static void copyDb(
         @NonNull String sourcePath,
         @NonNull String parentDir,
@@ -106,13 +106,9 @@ public abstract class C4Database extends C4NativePeer {
         deleteNamed(name, directory);
     }
 
-    public static void eraseDatabaseFile(@NonNull String directory, @NonNull String name) {
-        FileUtils.eraseFileOrDir(getDatabaseFile(new File(directory), name));
-    }
-
     @NonNull
     public static File getDatabaseFile(@NonNull File directory, @NonNull String name) {
-        return new File(directory, name.replaceAll("/", ":") + DB_EXTENSION);
+        return new File(directory, name + DB_EXTENSION);
     }
 
     static void rawFreeDocument(long rawDoc) throws LiteCoreException { rawFree(rawDoc); }
@@ -127,14 +123,36 @@ public abstract class C4Database extends C4NativePeer {
 
     // managed: Java code is responsible for freeing it
     public static C4Database getDatabase(
-        String path,
+        @NonNull String parentDirPath,
+        @NonNull String name,
         int flags,
-        String storageEngine,
-        int versioning,
         int algorithm,
         byte[] encryptionKey)
         throws LiteCoreException {
-        return new ManagedC4Database(open(path, flags, storageEngine, versioning, algorithm, encryptionKey));
+
+        // Stupid LiteCore will throw a total hissy fit if we pass
+        // it something that it decides isn't a directory.
+        boolean pathOk = false;
+        try {
+            final File parentDir = new File(parentDirPath);
+            parentDirPath = parentDir.getCanonicalPath();
+            pathOk = (parentDir.exists()) && (parentDir.isDirectory());
+        }
+        catch (IOException ignore) { }
+
+        if (!pathOk) {
+            throw new LiteCoreException(
+                C4Constants.ErrorDomain.LITE_CORE,
+                C4Constants.LiteCoreError.WRONG_FORMAT,
+                "Parent directory does not exist or is not a directory: " + parentDirPath);
+        }
+
+        return new ManagedC4Database(open(
+            parentDirPath,
+            name,
+            flags,
+            algorithm,
+            encryptionKey));
     }
 
 
@@ -532,10 +550,9 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Lifecycle
     static native long open(
-        String path,
+        @NonNull String parentDir,
+        @NonNull String name,
         int flags,
-        String storageEngine,
-        int versioning,
         int algorithm,
         byte[] encryptionKey)
         throws LiteCoreException;

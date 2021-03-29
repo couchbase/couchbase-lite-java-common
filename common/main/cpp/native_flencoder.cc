@@ -18,8 +18,6 @@
 #include "native_glue.hh"
 #include "com_couchbase_lite_internal_fleece_FLEncoder.h"
 
-#pragma ide diagnostic ignored "UnusedLocalVariable"
-
 using namespace litecore;
 using namespace litecore::jni;
 
@@ -218,7 +216,7 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeKey(
         jlong jenc,
         jstring jkey) {
     if (jkey == nullptr)
-        return false;
+        return JNI_FALSE;
     jstringSlice key(env, jkey);
     return (jboolean) FLEncoder_WriteKey((FLEncoder) jenc, key);
 }

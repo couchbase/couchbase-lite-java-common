@@ -117,25 +117,23 @@ public class C4ObserverTest extends C4BaseTest {
         checkChanges(Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
 
         C4Database otherdb = C4Database.getDatabase(
-            dbPath,
+            dbParentDirPath,
+            dbName,
             getFlags(),
-            null,
-            getVersioning(),
-            encryptionAlgorithm(),
-            encryptionKey());
+            C4Constants.EncryptionAlgorithm.NONE,
+            null);
         assertNotNull(otherdb);
-        {
-            boolean commit = false;
-            otherdb.beginTransaction();
-            try {
-                createRev(otherdb, "c", "1-cc", fleeceBody);
-                createRev(otherdb, "d", "1-dd", fleeceBody);
-                createRev(otherdb, "e", "1-ee", fleeceBody);
-                commit = true;
-            }
-            finally {
-                otherdb.endTransaction(commit);
-            }
+
+        boolean commit = false;
+        otherdb.beginTransaction();
+        try {
+            createRev(otherdb, "c", "1-cc", fleeceBody);
+            createRev(otherdb, "d", "1-dd", fleeceBody);
+            createRev(otherdb, "e", "1-ee", fleeceBody);
+            commit = true;
+        }
+        finally {
+            otherdb.endTransaction(commit);
         }
 
         assertEquals(2, dbCallbackCalls.get());

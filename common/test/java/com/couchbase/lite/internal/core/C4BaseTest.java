@@ -73,9 +73,8 @@ public class C4BaseTest extends PlatformBaseTest {
 
     protected C4Database c4Database;
 
-    protected File rootDir;
+    protected String dbParentDirPath;
     protected String dbName;
-    protected String dbPath;
 
     protected byte[] fleeceBody;
 
@@ -97,19 +96,18 @@ public class C4BaseTest extends PlatformBaseTest {
         try {
             C4.setenv("TMPDIR", getScratchDirectoryPath(testDirName), 1);
 
-            rootDir = new File(CouchbaseLiteInternal.getRootDir(), testDirName);
-            if (!rootDir.mkdirs()) { throw new IOException("Can't create directory: " + rootDir); }
+            final File parentDir = new File(CouchbaseLiteInternal.getRootDir(), testDirName);
+            if (!parentDir.mkdirs()) { throw new IOException("Can't create test db directory: " + parentDir); }
+            dbParentDirPath = parentDir.getCanonicalPath();
 
             dbName = getUniqueName("c4-test-db");
-            dbPath = new File(rootDir, dbName + C4Database.DB_EXTENSION).getCanonicalPath();
 
             c4Database = C4Database.getDatabase(
-                dbPath,
+                dbParentDirPath,
+                dbName,
                 getFlags(),
-                null,
-                getVersioning(),
-                encryptionAlgorithm(),
-                encryptionKey());
+                C4Constants.EncryptionAlgorithm.NONE,
+                null);
 
             Map<String, Object> body = new HashMap<>();
             body.put("ans*wer", 42);
@@ -128,7 +126,7 @@ public class C4BaseTest extends PlatformBaseTest {
         c4Database = null;
         if (db != null) { db.closeDb(); }
 
-        FileUtils.eraseFileOrDir(rootDir);
+        FileUtils.eraseFileOrDir(dbParentDirPath);
 
         Report.log(LogLevel.INFO, "<<<<<<<< C4 Test completed: " + testName);
     }
@@ -136,6 +134,8 @@ public class C4BaseTest extends PlatformBaseTest {
     protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
 
     protected String getScratchDirectoryPath(@NonNull String name) { return BaseTest.getScratchDirPath(name); }
+
+    protected int getFlags() { return C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.SHARED_KEYS; }
 
     protected C4DocEnumerator enumerateChanges(C4Database db, long since, int flags) throws LiteCoreException {
         return new C4DocEnumerator(db.getPeer(), since, flags);
@@ -148,14 +148,6 @@ public class C4BaseTest extends PlatformBaseTest {
     protected void createRev(String docID, String revID, byte[] body) throws LiteCoreException {
         createRev(docID, revID, body, 0);
     }
-
-    protected int getFlags() { return C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.SHARED_KEYS; }
-
-    protected int getVersioning() { return C4Constants.DocumentVersioning.REVISION_TREES; }
-
-    protected int encryptionAlgorithm() { return C4Constants.EncryptionAlgorithm.NONE; }
-
-    protected byte[] encryptionKey() { return null; }
 
     protected long importJSONLines(String name) throws LiteCoreException, IOException {
         return importJSONLines(PlatformUtils.getAsset(name));
@@ -184,25 +176,23 @@ public class C4BaseTest extends PlatformBaseTest {
     protected void reopenDB() throws LiteCoreException {
         closeC4Database();
         c4Database = C4Database.getDatabase(
-            dbPath,
+            dbParentDirPath,
+            dbName,
             getFlags(),
-            null,
-            getVersioning(),
-            encryptionAlgorithm(),
-            encryptionKey());
+            C4Constants.EncryptionAlgorithm.NONE,
+            null);
         assertNotNull(c4Database);
     }
 
     protected void reopenDBReadOnly() throws LiteCoreException {
         closeC4Database();
-        int flag = getFlags() & ~C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.READ_ONLY;
+        int flags = getFlags() & ~C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.READ_ONLY;
         c4Database = C4Database.getDatabase(
-            dbPath,
-            flag,
-            null,
-            getVersioning(),
-            encryptionAlgorithm(),
-            encryptionKey());
+            dbParentDirPath,
+            dbName,
+            flags,
+            C4Constants.EncryptionAlgorithm.NONE,
+            null);
         assertNotNull(c4Database);
     }
 

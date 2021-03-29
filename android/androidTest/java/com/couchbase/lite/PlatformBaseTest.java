@@ -34,7 +34,7 @@ import com.couchbase.lite.internal.utils.Fn;
 public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
 
-    public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&*()_+{}|\\][=-/.,<>?\":;'ABCDEabcde";
+    public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&()_+{}][=-.,;'12345ABCDEabcde";
 
     private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
     static {

@@ -21,8 +21,6 @@
 #include "com_couchbase_lite_internal_core_C4Database.h"
 #include "native_glue.hh"
 
-#pragma ide diagnostic ignored "UnusedLocalVariable"
-
 using namespace litecore;
 using namespace litecore::jni;
 
@@ -35,31 +33,32 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    open
- * Signature: (Ljava/lang/String;ILjava/lang/String;II[B)J
+ * Signature: (Ljava/lang/String;Ljava/lang/String;II[B)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_open(
         JNIEnv *env,
         jclass ignore,
-        jstring jpath,
+        jstring jparentDir,
+        jstring jname,
         jint jflags,
-        jstring storageEngine,
-        jint versioning,
         jint encryptionAlg,
         jbyteArray encryptionKey) {
-    jstringSlice path(env, jpath);
+    jstringSlice name(env, jname);
 
-    C4DatabaseConfig config{};
+    jstringSlice parentDir(env, jparentDir);
+
+    C4DatabaseConfig2 config;
+    config.parentDirectory = parentDir;
     config.flags = (C4DatabaseFlags) jflags;
-    config.storageEngine = kC4SQLiteStorageEngine;
-    config.versioning = kC4TreeVersioning;
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))
         return 0;
 
     C4Error error;
-    C4Database *db = c4db_open(path, &config, &error);
+    C4Database *db = c4db_openNamed(name, &config, &error);
     if (!db)
         throwError(env, error);
+
     return (jlong) db;
 }
 
@@ -79,10 +78,11 @@ Java_com_couchbase_lite_internal_core_C4Database_copy(
         jint encryptionAlg,
         jbyteArray encryptionKey) {
     jstringSlice fromPath(env, jfromPath);
-    jstringSlice parentDir(env, jparentDir);
     jstringSlice name(env, jname);
 
-    C4DatabaseConfig2 config{};
+    jstringSlice parentDir(env, jparentDir);
+
+    C4DatabaseConfig2 config;
     config.parentDirectory = parentDir;
     config.flags = (C4DatabaseFlags) jflags;
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))

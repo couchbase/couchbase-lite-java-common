@@ -25,8 +25,6 @@
 #include "com_couchbase_lite_internal_fleece_FLEncoder.h"
 #include "com_couchbase_lite_internal_fleece_FLSliceResult.h"
 
-#pragma ide diagnostic ignored "UnusedLocalVariable"
-
 using namespace litecore;
 using namespace litecore::jni;
 

@@ -20,8 +20,6 @@
 #include "com_couchbase_lite_internal_core_C4DocumentObserver.h"
 #include "native_glue.hh"
 
-#pragma ide diagnostic ignored "UnusedLocalVariable"
-
 using namespace litecore;
 using namespace litecore::jni;
 
@@ -170,7 +168,6 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_getChanges(
         jclass ignore,
         jlong observer,
         jint maxChanges) {
-    //static const uint32_t kMaxChanges = 100u;
     auto *c4changes = new C4DatabaseChange[maxChanges];
     bool external = false;
     uint32_t nChanges = c4dbobs_getChanges(

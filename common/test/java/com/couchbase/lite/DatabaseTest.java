@@ -1348,10 +1348,7 @@ public class DatabaseTest extends BaseDbTest {
             // the (uncopyable) 2.8.0 db should still exist
             assertTrue(C4Database.getDatabaseFile(twoDot8DotOhDir, dbName).exists());
             // the copy should not exist
-            assertFalse(C4Database.getDatabaseFile(
-                CouchbaseLiteInternal.getRootDir(),
-                dbName)
-                .exists());
+            assertFalse(C4Database.getDatabaseFile(CouchbaseLiteInternal.getRootDir(), dbName).exists());
         }
         finally {
             try {

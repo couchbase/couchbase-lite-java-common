@@ -439,7 +439,11 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Override
     public int hashCode() {
         final Database db = getDatabase();
-        int result = ((db == null) || (db.getPath() == null)) ? 0 : db.getPath().hashCode();
+        int result = 0;
+        if  (db != null) {
+            final String path = db.getPath();
+            if (path != null) { result = path.hashCode(); }
+        }
         result = 31 * result + id.hashCode();
         result = 31 * result + getContent().hashCode();
         return result;

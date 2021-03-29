@@ -23,8 +23,6 @@
 #include "com_couchbase_lite_internal_core_C4Document.h"
 #include "native_glue.hh"
 
-#pragma ide diagnostic ignored "UnusedLocalVariable"
-
 using namespace litecore;
 using namespace litecore::jni;
 

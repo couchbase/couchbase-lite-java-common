@@ -16,7 +16,6 @@
 package com.couchbase.lite.internal.core;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,13 +50,13 @@ public class C4DatabaseTest extends C4BaseTest {
     @Test
     public void testDatabaseErrorMessages() {
         try {
-            C4Database.getDatabase("", 0, null, 0, 0, null);
+            C4Database.getDatabase("", "", 0, 0, null);
             fail();
         }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
             assertEquals(C4Constants.LiteCoreError.WRONG_FORMAT, e.code);
-            assertEquals("file/data is not in the requested format", e.getMessage());
+            assertTrue(e.getMessage().startsWith("Parent directory does not exist"));
         }
 
         try {
@@ -130,9 +129,7 @@ public class C4DatabaseTest extends C4BaseTest {
 
         // Try it using our idea of the location of the db
         try {
-            final String dir = new File(dbPath).getParent();
-            assertNotNull(dir);
-            C4Database.deleteNamedDb(dir, dbName);
+            C4Database.deleteNamedDb(dbParentDirPath, dbName);
             fail();
         }
         catch (LiteCoreException e) {
@@ -152,9 +149,9 @@ public class C4DatabaseTest extends C4BaseTest {
 
     // - "Database OpenBundle"
     @Test
-    public void testDatabaseOpenBundle() throws LiteCoreException, IOException {
-        final String scratchDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
-        final String bundlePath = new File(scratchDirPath, "db").getCanonicalPath();
+    public void testDatabaseOpenBundle() throws LiteCoreException {
+        final String bundleDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
+        final String bundleName = getUniqueName("bundle");
 
         final int flags = C4Constants.DatabaseFlags.SHARED_KEYS;
         try {
@@ -163,12 +160,11 @@ public class C4DatabaseTest extends C4BaseTest {
             // Open nonexistent bundle with the create flag.
             try {
                 bundle = C4Database.getDatabase(
-                    bundlePath,
+                    bundleDirPath,
+                    bundleName,
                     flags | C4Constants.DatabaseFlags.CREATE,
-                    null,
-                    getVersioning(),
-                    encryptionAlgorithm(),
-                    encryptionKey());
+                    C4Constants.EncryptionAlgorithm.NONE,
+                    null);
 
                 assertNotNull(bundle);
             }
@@ -182,12 +178,11 @@ public class C4DatabaseTest extends C4BaseTest {
             // Reopen without 'create' flag:
             try {
                 bundle = C4Database.getDatabase(
-                    bundlePath,
+                    bundleDirPath,
+                    bundleName,
                     flags,
-                    null,
-                    getVersioning(),
-                    encryptionAlgorithm(),
-                    encryptionKey());
+                    C4Constants.EncryptionAlgorithm.NONE,
+                    null);
 
                 assertNotNull(bundle);
             }
@@ -196,12 +191,20 @@ public class C4DatabaseTest extends C4BaseTest {
             }
         }
         finally {
-            FileUtils.eraseFileOrDir(scratchDirPath);
+            FileUtils.eraseFileOrDir(bundleDirPath);
         }
+    }
 
-        // Open nonexistent bundle without the create flag.
+    // Open nonexistent bundle without the create flag.
+    @Test
+    public void testDatabaseOpenNonExistentBundleWithoutCreateFlagFails() throws LiteCoreException {
         try {
-            C4Database.getDatabase(bundlePath, flags, null, getVersioning(), encryptionAlgorithm(), encryptionKey());
+            C4Database.getDatabase(
+                getScratchDirectoryPath(getUniqueName("c4_test_2")),
+                getUniqueName("bundle"),
+                C4Constants.DatabaseFlags.SHARED_KEYS,
+                C4Constants.EncryptionAlgorithm.NONE,
+                null);
             fail();
         }
         catch (LiteCoreException e) {
@@ -533,18 +536,18 @@ public class C4DatabaseTest extends C4BaseTest {
     }
 
     @Test
-    public void testDatabaseCopySucceeds() throws LiteCoreException, IOException {
+    public void testDatabaseCopySucceeds() throws LiteCoreException {
         String doc1ID = "doc001";
         String doc2ID = "doc002";
 
         createRev(doc1ID, REV_ID_1, fleeceBody);
         createRev(doc2ID, REV_ID_1, fleeceBody);
+        assertEquals(2, c4Database.getDocumentCount());
 
         final String srcDbPath = c4Database.getDbPath();
 
         final String dbName = getUniqueName("c4_copy_test_db");
         final String dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
-        final String destDbPath = C4Database.getDatabaseFile(new File(dstParentDirPath), dbName).getCanonicalPath();
 
         C4Database.copyDb(
             srcDbPath,
@@ -555,10 +558,9 @@ public class C4DatabaseTest extends C4BaseTest {
             null);
 
         final C4Database copyDb = C4Database.getDatabase(
-            destDbPath,
+            dstParentDirPath,
+            dbName,
             getFlags(),
-            null,
-            C4Constants.DocumentVersioning.REVISION_TREES,
             C4Constants.EncryptionAlgorithm.NONE,
             null);
 
@@ -603,20 +605,18 @@ public class C4DatabaseTest extends C4BaseTest {
     }
 
     @Test
-    public void testDatabaseCopyToExistingDBFails() throws LiteCoreException, IOException {
+    public void testDatabaseCopyToExistingDBFails() throws LiteCoreException {
         createRev("doc001", REV_ID_1, fleeceBody);
         createRev("doc002", REV_ID_1, fleeceBody);
 
         final String srcDbPath = c4Database.getDbPath();
 
         final String dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"));
-        final String destDbPath = C4Database.getDatabaseFile(new File(dstParentDirPath), dbName).getCanonicalPath();
 
         C4Database targetDb = C4Database.getDatabase(
-            destDbPath,
+            dstParentDirPath,
+            dbName,
             getFlags(),
-            null,
-            C4Constants.DocumentVersioning.REVISION_TREES,
             C4Constants.EncryptionAlgorithm.NONE,
             null);
         createRev(targetDb, "doc001", REV_ID_1, fleeceBody);
@@ -638,10 +638,9 @@ public class C4DatabaseTest extends C4BaseTest {
         }
 
         targetDb = C4Database.getDatabase(
-            destDbPath,
+            dstParentDirPath,
+            dbName,
             getFlags(),
-            null,
-            C4Constants.DocumentVersioning.REVISION_TREES,
             C4Constants.EncryptionAlgorithm.NONE,
             null);
         assertEquals(1, targetDb.getDocumentCount());

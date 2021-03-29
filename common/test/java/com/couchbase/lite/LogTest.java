@@ -441,7 +441,6 @@ public class LogTest extends BaseDbTest {
             });
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void testLogFileConfigurationConstructors() {
         int rotateCount = 4;

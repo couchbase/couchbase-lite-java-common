@@ -201,7 +201,8 @@ abstract class AbstractDatabase {
         catch (LiteCoreException e) { err = CouchbaseLiteException.convertException(e); }
         catch (IOException e) { err = new CouchbaseLiteException("Failed creating canonical path for " + path, e); }
 
-        C4Database.eraseDatabaseFile(config.getDirectory(), name);
+        FileUtils.eraseFileOrDir(C4Database.getDatabaseFile(new File(config.getDirectory()), name));
+
         throw err;
     }
 
@@ -299,7 +300,7 @@ abstract class AbstractDatabase {
      * C4Database object will be managed by the caller. This is currently used for creating a
      * Dictionary as an input of the predict() method of the PredictiveModel.
      */
-    // !!! This should be a separate class...
+    // ??? This should be a separate class...
     protected AbstractDatabase(long c4dbHandle) {
         CouchbaseLiteInternal.requireInit("Cannot create database");
 
@@ -340,6 +341,7 @@ abstract class AbstractDatabase {
      *
      * @return the database's path.
      */
+    @Nullable
     public String getPath() {
         synchronized (getLock()) { return (!isOpen()) ? null : path; }
     }
@@ -369,6 +371,7 @@ abstract class AbstractDatabase {
      * @param id the document ID
      * @return the Document object
      */
+    @Nullable
     public Document getDocument(@NonNull String id) {
         Preconditions.assertNotNull(id, "id");
 
@@ -517,7 +520,7 @@ abstract class AbstractDatabase {
      *                   to remove expiration date time from doc.
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
-    public void setDocumentExpiration(@NonNull String id, Date expiration) throws CouchbaseLiteException {
+    public void setDocumentExpiration(@NonNull String id, @Nullable Date expiration) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
 
         if (purgeStrategy == null) {
@@ -544,6 +547,7 @@ abstract class AbstractDatabase {
      * @return Date a nullable expiration timestamp of the document or null if time not set.
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
+    @Nullable
     public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
 
@@ -1129,15 +1133,13 @@ abstract class AbstractDatabase {
     }
 
     private C4Database openC4Db() throws CouchbaseLiteException {
-        final File dbFile = C4Database.getDatabaseFile(new File(config.getDirectory()), this.name);
-        Log.v(DOMAIN, "Opening %s at path %s", this, dbFile.getPath());
-
+        final String parentDirPath = config.getDirectory();
+        Log.v(DOMAIN, "Opening db %s at path %s", this, parentDirPath);
         try {
             return C4Database.getDatabase(
-                dbFile.getPath(),
+                parentDirPath,
+                name,
                 DEFAULT_DATABASE_FLAGS,
-                null,
-                C4Constants.DocumentVersioning.REVISION_TREES,
                 getEncryptionAlgorithm(),
                 getEncryptionKey());
         }
