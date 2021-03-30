@@ -116,7 +116,7 @@ public class C4Query extends C4NativePeer {
      * Gets a fleece encoded array of indexes in the given database
      * that were created by `c4db_createIndex`
      */
-    static native long getIndexes(long db) throws LiteCoreException;
+    static native long getIndexesInfo(long db) throws LiteCoreException;
 
     static native void deleteIndex(long db, String name) throws LiteCoreException;
 

@@ -321,7 +321,7 @@ public abstract class C4Database extends C4NativePeer {
 
     public void deleteIndex(String name) throws LiteCoreException { C4Query.deleteIndex(getPeer(), name); }
 
-    public FLValue getIndexes() throws LiteCoreException { return new FLValue(C4Query.getIndexes(getPeer())); }
+    public FLValue getIndexesInfo() throws LiteCoreException { return new FLValue(C4Query.getIndexesInfo(getPeer())); }
 
     public boolean performMaintenance(MaintenanceType type) throws LiteCoreException {
         return maintenance(

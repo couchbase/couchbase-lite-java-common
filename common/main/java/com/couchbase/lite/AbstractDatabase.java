@@ -99,6 +99,8 @@ abstract class AbstractDatabase {
     private static final int DB_CLOSE_MAX_RETRIES = 5; // random choice: wait for 5 replicators
     private static final int EXECUTOR_CLOSE_MAX_WAIT_SECS = 5;
 
+    private static final String INDEX_KEY_NAME = "name";
+
     // A random but absurdly large number.
     private static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
 
@@ -573,11 +575,11 @@ abstract class AbstractDatabase {
      * like multiple inserts/updates; it saves the overhead of multiple database commits, greatly
      * improving performance.
      *
-     * @param task a task that may terminate abruptly (with an exception)
+     * @param work a unit of work that may terminate abruptly (with an exception)
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
-    public <T extends Exception> void inBatch(@NonNull Fn.TaskThrows<T> task) throws CouchbaseLiteException, T {
-        Preconditions.assertNotNull(task, "task");
+    public <T extends Exception> void inBatch(@NonNull UnitOfWork<T> work) throws CouchbaseLiteException, T {
+        Preconditions.assertNotNull(work, "work");
 
         synchronized (getLock()) {
             final C4Database db = getC4DatabaseLocked();
@@ -585,7 +587,7 @@ abstract class AbstractDatabase {
             try {
                 db.beginTransaction();
                 try {
-                    task.run();
+                    work.run();
                     commit = true;
                 }
                 finally {
@@ -712,12 +714,22 @@ abstract class AbstractDatabase {
         shutdown(C4Database::deleteDb);
     }
 
+    @NonNull
+    public List<String> getIndexNames() throws CouchbaseLiteException {
+        final List<Map<String, Object>> indexesInfo = getIndexesInfo();
+        final List<String> indexNames = new ArrayList<>(indexesInfo.size());
+        for (Map<String, Object> idxInfo: indexesInfo) {
+            final Object idxName = idxInfo.get(INDEX_KEY_NAME);
+            indexNames.add((idxName instanceof String) ? (String) idxName : "unknown");
+        }
+        return indexNames;
+    }
 
     @SuppressWarnings("unchecked")
     @NonNull
-    public List<String> getIndexes() throws CouchbaseLiteException {
+    public List<Map<String, Object>> getIndexesInfo() throws CouchbaseLiteException {
         synchronized (getLock()) {
-            try { return (List<String>) getC4DatabaseLocked().getIndexes().asObject(); }
+            try { return (List<Map<String, Object>>) getC4DatabaseLocked().getIndexesInfo().asObject(); }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }

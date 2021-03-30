@@ -197,7 +197,7 @@ public class C4DatabaseTest extends C4BaseTest {
 
     // Open nonexistent bundle without the create flag.
     @Test
-    public void testDatabaseOpenNonExistentBundleWithoutCreateFlagFails() throws LiteCoreException {
+    public void testDatabaseOpenNonExistentBundleWithoutCreateFlagFails() {
         try {
             C4Database.getDatabase(
                 getScratchDirectoryPath(getUniqueName("c4_test_2")),
