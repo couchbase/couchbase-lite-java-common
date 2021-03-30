@@ -42,7 +42,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity"})
 public class Document implements DictionaryInterface, Iterable<String> {
-    // ??? This code is from v1.x. Replace with c4rev_getGeneration().
+    // !!! This code is from v1.x. Replace with c4rev_getGeneration().
     private static long generationFromRevID(String revID) {
         long generation = 0;
         final long length = Math.min(revID == null ? 0 : revID.length(), 9);

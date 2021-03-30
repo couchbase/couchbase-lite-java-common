@@ -49,8 +49,14 @@ import static org.junit.Assert.assertTrue;
 
 
 public abstract class BaseTest extends PlatformBaseTest {
-    protected static final String TEST_DATE = "2019-02-21T05:37:22.014Z";
-    protected static final String BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box.";
+    public static final long STD_TIMEOUT_SEC = 5;
+    public static final long LONG_TIMEOUT_SEC = 10;
+
+    public static final long STD_TIMEOUT_MS = STD_TIMEOUT_SEC * 1000L;
+    public static final long LONG_TIMEOUT_MS = LONG_TIMEOUT_SEC * 1000L;
+
+    public static final String TEST_DATE = "2019-02-21T05:37:22.014Z";
+    public static final String BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box.";
 
     private final AtomicReference<AssertionError> testFailure = new AtomicReference<>();
 
@@ -83,6 +89,21 @@ public abstract class BaseTest extends PlatformBaseTest {
             return path;
         }
         catch (IOException e) { throw new IllegalStateException("Failed creating scratch directory: " + name, e); }
+    }
+
+    public static void waitUntil(long maxTime, Fn.Provider<Boolean> test) {
+        final long delay = 100;
+        if (maxTime <= delay) { assertTrue(test.get()); }
+
+        final long endTimes = System.currentTimeMillis() + maxTime - delay;
+        do {
+            try { Thread.sleep(delay); }
+            catch (InterruptedException e) { break; }
+            if (test.get()) { return; }
+        }
+        while (System.currentTimeMillis() < endTimes);
+
+        assertTrue(false); // more relevant message than using fail...
     }
 
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();

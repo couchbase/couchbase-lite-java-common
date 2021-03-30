@@ -27,6 +27,7 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
@@ -355,57 +356,41 @@ public class C4DatabaseTest extends C4BaseTest {
         }
     }
 
-    // - "Database Expired"
     @Test
-    public void testDatabaseExpired() throws LiteCoreException {
+    public void testPurgeExpiredDocs() throws LiteCoreException, InterruptedException {
+        long now = System.currentTimeMillis();
+        final long longExpire = now + BaseTest.STD_TIMEOUT_MS;
+        final long shortExpire = now + 1000;
+
         String docID = "expire_me";
         createRev(docID, REV_ID_1, fleeceBody);
+        assertEquals(0, c4Database.getExpiration(docID));
 
-        // unix time
-        long expire = System.currentTimeMillis() / 1000 + 1;
-        c4Database.setExpiration(docID, expire);
+        c4Database.setExpiration(docID, longExpire);
+        assertEquals(longExpire, c4Database.getExpiration(docID));
 
-        expire = System.currentTimeMillis() / 1000 + 2;
-        c4Database.setExpiration(docID, expire);
-        c4Database.setExpiration(docID, expire);
+        c4Database.setExpiration(docID, shortExpire);
+        assertEquals(shortExpire, c4Database.getExpiration(docID));
 
-        String docID2 = "expire_me_too";
-        createRev(docID2, REV_ID_1, fleeceBody);
-        c4Database.setExpiration(docID2, expire);
-
-        String docID3 = "dont_expire_me";
-        createRev(docID3, REV_ID_1, fleeceBody);
-
-        try { Thread.sleep(2 * 1000); }
-        catch (InterruptedException ignore) { }
-
-        assertEquals(expire, c4Database.getExpiration(docID));
-        assertEquals(expire, c4Database.getExpiration(docID2));
-        assertEquals(expire, c4Database.nextDocExpiration());
-    }
-
-    @Test
-    public void testPurgeExpiredDocs() throws LiteCoreException {
-        String docID = "expire_me";
+        docID = "expire_me_too";
         createRev(docID, REV_ID_1, fleeceBody);
+        c4Database.setExpiration(docID, shortExpire);
+        assertEquals(shortExpire, c4Database.getExpiration(docID));
 
-        // unix time
-        long expire = System.currentTimeMillis() / 1000 + 1;
-        c4Database.setExpiration(docID, expire);
+        docID = "expire_me_later";
+        createRev(docID, REV_ID_1, fleeceBody);
+        c4Database.setExpiration(docID, longExpire);
+        assertEquals(longExpire, c4Database.getExpiration(docID));
 
-        expire = System.currentTimeMillis() / 1000 + 2;
-        c4Database.setExpiration(docID, expire);
+        docID = "dont_expire_me_at_all";
+        createRev(docID, REV_ID_1, fleeceBody);
+        assertEquals(0, c4Database.getExpiration(docID));
 
-        String docID2 = "expire_me_too";
-        createRev(docID2, REV_ID_1, fleeceBody);
-        c4Database.setExpiration(docID2, expire);
+        assertEquals(4, c4Database.getDocumentCount());
 
-        try { Thread.sleep(3 * 1000); }
-        catch (InterruptedException ignore) { }
-
-        long cnt = c4Database.purgeExpiredDocs();
-
-        assertEquals(cnt, 2);
+        // There should be a time at which exactly two of the docs have expired (the other two have not).
+        // That time should be less than the long-expire timeout
+        BaseTest.waitUntil(BaseTest.STD_TIMEOUT_MS, () -> 2 == c4Database.getDocumentCount());
     }
 
     @Test
@@ -426,7 +411,7 @@ public class C4DatabaseTest extends C4BaseTest {
 
     // - "Database CancelExpire"
     @Test
-    public void testDatabaseCancelExpire() throws LiteCoreException {
+    public void testDatabaseCancelExpire() throws LiteCoreException, InterruptedException {
         String docID = "expire_me";
         createRev(docID, REV_ID_1, fleeceBody);
 
@@ -435,8 +420,7 @@ public class C4DatabaseTest extends C4BaseTest {
         c4Database.setExpiration(docID, expire);
         c4Database.setExpiration(docID, 0);
 
-        try { Thread.sleep(2 * 1000); }
-        catch (InterruptedException ignore) { }
+        Thread.sleep(2 * 1000);
 
         assertNotNull(c4Database.get(docID, true));
     }

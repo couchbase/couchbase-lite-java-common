@@ -233,10 +233,6 @@ public abstract class C4Database extends C4NativePeer {
 
     public long getDocumentCount() { return getDocumentCount(getPeer()); }
 
-    public long nextDocExpiration() { return nextDocExpiration(getPeer()); }
-
-    public long purgeExpiredDocs() { return purgeExpiredDocs(getPeer()); }
-
     public void purgeDoc(String docID) throws LiteCoreException { purgeDoc(getPeer(), docID); }
 
     public byte[] getPublicUUID() throws LiteCoreException { return getPublicUUID(getPeer()); }
@@ -595,10 +591,6 @@ public abstract class C4Database extends C4NativePeer {
     private static native long getDocumentCount(long db);
 
     private static native long getLastSequence(long db);
-
-    private static native long nextDocExpiration(long db);
-
-    private static native long purgeExpiredDocs(long db);
 
     private static native void purgeDoc(long db, String id) throws LiteCoreException;
 

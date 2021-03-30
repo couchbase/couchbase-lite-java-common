@@ -177,7 +177,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         repl.start();
         try {
-            try { latch.await(STD_TIMEOUT_SECS, TimeUnit.SECONDS); }
+            try { latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS); }
             catch (InterruptedException ignore) { }
         }
         finally {

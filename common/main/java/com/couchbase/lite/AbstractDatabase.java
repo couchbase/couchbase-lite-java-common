@@ -104,10 +104,6 @@ abstract class AbstractDatabase {
     // A random but absurdly large number.
     private static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
 
-    // How long to wait after a database opens before expiring docs
-    private static final long INITIAL_PURGE_DELAY_MS = 3;
-    private static final long STANDARD_PURGE_INTERVAL_MS = 1000;
-
     private static final int DEFAULT_DATABASE_FLAGS
         = C4Constants.DatabaseFlags.CREATE
         | C4Constants.DatabaseFlags.AUTO_COMPACT
@@ -231,8 +227,6 @@ abstract class AbstractDatabase {
 
     private final SharedKeys sharedKeys;
 
-    private final DocumentExpirationStrategy purgeStrategy;
-
     @GuardedBy("activeProcesses")
     private final Set<ActiveProcess<?>> activeProcesses;
 
@@ -290,9 +284,6 @@ abstract class AbstractDatabase {
         // Initialize a shared keys:
         this.sharedKeys = new SharedKeys(c4Database);
 
-        this.purgeStrategy = new DocumentExpirationStrategy(this, STANDARD_PURGE_INTERVAL_MS, postExecutor);
-        this.purgeStrategy.schedulePurge(INITIAL_PURGE_DELAY_MS);
-
         // warn if logging has not been turned on
         Log.warn();
     }
@@ -320,8 +311,6 @@ abstract class AbstractDatabase {
         this.docChangeNotifiers = null;
 
         this.sharedKeys = null;
-
-        this.purgeStrategy = null;
     }
 
     //---------------------------------------------
@@ -524,20 +513,9 @@ abstract class AbstractDatabase {
      */
     public void setDocumentExpiration(@NonNull String id, @Nullable Date expiration) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
-
-        if (purgeStrategy == null) {
-            Log.w(DOMAIN, "Attempt to set document expiration without a purge strategy");
-            return;
-        }
-
         synchronized (getLock()) {
-            try {
-                getC4DatabaseLocked().setExpiration(id, (expiration == null) ? 0 : expiration.getTime());
-                purgeStrategy.schedulePurge(0);
-            }
-            catch (LiteCoreException e) {
-                throw CouchbaseLiteException.convertException(e);
-            }
+            try { getC4DatabaseLocked().setExpiration(id, (expiration == null) ? 0 : expiration.getTime()); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
 
@@ -925,14 +903,6 @@ abstract class AbstractDatabase {
     @NonNull
     FLEncoder getSharedFleeceEncoder() {
         synchronized (getLock()) { return getC4DatabaseLocked().getSharedFleeceEncoder(); }
-    }
-
-    long getNextDocumentExpiration() {
-        synchronized (getLock()) { return getC4DatabaseLocked().nextDocExpiration(); }
-    }
-
-    long purgeExpiredDocs() {
-        synchronized (getLock()) { return getC4DatabaseLocked().purgeExpiredDocs(); }
     }
 
     @NonNull
@@ -1616,8 +1586,6 @@ abstract class AbstractDatabase {
 
             // don't do any of this stuff in shell mode
             if (name == null) { return; }
-
-            purgeStrategy.cancelPurges();
 
             freeC4DbObserver();
             docChangeNotifiers.clear();

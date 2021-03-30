@@ -56,8 +56,12 @@ Java_com_couchbase_lite_internal_core_C4Database_open(
 
     C4Error error;
     C4Database *db = c4db_openNamed(name, &config, &error);
-    if (!db)
+    if (!db) {
         throwError(env, error);
+        return 0;
+    }
+
+    c4db_startHousekeeping(db);
 
     return (jlong) db;
 }
@@ -193,30 +197,6 @@ Java_com_couchbase_lite_internal_core_C4Database_getDocumentCount(JNIEnv *env, j
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_getLastSequence(JNIEnv *env, jclass ignore, jlong jdb) {
     return (jlong) c4db_getLastSequence((C4Database *) jdb);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    nextDocExpiration
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_nextDocExpiration(JNIEnv *env, jclass ignore, jlong jdb) {
-    return (jlong) c4db_nextDocExpiration((C4Database *) jdb);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    purgeExpiredDocs
- * Signature: (J)I
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_purgeExpiredDocs(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4Error error;
-    long num = c4db_purgeExpiredDocs((C4Database *) jdb, &error);
-    if (num == -1)
-        throwError(env, error);
-    return num;
 }
 
 /*

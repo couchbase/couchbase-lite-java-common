@@ -796,7 +796,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
             if (c4Repl != null) {
                 c4Repl.setOptions(getFleeceOptions());
-                // ??? This is probably a bug.  SetOptions should not clear the progress level
+                // !!! This is probably a bug.  SetOptions should not clear the progress level
                 setProgressLevel();
                 return c4Repl;
             }

@@ -100,7 +100,7 @@ public final class MutableDocument extends Document implements MutableDictionary
         if (doc.isMutable()) { setContent(doc.getContent().toMutable()); }
     }
 
-    // !!! Expressing this constructor in terms of the previous one
+    // Expressing this constructor in terms of the previous one
     // fails because the previous constructor does not copy
     // the source document's mutated state.  While it *does* copy the
     // mutable state, if the source has been changed since it was created

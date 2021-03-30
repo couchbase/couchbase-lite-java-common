@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import android.support.annotation.NonNull;
+
 import java.io.PrintStream;
 import java.util.Locale;
 
@@ -29,6 +31,18 @@ public final class Report {
     private Report() {}
 
     private static final String DOMAIN = "TEST: ";
+
+    public static void log(@NonNull String message) {
+        Report.log(LogLevel.INFO, message, (Throwable) null);
+    }
+
+    public static void log(@NonNull String template, Object... args) {
+        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args));
+    }
+
+    public static void log(@NonNull String message, Throwable err) {
+        Report.log(LogLevel.INFO, message, err);
+    }
 
     public static void log(LogLevel level, String message) {
         Report.log(level, message, (Throwable) null);

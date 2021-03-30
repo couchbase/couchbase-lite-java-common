@@ -561,7 +561,7 @@ public class ArrayTest extends BaseDbTest {
         }
     }
 
-    // !!! Failing on Nexus 4
+    // !!! Fails on Nexus 4
     @Test
     public void testGetNumber() throws CouchbaseLiteException {
         for (int i = 0; i < 2; i++) {

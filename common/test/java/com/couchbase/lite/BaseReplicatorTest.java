@@ -32,9 +32,6 @@ import static org.junit.Assert.assertTrue;
 
 
 public abstract class BaseReplicatorTest extends BaseDbTest {
-    protected static final long STD_TIMEOUT_SECS = 5;
-    protected static final long LONG_TIMEOUT_SECS = 30;
-
     protected Replicator baseTestReplicator;
 
     protected Database otherDB;
@@ -178,7 +175,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         boolean success;
         try {
             repl.start(reset);
-            success = listener.awaitCompletion(STD_TIMEOUT_SECS, TimeUnit.SECONDS);
+            success = listener.awaitCompletion(STD_TIMEOUT_SEC, TimeUnit.SECONDS);
         }
         finally {
             repl.removeChangeListener(token);
