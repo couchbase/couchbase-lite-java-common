@@ -1744,7 +1744,7 @@ public class DocumentTest extends BaseDbTest {
     }
 
     @Test
-    public void testSetExpirationOnDoc() throws Exception {
+    public void testSetExpirationOnDoc() throws CouchbaseLiteException {
         long now = System.currentTimeMillis();
 
         MutableDocument doc1 = new MutableDocument("doc1");
@@ -1757,16 +1757,11 @@ public class DocumentTest extends BaseDbTest {
         doc2.setValue("question", "What is six plus six?");
         saveDocInBaseTestDb(doc2);
 
-        baseTestDb.setDocumentExpiration("doc1", new Date(now));
-        baseTestDb.setDocumentExpiration("doc2", new Date(now + (2 * 1000L)));
+        baseTestDb.setDocumentExpiration("doc1", new Date(now + 100));
+        baseTestDb.setDocumentExpiration("doc2", new Date(now + BaseTest.LONG_TIMEOUT_MS));
+        assertEquals(2, baseTestDb.getCount());
 
-        Thread.sleep(500);
-        assertNull(baseTestDb.getDocument("doc1"));
-        assertNotNull(baseTestDb.getDocument("doc2"));
-
-        Thread.sleep(2 * 1000); // sleep 2 sec
-        assertNull(baseTestDb.getDocument("doc1"));
-        assertNull(baseTestDb.getDocument("doc2"));
+        BaseTest.waitUntil(1000L, () -> 1 == baseTestDb.getCount());
     }
 
     @Test

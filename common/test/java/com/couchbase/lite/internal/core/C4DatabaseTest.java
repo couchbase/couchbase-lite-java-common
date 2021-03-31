@@ -394,6 +394,27 @@ public class C4DatabaseTest extends C4BaseTest {
     }
 
     @Test
+    public void testDatabaseCancelExpire() throws LiteCoreException {
+        final long expire = System.currentTimeMillis() + 100;
+
+        String docID1 = "expire_me";
+        createRev(docID1, REV_ID_1, fleeceBody);
+
+        String docID2 = "dont_expire_me";
+        createRev(docID2, REV_ID_1, fleeceBody);
+
+        assertEquals(2, c4Database.getDocumentCount());
+
+        c4Database.setExpiration(docID1, expire);
+        c4Database.setExpiration(docID2, expire);
+        c4Database.setExpiration(docID2, 0);
+
+        BaseTest.waitUntil(BaseTest.STD_TIMEOUT_MS, () -> 1 == c4Database.getDocumentCount());
+
+        assertNotNull(c4Database.get(docID2, true));
+    }
+
+    @Test
     public void testPurgeDoc() throws LiteCoreException {
         String docID = "purge_me";
         createRev(docID, REV_ID_1, fleeceBody);
@@ -410,20 +431,6 @@ public class C4DatabaseTest extends C4BaseTest {
     }
 
     // - "Database CancelExpire"
-    @Test
-    public void testDatabaseCancelExpire() throws LiteCoreException, InterruptedException {
-        String docID = "expire_me";
-        createRev(docID, REV_ID_1, fleeceBody);
-
-        // unix time
-        long expire = System.currentTimeMillis() / 1000 + 2;
-        c4Database.setExpiration(docID, expire);
-        c4Database.setExpiration(docID, 0);
-
-        Thread.sleep(2 * 1000);
-
-        assertNotNull(c4Database.get(docID, true));
-    }
 
     // - "Database BlobStore"
     @Test
