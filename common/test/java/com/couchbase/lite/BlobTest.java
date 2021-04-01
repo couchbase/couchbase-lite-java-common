@@ -33,7 +33,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.IOUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.StringUtils;
@@ -274,24 +273,31 @@ public class BlobTest extends BaseDbTest {
         assertThrows(IllegalArgumentException.class, () -> new Blob(contentType, new URL("http://java.sun.com")));
     }
 
-    @FlakyTest
     @Test
-    public void testBlobReadFunctions() throws IOException {
+    public void testBlobReadByte() throws IOException {
+        byte[] data;
+        try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
+        assertEquals(new Blob("application/json", data).getContentStream().read(), data[0]);
+    }
+
+    @Test
+    public void testBlobReadByteArray() throws IOException {
         byte[] data;
         try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
 
-        Blob blob = new Blob("application/json", data);
-        assertEquals(blob.getContentStream().read(), data[0]);
-
-        blob = new Blob("application/json", data);
         byte[] blobContent = new byte[data.length];
-        blob.getContentStream().read(blobContent, 0, data.length);
+        new Blob("application/json", data).getContentStream().read(blobContent, 0, data.length);
         assertArrayEquals(blobContent, data);
+    }
 
-        blob = new Blob("application/json", data);
-        InputStream iStream = blob.getContentStream();
-        iStream.skip(17);
-        assertEquals(iStream.read(), data[17]);
+    @Test
+    public void testBlobReadSkip() throws IOException {
+        byte[] data;
+        try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
+
+        InputStream blobStream = new Blob("application/json", data).getContentStream();
+        blobStream.skip(17);
+        assertEquals(blobStream.read(), data[17]);
     }
 
     @Test

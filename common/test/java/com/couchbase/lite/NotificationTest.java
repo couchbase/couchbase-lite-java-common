@@ -46,7 +46,7 @@ public class NotificationTest extends BaseDbTest {
                 saveDocInBaseTestDb(doc);
             }
         });
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class NotificationTest extends BaseDbTest {
         saveDocInBaseTestDb(mDocB);
         mDocA.setValue("theanswer", 18);
         Document docA = saveDocInBaseTestDb(mDocA);
-        assertTrue(latch1.await(10, TimeUnit.SECONDS));
+        assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         baseTestDb.removeChangeListener(token);
 
         // update doc
@@ -83,7 +83,7 @@ public class NotificationTest extends BaseDbTest {
         mDocA = docA.toMutable();
         mDocA.setValue("thewronganswer", 18);
         docA = saveDocInBaseTestDb(mDocA);
-        assertTrue(latch2.await(5, TimeUnit.SECONDS));
+        assertTrue(latch2.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         baseTestDb.removeChangeListener(token);
 
         // delete doc
@@ -96,7 +96,7 @@ public class NotificationTest extends BaseDbTest {
         };
         token = baseTestDb.addDocumentChangeListener("A", listener3);
         baseTestDb.delete(docA);
-        assertTrue(latch3.await(5, TimeUnit.SECONDS));
+        assertTrue(latch3.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         baseTestDb.removeChangeListener(token);
     }
 
@@ -132,8 +132,8 @@ public class NotificationTest extends BaseDbTest {
                 }
             });
 
-            assertTrue(latchDB.await(5, TimeUnit.SECONDS));
-            assertTrue(latchDoc.await(5, TimeUnit.SECONDS));
+            assertTrue(latchDB.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            assertTrue(latchDoc.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
             db2.close();
@@ -164,7 +164,7 @@ public class NotificationTest extends BaseDbTest {
             doc1.setValue("name", "Scott Tiger");
             saveDocInBaseTestDb(doc1);
 
-            // Let's wait for 0.5 seconds:
+            // Let's only wait for 0.5 seconds:
             assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
         }
         finally {
@@ -199,7 +199,7 @@ public class NotificationTest extends BaseDbTest {
         doc1.setValue("name", "Scott Tiger");
         savedDoc1 = saveDocInBaseTestDb(doc1);
 
-        // Let's wait for 0.5 seconds:
+        // Let's only wait for 0.5 seconds:
         assertTrue(latch1.await(500, TimeUnit.MILLISECONDS));
 
         // Remove change listener:
@@ -210,7 +210,7 @@ public class NotificationTest extends BaseDbTest {
         doc1.setValue("name", "Scotty");
         saveDocInBaseTestDb(doc1);
 
-        // Let's wait for 0.5 seconds:
+        // Let's only wait for 0.5 seconds:
         assertFalse(latch2.await(500, TimeUnit.MILLISECONDS));
         assertEquals(1, latch2.getCount());
 

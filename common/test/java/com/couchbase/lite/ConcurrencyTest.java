@@ -36,7 +36,8 @@ import static org.junit.Assert.fail;
 
 
 public class ConcurrencyTest extends BaseDbTest {
-
+    private static final long TIMEOUT = 180L;
+    
     interface Callback {
         void callback(int threadIndex);
     }
@@ -175,8 +176,8 @@ public class ConcurrencyTest extends BaseDbTest {
         final String tag = "Update";
         runSafelyInThread(latch2, () -> assertTrue(updateDocs(docIDs, kNRounds, tag)));
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
 
         verifyByTagName(tag, kNDocs);
@@ -217,8 +218,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 }
             });
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
 
         assertEquals(0, baseTestDb.getCount());
@@ -259,8 +260,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 }
             });
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
 
         assertEquals(0, baseTestDb.getCount());
@@ -294,8 +295,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 catch (CouchbaseLiteException e) { fail(); }
             });
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
     }
 
@@ -327,8 +328,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 catch (CouchbaseLiteException e) { fail(); }
             });
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
     }
 
@@ -357,8 +358,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 catch (CouchbaseLiteException e) { fail(); }
             });
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
     }
 
@@ -392,8 +393,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 catch (CouchbaseLiteException e) { fail(); }
             });
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
     }
 
@@ -412,8 +413,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 catch (CouchbaseLiteException e) { fail(); }
             });
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
     }
 
@@ -432,8 +433,8 @@ public class ConcurrencyTest extends BaseDbTest {
                 catch (CouchbaseLiteException e) { fail(); }
             });
 
-        assertTrue(latch1.await(180, TimeUnit.SECONDS));
-        assertTrue(latch2.await(180, TimeUnit.SECONDS));
+        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
         checkForFailure();
     }
 

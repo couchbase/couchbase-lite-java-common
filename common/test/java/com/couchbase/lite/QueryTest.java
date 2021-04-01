@@ -1464,7 +1464,7 @@ public class QueryTest extends BaseQueryTest {
                 }
             });
             // wait till listener is called
-            assertTrue(latch.await(20, TimeUnit.SECONDS));
+            assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
             query.removeChangeListener(token);
@@ -1920,7 +1920,7 @@ public class QueryTest extends BaseQueryTest {
 
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch1.countDown());
         try {
-            assertTrue(latch1.await(2, TimeUnit.SECONDS));
+            assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
             baseTestDb.delete();
         }
         finally { query.removeChangeListener(token); }
@@ -1935,7 +1935,7 @@ public class QueryTest extends BaseQueryTest {
 
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
         try {
-            assertTrue(latch.await(2, TimeUnit.SECONDS));
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
             baseTestDb.close();
         }
         finally { query.removeChangeListener(token); }
@@ -2500,8 +2500,8 @@ public class QueryTest extends BaseQueryTest {
                 latchAdd.countDown();
             });
 
-            assertTrue(latchAdd.await(20, TimeUnit.SECONDS));
-            assertTrue(latch.await(20, TimeUnit.SECONDS));
+            assertTrue(latchAdd.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
             query.removeChangeListener(token);
@@ -2537,13 +2537,13 @@ public class QueryTest extends BaseQueryTest {
         });
 
         try {
-            assertTrue(latch1.await(5, TimeUnit.SECONDS));
+            assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             doc = baseTestDb.getDocument("doc1").toMutable();
             doc.setInt("number1", 15);
             baseTestDb.save(doc);
 
-            assertTrue(latch2.await(5, TimeUnit.SECONDS));
+            assertTrue(latch2.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
             query.removeChangeListener(token);
@@ -2980,7 +2980,7 @@ public class QueryTest extends BaseQueryTest {
             });
 
             // wait till listener is called
-            assertFalse(latch.await(5, TimeUnit.SECONDS));
+            assertFalse(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
             assertEquals(1, latch.getCount());
         }
         finally {

@@ -27,6 +27,7 @@ import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Report;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
@@ -142,7 +143,6 @@ public class LogTest extends BaseDbTest {
     @After
     public final void tearDownLogTest() { BaseTest.logTestTeardownBegun("Log"); }
 
-    @FlakyTest
     @Test
     public void testCustomLoggingLevels() {
         LogTestLogger customLogger = new LogTestLogger("TEST ");
@@ -217,7 +217,12 @@ public class LogTest extends BaseDbTest {
                 for (File log: getLogFiles()) {
                     BufferedReader fin = new BufferedReader(new FileReader(log));
                     int lineCount = 0;
-                    while ((fin.readLine()) != null) { lineCount++; }
+                    String l;
+                    Report.log("Log file: " + log);
+                    while ((l = fin.readLine()) != null) {
+                        lineCount++;
+                        Report.log("@" + lineCount + ": " + l);
+                    }
 
                     String logPath = log.getCanonicalPath();
                     // One meta line per log, so the actual logging lines is X + 1

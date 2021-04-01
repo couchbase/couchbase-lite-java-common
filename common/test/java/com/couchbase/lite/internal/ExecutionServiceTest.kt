@@ -38,7 +38,7 @@ import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
-private const val TIMEOUT_SEC = 5L
+private const val TIMEOUT_SEC = BaseTest.STD_TIMEOUT_SEC
 private const val CAPACITY = AbstractExecutionService.MIN_CAPACITY * 2
 private const val THREADS = 3
 

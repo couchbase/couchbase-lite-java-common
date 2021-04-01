@@ -21,8 +21,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import com.couchbase.lite.internal.utils.FlakyTest;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -53,7 +51,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         createDocNumbered(10);
 
-        try { assertTrue(latch.await(10, TimeUnit.SECONDS)); }
+        try { assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
         finally { query.removeChangeListener(token); }
     }
 
@@ -73,7 +71,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         createDocNumbered(11);
 
-        try { assertTrue(latch.await(10, TimeUnit.SECONDS)); }
+        try { assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
         finally {
             query.removeChangeListener(token1);
             query.removeChangeListener(token2);
@@ -141,7 +139,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> globalLatch.countDown());
         try {
-            assertTrue(globalLatch.await(10, TimeUnit.SECONDS));
+            assertTrue(globalLatch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             globalLatch = new CountDownLatch(1);
 
@@ -149,7 +147,7 @@ public class LiveQueryTest extends BaseDbTest {
             params.setInt("VALUE", 1);
             query.setParameters(params);
 
-            assertTrue(globalLatch.await(10, TimeUnit.SECONDS));
+            assertTrue(globalLatch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
             query.removeChangeListener(token);
@@ -157,7 +155,6 @@ public class LiveQueryTest extends BaseDbTest {
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1606
-    @FlakyTest
     @Test
     public void testRemovingLiveQuery() throws CouchbaseLiteException, InterruptedException {
         int n = 1;
@@ -165,15 +162,15 @@ public class LiveQueryTest extends BaseDbTest {
         try {
             // creates doc1 -> first query match
             createDocNumbered(n++);
-            assertTrue(globalLatch.await(10, TimeUnit.SECONDS));
+            assertTrue(globalLatch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // create doc2 -> update query match
             createDocNumbered(n++);
-            assertTrue(globalLatch.await(10, TimeUnit.SECONDS));
+            assertTrue(globalLatch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // create doc3 -> update query match
             createDocNumbered(n);
-            assertTrue(globalLatch.await(10, TimeUnit.SECONDS));
+            assertTrue(globalLatch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
             globalQuery.removeChangeListener(globalToken);

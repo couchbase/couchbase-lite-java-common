@@ -63,6 +63,6 @@ public class QueryChangeTest  extends BaseQueryTest{
 
         synchronized (this) { token[0] = query.addChangeListener(testSerialExecutor, listener); }
 
-        assertTrue(latch.await(2, TimeUnit.SECONDS));
+        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
     }
 }

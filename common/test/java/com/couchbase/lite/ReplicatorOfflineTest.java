@@ -51,8 +51,8 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
                 if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) { stopped.countDown(); }
             });
         repl.start(false);
-        assertTrue(offline.await(10, TimeUnit.SECONDS));
-        assertTrue(stopped.await(10, TimeUnit.SECONDS));
+        assertTrue(offline.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+        assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         repl.removeChangeListener(token);
     }
 
@@ -70,7 +70,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
                 if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) { stopped.countDown(); }
             });
         repl.start(false);
-        assertTrue(stopped.await(10, TimeUnit.SECONDS));
+        assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         repl.removeChangeListener(token);
     }
 

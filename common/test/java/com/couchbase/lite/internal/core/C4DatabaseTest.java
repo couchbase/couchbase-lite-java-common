@@ -359,8 +359,9 @@ public class C4DatabaseTest extends C4BaseTest {
     @Test
     public void testPurgeExpiredDocs() throws LiteCoreException, InterruptedException {
         long now = System.currentTimeMillis();
-        final long longExpire = now + BaseTest.STD_TIMEOUT_MS;
         final long shortExpire = now + 1000;
+        final long longExpire = now + BaseTest.STD_TIMEOUT_MS;
+
 
         String docID = "expire_me";
         createRev(docID, REV_ID_1, fleeceBody);

@@ -1668,7 +1668,7 @@ public class DocumentTest extends BaseDbTest {
 
         baseTestDb.setDocumentExpiration("doc1", new Date(System.currentTimeMillis() + 100));
 
-        try { assertTrue(latch.await(2, TimeUnit.SECONDS)); }
+        try { assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
         finally { baseTestDb.removeChangeListener(token); }
     }
 
