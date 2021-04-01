@@ -46,7 +46,7 @@ public final class FullTextExpression {
         //---------------------------------------------
 
         @Override
-        Object asJSON() { return Arrays.asList("MATCH", indexName, text); }
+        Object asJSON() { return Arrays.asList("MATCH()", indexName, text); }
     }
 
     /**

@@ -305,7 +305,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             C4Constants.IndexType.FULL_TEXT,
             null,
             true);
-        compile(json5("['MATCH', 'byStreet', 'Hwy']"));
+        compile(json5("['MATCH()', 'byStreet', 'Hwy']"));
         assertEquals(Arrays.asList(
             Arrays.asList(Arrays.asList(13L, 0L, 0L, 10L, 3L)),
             Arrays.asList(Arrays.asList(15L, 0L, 0L, 11L, 3L)),
@@ -326,7 +326,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             true);
 
         // Some docs match 'Santa' in the street name, some in the city name
-        compile(json5("['MATCH', 'byAddress', 'Santa']"));
+        compile(json5("['MATCH()', 'byAddress', 'Santa']"));
         assertEquals(Arrays.asList(
             Arrays.asList(Arrays.asList(15L, 1L, 0L, 0L, 5L)),
             Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
@@ -335,14 +335,14 @@ public class C4QueryTest extends C4QueryBaseTest {
         ), runFTS());
 
         // Search only the street name:
-        compile(json5("['MATCH', 'byAddress', 'contact.address.street:Santa']"));
+        compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa']"));
         assertEquals(Arrays.asList(
             Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
             Arrays.asList(Arrays.asList(68L, 0L, 0L, 3L, 5L))
         ), runFTS());
 
         // Search for 'Santa' in the street name, and 'Saint' in either:
-        compile(json5("['MATCH', 'byAddress', 'contact.address.street:Santa Saint']"));
+        compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa Saint']"));
         assertEquals(
             Arrays.asList(
                 Arrays.asList(
@@ -351,7 +351,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             ), runFTS());
 
         // Search for 'Santa' in the street name, _or_ 'Saint' in either:
-        compile(json5("['MATCH', 'byAddress', 'contact.address.street:Santa OR Saint']"));
+        compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa OR Saint']"));
         assertEquals(Arrays.asList(
             Arrays.asList(Arrays.asList(20L, 1L, 1L, 0L, 5L)),
             Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
@@ -373,7 +373,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             null,
             true);
         c4Database.createIndex("byCity", "[[\".contact.address.city\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
-        compile(json5("['AND', ['MATCH', 'byStreet', 'Hwy'], ['MATCH', 'byCity',   'Santa']]"));
+        compile(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]"));
         assertEquals(Arrays.asList("0000015"), run());
         assertEquals(Arrays.asList(
             Arrays.asList(Arrays.asList(15L, 0L, 0L, 11L, 3L))
@@ -391,7 +391,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             true);
         c4Database.createIndex("byCity", "[[\".contact.address.city\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
         compile(json5(
-            "['AND', ['AND', ['=', ['.gender'], 'male'], ['MATCH', 'byCity', 'Santa']], ['=', ['.name.first'], "
+            "['AND', ['AND', ['=', ['.gender'], 'male'], ['MATCH()', 'byCity', 'Santa']], ['=', ['.name.first'], "
                 + "'Cleveland']]"));
         assertEquals(Arrays.asList("0000015"), run());
         assertEquals(Arrays.asList(
@@ -409,7 +409,9 @@ public class C4QueryTest extends C4QueryBaseTest {
             C4Constants.IndexType.FULL_TEXT,
             null,
             true);
-        try { c4Database.createQuery(json5("['AND', ['MATCH', 'byStreet', 'Hwy'], ['MATCH', 'byStreet', 'Blvd']]")); }
+        try {
+            c4Database.createQuery(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]"));
+        }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
             assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, e.code);
@@ -428,7 +430,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             true);
         try {
             c4Database.createQuery(
-                json5("['OR', ['MATCH', 'byStreet', 'Hwy'], ['=', ['.', 'contact', 'address', 'state'], 'CA']]"));
+                json5("['OR', ['MATCH()', 'byStreet', 'Hwy'], ['=', ['.', 'contact', 'address', 'state'], 'CA']]"));
         }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);

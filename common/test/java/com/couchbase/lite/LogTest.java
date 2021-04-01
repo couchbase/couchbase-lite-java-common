@@ -37,13 +37,13 @@ import static org.junit.Assert.assertTrue;
 
 
 public class LogTest extends BaseDbTest {
-    private static class SimpleLogger implements Logger {
+    private static class SingleLineLogger implements Logger {
         private final String prefix;
         private LogLevel level;
         private LogDomain domain;
         private String message;
 
-        SimpleLogger(@Nullable String prefix) { this.prefix = prefix; }
+        SingleLineLogger(@Nullable String prefix) { this.prefix = prefix; }
 
         @NonNull
         @Override
@@ -71,12 +71,16 @@ public class LogTest extends BaseDbTest {
     }
 
     private static class LogTestLogger implements Logger {
+        private final String prefix;
         private final Map<LogLevel, Integer> lineCounts = new HashMap<>();
         private final StringBuilder content = new StringBuilder();
         private LogLevel level;
 
+        LogTestLogger(@Nullable String prefix) { this.prefix = prefix; }
+
         @Override
         public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+            if ((prefix != null) && !message.startsWith(Log.LOG_HEADER + prefix)) { return; }
             if (level.compareTo(this.level) < 0) { return; }
             lineCounts.put(level, getLineCount(level) + 1);
             content.append(message);
@@ -141,7 +145,7 @@ public class LogTest extends BaseDbTest {
     @FlakyTest
     @Test
     public void testCustomLoggingLevels() {
-        LogTestLogger customLogger = new LogTestLogger();
+        LogTestLogger customLogger = new LogTestLogger("TEST ");
         Database.log.setCustom(customLogger);
 
         for (LogLevel level: LogLevel.values()) {
@@ -161,7 +165,7 @@ public class LogTest extends BaseDbTest {
 
     @Test
     public void testEnableAndDisableCustomLogging() {
-        LogTestLogger customLogger = new LogTestLogger();
+        LogTestLogger customLogger = new LogTestLogger("TEST ");
         Database.log.setCustom(customLogger);
 
         customLogger.setLevel(LogLevel.NONE);
@@ -369,7 +373,7 @@ public class LogTest extends BaseDbTest {
     public void testBasicLogFormatting() {
         String nl = System.lineSeparator();
 
-        SimpleLogger logger = new SimpleLogger("TEST DEBUG");
+        SingleLineLogger logger = new SingleLineLogger("TEST DEBUG");
         Database.log.setCustom(logger);
 
         Log.d(LogDomain.DATABASE, "TEST DEBUG");
@@ -511,7 +515,7 @@ public class LogTest extends BaseDbTest {
     public void testNonASCII() throws CouchbaseLiteException {
         String hebrew = "מזג האוויר נחמד היום"; // The weather is nice today.
 
-        LogTestLogger customLogger = new LogTestLogger();
+        LogTestLogger customLogger = new LogTestLogger(null);
         customLogger.setLevel(LogLevel.VERBOSE);
         Database.log.setCustom(customLogger);
 
@@ -538,7 +542,7 @@ public class LogTest extends BaseDbTest {
         try {
             Log.initLogging(stdErr);
 
-            SimpleLogger logger = new SimpleLogger("TEST DEBUG");
+            SingleLineLogger logger = new SingleLineLogger("TEST DEBUG");
             Database.log.setCustom(logger);
 
             Log.d(LogDomain.DATABASE, "FOO", new Exception("whoops"), 1, "arg", 3.0F);
