@@ -16,5 +16,5 @@
 package com.couchbase.lite;
 
 @FunctionalInterface
-interface UnitOfWork<E extends Exception> { void run() throws E; }
+public interface UnitOfWork<E extends Exception> { void run() throws E; }
 
