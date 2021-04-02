@@ -108,7 +108,8 @@ final class NativeLibrary {
             try { System.load(libPath); }
             catch (Throwable e) {
                 throw new IllegalStateException(
-                    "Cannot load native library " + libPath + "for " + osName + "/" + System.getProperty("os.arch"),
+                    "Cannot load native library " + lib + " @" + libPath
+                        + " for " + osName + "/" + System.getProperty("os.arch"),
                     e);
             }
         }

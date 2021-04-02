@@ -265,12 +265,6 @@ public final class Blob implements FLEncodable {
     @Nullable
     private String blobDigest;
 
-    /**
-     * The metadata associated with this Blob, or null if it was not read from a database
-     */
-    @Nullable
-    private Map<String, Object> properties;
-
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
@@ -335,14 +329,13 @@ public final class Blob implements FLEncodable {
     Blob(@NonNull Database database, @NonNull Map<String, Object> properties) {
         this.database = database;
 
-        this.properties = new HashMap<>(properties);
-        this.properties.remove(META_PROP_TYPE);
-
         blobDigest = (String) properties.get(PROP_DIGEST);
 
-        // NOTE: length field might not be set if length is unknown.
         final Object len = properties.get(PROP_LENGTH);
-        if (len instanceof Number) { blobLength = ((Number) len).longValue(); }
+        if (len instanceof Number) {
+            blobLength = ((Number) len).longValue();
+            Log.w(LogDomain.DATABASE, "Blob length unspecified for blob %s.  Using 0", blobDigest);
+        }
 
         String propType = (String) properties.get(PROP_CONTENT_TYPE);
         if (propType == null) {
@@ -467,16 +460,12 @@ public final class Blob implements FLEncodable {
      */
     @NonNull
     public Map<String, Object> getProperties() {
-        // Blob read from database;
-        if (properties != null) { return new HashMap<>(properties); }
-
         final Map<String, Object> props = new HashMap<>();
         props.put(PROP_DIGEST, blobDigest);
         props.put(PROP_LENGTH, blobLength);
         props.put(PROP_CONTENT_TYPE, contentType);
         return props;
     }
-
 
     /**
      * This method is not part of the public API: Do not use it.
