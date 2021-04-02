@@ -25,9 +25,7 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.Report;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
@@ -58,12 +56,6 @@ public class LogTest extends BaseDbTest {
             this.level = level;
             this.domain = domain;
             this.message = message;
-        }
-
-        public void reset() {
-            this.level = null;
-            this.domain = null;
-            this.message = null;
         }
 
         @NonNull
@@ -145,16 +137,16 @@ public class LogTest extends BaseDbTest {
 
     @Test
     public void testCustomLoggingLevels() {
-        LogTestLogger customLogger = new LogTestLogger("TEST ");
+        LogTestLogger customLogger = new LogTestLogger("$$$TEST ");
         Database.log.setCustom(customLogger);
 
         for (LogLevel level: LogLevel.values()) {
             customLogger.setLevel(level);
-            Log.d(LogDomain.DATABASE, "TEST DEBUG");
-            Log.v(LogDomain.DATABASE, "TEST VERBOSE");
-            Log.i(LogDomain.DATABASE, "TEST INFO");
-            Log.w(LogDomain.DATABASE, "TEST WARNING");
-            Log.e(LogDomain.DATABASE, "TEST ERROR");
+            Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
+            Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
+            Log.i(LogDomain.DATABASE, "$$$TEST INFO");
+            Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
+            Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
         }
 
         assertEquals(2, customLogger.getLineCount(LogLevel.VERBOSE));
@@ -165,23 +157,23 @@ public class LogTest extends BaseDbTest {
 
     @Test
     public void testEnableAndDisableCustomLogging() {
-        LogTestLogger customLogger = new LogTestLogger("TEST ");
+        LogTestLogger customLogger = new LogTestLogger("$$$TEST ");
         Database.log.setCustom(customLogger);
 
         customLogger.setLevel(LogLevel.NONE);
-        Log.d(LogDomain.DATABASE, "TEST DEBUG");
-        Log.v(LogDomain.DATABASE, "TEST VERBOSE");
-        Log.i(LogDomain.DATABASE, "TEST INFO");
-        Log.w(LogDomain.DATABASE, "TEST WARNING");
-        Log.e(LogDomain.DATABASE, "TEST ERROR");
+        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
+        Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
+        Log.i(LogDomain.DATABASE, "$$$TEST INFO");
+        Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
+        Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
         assertEquals(0, customLogger.getLineCount());
 
         customLogger.setLevel(LogLevel.VERBOSE);
-        Log.d(LogDomain.DATABASE, "TEST DEBUG");
-        Log.v(LogDomain.DATABASE, "TEST VERBOSE");
-        Log.i(LogDomain.DATABASE, "TEST INFO");
-        Log.w(LogDomain.DATABASE, "TEST WARNING");
-        Log.e(LogDomain.DATABASE, "TEST ERROR");
+        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
+        Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
+        Log.i(LogDomain.DATABASE, "$$$TEST INFO");
+        Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
+        Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
         assertEquals(4, customLogger.getLineCount());
     }
 
@@ -207,29 +199,26 @@ public class LogTest extends BaseDbTest {
             () -> {
                 for (LogLevel level: LogLevel.values()) {
                     Database.log.getFile().setLevel(level);
-                    Log.d(LogDomain.DATABASE, "TEST DEBUG");
-                    Log.v(LogDomain.DATABASE, "TEST VERBOSE");
-                    Log.i(LogDomain.DATABASE, "TEST INFO");
-                    Log.w(LogDomain.DATABASE, "TEST WARNING");
-                    Log.e(LogDomain.DATABASE, "TEST ERROR");
+                    Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
+                    Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
+                    Log.i(LogDomain.DATABASE, "$$$TEST INFO");
+                    Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
+                    Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
                 }
 
                 for (File log: getLogFiles()) {
                     BufferedReader fin = new BufferedReader(new FileReader(log));
                     int lineCount = 0;
                     String l;
-                    Report.log("Log file: " + log);
                     while ((l = fin.readLine()) != null) {
-                        lineCount++;
-                        Report.log("@" + lineCount + ": " + l);
+                        if (l.contains("$$$TEST")) { lineCount++; }
                     }
 
                     String logPath = log.getCanonicalPath();
-                    // One meta line per log, so the actual logging lines is X + 1
-                    if (logPath.contains("verbose")) { assertEquals(3, lineCount); }
-                    else if (logPath.contains("info")) { assertEquals(4, lineCount); }
-                    else if (logPath.contains("warning")) { assertEquals(5, lineCount); }
-                    else if (logPath.contains("error")) { assertEquals(6, lineCount); }
+                    if (logPath.contains("verbose")) { assertEquals(2, lineCount); }
+                    else if (logPath.contains("info")) { assertEquals(3, lineCount); }
+                    else if (logPath.contains("warning")) { assertEquals(4, lineCount); }
+                    else if (logPath.contains("error")) { assertEquals(5, lineCount); }
                 }
             });
     }
@@ -287,7 +276,7 @@ public class LogTest extends BaseDbTest {
             LogLevel.DEBUG,
             config,
             () -> {
-                Log.e(LogDomain.DATABASE, "TEST MESSAGE");
+                Log.e(LogDomain.DATABASE, "$$$TEST MESSAGE");
 
                 File[] files = getLogFiles();
                 assertTrue(files.length >= 4);
@@ -378,27 +367,27 @@ public class LogTest extends BaseDbTest {
     public void testBasicLogFormatting() {
         String nl = System.lineSeparator();
 
-        SingleLineLogger logger = new SingleLineLogger("TEST DEBUG");
+        SingleLineLogger logger = new SingleLineLogger("$$$TEST");
         Database.log.setCustom(logger);
 
-        Log.d(LogDomain.DATABASE, "TEST DEBUG");
-        assertEquals(Log.LOG_HEADER + "TEST DEBUG", logger.message);
+        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
+        assertEquals(Log.LOG_HEADER + "$$$TEST DEBUG", logger.message);
 
-        Log.d(LogDomain.DATABASE, "TEST DEBUG", new Exception("whoops"));
+        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG", new Exception("whoops"));
         String msg = logger.message;
         assertNotNull(msg);
         assertTrue(msg.startsWith(
-            Log.LOG_HEADER + "TEST DEBUG" + nl + "java.lang.Exception: whoops" + System.lineSeparator()));
+            Log.LOG_HEADER + "$$$TEST DEBUG" + nl + "java.lang.Exception: whoops" + System.lineSeparator()));
 
         // test formatting, including argument ordering
-        Log.d(LogDomain.DATABASE, "TEST DEBUG %2$s %1$d %3$.2f", 1, "arg", 3.0F);
-        assertEquals(Log.LOG_HEADER + "TEST DEBUG arg 1 3.00", logger.message);
+        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG %2$s %1$d %3$.2f", 1, "arg", 3.0F);
+        assertEquals(Log.LOG_HEADER + "$$$TEST DEBUG arg 1 3.00", logger.message);
 
-        Log.d(LogDomain.DATABASE, "TEST DEBUG %2$s %1$d %3$.2f", new Exception("whoops"), 1, "arg", 3.0F);
+        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG %2$s %1$d %3$.2f", new Exception("whoops"), 1, "arg", 3.0F);
         msg = logger.message;
         assertNotNull(msg);
         assertTrue(msg.startsWith(
-            Log.LOG_HEADER + "TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
+            Log.LOG_HEADER + "$$$TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
     }
 
     @Test
@@ -543,18 +532,18 @@ public class LogTest extends BaseDbTest {
         String nl = System.lineSeparator();
 
         Map<String, String> stdErr = new HashMap<>();
-        stdErr.put("FOO", "TEST DEBUG %2$s %1$d %3$.2f");
+        stdErr.put("FOO", "$$$TEST DEBUG %2$s %1$d %3$.2f");
         try {
             Log.initLogging(stdErr);
 
-            SingleLineLogger logger = new SingleLineLogger("TEST DEBUG");
+            SingleLineLogger logger = new SingleLineLogger("$$$TEST DEBUG");
             Database.log.setCustom(logger);
 
             Log.d(LogDomain.DATABASE, "FOO", new Exception("whoops"), 1, "arg", 3.0F);
             String msg = logger.message;
             assertNotNull(msg);
             assertTrue(msg.startsWith(
-                Log.LOG_HEADER + "TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
+                Log.LOG_HEADER + "$$$TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
         }
         finally {
             reloadStandardErrorMessages();
@@ -564,10 +553,10 @@ public class LogTest extends BaseDbTest {
     @Test
     public void testLookupStandardMessage() {
         Map<String, String> stdErr = new HashMap<>();
-        stdErr.put("FOO", "TEST DEBUG");
+        stdErr.put("FOO", "$$$TEST DEBUG");
         try {
             Log.initLogging(stdErr);
-            assertEquals("TEST DEBUG", Log.lookupStandardMessage("FOO"));
+            assertEquals("$$$TEST DEBUG", Log.lookupStandardMessage("FOO"));
         }
         finally {
             reloadStandardErrorMessages();
@@ -577,10 +566,10 @@ public class LogTest extends BaseDbTest {
     @Test
     public void testFormatStandardMessage() {
         Map<String, String> stdErr = new HashMap<>();
-        stdErr.put("FOO", "TEST DEBUG %2$s %1$d %3$.2f");
+        stdErr.put("FOO", "$$$TEST DEBUG %2$s %1$d %3$.2f");
         try {
             Log.initLogging(stdErr);
-            assertEquals("TEST DEBUG arg 1 3.00", Log.formatStandardMessage("FOO", 1, "arg", 3.0F));
+            assertEquals("$$$TEST DEBUG arg 1 3.00", Log.formatStandardMessage("FOO", 1, "arg", 3.0F));
         }
         finally {
             reloadStandardErrorMessages();
@@ -591,7 +580,7 @@ public class LogTest extends BaseDbTest {
     @Test
     public void testStandardCBLException() {
         Map<String, String> stdErr = new HashMap<>();
-        stdErr.put("FOO", "TEST DEBUG");
+        stdErr.put("FOO", "$$$TEST DEBUG");
         try {
             Log.initLogging(stdErr);
             CouchbaseLiteException e = new CouchbaseLiteException(
@@ -600,7 +589,7 @@ public class LogTest extends BaseDbTest {
                 CBLError.Code.UNIMPLEMENTED);
             String msg = e.getMessage();
             assertNotNull(msg);
-            assertTrue(msg.startsWith("TEST DEBUG"));
+            assertTrue(msg.startsWith("$$$TEST DEBUG"));
         }
         finally {
             reloadStandardErrorMessages();
@@ -610,7 +599,7 @@ public class LogTest extends BaseDbTest {
     @Test
     public void testNonStandardCBLException() {
         Map<String, String> stdErr = new HashMap<>();
-        stdErr.put("FOO", "TEST DEBUG");
+        stdErr.put("FOO", "$$$TEST DEBUG");
         try {
             Log.initLogging(stdErr);
             CouchbaseLiteException e = new CouchbaseLiteException(

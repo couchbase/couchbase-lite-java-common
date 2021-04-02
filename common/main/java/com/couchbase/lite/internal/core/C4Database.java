@@ -85,7 +85,6 @@ public abstract class C4Database extends C4NativePeer {
         m.put(MaintenanceType.INTEGRITY_CHECK, 2);
         MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
     }
-
     public static void copyDb(
         @NonNull String sourcePath,
         @NonNull String parentDir,
@@ -312,12 +311,12 @@ public abstract class C4Database extends C4NativePeer {
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        C4Query.createIndex(getPeer(), name, expressionsJSON, indexType, language, ignoreDiacritics);
+        C4Query.createIndex(this, name, expressionsJSON, indexType, language, ignoreDiacritics);
     }
 
-    public void deleteIndex(String name) throws LiteCoreException { C4Query.deleteIndex(getPeer(), name); }
+    public void deleteIndex(String name) throws LiteCoreException { C4Query.deleteIndex(this, name); }
 
-    public FLValue getIndexesInfo() throws LiteCoreException { return new FLValue(C4Query.getIndexesInfo(getPeer())); }
+    public FLValue getIndexes() throws LiteCoreException { return C4Query.getIndexes(this); }
 
     public boolean performMaintenance(MaintenanceType type) throws LiteCoreException {
         return maintenance(

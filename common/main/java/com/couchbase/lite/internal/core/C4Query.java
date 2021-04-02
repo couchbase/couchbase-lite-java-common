@@ -23,9 +23,30 @@ import android.support.annotation.VisibleForTesting;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.FLValue;
 
 
 public class C4Query extends C4NativePeer {
+    // who knows why this stuff is here...
+    public static void createIndex(
+        C4Database db,
+        String name,
+        String expressionsJSON,
+        int indexType,
+        String language,
+        boolean ignoreDiacritics)
+        throws LiteCoreException {
+        createIndex(db.getPeer(), name, expressionsJSON, indexType, language, ignoreDiacritics);
+    }
+
+    public static FLValue getIndexes(C4Database db) throws LiteCoreException {
+        return new FLValue(getIndexes(db.getPeer()));
+    }
+
+    public static void deleteIndex(C4Database db, String name) throws LiteCoreException {
+        deleteIndex(db.getPeer(), name);
+    }
+
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -110,17 +131,18 @@ public class C4Query extends C4NativePeer {
     // Native methods
     //-------------------------------------------------------------------------
 
+
     //////// DATABASE QUERIES:
 
     /**
      * Gets a fleece encoded array of indexes in the given database
      * that were created by `c4db_createIndex`
      */
-    static native long getIndexesInfo(long db) throws LiteCoreException;
+    private static native long getIndexes(long db) throws LiteCoreException;
 
-    static native void deleteIndex(long db, String name) throws LiteCoreException;
+    private static native void deleteIndex(long db, String name) throws LiteCoreException;
 
-    static native boolean createIndex(
+    private static native boolean createIndex(
         long db,
         String name,
         String expressionsJSON,

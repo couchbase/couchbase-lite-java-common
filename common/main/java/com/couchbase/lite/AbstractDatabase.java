@@ -99,7 +99,6 @@ abstract class AbstractDatabase {
     private static final int DB_CLOSE_MAX_RETRIES = 5; // random choice: wait for 5 replicators
     private static final int EXECUTOR_CLOSE_MAX_WAIT_SECS = 5;
 
-    private static final String INDEX_KEY_NAME = "name";
 
     // A random but absurdly large number.
     private static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
@@ -692,22 +691,11 @@ abstract class AbstractDatabase {
         shutdown(C4Database::deleteDb);
     }
 
-    @NonNull
-    public List<String> getIndexNames() throws CouchbaseLiteException {
-        final List<Map<String, Object>> indexesInfo = getIndexesInfo();
-        final List<String> indexNames = new ArrayList<>(indexesInfo.size());
-        for (Map<String, Object> idxInfo: indexesInfo) {
-            final Object idxName = idxInfo.get(INDEX_KEY_NAME);
-            indexNames.add((idxName instanceof String) ? (String) idxName : "unknown");
-        }
-        return indexNames;
-    }
-
     @SuppressWarnings("unchecked")
     @NonNull
-    public List<Map<String, Object>> getIndexesInfo() throws CouchbaseLiteException {
+    public List<String> getIndexes() throws CouchbaseLiteException {
         synchronized (getLock()) {
-            try { return (List<Map<String, Object>>) getC4DatabaseLocked().getIndexesInfo().asObject(); }
+            try { return (List<String>) getC4DatabaseLocked().getIndexes().asObject(); }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }

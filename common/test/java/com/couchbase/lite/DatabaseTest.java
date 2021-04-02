@@ -957,23 +957,23 @@ public class DatabaseTest extends BaseDbTest {
 
     @Test
     public void testCreateIndex() throws CouchbaseLiteException {
-        assertEquals(0, baseTestDb.getIndexNames().size());
+        assertEquals(0, baseTestDb.getIndexes().size());
 
         baseTestDb.createIndex(
             "index1",
             IndexBuilder.valueIndex(
                 ValueIndexItem.property("firstName"),
                 ValueIndexItem.property("lastName")));
-        assertEquals(1, baseTestDb.getIndexNames().size());
+        assertEquals(1, baseTestDb.getIndexes().size());
 
         // Create FTS index:
         baseTestDb.createIndex("index2", IndexBuilder.fullTextIndex(FullTextIndexItem.property("detail")));
-        assertEquals(2, baseTestDb.getIndexNames().size());
+        assertEquals(2, baseTestDb.getIndexes().size());
 
         baseTestDb.createIndex(
             "index3",
             IndexBuilder.fullTextIndex(FullTextIndexItem.property("es-detail")).ignoreAccents(true).setLanguage("es"));
-        assertEquals(3, baseTestDb.getIndexNames().size());
+        assertEquals(3, baseTestDb.getIndexes().size());
 
         // Create value index with expression() instead of property()
         baseTestDb.createIndex(
@@ -981,9 +981,9 @@ public class DatabaseTest extends BaseDbTest {
             IndexBuilder.valueIndex(
                 ValueIndexItem.expression(Expression.property("firstName")),
                 ValueIndexItem.expression(Expression.property("lastName"))));
-        assertEquals(4, baseTestDb.getIndexNames().size());
+        assertEquals(4, baseTestDb.getIndexes().size());
 
-        assertEquals(Arrays.asList("index1", "index2", "index3", "index4"), baseTestDb.getIndexNames());
+        assertEquals(Arrays.asList("index1", "index2", "index3", "index4"), baseTestDb.getIndexes());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -1002,8 +1002,8 @@ public class DatabaseTest extends BaseDbTest {
         // Call create index again:
         baseTestDb.createIndex("myindex", index);
 
-        assertEquals(1, baseTestDb.getIndexNames().size());
-        assertEquals(Arrays.asList("myindex"), baseTestDb.getIndexNames());
+        assertEquals(1, baseTestDb.getIndexes().size());
+        assertEquals(Arrays.asList("myindex"), baseTestDb.getIndexes());
     }
 
     @Test
@@ -1021,16 +1021,16 @@ public class DatabaseTest extends BaseDbTest {
         baseTestDb.createIndex("myindex", lNameindex);
 
         // Check:
-        assertEquals(1, baseTestDb.getIndexNames().size());
-        assertEquals(Arrays.asList("myindex"), baseTestDb.getIndexNames());
+        assertEquals(1, baseTestDb.getIndexes().size());
+        assertEquals(Arrays.asList("myindex"), baseTestDb.getIndexes());
 
         // Create FTS index:
         Index detailIndex = IndexBuilder.fullTextIndex(detailItem);
         baseTestDb.createIndex("myindex", detailIndex);
 
         // Check:
-        assertEquals(1, baseTestDb.getIndexNames().size());
-        assertEquals(Arrays.asList("myindex"), baseTestDb.getIndexNames());
+        assertEquals(1, baseTestDb.getIndexes().size());
+        assertEquals(Arrays.asList("myindex"), baseTestDb.getIndexes());
     }
 
     @Test
@@ -1040,20 +1040,20 @@ public class DatabaseTest extends BaseDbTest {
         // Delete indexes:
 
         baseTestDb.deleteIndex("index4");
-        assertEquals(3, baseTestDb.getIndexNames().size());
-        assertEquals(Arrays.asList("index1", "index2", "index3"), baseTestDb.getIndexNames());
+        assertEquals(3, baseTestDb.getIndexes().size());
+        assertEquals(Arrays.asList("index1", "index2", "index3"), baseTestDb.getIndexes());
 
         baseTestDb.deleteIndex("index1");
-        assertEquals(2, baseTestDb.getIndexNames().size());
-        assertEquals(Arrays.asList("index2", "index3"), baseTestDb.getIndexNames());
+        assertEquals(2, baseTestDb.getIndexes().size());
+        assertEquals(Arrays.asList("index2", "index3"), baseTestDb.getIndexes());
 
         baseTestDb.deleteIndex("index2");
-        assertEquals(1, baseTestDb.getIndexNames().size());
-        assertEquals(Arrays.asList("index3"), baseTestDb.getIndexNames());
+        assertEquals(1, baseTestDb.getIndexes().size());
+        assertEquals(Arrays.asList("index3"), baseTestDb.getIndexes());
 
         baseTestDb.deleteIndex("index3");
-        assertEquals(0, baseTestDb.getIndexNames().size());
-        assertTrue(baseTestDb.getIndexNames().isEmpty());
+        assertEquals(0, baseTestDb.getIndexes().size());
+        assertTrue(baseTestDb.getIndexes().isEmpty());
 
         // Delete non existing index:
         baseTestDb.deleteIndex("dummy");
