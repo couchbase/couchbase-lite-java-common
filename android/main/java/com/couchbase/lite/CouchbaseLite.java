@@ -27,6 +27,9 @@ public final class CouchbaseLite {
     // Singleton
     private CouchbaseLite() {}
 
+    private static final Loggers LOGGERS = new Loggers();
+
+
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      */
@@ -52,4 +55,11 @@ public final class CouchbaseLite {
     public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDbDir, @NonNull File scratchDir) {
         CouchbaseLiteInternal.init(new MValueDelegate(), debug, rootDbDir, scratchDir, ctxt);
     }
+
+    /**
+     * Get the system loggers.
+     *
+     * @return the system loggers.
+     */
+    public static Loggers getLoggers() { return LOGGERS; }
 }

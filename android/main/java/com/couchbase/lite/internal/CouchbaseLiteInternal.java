@@ -97,11 +97,11 @@ public final class CouchbaseLiteInternal {
 
         C4Base.debug(debug);
 
+        Log.initLogging(loadErrorMessages(ctxt));
+
         setC4TmpDirPath(scratchDir);
 
         MValue.registerDelegate(mValueDelegate);
-
-        Log.initLogging(loadErrorMessages(ctxt));
     }
 
     public static boolean isDebugging() { return debugging; }

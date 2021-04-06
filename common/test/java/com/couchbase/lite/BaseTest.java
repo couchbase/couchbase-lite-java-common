@@ -35,8 +35,8 @@ import org.junit.runner.Description;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Database;
+import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
@@ -78,13 +78,13 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @Before
     public final void setUpBaseTest() {
-        Report.log(LogLevel.INFO, ">>>>>>>> Test started: " + testName);
-        Log.initLogging();
+        C4Log.initLogging();
 
         setupPlatform();
 
         testSerialExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
+        Report.log(LogLevel.INFO, ">>>>>>>> Test started: " + testName);
         startTime = System.currentTimeMillis();
     }
 

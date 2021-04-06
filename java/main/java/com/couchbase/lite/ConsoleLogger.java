@@ -21,6 +21,7 @@ import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.EnumSet;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
@@ -28,13 +29,20 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 /**
  * A class for sending log messages to standard output stream.
  */
-public class ConsoleLogger extends AbstractConsoleLogger {
+public class ConsoleLogger extends BaseLogger {
     private static final String LOG_TAG = "/CouchbaseLite/";
     private static final int THREAD_FIELD_LEN = 7;
     private static final String THREAD_FIELD_PAD = String.join("", Collections.nCopies(THREAD_FIELD_LEN, " "));
     private static final ThreadLocal<DateTimeFormatter> TS_FORMAT
         = ThreadLocal.withInitial(() -> DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS"));
 
+    public ConsoleLogger(@NonNull LogLevel level) { this(level, LogDomain.ALL_DOMAINS); }
+
+    public ConsoleLogger(@NonNull LogLevel level, @NonNull LogDomain first, @NonNull LogDomain... rest) {
+        super(level, first, rest);
+    }
+
+    public ConsoleLogger(@NonNull LogLevel level, @NonNull EnumSet<LogDomain> domains) { super(level, domains); }
 
     public static PrintStream getLogStream(@NonNull LogLevel level) {
         return ((CouchbaseLiteInternal.isDebugging()) || (LogLevel.WARNING.compareTo(level) > 0))
@@ -51,7 +59,7 @@ public class ConsoleLogger extends AbstractConsoleLogger {
     }
 
     @Override
-    public void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+    public void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         getLogStream(level).println(formatLog(level, domain.name(), message));
     }
 }

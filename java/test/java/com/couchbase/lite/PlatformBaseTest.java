@@ -15,8 +15,6 @@
 //
 package com.couchbase.lite;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +22,6 @@ import java.util.Map;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -42,6 +39,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
     private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
+
     static {
         final Map<String, Fn.Provider<Boolean>> m = new HashMap<>();
         m.put("windows", () -> {
@@ -51,37 +49,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    private static LogFileConfiguration logConfig;
-
     static { CouchbaseLite.init(true); }
 
 
-    // set up the file logger...
     @Override
-    public void setupPlatform() {
-        if (logConfig == null) {
-            final String logDirPath;
-            try {
-                logDirPath = FileUtils.verifyDir(new File(new File("").getCanonicalFile(), LOG_DIR))
-                    .getCanonicalPath();
-            }
-            catch (IOException e) { throw new IllegalStateException("Could not find log directory", e); }
-
-            logConfig = new LogFileConfiguration(logDirPath)
-                .setUsePlaintext(true)
-                .setMaxSize(MAX_LOG_FILE_BYTES)
-                .setMaxRotateCount(MAX_LOG_FILES);
-        }
-
-        final com.couchbase.lite.Log logger = Database.log;
-        final FileLogger fileLogger = logger.getFile();
-        if (!logConfig.equals(fileLogger.getConfig())) { fileLogger.setConfig(logConfig); }
-        fileLogger.setLevel(LogLevel.DEBUG);
-
-        final ConsoleLogger consoleLogger = logger.getConsole();
-        consoleLogger.setLevel(LogLevel.DEBUG);
-        consoleLogger.setDomains(LogDomain.ALL_DOMAINS);
-    }
+    public void setupPlatform() { }
 
     @Override
     public void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }

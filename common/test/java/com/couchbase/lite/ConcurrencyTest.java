@@ -57,7 +57,6 @@ public class ConcurrencyTest extends BaseDbTest {
     @Test
     @ConcurrencyUnitTest
     public void testConcurrentCreate() throws CouchbaseLiteException {
-        Database.log.getConsole().setLevel(LogLevel.DEBUG);
         final int kNDocs = 50;
         final int kNThreads = 4;
         final int kWaitInSec = 180;

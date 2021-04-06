@@ -73,16 +73,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
 @SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
 abstract class AbstractDatabase extends BaseDatabase {
 
-    /**
-     * Gets the logging controller for the Couchbase Lite library to configure the
-     * logging settings and add custom logging.
-     * <p>
-     */
-    // Public API.  Do not fix the name.
-    @SuppressWarnings({"ConstantName", "PMD.FieldNamingConventions"})
-    @NonNull
-    public static final com.couchbase.lite.Log log = new com.couchbase.lite.Log();
-
     //---------------------------------------------
     // Constants
     //---------------------------------------------

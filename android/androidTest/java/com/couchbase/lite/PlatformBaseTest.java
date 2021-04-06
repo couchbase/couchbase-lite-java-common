@@ -44,12 +44,10 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext(), true); }
+
+
     @Override
-    public void setupPlatform() {
-        final ConsoleLogger console = Database.log.getConsole();
-        console.setLevel(LogLevel.DEBUG);
-        console.setDomains(LogDomain.ALL_DOMAINS);
-    }
+    public void setupPlatform() { }
 
     @Override
     public void reloadStandardErrorMessages() {

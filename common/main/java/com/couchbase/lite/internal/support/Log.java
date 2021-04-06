@@ -17,28 +17,24 @@ package com.couchbase.lite.internal.support;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.FormatterClosedException;
-import java.util.HashMap;
 import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.couchbase.lite.ConsoleLogger;
-import com.couchbase.lite.Database;
+import com.couchbase.lite.CouchbaseLite;
+import com.couchbase.lite.CustomLogger;
 import com.couchbase.lite.FileLogger;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.Logger;
-import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.Loggers;
 import com.couchbase.lite.internal.core.C4Log;
-import com.couchbase.lite.internal.core.CBLVersion;
 
 
 /**
@@ -57,55 +53,6 @@ public final class Log {
 
     public static final String LOG_HEADER = "[JAVA] ";
 
-    private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
-    static {
-        final Map<String, LogDomain> m = new HashMap<>();
-        m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.SQL, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.ZIP, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.WEB_SOCKET, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.BLIP, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.TLS, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.SYNC, LogDomain.REPLICATOR);
-        m.put(C4Constants.LogDomain.SYNC_BUSY, LogDomain.REPLICATOR);
-        m.put(C4Constants.LogDomain.QUERY, LogDomain.QUERY);
-        m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
-        LOGGING_DOMAINS_FROM_C4 = Collections.unmodifiableMap(m);
-    }
-
-    private static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
-    static {
-        final Map<LogDomain, String> m = new HashMap<>();
-        m.put(LogDomain.DATABASE, C4Constants.LogDomain.DATABASE);
-        m.put(LogDomain.NETWORK, C4Constants.LogDomain.WEB_SOCKET);
-        m.put(LogDomain.REPLICATOR, C4Constants.LogDomain.SYNC);
-        m.put(LogDomain.QUERY, C4Constants.LogDomain.QUERY);
-        m.put(LogDomain.LISTENER, C4Constants.LogDomain.LISTENER);
-        LOGGING_DOMAINS_TO_C4 = Collections.unmodifiableMap(m);
-    }
-
-    private static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
-    static {
-        final Map<Integer, LogLevel> m = new HashMap<>();
-        m.put(C4Constants.LogLevel.DEBUG, LogLevel.DEBUG);
-        m.put(C4Constants.LogLevel.VERBOSE, LogLevel.VERBOSE);
-        m.put(C4Constants.LogLevel.INFO, LogLevel.INFO);
-        m.put(C4Constants.LogLevel.WARNING, LogLevel.WARNING);
-        m.put(C4Constants.LogLevel.ERROR, LogLevel.ERROR);
-        LOG_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
-    }
-
-    private static final Map<LogLevel, Integer> LOG_LEVEL_TO_C4;
-    static {
-        final Map<LogLevel, Integer> m = new HashMap<>();
-        m.put(LogLevel.DEBUG, C4Constants.LogLevel.DEBUG);
-        m.put(LogLevel.VERBOSE, C4Constants.LogLevel.VERBOSE);
-        m.put(LogLevel.INFO, C4Constants.LogLevel.INFO);
-        m.put(LogLevel.WARNING, C4Constants.LogLevel.WARNING);
-        m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
-        LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
-    }
-
     private static final AtomicBoolean WARNED = new AtomicBoolean(false);
 
     private static final String DEFAULT_MSG = "Unknown error";
@@ -114,22 +61,16 @@ public final class Log {
 
     /**
      * Setup logging.
+     * Note: assuming that we own the map now.
      */
     public static void initLogging(@NonNull Map<String, String> errorMessages) {
-        initLogging();
         Log.errorMessages = Collections.unmodifiableMap(errorMessages);
 
-        // Init the console logger.  The FileLogger will take care of itself.
-        final ConsoleLogger logger = Database.log.getConsole();
-        logger.setLevel(LogLevel.INFO);
-        Log.i(LogDomain.DATABASE, "CBL-ANDROID Initialized: " + CBLVersion.getVersionInfo());
-        logger.setLevel(LogLevel.WARNING);
-    }
+        C4Log.initLogging();
 
-    @VisibleForTesting
-    public static void initLogging() {
-        C4Log.forceCallbackLevel(Database.log.getConsole().getLevel());
-        setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
+        final ConsoleLogger console = new ConsoleLogger(LogLevel.WARNING);
+        final Loggers loggers = CouchbaseLite.getLoggers();
+        loggers.setConsoleLogger(console);
     }
 
     /**
@@ -360,29 +301,6 @@ public final class Log {
         return String.format(Locale.ENGLISH, lookupStandardMessage(msg), args);
     }
 
-    @NonNull
-    public static LogLevel getLogLevelForC4Level(int c4Level) {
-        final LogLevel level = LOG_LEVEL_FROM_C4.get(c4Level);
-        return (level != null) ? level : LogLevel.INFO;
-    }
-
-    public static int getC4LevelForLogLevel(@NonNull LogLevel logLevel) {
-        final Integer c4level = LOG_LEVEL_TO_C4.get(logLevel);
-        return (c4level != null) ? c4level : C4Constants.LogLevel.INFO;
-    }
-
-    @NonNull
-    public static String getC4DomainForLoggingDomain(@NonNull LogDomain domain) {
-        final String c4Domain = LOGGING_DOMAINS_TO_C4.get(domain);
-        return (c4Domain != null) ? c4Domain : C4Constants.LogDomain.DATABASE;
-    }
-
-    @NonNull
-    public static LogDomain getLoggingDomainForC4Domain(@NonNull String c4Domain) {
-        final LogDomain domain = LOGGING_DOMAINS_FROM_C4.get(c4Domain);
-        return (domain != null) ? domain : LogDomain.DATABASE;
-    }
-
     public static void warn() {
         if (WARNED.getAndSet(true)) { return; }
         Log.w(
@@ -391,39 +309,22 @@ public final class Log {
                 + "Log files required for product support are not being generated.");
     }
 
-    private static void setC4LogLevel(@NonNull EnumSet<LogDomain> domains, @NonNull LogLevel level) {
-        final int c4Level = getC4LevelForLogLevel(level);
-        for (LogDomain domain: domains) {
-            switch (domain) {
-                case DATABASE:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.DATABASE);
-                    break;
+    public static void sendToLocalLoggers(
+        @NonNull LogDomain domain,
+        @NonNull LogLevel level,
+        @NonNull String msg) {
+        final Loggers loggers = CouchbaseLite.getLoggers();
 
-                case LISTENER:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.LISTENER);
-                    break;
-
-                case QUERY:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY, C4Constants.LogDomain.SQL);
-                    break;
-
-                case REPLICATOR:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.SYNC, C4Constants.LogDomain.SYNC_BUSY);
-                    break;
-
-                case NETWORK:
-                    C4Log.setLevels(
-                        c4Level,
-                        C4Constants.LogDomain.BLIP,
-                        C4Constants.LogDomain.WEB_SOCKET,
-                        C4Constants.LogDomain.TLS);
-                    break;
-
-                default:
-                    Log.i(LogDomain.DATABASE, "Unexpected log domain: " + domain);
-                    break;
-            }
+        // Custom logging:
+        final CustomLogger custom = loggers.getCustomLogger();
+        if (custom != null) {
+            try { custom.log(level, domain, msg); }
+            catch (RuntimeException ignore) { }
         }
+
+        // Console logging:
+        final ConsoleLogger consoleLogger = loggers.getConsoleLogger();
+        if (consoleLogger != null) { consoleLogger.log(level, domain, msg); }
     }
 
     private static void log(
@@ -455,29 +356,24 @@ public final class Log {
     }
 
     private static void sendToLoggers(LogLevel level, LogDomain domain, String msg) {
-        final com.couchbase.lite.Log logger = Database.log;
+        RuntimeException consoleErr = null;
+        try { sendToLocalLoggers(domain, level, msg); }
+        catch (RuntimeException e) { consoleErr = e; }
 
-        // Console logging:
-        final ConsoleLogger consoleLogger = logger.getConsole();
-        Exception consoleErr = null;
-        try { consoleLogger.log(level, domain, msg); }
-        catch (Exception e) { consoleErr = e; }
+        final Loggers loggers = CouchbaseLite.getLoggers();
+        final FileLogger fileLogger = loggers.getFileLogger();
+        if (fileLogger == null) { return; }
 
-        // File logging:
-        final FileLogger fileLogger = logger.getFile();
         try {
             fileLogger.log(level, domain, msg);
-            if (consoleErr != null) { consoleLogger.log(LogLevel.ERROR, LogDomain.DATABASE, consoleErr.toString()); }
+            if (consoleErr != null) { fileLogger.log(LogLevel.ERROR, LogDomain.DATABASE, consoleErr.toString()); }
         }
-        catch (Exception e) {
-            if (consoleErr == null) { fileLogger.log(LogLevel.ERROR, LogDomain.DATABASE, e.toString()); }
-        }
-
-        // Custom logging:
-        final Logger custom = logger.getCustom();
-        if (custom != null) {
-            try { custom.log(level, domain, msg); }
-            catch (Exception ignore) { }
+        catch (RuntimeException e) {
+            final ConsoleLogger consoleLogger = loggers.getConsoleLogger();
+            if ((consoleLogger != null) && (consoleErr == null)) {
+                consoleLogger.log(LogLevel.ERROR, LogDomain.DATABASE, e.toString());
+            }
         }
     }
 }
+

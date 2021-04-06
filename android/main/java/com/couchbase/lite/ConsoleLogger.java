@@ -18,13 +18,23 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import java.util.EnumSet;
+
 
 /**
  * A class that sends log messages to Android's system log, available via 'logcat'.
  */
-public final class ConsoleLogger extends AbstractConsoleLogger {
+public final class ConsoleLogger extends BaseLogger {
+    public ConsoleLogger(@NonNull LogLevel level) { super(level); }
+
+    public ConsoleLogger(@NonNull LogLevel level, @NonNull LogDomain first, @NonNull LogDomain... rest) {
+        super(level, first, rest);
+    }
+
+    public ConsoleLogger(@NonNull LogLevel level, @NonNull EnumSet<LogDomain> domains) { super(level, domains); }
+
     @Override
-    protected void doLog(LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+    public void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         final String tag = "CouchbaseLite/" + domain.toString();
         switch (level) {
             case DEBUG:

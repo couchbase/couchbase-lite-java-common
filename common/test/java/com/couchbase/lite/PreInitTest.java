@@ -38,10 +38,13 @@ public class PreInitTest extends BaseTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testGetConsoleBeforeInit() { new Log().getConsole(); }
+    public void testSetFileLoggerBeforeInit() { CouchbaseLite.getLoggers().setFileLogger(null); }
 
     @Test(expected = IllegalStateException.class)
-    public void testGetFileBeforeInit() { new Log().getFile(); }
+    public void testSetConsoleLoggerBeforeInit() { CouchbaseLite.getLoggers().setConsoleLogger(null); }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSetCustomLoggerBeforeInit() { CouchbaseLite.getLoggers().setCustomLogger(null); }
 
     @Test(expected = IllegalStateException.class)
     public void testCreateDBConfigBeforeInit() { new DatabaseConfiguration(); }

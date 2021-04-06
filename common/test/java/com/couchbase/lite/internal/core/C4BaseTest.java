@@ -31,6 +31,8 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.couchbase.lite.BaseTest;
+import com.couchbase.lite.ConsoleLogger;
+import com.couchbase.lite.CouchbaseLite;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
