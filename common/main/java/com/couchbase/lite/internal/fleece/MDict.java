@@ -201,7 +201,7 @@ public class MDict extends MCollection implements Iterable<String> {
     //---------------------------------------------
 
     @Override
-    protected void initInSlot(@NonNull MValue mv, @Nullable MCollection parent, boolean isMutable) {
+    protected final void initInSlot(@NonNull MValue mv, @Nullable MCollection parent, boolean isMutable) {
         super.initInSlot(mv, parent, isMutable);
         if (flDict != null) { throw new IllegalStateException("flDict is not null"); }
 

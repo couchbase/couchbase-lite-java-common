@@ -64,7 +64,7 @@ public class JavaExecutionService extends AbstractExecutionService {
     //---------------------------------------------
     // Types
     //---------------------------------------------
-    private static class CancellableTask implements Cancellable {
+    private static final class CancellableTask implements Cancellable {
         private final Future future;
 
         private CancellableTask(@NonNull Future future) {

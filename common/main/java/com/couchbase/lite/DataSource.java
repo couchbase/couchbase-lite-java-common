@@ -35,7 +35,7 @@ public class DataSource {
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
-        private As(Database source) { super(source); }
+        As(Database source) { super(source); }
 
         //---------------------------------------------
         // API - public methods

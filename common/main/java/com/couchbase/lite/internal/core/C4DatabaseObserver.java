@@ -78,7 +78,7 @@ public class C4DatabaseObserver extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    private C4DatabaseObserver(long db, C4DatabaseObserverListener listener, Object context) {
+    C4DatabaseObserver(long db, C4DatabaseObserverListener listener, Object context) {
         super(create(db));
         this.listener = listener;
         this.context = context;

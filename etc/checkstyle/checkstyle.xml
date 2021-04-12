@@ -73,6 +73,32 @@
     <module name="TreeWalker">
         <module name="SuppressWarningsHolder" />
 
+        <module name="com.github.sevntu.checkstyle.checks.coding.FinalizeImplementationCheck"/>
+
+        <module name="com.github.sevntu.checkstyle.checks.coding.OverridableMethodInConstructorCheck"/>
+
+        <!-- No empty statements -->
+        <module name="EmptyStatement"/>
+
+        <!-- Check that Utility classes don't have constructors -->
+        <module name="HideUtilityClassConstructor"/>
+
+        <!-- Private constructors == final -->
+        <module name="FinalClass"/>
+
+        <!-- Constants on the left of the .equals -->
+        <module name="EqualsAvoidNull"/>
+
+        <!-- Check for no-arg super calls -->
+        <module name="AvoidNoArgumentSuperConstructorCall"/>
+
+        <!-- Force annotations to their own line -->
+        <module name="AnnotationLocation">
+            <property name="allowSamelineMultipleAnnotations" value="false"/>
+            <property name="allowSamelineSingleParameterlessAnnotation" value="false"/>
+            <property name="allowSamelineParameterizedAnnotation" value="false"/>
+        </module>
+
         <!-- Verifies that both Deprecated annotation is present and the @deprecated Javadoc tag is present when either is present -->
         <module name="MissingDeprecated"/>
 
@@ -117,6 +143,7 @@
         </module>
 
         <!-- Checks that a switch statement has a default clause
+             Explicitly disabled.
         <module name="MissingSwitchDefault"/>
          -->
 
@@ -139,7 +166,7 @@
         <module name="NoClone"/>
 
         <!-- Verifies that there are no finalize() methods defined in a class.
-        Disabled because there are a butload of finalizers in this codebase
+             There are a butload of finalizers in this codebase
         <module name="NoFinalizer"/>
         -->
 
@@ -178,7 +205,7 @@
         <module name="GenericWhitespace"/>
 
         <!-- Ensures fields declaration order
-        Disabled because it does not allow the separation of statics
+             Disabled because it does not allow the separation of statics
         <module name="DeclarationOrder" />
          -->
 

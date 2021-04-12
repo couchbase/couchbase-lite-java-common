@@ -37,7 +37,7 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     //---------------------------------------------
     // Types
     //---------------------------------------------
-    private static class CancellableTask implements Cancellable {
+    private static final class CancellableTask implements Cancellable {
         private final Handler handler;
         private final Runnable task;
 

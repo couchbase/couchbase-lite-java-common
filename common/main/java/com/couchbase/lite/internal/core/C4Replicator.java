@@ -336,7 +336,7 @@ public class C4Replicator extends C4NativePeer {
 
     // Remote
     @SuppressWarnings("PMD.ExcessiveParameterList")
-    private C4Replicator(
+    C4Replicator(
         long db,
         @Nullable String schema,
         @Nullable String host,

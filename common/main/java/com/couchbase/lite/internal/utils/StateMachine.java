@@ -33,7 +33,7 @@ import com.couchbase.lite.internal.support.Log;
  *
  * @param <T> states.
  */
-public class StateMachine<T extends Enum<T>> {
+public final class StateMachine<T extends Enum<T>> {
     private static final LogDomain TAG = LogDomain.DATABASE;
 
     public static class Builder<S extends Enum<S>> {
@@ -139,7 +139,7 @@ public class StateMachine<T extends Enum<T>> {
      * @param nextState the requested new state
      * @return the previous state, if the transition succeeds; null otherwise.
      */
-    public final boolean setState(@NonNull T nextState) {
+    public boolean setState(@NonNull T nextState) {
         final EnumSet<T> legalStates = transitions.get(state);
         if ((nextState == errorState) || ((legalStates != null) && (legalStates.contains(nextState)))) {
             Log.d(TAG, "StateMachine%s: transition %s => %s", this, state, nextState);

@@ -80,7 +80,7 @@ public class C4DocumentObserver extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    private C4DocumentObserver(long db, String docID, C4DocumentObserverListener listener, Object context) {
+    C4DocumentObserver(long db, String docID, C4DocumentObserverListener listener, Object context) {
         super(create(db, docID));
         this.listener = listener;
         this.context = context;

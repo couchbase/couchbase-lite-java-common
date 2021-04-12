@@ -33,7 +33,7 @@ public abstract class FLSliceResult extends C4NativePeer {
 
     // unmanaged: the native code will free it
     static final class UnmanagedFLSliceResult extends FLSliceResult {
-        UnmanagedFLSliceResult() { super(); }
+        UnmanagedFLSliceResult() { }
 
         UnmanagedFLSliceResult(long peer) { super(peer); }
 
@@ -43,7 +43,7 @@ public abstract class FLSliceResult extends C4NativePeer {
 
     // managed: Java code is responsible for freeing it
     static final class ManagedFLSliceResult extends FLSliceResult {
-        ManagedFLSliceResult() { super(); }
+        ManagedFLSliceResult() { }
 
         ManagedFLSliceResult(long peer) { super(peer); }
 
