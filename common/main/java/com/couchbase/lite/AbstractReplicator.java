@@ -315,9 +315,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     private final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
-    @GuardedBy("lock")
+    @GuardedBy("InternalReplicator.lock")
     private final Set<ReplicatorChangeListenerToken> changeListeners = new HashSet<>();
-    @GuardedBy("lock")
+    @GuardedBy("InternalReplicator.lock")
     private final Set<DocumentReplicationListenerToken> docEndedListeners = new HashSet<>();
 
     @NonNull
@@ -329,16 +329,16 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     private final SocketFactory socketFactory;
 
-    @GuardedBy("lock")
+    @GuardedBy("InternalReplicator.lock")
     @NonNull
     private Status status = new Status(ActivityLevel.STOPPED, new Progress(0, 0), null);
 
-    @GuardedBy("lock")
+    @GuardedBy("InternalReplicator.lock")
     private C4ReplicationFilter c4ReplPushFilter;
-    @GuardedBy("lock")
+    @GuardedBy("InternalReplicator.lock")
     private C4ReplicationFilter c4ReplPullFilter;
 
-    @GuardedBy("lock")
+    @GuardedBy("InternalReplicator.lock")
     private CouchbaseLiteException lastError;
 
     private volatile String desc;

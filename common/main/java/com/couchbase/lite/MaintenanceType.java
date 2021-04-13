@@ -26,5 +26,7 @@ public enum MaintenanceType {
     REINDEX,
 
     COMPACT,
-    INTEGRITY_CHECK
+    INTEGRITY_CHECK,
+    OPTIMIZE,
+    FULL_OPTIMIZE;
 }
