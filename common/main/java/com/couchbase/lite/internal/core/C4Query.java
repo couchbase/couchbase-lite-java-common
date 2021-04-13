@@ -39,8 +39,8 @@ public class C4Query extends C4NativePeer {
         createIndex(db.getPeer(), name, expressionsJSON, indexType, language, ignoreDiacritics);
     }
 
-    public static FLValue getIndexes(C4Database db) throws LiteCoreException {
-        return new FLValue(getIndexes(db.getPeer()));
+    public static FLValue getIndexInfo(C4Database db) throws LiteCoreException {
+        return new FLValue(getIndexInfo(db.getPeer()));
     }
 
     public static void deleteIndex(C4Database db, String name) throws LiteCoreException {
@@ -138,7 +138,7 @@ public class C4Query extends C4NativePeer {
      * Gets a fleece encoded array of indexes in the given database
      * that were created by `c4db_createIndex`
      */
-    private static native long getIndexes(long db) throws LiteCoreException;
+    private static native long getIndexInfo(long db) throws LiteCoreException;
 
     private static native void deleteIndex(long db, String name) throws LiteCoreException;
 

@@ -161,8 +161,8 @@ Java_com_couchbase_lite_internal_core_C4Query_createIndex(
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_getIndexes(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4SliceResult data = c4db_getIndexes((C4Database *) jdb, nullptr);
+Java_com_couchbase_lite_internal_core_C4Query_getIndexInfo(JNIEnv *env, jclass ignore, jlong jdb) {
+    C4SliceResult data = c4db_getIndexesInfo((C4Database *) jdb, nullptr);
     return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
 }
 

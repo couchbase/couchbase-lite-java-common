@@ -56,6 +56,7 @@ import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.SharedKeys;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
@@ -99,6 +100,7 @@ abstract class AbstractDatabase {
     private static final int DB_CLOSE_MAX_RETRIES = 5; // random choice: wait for 5 replicators
     private static final int EXECUTOR_CLOSE_MAX_WAIT_SECS = 5;
 
+    private static final String INDEX_KEY_NAME = "name";
 
     // A random but absurdly large number.
     private static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
@@ -691,13 +693,26 @@ abstract class AbstractDatabase {
         shutdown(C4Database::deleteDb);
     }
 
-    @SuppressWarnings("unchecked")
     @NonNull
     public List<String> getIndexes() throws CouchbaseLiteException {
+        final FLValue flIndexInfo;
         synchronized (getLock()) {
-            try { return (List<String>) getC4DatabaseLocked().getIndexes().asObject(); }
+            try { flIndexInfo = getC4DatabaseLocked().getIndexesInfo(); }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
+
+        final List<String> indexNames = new ArrayList<>();
+
+        final Object indexesInfo = flIndexInfo.asObject();
+        if (!(indexesInfo instanceof List<?>)) { return indexNames; }
+
+        for (Object idxInfo: (List<?>) indexesInfo) {
+            if (!(idxInfo instanceof Map<?, ?>)) { continue; }
+            final Object idxName = ((Map<?, ?>) idxInfo).get(INDEX_KEY_NAME);
+            if (idxName instanceof String) { indexNames.add((String) idxName); }
+        }
+
+        return indexNames;
     }
 
     public void createIndex(@NonNull String name, @NonNull Index idx) throws CouchbaseLiteException {
