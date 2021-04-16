@@ -174,6 +174,14 @@ public class C4Replicator extends C4NativePeer {
         long dict,
         boolean isPush,
         Object ctxt) {
+        Log.v(
+            LogDomain.REPLICATOR,
+            "Running %s filter for doc %s@%s, repl %s",
+            (isPush ? "push" : "pull"),
+            docID,
+            revID,
+            ctxt);
+
         if (!(ctxt instanceof AbstractReplicator)) {
             Log.w(LogDomain.DATABASE, "Validation function called with unrecognized context: " + ctxt);
             return true;

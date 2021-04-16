@@ -252,7 +252,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             @Nullable C4Replicator c4Repl,
             @Nullable C4ReplicatorStatus status,
             @Nullable Object repl) {
-            Log.v(DOMAIN, "C4ReplicatorListener.statusChanged, repl: %s, status: %s", repl, status);
+            Log.v(DOMAIN, "ReplicatorListener.statusChanged, repl: %s, status: %s", repl, status);
 
             final AbstractReplicator replicator = verifyReplicator(c4Repl, repl);
             if (replicator == null) { return; }
