@@ -307,25 +307,13 @@ abstract class AbstractQuery implements Query {
     @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.NPathComplexity", "PMD.AvoidDeeplyNestedIfStmts"})
     @NonNull
     private String marshalAsJSON() throws JSONException {
-        final JSONUtils.Marshaller json = new JSONUtils.Marshaller();
-
-        boolean first = true;
-        json.startObject();
+        final Map<String, Object> json = new HashMap<>();
 
         // DISTINCT:
-        if (select != null && select.isDistinct()) {
-            json.writeKey("DISTINCT");
-            json.writeBoolean(true);
-            first = false;
-        }
+        if (select != null && select.isDistinct()) { json.put("DISTINCT", "true"); }
 
         // result-columns / SELECT-RESULTS
-        if (select != null && select.hasSelectResults()) {
-            if (!first) { json.nextMember(); }
-            json.writeKey("WHAT");
-            json.writeValue(select.asJSON());
-            first = false;
-        }
+        if (select != null && select.hasSelectResults()) { json.put("WHAT", select.asJSON()); }
 
         final List<Object> froms = new ArrayList<>();
 
@@ -334,59 +322,26 @@ abstract class AbstractQuery implements Query {
 
         if (joins != null) { froms.addAll((List<?>) joins.asJSON()); }
 
-        if (!froms.isEmpty()) {
-            if (!first) { json.nextMember(); }
-            json.writeKey("FROM");
-            json.writeArray(froms);
-            first = false;
-        }
+        if (!froms.isEmpty()) { json.put("FROM", froms); }
 
-        if (where != null) {
-            if (!first) { json.nextMember(); }
-            json.writeKey("WHERE");
-            json.writeValue(where.asJSON());
-            first = false;
-        }
+        if (where != null) { json.put("WHERE", where.asJSON()); }
 
-        if (groupBy != null) {
-            if (!first) { json.nextMember(); }
-            json.writeKey("GROUP_BY");
-            json.writeValue(groupBy.asJSON());
-            first = false;
-        }
+        if (groupBy != null) { json.put("GROUP_BY", groupBy.asJSON()); }
 
         if (having != null) {
             final Object havingJson = having.asJSON();
-            if (havingJson != null) {
-                if (!first) { json.nextMember(); }
-                json.writeKey("HAVING");
-                json.writeValue(havingJson);
-                first = false;
-            }
+            if (havingJson != null) { json.put("HAVING", havingJson); }
         }
 
-        if (orderBy != null) {
-            if (!first) { json.nextMember(); }
-            json.writeKey("ORDER_BY");
-            json.writeArray((List<?>) orderBy.asJSON());
-            first = false;
-        }
+        if (orderBy != null) { json.put("ORDER_BY", orderBy.asJSON()); }
 
         if (limit != null) {
             final List<?> limits = (List<?>) limit.asJSON();
-            if (!first) { json.nextMember(); }
-            json.writeKey("LIMIT");
-            json.writeValue(limits.get(0));
-            if (limits.size() > 1) {
-                json.nextMember();
-                json.writeKey("OFFSET");
-                json.writeValue(limits.get(1));
-            }
+            json.put("LIMIT", limits.get(0));
+            if (limits.size() > 1) { json.put("OFFSET", limits.get(1)); }
         }
 
-        json.endObject();
-
-        return json.toString();
+        return JSONUtils.toJSON(json).toString();
     }
 
     private Object getDbLock() {

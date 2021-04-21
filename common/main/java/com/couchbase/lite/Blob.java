@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.json.JSONException;
 
 import com.couchbase.lite.internal.core.C4BlobKey;
 import com.couchbase.lite.internal.core.C4BlobReadStream;
@@ -371,7 +372,7 @@ public final class Blob implements FLEncodable {
 
         if (database != null) { return getContentFromDatabase(); }
 
-        if (blobDigest == null) { Log.w(LogDomain.DATABASE, "Blob with digest %s has no database", blobDigest); }
+        if (blobDigest == null) { Log.w(LogDomain.DATABASE, "Blob has no digest"); }
 
         return null;
     }
@@ -393,7 +394,7 @@ public final class Blob implements FLEncodable {
 
         if (database != null) { return getStreamFromDatabase(database); }
 
-        if (blobDigest == null) { Log.w(LogDomain.DATABASE, "Blob with digest %s has no database", blobDigest); }
+        if (blobDigest == null) { Log.w(LogDomain.DATABASE, "Blob has no digest"); }
 
         return null;
     }
@@ -412,30 +413,15 @@ public final class Blob implements FLEncodable {
             throw new IllegalStateException("A Blob may be encoded as JSON only after it has been saved in a database");
         }
 
-        return new JSONUtils.Marshaller()
-            .startObject()
+        final Map<String, Object> json = new HashMap<>();
 
-            .writeKey(META_PROP_TYPE)
-            .writeString(TYPE_BLOB)
-            .nextMember()
+        json.put(META_PROP_TYPE, TYPE_BLOB);
+        json.put(PROP_DIGEST, blobDigest);
+        json.put(PROP_LENGTH, blobLength);
+        json.put(PROP_CONTENT_TYPE, contentType);
 
-            .writeKey(PROP_DIGEST)
-            .writeString(blobDigest)
-            .nextMember()
-
-            .writeKey(PROP_LENGTH)
-            .writeNumber(blobLength)
-            .nextMember()
-
-            .writeKey(PROP_CONTENT_TYPE)
-            .writeString(contentType)
-            .nextMember()
-
-            .writeKey(PROP_DIGEST)
-            .writeString(blobDigest)
-
-            .endObject()
-            .toString();
+        try { return JSONUtils.toJSON(json).toString(); }
+        catch (JSONException e) { throw new IllegalStateException("Could not parse Blob JSON", e); }
     }
 
     /**
@@ -587,7 +573,7 @@ public final class Blob implements FLEncodable {
             return;
         }
 
-        database = (Database) db;
+        database = db;
 
         // blob was saved using Database.saveBlob();
         if (blobDigest != null) { return; }
