@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
+import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.BaseReplicator;
 import com.couchbase.lite.internal.core.C4Constants;
@@ -313,7 +314,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     // member variables
     //---------------------------------------------
     @NonNull
-    final ReplicatorConfiguration config;
+    private final ImmutableReplicatorConfiguration config;
 
     private final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
@@ -355,7 +356,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
      */
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
-        this.config = config.readonlyCopy();
+        this.config = new ImmutableReplicatorConfiguration(config);
         this.socketFactory = new SocketFactory(config, getCookieStore(), this::setServerCertificates);
         this.c4ReplListener = new ReplicatorListener(dispatcher);
     }
@@ -412,7 +413,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
      * @return this replicator's configuration
      */
     @NonNull
-    public ReplicatorConfiguration getConfig() { return config.readonlyCopy(); }
+    public ReplicatorConfiguration getConfig() { return new ReplicatorConfiguration(config); }
 
     /**
      * The replicator's current status: its activity level and progress. Observable.
@@ -856,7 +857,12 @@ public abstract class AbstractReplicator extends BaseReplicator {
     }
 
     private byte[] getFleeceOptions() {
-        final Map<String, Object> options = config.effectiveOptions();
+        final Map<String, Object> options = new HashMap<>();
+
+        final Authenticator authenticator = config.getAuthenticator();
+        if (authenticator != null) { authenticator.authenticate(options); }
+
+        config.addEffectiveOptions(options);
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {

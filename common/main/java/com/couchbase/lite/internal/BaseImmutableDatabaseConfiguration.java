@@ -17,14 +17,18 @@ package com.couchbase.lite.internal;
 
 import android.support.annotation.NonNull;
 
+import com.couchbase.lite.DatabaseConfiguration;
+
 
 @SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
 public abstract class BaseImmutableDatabaseConfiguration {
     @NonNull
     private final String dbDir;
 
-    protected BaseImmutableDatabaseConfiguration(@NonNull String dbDir) { this.dbDir = dbDir; }
+    protected BaseImmutableDatabaseConfiguration(@NonNull DatabaseConfiguration config) {
+        this.dbDir = config.getDirectory();
+    }
 
     @NonNull
-    public String getDirectory() { return dbDir; }
+    public final String getDirectory() { return dbDir; }
 }

@@ -34,6 +34,7 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+    protected AbstractDatabaseConfiguration() { this((String) null); }
 
     protected AbstractDatabaseConfiguration(@Nullable AbstractDatabaseConfiguration config) {
         this((config == null) ? null : config.getDirectory());
@@ -43,7 +44,7 @@ abstract class AbstractDatabaseConfiguration {
         this((config == null) ? null : config.getDirectory());
     }
 
-    private AbstractDatabaseConfiguration(@Nullable String dbDirectory) {
+    protected AbstractDatabaseConfiguration(@Nullable String dbDirectory) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
         this.dbDirectory = (dbDirectory != null) ? dbDirectory : getDefaultDbDirPath();
     }

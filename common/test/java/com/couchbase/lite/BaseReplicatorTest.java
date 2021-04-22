@@ -166,7 +166,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         baseTestReplicator = repl;
 
         TestReplicatorChangeListener listener
-            = new TestReplicatorChangeListener(repl.config.isContinuous(), expectedErrorDomain, expectedErrorCode);
+            = new TestReplicatorChangeListener(repl.getConfig().isContinuous(), expectedErrorDomain, expectedErrorCode);
 
         if (onReady != null) { onReady.accept(repl); }
 

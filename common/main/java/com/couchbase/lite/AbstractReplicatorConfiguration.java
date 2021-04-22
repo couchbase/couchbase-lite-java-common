@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.internal.Util;
 
-import com.couchbase.lite.internal.core.C4Replicator;
-import com.couchbase.lite.internal.core.CBLVersion;
+import com.couchbase.lite.internal.BaseImmutableReplicatorConfiguration;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -51,6 +51,8 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @Deprecated
     public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
+
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -76,46 +78,107 @@ public abstract class AbstractReplicatorConfiguration {
     private ReplicationFilter pullFilter;
     @Nullable
     private ConflictResolver conflictResolver;
-    private int maxRetries = -1;
-    private long maxRetryWaitTime = AbstractCBLWebSocket.DEFAULT_MAX_RETRY_WAIT_SEC;
-    private long heartbeat = AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC;
-
-    protected final Endpoint target;
-    protected final boolean readonly;
+    private int maxRetries;
+    private long maxRetryWaitTime;
+    private long heartbeat;
+    private final Endpoint target;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        this.database = Preconditions.assertNotNull(database, "database");
-        this.target = Preconditions.assertNotNull(target, "target");
-        this.readonly = false;
-        this.type = Replicator.Type.PUSH_AND_PULL;
+        this(
+            Preconditions.assertNotNull(database, "database"),
+            Replicator.Type.PUSH_AND_PULL,
+            false,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            -1,
+            AbstractCBLWebSocket.DEFAULT_MAX_RETRY_WAIT_SEC,
+            AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC,
+            Preconditions.assertNotNull(target, "target")
+        );
     }
 
-    protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config, boolean readonly) {
-        Preconditions.assertNotNull(config, "config");
-
-        this.readonly = readonly;
-        this.database = config.database;
-        this.target = config.target;
-        this.type = config.type;
-        this.continuous = config.continuous;
-        this.authenticator = config.authenticator;
-        this.pinnedServerCertificate = config.pinnedServerCertificate;
-        this.headers = config.headers;
-        this.channels = config.channels;
-        this.documentIDs = config.documentIDs;
-        this.pullFilter = config.pullFilter;
-        this.pushFilter = config.pushFilter;
-        this.conflictResolver = config.conflictResolver;
-        this.maxRetries = config.maxRetries;
-        this.maxRetryWaitTime = config.maxRetryWaitTime;
-        this.heartbeat = config.heartbeat;
+    protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
+        this(
+            Preconditions.assertNotNull(config, "config").database,
+            config.type,
+            config.continuous,
+            config.authenticator,
+            config.headers,
+            config.pinnedServerCertificate,
+            config.channels,
+            config.documentIDs,
+            config.pullFilter,
+            config.pushFilter,
+            config.conflictResolver,
+            config.maxRetries,
+            config.maxRetryWaitTime,
+            config.heartbeat,
+            config.target);
     }
 
-    //---------------------------------------------
+    protected AbstractReplicatorConfiguration(@NonNull BaseImmutableReplicatorConfiguration config) {
+        this(
+            Preconditions.assertNotNull(config, "config").getDatabase(),
+            config.getType(),
+            config.isContinuous(),
+            config.getAuthenticator(),
+            config.getHeaders(),
+            config.getPinnedServerCertificate(),
+            config.getChannels(),
+            config.getDocumentIDs(),
+            config.getPullFilter(),
+            config.getPushFilter(),
+            config.getConflictResolver(),
+            config.getMaxRetries(),
+            config.getMaxRetryWaitTime(),
+            config.getHeartbeat(),
+            config.getTarget());
+    }
+
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    protected AbstractReplicatorConfiguration(
+        @NonNull Database database,
+        @NonNull Replicator.Type type,
+        boolean continuous,
+        @Nullable Authenticator authenticator,
+        @Nullable Map<String, String> headers,
+        @Nullable byte[] pinnedServerCertificate,
+        @Nullable List<String> channels,
+        @Nullable List<String> documentIDs,
+        @Nullable ReplicationFilter pushFilter,
+        @Nullable ReplicationFilter pullFilter,
+        @Nullable ConflictResolver conflictResolver,
+        int maxRetries,
+        long maxRetryWaitTime, long heartbeat, Endpoint target) {
+        this.database = database;
+        this.type = type;
+        this.continuous = continuous;
+        this.authenticator = authenticator;
+        this.headers = headers;
+        this.channels = channels;
+        this.documentIDs = documentIDs;
+        this.pullFilter = pullFilter;
+        this.pushFilter = pushFilter;
+        this.conflictResolver = conflictResolver;
+        this.target = target;
+
+        setPinnedServerCertificateInternal(pinnedServerCertificate);
+        setMaxRetriesInternal(maxRetries);
+        setMaxRetryWaitTimeInternal(maxRetryWaitTime);
+        setHeartbeatInternal(heartbeat);
+    }
+
+//---------------------------------------------
     // Setters
     //---------------------------------------------
 
@@ -129,7 +192,6 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration setAuthenticator(@NonNull Authenticator authenticator) {
-        checkReadOnly();
         this.authenticator = Preconditions.assertNotNull(authenticator, "authenticator");
         return getReplicatorConfiguration();
     }
@@ -145,8 +207,7 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
-        checkReadOnly();
-        this.channels = channels;
+        this.channels = (channels == null) ? null : new ArrayList<>(channels);
         return getReplicatorConfiguration();
     }
 
@@ -158,7 +219,6 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @Nullable
     public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
-        checkReadOnly();
         this.conflictResolver = conflictResolver;
         return getReplicatorConfiguration();
     }
@@ -174,7 +234,6 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration setContinuous(boolean continuous) {
-        checkReadOnly();
         this.continuous = continuous;
         return getReplicatorConfiguration();
     }
@@ -188,8 +247,7 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
-        checkReadOnly();
-        this.documentIDs = documentIDs;
+        this.documentIDs = (documentIDs == null) ? null : new ArrayList<>(documentIDs);
         return getReplicatorConfiguration();
     }
 
@@ -200,9 +258,8 @@ public abstract class AbstractReplicatorConfiguration {
      * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setHeaders(@NonNull Map<String, String> headers) {
-        checkReadOnly();
-        this.headers = new HashMap<>(headers);
+    public final ReplicatorConfiguration setHeaders(@Nullable Map<String, String> headers) {
+        this.headers = (headers == null) ? null : new HashMap<>(headers);
         return getReplicatorConfiguration();
     }
 
@@ -214,14 +271,7 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
-        checkReadOnly();
-
-        if (pinnedCert == null) { pinnedServerCertificate = null; }
-        else {
-            pinnedServerCertificate = new byte[pinnedCert.length];
-            System.arraycopy(pinnedCert, 0, pinnedServerCertificate, 0, pinnedServerCertificate.length);
-        }
-
+        setPinnedServerCertificateInternal(pinnedCert);
         return getReplicatorConfiguration();
     }
 
@@ -234,7 +284,6 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
-        checkReadOnly();
         this.pullFilter = pullFilter;
         return getReplicatorConfiguration();
     }
@@ -248,7 +297,6 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration setPushFilter(ReplicationFilter pushFilter) {
-        checkReadOnly();
         this.pushFilter = pushFilter;
         return getReplicatorConfiguration();
     }
@@ -264,7 +312,6 @@ public abstract class AbstractReplicatorConfiguration {
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
-        checkReadOnly();
         final Replicator.Type type;
         switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
             case PUSH_AND_PULL:
@@ -291,7 +338,6 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration setType(@NonNull Replicator.Type type) {
-        checkReadOnly();
         this.type = Preconditions.assertNotNull(type, "replicator type");
         return getReplicatorConfiguration();
     }
@@ -302,7 +348,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @param maxRetries max retry attempts
      */
     public final ReplicatorConfiguration setMaxRetries(int maxRetries) {
-        this.maxRetries = Preconditions.assertNotNegative(maxRetries, "max retries");
+        setMaxRetriesInternal(maxRetries);
         return getReplicatorConfiguration();
     }
 
@@ -312,7 +358,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @param maxRetryWaitTime max retry wait time
      */
     public final ReplicatorConfiguration setMaxRetryWaitTime(long maxRetryWaitTime) {
-        this.maxRetryWaitTime = Preconditions.assertPositive(maxRetryWaitTime, "max retry wait time");
+        setMaxRetryWaitTimeInternal(maxRetryWaitTime);
         return getReplicatorConfiguration();
     }
 
@@ -321,8 +367,7 @@ public abstract class AbstractReplicatorConfiguration {
      * Must be positive and less than Integer.MAX_VALUE milliseconds
      */
     public final ReplicatorConfiguration setHeartbeat(long heartbeat) {
-        Util.checkDuration("heartbeat", Preconditions.assertPositive(heartbeat, "heartbeat"), TimeUnit.SECONDS);
-        this.heartbeat = heartbeat;
+        setHeartbeatInternal(heartbeat);
         return getReplicatorConfiguration();
     }
 
@@ -342,7 +387,7 @@ public abstract class AbstractReplicatorConfiguration {
      * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
      */
     @Nullable
-    public final List<String> getChannels() { return channels; }
+    public final List<String> getChannels() { return (channels == null) ? null : new ArrayList<>(channels); }
 
     /**
      * Return the conflict resolver.
@@ -367,24 +412,19 @@ public abstract class AbstractReplicatorConfiguration {
      * and/or pulled.
      */
     @Nullable
-    public final List<String> getDocumentIDs() { return documentIDs; }
+    public final List<String> getDocumentIDs() { return (documentIDs == null) ? null : new ArrayList<>(documentIDs); }
 
     /**
      * Return Extra HTTP headers to send in all requests to the remote target.
      */
     @Nullable
-    public final Map<String, String> getHeaders() { return headers; }
+    public final Map<String, String> getHeaders() { return (headers == null) ? null : new HashMap<>(headers); }
 
     /**
      * Return the remote target's SSL certificate.
      */
     @Nullable
-    public final byte[] getPinnedServerCertificate() {
-        if (pinnedServerCertificate == null) { return null; }
-        final byte[] pinnedCert = new byte[pinnedServerCertificate.length];
-        System.arraycopy(pinnedServerCertificate, 0, pinnedCert, 0, pinnedCert.length);
-        return pinnedCert;
-    }
+    public final byte[] getPinnedServerCertificate() { return copyCert(pinnedServerCertificate); }
 
     /**
      * Gets a filter object for validating whether the documents can be pulled
@@ -486,66 +526,32 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     //---------------------------------------------
-    // Protected access
-    //---------------------------------------------
-
-    protected void checkReadOnly() {
-        if (readonly) { throw new IllegalStateException("ReplicatorConfiguration is readonly mode."); }
-    }
-
-    //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
     abstract ReplicatorConfiguration getReplicatorConfiguration();
 
-    boolean isPush() {
-        return type == Replicator.Type.PUSH_AND_PULL
-            || type == Replicator.Type.PUSH;
+    private void setPinnedServerCertificateInternal(@Nullable byte[] pinnedCert) {
+        pinnedServerCertificate = copyCert(pinnedCert);
     }
 
-    boolean isPull() {
-        return type == Replicator.Type.PUSH_AND_PULL
-            || type == Replicator.Type.PULL;
+    private void setMaxRetriesInternal(int maxRetries) {
+        this.maxRetries = Preconditions.assertNotNegative(maxRetries, "max retries");
     }
 
-    final ReplicatorConfiguration readonlyCopy() {
-        return new ReplicatorConfiguration(getReplicatorConfiguration(), true);
+    private void setMaxRetryWaitTimeInternal(long maxRetryWaitTime) {
+        this.maxRetryWaitTime = Preconditions.assertPositive(maxRetryWaitTime, "max retry wait time");
     }
 
-    protected Map<String, Object> effectiveOptions() {
-        final Map<String, Object> options = new HashMap<>();
+    private void setHeartbeatInternal(long heartbeat) {
+        Util.checkDuration("heartbeat", Preconditions.assertPositive(heartbeat, "heartbeat"), TimeUnit.SECONDS);
+        this.heartbeat = heartbeat;
+    }
 
-        if (authenticator != null) { authenticator.authenticate(options); }
-
-        // Add the pinned certificate if any:
-        if (pinnedServerCertificate != null) {
-            options.put(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT, pinnedServerCertificate);
-        }
-
-        if ((documentIDs != null) && (!documentIDs.isEmpty())) {
-            options.put(C4Replicator.REPLICATOR_OPTION_DOC_IDS, documentIDs);
-        }
-
-        if ((channels != null) && (!channels.isEmpty())) {
-            options.put(C4Replicator.REPLICATOR_OPTION_CHANNELS, channels);
-        }
-
-        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, getMaxRetries());
-        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxRetryWaitTime);
-        options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, heartbeat);
-
-        final Map<String, Object> httpHeaders = new HashMap<>();
-        // User-Agent:
-        httpHeaders.put("User-Agent", CBLVersion.getUserAgent());
-        // headers
-        if ((headers != null) && (!headers.isEmpty())) {
-            for (Map.Entry<String, String> entry: headers.entrySet()) {
-                httpHeaders.put(entry.getKey(), entry.getValue());
-            }
-        }
-        options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
-
-        return options;
+    private static byte[] copyCert(@Nullable byte[] cert) {
+        if (cert == null) { return null; }
+        final byte[] newCert = new byte[cert.length];
+        System.arraycopy(cert, 0, newCert, 0, newCert.length);
+        return newCert;
     }
 }
