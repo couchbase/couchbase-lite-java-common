@@ -83,7 +83,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
 
     @NonNull
-    private final Object lock = new Object(); // lock for thread-safety
+    private final Object lock = new Object();
 
     @NonNull
     private final String id;
@@ -440,7 +440,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public int hashCode() {
         final Database db = getDatabase();
         int result = 0;
-        if  (db != null) {
+        if (db != null) {
             final String path = db.getPath();
             if (path != null) { result = path.hashCode(); }
         }
@@ -596,6 +596,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
         final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
         root = newRoot;
 
-        synchronized (db.getLock()) { internalDict = (Dictionary) newRoot.asNative(); }
+        synchronized (db.getDbLock()) { internalDict = (Dictionary) newRoot.asNative(); }
     }
 }

@@ -83,8 +83,8 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             cblConnectivityMgr.connectivityChanged(networkState);
         }
 
-        protected final String getLogMessage(@NonNull String prefix) {
-            return String.format("%s %s network listener for %s: %s", prefix, name, getCblMgr(), this);
+        protected final void logStart() {
+            Log.v(LogDomain.NETWORK, String.format("Started %s network listener for %s: %s", name, getCblMgr(), this));
         }
     }
 
@@ -131,7 +131,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             if (connectivityMgr == null) { return; }
 
             connectivityMgr.registerNetworkCallback(new NetworkRequest.Builder().build(), connectivityCallback);
-            Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            logStart();
         }
 
         @Override
@@ -158,7 +158,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             if (connectivityMgr == null) { return; }
 
             connectivityMgr.registerDefaultNetworkCallback(connectivityCallback);
-            Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            logStart();
         }
 
         @Override
@@ -187,7 +187,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             if (connectivityMgr == null) { return; }
 
             connectivityMgr.registerDefaultNetworkCallback(connectivityCallback);
-            Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            logStart();
         }
 
         @Override

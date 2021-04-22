@@ -346,7 +346,7 @@ abstract class AbstractQuery implements Query {
 
     private Object getDbLock() {
         final Database db = getDatabase();
-        if (db != null) { return db.getLock(); }
+        if (db != null) { return db.getDbLock(); }
         throw new IllegalStateException("Cannot seize DB lock");
     }
 }

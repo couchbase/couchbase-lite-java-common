@@ -18,6 +18,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import com.couchbase.lite.internal.BaseImmutableDatabaseConfiguration;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -28,19 +29,23 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-
-    private final boolean readOnly;
-
     private String dbDirectory;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    protected AbstractDatabaseConfiguration(@Nullable AbstractDatabaseConfiguration config, boolean readOnly) {
+    protected AbstractDatabaseConfiguration(@Nullable AbstractDatabaseConfiguration config) {
+        this((config == null) ? null : config.getDirectory());
+    }
+
+    protected AbstractDatabaseConfiguration(@Nullable BaseImmutableDatabaseConfiguration config) {
+        this((config == null) ? null : config.getDirectory());
+    }
+
+    private AbstractDatabaseConfiguration(@Nullable String dbDirectory) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
-        this.readOnly = readOnly;
-        dbDirectory = (config != null) ? config.dbDirectory : getDefaultDbDirPath();
+        this.dbDirectory = (dbDirectory != null) ? dbDirectory : getDefaultDbDirPath();
     }
 
     //---------------------------------------------
@@ -59,7 +64,6 @@ abstract class AbstractDatabaseConfiguration {
     @NonNull
     public DatabaseConfiguration setDirectory(@NonNull String directory) {
         Preconditions.assertNotNull(directory, "directory");
-        verifyWritable();
 
         // a bunch of code assumes that this string is the *canonical* path to the directory
         dbDirectory = FileUtils.verifyDir(directory).getAbsolutePath();
@@ -82,10 +86,6 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
 
     protected abstract DatabaseConfiguration getDatabaseConfiguration();
-
-    protected void verifyWritable() {
-        if (readOnly) { throw new IllegalStateException("DatabaseConfiguration is readonly mode."); }
-    }
 
     @VisibleForTesting
     void resetDbDir() { dbDirectory = getDefaultDbDirPath(); }

@@ -51,15 +51,17 @@ final class LiveQuery implements DatabaseChangeListener {
     // member variables
     //---------------------------------------------
 
+    @NonNull
+    private final Object lock = new Object();
+
+    @NonNull
     private final ChangeNotifier<QueryChange> changeNotifier = new ChangeNotifier<>();
-
-    private final AtomicReference<State> state = new AtomicReference<>(State.STOPPED);
-
 
     @NonNull
     private final AbstractQuery query;
 
-    private final Object lock = new Object();
+    @NonNull
+    private final AtomicReference<State> state = new AtomicReference<>(State.STOPPED);
 
     @GuardedBy("lock")
     private ListenerToken dbListenerToken;
@@ -117,7 +119,7 @@ final class LiveQuery implements DatabaseChangeListener {
         final Database db = Preconditions.assertNotNull(query.getDatabase(), "Live query database");
 
         // can't have the db closing while a query is starting.
-        synchronized (db.getLock()) {
+        synchronized (db.getDbLock()) {
             db.mustBeOpen();
 
             if (state.compareAndSet(State.STOPPED, State.STARTED)) {
@@ -146,7 +148,7 @@ final class LiveQuery implements DatabaseChangeListener {
             return;
         }
 
-        synchronized (db.getLock()) {
+        synchronized (db.getDbLock()) {
             if (State.STOPPED == state.getAndSet(State.STOPPED)) { return; }
 
             synchronized (lock) {

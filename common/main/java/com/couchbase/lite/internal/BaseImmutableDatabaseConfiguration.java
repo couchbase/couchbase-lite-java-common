@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2021 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,18 +15,16 @@
 //
 package com.couchbase.lite.internal;
 
-import android.support.annotation.Nullable;
-
-import com.couchbase.lite.BaseDatabase;
-import com.couchbase.lite.internal.fleece.MContext;
+import android.support.annotation.NonNull;
 
 
-public class DbContext extends MContext {
-    @Nullable
-    private final BaseDatabase db;
+@SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
+public abstract class BaseImmutableDatabaseConfiguration {
+    @NonNull
+    private final String dbDir;
 
-    public DbContext(@Nullable BaseDatabase db) { this.db = db; }
+    protected BaseImmutableDatabaseConfiguration(@NonNull String dbDir) { this.dbDir = dbDir; }
 
-    @Nullable
-    public BaseDatabase getDatabase() { return db; }
+    @NonNull
+    public String getDirectory() { return dbDir; }
 }

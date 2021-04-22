@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.SocketFactory;
+import com.couchbase.lite.internal.core.BaseReplicator;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4DocumentEnded;
 import com.couchbase.lite.internal.core.C4Error;
@@ -49,13 +50,13 @@ import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.C4ReplicatorMode;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.core.C4Socket;
-import com.couchbase.lite.internal.core.InternalReplicator;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.StringUtils;
 
@@ -66,8 +67,9 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * or continuous. The replicator runs asynchronously, so observe the status to
  * be notified of progress.
  */
+@Internal("This class is not part of the public API")
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.CyclomaticComplexity"})
-public abstract class AbstractReplicator extends InternalReplicator {
+public abstract class AbstractReplicator extends BaseReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
     /**
@@ -315,9 +317,9 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     private final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
-    @GuardedBy("InternalReplicator.lock")
+    @GuardedBy("getReplicatorLock()")
     private final Set<ReplicatorChangeListenerToken> changeListeners = new HashSet<>();
-    @GuardedBy("InternalReplicator.lock")
+    @GuardedBy("getReplicatorLock()")
     private final Set<DocumentReplicationListenerToken> docEndedListeners = new HashSet<>();
 
     @NonNull
@@ -329,16 +331,16 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     private final SocketFactory socketFactory;
 
-    @GuardedBy("InternalReplicator.lock")
+    @GuardedBy("getReplicatorLock()")
     @NonNull
     private Status status = new Status(ActivityLevel.STOPPED, new Progress(0, 0), null);
 
-    @GuardedBy("InternalReplicator.lock")
+    @GuardedBy("getReplicatorLock()")
     private C4ReplicationFilter c4ReplPushFilter;
-    @GuardedBy("InternalReplicator.lock")
+    @GuardedBy("getReplicatorLock()")
     private C4ReplicationFilter c4ReplPullFilter;
 
-    @GuardedBy("InternalReplicator.lock")
+    @GuardedBy("getReplicatorLock()")
     private CouchbaseLiteException lastError;
 
     private volatile String desc;
@@ -375,7 +377,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         getDatabase().addActiveReplicator(this);
 
         final C4Replicator repl = getOrCreateC4Replicator();
-        synchronized (getLock()) {
+        synchronized (getReplicatorLock()) {
             repl.start(resetCheckpoint);
 
             C4ReplicatorStatus status = repl.getStatus();
@@ -419,7 +421,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      */
     @NonNull
     public Status getStatus() {
-        synchronized (getLock()) { return new Status(status); }
+        synchronized (getReplicatorLock()) { return new Status(status); }
     }
 
     /**
@@ -511,7 +513,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     public ListenerToken addChangeListener(Executor executor, @NonNull ReplicatorChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-        synchronized (getLock()) {
+        synchronized (getReplicatorLock()) {
             final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
             changeListeners.add(token);
             setProgressLevel();
@@ -548,7 +550,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         @Nullable Executor executor,
         @NonNull DocumentReplicationListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-        synchronized (getLock()) {
+        synchronized (getReplicatorLock()) {
             final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
             docEndedListeners.add(token);
             setProgressLevel();
@@ -563,7 +565,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      */
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
-        synchronized (getLock()) {
+        synchronized (getReplicatorLock()) {
             if (token instanceof ReplicatorChangeListenerToken) { changeListeners.remove(token); }
             else if (token instanceof DocumentReplicationListenerToken) { docEndedListeners.remove(token); }
             else { throw new IllegalArgumentException("unexpected token: " + token); }
@@ -582,7 +584,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     // Protected methods
     //---------------------------------------------
 
-    @GuardedBy("lock")
+    @GuardedBy("getDbLock()")
     protected abstract C4Replicator createReplicatorForTarget(Endpoint target) throws LiteCoreException;
 
     protected abstract void handleOffline(ActivityLevel prevState, boolean nowOnline);
@@ -594,7 +596,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * @return the c4Replicator
      * @throws LiteCoreException on failure to create the replicator
      */
-    @GuardedBy("lock")
+    @GuardedBy("getDbLock()")
     @NonNull
     protected final C4Replicator getRemoteC4Replicator(@NonNull URI remoteUri) throws LiteCoreException {
         // Set up the port: core uses 0 for not set
@@ -632,7 +634,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * @return the c4Replicator
      * @throws LiteCoreException on failure to create the replicator
      */
-    @GuardedBy("lock")
+    @GuardedBy("getDbLock()")
     @NonNull
     protected final C4Replicator getLocalC4Replicator(@NonNull Database otherDb) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
@@ -655,7 +657,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
      * @return the c4Replicator
      * @throws LiteCoreException on failure to create the replicator
      */
-    @GuardedBy("lock")
+    @GuardedBy("getDbLock()")
     @NonNull
     protected final C4Replicator getMessageC4Replicator(int framing) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
@@ -687,13 +689,13 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     @NonNull
     ActivityLevel getState() {
-        synchronized (getLock()) { return status.getActivityLevel(); }
+        synchronized (getReplicatorLock()) { return status.getActivityLevel(); }
     }
 
     void c4StatusChanged(@NonNull C4ReplicatorStatus c4Status) {
         final ReplicatorChange change;
         final List<ReplicatorChangeListenerToken> tokens;
-        synchronized (getLock()) {
+        synchronized (getReplicatorLock()) {
             Log.i(
                 DOMAIN,
                 "status changed: (%d, %d) @%s for %s",
@@ -751,7 +753,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         CouchbaseLiteException err) {
         Log.i(DOMAIN, "Conflict resolved: %s", err, docId);
         List<C4ReplicatorStatus> pendingNotifications = null;
-        synchronized (getLock()) {
+        synchronized (getReplicatorLock()) {
             pendingResolutions.remove(task);
             // if no more resolutions, deliver any outstanding status notifications
             if (pendingResolutions.isEmpty()) {
@@ -770,7 +772,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     void notifyDocumentEnded(boolean pushing, List<ReplicatedDocument> docs) {
         final DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
         final List<DocumentReplicationListenerToken> tokens;
-        synchronized (getLock()) { tokens = new ArrayList<>(docEndedListeners); }
+        synchronized (getReplicatorLock()) { tokens = new ArrayList<>(docEndedListeners); }
         for (DocumentReplicationListenerToken token: tokens) { token.notify(update); }
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
     }
@@ -781,7 +783,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
 
     @VisibleForTesting
     int getListenerCount() {
-        synchronized (getLock()) { return changeListeners.size() + docEndedListeners.size(); }
+        synchronized (getReplicatorLock()) { return changeListeners.size() + docEndedListeners.size(); }
     }
 
     //---------------------------------------------
@@ -791,20 +793,20 @@ public abstract class AbstractReplicator extends InternalReplicator {
     @NonNull
     private C4Replicator getOrCreateC4Replicator() {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
-        synchronized (config.getDatabase().getLock()) {
+        synchronized (config.getDatabase().getDbLock()) {
             C4Replicator c4Repl = getC4Replicator();
 
             if (c4Repl != null) {
                 c4Repl.setOptions(getFleeceOptions());
                 // !!! This is probably a bug.  SetOptions should not clear the progress level
-                setProgressLevel();
+                synchronized (getReplicatorLock()) { setProgressLevel(); }
                 return c4Repl;
             }
 
             setupFilters();
             try {
                 c4Repl = createReplicatorForTarget(config.getTarget());
-                synchronized (getLock()) {
+                synchronized (getReplicatorLock()) {
                     setC4Replicator(c4Repl);
                     setProgressLevel();
                 }
@@ -818,7 +820,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         }
     }
 
-    @GuardedBy("lock")
+    @GuardedBy("getReplicatorLock()")
     private C4ReplicatorStatus updateStatus(@NonNull C4ReplicatorStatus c4Status) {
         final Status oldStatus = status;
         status = new Status(c4Status);
@@ -847,7 +849,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             public void accept(CouchbaseLiteException err) { onConflictResolved(this, docId, flags, err); }
         };
 
-        synchronized (getLock()) {
+        synchronized (getReplicatorLock()) {
             executor.execute(() -> db.resolveReplicationConflict(resolver, docId, task));
             pendingResolutions.add(task);
         }
@@ -869,7 +871,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
     }
 
     private void setupFilters() {
-        synchronized (getLock()) {
+        synchronized (getReplicatorLock()) {
             if (config.getPushFilter() != null) {
                 c4ReplPushFilter = (docID, revId, flags, dict, isPush, repl) ->
                     repl.filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
@@ -910,7 +912,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
         return (filter != null) && filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
     }
 
-    @GuardedBy("getLock()")
+    @GuardedBy("getReplicatorLock()")
     private void setProgressLevel() {
         final C4Replicator c4Repl = getC4Replicator();
         if (c4Repl == null) { return; }
@@ -948,7 +950,7 @@ public abstract class AbstractReplicator extends InternalReplicator {
             @Override
             public String getCookies(@NonNull URI uri) {
                 final Database db = getDatabase();
-                return (!db.isOpen()) ? null : db.getCookies(uri);
+                synchronized (db.getDbLock()) { return (!db.isOpen()) ? null : db.getCookies(uri); }
             }
         };
     }

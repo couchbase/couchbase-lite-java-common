@@ -370,8 +370,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     private Object getDbLock() {
         final MContext context = internalArray.getContext();
         if (context instanceof DbContext) {
-            final Database db = ((DbContext) context).getDatabase();
-            if (db != null) { return db.getLock(); }
+            final BaseDatabase db = ((DbContext) context).getDatabase();
+            if (db != null) { return db.getDbLock(); }
         }
         return new Object();
     }

@@ -502,7 +502,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         final FLValue value = values.get(index);
         if (value == null) { return null; }
         final MRoot root = new MRoot(context, value, false);
-        synchronized (rs.getQuery().getDatabase().getLock()) { return root.asNative(); }
+        synchronized (rs.getQuery().getDatabase().getDbLock()) { return root.asNative(); }
     }
 
     private List<FLValue> extractColumns(FLArrayIterator columns) {

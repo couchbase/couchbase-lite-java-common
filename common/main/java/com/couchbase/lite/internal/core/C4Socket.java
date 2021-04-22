@@ -172,7 +172,7 @@ public abstract class C4Socket extends C4NativePeer {
     // Fields
     //-------------------------------------------------------------------------
 
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     private boolean closing;
 
     //-------------------------------------------------------------------------
@@ -213,7 +213,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     protected final void opened() {
         final long peer;
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
             if (peer != 0) { opened(peer); }
         }
@@ -222,7 +222,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     protected final void gotHTTPResponse(int httpStatus, @Nullable byte[] responseHeadersFleece) {
         final long peer;
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
             if (peer != 0) { gotHTTPResponse(peer, httpStatus, responseHeadersFleece); }
         }
@@ -231,7 +231,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     protected final void completedWrite(long byteCount) {
         final long peer;
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
             if (peer != 0) { completedWrite(peer, byteCount); }
         }
@@ -240,7 +240,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     protected final void received(byte[] data) {
         final long peer;
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
             if (peer != 0) { received(peer, data); }
         }
@@ -249,7 +249,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     protected final void closeRequested(int status, String message) {
         final long peer;
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
             if (peer != 0) { closeRequested(peer, status, message); }
         }
@@ -260,7 +260,7 @@ public abstract class C4Socket extends C4NativePeer {
         closeInternal(errorDomain, errorCode, message);
     }
 
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     protected final boolean isC4SocketClosing() { return closing || (getPeerUnchecked() == 0L); }
 
     // there's really no point in having a finalizer...
@@ -279,7 +279,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     private void closeInternal(int domain, int code, String msg) {
         final long peer;
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
             if (!closing && (peer != 0)) { closed(peer, domain, code, msg); }
             closing = true;

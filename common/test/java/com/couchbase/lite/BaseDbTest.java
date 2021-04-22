@@ -55,7 +55,7 @@ public abstract class BaseDbTest extends BaseTest {
         baseTestDb = createDb("base-db");
         Report.log(LogLevel.INFO, "Created base test DB: " + baseTestDb);
         assertNotNull(baseTestDb);
-        assertTrue(baseTestDb.isOpen());
+        synchronized (baseTestDb.getDbLock()) { assertTrue(baseTestDb.isOpen()); }
         BaseTest.logTestInitializationComplete("DB");
     }
 

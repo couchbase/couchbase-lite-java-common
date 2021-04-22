@@ -194,16 +194,22 @@ public abstract class BaseTest extends PlatformBaseTest {
     }
 
     protected final boolean closeDb(@Nullable Database db) {
-        if ((db == null) || (!db.isOpen())) { return true; }
+        synchronized (db.getDbLock()) {
+            if ((db == null) || (!db.isOpen())) { return true; }
+        }
         return doSafely("Close db " + db.getName(), db::close);
     }
 
     protected final boolean deleteDb(@Nullable Database db) {
         if (db == null) { return true; }
-        return (db.isOpen())
+        final boolean isOpen;
+        synchronized (db.getDbLock()) { isOpen = db.isOpen(); }
+        // there is a race here... probably small.
+        return (isOpen)
             ? doSafely("Delete db " + db.getName(), db::delete)
             : FileUtils.eraseFileOrDir(db.getDbFile());
     }
+
 
     protected final void runSafely(Runnable test) {
         try { test.run(); }

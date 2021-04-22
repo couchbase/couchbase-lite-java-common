@@ -139,7 +139,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
             Log.v(TAG, "%s#OkHTTP open: %s", AbstractCBLWebSocket.this, response);
-            synchronized (getLock()) {
+            synchronized (getPeerLock()) {
                 if (!state.setState(State.OPEN)) { return; }
                 AbstractCBLWebSocket.this.webSocket = webSocket;
                 receivedHTTPResponse(response);
@@ -153,7 +153,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onMessage(@NonNull WebSocket webSocket, String text) {
             Log.v(TAG, "%s#OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
-            synchronized (getLock()) {
+            synchronized (getPeerLock()) {
                 if (!state.assertState(State.OPEN)) { return; }
                 received(text.getBytes(StandardCharsets.UTF_8));
             }
@@ -164,7 +164,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onMessage(@NonNull WebSocket webSocket, ByteString bytes) {
             Log.v(TAG, "%s#OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
-            synchronized (getLock()) {
+            synchronized (getPeerLock()) {
                 if (!state.assertState(State.OPEN)) { return; }
                 received(bytes.toByteArray());
             }
@@ -175,7 +175,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.v(TAG, "%s#OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
-            synchronized (getLock()) {
+            synchronized (getPeerLock()) {
                 if (!state.setState(State.CLOSE_REQUESTED)) { return; }
                 closeRequested(code, reason);
             }
@@ -186,7 +186,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.v(TAG, "%s#OkHTTP closed: (%d) %s", AbstractCBLWebSocket.this, code, reason);
-            synchronized (getLock()) {
+            synchronized (getPeerLock()) {
                 if (!state.setState(State.CLOSED)) { return; }
                 closeWithCode(code, reason);
             }
@@ -204,7 +204,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         @Override
         public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, Response response) {
             Log.v(TAG, "%s#OkHTTP failed: %s", err, AbstractCBLWebSocket.this, response);
-            synchronized (getLock()) {
+            synchronized (getPeerLock()) {
                 state.setState(State.FAILED);
 
                 if (response == null) {
@@ -231,7 +231,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     private class WebSocketCookieJar implements CookieJar {
         @Override
         public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
-            synchronized (getLock()) {
+            synchronized (getPeerLock()) {
                 for (Cookie cookie: cookies) { cookieStore.setCookie(httpUrl.uri(), cookie.toString()); }
             }
         }
@@ -240,7 +240,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         @Override
         public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
             final List<Cookie> cookies = new ArrayList<>();
-            synchronized (getLock()) {
+            synchronized (getPeerLock()) {
                 if (!state.assertState(State.INIT, State.CONNECTING)) { return cookies; }
 
                 // Cookies from config
@@ -309,12 +309,12 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     private final Map<String, Object> options;
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
 
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     private final StateMachine<State> state = WS_STATE_BUILDER.build();
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     private final CBLCookieStore cookieStore;
 
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     private WebSocket webSocket;
 
     //-------------------------------------------------------------------------
@@ -344,7 +344,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Implementation of AutoClosable.close()
     @Override
     public void close() {
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             if (!state.setState(State.CLOSE_REQUESTED)) {
                 closeRequested(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
                 return;
@@ -378,7 +378,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected final void openSocket() {
         Log.v(TAG, "%s#Core connect: %s", this, uri);
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             if (!state.setState(State.CONNECTING)) { return; }
             okHttpSocketFactory.newWebSocket(newRequest(), okHttpRemote);
         }
@@ -389,7 +389,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected final void send(@NonNull byte[] allocatedData) {
         Log.v(TAG, "%s#Core send: %d", this, allocatedData.length);
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             if (!state.assertState(State.OPEN)) { return; }
 
             if (!webSocket.send(ByteString.of(allocatedData, 0, allocatedData.length))) {
@@ -412,7 +412,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @Override
     protected final void requestClose(int code, String message) {
         Log.v(TAG, "%s#Core request close: %d", this, code);
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             if (!state.setState(State.CLOSE_REQUESTED)) { return; }
             closeWebSocket(code, message);
         }
@@ -428,7 +428,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // private methods
     //-------------------------------------------------------------------------
 
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     private void receivedHTTPResponse(Response response) {
         Log.v(TAG, "CBLWebSocket received HTTP response " + response);
 
@@ -453,7 +453,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     }
 
     // Close the OkHTTP connection to the remote
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     private void closeWebSocket(int code, String message) {
         // never got opened...
         if (webSocket == null) { return; }
@@ -469,7 +469,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
     }
 
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     private void closeWithCode(int code, String reason) {
         if (code == C4Constants.WebSocketError.NORMAL) {
             closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
@@ -480,7 +480,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         closed(C4Constants.ErrorDomain.WEB_SOCKET, code, reason);
     }
 
-    @GuardedBy("getLock()")
+    @GuardedBy("getPeerLock()")
     private void closeWithError(Throwable error) {
         if (error == null) {
             closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);

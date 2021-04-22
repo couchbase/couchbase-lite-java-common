@@ -63,9 +63,9 @@ public abstract class AbstractExecutionService implements ExecutionService {
 
     @VisibleForTesting
     static class InstrumentedTask implements Runnable {
-        // Putting a `new Exception()` here is useful but extremely expensive
+        // Putting a `new Exception()` here is useful but pretty expensive
         @SuppressWarnings("PMD.FinalFieldCouldBeStatic")
-        final Exception origin = null;
+        final Exception origin = null; // new Exception();
 
         @NonNull
         private final Runnable task;

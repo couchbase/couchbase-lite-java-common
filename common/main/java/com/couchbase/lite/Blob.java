@@ -257,7 +257,7 @@ public final class Blob implements FLEncodable {
      * Null if blob is new and unsaved
      */
     @Nullable
-    private Database database;
+    private BaseDatabase database;
 
     /**
      * The cryptographic digest of this Blob's contents, which uniquely identifies it,
@@ -327,7 +327,7 @@ public final class Blob implements FLEncodable {
     }
 
     // Initializer for an existing blob being read from a document
-    Blob(@NonNull Database database, @NonNull Map<String, Object> properties) {
+    Blob(@NonNull BaseDatabase database, @NonNull Map<String, Object> properties) {
         this.database = database;
 
         blobDigest = (String) properties.get(PROP_DIGEST);
@@ -559,6 +559,7 @@ public final class Blob implements FLEncodable {
         return -1;
     }
 
+    // ??? should be called holding the dbLock?
     void installInDatabase(@Nullable Database db) {
         if (database != null) {
             // attempt to save the blob in the wrong db;
@@ -579,7 +580,7 @@ public final class Blob implements FLEncodable {
         if (blobDigest != null) { return; }
 
         try (C4BlobStore store = database.getBlobStore(); C4BlobKey key = getBlobKey(store)) {
-            this.blobDigest = key.toString();
+            blobDigest = key.toString();
         }
         catch (Exception e) {
             database = null;
@@ -641,7 +642,7 @@ public final class Blob implements FLEncodable {
     }
 
     @NonNull
-    private InputStream getStreamFromDatabase(@NonNull Database db) {
+    private InputStream getStreamFromDatabase(@NonNull BaseDatabase db) {
         try (C4BlobKey key = new C4BlobKey(blobDigest)) { return new BlobInputStream(key, db.getBlobStore()); }
         catch (IllegalArgumentException | LiteCoreException e) {
             throw new IllegalStateException("Failed opening blobContent stream.", e);

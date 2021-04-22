@@ -41,7 +41,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         otherDB = createDb("replicator-db");
         Report.log(LogLevel.INFO, "Create other DB: " + otherDB);
         assertNotNull(otherDB);
-        assertTrue(otherDB.isOpen());
+        synchronized (otherDB.getDbLock()) { assertTrue(otherDB.isOpen()); }
         BaseTest.logTestInitializationComplete("Replicator");
     }
 

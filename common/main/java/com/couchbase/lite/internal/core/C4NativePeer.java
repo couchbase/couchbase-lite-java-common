@@ -54,7 +54,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     public String toString() { return Long.toHexString(peer); }
 
     protected final <T, E extends Exception> T withPeer(T def, Fn.FunctionThrows<Long, T, E> fn) throws E {
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             final long peer = get();
             if (peer == 0) {
                 logBadCall();
@@ -130,19 +130,19 @@ public abstract class C4NativePeer implements AutoCloseable {
      *
      * @return the lock used by this object
      */
-    protected final Object getLock() { return lock; }
+    protected final Object getPeerLock() { return lock; }
 
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
 
     private long get() {
-        synchronized (getLock()) { return peer; }
+        synchronized (getPeerLock()) { return peer; }
     }
 
     private void setPeerInternal(long peer) {
         Preconditions.assertNotZero(peer, HANDLE_NAME);
-        synchronized (getLock()) {
+        synchronized (getPeerLock()) {
             Preconditions.assertZero(this.peer, HANDLE_NAME);
             this.peer = peer;
         }
@@ -159,7 +159,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     private void logBadCall() {
         Log.e(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
         final Exception closedLoc;
-        synchronized (getLock()) { closedLoc = closedAt; }
+        synchronized (getPeerLock()) { closedLoc = closedAt; }
         if (closedLoc != null) { Log.e(LogDomain.DATABASE, "Closed at", closedLoc); }
     }
 }
