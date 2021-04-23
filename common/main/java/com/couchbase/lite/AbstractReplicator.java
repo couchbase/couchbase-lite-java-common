@@ -68,7 +68,6 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * or continuous. The replicator runs asynchronously, so observe the status to
  * be notified of progress.
  */
-@Internal("This class is not part of the public API")
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.CyclomaticComplexity"})
 public abstract class AbstractReplicator extends BaseReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
@@ -348,6 +347,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     // Server certificates received from the server during the TLS handshake
     private final AtomicReference<List<Certificate>> serverCertificates = new AtomicReference<>();
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
 
     /**
      * Initializes a replicator with the given configuration.

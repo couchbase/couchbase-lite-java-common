@@ -54,9 +54,8 @@ public abstract class AbstractReplicatorConfiguration {
 
 
     //---------------------------------------------
-    // member variables
+    // Data Members
     //---------------------------------------------
-
     @NonNull
     private final Database database;
     @NonNull
@@ -86,7 +85,6 @@ public abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
         this(
             Preconditions.assertNotNull(database, "database"),
@@ -170,15 +168,15 @@ public abstract class AbstractReplicatorConfiguration {
         this.pullFilter = pullFilter;
         this.pushFilter = pushFilter;
         this.conflictResolver = conflictResolver;
+        this.maxRetries = maxRetries;
         this.target = target;
 
         setPinnedServerCertificateInternal(pinnedServerCertificate);
-        setMaxRetriesInternal(maxRetries);
         setMaxRetryWaitTimeInternal(maxRetryWaitTime);
         setHeartbeatInternal(heartbeat);
     }
 
-//---------------------------------------------
+    //---------------------------------------------
     // Setters
     //---------------------------------------------
 
@@ -348,7 +346,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @param maxRetries max retry attempts
      */
     public final ReplicatorConfiguration setMaxRetries(int maxRetries) {
-        setMaxRetriesInternal(maxRetries);
+        this.maxRetries = Preconditions.assertNotNegative(maxRetries, "max retries");
         return getReplicatorConfiguration();
     }
 
@@ -533,10 +531,6 @@ public abstract class AbstractReplicatorConfiguration {
 
     private void setPinnedServerCertificateInternal(@Nullable byte[] pinnedCert) {
         pinnedServerCertificate = copyCert(pinnedCert);
-    }
-
-    private void setMaxRetriesInternal(int maxRetries) {
-        this.maxRetries = Preconditions.assertNotNegative(maxRetries, "max retries");
     }
 
     private void setMaxRetryWaitTimeInternal(long maxRetryWaitTime) {

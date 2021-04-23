@@ -25,9 +25,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 abstract class AbstractDatabaseConfiguration {
-
     //---------------------------------------------
-    // member variables
+    // Data Members
     //---------------------------------------------
     private String dbDirectory;
 
@@ -46,11 +45,11 @@ abstract class AbstractDatabaseConfiguration {
 
     protected AbstractDatabaseConfiguration(@Nullable String dbDirectory) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
-        this.dbDirectory = (dbDirectory != null) ? dbDirectory : getDefaultDbDirPath();
+        this.dbDirectory = dbDirectory;
     }
 
     //---------------------------------------------
-    // API - public methods
+    // Public API
     //---------------------------------------------
 
     /**
@@ -87,9 +86,4 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
 
     protected abstract DatabaseConfiguration getDatabaseConfiguration();
-
-    @VisibleForTesting
-    void resetDbDir() { dbDirectory = getDefaultDbDirPath(); }
-
-    private String getDefaultDbDirPath() { return CouchbaseLiteInternal.getRootDir().getAbsolutePath(); }
 }

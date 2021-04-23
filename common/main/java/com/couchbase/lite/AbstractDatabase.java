@@ -210,6 +210,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     @NonNull
     protected final ImmutableDatabaseConfiguration config;
 
+    @NonNull
     private final String name;
 
     // Executor for purge and posting Database/Document changes.
@@ -236,19 +237,14 @@ abstract class AbstractDatabase extends BaseDatabase {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+    protected AbstractDatabase(@NonNull String name) throws CouchbaseLiteException {
+        this(name, new ImmutableDatabaseConfiguration(null));
+    }
+
     protected AbstractDatabase(@NonNull String name, @NonNull DatabaseConfiguration config)
         throws CouchbaseLiteException {
         this(name, new ImmutableDatabaseConfiguration(config));
     }
-
-    /**
-     * Construct a  AbstractDatabase with a given name and database config.
-     * If the database does not yet exist, it will be created, unless the `readOnly` option is used.
-     *
-     * @param name   The name of the database. May NOT contain capital letters!
-     * @param config The database config, Note: null config parameter is not allowed with Android platform
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the open operation.
-     */
     protected AbstractDatabase(@NonNull String name, @NonNull ImmutableDatabaseConfiguration config)
         throws CouchbaseLiteException {
         Preconditions.assertNotEmpty(name, "db name");
@@ -1525,9 +1521,6 @@ abstract class AbstractDatabase extends BaseDatabase {
 
             c4Db = getOpenC4DbLocked();
             setC4DatabaseLocked(null);
-
-            // don't do any of this stuff in shell mode
-            if (name == null) { return; }
 
             freeC4DbObserver();
             docChangeNotifiers.clear();

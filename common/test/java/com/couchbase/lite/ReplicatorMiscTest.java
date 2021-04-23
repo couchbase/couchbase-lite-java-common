@@ -50,14 +50,6 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertEquals(CouchbaseLiteInternal.getExecutionService().getMainExecutor(), token.getExecutor());
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testEditReadOnlyConfiguration() throws Exception {
-        baseTestReplicator = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true)
-            .setContinuous(false));
-
-        baseTestReplicator.getConfig().setContinuous(true);
-    }
-
     @Test
     public void testReplicatorChange() {
         long completed = 10;

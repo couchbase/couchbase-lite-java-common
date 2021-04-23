@@ -34,11 +34,16 @@ import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
 
-
+/**
+ * A bit odd.  Why are these properties not simply properties on the AbstractReplicator object?
+ * Because they are mandated by a spec:
+ * https://docs.google.com/document/d/16XmIOw7aZ_NcFc6Dy6fc1jV7sc994r6iv5qm9_J7qKo/edit#heading=h.kt1n12mtpzx4
+ */
 @SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
 public abstract class BaseImmutableReplicatorConfiguration {
+
     //---------------------------------------------
-    // member variables
+    // Data Members
     //---------------------------------------------
     @NonNull
     private final Database database;
@@ -67,6 +72,9 @@ public abstract class BaseImmutableReplicatorConfiguration {
     @NonNull
     private final Endpoint target;
 
+    //-------------------------------------------------------------------------
+    // Constructors
+    //-------------------------------------------------------------------------
     protected BaseImmutableReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
         this.database = config.getDatabase();
         this.type = config.getType();
@@ -85,6 +93,9 @@ public abstract class BaseImmutableReplicatorConfiguration {
         this.target = config.getTarget();
     }
 
+    //-------------------------------------------------------------------------
+    // Properties
+    //-------------------------------------------------------------------------
     @NonNull
     public final Database getDatabase() { return database; }
 
@@ -139,6 +150,9 @@ public abstract class BaseImmutableReplicatorConfiguration {
     @NonNull
     public final Endpoint getTarget() { return target; }
 
+    //-------------------------------------------------------------------------
+    // Public Methods
+    //-------------------------------------------------------------------------
     public void addEffectiveOptions(@NonNull Map<String, Object> options) {
         // Add the pinned certificate if any:
         if (pinnedServerCertificate != null) {

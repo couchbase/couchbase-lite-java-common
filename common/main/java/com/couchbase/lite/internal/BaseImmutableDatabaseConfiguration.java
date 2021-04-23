@@ -16,19 +16,38 @@
 package com.couchbase.lite.internal;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.couchbase.lite.DatabaseConfiguration;
 
 
+/**
+ * A bit odd.  Why are these properties not simply properties on the AbstractDatabase object?
+ * Because they are mandated by a spec:
+ * https://docs.google.com/document/d/16XmIOw7aZ_NcFc6Dy6fc1jV7sc994r6iv5qm9_J7qKo/edit#heading=h.kt1n12mtpzx4
+ */
 @SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
 public abstract class BaseImmutableDatabaseConfiguration {
+    //-------------------------------------------------------------------------
+    // Data members
+    //-------------------------------------------------------------------------
     @NonNull
     private final String dbDir;
 
-    protected BaseImmutableDatabaseConfiguration(@NonNull DatabaseConfiguration config) {
-        this.dbDir = config.getDirectory();
+    //-------------------------------------------------------------------------
+    // Constructors
+    //-------------------------------------------------------------------------
+    protected BaseImmutableDatabaseConfiguration(@Nullable DatabaseConfiguration config) {
+        final String dbDirectory = (config == null) ? null : config.getDirectory();
+        this.dbDir = (dbDirectory != null) ? dbDirectory : getDefaultDbDirPath();
     }
 
+    //-------------------------------------------------------------------------
+    // Properties
+    //-------------------------------------------------------------------------
     @NonNull
     public final String getDirectory() { return dbDir; }
+
+    @NonNull
+    private String getDefaultDbDirPath() { return CouchbaseLiteInternal.getRootDir().getAbsolutePath(); }
 }
