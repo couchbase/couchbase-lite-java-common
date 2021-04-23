@@ -108,7 +108,7 @@ public final class CBLError {
         public static final int WEB_SOCKET_MESSAGE_TOO_BIG = HTTP_BASE + C4Constants.WebSocketError.MESSAGE_TO_BIG;
         public static final int WEB_SOCKET_MISSING_EXTENSION = HTTP_BASE + C4Constants.WebSocketError.MISSING_EXTENSION;
         public static final int WEB_SOCKET_CANT_FULFILL = HTTP_BASE + C4Constants.WebSocketError.CANT_FULFILL;
-        public static final int WEB_SOCKET_TLS_FAILUIRE = HTTP_BASE + C4Constants.WebSocketError.TLS_FAILURE;
+        public static final int WEB_SOCKET_TLS_FAILURE = HTTP_BASE + C4Constants.WebSocketError.TLS_FAILURE;
         public static final int WEB_SOCKET_USER = HTTP_BASE + C4Constants.WebSocketError.USER;
         public static final int WEB_SOCKET_CLOSE_USER_TRANSIENT = HTTP_BASE + C4Constants.WebSocketError.USER_TRANSIENT;
         public static final int WEB_SOCKET_CLOSE_USER_PERMANENT = HTTP_BASE + C4Constants.WebSocketError.USER_PERMANENT;

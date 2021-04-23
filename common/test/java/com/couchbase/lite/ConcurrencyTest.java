@@ -80,7 +80,7 @@ public class ConcurrencyTest extends BaseDbTest {
             kNThreads,
             threadIndex -> {
                 final String tag = "tag-" + threadIndex;
-                try { baseTestDb.inBatch(() -> { createDocs(kNDocs, tag); }); }
+                try { baseTestDb.inBatch(() -> createDocs(kNDocs, tag) ); }
                 catch (CouchbaseLiteException e) { fail(); }
             },
             kWaitInSec);

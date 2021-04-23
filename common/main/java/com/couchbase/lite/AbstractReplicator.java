@@ -57,7 +57,6 @@ import com.couchbase.lite.internal.replicator.CBLCookieStore;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.StringUtils;
 

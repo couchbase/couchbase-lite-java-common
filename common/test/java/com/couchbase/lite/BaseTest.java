@@ -91,6 +91,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         catch (IOException e) { throw new IllegalStateException("Failed creating scratch directory: " + name, e); }
     }
 
+    @SuppressWarnings("BusyWait")
     public static void waitUntil(long maxTime, Fn.Provider<Boolean> test) {
         final long delay = 100;
         if (maxTime <= delay) { assertTrue(test.get()); }

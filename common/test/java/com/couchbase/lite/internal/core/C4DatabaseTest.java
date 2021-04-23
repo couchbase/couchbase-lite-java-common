@@ -357,7 +357,7 @@ public class C4DatabaseTest extends C4BaseTest {
     }
 
     @Test
-    public void testPurgeExpiredDocs() throws LiteCoreException, InterruptedException {
+    public void testPurgeExpiredDocs() throws LiteCoreException {
         long now = System.currentTimeMillis();
         final long shortExpire = now + 1000;
         final long longExpire = now + BaseTest.STD_TIMEOUT_MS;

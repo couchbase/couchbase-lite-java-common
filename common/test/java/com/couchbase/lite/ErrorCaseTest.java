@@ -52,10 +52,7 @@ public class ErrorCaseTest extends BaseDbTest {
             baseTestDb.delete(doc);
             fail();
         } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.NOT_FOUND)
-                ;// expected
-            else
-                fail();
+            if (e.getCode() != CBLError.Code.NOT_FOUND) { fail(); }
         }
         assertEquals("Scott Tiger", doc.getValue("name"));
     }
@@ -94,10 +91,7 @@ public class ErrorCaseTest extends BaseDbTest {
             baseTestDb.delete(saved);
             fail();
         } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.NOT_FOUND)
-                ;// expected
-            else
-                fail();
+            if (e.getCode() != CBLError.Code.NOT_FOUND) { fail(); }
         }
     }
 
@@ -139,11 +133,9 @@ public class ErrorCaseTest extends BaseDbTest {
         try {
             baseTestDb.purge(saved);
             fail();
-        } catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.NOT_FOUND)
-                ;// expected
-            else
-                fail();
+        }
+        catch (CouchbaseLiteException e) {
+            if (e.getCode() != CBLError.Code.NOT_FOUND) { fail(); }
         }
     }
 

@@ -784,7 +784,7 @@ public abstract class BaseDbTest extends BaseTest {
     }
 
 
-    @SuppressWarnings("UnnecessaryBoxing")
+    @SuppressWarnings({"UnnecessaryBoxing", "RedundantCast"})
     protected final void verifyDict(@Nullable DictionaryInterface dict) {
         assertNotNull(dict);
 
@@ -1278,7 +1278,7 @@ public abstract class BaseDbTest extends BaseTest {
         verifyBlob(jObj.getJSONObject("doc-29"));
     }
 
-    @SuppressWarnings("UnnecessaryBoxing")
+    @SuppressWarnings({"UnnecessaryBoxing", "RedundantCast"})
     protected final void verifyDocument(DictionaryInterface doc) {
         assertEquals(29, doc.count());
 

@@ -48,7 +48,7 @@ public final class BasicAuthenticator extends Authenticator {
     /**
      * Create a Basic Authenticator.
      * The new instance contains a copy of the password char[] parameter:
-     * the owner of the original retains the responsiblity for zeroing it before releasing it.
+     * the owner of the original retains the responsibility for zeroing it before releasing it.
      */
     public BasicAuthenticator(@NonNull String username, @NonNull char[] password) {
         this.username = Preconditions.assertNotNull(username, "username");

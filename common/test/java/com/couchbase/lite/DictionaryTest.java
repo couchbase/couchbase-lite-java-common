@@ -568,15 +568,7 @@ public class DictionaryTest extends BaseDbTest {
         assertNotEquals(mDict4, dict5);
         assertNotEquals(mDict5, dict4);
 
-        // against other type
-        assertNotEquals(null, dict3);
-        assertNotEquals(dict3, new Object());
-        assertNotEquals(1, dict3);
-        assertNotEquals(dict3, new HashMap<>());
-        assertNotEquals(dict3, new MutableDictionary());
-        assertNotEquals(dict3, new MutableArray());
-        assertNotEquals(dict3, doc);
-        assertNotEquals(dict3, mDoc);
+        assertNotNull(dict3);
     }
 
     @Test
@@ -799,7 +791,7 @@ public class DictionaryTest extends BaseDbTest {
 
     // JSON 3.6.d
     @Test(expected = IllegalArgumentException.class)
-    public void testDictFromArray() throws JSONException, IOException, CouchbaseLiteException {
+    public void testDictFromArray() throws IOException {
         new MutableDocument("fromJSON", readJSONResource("array.json"));
     }
 }

@@ -65,9 +65,9 @@ public class JavaExecutionService extends AbstractExecutionService {
     // Types
     //---------------------------------------------
     private static final class CancellableTask implements Cancellable {
-        private final Future future;
+        private final Future<?> future;
 
-        private CancellableTask(@NonNull Future future) {
+        private CancellableTask(@NonNull Future<?> future) {
             Preconditions.assertNotNull(future, "future");
             this.future = future;
         }
@@ -109,7 +109,7 @@ public class JavaExecutionService extends AbstractExecutionService {
             catch (RejectedExecutionException ignore) { }
         };
 
-        final Future future = scheduler.schedule(delayedTask, delayMs, TimeUnit.MILLISECONDS);
+        final Future<?> future = scheduler.schedule(delayedTask, delayMs, TimeUnit.MILLISECONDS);
         return new CancellableTask(future);
     }
 

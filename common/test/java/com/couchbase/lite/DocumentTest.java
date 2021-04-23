@@ -2335,13 +2335,7 @@ public class DocumentTest extends BaseDbTest {
         assertNotEquals(mDoc9, mDoc8);
         assertEquals(mDoc9, mDoc9);
 
-        // against other type
-        assertNotEquals(null, doc3);
-        assertNotEquals(doc3, new Object());
-        assertNotEquals(1, doc3);
-        assertNotEquals(doc3, new HashMap<>());
-        assertNotEquals(doc3, new MutableDocument());
-        assertNotEquals(doc3, new MutableArray());
+        assertNotNull(null, doc3);
     }
 
     @Test
@@ -2536,7 +2530,7 @@ public class DocumentTest extends BaseDbTest {
 
     // JSON 3.5.e
     @Test(expected = IllegalArgumentException.class)
-    public void testMutableFromArray() throws JSONException, IOException, CouchbaseLiteException {
+    public void testMutableFromArray() throws IOException {
         new MutableDocument("fromJSON", readJSONResource("array.json"));
     }
 }

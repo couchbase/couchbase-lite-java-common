@@ -28,5 +28,5 @@ public enum MaintenanceType {
     COMPACT,
     INTEGRITY_CHECK,
     OPTIMIZE,
-    FULL_OPTIMIZE;
+    FULL_OPTIMIZE
 }

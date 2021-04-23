@@ -15,16 +15,16 @@
 //
 package com.couchbase.lite;
 
-import org.junit.Test;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertNotNull;
+import org.junit.Test;
+
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class QueryChangeTest  extends BaseQueryTest{
+
+public class QueryChangeTest extends BaseQueryTest {
 
     @Test
     public void testQueryChangeTest() {
@@ -41,9 +41,9 @@ public class QueryChangeTest  extends BaseQueryTest{
         loadNumberedDocs(10);
 
         final Query query = QueryBuilder
-                .select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(baseTestDb))
-                .where(Expression.property("number1").lessThan(Expression.intValue(5)));
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property("number1").lessThan(Expression.intValue(5)));
 
         final ListenerToken[] token = new ListenerToken[1];
 

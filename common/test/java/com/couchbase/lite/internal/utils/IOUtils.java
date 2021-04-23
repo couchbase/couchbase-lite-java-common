@@ -32,13 +32,7 @@ public class IOUtils {
     }
 
     public static byte[] toByteArray(File file) throws IOException {
-        FileInputStream fis = new FileInputStream(file);
-        try {
-            return toByteArray(fis);
-        }
-        finally {
-            fis.close();
-        }
+        try (FileInputStream fis = new FileInputStream(file)) { return toByteArray(fis); }
     }
 
     public static byte[] toByteArray(InputStream input) throws IOException {
@@ -59,7 +53,7 @@ public class IOUtils {
         throws IOException {
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
         long count = 0;
-        int n = 0;
+        int n;
         while (-1 != (n = input.read(buffer))) {
             output.write(buffer, 0, n);
             count += n;

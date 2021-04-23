@@ -328,7 +328,7 @@ public class BlobTest extends BaseDbTest {
 
     // 3.1.a
     @Test
-    public void testDbSaveBlob() throws CouchbaseLiteException, JSONException {
+    public void testDbSaveBlob() throws JSONException {
         Blob blob = makeBlob();
         baseTestDb.saveBlob(blob);
         verifyBlob(new JSONObject(blob.toJSON()));
@@ -336,7 +336,7 @@ public class BlobTest extends BaseDbTest {
 
     // 3.1.b
     @Test
-    public void testDbGetBlob() throws CouchbaseLiteException {
+    public void testDbGetBlob() {
         Map<String, Object> props = getSpecForSavedBlob();
         props.put(Blob.PROP_CONTENT_TYPE, "text/plain");
 
@@ -361,7 +361,7 @@ public class BlobTest extends BaseDbTest {
 
     // 3.1.e.0: empty
     @Test(expected = IllegalArgumentException.class)
-    public void testDbGetNotBlob0() throws CouchbaseLiteException {
+    public void testDbGetNotBlob0() {
         Blob blob = makeBlob();
         baseTestDb.saveBlob(blob);
 
@@ -442,7 +442,7 @@ public class BlobTest extends BaseDbTest {
         assertNull(baseTestDb.getBlob(props));
     }
 
-    private Map<String, Object> getSpecForSavedBlob() throws CouchbaseLiteException {
+    private Map<String, Object> getSpecForSavedBlob() {
         Blob blob = makeBlob();
         baseTestDb.saveBlob(blob);
 

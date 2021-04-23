@@ -103,7 +103,7 @@ public abstract class FLEncoder extends C4NativePeer {
             .append(ClassUtils.objId(this)).append('/').append(super.toString())
             .append('[');
         boolean first = true;
-        for (Map.Entry arg: arguments.entrySet()) {
+        for (Map.Entry<?, ?> arg: arguments.entrySet()) {
             if (first) { first = false; }
             else { buf.append(','); }
             buf.append(arg.getKey()).append("=>").append(arg.getValue());

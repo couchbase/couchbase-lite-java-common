@@ -2047,8 +2047,7 @@ public class QueryTest extends BaseQueryTest {
         i = 0;
         rs = query.execute();
         List<Result> list = rs.allResults();
-        for (int j = 0; j < list.size(); j++) {
-            Result r = list.get(j);
+        for (Result r: list) {
             assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
             i++;
         }

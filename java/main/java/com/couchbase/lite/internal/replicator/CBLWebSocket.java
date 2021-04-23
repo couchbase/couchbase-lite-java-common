@@ -19,7 +19,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.util.List;
@@ -34,7 +33,7 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         @Nullable byte[] opts,
         @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
-        throws GeneralSecurityException, URISyntaxException {
+        throws GeneralSecurityException {
         super(handle, uri, opts, cookieStore, serverCertsListener);
     }
 

@@ -87,13 +87,13 @@ class NetworkConnectivityManagerTest : BaseTest() {
         Assert.assertTrue(mgr.observers.isEmpty())
         Assert.assertEquals(0, replFactory.calls)
 
-        // Now ofline but previously offline: no change
+        // Now offline but previously offline: no change
         mgr.observers.add(observer)
         observer.handleOffline(AbstractReplicator.ActivityLevel.OFFLINE, false)
         Assert.assertEquals(1, mgr.observers.size)
         Assert.assertEquals(0, replFactory.calls)
 
-        // Now ofline but previously online: subscribe and try to tell the C4Replicator
+        // Now offline but previously online: subscribe and try to tell the C4Replicator
         observer.handleOffline(AbstractReplicator.ActivityLevel.CONNECTING, false)
         Assert.assertEquals(1, mgr.observers.size)
         Assert.assertEquals(1, replFactory.calls)

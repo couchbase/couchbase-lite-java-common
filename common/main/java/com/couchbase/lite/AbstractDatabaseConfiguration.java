@@ -16,7 +16,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.internal.BaseImmutableDatabaseConfiguration;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -43,9 +42,9 @@ abstract class AbstractDatabaseConfiguration {
         this((config == null) ? null : config.getDirectory());
     }
 
-    protected AbstractDatabaseConfiguration(@Nullable String dbDirectory) {
+    protected AbstractDatabaseConfiguration(@Nullable String dbDir) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
-        this.dbDirectory = dbDirectory;
+        this.dbDirectory = (dbDir != null) ? dbDir : CouchbaseLiteInternal.getRootDirPath();
     }
 
     //---------------------------------------------

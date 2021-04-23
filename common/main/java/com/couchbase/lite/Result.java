@@ -495,7 +495,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     private int indexForColumnName(String name) {
         final int index = rs.getColumnIndex(name);
         if (index < 0) { return -1; }
-        return ((missingColumns & (1 << index)) == 0) ? index : -1;
+        return ((missingColumns & (1L << index)) == 0) ? index : -1;
     }
 
     private Object fleeceValueToObject(int index) {

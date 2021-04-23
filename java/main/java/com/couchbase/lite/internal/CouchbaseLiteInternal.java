@@ -110,10 +110,16 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
+    public static String getRootDirPath() { return rootDir.getAbsolutePath(); }
+
+    @NonNull
     public static File getScratchDir() {
         requireInit("Can't create Scratch path");
         return scratchDir;
     }
+
+    @NonNull
+    public static String getScratchDirPath() { return scratchDir.getAbsolutePath(); }
 
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }

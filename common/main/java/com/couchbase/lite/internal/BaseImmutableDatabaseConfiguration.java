@@ -39,7 +39,7 @@ public abstract class BaseImmutableDatabaseConfiguration {
     //-------------------------------------------------------------------------
     protected BaseImmutableDatabaseConfiguration(@Nullable DatabaseConfiguration config) {
         final String dbDirectory = (config == null) ? null : config.getDirectory();
-        this.dbDir = (dbDirectory != null) ? dbDirectory : getDefaultDbDirPath();
+        this.dbDir = (dbDirectory != null) ? dbDirectory : CouchbaseLiteInternal.getRootDirPath();
     }
 
     //-------------------------------------------------------------------------
@@ -47,7 +47,4 @@ public abstract class BaseImmutableDatabaseConfiguration {
     //-------------------------------------------------------------------------
     @NonNull
     public final String getDirectory() { return dbDir; }
-
-    @NonNull
-    private String getDefaultDbDirPath() { return CouchbaseLiteInternal.getRootDir().getAbsolutePath(); }
 }
