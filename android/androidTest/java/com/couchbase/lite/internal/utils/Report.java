@@ -36,6 +36,10 @@ public final class Report {
         Report.log(LogLevel.INFO, message, (Throwable) null);
     }
 
+    public static void log(@NonNull String message, @Nullable Throwable err) {
+        Report.log(LogLevel.INFO, message, err);
+    }
+
     public static void log(@NonNull String template, Object... args) {
         Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args));
     }
