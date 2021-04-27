@@ -43,8 +43,8 @@ import static org.junit.Assert.fail;
 public class C4QueryTest extends C4QueryBaseTest {
 
     @Before
-    public final void setUpC4QueryTest() throws CouchbaseLiteException {
-        importJSONLinesSafely("names_100.json");
+    public final void setUpC4QueryTest() throws LiteCoreException, IOException {
+        loadJsonAsset("names_100.json");
         BaseTest.logTestInitializationComplete("C4Query");
     }
 
@@ -546,7 +546,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query Join
     @Test
     public void testDBQueryJoin() throws IOException, LiteCoreException {
-        importJSONLines("states_titlecase_line.json", "state-");
+        loadJsonAsset("states_titlecase_line.json", "state-");
         List<String> expectedFirst = Arrays.asList("Cleveland", "Georgetta", "Margaretta");
         List<String> expectedState = Arrays.asList("California", "Ohio", "South Dakota");
         compileSelect(json5(

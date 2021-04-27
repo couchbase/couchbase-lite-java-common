@@ -185,8 +185,14 @@ final class LiveQuery implements DatabaseChangeListener {
                 prevResults = previousResults;
             }
 
-            final ResultSet newResults = (prevResults == null) ? query.execute() : prevResults.refresh();
+            final ResultSet newResults;
+            if (prevResults == null) { newResults = query.execute(); }
+            else {
+                newResults = prevResults.refresh();
+                prevResults.close();
+            }
             Log.i(DOMAIN, "LiveQuery refresh: %s > %s", prevResults, newResults);
+
             if (newResults == null) { return; }
 
             boolean update = false;
@@ -198,6 +204,7 @@ final class LiveQuery implements DatabaseChangeListener {
             }
 
             // Listeners may be notified even after the LiveQuery has been stopped.
+            // ??? if the client code closes `newResults`, this method will not be able to refresh it...
             if (update) { changeNotifier.postChange(new QueryChange(query, newResults, null)); }
         }
         catch (CouchbaseLiteException err) {

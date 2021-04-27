@@ -923,20 +923,21 @@ public class ResultTest extends BaseQueryTest {
             .from(DataSource.database(baseTestDb))
             .where(Meta.id.equalTo(Expression.string(doc1)));
 
-        ResultSet results = query.execute();
-        assertNotNull(results);
-        for (Result result: results.allResults()) {
-            assertNotNull(result);
-            assertEquals(1, result.toMap().size());
-            Dictionary emptyDict = result.getDictionary(key1);
-            assertNotNull(emptyDict);
-            assertTrue(emptyDict.isEmpty());
+        try (ResultSet results = query.execute()) {
+            assertNotNull(results);
+            for (Result result: results.allResults()) {
+                assertNotNull(result);
+                assertEquals(1, result.toMap().size());
+                Dictionary emptyDict = result.getDictionary(key1);
+                assertNotNull(emptyDict);
+                assertTrue(emptyDict.isEmpty());
+            }
         }
     }
 
     ///////////////  JSON tests
 
-    // JSON 3.4
+    // JSON 3.8
     @Test
     public void testResultToJSON() throws CouchbaseLiteException, JSONException {
         for (int i = 0; i < 5; i++) {
@@ -946,19 +947,21 @@ public class ResultTest extends BaseQueryTest {
         }
 
         SelectResult[] projection = new SelectResult[29];
-        for (int i = 1; i <= 29; i++) { projection[i-1] = SelectResult.property("doc-" + i); }
+        // `makeDocument` creates a document with 29 properties named doc-1 through doc-29
+        for (int i = 1; i <= 29; i++) { projection[i - 1] = SelectResult.property("doc-" + i); }
 
-        ResultSet results = QueryBuilder.select(projection)
+        try (ResultSet results = QueryBuilder.select(projection)
             .from(DataSource.database(baseTestDb))
             .where(Expression.property("id").equalTo(Expression.string("jsonQuery-4")))
-            .execute();
+            .execute()) {
 
-        Result result = results.next();
-        assertNotNull(result);
-        assertNull(results.next());
+            Result result = results.next();
+            assertNotNull(result);
+            assertNull(results.next());
 
-        verifyDocument(result);
-        verifyDocument(new JSONObject(result.toJSON()));
+            verifyDocument(result);
+            verifyDocument(new JSONObject(result.toJSON()));
+        }
     }
 
 

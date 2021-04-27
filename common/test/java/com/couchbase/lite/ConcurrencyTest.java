@@ -37,7 +37,7 @@ import static org.junit.Assert.fail;
 
 public class ConcurrencyTest extends BaseDbTest {
     private static final long TIMEOUT = 180L;
-    
+
     interface Callback {
         void callback(int threadIndex);
     }
@@ -57,12 +57,13 @@ public class ConcurrencyTest extends BaseDbTest {
         // concurrently creates documents
         concurrentValidator(
             kNThreads,
+            kWaitInSec,
             threadIndex -> {
                 String tag = "tag-" + threadIndex;
                 try { createDocs(kNDocs, tag); }
                 catch (CouchbaseLiteException e) { fail(); }
-            },
-            kWaitInSec);
+            }
+        );
 
         // validate stored documents
         for (int i = 0; i < kNThreads; i++) { verifyByTagName("tag-" + i, kNDocs); }
@@ -78,12 +79,13 @@ public class ConcurrencyTest extends BaseDbTest {
         // concurrently creates documents
         concurrentValidator(
             kNThreads,
+            kWaitInSec,
             threadIndex -> {
                 final String tag = "tag-" + threadIndex;
-                try { baseTestDb.inBatch(() -> createDocs(kNDocs, tag) ); }
+                try { baseTestDb.inBatch(() -> createDocs(kNDocs, tag)); }
                 catch (CouchbaseLiteException e) { fail(); }
-            },
-            kWaitInSec);
+            }
+        );
 
         checkForFailure();
 
@@ -107,11 +109,12 @@ public class ConcurrencyTest extends BaseDbTest {
         // concurrently creates documents
         concurrentValidator(
             kNThreads,
+            kWaitInSec,
             threadIndex -> {
                 String tag = "tag-" + threadIndex;
                 assertTrue(updateDocs(docIDs, kNRounds, tag));
-            },
-            kWaitInSec);
+            }
+        );
 
         final AtomicInteger count = new AtomicInteger(0);
         for (int i = 0; i < kNThreads; i++) { verifyByTagName("tag-" + i, (n, result) -> count.incrementAndGet()); }
@@ -132,7 +135,7 @@ public class ConcurrencyTest extends BaseDbTest {
         assertEquals(kNDocs, docIDs.size());
 
         // concurrently creates documents
-        concurrentValidator(kNThreads, threadIndex -> readDocs(docIDs, kNRounds), kWaitInSec);
+        concurrentValidator(kNThreads, kWaitInSec, threadIndex -> readDocs(docIDs, kNRounds));
     }
 
     @Test
@@ -150,11 +153,12 @@ public class ConcurrencyTest extends BaseDbTest {
         // concurrently creates documents
         concurrentValidator(
             kNThreads,
+            kWaitInSec,
             threadIndex -> {
                 try { baseTestDb.inBatch(() -> readDocs(docIDs, kNRounds)); }
                 catch (CouchbaseLiteException e) { fail(); }
-            },
-            kWaitInSec);
+            }
+        );
     }
 
     @Test
@@ -450,9 +454,9 @@ public class ConcurrencyTest extends BaseDbTest {
 
         concurrentValidator(
             10,
+            180,
             threadIndex -> {
-                try {
-                    ResultSet rs = query.execute();
+                try (ResultSet rs = query.execute()) {
                     List<Result> results = rs.allResults();
                     assertEquals(100, results.size());
                     assertEquals(baseTestDb.getCount(), results.size());
@@ -461,8 +465,8 @@ public class ConcurrencyTest extends BaseDbTest {
                     Report.log(LogLevel.ERROR, "Query Error", e);
                     fail();
                 }
-            },
-            180);
+            }
+        );
     }
 
     private MutableDocument createDocumentWithTag(String tag) {
@@ -554,7 +558,7 @@ public class ConcurrencyTest extends BaseDbTest {
         assertEquals(nRows, count.intValue());
     }
 
-    private void concurrentValidator(final int nThreads, final Callback callback, final int waitSec) {
+    private void concurrentValidator(final int nThreads, final int waitSec, final Callback callback) {
         // setup
         final Thread[] threads = new Thread[nThreads];
         final CountDownLatch[] latches = new CountDownLatch[nThreads];

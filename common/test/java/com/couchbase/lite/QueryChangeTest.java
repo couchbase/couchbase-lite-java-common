@@ -35,7 +35,6 @@ public class QueryChangeTest extends BaseQueryTest {
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1615
-    // ??? note that this test does not actually verify that the listener has been removed
     @Test
     public void testRemoveQueryChangeListenerInCallback() throws Exception {
         loadNumberedDocs(10);
@@ -46,14 +45,15 @@ public class QueryChangeTest extends BaseQueryTest {
             .where(Expression.property("number1").lessThan(Expression.intValue(5)));
 
         final ListenerToken[] token = new ListenerToken[1];
+        final Object lock = new Object();
 
-        // Removing a listener inside the listener itself needs be done carefully.
+        // Removing the listener while inside the listener itself needs be done carefully.
         // The change handler might get called from the executor thread before query.addChangeListener() returns.
         final CountDownLatch latch = new CountDownLatch(1);
         QueryChangeListener listener = change -> {
             ResultSet rs = change.getResults();
             if ((rs != null) && (rs.next() != null)) { // ??? WAT?
-                synchronized (this) {
+                synchronized (lock) {
                     query.removeChangeListener(token[0]);
                     token[0] = null;
                 }
@@ -61,8 +61,10 @@ public class QueryChangeTest extends BaseQueryTest {
             latch.countDown();
         };
 
-        synchronized (this) { token[0] = query.addChangeListener(testSerialExecutor, listener); }
+        synchronized (lock) { token[0] = query.addChangeListener(testSerialExecutor, listener); }
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+
+        synchronized (lock) { assertNull(token[0]); }
     }
 }

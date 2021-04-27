@@ -16,7 +16,9 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -33,7 +35,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * A result set representing the query result. The result set is an iterator of
  * the {@code Result} objects.
  */
-public class ResultSet implements Iterable<Result> {
+public class ResultSet implements Iterable<Result>, AutoCloseable {
     //---------------------------------------------
     // static variables
     //---------------------------------------------
@@ -43,21 +45,26 @@ public class ResultSet implements Iterable<Result> {
     // member variables
     //---------------------------------------------
 
+    @NonNull
     private final AbstractQuery query;
+    @NonNull
     private final Map<String, Integer> columnNames;
+    @NonNull
     private final DbContext context;
-    private final C4QueryEnumerator c4enum;
+    @GuardedBy("getDbLock()")
+    @Nullable
+    private C4QueryEnumerator c4enum;
     private boolean isAllEnumerated;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
-    ResultSet(AbstractQuery query, C4QueryEnumerator c4enum, Map<String, Integer> columnNames) {
+    ResultSet(@NonNull AbstractQuery query, @Nullable C4QueryEnumerator c4enum, @NonNull Map<String, Integer> cols) {
         this.query = query;
-        this.c4enum = c4enum;
-        this.columnNames = columnNames;
+        this.columnNames = cols;
         this.context = new DbContext(query.getDatabase());
+        this.c4enum = c4enum;
     }
 
     //---------------------------------------------
@@ -74,6 +81,7 @@ public class ResultSet implements Iterable<Result> {
      * @return the Result after moving the cursor forward. Returns {@code null} value
      * if there are no more rows, or ResultSet is freed already.
      */
+    @Nullable
     public Result next() {
         Preconditions.assertNotNull(query, "query");
 
@@ -131,14 +139,25 @@ public class ResultSet implements Iterable<Result> {
     @Override
     public Iterator<Result> iterator() { return allResults().iterator(); }
 
+    @Override
+    public void close() {
+        synchronized (getDbLock()) {
+            if (c4enum == null) { return; }
+            c4enum.close();
+            c4enum = null;
+        }
+    }
+
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
+    @NonNull
     AbstractQuery getQuery() { return query; }
 
     int getColumnCount() { return columnNames.size(); }
 
+    @NonNull
     List<String> getColumnNames() { return new ArrayList<>(columnNames.keySet()); }
 
     int getColumnIndex(@NonNull String name) {
@@ -146,10 +165,12 @@ public class ResultSet implements Iterable<Result> {
         return (idx == null) ? -1 : idx;
     }
 
+    @Nullable
     ResultSet refresh() throws CouchbaseLiteException {
         Preconditions.assertNotNull(query, "query");
 
         synchronized (getDbLock()) {
+            if (c4enum == null) { return null; }
             try {
                 final C4QueryEnumerator newEnum = c4enum.refresh();
                 return (newEnum == null) ? null : new ResultSet(query, newEnum, columnNames);

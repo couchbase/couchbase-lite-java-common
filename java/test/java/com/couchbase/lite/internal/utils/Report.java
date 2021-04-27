@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.utils;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.util.Locale;
@@ -36,23 +37,31 @@ public final class Report {
         Report.log(LogLevel.INFO, message, (Throwable) null);
     }
 
+    public static void log(@Nullable Throwable err, @NonNull String message) {
+        Report.log(LogLevel.INFO, message, err);
+    }
+
     public static void log(@NonNull String template, Object... args) {
         Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args));
     }
 
-    public static void log(@NonNull String message, Throwable err) {
-        Report.log(LogLevel.INFO, message, err);
+    public static void log(@Nullable Throwable err, @NonNull String template, Object... args) {
+        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args), err);
     }
 
-    public static void log(LogLevel level, String message) {
+    public static void log(@NonNull LogLevel level, @NonNull String message) {
         Report.log(level, message, (Throwable) null);
     }
 
-    public static void log(LogLevel level, String template, Object... args) {
+    public static void log(@NonNull LogLevel level, @NonNull String template, Object... args) {
         Report.log(level, String.format(Locale.ENGLISH, template, args));
     }
 
-    public static void log(LogLevel level, String message, Throwable err) {
+    public static void log(@NonNull LogLevel level, @Nullable Throwable err, @NonNull String template, Object... args) {
+        Report.log(level, String.format(Locale.ENGLISH, template, args), err);
+    }
+
+    public static void log(@NonNull LogLevel level, @NonNull String message, @NonNull Throwable err) {
         final PrintStream logStream = ConsoleLogger.getLogStream(level);
         logStream.println(ConsoleLogger.formatLog(level, DOMAIN, message));
         if (err != null) { err.printStackTrace(logStream); }

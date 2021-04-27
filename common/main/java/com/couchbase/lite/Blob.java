@@ -211,8 +211,9 @@ public final class Blob implements FLEncodable {
             nProps++;
         }
 
-        if (props.containsKey(PROP_LENGTH)) {
-            if (!(props.get(PROP_LENGTH) instanceof Number)) { return false; }
+        final Object len = props.get(PROP_LENGTH);
+        if (len != null) {
+            if ((!(len instanceof Integer) && (!(len instanceof Long)))) { return false; }
             nProps++;
         }
 

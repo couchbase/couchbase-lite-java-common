@@ -67,16 +67,18 @@ public abstract class BaseQueryTest extends BaseDbTest {
 
     private int verifyQueryWithEnumerator(Query query, QueryResult queryResult) throws CouchbaseLiteException {
         int n = 0;
-        ResultSet rs = query.execute();
-        Result result;
-        while ((result = rs.next()) != null) { queryResult.check(++n, result); }
+        try (ResultSet rs = query.execute()) {
+            Result result;
+            while ((result = rs.next()) != null) { queryResult.check(++n, result); }
+        }
         return n;
     }
 
     private int verifyQueryWithIterable(Query query, QueryResult queryResult) throws CouchbaseLiteException {
         int n = 0;
-        ResultSet rs = query.execute();
-        for (Result result: rs) { queryResult.check(++n, result); }
+        try (ResultSet rs = query.execute()) {
+            for (Result result: rs) { queryResult.check(++n, result); }
+        }
         return n;
     }
 }

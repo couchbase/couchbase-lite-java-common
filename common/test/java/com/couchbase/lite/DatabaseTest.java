@@ -932,22 +932,22 @@ public class DatabaseTest extends BaseDbTest {
             assertNotNull(newDb);
             assertEquals(nDocs, newDb.getCount());
 
-            ResultSet rs = QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(newDb))
-                .execute();
+            try (ResultSet rs = QueryBuilder.select(SelectResult.expression(Meta.id))
+                    .from(DataSource.database(newDb))
+                    .execute()) {
+                for (Result r: rs) {
+                    String docID = r.getString(0);
+                    assertNotNull(docID);
 
-            for (Result r: rs) {
-                String docID = r.getString(0);
-                assertNotNull(docID);
+                    Document doc = newDb.getDocument(docID);
+                    assertNotNull(doc);
+                    assertEquals(docID, doc.getString("name"));
 
-                Document doc = newDb.getDocument(docID);
-                assertNotNull(doc);
-                assertEquals(docID, doc.getString("name"));
+                    Blob blob = doc.getBlob("data");
+                    assertNotNull(blob);
 
-                Blob blob = doc.getBlob("data");
-                assertNotNull(blob);
-
-                assertEquals(docID, new String(blob.getContent()));
+                    assertEquals(docID, new String(blob.getContent()));
+                }
             }
         }
         finally {

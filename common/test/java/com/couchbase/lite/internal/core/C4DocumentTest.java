@@ -56,7 +56,7 @@ public class C4DocumentTest extends C4BaseTest {
 
     // - "FleeceDocs"
     @Test
-    public void testFleeceDocs() throws LiteCoreException, IOException { importJSONLines("names_100.json"); }
+    public void testFleeceDocs() throws LiteCoreException, IOException { loadJsonAsset("names_100.json"); }
 
     // - "Document CreateVersionedDoc"
     @Test

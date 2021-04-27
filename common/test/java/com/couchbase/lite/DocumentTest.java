@@ -2504,14 +2504,13 @@ public class DocumentTest extends BaseDbTest {
     public void testMutableDocToJSONBeforeSave() { new MutableDocument().toJSON(); }
 
     // JSON 3.5.a
-    // Java does not have MutableDocument(String json) because it colides with MutableDocument(String id)
+    // Java does not have MutableDocument(String json) because it collides with MutableDocument(String id)
 
     // JSON 3.5.b-c
     @Test
     public void testDocFromJSON() throws JSONException, IOException, CouchbaseLiteException {
-        MutableDocument mDoc = new MutableDocument("fromJSON", readJSONResource("document.json"));
-        saveDocInBaseTestDb(mDoc);
-        Document dbDoc = baseTestDb.getDocument(mDoc.getId());
+        Document dbDoc = saveDocInBaseTestDb(new MutableDocument("fromJSON", readJSONResource("document.json")));
+        baseTestDb.saveBlob(makeBlob()); // be sure the blob is there...
         verifyDocument(dbDoc);
         verifyDocument(new JSONObject(dbDoc.toJSON()));
     }

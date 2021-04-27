@@ -190,7 +190,6 @@ public abstract class BaseDbTest extends BaseTest {
         }
     }
 
-
     protected final String readJSONResource(String name) throws IOException {
         StringBuilder buf = new StringBuilder();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(PlatformUtils.getAsset(name)))) {
@@ -1184,6 +1183,7 @@ public abstract class BaseDbTest extends BaseTest {
         assertEquals("sha1-C+QguVamTgLjyDQ9RzRtyCv6x60=", blob.digest());
         assertEquals(59, blob.length());
         assertEquals("text/plain", blob.getContentType());
+        assertEquals(BLOB_CONTENT, new String(blob.getContent()));
     }
 
     protected final MutableDocument makeDocument() {

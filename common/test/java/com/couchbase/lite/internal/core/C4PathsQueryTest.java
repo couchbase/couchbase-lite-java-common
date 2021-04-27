@@ -1,5 +1,6 @@
 package com.couchbase.lite.internal.core;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.junit.After;
@@ -19,8 +20,8 @@ public class C4PathsQueryTest extends C4QueryBaseTest {
     //-------------------------------------------------------------------------
 
     @Before
-    public final void setUpC4PathsQueryTest() throws CouchbaseLiteException {
-        importJSONLinesSafely("paths.json");
+    public final void setUpC4PathsQueryTest() throws LiteCoreException, IOException {
+        loadJsonAsset("paths.json");
         BaseTest.logTestInitializationComplete("C4PathsQuery");
     }
 

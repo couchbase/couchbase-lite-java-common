@@ -521,8 +521,7 @@ public class LogTest extends BaseDbTest {
         saveDocInBaseTestDb(doc);
 
         Query query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(baseTestDb));
-        ResultSet rs = query.execute();
-        assertEquals(rs.allResults().size(), 1);
+        try (ResultSet rs = query.execute()) { assertEquals(rs.allResults().size(), 1); }
 
         assertTrue(customLogger.getContent().contains("[{\"hebrew\":\"" + hebrew + "\"}]"));
     }

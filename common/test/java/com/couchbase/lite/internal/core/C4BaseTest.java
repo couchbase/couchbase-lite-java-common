@@ -149,23 +149,19 @@ public class C4BaseTest extends PlatformBaseTest {
         createRev(docID, revID, body, 0);
     }
 
-    protected long importJSONLines(String name) throws LiteCoreException, IOException {
-        return importJSONLines(PlatformUtils.getAsset(name));
-    }
-
-    protected long importJSONLines(String name, String idPrefix) throws LiteCoreException, IOException {
-        return importJSONLines(PlatformUtils.getAsset(name), idPrefix);
-    }
-
-    protected long importJSONLinesSafely(String name) throws CouchbaseLiteException {
-        try { return importJSONLines(name); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        catch (IOException e) { throw new IllegalStateException("IO error importing JSON", e); }
-    }
-
     protected void createRev(C4Database db, String docID, String revID, byte[] body)
         throws LiteCoreException {
         createRev(db, docID, revID, body, 0);
+    }
+
+    protected long loadJsonAsset(String name) throws LiteCoreException, IOException {
+        return loadJsonAsset(name, "");
+    }
+
+    protected long loadJsonAsset(String name, String idPrefix) throws LiteCoreException, IOException {
+        try (InputStream is = PlatformUtils.getAsset(name)) {
+            return loadJsonAsset(is, idPrefix, 120, true);
+        }
     }
 
     protected void createRev(String docID, String revID, byte[] body, int flags)
@@ -246,52 +242,36 @@ public class C4BaseTest extends PlatformBaseTest {
         }
     }
 
-    private long importJSONLines(InputStream is) throws LiteCoreException, IOException {
-        return importJSONLines(is, 120, true);
-    }
-
-    private long importJSONLines(InputStream is, String idPrefix) throws LiteCoreException, IOException {
-        return importJSONLines(is, idPrefix, 120, true);
-    }
-
-    // Read a file that contains a JSON document per line. Every line becomes a document.
-    private long importJSONLines(InputStream is, double timeout, boolean verbose)
-        throws IOException, LiteCoreException {
-        return importJSONLines(is, "", timeout, verbose);
-    }
-
-    // Read a file that contains a JSON document per line. Every line becomes a document.
-    private long importJSONLines(InputStream is, String idPrefix, double timeout, boolean verbose)
+    // Read a file that contains a JSON document per line. Each line becomes a document.
+    private long loadJsonAsset(InputStream is, String idPrefix, double timeout, boolean verbose)
         throws LiteCoreException, IOException {
-        StopWatch timer = new StopWatch();
-
         long numDocs = 0;
         boolean commit = false;
+
+        StopWatch timer = new StopWatch();
+
         c4Database.beginTransaction();
-        try {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    try (FLSliceResult body = c4Database.encodeJSON(line)) {
-                        String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
-
-                        try (C4Document doc = c4Database.put(body, docID, 0, false, false, new String[0], true, 0, 0)) {
-                            assertNotNull(doc);
-                        }
-                    }
-
-                    numDocs++;
-                    if ((numDocs % 1000) == 0 && (timer.getElapsedTimeSecs() >= timeout)) {
-                        String msg = String.format(
-                            Locale.ENGLISH, "Stopping JSON import after %.3f sec",
-                            timer.getElapsedTimeSecs());
-                        throw new IOException(msg);
-                    }
-                    if (verbose && numDocs % 100000 == 0) {
-                        Report.log(LogLevel.VERBOSE, String.valueOf(numDocs));
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
+            String l;
+            while ((l = br.readLine()) != null) {
+                try (FLSliceResult body = c4Database.encodeJSON(l)) {
+                    String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
+                    try (C4Document doc = c4Database.put(body, docID, 0, false, false, new String[0], true, 0, 0)) {
+                        assertNotNull(doc);
                     }
                 }
+
+                numDocs++;
+
+                if (verbose && numDocs % 100000 == 0) { Report.log(LogLevel.VERBOSE, "...docs loaded: " + numDocs); }
+
+                if (((numDocs % 1000) == 0) && (timer.getElapsedTimeSecs() >= timeout)) {
+                    throw new IOException(String.format(
+                        Locale.ENGLISH, "Stopping JSON import after %.3f sec",
+                        timer.getElapsedTimeSecs()));
+                }
             }
+
             commit = true;
         }
         finally {

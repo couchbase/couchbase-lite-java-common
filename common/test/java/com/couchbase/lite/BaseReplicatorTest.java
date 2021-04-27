@@ -172,7 +172,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
         ListenerToken token = repl.addChangeListener(testSerialExecutor, listener);
 
-        Report.log("Starting test replicator: " + repl.getConfig());
+        Report.log("Test replicator starting: " + repl.getConfig());
         boolean success;
         try {
             repl.start(reset);
@@ -184,7 +184,8 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
         // see if the replication succeeded
         Throwable err = listener.getFailureReason();
-        Report.log(err, "Test eplicator finished: " + success);
+        Report.log(err, "Test replicator stopped: " + success);
+
         if (err instanceof CouchbaseLiteException) { throw (CouchbaseLiteException) err; }
         if (err != null) { throw new RuntimeException(err); }
 

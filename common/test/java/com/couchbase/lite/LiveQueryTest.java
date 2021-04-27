@@ -186,8 +186,8 @@ public class LiveQueryTest extends BaseDbTest {
     }
 
     private void nextQuery(int n, QueryChange change) {
-        ResultSet rs = change.getResults();
-        List<Result> results = rs.allResults();
+        List<Result> results;
+        try (ResultSet rs = change.getResults()) { results = rs.allResults(); }
         if (results.size() <= 0) { return; }
 
         globalQuery.removeChangeListener(globalToken);

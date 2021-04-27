@@ -49,8 +49,6 @@ import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("ConstantConditions")
 public class ArrayTest extends BaseDbTest {
-    @Test(expected = IllegalStateException.class)
-    public void testMutableArrayToJSON() { new MutableArray().toJSON(); }
 
     @Test
     public void testCreate() throws CouchbaseLiteException {

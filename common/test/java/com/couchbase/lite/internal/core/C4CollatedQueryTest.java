@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +32,8 @@ import static org.junit.Assert.assertEquals;
 
 public class C4CollatedQueryTest extends C4QueryBaseTest {
     @Before
-    public final void setUpC4CollatedQueryTest() throws CouchbaseLiteException {
-        importJSONLinesSafely("iTunesMusicLibrary.json");
+    public final void setUpC4CollatedQueryTest() throws LiteCoreException, IOException {
+        loadJsonAsset("iTunesMusicLibrary.json");
         BaseTest.logTestInitializationComplete("C4CollatedQuery");
     }
 

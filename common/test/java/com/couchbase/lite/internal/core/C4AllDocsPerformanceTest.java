@@ -96,12 +96,8 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         C4Document doc;
         int i = 0;
         while ((doc = nextDocument(e)) != null) {
-            try {
-                i++;
-            }
-            finally {
-                doc.close();
-            }
+            try { i++; }
+            finally { doc.close(); }
         }
         assertEquals(DOC_NUM, i);
 

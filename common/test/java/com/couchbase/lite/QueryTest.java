@@ -1450,6 +1450,7 @@ public class QueryTest extends BaseQueryTest {
                 }
                 assertEquals(10, count);
             }
+
             latch.countDown();
         };
         ListenerToken token = query.addChangeListener(testSerialExecutor, listener);
@@ -2023,48 +2024,52 @@ public class QueryTest extends BaseQueryTest {
         // Type 1: Enumeration by ResultSet.next()
         int i = 0;
         Result result;
-        ResultSet rs = query.execute();
-        while ((result = rs.next()) != null) {
-            assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), result.getString(0));
-            i++;
+        try (ResultSet rs = query.execute()) {
+            while ((result = rs.next()) != null) {
+                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), result.getString(0));
+                i++;
+            }
+            assertEquals(5, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(5, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
 
         // Type 2: Enumeration by ResultSet.iterator()
         i = 0;
-        rs = query.execute();
-        for (Result r: rs) {
-            assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-            i++;
+        try (ResultSet rs = query.execute()) {
+            for (Result r: rs) {
+                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
+                i++;
+            }
+            assertEquals(5, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(5, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
 
         // Type 3: Enumeration by ResultSet.allResults().get(int index)
         i = 0;
-        rs = query.execute();
-        List<Result> list = rs.allResults();
-        for (Result r: list) {
-            assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-            i++;
+        try (ResultSet rs = query.execute()) {
+            List<Result> list = rs.allResults();
+            for (Result r: list) {
+                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
+                i++;
+            }
+            assertEquals(5, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(5, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
 
         // Type 4: Enumeration by ResultSet.allResults().iterator()
         i = 0;
-        rs = query.execute();
-        for (Result r: rs.allResults()) {
-            assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-            i++;
+        try (ResultSet rs = query.execute()) {
+            for (Result r: rs.allResults()) {
+                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
+                i++;
+            }
+            assertEquals(5, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(5, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
     }
 
     @Test
@@ -2075,47 +2080,52 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(baseTestDb))
             .orderBy(Ordering.property("number1"));
 
+        List<Result> results;
+
         // Get all results by get(int)
         int i = 0;
-        ResultSet rs = query.execute();
-        List<Result> results = rs.allResults();
-        for (int j = 0; j < results.size(); j++) {
-            Result r = results.get(j);
-            assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-            i++;
+        try (ResultSet rs = query.execute()) {
+            results = rs.allResults();
+            for (int j = 0; j < results.size(); j++) {
+                Result r = results.get(j);
+                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
+                i++;
+            }
+            assertEquals(5, results.size());
+            assertEquals(5, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(5, results.size());
-        assertEquals(5, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
 
         // Get all results by iterator
         i = 0;
-        rs = query.execute();
-        results = rs.allResults();
-        for (Result r: results) {
-            assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-            i++;
+        try (ResultSet rs = query.execute()) {
+            results = rs.allResults();
+            for (Result r: results) {
+                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
+                i++;
+            }
+            assertEquals(5, results.size());
+            assertEquals(5, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(5, results.size());
-        assertEquals(5, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
 
         // Partial enumerating then get all results:
-        rs = query.execute();
-        assertNotNull(rs.next());
-        assertNotNull(rs.next());
-        results = rs.allResults();
-        i = 2;
-        for (Result r: results) {
-            assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-            i++;
+        try (ResultSet rs = query.execute()) {
+            assertNotNull(rs.next());
+            assertNotNull(rs.next());
+            results = rs.allResults();
+            i = 2;
+            for (Result r: results) {
+                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
+                i++;
+            }
+            assertEquals(3, results.size());
+            assertEquals(5, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(3, results.size());
-        assertEquals(5, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
     }
 
     @Test
@@ -2129,43 +2139,43 @@ public class QueryTest extends BaseQueryTest {
 
         // Type 1: Enumeration by ResultSet.next()
         int i = 0;
-        ResultSet rs = query.execute();
-        while (rs.next() != null) { i++; }
-        assertEquals(0, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
+        try (ResultSet rs = query.execute()) {
+            while (rs.next() != null) { i++; }
+            assertEquals(0, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
+        }
 
         // Type 2: Enumeration by ResultSet.iterator()
         i = 0;
-        rs = query.execute();
-        for (Result r: rs) {
-            i++;
+        try (ResultSet rs = query.execute()) {
+            for (Result r: rs) { i++; }
+            assertEquals(0, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(0, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
 
         // Type 3: Enumeration by ResultSet.allResults().get(int index)
         i = 0;
-        rs = query.execute();
-        List<Result> list = rs.allResults();
-        for (int j = 0; j < list.size(); j++) {
-            list.get(j);
-            i++;
+        try (ResultSet rs = query.execute()) {
+            List<Result> list = rs.allResults();
+            for (int j = 0; j < list.size(); j++) {
+                list.get(j);
+                i++;
+            }
+            assertEquals(0, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(0, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
 
         // Type 4: Enumeration by ResultSet.allResults().iterator()
         i = 0;
-        rs = query.execute();
-        for (Result r: rs.allResults()) {
-            i++;
+        try (ResultSet rs = query.execute()) {
+            for (Result r: rs.allResults()) { i++; }
+            assertEquals(0, i);
+            assertNull(rs.next());
+            assertEquals(0, rs.allResults().size());
         }
-        assertEquals(0, i);
-        assertNull(rs.next());
-        assertEquals(0, rs.allResults().size());
     }
 
     @Test
@@ -2490,12 +2500,8 @@ public class QueryTest extends BaseQueryTest {
             // create one doc
             final CountDownLatch latchAdd = new CountDownLatch(1);
             executeAsync(500, () -> {
-                try {
-                    loadNumberedDocs(51, 100);
-                }
-                catch (Exception e) {
-                    e.printStackTrace();
-                }
+                try { loadNumberedDocs(51, 100); }
+                catch (Exception e) { e.printStackTrace(); }
                 latchAdd.countDown();
             });
 
@@ -2524,14 +2530,12 @@ public class QueryTest extends BaseQueryTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> {
-            int matchs = 0;
+            int matches = 0;
             ResultSet rs = change.getResults();
-            for (Result r: rs) {
-                matchs++;
-            }
+            for (Result r: rs) { matches++; }
             // match doc1 with number1 -> 5 which is less than 10
-            if (matchs == 1) { latch1.countDown(); }
-            // Not match with doc1 because number1 -> 15 which does not quarify the query criteria
+            if (matches == 1) { latch1.countDown(); }
+            // Not match with doc1 because number1 -> 15 which does not match the query criteria
             else { latch2.countDown(); }
         });
 
@@ -2660,12 +2664,10 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(baseTestDb))
             .where(Meta.id.equalTo(Expression.string("doc1")));
 
-        ResultSet rs = query.execute();
-        List<Result> results = rs.allResults();
-        assertEquals(1, results.size());
-
-        results = rs.allResults();
-        assertEquals(0, results.size());
+        try (ResultSet rs = query.execute()) {
+            assertEquals(1, rs.allResults().size());
+            assertEquals(0, rs.allResults().size());
+        }
     }
 
     @Test
@@ -2898,7 +2900,7 @@ public class QueryTest extends BaseQueryTest {
 
         //ArrayList<String> expectedLocal = new ArrayList<>();
 
-        for (Number t: millis) {  baseTestDb.save(new MutableDocument().setNumber("timestamp", t)); }
+        for (Number t: millis) { baseTestDb.save(new MutableDocument().setNumber("timestamp", t)); }
 
         Query query = QueryBuilder.select(
             SelectResult.expression(Function.millisToString(Expression.property("timestamp"))),
@@ -2939,14 +2941,15 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(baseTestDb))
             .where(Expression.property("$type").equalTo(Expression.string("book")));
 
-        ResultSet res = q.execute();
-        for (Result r: res) {
-            books++;
-            String p = r.getString("$price");
-            if (Integer.parseInt(p.substring(1)) < 100) { cheapBooks++; }
+        try (ResultSet res = q.execute()) {
+            for (Result r: res) {
+                books++;
+                String p = r.getString("$price");
+                if (Integer.parseInt(p.substring(1)) < 100) { cheapBooks++; }
 
-            assertEquals(2, books);
-            assertEquals(1, cheapBooks);
+                assertEquals(2, books);
+                assertEquals(1, cheapBooks);
+            }
         }
     }
 
@@ -2963,9 +2966,10 @@ public class QueryTest extends BaseQueryTest {
 
         final CountDownLatch latch = new CountDownLatch(2);
         QueryChangeListener listener = change -> {
-            ResultSet rs = change.getResults();
-            if (consumeAll) {
-                while (rs.next() != null) { }
+            try (ResultSet rs = change.getResults()) {
+                if (consumeAll) {
+                    while (rs.next() != null) { }
+                }
             }
             latch.countDown();
             // should come only once!

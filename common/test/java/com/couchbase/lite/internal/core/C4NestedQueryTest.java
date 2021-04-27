@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.junit.After;
@@ -34,8 +35,8 @@ public class C4NestedQueryTest extends C4QueryBaseTest {
     //-------------------------------------------------------------------------
 
     @Before
-    public final void setUpC4NestedQueryTest() throws CouchbaseLiteException {
-        importJSONLinesSafely("nested.json");
+    public final void setUpC4NestedQueryTest() throws LiteCoreException, IOException {
+        loadJsonAsset("nested.json");
         BaseTest.logTestInitializationComplete("C4NestedQuery");
     }
 
