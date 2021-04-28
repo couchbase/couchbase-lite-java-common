@@ -183,8 +183,8 @@ public class QueryTest extends BaseQueryTest {
             {EXPR_NUMBER1.equalTo(Expression.intValue(7)), docids(7)},
             {EXPR_NUMBER1.notEqualTo(Expression.intValue(7)), docids(1, 2, 3, 4, 5, 6, 8, 9, 10)}
         };
-        List<Map<String, Object>> numbers = loadNumberedDocs(10);
-        runTestWithNumbers(numbers, cases);
+        loadNumberedDocs(10);
+        runTestWithNumbers(cases);
     }
 
     @Test
@@ -231,8 +231,8 @@ public class QueryTest extends BaseQueryTest {
                 docids(6, 7, 8, 9, 10)
             }
         };
-        List<Map<String, Object>> numbers = loadNumberedDocs(10);
-        runTestWithNumbers(numbers, cases);
+        loadNumberedDocs(10);
+        runTestWithNumbers(cases);
     }
 
     @Test
@@ -247,8 +247,8 @@ public class QueryTest extends BaseQueryTest {
                 docids(1, 2, 8, 9, 10)
             }
         };
-        List<Map<String, Object>> numbers = loadNumberedDocs(10);
-        runTestWithNumbers(numbers, cases);
+        loadNumberedDocs(10);
+        runTestWithNumbers(cases);
     }
 
     // https://github.com/couchbase/couchbase-lite-ios/issues/1670
@@ -340,8 +340,8 @@ public class QueryTest extends BaseQueryTest {
         Object[][] cases = {
             {EXPR_NUMBER1.between(Expression.intValue(3), Expression.intValue(7)), docids(3, 4, 5, 6, 7)}
         };
-        List<Map<String, Object>> numbers = loadNumberedDocs(10);
-        runTestWithNumbers(numbers, cases);
+        loadNumberedDocs(10);
+        runTestWithNumbers(cases);
     }
 
     @Test
@@ -1433,36 +1433,34 @@ public class QueryTest extends BaseQueryTest {
 
         final CountDownLatch latch = new CountDownLatch(2);
         QueryChangeListener listener = change -> {
-            ResultSet rs = change.getResults();
-            if (latch.getCount() == 2) {
-                int count = 0;
-                while (rs.next() != null) { count++; }
-                assertEquals(9, count);
-            }
-            else if (latch.getCount() == 1) {
-                int count = 0;
-                for (Result result: rs) {
-                    if (count == 0) {
-                        Document doc = baseTestDb.getDocument(result.getString(0));
-                        assertEquals(-1L, doc.getValue("number1"));
-                    }
-                    count++;
+            try (ResultSet rs = change.getResults()) {
+                if (latch.getCount() == 2) {
+                    int count = 0;
+                    while (rs.next() != null) { count++; }
+                    assertEquals(9, count);
                 }
-                assertEquals(10, count);
+                else if (latch.getCount() == 1) {
+                    int count = 0;
+                    for (Result result: rs) {
+                        if (count == 0) {
+                            Document doc = baseTestDb.getDocument(result.getString(0));
+                            assertEquals(-1L, doc.getValue("number1"));
+                        }
+                        count++;
+                    }
+                    assertEquals(10, count);
+                }
             }
 
             latch.countDown();
         };
+
         ListenerToken token = query.addChangeListener(testSerialExecutor, listener);
         try {
             // create one doc
             executeAsync(500, () -> {
-                try {
-                    createNumberedDocInBaseTestDb(-1, 100);
-                }
-                catch (CouchbaseLiteException e) {
-                    throw new RuntimeException(e);
-                }
+                try { createNumberedDocInBaseTestDb(-1, 100); }
+                catch (CouchbaseLiteException e) { throw new RuntimeException(e); }
             });
             // wait till listener is called
             assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
@@ -1672,10 +1670,10 @@ public class QueryTest extends BaseQueryTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1389
     @Test
     public void testQueryWhereBooleanExpression() throws CouchbaseLiteException {
-        // STEP 1: Insert two documents
-        Document task1 = createTaskDocument("Task 1", false);
-        Document task2 = createTaskDocument("Task 2", true);
-        Document task3 = createTaskDocument("Task 3", true);
+        // STEP 1: Insert three documents
+        createTaskDocument("Task 1", false);
+        createTaskDocument("Task 2", true);
+        createTaskDocument("Task 3", true);
         assertEquals(3, baseTestDb.getCount());
 
         Expression exprType = Expression.property("type");
@@ -2490,8 +2488,9 @@ public class QueryTest extends BaseQueryTest {
         final CountDownLatch latch = new CountDownLatch(1);
         QueryChangeListener listener = change -> {
             int count = 0;
-            ResultSet rs = change.getResults();
-            while (rs.next() != null) { count++; }
+            try (ResultSet rs = change.getResults()) {
+                while (rs.next() != null) { count++; }
+            }
             if (count == 75) { latch.countDown(); } // 26-100
         };
         ListenerToken token = query.addChangeListener(testSerialExecutor, listener);
@@ -2531,8 +2530,9 @@ public class QueryTest extends BaseQueryTest {
         final CountDownLatch latch2 = new CountDownLatch(1);
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> {
             int matches = 0;
-            ResultSet rs = change.getResults();
-            for (Result r: rs) { matches++; }
+            try (ResultSet rs = change.getResults()) {
+                for (Result r: rs) { matches++; }
+            }
             // match doc1 with number1 -> 5 which is less than 10
             if (matches == 1) { latch1.countDown(); }
             // Not match with doc1 because number1 -> 15 which does not match the query criteria
@@ -2933,7 +2933,6 @@ public class QueryTest extends BaseQueryTest {
         int cheapBooks = 0;
         int books = 0;
 
-        Expression w = Expression.property("name.first").regex(Expression.string("^Mar.*"));
         Where q = QueryBuilder.select(
             SelectResult.expression(Meta.id),
             SelectResult.expression(Expression.property("$type")),
@@ -2966,14 +2965,15 @@ public class QueryTest extends BaseQueryTest {
 
         final CountDownLatch latch = new CountDownLatch(2);
         QueryChangeListener listener = change -> {
-            try (ResultSet rs = change.getResults()) {
-                if (consumeAll) {
+            if (consumeAll) {
+                try (ResultSet rs = change.getResults()) {
                     while (rs.next() != null) { }
                 }
             }
             latch.countDown();
-            // should come only once!
+            // should happen only once!
         };
+
         ListenerToken token = query.addChangeListener(testSerialExecutor, listener);
         try {
             // create one doc
@@ -2982,8 +2982,9 @@ public class QueryTest extends BaseQueryTest {
                 catch (CouchbaseLiteException e) { throw new RuntimeException(e); }
             });
 
-            // wait till listener is called
-            assertFalse(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+            // Wait 5 seconds
+            // The latch should not pop, because the listener should be called only once
+            assertFalse(latch.await(5 * 1000, TimeUnit.MILLISECONDS));
             assertEquals(1, latch.getCount());
         }
         finally {
@@ -2991,7 +2992,7 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
-    private void runTestWithNumbers(List<Map<String, Object>> numbers, Object[][] cases) throws
+    private void runTestWithNumbers(Object[][] cases) throws
         CouchbaseLiteException {
         for (Object[] c: cases) {
             Expression w = (Expression) c[0];

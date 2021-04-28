@@ -27,12 +27,11 @@ public abstract class BaseQueryTest extends BaseDbTest {
     public interface QueryResult { void check(int n, Result result); }
 
     protected final String createNumberedDocInBaseTestDb(int i, int num) throws CouchbaseLiteException {
-        String docID = "doc" + i;
-        MutableDocument doc = new MutableDocument(docID);
+        MutableDocument doc = new MutableDocument("doc" + i);
         doc.setValue("number1", i);
         doc.setValue("number2", num - i);
         saveDocInBaseTestDb(doc);
-        return docID;
+        return doc.getId();
     }
 
     protected final List<Map<String, Object>> loadNumberedDocs(final int num) throws CouchbaseLiteException {

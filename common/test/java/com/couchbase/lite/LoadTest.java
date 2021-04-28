@@ -274,7 +274,7 @@ public class LoadTest extends BaseDbTest {
         }
     }
 
-    private Document updateDoc(Document doc, int rounds, String tag) throws CouchbaseLiteException {
+    private void updateDoc(Document doc, int rounds, String tag) throws CouchbaseLiteException {
         Document tmpDoc = doc;
         for (int i = 1; i <= rounds; i++) {
             MutableDocument mDoc = tmpDoc.toMutable();
@@ -299,15 +299,16 @@ public class LoadTest extends BaseDbTest {
 
             tmpDoc = saveDocInBaseTestDb(mDoc);
         }
-        return tmpDoc;
     }
 
     private void verifyByTagName(String tag, VerifyBlock block) throws CouchbaseLiteException {
-        Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb))
-            .where(Expression.property("tag").equalTo(Expression.string(tag)));
         int n = 0;
-        for (Result row: query.execute()) { block.verify(++n, row); }
+        try (ResultSet rs = QueryBuilder.select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property("tag").equalTo(Expression.string(tag)))
+            .execute()) {
+            for (Result row: rs) { block.verify(++n, row); }
+        }
     }
 
     private void verifyByTagName(String tag, int nRows) throws CouchbaseLiteException {

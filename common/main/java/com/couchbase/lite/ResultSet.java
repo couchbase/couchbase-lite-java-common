@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
@@ -51,16 +52,25 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     private final Map<String, Integer> columnNames;
     @NonNull
     private final DbContext context;
+
+    @NonNull
+    private final AtomicInteger refCount = new AtomicInteger(0);
+
     @GuardedBy("getDbLock()")
     @Nullable
     private C4QueryEnumerator c4enum;
+
+    @GuardedBy("getDbLock()")
     private boolean isAllEnumerated;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
-    ResultSet(@NonNull AbstractQuery query, @Nullable C4QueryEnumerator c4enum, @NonNull Map<String, Integer> cols) {
+    ResultSet(
+        @NonNull AbstractQuery query,
+        @Nullable C4QueryEnumerator c4enum,
+        @NonNull Map<String, Integer> cols) {
         this.query = query;
         this.columnNames = cols;
         this.context = new DbContext(query.getDatabase());
@@ -143,14 +153,23 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     public void close() {
         synchronized (getDbLock()) {
             if (c4enum == null) { return; }
-            c4enum.close();
-            c4enum = null;
+            if (refCount.get() <= 0) {
+                c4enum.close();
+                c4enum = null;
+                return;
+            }
         }
+        // Make a guess about why this is retained...
+        Log.i(LogDomain.QUERY, "Attempt to close a retained ResultSet.  Do not close the Results from a LiveQuery");
     }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+
+    // Ref counting: An ugly little hack for LiveQueries
+    void retain() { refCount.incrementAndGet(); }
+    void release() { refCount.decrementAndGet(); }
 
     @NonNull
     AbstractQuery getQuery() { return query; }

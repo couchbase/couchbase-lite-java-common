@@ -96,30 +96,28 @@ public class ConcurrencyTest extends BaseDbTest {
     @Test
     @ConcurrencyUnitTest
     public void testConcurrentUpdate() throws CouchbaseLiteException {
-        // NOTE: By increasing number of threads, update causes crash!
-        final int kNDocs = 5;
-        final int kNRounds = 50;
-        final int kNThreads = 4;
-        final int kWaitInSec = 600;
+        // ??? Increasing number of threads causes crashes
+        final int nDocs = 5;
+        final int nThreads = 4;
 
         // createDocs2 returns synchronized List.
-        final List<String> docIDs = createDocs(kNDocs, "Create");
-        assertEquals(kNDocs, docIDs.size());
+        final List<String> docIDs = createDocs(nDocs, "Create");
+        assertEquals(nDocs, docIDs.size());
 
         // concurrently creates documents
         concurrentValidator(
-            kNThreads,
-            kWaitInSec,
+            nThreads,
+            600,
             threadIndex -> {
                 String tag = "tag-" + threadIndex;
-                assertTrue(updateDocs(docIDs, kNRounds, tag));
+                assertTrue(updateDocs(docIDs, 50, tag));
             }
         );
 
         final AtomicInteger count = new AtomicInteger(0);
-        for (int i = 0; i < kNThreads; i++) { verifyByTagName("tag-" + i, (n, result) -> count.incrementAndGet()); }
+        for (int i = 0; i < nThreads; i++) { verifyByTagName("tag-" + i, (n, result) -> count.incrementAndGet()); }
 
-        assertEquals(kNDocs, count.intValue());
+        assertEquals(nDocs, count.intValue());
     }
 
     @Test
@@ -545,11 +543,13 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     private void verifyByTagName(String tag, VerifyBlock<Result> block) throws CouchbaseLiteException {
-        Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb))
-            .where(Expression.property("tag").equalTo(Expression.string(tag)));
         int n = 0;
-        for (Result result: query.execute()) { block.verify(++n, result); }
+        try (ResultSet rs = QueryBuilder.select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property("tag").equalTo(Expression.string(tag)))
+            .execute()) {
+            for (Result result: rs) { block.verify(++n, result); }
+        }
     }
 
     private void verifyByTagName(String tag, int nRows) throws CouchbaseLiteException {
