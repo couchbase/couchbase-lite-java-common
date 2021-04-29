@@ -55,6 +55,33 @@ public class LiveQueryTest extends BaseDbTest {
         finally { query.removeChangeListener(token); }
     }
 
+    @Test
+    public void testCloseResultsInLiveQueryListener() throws CouchbaseLiteException, InterruptedException {
+        final Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb));
+
+        final int[] count = new int[] {0};
+        final CountDownLatch[] latches = new CountDownLatch[2];
+        for (int i = 0; i < latches.length; i++) { latches[i] = new CountDownLatch(1); }
+        ListenerToken token = query.addChangeListener(
+            testSerialExecutor,
+            change -> {
+                // this will close the resultset
+                try (ResultSet rs = change.getResults()) {
+                    int n = count[0]++;
+                    latches[n].countDown();
+                }
+            });
+
+        createDocNumbered(10);
+        assertTrue(latches[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+
+        createDocNumbered(11);
+        try { assertTrue(latches[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+        finally { query.removeChangeListener(token); }
+    }
+
     // All listeners should hear an update
     @Test
     public void testLiveQueryWith2Listeners() throws CouchbaseLiteException, InterruptedException {
@@ -186,8 +213,7 @@ public class LiveQueryTest extends BaseDbTest {
     }
 
     private void nextQuery(int n, QueryChange change) {
-        List<Result> results;
-        try (ResultSet rs = change.getResults()) { results = rs.allResults(); }
+        List<Result> results = change.getResults().allResults();
         if (results.size() <= 0) { return; }
 
         globalQuery.removeChangeListener(globalToken);

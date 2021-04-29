@@ -51,12 +51,11 @@ public class QueryChangeTest extends BaseQueryTest {
         // The change handler might get called from the executor thread before query.addChangeListener() returns.
         final CountDownLatch latch = new CountDownLatch(1);
         final QueryChangeListener listener = change -> {
-            try (ResultSet rs = change.getResults()) {
-                if ((rs != null) && (rs.next() != null)) {
-                    synchronized (lock) {
-                        query.removeChangeListener(token[0]);
-                        token[0] = null;
-                    }
+            ResultSet rs = change.getResults();
+            if ((rs != null) && (rs.next() != null)) {
+                synchronized (lock) {
+                    query.removeChangeListener(token[0]);
+                    token[0] = null;
                 }
             }
             latch.countDown();

@@ -1433,23 +1433,22 @@ public class QueryTest extends BaseQueryTest {
 
         final CountDownLatch latch = new CountDownLatch(2);
         QueryChangeListener listener = change -> {
-            try (ResultSet rs = change.getResults()) {
-                if (latch.getCount() == 2) {
-                    int count = 0;
-                    while (rs.next() != null) { count++; }
-                    assertEquals(9, count);
-                }
-                else if (latch.getCount() == 1) {
-                    int count = 0;
-                    for (Result result: rs) {
-                        if (count == 0) {
-                            Document doc = baseTestDb.getDocument(result.getString(0));
-                            assertEquals(-1L, doc.getValue("number1"));
-                        }
-                        count++;
+            ResultSet rs = change.getResults();
+            if (latch.getCount() == 2) {
+                int count = 0;
+                while (rs.next() != null) { count++; }
+                assertEquals(9, count);
+            }
+            else if (latch.getCount() == 1) {
+                int count = 0;
+                for (Result result: rs) {
+                    if (count == 0) {
+                        Document doc = baseTestDb.getDocument(result.getString(0));
+                        assertEquals(-1L, doc.getValue("number1"));
                     }
-                    assertEquals(10, count);
+                    count++;
                 }
+                assertEquals(10, count);
             }
 
             latch.countDown();
@@ -2488,9 +2487,8 @@ public class QueryTest extends BaseQueryTest {
         final CountDownLatch latch = new CountDownLatch(1);
         QueryChangeListener listener = change -> {
             int count = 0;
-            try (ResultSet rs = change.getResults()) {
-                while (rs.next() != null) { count++; }
-            }
+            ResultSet rs = change.getResults();
+            while (rs.next() != null) { count++; }
             if (count == 75) { latch.countDown(); } // 26-100
         };
         ListenerToken token = query.addChangeListener(testSerialExecutor, listener);
@@ -2530,9 +2528,8 @@ public class QueryTest extends BaseQueryTest {
         final CountDownLatch latch2 = new CountDownLatch(1);
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> {
             int matches = 0;
-            try (ResultSet rs = change.getResults()) {
-                for (Result r: rs) { matches++; }
-            }
+            for (Result r: change.getResults()) { matches++; }
+
             // match doc1 with number1 -> 5 which is less than 10
             if (matches == 1) { latch1.countDown(); }
             // Not match with doc1 because number1 -> 15 which does not match the query criteria
@@ -2966,10 +2963,10 @@ public class QueryTest extends BaseQueryTest {
         final CountDownLatch latch = new CountDownLatch(2);
         QueryChangeListener listener = change -> {
             if (consumeAll) {
-                try (ResultSet rs = change.getResults()) {
-                    while (rs.next() != null) { }
-                }
+                ResultSet rs = change.getResults();
+                while (rs.next() != null) { }
             }
+
             latch.countDown();
             // should happen only once!
         };

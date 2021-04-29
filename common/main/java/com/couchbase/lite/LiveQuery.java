@@ -132,7 +132,7 @@ final class LiveQuery implements DatabaseChangeListener {
                 // In either case we probably want to kick off a new query.
                 // In the latter case the current query results are irrelevant and need to be cleared.
                 if (shouldClearResults) {
-                    synchronized (lock) { previousResults = null; }
+                    synchronized (lock) { closePrevResults(); }
                 }
             }
         }
@@ -152,7 +152,7 @@ final class LiveQuery implements DatabaseChangeListener {
             if (State.STOPPED == state.getAndSet(State.STOPPED)) { return; }
 
             synchronized (lock) {
-                previousResults = null;
+                closePrevResults();
 
                 final ListenerToken token = dbListenerToken;
                 dbListenerToken = null;
@@ -189,8 +189,7 @@ final class LiveQuery implements DatabaseChangeListener {
             if (prevResults == null) { newResults = query.execute(); }
             else {
                 newResults = prevResults.refresh();
-                prevResults.release();
-                prevResults.close();
+                previousResults.forceClose();
             }
             Log.i(DOMAIN, "LiveQuery refresh: %s > %s", prevResults, newResults);
 
@@ -213,4 +212,12 @@ final class LiveQuery implements DatabaseChangeListener {
             changeNotifier.postChange(new QueryChange(query, null, err));
         }
     }
+
+    @GuardedBy("lock")
+    private void closePrevResults() {
+        if (previousResults == null) { return; }
+        previousResults.forceClose();
+        previousResults = null;
+    }
 }
+

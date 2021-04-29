@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
@@ -53,15 +52,15 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @NonNull
     private final DbContext context;
 
-    @NonNull
-    private final AtomicInteger refCount = new AtomicInteger(0);
-
     @GuardedBy("getDbLock()")
     @Nullable
     private C4QueryEnumerator c4enum;
 
     @GuardedBy("getDbLock()")
     private boolean isAllEnumerated;
+
+    @GuardedBy("getDbLock()")
+    private boolean uncloseable;
 
     //---------------------------------------------
     // constructors
@@ -152,10 +151,8 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @Override
     public void close() {
         synchronized (getDbLock()) {
-            if (c4enum == null) { return; }
-            if (refCount.get() <= 0) {
-                c4enum.close();
-                c4enum = null;
+            if (!uncloseable) {
+                forceClose();
                 return;
             }
         }
@@ -167,9 +164,18 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     // Package level access
     //---------------------------------------------
 
-    // Ref counting: An ugly little hack for LiveQueries
-    void retain() { refCount.incrementAndGet(); }
-    void release() { refCount.decrementAndGet(); }
+    // An ugly little hack for LiveQueries
+    void retain() {
+        synchronized (getDbLock()) { uncloseable = true; }
+    }
+
+    void forceClose() {
+        synchronized (getDbLock()) {
+            if (c4enum == null) { return; }
+            c4enum.close();
+            c4enum = null;
+        }
+    }
 
     @NonNull
     AbstractQuery getQuery() { return query; }

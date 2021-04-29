@@ -77,6 +77,12 @@
 
         <module name="com.github.sevntu.checkstyle.checks.coding.OverridableMethodInConstructorCheck"/>
 
+        <!-- This forbids @Nullable on method returns.  Feh!
+        <module name="com.github.sevntu.checkstyle.checks.coding.Jsr305AnnotationsCheck">
+           <property name="packages" value="com.couchbase.lite"/>
+        </module>
+        -->
+
         <!-- No empty statements -->
         <module name="EmptyStatement"/>
 
