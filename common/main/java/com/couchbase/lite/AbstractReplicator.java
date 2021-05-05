@@ -864,7 +864,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         final Authenticator authenticator = config.getAuthenticator();
         if (authenticator != null) { authenticator.authenticate(options); }
 
-        config.addEffectiveOptions(options);
+        config.addConnectionOptions(options);
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {

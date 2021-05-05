@@ -115,10 +115,10 @@ import com.couchbase.lite.internal.utils.StringUtils;
 public abstract class AbstractCBLWebSocket extends C4Socket {
     private static final LogDomain TAG = LogDomain.NETWORK;
 
-    public static final int DEFAULT_ONE_SHOT_MAX_RETRIES = 9;
-    public static final int DEFAULT_CONTINUOUS_MAX_RETRIES = Integer.MAX_VALUE;
-    public static final long DEFAULT_MAX_RETRY_WAIT_SEC = 300L;
-    public static final long DEFAULT_HEARTBEAT_SEC = 300L;
+    public static final int DEFAULT_ONE_SHOT_MAX_RETRY_ATTEMPTS = 9;
+    public static final int DEFAULT_CONTINUOUS_MAX_RETRY_ATTEMPTS = Integer.MAX_VALUE;
+    public static final int DEFAULT_MAX_RETRY_WAIT_SEC = 300;
+    public static final int DEFAULT_HEARTBEAT_SEC = 300;
 
     private static final int MAX_AUTH_RETRIES = 3;
 
@@ -244,8 +244,10 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
                 if (!state.assertState(State.INIT, State.CONNECTING)) { return cookies; }
 
                 // Cookies from config
-                final String confCookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-                if (confCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, confCookies)); }
+                if (options != null) {
+                    final String confCookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+                    if (confCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, confCookies)); }
+                }
 
                 // Set cookies in the CookieStore
                 final String setCookies = cookieStore.getCookies(url.uri());
@@ -306,7 +308,9 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     private final URI uri;
     private final OkHttpRemote okHttpRemote;
     private final OkHttpClient okHttpSocketFactory;
+    @Nullable
     private final Map<String, Object> options;
+    @NonNull
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
 
     @GuardedBy("getPeerLock()")
@@ -359,6 +363,9 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     @VisibleForTesting
     public final OkHttpClient getOkHttpSocketFactory() { return okHttpSocketFactory; }
+
+    @VisibleForTesting
+    public Map<String, Object> getOptions() { return options; }
 
     //-------------------------------------------------------------------------
     // Abstract methods
@@ -522,8 +529,10 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
 
         // Heartbeat
-        final Number heartbeat = (Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
-        if (heartbeat != null) { builder.pingInterval((long) heartbeat, TimeUnit.SECONDS).build(); }
+        if (options != null) {
+            final Number heartbeat = (Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
+            if (heartbeat != null) { builder.pingInterval((long) heartbeat, TimeUnit.SECONDS).build(); }
+        }
 
         // Authenticator
         final Authenticator authenticator = getBasicAuthenticator();
@@ -622,6 +631,8 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     }
 
     private KeyManager getAuthenticator() {
+        if (options == null) { return null; }
+
         final Object opt = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
         if (!(opt instanceof Map)) { return null; }
         final Map<?, ?> auth = (Map<?, ?>) opt;

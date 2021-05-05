@@ -17,16 +17,18 @@ package com.couchbase.lite;
 
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
@@ -103,10 +105,14 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false)).getStatus();
     }
 
-    @Test
-    public void testGetHeartbeatBeforeSet() throws URISyntaxException {
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint());
-        assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC, config.getHeartbeat());
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetMaxAttemptWaitTime() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttemptWaitTime(-47);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSetIllegalMaxAttempts() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttempts(-47);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -114,45 +120,68 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(-47);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetZeroHeartbeat() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(0);
-    }
-
     @Test
-    public void testDefaultHeartbeat() throws URISyntaxException {
-        // Don't use makeConfig: it sets heartbeat to 0
+    public void testDefaultConnectionOptions() throws URISyntaxException {
+        // Don't use makeConfig: it sets the heartbeat
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
             .setType(Replicator.Type.PUSH)
             .setContinuous(false);
 
         final Replicator repl = testReplicator(config);
 
-        final AtomicInteger heartbeat = new AtomicInteger();
-        repl.getSocketFactory().setListener(sf ->
-            heartbeat.compareAndSet(0, ((AbstractCBLWebSocket) sf).getOkHttpSocketFactory().pingIntervalMillis()));
+        final Map<String, Object> options = new HashMap<>();
+        repl.getSocketFactory().setListener(c4Socket -> {
+            synchronized (options) {
+                if (options.containsValue("heartbeat")) { return; }
+                final AbstractCBLWebSocket socket = (AbstractCBLWebSocket) c4Socket;
+                options.put("heartbeat", socket.getOkHttpSocketFactory().pingIntervalMillis());
+                final Map<String, Object> socketOpts = socket.getOptions();
+                options.put("retries", socketOpts.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
+                options.put("wait", socketOpts.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
+            }
+        });
 
         try { run(repl); }
         catch (CouchbaseLiteException ignore) { }
 
-        assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000, heartbeat.get());
+        synchronized (options) {
+            assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000, options.get("heartbeat"));
+            assertEquals((long) AbstractCBLWebSocket.DEFAULT_MAX_RETRY_WAIT_SEC, options.get("wait"));
+            assertEquals((long) AbstractCBLWebSocket.DEFAULT_ONE_SHOT_MAX_RETRY_ATTEMPTS, options.get("retries"));
+        }
     }
 
     @Test
-    public void testCustomHeartbeat() throws URISyntaxException {
-        final ReplicatorConfiguration config = makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false)
-            .setHeartbeat(67L);
+    public void testCustomConnectionOptions() throws URISyntaxException {
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
+            .setType(Replicator.Type.PUSH)
+            .setContinuous(false)
+            .setHeartbeat(33)
+            .setMaxAttempts(78)
+            .setMaxAttemptWaitTime(45);
 
-        Replicator repl = testReplicator(config);
+        final Replicator repl = testReplicator(config);
 
-        final AtomicInteger heartbeat = new AtomicInteger();
-        repl.getSocketFactory().setListener(sf ->
-            heartbeat.compareAndSet(0, ((AbstractCBLWebSocket) sf).getOkHttpSocketFactory().pingIntervalMillis()));
+        final Map<String, Object> options = new HashMap<>();
+        repl.getSocketFactory().setListener(c4Socket -> {
+            synchronized (options) {
+                if (options.containsValue("heartbeat")) { return; }
+                final AbstractCBLWebSocket socket = (AbstractCBLWebSocket) c4Socket;
+                options.put("heartbeat", socket.getOkHttpSocketFactory().pingIntervalMillis());
+                final Map<String, Object> socketOpts = socket.getOptions();
+                options.put("retries", socketOpts.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
+                options.put("wait", socketOpts.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
+            }
+        });
 
         try { run(repl); }
         catch (CouchbaseLiteException ignore) { }
 
-        assertEquals(config.getHeartbeat() * 1000, heartbeat.get());
+        synchronized (options) {
+            assertEquals(33 * 1000, options.get("heartbeat"));
+            assertEquals(45L, options.get("wait"));
+            assertEquals(78L, options.get("retries"));
+        }
     }
 
     @Test

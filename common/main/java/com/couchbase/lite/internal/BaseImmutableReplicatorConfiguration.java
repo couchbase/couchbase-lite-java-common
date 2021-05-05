@@ -33,6 +33,8 @@ import com.couchbase.lite.Replicator;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
+import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
+
 
 /**
  * A bit odd.  Why are these properties not simply properties on the AbstractReplicator object?
@@ -66,9 +68,9 @@ public abstract class BaseImmutableReplicatorConfiguration {
     private final ReplicationFilter pullFilter;
     @Nullable
     private final ConflictResolver conflictResolver;
-    private final int maxRetries;
-    private final long maxRetryWaitTime;
-    private final long heartbeat;
+    private final int maxRetryAttempts;
+    private final int maxRetryAttemptWaitTime;
+    private final int heartbeat;
     @NonNull
     private final Endpoint target;
 
@@ -87,8 +89,8 @@ public abstract class BaseImmutableReplicatorConfiguration {
         this.pushFilter = config.getPushFilter();
         this.pullFilter = config.getPullFilter();
         this.conflictResolver = config.getConflictResolver();
-        this.maxRetries = config.getMaxRetries();
-        this.maxRetryWaitTime = config.getMaxRetryWaitTime();
+        this.maxRetryAttempts = config.getMaxAttempts();
+        this.maxRetryAttemptWaitTime = config.getMaxAttemptWaitTime();
         this.heartbeat = config.getHeartbeat();
         this.target = config.getTarget();
     }
@@ -141,11 +143,11 @@ public abstract class BaseImmutableReplicatorConfiguration {
     @Nullable
     public final ConflictResolver getConflictResolver() { return conflictResolver; }
 
-    public final int getMaxRetries() { return maxRetries; }
+    public final int getMaxRetryAttempts() { return maxRetryAttempts; }
 
-    public final long getMaxRetryWaitTime() { return maxRetryWaitTime; }
+    public final int getMaxRetryAttemptWaitTime() { return maxRetryAttemptWaitTime; }
 
-    public final long getHeartbeat() { return heartbeat; }
+    public final int getHeartbeat() { return heartbeat; }
 
     @NonNull
     public final Endpoint getTarget() { return target; }
@@ -153,7 +155,8 @@ public abstract class BaseImmutableReplicatorConfiguration {
     //-------------------------------------------------------------------------
     // Public Methods
     //-------------------------------------------------------------------------
-    public void addEffectiveOptions(@NonNull Map<String, Object> options) {
+
+    public void addConnectionOptions(@NonNull Map<String, Object> options) {
         // Add the pinned certificate if any:
         if (pinnedServerCertificate != null) {
             options.put(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT, pinnedServerCertificate);
@@ -167,9 +170,9 @@ public abstract class BaseImmutableReplicatorConfiguration {
             options.put(C4Replicator.REPLICATOR_OPTION_CHANNELS, channels);
         }
 
-        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, getMaxRetries());
-        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxRetryWaitTime);
-        options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, heartbeat);
+        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, getDefaultedMaxRetryAttempts());
+        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, getDefaultedMaxRetryAttemptWaitTime());
+        options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, getDefaultedHeartbeat());
 
         final Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:
@@ -181,5 +184,23 @@ public abstract class BaseImmutableReplicatorConfiguration {
             }
         }
         options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
+    }
+
+    private int getDefaultedMaxRetryAttempts() {
+        return (maxRetryAttempts > 0)
+            ? maxRetryAttempts
+            : ((continuous)
+                ? AbstractCBLWebSocket.DEFAULT_CONTINUOUS_MAX_RETRY_ATTEMPTS
+                : AbstractCBLWebSocket.DEFAULT_ONE_SHOT_MAX_RETRY_ATTEMPTS);
+    }
+
+    private int getDefaultedMaxRetryAttemptWaitTime() {
+        return (maxRetryAttemptWaitTime > 0)
+            ? maxRetryAttemptWaitTime
+            : AbstractCBLWebSocket.DEFAULT_MAX_RETRY_WAIT_SEC;
+    }
+
+    private int getDefaultedHeartbeat() {
+        return (heartbeat > 0) ? heartbeat : AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC;
     }
 }
