@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.core;
 import android.support.annotation.Nullable;
 
 
+@FunctionalInterface
 public interface C4DocumentObserverListener {
     void callback(C4DocumentObserver observer, @Nullable String docID, long sequence, Object context);
 }

@@ -17,7 +17,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-
+@FunctionalInterface
 public interface ChangeListener<T> {
     void changed(@NonNull T change);
 }

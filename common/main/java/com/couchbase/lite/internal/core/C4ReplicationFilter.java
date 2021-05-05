@@ -21,6 +21,7 @@ import android.support.annotation.Nullable;
 import com.couchbase.lite.AbstractReplicator;
 
 
+@FunctionalInterface
 public interface C4ReplicationFilter {
     boolean validationFunction(
         @Nullable String docID,

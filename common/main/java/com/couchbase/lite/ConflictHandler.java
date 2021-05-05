@@ -19,6 +19,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 
+@FunctionalInterface
 public interface ConflictHandler {
     boolean handle(@NonNull MutableDocument document, @Nullable Document oldDocument);
 }

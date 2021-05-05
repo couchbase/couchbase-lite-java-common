@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 /**
  * The listener interface for receiving Database change events.
  */
+@FunctionalInterface
 public interface DatabaseChangeListener extends ChangeListener<DatabaseChange> {
     /**
      * Callback function from Database when database has change

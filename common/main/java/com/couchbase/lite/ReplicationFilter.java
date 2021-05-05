@@ -25,6 +25,7 @@ import java.util.EnumSet;
  * Document push and pull will be allowed if output is true, otherwise, Document
  * push and pull will not be allowed.
  **/
+@FunctionalInterface
 public interface ReplicationFilter {
     boolean filtered(@NonNull Document document, @NonNull EnumSet<DocumentFlag> flags);
 }

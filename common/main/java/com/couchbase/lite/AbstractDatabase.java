@@ -292,9 +292,9 @@ abstract class AbstractDatabase extends BaseDatabase {
     public String getName() { return name; }
 
     /**
-     * Return the database's path. If the database is closed or deleted, null value will be returned.
+     * The database's absolute path
      *
-     * @return the database's path.
+     * @return the database's path or null if the database is closed.
      */
     @Nullable
     public String getPath() {
@@ -311,8 +311,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     }
 
     /**
-     * Returns a READONLY config object which will throw a runtime exception
-     * when any setter methods are called.
+     * Returns a copy of the database configuration.
      *
      * @return the READONLY copied config object
      */

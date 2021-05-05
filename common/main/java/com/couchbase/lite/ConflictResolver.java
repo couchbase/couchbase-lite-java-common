@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 /**
  * Custom conflict resolution strategies implement this interface.
  */
+@FunctionalInterface
 public interface ConflictResolver {
     /**
      * The default conflict resolution strategy.

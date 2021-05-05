@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 /**
  * The listener interface for receiving Live Query change events.
  */
+@FunctionalInterface
 public interface QueryChangeListener extends ChangeListener<QueryChange> {
     /**
      * The callback function from live query

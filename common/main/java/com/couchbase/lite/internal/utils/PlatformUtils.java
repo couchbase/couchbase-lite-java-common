@@ -24,11 +24,13 @@ import java.io.InputStream;
 public final class PlatformUtils {
     private PlatformUtils() {}
 
+    @FunctionalInterface
     public interface Base64Encoder {
         @Nullable
         String encodeToString(@Nullable byte[] src);
     }
 
+    @FunctionalInterface
     public interface Base64Decoder {
         @Nullable
         byte[] decodeString(@Nullable String src);

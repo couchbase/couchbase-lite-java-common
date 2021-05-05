@@ -4,6 +4,8 @@ import android.support.annotation.NonNull;
 
 
 public interface NetworkConnectivityManager {
+
+    @FunctionalInterface
     interface Observer {
         void onConnectivityChanged(boolean connected);
     }

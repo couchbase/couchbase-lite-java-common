@@ -22,6 +22,7 @@ import android.support.annotation.NonNull;
 /**
  * The listener interface for receiving Document replicated events.
  */
+@FunctionalInterface
 public interface DocumentReplicationListener {
     /**
      * The callback function from Replicator

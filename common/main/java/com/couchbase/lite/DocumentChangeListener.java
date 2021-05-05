@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 /**
  * The listener interface for receiving Document change events.
  */
+@FunctionalInterface
 public interface DocumentChangeListener extends ChangeListener<DocumentChange> {
     /**
      * Callback function from Database when the specified document is updated.
