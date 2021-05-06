@@ -39,7 +39,6 @@ import org.json.JSONException;
 
 import com.couchbase.lite.internal.CBLInternalException;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.ImmutableDatabaseConfiguration;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Constants;
@@ -54,6 +53,7 @@ import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.SharedKeys;
+import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -245,6 +245,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         throws CouchbaseLiteException {
         this(name, new ImmutableDatabaseConfiguration(config));
     }
+
     protected AbstractDatabase(@NonNull String name, @NonNull ImmutableDatabaseConfiguration config)
         throws CouchbaseLiteException {
         Preconditions.assertNotEmpty(name, "db name");
@@ -924,7 +925,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
             @Override
             public boolean isActive() {
-                return !AbstractReplicator.ActivityLevel.STOPPED.equals(replicator.getState());
+                return !ReplicatorActivityLevel.STOPPED.equals(replicator.getState());
             }
         });
     }

@@ -36,19 +36,19 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         }
 
         Endpoint target = getRemoteTargetEndpoint();
-        ReplicatorConfiguration config = makeConfig(baseTestDb, target, Replicator.Type.PULL, true);
+        ReplicatorConfiguration config = makeConfig(baseTestDb, target, ReplicatorType.PULL, true);
         Replicator repl = testReplicator(config);
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(
             testSerialExecutor,
             change -> {
-                Replicator.Status status = change.getStatus();
-                if (status.getActivityLevel() == Replicator.ActivityLevel.OFFLINE) {
+                ReplicatorStatus status = change.getStatus();
+                if (status.getActivityLevel() == ReplicatorActivityLevel.OFFLINE) {
                     change.getReplicator().stop();
                     offline.countDown();
                 }
-                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) { stopped.countDown(); }
+                if (status.getActivityLevel() == ReplicatorActivityLevel.STOPPED) { stopped.countDown(); }
             });
         repl.start(false);
         assertTrue(offline.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
@@ -61,13 +61,13 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         // this test crashes the test suite on Android <21
         if (handlePlatformSpecially("android<21")) { fail("Websockets not supported on Android v < 21"); }
 
-        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false));
+        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false));
         final CountDownLatch stopped = new CountDownLatch(1);
         ListenerToken token = repl.addChangeListener(
             testSerialExecutor,
             change -> {
-                Replicator.Status status = change.getStatus();
-                if (status.getActivityLevel() == Replicator.ActivityLevel.STOPPED) { stopped.countDown(); }
+                ReplicatorStatus status = change.getStatus();
+                if (status.getActivityLevel() == ReplicatorActivityLevel.STOPPED) { stopped.countDown(); }
             });
         repl.start(false);
         assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
@@ -76,7 +76,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddNullDocumentReplicationListener() throws URISyntaxException {
-        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true));
+        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true));
 
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
         assertNotNull(token);
@@ -86,7 +86,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddNullDocumentReplicationListenerWithExecutor() throws URISyntaxException {
-        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true));
+        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true));
 
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
         assertNotNull(token);
@@ -96,12 +96,12 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddNullChangeListener() throws Exception {
-        testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true)).addChangeListener(null);
+        testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true)).addChangeListener(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullChangeListenerWithExecutor() throws Exception {
-        testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, true))
+        testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true))
             .addChangeListener(testSerialExecutor, null);
     }
 }

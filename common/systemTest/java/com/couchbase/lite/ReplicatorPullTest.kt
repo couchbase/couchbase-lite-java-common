@@ -93,7 +93,7 @@ class ReplicatorPullTest : BaseTest() {
                 val state = change.status.activityLevel
                 Log.d("###", "STATE CHANGE: ${state}")
                 when (state) {
-                    AbstractReplicator.ActivityLevel.STOPPED -> stoppedLatch.countDown()
+                    ReplicatorActivityLevel.STOPPED -> stoppedLatch.countDown()
                     else -> Unit
                 }
             })

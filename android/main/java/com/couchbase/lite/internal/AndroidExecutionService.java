@@ -25,6 +25,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 

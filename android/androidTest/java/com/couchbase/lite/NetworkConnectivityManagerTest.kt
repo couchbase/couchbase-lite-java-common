@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.AndroidConnectivityManager
+import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager
 import com.couchbase.lite.internal.core.C4Replicator
 import com.couchbase.lite.internal.replicator.AndroidConnectivityObserver
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager
@@ -51,16 +51,28 @@ class NetworkConnectivityManagerTest : BaseTest() {
     }
 
     @Test
-    fun testStartStopPre21() = testStartStop(AndroidConnectivityManager(19) { r -> r.run() })
+    fun testStartStopPre21() = testStartStop(
+        AndroidConnectivityManager(
+            19
+        ) { r -> r.run() })
 
     @Test
-    fun testStartStop21to23() = testStartStop(AndroidConnectivityManager(22) { r -> r.run() })
+    fun testStartStop21to23() = testStartStop(
+        AndroidConnectivityManager(
+            22
+        ) { r -> r.run() })
 
     @Test
-    fun testStartStop24to28() = testStartStop(AndroidConnectivityManager(26) { r -> r.run() })
+    fun testStartStop24to28() = testStartStop(
+        AndroidConnectivityManager(
+            26
+        ) { r -> r.run() })
 
     @Test
-    fun testStartStopPost29() = testStartStop(AndroidConnectivityManager(29) { r -> r.run() })
+    fun testStartStopPost29() = testStartStop(
+        AndroidConnectivityManager(
+            29
+        ) { r -> r.run() })
 
     @Test
     fun testOffline() {
@@ -78,23 +90,23 @@ class NetworkConnectivityManagerTest : BaseTest() {
 
         // Now online: don't observe the network anymore, regardless of previous state
         mgr.observers.add(observer)
-        observer.handleOffline(AbstractReplicator.ActivityLevel.CONNECTING, true)
+        observer.handleOffline(ReplicatorActivityLevel.CONNECTING, true)
         Assert.assertTrue(mgr.observers.isEmpty())
 
         // Now online: don't observe the network anymore, regardless of previous state
         mgr.observers.add(observer)
-        observer.handleOffline(AbstractReplicator.ActivityLevel.OFFLINE, true)
+        observer.handleOffline(ReplicatorActivityLevel.OFFLINE, true)
         Assert.assertTrue(mgr.observers.isEmpty())
         Assert.assertEquals(0, replFactory.calls)
 
         // Now offline but previously offline: no change
         mgr.observers.add(observer)
-        observer.handleOffline(AbstractReplicator.ActivityLevel.OFFLINE, false)
+        observer.handleOffline(ReplicatorActivityLevel.OFFLINE, false)
         Assert.assertEquals(1, mgr.observers.size)
         Assert.assertEquals(0, replFactory.calls)
 
         // Now offline but previously online: subscribe and try to tell the C4Replicator
-        observer.handleOffline(AbstractReplicator.ActivityLevel.CONNECTING, false)
+        observer.handleOffline(ReplicatorActivityLevel.CONNECTING, false)
         Assert.assertEquals(1, mgr.observers.size)
         Assert.assertEquals(1, replFactory.calls)
     }

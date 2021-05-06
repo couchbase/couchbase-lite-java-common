@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 

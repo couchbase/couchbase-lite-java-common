@@ -19,6 +19,8 @@ import com.couchbase.lite.BaseTest
 import com.couchbase.lite.LogDomain
 import com.couchbase.lite.LogLevel
 import com.couchbase.lite.PlatformBaseTest
+import com.couchbase.lite.internal.exec.AbstractExecutionService
+import com.couchbase.lite.internal.exec.ExecutionService
 import com.couchbase.lite.internal.support.Log
 import com.couchbase.lite.internal.utils.Report
 import org.junit.After

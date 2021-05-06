@@ -67,14 +67,14 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
 
     protected final ReplicatorConfiguration makeConfig(
         Endpoint target,
-        Replicator.Type type,
+        ReplicatorType type,
         boolean continuous) {
         return makeConfig(target, type, continuous, null);
     }
 
     protected final ReplicatorConfiguration makeConfig(
         Endpoint target,
-        Replicator.Type type,
+        ReplicatorType type,
         boolean continuous,
         Certificate pinnedServerCert) {
         return makeConfig(baseTestDb, target, type, continuous, pinnedServerCert);
@@ -83,7 +83,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final ReplicatorConfiguration makeConfig(
         Database source,
         Endpoint target,
-        Replicator.Type type,
+        ReplicatorType type,
         boolean continuous,
         Certificate pinnedServerCert,
         ConflictResolver resolver) {
@@ -97,7 +97,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final ReplicatorConfiguration makeConfig(
         Database source,
         Endpoint target,
-        Replicator.Type type,
+        ReplicatorType type,
         boolean continuous,
         Certificate pinnedServerCert) {
         final ReplicatorConfiguration config = makeConfig(source, target, type, continuous);
@@ -115,7 +115,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final ReplicatorConfiguration makeConfig(
         Database source,
         Endpoint target,
-        Replicator.Type type,
+        ReplicatorType type,
         boolean continuous) {
         return new ReplicatorConfiguration(source, target)
             .setType(type)

@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4Base;
+import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;

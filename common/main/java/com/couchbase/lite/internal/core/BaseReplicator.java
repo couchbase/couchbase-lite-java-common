@@ -40,16 +40,16 @@ public abstract class BaseReplicator implements AutoCloseable {
         closeC4Replicator(c4Repl);
     }
 
+    @Nullable
+    public C4Replicator getC4Replicator() {
+        synchronized (getReplicatorLock()) { return c4Replicator; }
+    }
+
     protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
         Log.d(
             LogDomain.REPLICATOR,
             "Setting c4 replicator " + ClassUtils.objId(c4Repl) + " for replicator " + ClassUtils.objId(this));
         synchronized (getReplicatorLock()) { c4Replicator = c4Repl; }
-    }
-
-    @Nullable
-    protected C4Replicator getC4Replicator() {
-        synchronized (getReplicatorLock()) { return c4Replicator; }
     }
 
     protected Object getReplicatorLock() { return lock; }

@@ -37,7 +37,7 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
     @Override
     public void changed(@NonNull ReplicatorChange change) {
         Report.log(LogLevel.DEBUG, "Test replicator state change: " + change);
-        final Replicator.Status status = change.getStatus();
+        final ReplicatorStatus status = change.getStatus();
         try {
             if (continuous) { checkContinuousStatus(status); }
             else { checkOneShotStatus(status); }
@@ -47,11 +47,11 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
         }
     }
 
-    private void checkOneShotStatus(AbstractReplicator.Status status) throws CouchbaseLiteException {
+    private void checkOneShotStatus(ReplicatorStatus status) throws CouchbaseLiteException {
         final CouchbaseLiteException error = status.getError();
-        final AbstractReplicator.ActivityLevel state = status.getActivityLevel();
+        final ReplicatorActivityLevel state = status.getActivityLevel();
 
-        if (state != Replicator.ActivityLevel.STOPPED) { return; }
+        if (state != ReplicatorActivityLevel.STOPPED) { return; }
 
         try {
             if (expectedErrCode != 0) { verifyError(error); }
@@ -63,10 +63,10 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
     }
 
 
-    private void checkContinuousStatus(AbstractReplicator.Status status) throws CouchbaseLiteException {
-        final Replicator.Progress progress = status.getProgress();
+    private void checkContinuousStatus(ReplicatorStatus status) throws CouchbaseLiteException {
+        final ReplicatorProgress progress = status.getProgress();
         final CouchbaseLiteException error = status.getError();
-        final AbstractReplicator.ActivityLevel state = status.getActivityLevel();
+        final ReplicatorActivityLevel state = status.getActivityLevel();
 
         switch (state) {
             case OFFLINE:

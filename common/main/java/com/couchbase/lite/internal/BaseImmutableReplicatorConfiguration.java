@@ -29,8 +29,8 @@ import com.couchbase.lite.ConflictResolver;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Endpoint;
 import com.couchbase.lite.ReplicationFilter;
-import com.couchbase.lite.Replicator;
 import com.couchbase.lite.ReplicatorConfiguration;
+import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
@@ -50,7 +50,7 @@ public abstract class BaseImmutableReplicatorConfiguration {
     @NonNull
     private final Database database;
     @NonNull
-    private final Replicator.Type type;
+    private final ReplicatorType type;
     private final boolean continuous;
     @Nullable
     private final Authenticator authenticator;
@@ -102,16 +102,16 @@ public abstract class BaseImmutableReplicatorConfiguration {
     public final Database getDatabase() { return database; }
 
     @NonNull
-    public final Replicator.Type getType() { return type; }
+    public final ReplicatorType getType() { return type; }
 
     public final boolean isPush() {
-        return type == Replicator.Type.PUSH_AND_PULL
-            || type == Replicator.Type.PUSH;
+        return type == ReplicatorType.PUSH_AND_PULL
+            || type == ReplicatorType.PUSH;
     }
 
     public final boolean isPull() {
-        return type == Replicator.Type.PUSH_AND_PULL
-            || type == Replicator.Type.PULL;
+        return type == ReplicatorType.PUSH_AND_PULL
+            || type == ReplicatorType.PULL;
     }
 
     public final boolean isContinuous() { return continuous; }

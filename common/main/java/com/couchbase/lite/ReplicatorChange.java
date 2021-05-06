@@ -23,9 +23,9 @@ import android.support.annotation.NonNull;
  */
 public final class ReplicatorChange {
     private final Replicator replicator;
-    private final Replicator.Status status;
+    private final ReplicatorStatus status;
 
-    ReplicatorChange(Replicator replicator, Replicator.Status status) {
+    ReplicatorChange(Replicator replicator, ReplicatorStatus status) {
         this.replicator = replicator;
         this.status = status;
     }
@@ -40,7 +40,7 @@ public final class ReplicatorChange {
      * Return the replicator status.
      */
     @NonNull
-    public Replicator.Status getStatus() { return status; }
+    public ReplicatorStatus getStatus() { return status; }
 
     @NonNull
     @Override

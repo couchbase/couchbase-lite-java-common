@@ -67,7 +67,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             errorCode,
             0
         );
-        Replicator.Status status = new Replicator.Status(c4ReplicatorStatus);
+        ReplicatorStatus status = new ReplicatorStatus(c4ReplicatorStatus);
         ReplicatorChange repChange = new ReplicatorChange(baseTestReplicator, status);
 
         assertEquals(repChange.getReplicator(), baseTestReplicator);
@@ -95,36 +95,56 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStopBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false)).stop();
+        testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false)).stop();
     }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
     public void testStatusBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false)).getStatus();
+        testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false)).getStatus();
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetMaxAttemptWaitTime() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttemptWaitTime(-47);
+    public void testIllegalMaxAttempts() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttempts(-1);
+    }
+
+    @Test
+    public void testMaxAttemptsZero() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttempts(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetIllegalMaxAttempts() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttempts(-47);
+    public void testIllegalAttemptsWaitTime() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttemptWaitTime(-1);
+    }
+
+    @Test
+    public void testMaxAttemptsWaitTimeZero() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttemptWaitTime(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testSetIllegalHeartbeat() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(-47);
+    public void testIllegalHeartbeatMin() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(-1);
+    }
+
+    @Test
+    public void testHeartbeatZero() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIllegalHeartbeatMax() throws URISyntaxException {
+        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(2147484);
     }
 
     @Test
     public void testDefaultConnectionOptions() throws URISyntaxException {
         // Don't use makeConfig: it sets the heartbeat
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setType(Replicator.Type.PUSH)
+            .setType(ReplicatorType.PUSH)
             .setContinuous(false);
 
         final Replicator repl = testReplicator(config);
@@ -154,7 +174,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testCustomConnectionOptions() throws URISyntaxException {
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setType(Replicator.Type.PUSH)
+            .setType(ReplicatorType.PUSH)
             .setContinuous(false)
             .setHeartbeat(33)
             .setMaxAttempts(78)
@@ -186,11 +206,11 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testStopWhileConnecting() throws URISyntaxException {
-        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), Replicator.Type.PUSH, false));
+        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false));
 
         final CountDownLatch latch = new CountDownLatch(1);
         repl.addChangeListener(status -> {
-            if (status.getStatus().getActivityLevel() == AbstractReplicator.ActivityLevel.CONNECTING) {
+            if (status.getStatus().getActivityLevel() == ReplicatorActivityLevel.CONNECTING) {
                 repl.stop();
                 latch.countDown();
             }
@@ -228,7 +248,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         Replicator replicator = testReplicator(makeConfig(
             baseTestDb,
             getRemoteTargetEndpoint(),
-            Replicator.Type.PUSH_AND_PULL,
+            ReplicatorType.PUSH_AND_PULL,
             false,
             null,
             null));
@@ -244,7 +264,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         Replicator replicator = testReplicator(makeConfig(
             baseTestDb,
             getRemoteTargetEndpoint(),
-            Replicator.Type.PUSH_AND_PULL,
+            ReplicatorType.PUSH_AND_PULL,
             false,
             null,
             null));
@@ -264,7 +284,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             makeConfig(
                 baseTestDb,
                 getRemoteTargetEndpoint(),
-                Replicator.Type.PUSH_AND_PULL,
+                ReplicatorType.PUSH_AND_PULL,
                 false,
                 null,
                 null));
@@ -278,30 +298,30 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testReplicatorStatus() {
         assertEquals(
-            AbstractReplicator.ActivityLevel.BUSY,
+            ReplicatorActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.STOPPED - 1));
         assertEquals(
-            AbstractReplicator.ActivityLevel.STOPPED,
+            ReplicatorActivityLevel.STOPPED,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.STOPPED));
         assertEquals(
-            AbstractReplicator.ActivityLevel.OFFLINE,
+            ReplicatorActivityLevel.OFFLINE,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.OFFLINE));
         assertEquals(
-            AbstractReplicator.ActivityLevel.CONNECTING,
+            ReplicatorActivityLevel.CONNECTING,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.CONNECTING));
         assertEquals(
-            AbstractReplicator.ActivityLevel.IDLE,
+            ReplicatorActivityLevel.IDLE,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.IDLE));
         assertEquals(
-            AbstractReplicator.ActivityLevel.BUSY,
+            ReplicatorActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY));
         assertEquals(
-            AbstractReplicator.ActivityLevel.BUSY,
+            ReplicatorActivityLevel.BUSY,
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY + 1));
     }
 
-    private AbstractReplicator.ActivityLevel getActivityLevelFor(int activityLevel) {
-        return new AbstractReplicator.Status(new C4ReplicatorStatus(activityLevel, 0, 0, 0, 0, 0, 0))
+    private ReplicatorActivityLevel getActivityLevelFor(int activityLevel) {
+        return new ReplicatorStatus(new C4ReplicatorStatus(activityLevel, 0, 0, 0, 0, 0, 0))
             .getActivityLevel();
     }
 }

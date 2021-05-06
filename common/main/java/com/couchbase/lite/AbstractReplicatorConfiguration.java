@@ -33,12 +33,13 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Replicator configuration.
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields"})
+@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.UnnecessaryFullyQualifiedName"})
 public abstract class AbstractReplicatorConfiguration {
     /**
-     * This is a long time.  This many seconds, however, is less than Integer.MAX_INT millis
+     * This is a long time: just under 25 days.
+     * This many seconds, however, is just less than Integer.MAX_INT millis, and will fit in the heartbeat property.
      */
-    public static final int DISABLE_HEARTBEAT = 35000;
+    public static final int DISABLE_HEARTBEAT = 2147483;
 
     /**
      * Replicator type
@@ -70,7 +71,7 @@ public abstract class AbstractReplicatorConfiguration {
     @NonNull
     private final Database database;
     @NonNull
-    private Replicator.Type type;
+    private com.couchbase.lite.ReplicatorType type;
     private boolean continuous;
     @Nullable
     private Authenticator authenticator;
@@ -98,7 +99,7 @@ public abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
         this.database = database;
-        this.type = Replicator.Type.PUSH_AND_PULL;
+        this.type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
         this.target = target;
     }
 
@@ -143,7 +144,7 @@ public abstract class AbstractReplicatorConfiguration {
     @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
     protected AbstractReplicatorConfiguration(
         @NonNull Database database,
-        @NonNull Replicator.Type type,
+        @NonNull com.couchbase.lite.ReplicatorType type,
         boolean continuous,
         @Nullable Authenticator authenticator,
         @Nullable Map<String, String> headers,
@@ -308,16 +309,16 @@ public abstract class AbstractReplicatorConfiguration {
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
-        final Replicator.Type type;
+        final com.couchbase.lite.ReplicatorType type;
         switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
             case PUSH_AND_PULL:
-                type = Replicator.Type.PUSH_AND_PULL;
+                type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
                 break;
             case PUSH:
-                type = Replicator.Type.PUSH;
+                type = com.couchbase.lite.ReplicatorType.PUSH;
                 break;
             case PULL:
-                type = Replicator.Type.PULL;
+                type = com.couchbase.lite.ReplicatorType.PULL;
                 break;
             default:
                 throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
@@ -333,7 +334,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setType(@NonNull Replicator.Type type) {
+    public final ReplicatorConfiguration setType(@NonNull com.couchbase.lite.ReplicatorType type) {
         this.type = Preconditions.assertNotNull(type, "replicator type");
         return getReplicatorConfiguration();
     }
@@ -451,11 +452,11 @@ public abstract class AbstractReplicatorConfiguration {
     public final ReplicatorType getReplicatorType() {
         switch (type) {
             case PUSH_AND_PULL:
-                return ReplicatorType.PUSH_AND_PULL;
+                return AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
             case PUSH:
-                return ReplicatorType.PUSH;
+                return AbstractReplicatorConfiguration.ReplicatorType.PUSH;
             case PULL:
-                return ReplicatorType.PULL;
+                return AbstractReplicatorConfiguration.ReplicatorType.PULL;
             default:
                 throw new IllegalStateException("Unrecognized replicator type: " + type);
         }
@@ -465,7 +466,7 @@ public abstract class AbstractReplicatorConfiguration {
      * Return Replicator type indicating the direction of the replicator.
      */
     @NonNull
-    public final Replicator.Type getType() { return type; }
+    public final com.couchbase.lite.ReplicatorType getType() { return type; }
 
     /**
      * Return the replication target to replicate with.
@@ -499,13 +500,15 @@ public abstract class AbstractReplicatorConfiguration {
         final StringBuilder buf = new StringBuilder();
 
         if (pullFilter != null) { buf.append('|'); }
-        if ((type == Replicator.Type.PULL) || (type == Replicator.Type.PUSH_AND_PULL)) {
+        if ((type == com.couchbase.lite.ReplicatorType.PULL)
+            || (type == com.couchbase.lite.ReplicatorType.PUSH_AND_PULL)) {
             buf.append('<');
         }
 
         buf.append(continuous ? '*' : '=');
 
-        if ((type == Replicator.Type.PUSH) || (type == Replicator.Type.PUSH_AND_PULL)) {
+        if ((type == com.couchbase.lite.ReplicatorType.PUSH)
+            || (type == com.couchbase.lite.ReplicatorType.PUSH_AND_PULL)) {
             buf.append('>');
         }
         if (pushFilter != null) { buf.append('|'); }

@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal;
+package com.couchbase.lite.internal.exec;
 
 import android.support.annotation.NonNull;
 

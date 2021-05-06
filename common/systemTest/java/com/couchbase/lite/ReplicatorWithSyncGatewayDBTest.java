@@ -122,8 +122,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             ListenerToken token = r.addChangeListener(executor, new ReplicatorChangeListener() {
                 @Override
                 public void changed(ReplicatorChange change) {
-                    Replicator.Status status = change.getStatus();
-                    Replicator.Progress progress = status.getProgress();
+                    ReplicatorStatus status = change.getStatus();
+                    ReplicatorProgress progress = status.getProgress();
                     if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal()) {
                         progressLatch.countDown();
                     }
@@ -142,8 +142,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
             ListenerToken token = r.addChangeListener(executor, new ReplicatorChangeListener() {
                 @Override
                 public void changed(ReplicatorChange change) {
-                    Replicator.Status status = change.getStatus();
-                    Replicator.Progress progress = status.getProgress();
+                    ReplicatorStatus status = change.getStatus();
+                    ReplicatorProgress progress = status.getProgress();
                     if (progress.getCompleted() >= numDocs && progress.getCompleted() == progress.getTotal()) {
                         progressLatch.countDown();
                     }
@@ -321,8 +321,8 @@ public class ReplicatorWithSyncGatewayDBTest extends BaseReplicatorTest {
         ReplicatorChangeListener listener2 = new ReplicatorChangeListener() {
             @Override
             public void changed(ReplicatorChange change) {
-                Replicator.Status status = change.getStatus();
-                if (status.getActivityLevel() == Replicator.ActivityLevel.IDLE) {
+                ReplicatorStatus status = change.getStatus();
+                if (status.getActivityLevel() == ReplicatorActivityLevel.IDLE) {
                     latch2.countDown();
                     latch3.countDown();
                 }

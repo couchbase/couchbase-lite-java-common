@@ -17,8 +17,8 @@ package com.couchbase.lite.internal.replicator;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.ReplicatorActivityLevel;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
@@ -46,13 +46,13 @@ public class AndroidConnectivityObserver implements NetworkConnectivityManager.O
         c4Repl.setHostReachable(connected);
     }
 
-    public void handleOffline(@NonNull AbstractReplicator.ActivityLevel prevLevel, boolean nowOnline) {
+    public void handleOffline(@NonNull ReplicatorActivityLevel prevLevel, boolean nowOnline) {
         if (nowOnline) {
             connectivityManager.unregisterObserver(this);
             return;
         }
 
-        if (prevLevel.equals(AbstractReplicator.ActivityLevel.OFFLINE)) { return; }
+        if (prevLevel.equals(ReplicatorActivityLevel.OFFLINE)) { return; }
 
         connectivityManager.registerObserver(this);
 

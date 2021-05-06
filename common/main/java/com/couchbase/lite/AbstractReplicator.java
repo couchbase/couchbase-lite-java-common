@@ -38,7 +38,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.ExecutionService;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.BaseReplicator;
@@ -51,6 +50,7 @@ import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.C4ReplicatorMode;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.core.C4Socket;
+import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
@@ -71,238 +71,13 @@ import com.couchbase.lite.internal.utils.StringUtils;
 public abstract class AbstractReplicator extends BaseReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
-    /**
-     * The replication direction
-     * <p>
-     * PUSH_AND_PULL: Bidirectional; both push and pull
-     * PUSH: Pushing changes to the target
-     * PULL: Pulling changes from the target
-     */
-    public enum Type {PUSH_AND_PULL, PUSH, PULL}
-
-    /**
-     * Activity level of a replicator.
-     */
-    public enum ActivityLevel {
-        /**
-         * The replication is finished or hit a fatal error.
-         */
-        STOPPED,
-        /**
-         * The replicator is offline because the remote host is unreachable.
-         */
-        OFFLINE,
-        /**
-         * The replicator is connecting to the remote host.
-         */
-        CONNECTING,
-        /**
-         * The replication is inactive; either waiting for changes or offline
-         * as the remote host is unreachable.
-         */
-        IDLE,
-        /**
-         * The replication is actively transferring data.
-         */
-        BUSY
+    static boolean isStopped(C4ReplicatorStatus c4Status) {
+        return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED;
     }
 
-
-    /**
-     * Progress of a replicator. If `total` is zero, the progress is indeterminate; otherwise,
-     * dividing the two will produce a fraction that can be used to draw a progress bar.
-     */
-    public static final class Progress {
-        //---------------------------------------------
-        // member variables
-        //---------------------------------------------
-
-        // The number of completed changes processed.
-        private final long completed;
-
-        // The total number of changes to be processed.
-        private final long total;
-
-        //---------------------------------------------
-        // Constructors
-        //---------------------------------------------
-
-        private Progress(long completed, long total) {
-            this.completed = completed;
-            this.total = total;
-        }
-
-        //---------------------------------------------
-        // API - public methods
-        //---------------------------------------------
-
-        /**
-         * The number of completed changes processed.
-         */
-        public long getCompleted() { return completed; }
-
-        /**
-         * The total number of changes to be processed.
-         */
-        public long getTotal() { return total; }
-
-        @NonNull
-        @Override
-        public String toString() { return "Progress{" + "completed=" + completed + ", total=" + total + '}'; }
+    static boolean isOffline(C4ReplicatorStatus c4Status) {
+        return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.OFFLINE;
     }
-
-
-    /**
-     * Combined activity level and progress of a replicator.
-     */
-    public static final class Status {
-        private static final Map<Integer, ActivityLevel> ACTIVITY_LEVEL_FROM_C4;
-        static {
-            final Map<Integer, ActivityLevel> m = new HashMap<>();
-            m.put(C4ReplicatorStatus.ActivityLevel.STOPPED, ActivityLevel.STOPPED);
-            m.put(C4ReplicatorStatus.ActivityLevel.OFFLINE, ActivityLevel.OFFLINE);
-            m.put(C4ReplicatorStatus.ActivityLevel.CONNECTING, ActivityLevel.CONNECTING);
-            m.put(C4ReplicatorStatus.ActivityLevel.IDLE, ActivityLevel.IDLE);
-            m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ActivityLevel.BUSY);
-            ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
-        }
-        private static ActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
-            final ActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
-            if (level != null) { return level; }
-
-            Log.w(LogDomain.REPLICATOR, "Unrecognized replicator activity level: " + c4ActivityLevel);
-
-            // Per @Pasin, unrecognized states report as busy.
-            return ActivityLevel.BUSY;
-        }
-
-        static boolean isStopped(C4ReplicatorStatus c4Status) {
-            return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED;
-        }
-
-        static boolean isOffline(C4ReplicatorStatus c4Status) {
-            return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.OFFLINE;
-        }
-
-        //---------------------------------------------
-        // member variables
-        //---------------------------------------------
-        @NonNull
-        private final ActivityLevel activityLevel;
-        @NonNull
-        private final Progress progress;
-        @Nullable
-        private final CouchbaseLiteException error;
-
-        //---------------------------------------------
-        // Constructors
-        //---------------------------------------------
-
-        Status(@NonNull C4ReplicatorStatus c4Status) {
-            this(
-                getActivityLevelFromC4(c4Status.getActivityLevel()),
-                new Progress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
-                (c4Status.getErrorCode() == 0) ? null : CouchbaseLiteException.convertC4Error(c4Status.getC4Error()));
-        }
-
-        private Status(@NonNull Status status) { this(status.activityLevel, status.progress, status.error); }
-
-        private Status(
-            @NonNull ActivityLevel activityLevel,
-            @NonNull Progress progress,
-            @Nullable CouchbaseLiteException error) {
-            this.activityLevel = activityLevel;
-            this.progress = progress;
-            this.error = error;
-        }
-
-        //---------------------------------------------
-        // API - public methods
-        //---------------------------------------------
-
-        /**
-         * The current activity level.
-         */
-        @NonNull
-        public ActivityLevel getActivityLevel() { return activityLevel; }
-
-        /**
-         * The current progress of the replicator.
-         */
-        @NonNull
-        public Replicator.Progress getProgress() { return progress; }
-
-        @Nullable
-        public CouchbaseLiteException getError() { return error; }
-
-        @NonNull
-        @Override
-        public String toString() {
-            return "Status{" + "activityLevel=" + activityLevel + ", progress=" + progress + ", error=" + error + '}';
-        }
-    }
-
-    // just queue everything up for in-order processing.
-    static final class ReplicatorListener implements C4ReplicatorListener {
-        private final Executor dispatcher;
-
-        ReplicatorListener(@NonNull Executor dispatcher) { this.dispatcher = dispatcher; }
-
-        @Override
-        public void statusChanged(
-            @Nullable C4Replicator c4Repl,
-            @Nullable C4ReplicatorStatus status,
-            @Nullable Object repl) {
-            Log.v(DOMAIN, "ReplicatorListener.statusChanged, repl: %s, status: %s", repl, status);
-
-            final AbstractReplicator replicator = verifyReplicator(c4Repl, repl);
-            if (replicator == null) { return; }
-
-            if (status == null) {
-                Log.w(DOMAIN, "C4ReplicatorListener.statusChanged, status is null");
-                return;
-            }
-
-            dispatcher.execute(() -> replicator.c4StatusChanged(status));
-        }
-
-        @Override
-        public void documentEnded(
-            @NonNull C4Replicator c4Repl,
-            boolean pushing,
-            @Nullable C4DocumentEnded[] documents,
-            @Nullable Object repl) {
-            Log.i(DOMAIN, "C4ReplicatorListener.documentEnded, repl: %s, pushing: %s", repl, pushing);
-
-            if (!(repl instanceof AbstractReplicator)) {
-                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, repl is null");
-                return;
-            }
-
-            final AbstractReplicator replicator = verifyReplicator(c4Repl, repl);
-            if (replicator == null) { return; }
-
-            if (documents == null) {
-                Log.w(DOMAIN, "C4ReplicatorListener.documentEnded, documents is null");
-                return;
-            }
-
-            dispatcher.execute(() -> replicator.documentEnded(pushing, documents));
-        }
-
-        @Nullable
-        private AbstractReplicator verifyReplicator(@Nullable C4Replicator c4Repl, @Nullable Object repl) {
-            final AbstractReplicator replicator
-                = (!(repl instanceof AbstractReplicator)) ? null : (AbstractReplicator) repl;
-
-            if ((replicator != null) && (c4Repl == replicator.getC4Replicator())) { return replicator; }
-
-            Log.w(DOMAIN, "C4ReplicatorListener: c4replicator and replicator don't match: " + c4Repl + " :: " + repl);
-
-            return null;
-        }
-    }
-
 
     ////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////  R E P L I C A T O R   ////////////////////////////////
@@ -332,7 +107,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     @GuardedBy("getReplicatorLock()")
     @NonNull
-    private Status status = new Status(ActivityLevel.STOPPED, new Progress(0, 0), null);
+    private ReplicatorStatus status
+        = new ReplicatorStatus(ReplicatorActivityLevel.STOPPED, new ReplicatorProgress(0, 0), null);
 
     @GuardedBy("getReplicatorLock()")
     private C4ReplicationFilter c4ReplPushFilter;
@@ -423,8 +199,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
      * @return this replicator's status
      */
     @NonNull
-    public Status getStatus() {
-        synchronized (getReplicatorLock()) { return new Status(status); }
+    public ReplicatorStatus getStatus() {
+        synchronized (getReplicatorLock()) { return new ReplicatorStatus(status); }
     }
 
     /**
@@ -447,7 +223,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
      */
     @NonNull
     public Set<String> getPendingDocumentIds() throws CouchbaseLiteException {
-        if (config.getType().equals(Type.PULL)) {
+        if (config.getType().equals(ReplicatorType.PULL)) {
             throw new CouchbaseLiteException(
                 "PullOnlyPendingDocIDs",
                 CBLError.Domain.CBLITE,
@@ -474,7 +250,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     public boolean isDocumentPending(@NonNull String docId) throws CouchbaseLiteException {
         Preconditions.assertNotNull(docId, "document ID");
 
-        if (config.getType().equals(Type.PULL)) {
+        if (config.getType().equals(ReplicatorType.PULL)) {
             throw new CouchbaseLiteException(
                 "PullOnlyPendingDocIDs",
                 CBLError.Domain.CBLITE,
@@ -590,7 +366,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @GuardedBy("getDbLock()")
     protected abstract C4Replicator createReplicatorForTarget(Endpoint target) throws LiteCoreException;
 
-    protected abstract void handleOffline(ActivityLevel prevState, boolean nowOnline);
+    protected abstract void handleOffline(ReplicatorActivityLevel prevState, boolean nowOnline);
 
     /**
      * Create and return a c4Replicator targeting the passed URI
@@ -691,7 +467,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     CouchbaseLiteException getLastError() { return lastError; }
 
     @NonNull
-    ActivityLevel getState() {
+    ReplicatorActivityLevel getState() {
         synchronized (getReplicatorLock()) { return status.getActivityLevel(); }
     }
 
@@ -704,7 +480,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
                 "status changed: (%d, %d) @%s for %s",
                 pendingResolutions.size(), pendingStatusNotifications.size(), c4Status, this);
 
-            if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !Status.isOffline(c4Status)); }
+            if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !isOffline(c4Status)); }
 
             if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
             if (!pendingStatusNotifications.isEmpty()) { return; }
@@ -719,7 +495,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         }
 
         // this will probably make this instance eligible for garbage collection...
-        if (Status.isStopped(c4Status)) { getDatabase().removeActiveReplicator(this); }
+        if (isStopped(c4Status)) { getDatabase().removeActiveReplicator(this); }
 
         for (ReplicatorChangeListenerToken token: tokens) { token.notify(change); }
     }
@@ -825,17 +601,18 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     @GuardedBy("getReplicatorLock()")
     private C4ReplicatorStatus updateStatus(@NonNull C4ReplicatorStatus c4Status) {
-        final Status oldStatus = status;
-        status = new Status(c4Status);
+        final ReplicatorStatus oldStatus = status;
+        status = new ReplicatorStatus(c4Status);
 
-        if (c4Status.getErrorCode() != 0) { lastError = status.error; }
+        final CouchbaseLiteException err = status.getError();
+        if (c4Status.getErrorCode() != 0) { lastError = err; }
 
         Log.i(DOMAIN, "State changed %s => %s(%d/%d): %s for %s",
-            oldStatus.activityLevel,
-            status.activityLevel,
+            oldStatus.getActivityLevel(),
+            status.getActivityLevel(),
             c4Status.getProgressUnitsCompleted(),
             c4Status.getProgressUnitsTotal(),
-            status.error,
+            err,
             this);
 
         return c4Status.copy();

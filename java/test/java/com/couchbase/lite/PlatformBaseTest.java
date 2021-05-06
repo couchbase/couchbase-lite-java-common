@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.ExecutionService;
+import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
