@@ -31,6 +31,7 @@ import org.junit.Test;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.utils.SlowTest;
 import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
@@ -594,6 +595,7 @@ public class DatabaseTest extends BaseDbTest {
     //---------------------------------------------
     //  Delete Database
     //---------------------------------------------
+    @SlowTest
     @Test
     public void testDelete() throws CouchbaseLiteException {
         baseTestDb.delete();

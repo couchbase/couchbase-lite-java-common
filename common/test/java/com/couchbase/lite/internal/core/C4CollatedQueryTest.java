@@ -23,9 +23,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.BaseTest;
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.utils.SlowTest;
 
 import static org.junit.Assert.assertEquals;
 
@@ -34,17 +33,14 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     @Before
     public final void setUpC4CollatedQueryTest() throws LiteCoreException, IOException {
         loadJsonAsset("iTunesMusicLibrary.json");
-        BaseTest.logTestInitializationComplete("C4CollatedQuery");
     }
-
-    @After
-    public final void tearDownC4CollatedQueryTest() { BaseTest.logTestTeardownBegun("C4CollatedQuery"); }
 
     //-------------------------------------------------------------------------
     // tests
     //-------------------------------------------------------------------------
 
     // - DB Query collated
+    @SlowTest
     @Test
     public void testDBQueryCollated() throws LiteCoreException {
         compileSelect(json5("{WHAT: [ ['.Name'] ], "
@@ -56,6 +52,7 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     }
 
     // - DB Query aggregate collated
+    @SlowTest
     @Test
     public void testDBQueryAggregateCollated() throws LiteCoreException {
         compileSelect(json5(

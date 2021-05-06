@@ -22,7 +22,6 @@ import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 
-import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -33,13 +32,9 @@ import static org.junit.Assert.assertNotNull;
 public class C4QueryBaseTest extends C4BaseTest {
     protected C4Query query;
 
-    @Before
-    public final void setUpC4QueryBaseTest() { BaseTest.logTestInitializationComplete("C4Query base"); }
-
     @After
     public final void tearDownC4QueryBaseTest() {
         if (query != null) { query.close(); }
-        BaseTest.logTestTeardownBegun("C4Query base");
     }
 
     protected final void compileSelect(String queryStr) throws LiteCoreException {

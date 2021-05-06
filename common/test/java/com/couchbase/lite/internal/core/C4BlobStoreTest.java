@@ -26,7 +26,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
@@ -55,14 +54,10 @@ public class C4BlobStoreTest extends C4BaseTest {
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
-
-        BaseTest.logTestInitializationComplete("C4BlobStore");
     }
 
     @After
     public final void tearDownC4BlobStoreTest() {
-        BaseTest.logTestTeardownBegun("C4BlobStore");
-
         bogusKey.close();
 
         final C4BlobStore store = blobStore;

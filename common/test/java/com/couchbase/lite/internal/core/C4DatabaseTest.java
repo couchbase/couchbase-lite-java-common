@@ -31,6 +31,7 @@ import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.utils.SlowTest;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -112,6 +113,7 @@ public class C4DatabaseTest extends C4BaseTest {
     }
 
     // - Database deletion lock
+    @SlowTest
     @Test
     public void testDatabaseDeletionLock() {
         // Try it using the C4Db's idea of the location of the db
@@ -360,7 +362,7 @@ public class C4DatabaseTest extends C4BaseTest {
     public void testPurgeExpiredDocs() throws LiteCoreException {
         long now = System.currentTimeMillis();
         final long shortExpire = now + 1000;
-        final long longExpire = now + BaseTest.STD_TIMEOUT_MS;
+        final long longExpire = now + STD_TIMEOUT_MS;
 
 
         String docID = "expire_me";
@@ -391,7 +393,7 @@ public class C4DatabaseTest extends C4BaseTest {
 
         // There should be a time at which exactly two of the docs have expired (the other two have not).
         // That time should be less than the long-expire timeout
-        BaseTest.waitUntil(BaseTest.STD_TIMEOUT_MS, () -> 2 == c4Database.getDocumentCount());
+        waitUntil(STD_TIMEOUT_MS, () -> 2 == c4Database.getDocumentCount());
     }
 
     @Test
@@ -410,7 +412,7 @@ public class C4DatabaseTest extends C4BaseTest {
         c4Database.setExpiration(docID2, expire);
         c4Database.setExpiration(docID2, 0);
 
-        BaseTest.waitUntil(BaseTest.STD_TIMEOUT_MS, () -> 1 == c4Database.getDocumentCount());
+        waitUntil(STD_TIMEOUT_MS, () -> 1 == c4Database.getDocumentCount());
 
         assertNotNull(c4Database.get(docID2, true));
     }

@@ -18,19 +18,16 @@ package com.couchbase.lite.internal
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.LogDomain
 import com.couchbase.lite.LogLevel
-import com.couchbase.lite.PlatformBaseTest
 import com.couchbase.lite.internal.exec.AbstractExecutionService
 import com.couchbase.lite.internal.exec.ExecutionService
 import com.couchbase.lite.internal.support.Log
 import com.couchbase.lite.internal.utils.Report
 import org.junit.After
-import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Test
 import java.util.Stack
 import java.util.concurrent.ArrayBlockingQueue
@@ -40,27 +37,11 @@ import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
-private const val TIMEOUT_SEC = BaseTest.STD_TIMEOUT_SEC
 private const val CAPACITY = AbstractExecutionService.MIN_CAPACITY * 2
 private const val THREADS = 3
 
-class ExecutionServiceTest : PlatformBaseTest() {
-    companion object {
-        @JvmStatic
-        @BeforeClass
-        fun setUpC4BaseTestSuite() {
-            BaseTest.setUpPlatformSuite()
-        }
-
-        @JvmStatic
-        @AfterClass
-        fun tearDownC4BaseTestSuite() {
-            BaseTest.tearDownBaseTestSuite()
-        }
-    }
-
+class ExecutionServiceTest : BaseTest() {
     private val queue = ArrayBlockingQueue<Runnable>(CAPACITY)
-
     private val baseExecutor = ThreadPoolExecutor(THREADS, THREADS, 5, TimeUnit.SECONDS, queue)
 
     private val baseService = object : AbstractExecutionService(baseExecutor) {
@@ -85,16 +66,12 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
     @Before
     fun setUpExecutionServiceTest() {
-        Report.log(LogLevel.INFO, ">>>>>>>>>>>>> ExecutionService test started")
         cblService = CouchbaseLiteInternal.getExecutionService()
-        BaseTest.logTestInitializationComplete("ExecutionService")
     }
 
     @After
     fun cleanUpExecutionServiceTest() {
-        BaseTest.logTestTeardownBegun("ExecutionService")
         cblService = CouchbaseLiteInternal.getExecutionService()
-        Report.log(LogLevel.INFO, "<<<<<<<<<<<< ExecutionService Test completed")
     }
 
     // Serial Executor tests
@@ -111,7 +88,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
         executor.execute {
             try {
-                startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
                 // second task is queued but should not pass us.
                 Thread.sleep(1000)
             } catch (ignore: InterruptedException) {
@@ -131,7 +108,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         startLatch.countDown()
 
         try {
-            finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+            finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
         } catch (ignore: InterruptedException) {
         }
 
@@ -170,7 +147,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         try {
             // block the executor: it has a single thread so no tasks can run
             val blockLatch = CountDownLatch(1)
-            executor.execute { blockLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS) }
+            executor.execute { blockLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS) }
 
             val nTasks = 10
             val startLatch = CountDownLatch(1)
@@ -183,7 +160,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
                 executor.execute {
                     try {
                         firstStartedLatch.countDown()
-                        startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                        startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
                     } catch (ignore: InterruptedException) {
                     } finally {
                         firstFinishedLatch.countDown()
@@ -194,7 +171,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
             // clear the block and wait for the first of nTasks to start running
             blockLatch.countDown()
-            assertTrue(firstStartedLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+            assertTrue(firstStartedLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
             // the first of the nTasks is now blocking the queue.
 
             // fill the executor
@@ -202,11 +179,11 @@ class ExecutionServiceTest : PlatformBaseTest() {
             val clearSwampLatch = swamp(tinyExecutor, swampLatch)
 
             startLatch.countDown()
-            assertTrue(firstFinishedLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+            assertTrue(firstFinishedLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
             // the executing task completes but fails to restart the queue:
 
             swampLatch.countDown()
-            assertTrue(clearSwampLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+            assertTrue(clearSwampLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
             // the swamp is now drained
 
             // should be stalled.
@@ -215,7 +192,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
             executor.execute { finishLatch.countDown() }
 
-            assertTrue(finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+            assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         } catch (e: AssertionError) {
             tinyService.dumpExecutorState()
             throw e
@@ -240,7 +217,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
         executor.execute {
             try {
-                startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
             } catch (ignore: InterruptedException) {
             }
 
@@ -249,7 +226,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
         executor.execute {
             try {
-                startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
             } catch (ignore: InterruptedException) {
             }
 
@@ -268,7 +245,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         startLatch.countDown()
 
         try {
-            assertTrue(finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+            assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         } catch (ignore: InterruptedException) {
         }
 
@@ -290,7 +267,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
         executor.execute {
             try {
-                startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
                 Thread.sleep(1000)
             } catch (ignore: InterruptedException) {
             }
@@ -309,7 +286,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         startLatch.countDown()
 
         try {
-            finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+            finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
         } catch (ignore: InterruptedException) {
         }
 
@@ -335,7 +312,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         for (i in 0 until nTasks) {
             executor.execute {
                 try {
-                    startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                    startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
                 } catch (ignore: InterruptedException) {
                 } finally {
                     finishLatch.countDown()
@@ -346,7 +323,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         // Set all of the tasks free
         startLatch.countDown()
 
-        assertTrue(finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+        assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
     }
 
 
@@ -378,7 +355,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
         // block the executor: it has a single thread so no tasks can run
         val blockLatch = CountDownLatch(1)
-        tinyExecutor.execute { blockLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS) }
+        tinyExecutor.execute { blockLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS) }
 
         val nTasks = 10
         val startLatch = CountDownLatch(1)
@@ -392,7 +369,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
             executor.execute {
                 try {
                     firstStartedLatch.countDown()
-                    startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                    startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
                 } catch (ignore: InterruptedException) {
                 } finally {
                     firstFinishedLatch.countDown()
@@ -403,7 +380,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
         // clear the block and wait for the first of nTasks to start running
         blockLatch.countDown()
-        assertTrue(firstStartedLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+        assertTrue(firstStartedLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         // the first of the nTasks is now blocking the queue.
 
         // fill the executor
@@ -411,11 +388,11 @@ class ExecutionServiceTest : PlatformBaseTest() {
         val clearSwampLatch = swamp(tinyExecutor, swampLatch)
 
         startLatch.countDown()
-        assertTrue(firstFinishedLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+        assertTrue(firstFinishedLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         // the executing task completes but fails to restart the queue:
 
         swampLatch.countDown()
-        assertTrue(clearSwampLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+        assertTrue(clearSwampLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         // the swamp is now drained
 
         // the queue is stalled even though resources are available.
@@ -425,7 +402,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         // This should restart the queue
         executor.execute { finishLatch.countDown() }
 
-        assertTrue(finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+        assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
     }
 
     // A stopped concurrent executor finishes currently queued tasks.
@@ -439,7 +416,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         // enqueue two tasks
         executor.execute {
             try {
-                startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
             } catch (ignore: InterruptedException) {
             }
 
@@ -448,7 +425,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
 
         executor.execute {
             try {
-                startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
             } catch (ignore: InterruptedException) {
             }
 
@@ -467,7 +444,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         startLatch.countDown()
 
         try {
-            assertTrue(finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+            assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         } catch (ignore: InterruptedException) {
         }
 
@@ -504,7 +481,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
         }
 
         try {
-            latch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+            latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
         } catch (ignore: InterruptedException) {
         }
 
@@ -536,7 +513,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
             })
 
         try {
-            assertTrue(finishLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS))
+            assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         } catch (ignore: InterruptedException) {
         }
 
@@ -575,7 +552,7 @@ class ExecutionServiceTest : PlatformBaseTest() {
             while (true) {
                 ex.execute {
                     try {
-                        startLatch.await(TIMEOUT_SEC, TimeUnit.SECONDS)
+                        startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
                     } catch (ignore: InterruptedException) {
                     } finally {
                         if (--n == 0) stopLatch.countDown()

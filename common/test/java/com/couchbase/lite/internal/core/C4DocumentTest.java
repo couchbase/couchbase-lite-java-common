@@ -23,6 +23,7 @@ import org.junit.Test;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.SlowTest;
 import com.couchbase.lite.internal.utils.StopWatch;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -183,6 +184,7 @@ public class C4DocumentTest extends C4BaseTest {
     }
 
     // - "Document maxRevTreeDepth"
+    @SlowTest
     @Test
     public void testMaxRevTreeDepth() throws LiteCoreException {
         // NOTE: c4db_getMaxRevTreeDepth and c4db_setMaxRevTreeDepth are not supported by JNI.

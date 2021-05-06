@@ -1758,10 +1758,10 @@ public class DocumentTest extends BaseDbTest {
         saveDocInBaseTestDb(doc2);
 
         baseTestDb.setDocumentExpiration("doc1", new Date(now + 100));
-        baseTestDb.setDocumentExpiration("doc2", new Date(now + BaseTest.LONG_TIMEOUT_MS));
+        baseTestDb.setDocumentExpiration("doc2", new Date(now + LONG_TIMEOUT_MS));
         assertEquals(2, baseTestDb.getCount());
 
-        BaseTest.waitUntil(1000L, () -> 1 == baseTestDb.getCount());
+        waitUntil(1000L, () -> 1 == baseTestDb.getCount());
     }
 
     @Test

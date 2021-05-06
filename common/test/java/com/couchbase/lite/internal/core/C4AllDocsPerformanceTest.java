@@ -24,7 +24,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
@@ -77,12 +76,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
         assertEquals(DOC_NUM, c4Database.getDocumentCount());
-
-        BaseTest.logTestInitializationComplete("C4AllDocsPerformance");
     }
-
-    @After
-    public final void tearDownC4AllDocsPerformanceTest() { BaseTest.logTestTeardownBegun("C4AllDocsPerformance"); }
 
     // - AllDocsPerformance
     @Test

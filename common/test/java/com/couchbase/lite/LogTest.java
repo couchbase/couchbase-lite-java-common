@@ -125,15 +125,8 @@ public class LogTest extends BaseDbTest {
     @Before
     public final void setUpLogTest() {
         scratchDirPath = getScratchDirectoryPath(getUniqueName("log-dir"));
-
-        Log.initLogging();
         Database.log.reset();
-
-        BaseTest.logTestInitializationComplete("Log");
     }
-
-    @After
-    public final void tearDownLogTest() { BaseTest.logTestTeardownBegun("Log"); }
 
     @Test
     public void testCustomLoggingLevels() {

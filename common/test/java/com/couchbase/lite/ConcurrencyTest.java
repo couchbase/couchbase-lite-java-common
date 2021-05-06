@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -24,7 +23,9 @@ import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.ConcurrencyUnitTest;
@@ -46,6 +47,12 @@ public class ConcurrencyTest extends BaseDbTest {
     interface VerifyBlock<T> {
         void verify(int n, T result);
     }
+
+    private final AtomicReference<AssertionError> testFailure = new AtomicReference<>();
+
+    @Before
+    public final void setUpConcurrencyTest() { testFailure.set(null); }
+
 
     @Test
     @ConcurrencyUnitTest
@@ -162,7 +169,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     @ConcurrencyUnitTest
-    public void testConcurrentReadNUpdate() throws InterruptedException, CouchbaseLiteException {
+    public void testConcurrentReadAndUpdate() throws InterruptedException, CouchbaseLiteException {
         final int kNDocs = 5;
         final int kNRounds = 50;
 
@@ -172,12 +179,12 @@ public class ConcurrencyTest extends BaseDbTest {
 
         // Read:
         final CountDownLatch latch1 = new CountDownLatch(1);
-        runSafelyInThread(latch1, () -> readDocs(docIDs, kNRounds));
+        testOnNewThread("testConcurrentReadAndUpdate-1", latch1, () -> readDocs(docIDs, kNRounds));
 
         // Update:
         final CountDownLatch latch2 = new CountDownLatch(1);
         final String tag = "Update";
-        runSafelyInThread(latch2, () -> assertTrue(updateDocs(docIDs, kNRounds, tag)));
+        testOnNewThread("testConcurrentReadAndUpdate-2", latch2, () -> assertTrue(updateDocs(docIDs, kNRounds, tag)));
 
         assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
         assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
@@ -196,7 +203,8 @@ public class ConcurrencyTest extends BaseDbTest {
         assertEquals(kNDocs, docIDs.size());
 
         final CountDownLatch latch1 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentDelete-1",
             latch1,
             () -> {
                 for (String docID: docIDs) {
@@ -209,7 +217,8 @@ public class ConcurrencyTest extends BaseDbTest {
             });
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentDelete-2",
             latch2,
             () -> {
                 for (String docID: docIDs) {
@@ -238,7 +247,8 @@ public class ConcurrencyTest extends BaseDbTest {
         assertEquals(nDocs, docIDs.size());
 
         final CountDownLatch latch1 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentPurge-1",
             latch1,
             () -> {
                 for (String docID: docIDs) {
@@ -251,7 +261,8 @@ public class ConcurrencyTest extends BaseDbTest {
             });
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentPurge-2",
             latch2,
             () -> {
                 for (String docID: docIDs) {
@@ -272,12 +283,13 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     @ConcurrencyUnitTest
-    public void testConcurrentCreateNCloseDB() throws InterruptedException {
+    public void testConcurrentCreateAndCloseDB() throws InterruptedException {
         final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final String tag1 = "Create1";
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentCreateAndCloseDB-1",
             latch1,
             () -> {
                 try { createDocs(kNDocs, tag1); }
@@ -291,7 +303,8 @@ public class ConcurrencyTest extends BaseDbTest {
             });
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentCreateAndCloseDB-2",
             latch2,
             () -> {
                 try { baseTestDb.close(); }
@@ -305,12 +318,13 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     @ConcurrencyUnitTest
-    public void testConcurrentCreateNDeleteDB() throws InterruptedException {
+    public void testConcurrentCreateAndDeleteDB() throws InterruptedException {
         final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final String tag1 = "Create1";
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentCreateAndDeleteDB-1",
             latch1,
             () -> {
                 try { createDocs(kNDocs, tag1); }
@@ -324,7 +338,8 @@ public class ConcurrencyTest extends BaseDbTest {
             });
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentCreateAndDeleteDB-2",
             latch2,
             () -> {
                 try { baseTestDb.delete(); }
@@ -338,11 +353,12 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     @ConcurrencyUnitTest
-    public void testConcurrentCreateNCompactDB() throws InterruptedException {
+    public void testConcurrentCreateAndCompactDB() throws InterruptedException {
         final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentCreateAndCompactDB-1",
             latch1,
             () -> {
                 try { createDocs(kNDocs, "Create1"); }
@@ -354,7 +370,8 @@ public class ConcurrencyTest extends BaseDbTest {
             });
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentCreateAndCompactDB-2",
             latch2,
             () -> {
                 try { baseTestDb.performMaintenance(MaintenanceType.COMPACT); }
@@ -368,13 +385,14 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     @ConcurrencyUnitTest
-    public void testConcurrentCreateNCreateIndexDB() throws Exception {
+    public void testConcurrentCreateAndCreateIndexDB() throws Exception {
         loadJSONResource("sentences.json");
 
         final int kNDocs = 100;
 
         final CountDownLatch latch1 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentCreateAndCreateIndexDB-1",
             latch1,
             () -> {
                 try { createDocs(kNDocs, "Create1"); }
@@ -386,7 +404,8 @@ public class ConcurrencyTest extends BaseDbTest {
             });
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        runSafelyInThread(
+        testOnNewThread(
+            "testConcurrentCreateAndCreateIndexDB-2",
             latch2,
             () -> {
                 try {
@@ -409,7 +428,8 @@ public class ConcurrencyTest extends BaseDbTest {
 
         baseTestDb.addChangeListener(testSerialExecutor, change -> latch2.countDown());
 
-        runSafelyInThread(
+        testOnNewThread(
+            "testBlockDatabaseChange",
             latch1,
             () -> {
                 try { baseTestDb.save(new MutableDocument("doc1")); }
@@ -429,7 +449,8 @@ public class ConcurrencyTest extends BaseDbTest {
 
         baseTestDb.addDocumentChangeListener("doc1", change -> latch2.countDown());
 
-        runSafelyInThread(
+        testOnNewThread(
+            "testBlockDocumentChange",
             latch1,
             () -> {
                 try { baseTestDb.save(new MutableDocument("doc1")); }
@@ -568,11 +589,16 @@ public class ConcurrencyTest extends BaseDbTest {
             final int counter = i;
             latches[i] = new CountDownLatch(1);
             threads[i] = new Thread(
-                () -> runSafely(
-                    () -> {
+                () -> {
+                    try {
                         callback.callback(counter);
                         latches[counter].countDown();
-                    }),
+                    }
+                    catch (AssertionError failure) {
+                        Report.log(LogLevel.DEBUG, "Test failed", failure);
+                        testFailure.compareAndSet(null, failure);
+                    }
+                },
                 "Thread-" + i);
         }
 
@@ -586,5 +612,25 @@ public class ConcurrencyTest extends BaseDbTest {
         }
 
         checkForFailure();
+    }
+
+    private void testOnNewThread(String threadName, CountDownLatch latch, Runnable test) {
+        newTestThread(threadName, latch, test).start();
+    }
+
+    private Thread newTestThread(String threadName, CountDownLatch latch, Runnable test) {
+        return new Thread(() -> {
+            try { test.run(); }
+            catch (AssertionError failure) {
+                Report.log(LogLevel.DEBUG, "Test failed", failure);
+                testFailure.compareAndSet(null, failure);
+            }
+            finally { latch.countDown(); }
+        });
+    }
+
+    private void checkForFailure() {
+        AssertionError failure = testFailure.get();
+        if (failure != null) { throw new AssertionError(failure); }
     }
 }

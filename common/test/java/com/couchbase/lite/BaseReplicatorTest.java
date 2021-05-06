@@ -42,12 +42,10 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         Report.log(LogLevel.INFO, "Create other DB: " + otherDB);
         assertNotNull(otherDB);
         synchronized (otherDB.getDbLock()) { assertTrue(otherDB.isOpen()); }
-        BaseTest.logTestInitializationComplete("Replicator");
     }
 
     @After
     public final void tearDownBaseReplicatorTest() {
-        BaseTest.logTestTeardownBegun("Replicator");
         deleteDb(otherDB);
         Report.log(LogLevel.INFO, "Deleted other DB: " + otherDB);
     }

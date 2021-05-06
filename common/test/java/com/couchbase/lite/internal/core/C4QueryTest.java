@@ -21,12 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.BaseTest;
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.fleece.FLConstants;
@@ -45,11 +42,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Before
     public final void setUpC4QueryTest() throws LiteCoreException, IOException {
         loadJsonAsset("names_100.json");
-        BaseTest.logTestInitializationComplete("C4Query");
     }
-
-    @After
-    public final void tearDownC4QueryTest() { BaseTest.logTestTeardownBegun("C4Query"); }
 
     //-------------------------------------------------------------------------
     // tests

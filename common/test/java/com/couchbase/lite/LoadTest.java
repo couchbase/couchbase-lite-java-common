@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.LoadIntegrationTest;
 import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.SlowTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -50,6 +51,7 @@ public class LoadTest extends BaseDbTest {
         logPerformanceStats("testCreate()", (System.currentTimeMillis() - start));
     }
 
+    @SlowTest
     @Test
     public void testAddRevisions() throws CouchbaseLiteException {
         final int revs = 1000;

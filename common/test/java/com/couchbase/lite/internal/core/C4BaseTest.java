@@ -15,8 +15,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import android.support.annotation.NonNull;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -30,45 +28,30 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
 import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.PlatformBaseTest;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StopWatch;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 
-public class C4BaseTest extends PlatformBaseTest {
+public class C4BaseTest extends BaseTest {
     public static final String DOC_ID = "mydoc";
     public static final String REV_ID_1 = "1-abcd";
     public static final String REV_ID_2 = "2-c001d00d";
     public static final String REV_ID_3 = "3-deadbeef";
-
-    @BeforeClass
-    public static void setUpC4BaseTestSuite() { BaseTest.setUpPlatformSuite(); }
-
-    @AfterClass
-    public static void tearDownC4BaseTestSuite() { BaseTest.tearDownBaseTestSuite(); }
 
 
     protected C4Database c4Database;
@@ -80,18 +63,8 @@ public class C4BaseTest extends PlatformBaseTest {
 
     private String testName;
 
-    @Rule
-    public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) { testName = description.getMethodName(); }
-    };
-
     @Before
     public final void setUpC4BaseTest() throws CouchbaseLiteException {
-        Report.log(LogLevel.INFO, ">>>>>>>> C4 Test started: " + testName);
-        Log.initLogging();
-
-        setupPlatform();
-
         final String testDirName = getUniqueName("c4_test");
         try {
             C4.setenv("TMPDIR", getScratchDirectoryPath(testDirName), 1);
@@ -115,25 +88,16 @@ public class C4BaseTest extends PlatformBaseTest {
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
-
-        BaseTest.logTestInitializationComplete("C4");
     }
 
     @After
     public final void tearDownC4BaseTest() throws LiteCoreException {
-        BaseTest.logTestTeardownBegun("C4");
         final C4Database db = c4Database;
         c4Database = null;
         if (db != null) { db.closeDb(); }
 
         FileUtils.eraseFileOrDir(dbParentDirPath);
-
-        Report.log(LogLevel.INFO, "<<<<<<<< C4 Test completed: " + testName);
     }
-
-    protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
-
-    protected String getScratchDirectoryPath(@NonNull String name) { return BaseTest.getScratchDirPath(name); }
 
     protected int getFlags() { return C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.SHARED_KEYS; }
 

@@ -27,7 +27,6 @@ import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -53,13 +52,7 @@ public class BlobTest extends BaseDbTest {
     public TemporaryFolder tempFolder = new TemporaryFolder();
 
     @Before
-    public final void setUpBlobTest() {
-        localBlobContent = StringUtils.randomString(100);
-        BaseTest.logTestInitializationComplete("Blob");
-    }
-
-    @After
-    public final void tearDownBlobTest() { BaseTest.logTestTeardownBegun("Blob"); }
+    public final void setUpBlobTest() { localBlobContent = StringUtils.randomString(100); }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBlobCtorWithNullContentType() { new Blob(null, new byte[] {5, 6, 7, 8}); }

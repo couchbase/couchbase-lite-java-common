@@ -22,8 +22,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.BaseTest;
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 
 import static org.junit.Assert.assertEquals;
@@ -37,11 +35,7 @@ public class C4NestedQueryTest extends C4QueryBaseTest {
     @Before
     public final void setUpC4NestedQueryTest() throws LiteCoreException, IOException {
         loadJsonAsset("nested.json");
-        BaseTest.logTestInitializationComplete("C4NestedQuery");
     }
-
-    @After
-    public final void tearDownC4NestedQueryTest() { BaseTest.logTestTeardownBegun("C4NestedQuery"); }
 
     // - DB Query ANY nested
     @Test

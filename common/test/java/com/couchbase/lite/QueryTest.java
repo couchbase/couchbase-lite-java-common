@@ -1469,7 +1469,6 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
-    @SlowTest
     @Test
     public void testLiveQueryNoUpdate() throws CouchbaseLiteException, InterruptedException {
         testLiveQueryNoUpdate(false);
@@ -2950,6 +2949,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     // ??? This is a ridiculously expensive test
+    @SlowTest
     private void testLiveQueryNoUpdate(final boolean consumeAll) throws
         CouchbaseLiteException, InterruptedException {
         loadNumberedDocs(100);

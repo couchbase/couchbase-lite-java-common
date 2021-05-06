@@ -17,6 +17,7 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.io.BufferedReader;
@@ -48,6 +49,10 @@ public abstract class BaseDbTest extends BaseTest {
     @FunctionalInterface
     public interface DocValidator extends Fn.ConsumerThrows<Document, CouchbaseLiteException> {}
 
+    public static final String TEST_DATE = "2019-02-21T05:37:22.014Z";
+    public static final String BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box.";
+
+
     protected Database baseTestDb;
 
     @Before
@@ -56,19 +61,13 @@ public abstract class BaseDbTest extends BaseTest {
         Report.log(LogLevel.INFO, "Created base test DB: " + baseTestDb);
         assertNotNull(baseTestDb);
         synchronized (baseTestDb.getDbLock()) { assertTrue(baseTestDb.isOpen()); }
-        BaseTest.logTestInitializationComplete("DB");
     }
 
     @After
     public final void tearDownBaseDbTest() {
-        BaseTest.logTestTeardownBegun("DB");
         deleteDb(baseTestDb);
         Report.log(LogLevel.INFO, "Deleted baseTestDb: " + baseTestDb);
     }
-
-    protected final void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
-
-    protected final void recreateBastTestDb() throws CouchbaseLiteException { baseTestDb = recreateDb(baseTestDb); }
 
     protected final Document createSingleDocInBaseTestDb(String docID) throws CouchbaseLiteException {
         final long n = baseTestDb.getCount();
@@ -1653,6 +1652,10 @@ public abstract class BaseDbTest extends BaseTest {
 
         verifyBlob(doc.getBlob("doc-29"));
     }
+
+    protected final void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
+
+    protected final void recreateBastTestDb() throws CouchbaseLiteException { baseTestDb = recreateDb(baseTestDb); }
 
     // Some JSON encoding will promote a Float to a Double.
     protected final Float demoteToFloat(Object val) {
