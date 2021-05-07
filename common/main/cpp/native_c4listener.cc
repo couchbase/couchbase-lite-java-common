@@ -121,8 +121,7 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
 
 // The Java method returns a byte array of key data.
 // This method copies the data to its destination.
-static bool
-doKeyDataCallback(JNIEnv *env, void *externalKey, void *output, size_t outputMaxLen, size_t *outputLen) {
+static bool doKeyDataCallback(JNIEnv *env, void *externalKey, void *output, size_t outputMaxLen, size_t *outputLen) {
     auto key = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair,
                                                          m_C4KeyPair_keyDataCallback,
                                                          (jlong) externalKey));
@@ -167,8 +166,13 @@ static bool publicKeyDataCallback(void *externalKey, void *output, size_t output
 // The Java method takes a byte array of encrypted data and returns a byte array
 // containing the decrypted data. This method creates the parameter byte array
 // and then copies the result to its destination.
-static bool
-doDecryptCallback(JNIEnv *env, void *externalKey, C4Slice input, void *output, size_t outputMaxLen, size_t *outputLen) {
+static bool doDecryptCallback(
+        JNIEnv *env,
+        void *externalKey,
+        C4Slice input,
+        void *output,
+        size_t outputMaxLen,
+        size_t *outputLen) {
     jbyteArray encryptedData = env->NewByteArray(input.size);
     env->SetByteArrayRegion(encryptedData, 0, input.size, (jbyte *) input.buf);
 
@@ -216,8 +220,7 @@ static bool decryptKeyCallback(void *externalKey, C4Slice input, void *output, s
 // The Java method takes a byte array of data and returns a byte array
 // containing the signature. This method creates the parameter byte array
 // and then copies the result to its destination.
-static bool
-doSignCallback(JNIEnv *env,
+static bool doSignCallback(JNIEnv *env,
                void *externalKey,
                C4SignatureDigestAlgorithm digestAlgorithm,
                C4Slice inputData,

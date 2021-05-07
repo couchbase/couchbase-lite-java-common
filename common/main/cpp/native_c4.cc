@@ -32,8 +32,36 @@
 using namespace litecore;
 using namespace litecore::jni;
 
+//-------------------------------------------------------------------------
+// Package initialization
+//-------------------------------------------------------------------------
+
 static jclass cls_C4Log;
 static jmethodID m_C4Log_logCallback;
+
+static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list ignore);
+
+bool litecore::jni::initC4Logging(JNIEnv *env) {
+    jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Log");
+    if (!localClass)
+        return false;
+
+    cls_C4Log = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+    if (!cls_C4Log)
+        return false;
+
+    m_C4Log_logCallback = env->GetStaticMethodID(
+            cls_C4Log,
+            "logCallback",
+            "(Ljava/lang/String;ILjava/lang/String;)V");
+
+    if (!m_C4Log_logCallback)
+        return false;
+
+    c4log_writeToCallback((C4LogLevel) kC4LogDebug, logCallback, true);
+
+    return true;
+}
 
 // The default logging callback writes to stderr, or on Android to __android_log_write.
 // ??? Need to do something better for web service and Windows logging
@@ -67,8 +95,57 @@ void litecore::jni::logError(const char *fmt, ...) {
     va_end(args);
 }
 
-extern "C" {
+static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list ignore) {
+    if (!cls_C4Log || !m_C4Log_logCallback) {
+        logError("logCallback(): Logging not initialized");
+        return;
+    }
 
+    JNIEnv *env = nullptr;
+    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    if (getEnvStat == JNI_EDETACHED) {
+        if (attachCurrentThread(&env) != 0) {
+            logError("logCallback(): Failed to attach the current thread to a Java VM)");
+            return;
+        }
+    } else if (getEnvStat != JNI_OK) {
+        logError("logCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        return;
+    }
+
+    if (env->ExceptionCheck() == JNI_TRUE) {
+        logError("logCallback(): Cannot log while an exception is outstanding");
+        return;
+    }
+
+    jstring message = UTF8ToJstring(env, const_cast<char *>(fmt), strlen(fmt));
+    if (!message) {
+        logError("logCallback(): Failed encoding error message");
+        return;
+    }
+
+    const char *domainNameRaw = c4log_getDomainName(domain);
+    jstring domainName = UTF8ToJstring(env, domainNameRaw, strlen(domainNameRaw));
+    if (!domainName)
+        domainName = env->NewStringUTF("???");
+
+    env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
+
+    // If this method is on a thread that is was previously attached but was called
+    // from some long running method, we need to release the local refs.
+    env->DeleteLocalRef(message);
+    if (domainName)
+        env->DeleteLocalRef(domainName);
+
+    if (getEnvStat == JNI_EDETACHED) {
+        if (gJVM->DetachCurrentThread() != 0) {
+            C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
+        }
+    }
+}
+
+
+extern "C" {
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4
 // ----------------------------------------------------------------------------
@@ -240,50 +317,6 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(
     }
 }
 
-static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list ignore) {
-    JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) != 0) {
-            logError("logCallback(): Failed to attach the current thread to a Java VM)");
-            return;
-        }
-    } else if (getEnvStat != JNI_OK) {
-        logError("logCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-        return;
-    }
-
-    if (env->ExceptionCheck() == JNI_TRUE) {
-        logError("logCallback(): Cannot log while an exception is outstanding");
-        return;
-    }
-
-    jstring message = UTF8ToJstring(env, const_cast<char *>(fmt), strlen(fmt));
-    if (!message) {
-        logError("logCallback(): Failed encoding error message");
-        return;
-    }
-
-    const char *domainNameRaw = c4log_getDomainName(domain);
-    jstring domainName = UTF8ToJstring(env, domainNameRaw, strlen(domainNameRaw));
-    if (!domainName)
-        domainName = env->NewStringUTF("???");
-
-    env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
-
-    // If this method is on a thread that is was previously attached but was called
-    // from some long running method, we need to release the local refs.
-    env->DeleteLocalRef(message);
-    if (domainName)
-        env->DeleteLocalRef(domainName);
-
-    if (getEnvStat == JNI_EDETACHED) {
-        if (gJVM->DetachCurrentThread() != 0) {
-            C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
-        }
-    }
-}
-
 /*
  * Class:     com_couchbase_lite_internal_core_C4Log
  * Method:    setCallbackLevel
@@ -291,26 +324,6 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
  */
 JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env, jclass clazz, jint jlevel) {
-    if (cls_C4Log == nullptr) {
-        cls_C4Log = reinterpret_cast<jclass>(env->NewGlobalRef(clazz));
-        if (!cls_C4Log) {
-            C4Error err = c4error_make(LiteCoreDomain, kC4ErrorUnexpectedError, {});
-            throwError(env, err);
-        }
-
-        m_C4Log_logCallback = env->GetStaticMethodID(
-                cls_C4Log,
-                "logCallback",
-                "(Ljava/lang/String;ILjava/lang/String;)V");
-
-        if (!m_C4Log_logCallback) {
-            C4Error err = c4error_make(LiteCoreDomain, kC4ErrorUnexpectedError, {});
-            throwError(env, err);
-        }
-
-        c4log_writeToCallback((C4LogLevel) jlevel, logCallback, true);
-    }
-
     c4log_setCallbackLevel((C4LogLevel) jlevel);
 }
 

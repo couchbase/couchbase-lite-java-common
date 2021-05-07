@@ -36,8 +36,8 @@ using namespace std;
 // The strategy here is to use standard C functions to convert the UTF-8 directly to UTF-16, which Java handles nicely.
 // The following two functions are derived from this code:
 //   https://github.com/incanus/android-jni/blob/master/app/src/main/jni/JNI.cpp#L57-L86
-// !!! Creating the wstring_convert is expensive.  It would be nice to create one
-//    and to re-use it.  It is *NOT*, however, threadsafe.
+// ??? Creating the wstring_convert is expensive.  It would be nice to create one
+//     and to re-use it.  It is *NOT*, however, threadsafe.
 // ??? On failure, just return a nullptr.
 jstring litecore::jni::UTF8ToJstring(JNIEnv *env, const char *s, size_t size) {
     std::u16string ustr;
@@ -114,12 +114,13 @@ std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
 JNIEXPORT jint JNICALL
 JNI_OnLoad(JavaVM *jvm, void *reserved) {
     JNIEnv *env;
-    if (jvm->GetEnv((void **) &env, JNI_VERSION_1_6) == JNI_OK
+    if ((jvm->GetEnv((void **) &env, JNI_VERSION_1_6) == JNI_OK)
+        && initC4Logging(env)
+        && initC4Observer(env)
+        && initC4Replicator(env)
         #ifdef COUCHBASE_ENTERPRISE
         && initC4Listener(env)
         #endif
-        && initC4Observer(env)
-        && initC4Replicator(env)
         && initC4Socket(env)) {
 
         assert(gJVM == nullptr);

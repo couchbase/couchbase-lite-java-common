@@ -39,6 +39,7 @@ namespace litecore {
 
         void deleteGlobalRef(jobject gRef);
 
+        bool initC4Logging(JNIEnv *env); // Implemented in native_c4.cc
         bool initC4Observer(JNIEnv *);   // Implemented in native_c4observer.cc
         bool initC4Replicator(JNIEnv *); // Implemented in native_c4replicator.cc
         bool initC4Socket(JNIEnv *);     // Implemented in native_c4socket.cc
