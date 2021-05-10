@@ -25,6 +25,7 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.Fn;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
@@ -498,6 +499,7 @@ public class LogTest extends BaseDbTest {
         assertEquals(fileLogger.getConfig(), new LogFileConfiguration(scratchDirPath + "/foo"));
     }
 
+    @FlakyTest
     @Test
     public void testNonASCII() throws CouchbaseLiteException {
         String hebrew = "מזג האוויר נחמד היום"; // The weather is nice today.
