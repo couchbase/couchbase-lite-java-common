@@ -40,9 +40,9 @@ class InstrumentedTask implements Runnable {
     @Nullable
     private volatile Runnable onComplete;
 
-    public InstrumentedTask(@NonNull Runnable task) { this(task, null); }
+    InstrumentedTask(@NonNull Runnable task) { this(task, null); }
 
-    public InstrumentedTask(@NonNull Runnable task, @Nullable Runnable onComplete) {
+    InstrumentedTask(@NonNull Runnable task, @Nullable Runnable onComplete) {
         this.task = task;
         this.onComplete = onComplete;
     }
