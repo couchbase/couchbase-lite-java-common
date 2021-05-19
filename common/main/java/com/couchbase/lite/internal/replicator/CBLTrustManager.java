@@ -134,7 +134,7 @@ public final class CBLTrustManager implements X509TrustManager {
             throw new IllegalStateException("Cannot find the default trust manager", e);
         }
 
-        if (trustManagers == null || trustManagers.length == 0) {
+        if ((trustManagers == null) || (trustManagers.length == 0)) {
             throw new IllegalStateException("Cannot find the default trust manager");
         }
 
