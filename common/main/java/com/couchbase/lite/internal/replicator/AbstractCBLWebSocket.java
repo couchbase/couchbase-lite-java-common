@@ -115,12 +115,8 @@ import com.couchbase.lite.internal.utils.StringUtils;
 public abstract class AbstractCBLWebSocket extends C4Socket {
     private static final LogDomain TAG = LogDomain.NETWORK;
 
-    public static final int DEFAULT_ONE_SHOT_MAX_RETRY_ATTEMPTS = 9;
-    public static final int DEFAULT_CONTINUOUS_MAX_RETRY_ATTEMPTS = Integer.MAX_VALUE;
-    public static final int DEFAULT_MAX_RETRY_WAIT_SEC = 300;
-    public static final int DEFAULT_HEARTBEAT_SEC = 300;
-
     private static final int MAX_AUTH_RETRIES = 3;
+    public static final int DEFAULT_HEARTBEAT_SEC = 300;
 
     private static final String CHALLENGE_BASIC = "Basic";
     private static final String HEADER_AUTH = "Authorization";
@@ -284,8 +280,6 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         .followRedirects(true)
         .followSslRedirects(true)
 
-        // heartbeat
-        .pingInterval(DEFAULT_HEARTBEAT_SEC, TimeUnit.SECONDS)
         // ??? .retryOnConnectionFailure(false)
         .build();
 
@@ -364,6 +358,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @VisibleForTesting
     public final OkHttpClient getOkHttpSocketFactory() { return okHttpSocketFactory; }
 
+    @Nullable
     @VisibleForTesting
     public Map<String, Object> getOptions() { return options; }
 
@@ -530,8 +525,10 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
         // Heartbeat
         if (options != null) {
-            final Number heartbeat = (Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
-            if (heartbeat != null) { builder.pingInterval((long) heartbeat, TimeUnit.SECONDS).build(); }
+            final Object heartbeat = options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
+            builder.pingInterval(
+                (heartbeat instanceof Number) ? ((long) heartbeat) : DEFAULT_HEARTBEAT_SEC,
+                TimeUnit.SECONDS);
         }
 
         // Authenticator

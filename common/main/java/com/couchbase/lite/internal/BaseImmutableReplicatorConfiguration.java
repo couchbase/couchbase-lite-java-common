@@ -33,7 +33,6 @@ import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
-import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
 
 /**
@@ -152,10 +151,7 @@ public abstract class BaseImmutableReplicatorConfiguration {
     @NonNull
     public final Endpoint getTarget() { return target; }
 
-    //-------------------------------------------------------------------------
-    // Public Methods
-    //-------------------------------------------------------------------------
-
+    @SuppressWarnings("PMD.NPathComplexity")
     public void addConnectionOptions(@NonNull Map<String, Object> options) {
         // Add the pinned certificate if any:
         if (pinnedServerCertificate != null) {
@@ -170,9 +166,11 @@ public abstract class BaseImmutableReplicatorConfiguration {
             options.put(C4Replicator.REPLICATOR_OPTION_CHANNELS, channels);
         }
 
-        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, getDefaultedMaxRetryAttempts());
-        options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, getDefaultedMaxRetryAttemptWaitTime());
-        options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, getDefaultedHeartbeat());
+        if (heartbeat > 0) { options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, heartbeat); }
+        if (maxRetryAttempts > 0) { options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, maxRetryAttempts - 1); }
+        if (maxRetryAttemptWaitTime > 0) {
+            options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxRetryAttemptWaitTime);
+        }
 
         final Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:
@@ -184,23 +182,5 @@ public abstract class BaseImmutableReplicatorConfiguration {
             }
         }
         options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
-    }
-
-    private int getDefaultedMaxRetryAttempts() {
-        return (maxRetryAttempts > 0)
-            ? maxRetryAttempts
-            : ((continuous)
-                ? AbstractCBLWebSocket.DEFAULT_CONTINUOUS_MAX_RETRY_ATTEMPTS
-                : AbstractCBLWebSocket.DEFAULT_ONE_SHOT_MAX_RETRY_ATTEMPTS);
-    }
-
-    private int getDefaultedMaxRetryAttemptWaitTime() {
-        return (maxRetryAttemptWaitTime > 0)
-            ? maxRetryAttemptWaitTime
-            : AbstractCBLWebSocket.DEFAULT_MAX_RETRY_WAIT_SEC;
-    }
-
-    private int getDefaultedHeartbeat() {
-        return (heartbeat > 0) ? heartbeat : AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC;
     }
 }

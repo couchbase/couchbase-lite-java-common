@@ -32,6 +32,7 @@ import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -149,15 +150,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         final Replicator repl = testReplicator(config);
 
-        final Map<String, Object> options = new HashMap<>();
+        Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setListener(c4Socket -> {
+            if (c4Socket == null) { return; }
             synchronized (options) {
-                if (options.containsValue("heartbeat")) { return; }
-                final AbstractCBLWebSocket socket = (AbstractCBLWebSocket) c4Socket;
-                options.put("heartbeat", socket.getOkHttpSocketFactory().pingIntervalMillis());
-                final Map<String, Object> socketOpts = socket.getOptions();
-                options.put("retries", socketOpts.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
-                options.put("wait", socketOpts.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
+                Map<String, Object> opts = ((AbstractCBLWebSocket) c4Socket).getOptions();
+                if (opts != null) { options.putAll(opts); }
             }
         });
 
@@ -165,9 +163,9 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         catch (CouchbaseLiteException ignore) { }
 
         synchronized (options) {
-            assertEquals(AbstractCBLWebSocket.DEFAULT_HEARTBEAT_SEC * 1000, options.get("heartbeat"));
-            assertEquals((long) AbstractCBLWebSocket.DEFAULT_MAX_RETRY_WAIT_SEC, options.get("wait"));
-            assertEquals((long) AbstractCBLWebSocket.DEFAULT_ONE_SHOT_MAX_RETRY_ATTEMPTS, options.get("retries"));
+            assertFalse(options.containsKey(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
+            assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
+            assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
         }
     }
 
@@ -182,15 +180,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         final Replicator repl = testReplicator(config);
 
-        final Map<String, Object> options = new HashMap<>();
+        Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setListener(c4Socket -> {
+            if (c4Socket == null) { return; }
             synchronized (options) {
-                if (options.containsValue("heartbeat")) { return; }
-                final AbstractCBLWebSocket socket = (AbstractCBLWebSocket) c4Socket;
-                options.put("heartbeat", socket.getOkHttpSocketFactory().pingIntervalMillis());
-                final Map<String, Object> socketOpts = socket.getOptions();
-                options.put("retries", socketOpts.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
-                options.put("wait", socketOpts.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
+                Map<String, Object> opts = ((AbstractCBLWebSocket) c4Socket).getOptions();
+                if (opts != null) { options.putAll(opts); }
             }
         });
 
@@ -198,9 +193,10 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         catch (CouchbaseLiteException ignore) { }
 
         synchronized (options) {
-            assertEquals(33 * 1000, options.get("heartbeat"));
-            assertEquals(45L, options.get("wait"));
-            assertEquals(78L, options.get("retries"));
+            assertEquals(33L, options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
+            assertEquals(45L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
+            /* A friend once told me: Don't try to teach a pig to sing.  It won't work and it annoys the pig. */
+            assertEquals(78L - 1L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
         }
     }
 
