@@ -41,7 +41,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import okhttp3.Authenticator;
 import okhttp3.Challenge;
@@ -594,7 +593,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     private void setupSSLSocketFactory(OkHttpClient.Builder builder) throws GeneralSecurityException {
         byte[] pinnedServerCert = null;
         boolean acceptOnlySelfSignedServerCert = false;
-        KeyManager clientCertAuthKeyManager = null;
+        KeyManager[] keyManagers = null;
         if (options != null) {
             // Pinned Certificate:
             Object opt = options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
@@ -604,15 +603,13 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
             opt = options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);
             if (opt instanceof Boolean) { acceptOnlySelfSignedServerCert = (boolean) opt; }
 
-            clientCertAuthKeyManager = getAuthenticator();
+            // KeyManager for client cert authentication:
+            final KeyManager clientCertAuthKeyManager = getAuthenticator();
+            if (clientCertAuthKeyManager != null) { keyManagers = new KeyManager[] {clientCertAuthKeyManager}; }
         }
 
-        // KeyManager for client cert authentication:
-        KeyManager[] keyManagers = null;
-        if (clientCertAuthKeyManager != null) { keyManagers = new KeyManager[] {clientCertAuthKeyManager}; }
-
         // TrustManager for server cert verification:
-        final X509TrustManager trustManager
+        final CBLTrustManager trustManager
             = new CBLTrustManager(pinnedServerCert, acceptOnlySelfSignedServerCert, serverCertsListener);
 
         final SSLContext sslContext = SSLContext.getInstance("TLS");

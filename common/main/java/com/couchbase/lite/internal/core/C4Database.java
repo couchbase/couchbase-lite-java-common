@@ -430,6 +430,8 @@ public abstract class C4Database extends C4NativePeer {
     // !!!  Exposes the peer handle
     long getHandle() { return getPeer(); }
 
+    FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
+
     @VisibleForTesting
     C4Document create(String docID, byte[] body, int revisionFlags) throws LiteCoreException {
         return new C4Document(C4Document.create(getPeer(), docID, body, revisionFlags));
@@ -449,9 +451,6 @@ public abstract class C4Database extends C4NativePeer {
 
     @VisibleForTesting
     byte[] getPrivateUUID() throws LiteCoreException { return getPrivateUUID(getPeer()); }
-
-    @VisibleForTesting
-    FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
 
     @VisibleForTesting
     FLSliceResult encodeJSON(String data) throws LiteCoreException {

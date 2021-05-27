@@ -21,13 +21,15 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.BuildConfig;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
+
 
 @SuppressWarnings("PMD.ClassNamingConventions")
 public final class CBLVersion {
     private CBLVersion() {}
 
     private static final String USER_AGENT_TMPLT = "CouchbaseLite/%s (%s) %s";
-    private static final String VERSION_INFO_TMPLT = "CouchbaseLite Android v%s (%s at %s) on %s";
+    private static final String VERSION_INFO_TMPLT = "CouchbaseLite Android v%s@%s (%s at %s) on %s";
     private static final String LIB_INFO_TMPLT = "%s/%s, Commit/%s Core/%s";
     private static final String SYS_INFO_TMPLT = "Java; Android %s; %s";
 
@@ -53,7 +55,7 @@ public final class CBLVersion {
         return agent;
     }
 
-    // This is information about this library build.
+    // The whole megillah
     public static String getVersionInfo() {
         String info = VERSION_INFO.get();
         if (info == null) {
@@ -61,6 +63,7 @@ public final class CBLVersion {
                 Locale.ENGLISH,
                 VERSION_INFO_TMPLT,
                 BuildConfig.VERSION_NAME,
+                CouchbaseLiteInternal.getContext().getApplicationInfo().targetSdkVersion,
                 getLibInfo(),
                 BuildConfig.BUILD_TIME,
                 getSysInfo());

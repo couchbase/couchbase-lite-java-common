@@ -17,13 +17,11 @@ package com.couchbase.lite.internal.exec;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
 
 
-@VisibleForTesting
 class InstrumentedTask implements Runnable {
     // Putting a `new Exception()` here is useful but pretty expensive
     @SuppressWarnings("PMD.FinalFieldCouldBeStatic")
