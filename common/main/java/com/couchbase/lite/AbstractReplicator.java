@@ -71,6 +71,21 @@ import com.couchbase.lite.internal.utils.StringUtils;
 public abstract class AbstractReplicator extends BaseReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
+    static class ReplicatorCookieStore implements CBLCookieStore {
+        private final Database db;
+
+        ReplicatorCookieStore(Database db) { this.db = db; }
+
+        @Override
+        public void setCookie(@NonNull URI uri, @NonNull String header) { db.setCookie(uri, header); }
+
+        @Nullable
+        @Override
+        public String getCookies(@NonNull URI uri) {
+            synchronized (db.getDbLock()) { return (!db.isOpen()) ? null : db.getCookies(uri); }
+        }
+    }
+
     static boolean isStopped(C4ReplicatorStatus c4Status) {
         return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED;
     }
@@ -78,10 +93,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
     static boolean isOffline(C4ReplicatorStatus c4Status) {
         return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.OFFLINE;
     }
-
-    ////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////  R E P L I C A T O R   ////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////
 
     //---------------------------------------------
     // member variables
@@ -135,7 +146,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
         this.config = new ImmutableReplicatorConfiguration(config);
-        this.socketFactory = new SocketFactory(config, getCookieStore(), this::setServerCertificates);
+        this.socketFactory
+            = new SocketFactory(config, new ReplicatorCookieStore(getDatabase()), this::setServerCertificates);
         this.c4ReplListener = new ReplicatorListener(dispatcher);
     }
 
@@ -713,36 +725,13 @@ public abstract class AbstractReplicator extends BaseReplicator {
         }
     }
 
-    private Database getDatabase() { return config.getDatabase(); }
-
-    // Decompose a path into its elements.
-    private Deque<String> splitPath(String fullPath) {
-        final Deque<String> path = new ArrayDeque<>();
-        for (String element: fullPath.split("/")) {
-            if (element.length() > 0) { path.addLast(element); }
-        }
-        return path;
-    }
-
-    // CookieStore:
     @NonNull
-    private CBLCookieStore getCookieStore() {
-        return new CBLCookieStore() {
-            @Override
-            public void setCookie(@NonNull URI uri, @NonNull String header) { getDatabase().setCookie(uri, header); }
-
-            @Nullable
-            @Override
-            public String getCookies(@NonNull URI uri) {
-                final Database db = getDatabase();
-                synchronized (db.getDbLock()) { return (!db.isOpen()) ? null : db.getCookies(uri); }
-            }
-        };
-    }
+    private Database getDatabase() { return config.getDatabase(); }
 
     // Consumer callback to set the server certificates received during the TLS Handshake
     private void setServerCertificates(List<Certificate> certificates) { serverCertificates.set(certificates); }
 
+    @NonNull
     private String description() { return baseDesc() + "," + getDatabase() + " => " + config.getTarget() + "}"; }
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
@@ -754,5 +743,14 @@ public abstract class AbstractReplicator extends BaseReplicator {
             + (config.isContinuous() ? "*" : "-")
             + (config.isPush() ? ">" : "")
             + ")";
+    }
+
+    // Decompose a path into its elements.
+    private Deque<String> splitPath(String fullPath) {
+        final Deque<String> path = new ArrayDeque<>();
+        for (String element: fullPath.split("/")) {
+            if (element.length() > 0) { path.addLast(element); }
+        }
+        return path;
     }
 }

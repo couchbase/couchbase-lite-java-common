@@ -12,6 +12,7 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +23,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
@@ -29,10 +31,10 @@ import com.couchbase.lite.internal.utils.Fn;
  * 1. Supports pinned server certificate.
  * 2. Supports acceptOnlySelfSignedServerCertificate mode.
  * 3. Supports default trust manager for validating certs when the pinned server
- *    certificate and acceptOnlySelfSignedServerCertificate are not used.
+ * certificate and acceptOnlySelfSignedServerCertificate are not used.
  * 4. Allows to listen for the server certificates.
  */
-public final class CBLTrustManager implements X509TrustManager {
+public abstract class AbstractCBLTrustManager implements X509TrustManager {
     @Nullable
     private final byte[] pinnedServerCertificate;
 
@@ -44,46 +46,51 @@ public final class CBLTrustManager implements X509TrustManager {
     @NonNull
     private final AtomicReference<X509TrustManager> defaultTrustManager = new AtomicReference<>();
 
-    public CBLTrustManager(
+    public AbstractCBLTrustManager(
         @Nullable byte[] pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
-        this.pinnedServerCertificate = (pinnedServerCert != null ? pinnedServerCert.clone() : null);
+        this.pinnedServerCertificate = (pinnedServerCert == null) ? null : pinnedServerCert.clone();
         this.acceptOnlySelfSignedServerCertificate = acceptOnlySelfSignedServerCertificate;
         this.serverCertsListener = serverCertsListener;
     }
 
     @Override
-    public void checkClientTrusted(X509Certificate[] chain, String authType) {
+    public X509Certificate[] getAcceptedIssuers() {
+        if (useDefaultTrustManager()) { return getDefaultTrustManager().getAcceptedIssuers(); }
+        return new X509Certificate[0];
+    }
+
+    @Override
+    public void checkClientTrusted(@Nullable X509Certificate[] chain, @Nullable String authType) {
         throw new UnsupportedOperationException(
             "checkClientTrusted(X509Certificate[], String) not supported for client");
     }
 
     @Override
-    public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        try { doCheckServerTrusted(chain, authType); }
-        finally { serverCertsListener.accept(Collections.unmodifiableList(Arrays.asList(chain))); }
+    public void checkServerTrusted(@Nullable X509Certificate[] chain, @Nullable String authType)
+        throws CertificateException {
+        final List<X509Certificate> serverCerts = asList(chain);
+
+        notifyListener(serverCerts);
+
+        if (!useDefaultTrustManager()) { doCheckServerTrusted(serverCerts, authType); }
+        else { getDefaultTrustManager().checkServerTrusted(chain, authType); }
     }
 
-    private void doCheckServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        // Use default trust manager if the pinned server certificate
-        // and acceptOnlySelfSignedServerCertificate are not used:
-        if (useDefaultTrustManager()) {
-            getDefaultTrustManager().checkServerTrusted(chain, authType);
-            return;
-        }
-
-        // Check chain and authType precondition and throws IllegalArgumentException according to
-        // https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/X509TrustManager.html:
-        if (chain == null || chain.length == 0) {
+    // Check chain and authType precondition and throws IllegalArgumentException according to
+    // https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/X509TrustManager.html:
+    protected final void doCheckServerTrusted(@Nullable List<X509Certificate> certs, @Nullable String authType)
+        throws CertificateException {
+        if ((certs == null) || certs.isEmpty()) {
             throw new IllegalArgumentException("No server certificates");
         }
-        if (authType == null || authType.length() == 0) {
+        if (StringUtils.isEmpty(authType)) {
             throw new IllegalArgumentException("Invalid auth type: " + authType);
         }
 
         // Validate certificate:
-        final X509Certificate cert = chain[0];
+        final X509Certificate cert = certs.get(0);
         cert.checkValidity();
 
         // pinnedServerCertificate takes precedence over acceptOnlySelfSignedServerCertificate
@@ -95,16 +102,14 @@ public final class CBLTrustManager implements X509TrustManager {
         }
         else {
             // Accept only self-signed certificate:
-            if (chain.length > 1 || !isSelfSignedCertificate(cert)) {
+            if (certs.size() > 1 || !isSelfSignedCertificate(cert)) {
                 throw new CertificateException("Server certificate is not self-signed");
             }
         }
     }
 
-    @Override
-    public X509Certificate[] getAcceptedIssuers() {
-        if (useDefaultTrustManager()) { return getDefaultTrustManager().getAcceptedIssuers(); }
-        return new X509Certificate[0];
+    protected final void notifyListener(@NonNull List<X509Certificate> certs) {
+        serverCertsListener.accept(new ArrayList<>(certs));
     }
 
     /**
@@ -112,15 +117,20 @@ public final class CBLTrustManager implements X509TrustManager {
      * When the pinned server certificate and acceptOnlySelfSignedServerCertificate
      * are not used, the default trust manager will be used.
      */
-    private boolean useDefaultTrustManager() {
-        return pinnedServerCertificate == null && !acceptOnlySelfSignedServerCertificate;
+    protected final boolean useDefaultTrustManager() {
+        return (pinnedServerCertificate == null) && (!acceptOnlySelfSignedServerCertificate);
+    }
+
+    @NonNull
+    protected final List<X509Certificate> asList(@Nullable X509Certificate[] certs) {
+        return (certs == null) ? Collections.emptyList() : Arrays.asList(certs);
     }
 
     /**
      * Get the default trust manager.
      */
-    private X509TrustManager getDefaultTrustManager() {
-        final X509TrustManager trustManager = defaultTrustManager.get();
+    protected final X509TrustManager getDefaultTrustManager() {
+        X509TrustManager trustManager = defaultTrustManager.get();
         if (trustManager != null) { return trustManager; }
 
         final TrustManager[] trustManagers;
@@ -134,11 +144,16 @@ public final class CBLTrustManager implements X509TrustManager {
             throw new IllegalStateException("Cannot find the default trust manager", e);
         }
 
-        if ((trustManagers == null) || (trustManagers.length == 0)) {
-            throw new IllegalStateException("Cannot find the default trust manager");
+        for (TrustManager mgr: trustManagers) {
+            if (mgr instanceof X509TrustManager) {
+                trustManager = (X509TrustManager) mgr;
+                break;
+            }
         }
+        if (trustManager == null) { throw new IllegalStateException("Cannot find an X509TrustManager"); }
 
-        defaultTrustManager.compareAndSet(null, (X509TrustManager) trustManagers[0]);
+        defaultTrustManager.compareAndSet(null, trustManager);
+
         return defaultTrustManager.get();
     }
 
