@@ -116,6 +116,9 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @NonNull
     private final SocketFactory socketFactory;
 
+    // Server certificates received from the server during the TLS handshake
+    private final AtomicReference<List<Certificate>> serverCertificates = new AtomicReference<>();
+
     @GuardedBy("getReplicatorLock()")
     @NonNull
     private ReplicatorStatus status
@@ -130,9 +133,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
     private CouchbaseLiteException lastError;
 
     private volatile String desc;
-
-    // Server certificates received from the server during the TLS handshake
-    private final AtomicReference<List<Certificate>> serverCertificates = new AtomicReference<>();
 
     //---------------------------------------------
     // Constructors

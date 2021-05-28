@@ -35,7 +35,7 @@ public class CBLTrustManager extends AbstractCBLTrustManager {
     private static final X509Certificate[] CAST = new X509Certificate[0];
 
     public CBLTrustManager(
-        @Nullable @org.jetbrains.annotations.Nullable byte[] pinnedServerCert,
+        @Nullable byte[] pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
         super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, serverCertsListener);
@@ -63,7 +63,7 @@ public class CBLTrustManager extends AbstractCBLTrustManager {
 
         notifyListener(serverCerts);
 
-        if (!useDefaultTrustManager()) {
+        if (useCBLTrustManagement()) {
             doCheckServerTrusted(serverCerts, authType);
             return serverCerts;
         }

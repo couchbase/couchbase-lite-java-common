@@ -12,7 +12,6 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -57,8 +56,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
 
     @Override
     public X509Certificate[] getAcceptedIssuers() {
-        if (useDefaultTrustManager()) { return getDefaultTrustManager().getAcceptedIssuers(); }
-        return new X509Certificate[0];
+        return (useCBLTrustManagement()) ? new X509Certificate[0] : getDefaultTrustManager().getAcceptedIssuers();
     }
 
     @Override
@@ -74,7 +72,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
 
         notifyListener(serverCerts);
 
-        if (!useDefaultTrustManager()) { doCheckServerTrusted(serverCerts, authType); }
+        if (useCBLTrustManagement()) { doCheckServerTrusted(serverCerts, authType); }
         else { getDefaultTrustManager().checkServerTrusted(chain, authType); }
     }
 
@@ -99,17 +97,19 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
             if (!Arrays.equals(pinnedServerCertificate, cert.getEncoded())) {
                 throw new CertificateException("Server certificate does not match pinned certificate");
             }
+            return;
         }
-        else {
-            // Accept only self-signed certificate:
-            if (certs.size() > 1 || !isSelfSignedCertificate(cert)) {
-                throw new CertificateException("Server certificate is not self-signed");
-            }
+
+
+        // Accept only self-signed certificate:
+        if (certs.size() > 1 || !isSelfSignedCertificate(cert)) {
+            throw new CertificateException("Server certificate is not self-signed");
         }
     }
 
+
     protected final void notifyListener(@NonNull List<X509Certificate> certs) {
-        serverCertsListener.accept(new ArrayList<>(certs));
+        serverCertsListener.accept(Collections.unmodifiableList(certs));
     }
 
     /**
@@ -117,8 +117,8 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
      * When the pinned server certificate and acceptOnlySelfSignedServerCertificate
      * are not used, the default trust manager will be used.
      */
-    protected final boolean useDefaultTrustManager() {
-        return (pinnedServerCertificate == null) && (!acceptOnlySelfSignedServerCertificate);
+    protected final boolean useCBLTrustManagement() {
+        return acceptOnlySelfSignedServerCertificate || (pinnedServerCertificate != null);
     }
 
     @NonNull

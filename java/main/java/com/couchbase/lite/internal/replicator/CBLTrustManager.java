@@ -24,10 +24,10 @@ import java.util.List;
 
 import com.couchbase.lite.internal.utils.Fn;
 
-
+/** Just delegate everything to the base class */
 public class CBLTrustManager extends AbstractCBLTrustManager {
     public CBLTrustManager(
-        @Nullable @org.jetbrains.annotations.Nullable byte[] pinnedServerCert,
+        @Nullable byte[] pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
         super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, serverCertsListener);
