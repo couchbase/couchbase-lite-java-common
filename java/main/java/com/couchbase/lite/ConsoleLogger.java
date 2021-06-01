@@ -37,7 +37,7 @@ public class ConsoleLogger extends AbstractConsoleLogger {
 
 
     public static PrintStream getLogStream(@NonNull LogLevel level) {
-        return ((CouchbaseLiteInternal.isDebugging()) || (LogLevel.WARNING.compareTo(level) > 0))
+        return ((CouchbaseLiteInternal.debugging()) || (LogLevel.WARNING.compareTo(level) > 0))
             ? System.out
             : System.err;
     }

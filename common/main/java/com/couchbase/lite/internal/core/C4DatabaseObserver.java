@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -45,7 +46,7 @@ public class C4DatabaseObserver extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     static void callback(long peer) {
-        Log.d(LogDomain.DATABASE, "C4DatabaseObserver.callback @%x", peer);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LogDomain.DATABASE, "C4DatabaseObserver.callback @%x", peer); }
 
         final C4DatabaseObserver obs = REVERSE_LOOKUP_TABLE.get(peer);
         if (obs == null) { return; }

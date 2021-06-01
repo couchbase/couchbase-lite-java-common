@@ -17,6 +17,7 @@ package com.couchbase.lite;
 
 import java.util.EnumMap;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -26,27 +27,27 @@ import com.couchbase.lite.internal.support.Log;
 public enum LogLevel {
 
     /**
-     * Debug log messages. Only present in debug builds of CouchbaseLite.
+     * Debugging information. Only visible when CouchbaseLiteInternal.debugging() is true.
      */
     DEBUG,
 
     /**
-     * Verbose log messages.
+     * Used by core. Please do not use in platform coded.
      */
     VERBOSE,
 
     /**
-     * Informational log messages.
+     * Essential state info and client errors that are recoverable
      */
     INFO,
 
     /**
-     * Warning log messages.
+     * Internal errors that are recoverable; client errors that may not be recoverable
      */
     WARNING,
 
     /**
-     * Error log messages. These indicate immediate errors that need to be addressed.
+     * Internal errors that are unrecoverable
      */
     ERROR,
 
@@ -69,7 +70,7 @@ public enum LogLevel {
     public String toString() {
         final String s = LEVELS.get(this);
         if (s != null) { return s; }
-        Log.d(LogDomain.DATABASE, "Unrecognized log level: " + this);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LogDomain.DATABASE, "Unrecognized log level: %s", this); }
         return "?";
     }
 }

@@ -23,6 +23,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -118,8 +119,8 @@ public final class StateMachine<T extends Enum<T>> {
             if (s == state) { return true; }
         }
 
-        if (state != errorState) {
-            Log.v(
+        if ((state != errorState) && CouchbaseLiteInternal.debugging()) {
+            Log.d(
                 TAG,
                 "StateMachine%s: unexpected state %s %s",
                 new Exception(),
@@ -142,13 +143,15 @@ public final class StateMachine<T extends Enum<T>> {
     public boolean setState(@NonNull T nextState) {
         final EnumSet<T> legalStates = transitions.get(state);
         if ((nextState == errorState) || ((legalStates != null) && (legalStates.contains(nextState)))) {
-            Log.d(TAG, "StateMachine%s: transition %s => %s", this, state, nextState);
+            if (CouchbaseLiteInternal.debugging()) {
+                Log.d(TAG, "StateMachine%s: transition %s => %s", this, state, nextState);
+            }
             state = nextState;
             return true;
         }
 
-        if (state != errorState) {
-            Log.v(
+        if ((state != errorState) && CouchbaseLiteInternal.debugging()) {
+            Log.d(
                 TAG,
                 "StateMachine%s: no transition: %s => %s %s",
                 new Exception(),

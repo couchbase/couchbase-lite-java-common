@@ -47,8 +47,8 @@ import com.couchbase.lite.internal.core.CBLVersion;
  * Log levels are as follows:
  * e: internal errors that are unrecoverable
  * w: internal errors that are recoverable; client errors that may not be recoverable
- * i: client errors that are probably recoverable
- * v: useful state change information
+ * i: essential state info and client errors that are probably recoverable
+ * v: used by core: please do not use in platform coded.
  * d: low-level debugging information
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
@@ -176,6 +176,7 @@ public final class Log {
 
     /**
      * Send a VERBOSE message.
+     * Please do not use verbose level logging
      *
      * @param domain The log domain.
      * @param msg    The message you would like logged.
@@ -184,6 +185,7 @@ public final class Log {
 
     /**
      * Send a VERBOSE message and log the exception.
+     * Please do not use verbose level logging
      *
      * @param domain The log domain.
      * @param msg    The message you would like logged.
@@ -195,6 +197,7 @@ public final class Log {
 
     /**
      * Send a VERBOSE message.
+     * Please do not use verbose level logging
      *
      * @param domain The log domain.
      * @param msg    The string you would like logged plus format specifiers.
@@ -206,6 +209,7 @@ public final class Log {
 
     /**
      * Send a VERBOSE message and log the exception.
+     * Please do not use verbose level logging
      *
      * @param domain The log domain.
      * @param msg    The string you would like logged plus format specifiers.

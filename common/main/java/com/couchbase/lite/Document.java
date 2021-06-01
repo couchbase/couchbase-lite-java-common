@@ -379,7 +379,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
             }
         }
         catch (LiteCoreException e) {
-            Log.d(LogDomain.DATABASE, "Failed encoding document", CouchbaseLiteException.convertException(e));
+            Log.i(LogDomain.DATABASE, "Failed encoding document", CouchbaseLiteException.convertException(e));
         }
 
         return null;

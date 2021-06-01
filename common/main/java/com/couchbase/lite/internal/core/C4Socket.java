@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.support.Log;
 
@@ -79,7 +80,9 @@ public abstract class C4Socket extends C4NativePeer {
         @Nullable String path,
         byte[] options) {
         C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.open @%x: %s, %s", peer, socket, factory);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "C4Socket.open @%x: %s, %s", peer, socket, factory);
+        }
 
         // This socket will be bound in C4Socket.<init>
         if (socket == null) {
@@ -95,12 +98,12 @@ public abstract class C4Socket extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void write(long peer, byte[] allocatedData) {
         if (allocatedData == null) {
-            Log.v(LOG_DOMAIN, "C4Socket.write: allocatedData is null");
+            if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "C4Socket.write: allocatedData is null"); }
             return;
         }
 
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.write @%x: %s", peer, socket);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "C4Socket.write @%x: %s", peer, socket); }
 
         if (socket != null) { socket.send(allocatedData); }
     }
@@ -108,14 +111,16 @@ public abstract class C4Socket extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void completedReceive(long peer, long byteCount) {
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.receive @%x: %s", peer, socket);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "C4Socket.receive @%x: %s", peer, socket); }
         if (socket != null) { socket.completedReceive(byteCount); }
     }
 
     // This method is called by reflection.  Don't change its signature.
     static void requestClose(long peer, int status, @Nullable String message) {
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.requestClose @%x: %s, (%d) '%s'", peer, socket, status, message);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "C4Socket.requestClose @%x: %s, (%d) '%s'", peer, socket, status, message);
+        }
         if (socket != null) { socket.requestClose(status, message); }
     }
 
@@ -123,7 +128,7 @@ public abstract class C4Socket extends C4NativePeer {
     // NOTE: close(long) method should not be called.
     static void close(long peer) {
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.close @%x: %s", peer, socket);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "C4Socket.close @%x: %s", peer, socket); }
         if (socket != null) { socket.closeSocket(); }
     }
 
@@ -148,7 +153,7 @@ public abstract class C4Socket extends C4NativePeer {
             n = HANDLES_TO_SOCKETS.size();
         }
 
-        Log.d(LOG_DOMAIN, "Bind socket @%x to %s (%d)", peer, socket, n);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "Bind socket @%x to %s (%d)", peer, socket, n); }
     }
 
     @Nullable
@@ -164,7 +169,7 @@ public abstract class C4Socket extends C4NativePeer {
             if (socket != null) { socket.releasePeer(); }
             n = HANDLES_TO_SOCKETS.size();
         }
-        Log.d(LOG_DOMAIN, "Unbind socket @%x to %s (%d)", peer, socket, n);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "Unbind socket @%x to %s (%d)", peer, socket, n); }
     }
 
 
@@ -217,7 +222,7 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { opened(peer); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.opened @%x", peer);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "C4Socket.opened @%x", peer); }
     }
 
     protected final void gotHTTPResponse(int httpStatus, @Nullable byte[] responseHeadersFleece) {
@@ -226,7 +231,9 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { gotHTTPResponse(peer, httpStatus, responseHeadersFleece); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse @%x: %d", peer, httpStatus);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse @%x: %d", peer, httpStatus);
+        }
     }
 
     protected final void completedWrite(long byteCount) {
@@ -235,7 +242,9 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { completedWrite(peer, byteCount); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.completedWrite @%x: %d", peer, byteCount);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "C4Socket.completedWrite @%x: %d", peer, byteCount);
+        }
     }
 
     protected final void received(byte[] data) {
@@ -244,7 +253,9 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { received(peer, data); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.received @%x: %d", peer, data.length);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "C4Socket.received @%x: %d", peer, data.length);
+        }
     }
 
     protected final void closeRequested(int status, String message) {
@@ -253,7 +264,9 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { closeRequested(peer, status, message); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.closeRequested @%x: (%d) '%s'", peer, status, message);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "C4Socket.closeRequested @%x: (%d) '%s'", peer, status, message);
+        }
     }
 
     protected final void closed(int errorDomain, int errorCode, String message) {
@@ -284,7 +297,9 @@ public abstract class C4Socket extends C4NativePeer {
             if (!closing && (peer != 0)) { closed(peer, domain, code, msg); }
             closing = true;
         }
-        Log.d(LOG_DOMAIN, "C4Socket.closed @%x: (%d,%d) '%s'", peer, domain, code, msg);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "C4Socket.closed @%x: (%d,%d) '%s'", peer, domain, code, msg);
+        }
     }
 
     //-------------------------------------------------------------------------

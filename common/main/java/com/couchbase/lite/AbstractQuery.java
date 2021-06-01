@@ -28,6 +28,7 @@ import java.util.concurrent.Executor;
 
 import org.json.JSONException;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryOptions;
@@ -263,7 +264,7 @@ abstract class AbstractQuery implements Query {
     @GuardedBy("lock")
     private C4Query prepQueryLocked() throws CouchbaseLiteException {
         final String json = marshalAsJSONSafely();
-        Log.v(DOMAIN, "Encoded query: %s", json);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "Encoded query: %s", json); }
         if (json == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
 
         if (columnNames == null) { columnNames = getColumnNames(); }

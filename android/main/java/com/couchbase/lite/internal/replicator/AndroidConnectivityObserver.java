@@ -19,6 +19,7 @@ import android.support.annotation.NonNull;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.ReplicatorActivityLevel;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
@@ -42,7 +43,9 @@ public class AndroidConnectivityObserver implements NetworkConnectivityManager.O
         final C4Replicator c4Repl = replFactory.get();
         if (c4Repl == null) { return; }
 
-        Log.d(LogDomain.NETWORK, "Connectivity change @" + this + ": " + connected);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LogDomain.NETWORK, "Connectivity change for @%s: %s", this, connected);
+        }
         c4Repl.setHostReachable(connected);
     }
 

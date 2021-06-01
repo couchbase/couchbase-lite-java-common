@@ -27,11 +27,12 @@ import java.util.List;
 import javax.net.ssl.X509TrustManager;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 
 
-public class CBLTrustManager extends AbstractCBLTrustManager {
+public final class CBLTrustManager extends AbstractCBLTrustManager {
     private static final X509Certificate[] CAST = new X509Certificate[0];
 
     public CBLTrustManager(
@@ -39,13 +40,6 @@ public class CBLTrustManager extends AbstractCBLTrustManager {
         boolean acceptOnlySelfSignedServerCertificate,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
         super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, serverCertsListener);
-    }
-
-    @Override
-    public void checkServerTrusted(@Nullable X509Certificate[] chain, @Nullable String authType)
-        throws CertificateException {
-        Log.d(LogDomain.NETWORK, "Default checkServerTrusted: %d, %s", (chain == null) ? 0 : chain.length, authType);
-        super.checkServerTrusted(chain, authType);
     }
 
     /**
@@ -59,13 +53,15 @@ public class CBLTrustManager extends AbstractCBLTrustManager {
         @Nullable String host)
         throws CertificateException {
         final List<X509Certificate> serverCerts = asList(chain);
-        Log.d(LogDomain.NETWORK, "Extended checkServerTrusted: %d, %s, %s", serverCerts.size(), authType, host);
-
         notifyListener(serverCerts);
 
         if (useCBLTrustManagement()) {
-            doCheckServerTrusted(serverCerts, authType);
+            cBLServerTrustCheck(serverCerts, authType);
             return serverCerts;
+        }
+
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LogDomain.NETWORK, "Extended trust check: %d, %s, %s", serverCerts.size(), authType, host);
         }
 
         final X509TrustManager defaultMgr = getDefaultTrustManager();

@@ -32,6 +32,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -55,7 +56,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * WARNING!
  * This class and its members are referenced by name, from native code.
  */
-@SuppressWarnings({"PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal", "LineLength"})
+@SuppressWarnings({"PMD.GodClass", "PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal", "LineLength"})
 public class C4Replicator extends C4NativePeer {
 
     //-------------------------------------------------------------------------
@@ -142,9 +143,11 @@ public class C4Replicator extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void statusChangedCallback(long peer, @Nullable C4ReplicatorStatus status) {
         final C4Replicator repl = getReplicatorForHandle(peer);
-        Log.d(
-            LogDomain.REPLICATOR,
-            "C4Replicator.statusChangedCallback @" + Long.toHexString(peer) + ", status: " + status);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(
+                LogDomain.REPLICATOR,
+                "C4Replicator.statusChangedCallback @0x%s, status: %s", Long.toHexString(peer), status);
+        }
         if (repl == null) { return; }
 
         final C4ReplicatorListener listener = repl.listener;
@@ -153,9 +156,11 @@ public class C4Replicator extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     static void documentEndedCallback(long peer, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
-        Log.d(
-            LogDomain.REPLICATOR,
-            "C4Replicator.documentEndedCallback @" + Long.toHexString(peer) + ", pushing: " + pushing);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(
+                LogDomain.REPLICATOR,
+                "C4Replicator.documentEndedCallback @0x%s, pushing: %s", Long.toHexString(peer), pushing);
+        }
 
         final C4Replicator repl = getReplicatorForHandle(peer);
         if (repl == null) { return; }
@@ -174,13 +179,15 @@ public class C4Replicator extends C4NativePeer {
         long dict,
         boolean isPush,
         Object ctxt) {
-        Log.v(
-            LogDomain.REPLICATOR,
-            "Running %s filter for doc %s@%s, repl %s",
-            (isPush ? "push" : "pull"),
-            docID,
-            revID,
-            ctxt);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(
+                LogDomain.REPLICATOR,
+                "Running %s filter for doc %s@%s, repl %s",
+                (isPush ? "push" : "pull"),
+                docID,
+                revID,
+                ctxt);
+        }
 
         if (!(ctxt instanceof AbstractReplicator)) {
             Log.w(LogDomain.DATABASE, "Validation function called with unrecognized context: " + ctxt);
@@ -313,9 +320,11 @@ public class C4Replicator extends C4NativePeer {
     private static void bind(@NonNull C4Replicator repl) {
         Preconditions.assertNotNull(repl, "repl");
         final long peer = repl.getPeer();
-        Log.d(
-            LogDomain.REPLICATOR,
-            "Binding native replicator @0x" + Long.toHexString(peer) + " => " + ClassUtils.objId(repl));
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(
+                LogDomain.REPLICATOR,
+                "Binding native replicator @0x%s  => %s", Long.toHexString(peer), ClassUtils.objId(repl));
+        }
         REVERSE_LOOKUP_TABLE.put(peer, repl);
     }
 

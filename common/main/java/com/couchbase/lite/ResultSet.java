@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.support.Log;
@@ -102,7 +103,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
                     return null;
                 }
                 else if (!c4enum.next()) {
-                    Log.v(DOMAIN, "End of query enumeration");
+                    if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "End of query enumeration"); }
                     isAllEnumerated = true;
                     return null;
                 }

@@ -20,6 +20,7 @@ import android.net.Network;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -50,6 +51,6 @@ abstract class CallbackConnectivityWatcher extends ConnectivityWatcher {
             return;
         }
 
-        Log.v(LogDomain.NETWORK, "Stopped " + msg);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LogDomain.NETWORK, "Stopped: %s", msg); }
     }
 }

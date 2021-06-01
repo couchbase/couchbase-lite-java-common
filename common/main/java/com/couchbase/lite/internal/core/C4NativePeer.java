@@ -100,7 +100,9 @@ public abstract class C4NativePeer implements AutoCloseable {
             fn.accept(peer);
         }
 
-        if (domain != null) { Log.v(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName()); }
+        if ((domain != null) && CouchbaseLiteInternal.debugging()) {
+            Log.d(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName());
+        }
     }
 
     // The next three methods should go away.
@@ -152,7 +154,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     @GuardedBy("lock")
     private long releasePeerLocked() {
         final long peer = this.peer;
-        if ((this.peer != 0) && CouchbaseLiteInternal.isDebugging()) { closedAt = new Exception(); }
+        if ((this.peer != 0) && CouchbaseLiteInternal.debugging()) { closedAt = new Exception(); }
         this.peer = 0L;
         return peer;
     }

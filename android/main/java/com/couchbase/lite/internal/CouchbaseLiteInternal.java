@@ -104,7 +104,7 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(loadErrorMessages(ctxt));
     }
 
-    public static boolean isDebugging() { return debugging; }
+    public static boolean debugging() { return debugging; }
 
     @NonNull
     public static Context getContext() {

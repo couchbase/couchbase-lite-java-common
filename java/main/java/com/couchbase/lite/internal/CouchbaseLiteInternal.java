@@ -77,7 +77,7 @@ public final class CouchbaseLiteInternal {
 
         NativeLibrary.load(scratchDir);
 
-        C4Base.debug(isDebugging());
+        C4Base.debug(debugging());
 
         setC4TmpDirPath(scratchDir);
 
@@ -86,7 +86,7 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(loadErrorMessages());
     }
 
-    public static boolean isDebugging() { return debugging; }
+    public static boolean debugging() { return debugging; }
 
     /**
      * This method is for internal used only and will be removed in the future release.
