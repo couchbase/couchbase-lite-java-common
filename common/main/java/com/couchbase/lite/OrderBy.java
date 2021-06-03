@@ -29,7 +29,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * An OrderBy represents an ORDER BY clause of the query for specifying properties or expressions
  * that the result rows should be sorted by.
  */
-public final class OrderBy extends AbstractQuery implements LimitRouter {
+public final class OrderBy extends BuilderQuery implements LimitRouter {
 
     //---------------------------------------------
     // Member variables
@@ -41,7 +41,7 @@ public final class OrderBy extends AbstractQuery implements LimitRouter {
     // Constructor
     //---------------------------------------------
 
-    OrderBy(AbstractQuery query, List<Ordering> orderings) {
+    OrderBy(BuilderQuery query, List<Ordering> orderings) {
         copy(query);
         this.orderings = orderings;
         setOrderBy(this);

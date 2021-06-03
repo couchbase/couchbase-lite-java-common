@@ -23,6 +23,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public final class QueryBuilder {
     private QueryBuilder() { }
 
+    //---------------------------------------------
+    // API - public methods
+    //---------------------------------------------
+
     /**
      * Create a SELECT statement instance that you can use further
      * (e.g. calling the from() function) to construct the complete query statement.
@@ -36,10 +40,6 @@ public final class QueryBuilder {
         return new Select(false, results);
     }
 
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
-
     /**
      * Create a SELECT DISTINCT statement instance that you can use further
      * (e.g. calling the from() function) to construct the complete query statement.
@@ -52,4 +52,13 @@ public final class QueryBuilder {
         Preconditions.assertNotNull(results, "results");
         return new Select(true, results);
     }
+
+    /**
+     * Create Query from a N1QL string
+     *
+     * @param query A valid N1QL query.
+     * @return database The database against which the query will be run.
+     */
+    @NonNull
+    public static Query createQuery(String query, Database database) { return database.createQuery(query); }
 }

@@ -116,7 +116,7 @@ final class LiveQuery implements DatabaseChangeListener {
      * Starts observing database changes and reports changes in the query result.
      */
     void start(boolean shouldClearResults) {
-        final Database db = Preconditions.assertNotNull(query.getDatabase(), "Live query database");
+        final AbstractDatabase db = Preconditions.assertNotNull(query.getDatabase(), "Live query database");
 
         // can't have the db closing while a query is starting.
         synchronized (db.getDbLock()) {
@@ -140,7 +140,7 @@ final class LiveQuery implements DatabaseChangeListener {
     }
 
     void stop() {
-        final Database db = query.getDatabase();
+        final AbstractDatabase db = query.getDatabase();
         if (db == null) {
             if (State.STOPPED != state.get()) {
                 Log.w(LogDomain.DATABASE, "Null db when stopping LiveQuery");
@@ -171,7 +171,9 @@ final class LiveQuery implements DatabaseChangeListener {
 
     private void update(long delay) {
         if (!state.compareAndSet(State.STARTED, State.SCHEDULED)) { return; }
-        query.getDatabase().scheduleOnQueryExecutor(this::refreshResults, delay);
+        final AbstractDatabase db = query.getDatabase();
+        if (db == null) { throw new IllegalStateException("Live query with no database"); }
+        db.scheduleOnQueryExecutor(this::refreshResults, delay);
     }
 
     // Runs on the query.database.queryExecutor

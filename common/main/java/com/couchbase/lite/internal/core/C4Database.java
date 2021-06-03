@@ -78,6 +78,7 @@ public abstract class C4Database extends C4NativePeer {
 
     // These enum values must match the ones in DataFile::MaintenanceType
     private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
+
     static {
         final Map<MaintenanceType, Integer> m = new HashMap<>();
         m.put(MaintenanceType.COMPACT, 0);
@@ -300,8 +301,14 @@ public abstract class C4Database extends C4NativePeer {
     // C4Query
     ////////////////////////////////
 
-    public C4Query createQuery(String expression) throws LiteCoreException {
-        return new C4Query(getPeer(), expression);
+    @NonNull
+    public C4Query createJsonQuery(@NonNull String expression) throws LiteCoreException {
+        return new C4Query(getPeer(), C4Query.QueryLanguage.JSON, expression);
+    }
+
+    @NonNull
+    public C4Query createN1qlQuery(@NonNull String expression) throws LiteCoreException {
+        return new C4Query(getPeer(), C4Query.QueryLanguage.N1QL, expression);
     }
 
     public void createIndex(

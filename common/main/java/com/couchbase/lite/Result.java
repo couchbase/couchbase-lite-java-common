@@ -501,8 +501,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     private Object fleeceValueToObject(int index) {
         final FLValue value = values.get(index);
         if (value == null) { return null; }
+        final AbstractDatabase db = rs.getQuery().getDatabase();
+        if (db == null) { throw new IllegalStateException("Null database on attempt to get lock"); }
         final MRoot root = new MRoot(context, value, false);
-        synchronized (rs.getQuery().getDatabase().getDbLock()) { return root.asNative(); }
+        synchronized (db.getDbLock()) { return root.asNative(); }
     }
 
     private List<FLValue> extractColumns(FLArrayIterator columns) {

@@ -27,13 +27,13 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * A Where represents the WHERE clause of the query for filtering the query result.
  */
-public final class Where extends AbstractQuery implements GroupByRouter, OrderByRouter, LimitRouter {
+public final class Where extends BuilderQuery implements GroupByRouter, OrderByRouter, LimitRouter {
 
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
 
-    Where(AbstractQuery query, Expression where) {
+    Where(BuilderQuery query, Expression where) {
         copy(query);
         setWhere(where);
     }

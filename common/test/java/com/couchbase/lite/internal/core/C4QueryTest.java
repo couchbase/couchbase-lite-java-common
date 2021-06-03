@@ -52,7 +52,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDatabaseErrorMessages() {
         try {
-            c4Database.createQuery("[\"=\"]");
+            c4Database.createJsonQuery("[\"=\"]");
             fail();
         }
         catch (LiteCoreException e) {
@@ -403,7 +403,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             null,
             true);
         try {
-            c4Database.createQuery(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]"));
+            c4Database.createJsonQuery(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]"));
         }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
@@ -422,7 +422,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             null,
             true);
         try {
-            c4Database.createQuery(
+            c4Database.createJsonQuery(
                 json5("['OR', ['MATCH()', 'byStreet', 'Hwy'], ['=', ['.', 'contact', 'address', 'state'], 'CA']]"));
         }
         catch (LiteCoreException e) {
@@ -595,7 +595,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testQueryParserErrorMessages() {
         try {
-            query = new C4Query(c4Database.getHandle(), "[\"=\"]");
+            query = new C4Query(c4Database.getHandle(), C4Query.QueryLanguage.JSON, "[\"=\"]");
             fail();
         }
         catch (LiteCoreException ex) {

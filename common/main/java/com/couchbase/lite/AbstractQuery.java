@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2021 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,70 +20,31 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
-import org.json.JSONException;
-
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryOptions;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.ClassUtils;
-import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-@SuppressWarnings("PMD.GodClass")
 abstract class AbstractQuery implements Query {
-    //---------------------------------------------
-    // constants
-    //---------------------------------------------
-    private static final LogDomain DOMAIN = LogDomain.QUERY;
+    protected static final LogDomain DOMAIN = LogDomain.QUERY;
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private final Object lock = new Object();
-
+    // column names
+    protected Map<String, Integer> columnNames;
     @GuardedBy("lock")
     private C4Query c4query;
-
     @GuardedBy("lock")
     private LiveQuery liveQuery;
-
-    // NOTE:
-    // https://sqlite.org/lang_select.html
-
-    // SELECT
-    private Select select;
-    // FROM
-    private DataSource from; // FROM table-or-subquery
-    private Joins joins;     // FROM join-clause
-    // WHERE
-    private Expression where; // WHERE expr
-    // GROUP BY
-    private GroupBy groupBy; // GROUP BY expr(s)
-    private Having having; // Having expr
-    // ORDER BY
-    private OrderBy orderBy; // ORDER BY ordering-term(s)
-    // LIMIT
-    private Limit limit; // LIMIT expr
-
     // PARAMETERS
     private Parameters parameters;
-
-    // column names
-    private Map<String, Integer> columnNames;
-
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
 
     /**
      * Returns a copies of the current parameters.
@@ -209,45 +170,10 @@ abstract class AbstractQuery implements Query {
         getLiveQuery().removeChangeListener(token);
     }
 
-    @NonNull
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ",json=" + marshalAsJSONSafely() + "}";
-    }
+    protected abstract C4Query prepQueryLocked() throws CouchbaseLiteException;
 
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
-    Database getDatabase() { return (Database) from.getSource(); }
-
-    void setSelect(Select select) { this.select = select; }
-
-    void setFrom(DataSource from) { this.from = from; }
-
-    void setJoins(Joins joins) { this.joins = joins; }
-
-    void setWhere(Expression where) { this.where = where; }
-
-    void setGroupBy(GroupBy groupBy) { this.groupBy = groupBy; }
-
-    void setHaving(Having having) { this.having = having; }
-
-    void setOrderBy(OrderBy orderBy) { this.orderBy = orderBy; }
-
-    void setLimit(Limit limit) { this.limit = limit; }
-
-    void copy(AbstractQuery query) {
-        this.select = query.select;
-        this.from = query.from;
-        this.joins = query.joins;
-        this.where = query.where;
-        this.groupBy = query.groupBy;
-        this.having = query.having;
-        this.orderBy = query.orderBy;
-        this.limit = query.limit;
-        this.parameters = query.parameters;
-    }
+    @Nullable
+    protected abstract AbstractDatabase getDatabase();
 
     @VisibleForTesting
     LiveQuery getLiveQuery() {
@@ -257,96 +183,8 @@ abstract class AbstractQuery implements Query {
         }
     }
 
-    //---------------------------------------------
-    // Private methods
-    //---------------------------------------------
-
-    @GuardedBy("lock")
-    private C4Query prepQueryLocked() throws CouchbaseLiteException {
-        final String json = marshalAsJSONSafely();
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "Encoded query: %s", json); }
-        if (json == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
-
-        if (columnNames == null) { columnNames = getColumnNames(); }
-
-        try { return getDatabase().createQuery(json); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-    }
-
-    // https://issues.couchbase.com/browse/CBL-21
-    // Using c4query_columnTitle is not an improvement, as of 12/2019
-    private Map<String, Integer> getColumnNames() throws CouchbaseLiteException {
-        final Map<String, Integer> map = new HashMap<>();
-        int index = 0;
-        int provisionKeyIndex = 0;
-        for (SelectResult selectResult: select.getSelectResults()) {
-            String name = selectResult.getColumnName();
-
-            if (name != null && name.equals(PropertyExpression.PROPS_ALL)) { name = from.getColumnName(); }
-
-            if (name == null) { name = "$" + (++provisionKeyIndex); }
-
-            if (map.containsKey(name)) {
-                throw new CouchbaseLiteException(
-                    Log.formatStandardMessage("DuplicateSelectResultName", name),
-                    CBLError.Domain.CBLITE,
-                    CBLError.Code.INVALID_QUERY);
-            }
-            map.put(name, index);
-            index++;
-        }
-        return map;
-    }
-
-    @Nullable
-    private String marshalAsJSONSafely() {
-        try { return marshalAsJSON(); }
-        catch (JSONException e) { Log.w(LogDomain.QUERY, "Failed marshalling query as JSON query", e); }
-        return null;
-    }
-
-    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.NPathComplexity", "PMD.AvoidDeeplyNestedIfStmts"})
-    @NonNull
-    private String marshalAsJSON() throws JSONException {
-        final Map<String, Object> json = new HashMap<>();
-
-        // DISTINCT:
-        if (select != null && select.isDistinct()) { json.put("DISTINCT", "true"); }
-
-        // result-columns / SELECT-RESULTS
-        if (select != null && select.hasSelectResults()) { json.put("WHAT", select.asJSON()); }
-
-        final List<Object> froms = new ArrayList<>();
-
-        final Map<String, Object> as = from.asJSON();
-        if (!as.isEmpty()) { froms.add(as); }
-
-        if (joins != null) { froms.addAll((List<?>) joins.asJSON()); }
-
-        if (!froms.isEmpty()) { json.put("FROM", froms); }
-
-        if (where != null) { json.put("WHERE", where.asJSON()); }
-
-        if (groupBy != null) { json.put("GROUP_BY", groupBy.asJSON()); }
-
-        if (having != null) {
-            final Object havingJson = having.asJSON();
-            if (havingJson != null) { json.put("HAVING", havingJson); }
-        }
-
-        if (orderBy != null) { json.put("ORDER_BY", orderBy.asJSON()); }
-
-        if (limit != null) {
-            final List<?> limits = (List<?>) limit.asJSON();
-            json.put("LIMIT", limits.get(0));
-            if (limits.size() > 1) { json.put("OFFSET", limits.get(1)); }
-        }
-
-        return JSONUtils.toJSON(json).toString();
-    }
-
     private Object getDbLock() {
-        final Database db = getDatabase();
+        final BaseDatabase db = getDatabase();
         if (db != null) { return db.getDbLock(); }
         throw new IllegalStateException("Cannot seize DB lock");
     }

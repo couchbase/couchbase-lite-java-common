@@ -214,7 +214,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     private Object getDbLock() {
         final AbstractQuery q = query;
         if (q != null) {
-            final Database db = q.getDatabase();
+            final AbstractDatabase db = q.getDatabase();
             if (db != null) { return db.getDbLock(); }
         }
         throw new IllegalStateException("Could not obtain db lock");

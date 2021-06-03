@@ -28,7 +28,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * A Joins component represents a collection of the joins clauses of the query statement.
  */
-public final class Joins extends AbstractQuery implements WhereRouter, OrderByRouter, LimitRouter {
+public final class Joins extends BuilderQuery implements WhereRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -39,7 +39,7 @@ public final class Joins extends AbstractQuery implements WhereRouter, OrderByRo
     // Constructors
     //---------------------------------------------
 
-    Joins(AbstractQuery query, List<Join> joins) {
+    Joins(BuilderQuery query, List<Join> joins) {
         copy(query);
         this.joins = joins;
         setJoins(this);

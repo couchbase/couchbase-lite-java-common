@@ -34,12 +34,26 @@ extern "C" {
  * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_init(JNIEnv *env, jclass ignore, jlong db, jstring jexpr) {
+Java_com_couchbase_lite_internal_core_C4Query_createQuery(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db,
+        jint lang,
+        jstring jexpr) {
     jstringSlice expr(env, jexpr);
+    int errorLoc = -1;
     C4Error error = {};
-    C4Query *query = c4query_new((C4Database *) db, expr, &error);
+
+    C4Query *query = c4query_new2(
+            (C4Database *) db,
+            (C4QueryLanguage) lang,
+            expr,
+            &errorLoc,
+            &error);
+    // !!! Should put the error location into the exception message.
     if (!query)
         throwError(env, error);
+
     return (jlong) query;
 }
 
@@ -88,7 +102,7 @@ Java_com_couchbase_lite_internal_core_C4Query_run(
         jlong jquery,
         jboolean jrankFullText,
         jlong jparameters) {
-    C4QueryOptions options = { (bool) jrankFullText };
+    C4QueryOptions options = {(bool) jrankFullText};
     auto params = (FLSliceResult *) jparameters;
     C4Error error = {};
     C4Slice s = {params->buf, params->size};

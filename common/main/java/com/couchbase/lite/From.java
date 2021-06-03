@@ -27,13 +27,13 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * A From represents a FROM clause for specifying the data source of the query.
  */
-public final class From extends AbstractQuery
+public final class From extends BuilderQuery
     implements JoinRouter, WhereRouter, GroupByRouter, OrderByRouter, LimitRouter {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
 
-    From(AbstractQuery query, DataSource dataSource) {
+    From(BuilderQuery query, DataSource dataSource) {
         copy(query);
         setFrom(dataSource);
     }

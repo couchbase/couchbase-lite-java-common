@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.After;
-import org.junit.Before;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -42,7 +41,7 @@ public class C4QueryBaseTest extends C4BaseTest {
             query.close();
             query = null;
         }
-        query = c4Database.createQuery(queryStr);
+        query = c4Database.createJsonQuery(queryStr);
         assertNotNull(query);
     }
 
@@ -68,7 +67,7 @@ public class C4QueryBaseTest extends C4BaseTest {
             query.close();
             query = null;
         }
-        query = c4Database.createQuery(json.toString());
+        query = c4Database.createJsonQuery(json.toString());
         assertNotNull(query);
     }
 

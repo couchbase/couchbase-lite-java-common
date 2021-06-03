@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Having represents a HAVING clause of the query statement used for filtering the aggregated values
  * from the the GROUP BY clause.
  */
-public final class Having extends AbstractQuery implements OrderByRouter, LimitRouter {
+public final class Having extends BuilderQuery implements OrderByRouter, LimitRouter {
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
@@ -36,7 +36,7 @@ public final class Having extends AbstractQuery implements OrderByRouter, LimitR
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
-    Having(AbstractQuery query, Expression expression) {
+    Having(BuilderQuery query, Expression expression) {
         copy(query);
         this.expression = expression;
         setHaving(this);

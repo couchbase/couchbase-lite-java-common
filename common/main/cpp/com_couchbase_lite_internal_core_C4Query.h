@@ -34,10 +34,10 @@ JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Query_createI
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query
  * Method:    init
- * Signature: (JLjava/lang/String;)J
+ * Signature: (JILjava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Query_init
-  (JNIEnv *, jclass, jlong, jstring);
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Query_createQuery
+  (JNIEnv *, jclass, jlong, jint, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query

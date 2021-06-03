@@ -27,7 +27,16 @@ import com.couchbase.lite.internal.fleece.FLValue;
 
 
 public class C4Query extends C4NativePeer {
-    // who knows why this stuff is here...
+    enum QueryLanguage {
+        JSON(0), N1QL(1);
+
+        private final int val;
+
+        QueryLanguage(int val) { this.val = val; }
+
+        public int getVal() { return val; }
+    }
+
     public static void createIndex(
         C4Database db,
         String name,
@@ -52,7 +61,9 @@ public class C4Query extends C4NativePeer {
     // Constructors
     //-------------------------------------------------------------------------
 
-    C4Query(long db, String expression) throws LiteCoreException { super(init(db, expression)); }
+    C4Query(long db, QueryLanguage language, String expression) throws LiteCoreException {
+        super(createQuery(db, language.getVal(), expression));
+    }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -151,7 +162,7 @@ public class C4Query extends C4NativePeer {
         boolean ignoreDiacritics)
         throws LiteCoreException;
 
-    private static native long init(long db, String expression) throws LiteCoreException;
+    private static native long createQuery(long db, int language, String expression) throws LiteCoreException;
 
     /**
      * Free C4Query* instance

@@ -29,7 +29,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Select represents the SELECT clause of the query for specifying the returning properties in each
  * query result row.
  */
-public final class Select extends AbstractQuery implements FromRouter {
+public final class Select extends BuilderQuery implements FromRouter {
     //---------------------------------------------
     // Member variables
     //---------------------------------------------

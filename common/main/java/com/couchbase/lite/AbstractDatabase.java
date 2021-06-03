@@ -333,8 +333,11 @@ abstract class AbstractDatabase extends BaseDatabase {
         synchronized (getDbLock()) {
             mustBeOpen();
             try { return Document.getDocument((Database) this, id, false); }
-            // only 404 - Not Found error throws CouchbaseLiteException
-            catch (CouchbaseLiteException ex) { return null; }
+            catch (CouchbaseLiteException e) {
+                // Probably 404 - Not Found
+                Log.i(LogDomain.DATABASE, "Document %s not found", e, id);
+                return null;
+            }
         }
     }
 
@@ -599,7 +602,6 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-
     /**
      * Adds a change listener for the changes that occur to the specified document.
      * The changes will be delivered on the UI thread for the Android platform and on an arbitrary
@@ -653,6 +655,15 @@ abstract class AbstractDatabase extends BaseDatabase {
     public void delete() throws CouchbaseLiteException {
         if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "Deleting %s at path %s", this, getDbPath()); }
         shutdown(true, C4Database::deleteDb);
+    }
+
+    // Queries:
+
+    public Query createQuery(String query) {
+        synchronized (getDbLock()) {
+            mustBeOpen();
+            return new N1qlQuery(this, query);
+        }
     }
 
     @NonNull
@@ -825,8 +836,14 @@ abstract class AbstractDatabase extends BaseDatabase {
         unregisterProcess(query);
     }
 
-    C4Query createQuery(@NonNull String json) throws LiteCoreException {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().createQuery(json); }
+    @NonNull
+    C4Query createJsonQuery(@NonNull String json) throws LiteCoreException {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().createJsonQuery(json); }
+    }
+
+    @NonNull
+    C4Query createN1qlQuery(@NonNull String n1ql) throws LiteCoreException {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().createN1qlQuery(n1ql); }
     }
 
     C4Document getC4Document(@NonNull String id) throws LiteCoreException {
