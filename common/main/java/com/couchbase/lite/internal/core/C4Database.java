@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -303,22 +304,23 @@ public abstract class C4Database extends C4NativePeer {
 
     @NonNull
     public C4Query createJsonQuery(@NonNull String expression) throws LiteCoreException {
-        return new C4Query(getPeer(), C4Query.QueryLanguage.JSON, expression);
+        return new C4Query(getPeer(), AbstractIndex.QueryLanguage.JSON, expression);
     }
 
     @NonNull
     public C4Query createN1qlQuery(@NonNull String expression) throws LiteCoreException {
-        return new C4Query(getPeer(), C4Query.QueryLanguage.N1QL, expression);
+        return new C4Query(getPeer(), AbstractIndex.QueryLanguage.N1QL, expression);
     }
 
     public void createIndex(
         String name,
-        String expressionsJSON,
-        int indexType,
+        String queryExpression,
+        AbstractIndex.QueryLanguage queryLanguage,
+        AbstractIndex.IndexType indexType,
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        C4Query.createIndex(this, name, expressionsJSON, indexType, language, ignoreDiacritics);
+        C4Query.createIndex(this, name, queryExpression, queryLanguage, indexType, language, ignoreDiacritics);
     }
 
     public void deleteIndex(String name) throws LiteCoreException { C4Query.deleteIndex(this, name); }

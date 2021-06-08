@@ -140,14 +140,15 @@ JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_C4Query_createIndex(
         JNIEnv *env,
         jclass ignore,
-        jlong jdb,
+        jlong db,
         jstring jname,
-        jstring jexpressionsJSON,
+        jstring jqueryExpressions,
+        jint queryLanguage,
         jint indexType,
         jstring jlanguage,
         jboolean ignoreDiacritics) {
     jstringSlice name(env, jname);
-    jstringSlice expressionsJSON(env, jexpressionsJSON);
+    jstringSlice queryExpressions(env, jqueryExpressions);
     jstringSlice language(env, jlanguage);
 
     C4IndexOptions options = {};
@@ -155,11 +156,11 @@ Java_com_couchbase_lite_internal_core_C4Query_createIndex(
     options.ignoreDiacritics = (bool) ignoreDiacritics;
 
     C4Error error = {};
-
-    bool res = c4db_createIndex(
-            (C4Database *) jdb,
+    bool res = c4db_createIndex2(
+            (C4Database *) db,
             name,
-            (C4Slice) expressionsJSON,
+            (C4Slice) queryExpressions,
+            (C4QueryLanguage) queryLanguage,
             (C4IndexType) indexType,
             &options,
             &error);

@@ -2267,6 +2267,7 @@ public class QueryTest extends BaseQueryTest {
         saveDocInBaseTestDb(mDoc4);
 
         FullTextIndex ftsIndex = IndexBuilder.fullTextIndex(FullTextIndexItem.property("content"));
+        ftsIndex.setLanguage(Locale.ENGLISH.getLanguage());
         baseTestDb.createIndex("ftsIndex", ftsIndex);
 
         String[] expectedIDs = {"doc1", "doc2", "doc3"};

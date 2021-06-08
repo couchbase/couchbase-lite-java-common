@@ -25,7 +25,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Based class for Query Functions.
  */
-@SuppressWarnings({"PMD.AbstractClassWithoutAbstractMethod", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.AbstractClassWithoutAbstractMethod"})
 abstract class AbstractFunction {
     private static final String PARAM_EXPRESSION = "expression";
 

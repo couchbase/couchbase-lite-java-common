@@ -24,12 +24,13 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 
 
-@SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
-public abstract class BaseReplicator implements AutoCloseable {
+public class BaseReplicator implements AutoCloseable {
     private final Object lock = new Object();
 
     @Nullable
     private C4Replicator c4Replicator;
+
+    protected BaseReplicator() { }
 
     @Override
     public void close() {

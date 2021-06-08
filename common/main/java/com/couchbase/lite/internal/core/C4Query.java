@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -27,25 +28,23 @@ import com.couchbase.lite.internal.fleece.FLValue;
 
 
 public class C4Query extends C4NativePeer {
-    enum QueryLanguage {
-        JSON(0), N1QL(1);
-
-        private final int val;
-
-        QueryLanguage(int val) { this.val = val; }
-
-        public int getVal() { return val; }
-    }
-
     public static void createIndex(
         C4Database db,
         String name,
-        String expressionsJSON,
-        int indexType,
+        String queryExpression,
+        AbstractIndex.QueryLanguage queryLanguage,
+        AbstractIndex.IndexType indexType,
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        createIndex(db.getPeer(), name, expressionsJSON, indexType, language, ignoreDiacritics);
+        createIndex(
+            db.getPeer(),
+            name,
+            queryExpression,
+            queryLanguage.getValue(),
+            indexType.getValue(),
+            language,
+            ignoreDiacritics);
     }
 
     public static FLValue getIndexInfo(C4Database db) throws LiteCoreException {
@@ -61,8 +60,8 @@ public class C4Query extends C4NativePeer {
     // Constructors
     //-------------------------------------------------------------------------
 
-    C4Query(long db, QueryLanguage language, String expression) throws LiteCoreException {
-        super(createQuery(db, language.getVal(), expression));
+    C4Query(long db, AbstractIndex.QueryLanguage queryLanguage, String expression) throws LiteCoreException {
+        super(createQuery(db, queryLanguage.getValue(), expression));
     }
 
     //-------------------------------------------------------------------------
@@ -156,7 +155,8 @@ public class C4Query extends C4NativePeer {
     private static native boolean createIndex(
         long db,
         String name,
-        String expressionsJSON,
+        String queryExpressions,
+        int queryLanguage,
         int indexType,
         String language,
         boolean ignoreDiacritics)

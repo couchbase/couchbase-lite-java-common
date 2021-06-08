@@ -26,8 +26,7 @@ import com.couchbase.lite.DatabaseConfiguration;
  * Because they are mandated by a spec:
  * https://docs.google.com/document/d/16XmIOw7aZ_NcFc6Dy6fc1jV7sc994r6iv5qm9_J7qKo/edit#heading=h.kt1n12mtpzx4
  */
-@SuppressWarnings("PMD.AbstractClassWithoutAbstractMethod")
-public abstract class BaseImmutableDatabaseConfiguration {
+public class BaseImmutableDatabaseConfiguration {
     //-------------------------------------------------------------------------
     // Data members
     //-------------------------------------------------------------------------

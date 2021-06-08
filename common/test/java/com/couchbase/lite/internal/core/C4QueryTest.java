@@ -24,6 +24,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.fleece.FLConstants;
@@ -224,7 +225,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.createIndex(
             "length",
             json5("[['length()', ['.name.first']]]"),
-            C4Constants.IndexType.VALUE,
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.VALUE,
             null,
             true);
         compile(json5("['=', ['length()', ['.name.first']], 9]"));
@@ -238,7 +240,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.createIndex(
             "length",
             json5("[['length()', ['.name.first']]]"),
-            C4Constants.IndexType.VALUE,
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.VALUE,
             null,
             true);
 
@@ -295,7 +298,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
-            C4Constants.IndexType.FULL_TEXT,
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
         compile(json5("['MATCH()', 'byStreet', 'Hwy']"));
@@ -314,7 +318,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.createIndex(
             "byAddress",
             "[[\".contact.address.street\"], [\".contact.address.city\"], [\".contact.address.state\"]]",
-            C4Constants.IndexType.FULL_TEXT,
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
 
@@ -362,10 +367,17 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
-            C4Constants.IndexType.FULL_TEXT,
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        c4Database.createIndex("byCity", "[[\".contact.address.city\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
+        c4Database.createIndex(
+            "byCity",
+            "[[\".contact.address.city\"]]",
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.FULL_TEXT,
+            null,
+            true);
         compile(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]"));
         assertEquals(Arrays.asList("0000015"), run());
         assertEquals(Arrays.asList(
@@ -379,10 +391,17 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
-            C4Constants.IndexType.FULL_TEXT,
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        c4Database.createIndex("byCity", "[[\".contact.address.city\"]]", C4Constants.IndexType.FULL_TEXT, null, true);
+        c4Database.createIndex(
+            "byCity",
+            "[[\".contact.address.city\"]]",
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.FULL_TEXT,
+            null,
+            true);
         compile(json5(
             "['AND', ['AND', ['=', ['.gender'], 'male'], ['MATCH()', 'byCity', 'Santa']], ['=', ['.name.first'], "
                 + "'Cleveland']]"));
@@ -399,7 +418,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
-            C4Constants.IndexType.FULL_TEXT,
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
         try {
@@ -418,7 +438,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         c4Database.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
-            C4Constants.IndexType.FULL_TEXT,
+            AbstractIndex.QueryLanguage.JSON,
+            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
         try {
@@ -595,7 +616,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testQueryParserErrorMessages() {
         try {
-            query = new C4Query(c4Database.getHandle(), C4Query.QueryLanguage.JSON, "[\"=\"]");
+            query = new C4Query(c4Database.getHandle(), AbstractIndex.QueryLanguage.JSON, "[\"=\"]");
             fail();
         }
         catch (LiteCoreException ex) {

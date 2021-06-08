@@ -24,9 +24,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Based IndexBuilder used for building database index objects.
  */
-@SuppressWarnings({"PMD.AbstractClassWithoutAbstractMethod"})
-abstract class AbstractIndexBuilder {
-
+@SuppressWarnings({"PMD.UseUtilityClass", "HideUtilityClassConstructor"})
+class AbstractIndexBuilder {
     /**
      * Create a value index with the given index items. The index items are a list of
      * the properties or expressions to be indexed.

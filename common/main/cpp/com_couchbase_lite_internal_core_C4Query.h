@@ -26,10 +26,10 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Query_deleteIndex
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query
  * Method:    createIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Z)Z
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IILjava/lang/String;Z)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Query_createIndex
-  (JNIEnv *, jclass, jlong, jstring, jstring, jint, jstring, jboolean);
+  (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jstring, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query
