@@ -87,6 +87,7 @@ public class C4Replicator extends C4NativePeer {
     public static final String REPLICATOR_OPTION_DISABLE_DELTAS = "noDeltas";   ///< Disables delta sync: bool
     public static final String REPLICATOR_OPTION_MAX_RETRIES = "maxRetries";   ///< Max number of retry attempts (int)
     public static final String REPLICATOR_OPTION_MAX_RETRY_INTERVAL = "maxRetryInterval";  ///< Max delay between retries (secs)
+    public static final String REPLICATOR_OPTION_ENABLE_AUTO_PURGE = "autoPurge";  /// true, Enable auto-purge
 
 
     public static final String REPLICATOR_OPTION_ROOT_CERTS = "rootCerts";  ///< Trusted root certs (data)

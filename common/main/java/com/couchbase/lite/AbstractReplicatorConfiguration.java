@@ -92,6 +92,7 @@ public abstract class AbstractReplicatorConfiguration {
     private int maxAttempts;
     private int maxAttemptWaitTime;
     private int heartbeat;
+    private boolean enableAutoPurge = true;
     private final Endpoint target;
 
     //---------------------------------------------
@@ -119,6 +120,7 @@ public abstract class AbstractReplicatorConfiguration {
             config.maxAttempts,
             config.maxAttemptWaitTime,
             config.heartbeat,
+            config.enableAutoPurge,
             config.target);
     }
 
@@ -138,6 +140,7 @@ public abstract class AbstractReplicatorConfiguration {
             config.getMaxRetryAttempts(),
             config.getMaxRetryAttemptWaitTime(),
             config.getHeartbeat(),
+            config.isAutoPurgeEnabled(),
             config.getTarget());
     }
 
@@ -157,6 +160,7 @@ public abstract class AbstractReplicatorConfiguration {
         int maxAttempts,
         int maxAttemptWaitTime,
         int heartbeat,
+        boolean enableAutoPurge,
         @NonNull Endpoint target) {
         this.database = database;
         this.type = type;
@@ -172,6 +176,7 @@ public abstract class AbstractReplicatorConfiguration {
         this.maxAttempts = maxAttempts;
         this.maxAttemptWaitTime = maxAttemptWaitTime;
         this.heartbeat = heartbeat;
+        this.enableAutoPurge = enableAutoPurge;
         this.target = target;
     }
 
@@ -373,6 +378,15 @@ public abstract class AbstractReplicatorConfiguration {
         return getReplicatorConfiguration();
     }
 
+    /**
+     * Enable/disable auto-purge.
+     * Default is enabled.
+     */
+    public final ReplicatorConfiguration setAutoPurgeEnabled(boolean enabled) {
+        this.enableAutoPurge = enabled;
+        return getReplicatorConfiguration();
+    }
+
     //---------------------------------------------
     // Getters
     //---------------------------------------------
@@ -492,6 +506,12 @@ public abstract class AbstractReplicatorConfiguration {
      * @return heartbeat interval in seconds
      */
     public final int getHeartbeat() { return heartbeat; }
+
+    /**
+     * Enable/disable auto-purge.
+     * Default is enabled.
+     */
+    public final boolean isAutoPurgeEnabled() { return enableAutoPurge; }
 
     @SuppressWarnings("PMD.NPathComplexity")
     @NonNull

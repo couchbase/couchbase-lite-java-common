@@ -40,6 +40,7 @@ import com.couchbase.lite.internal.core.CBLVersion;
  * Because they are mandated by a spec:
  * https://docs.google.com/document/d/16XmIOw7aZ_NcFc6Dy6fc1jV7sc994r6iv5qm9_J7qKo/edit#heading=h.kt1n12mtpzx4
  */
+@SuppressWarnings("PMD.TooManyFields")
 public class BaseImmutableReplicatorConfiguration {
 
     //---------------------------------------------
@@ -69,6 +70,7 @@ public class BaseImmutableReplicatorConfiguration {
     private final int maxRetryAttempts;
     private final int maxRetryAttemptWaitTime;
     private final int heartbeat;
+    private final boolean enableAutoPurge;
     @NonNull
     private final Endpoint target;
 
@@ -90,6 +92,7 @@ public class BaseImmutableReplicatorConfiguration {
         this.maxRetryAttempts = config.getMaxAttempts();
         this.maxRetryAttemptWaitTime = config.getMaxAttemptWaitTime();
         this.heartbeat = config.getHeartbeat();
+        this.enableAutoPurge = config.isAutoPurgeEnabled();
         this.target = config.getTarget();
     }
 
@@ -147,6 +150,8 @@ public class BaseImmutableReplicatorConfiguration {
 
     public final int getHeartbeat() { return heartbeat; }
 
+    public final boolean isAutoPurgeEnabled() { return enableAutoPurge; }
+
     @NonNull
     public final Endpoint getTarget() { return target; }
 
@@ -170,6 +175,8 @@ public class BaseImmutableReplicatorConfiguration {
         if (maxRetryAttemptWaitTime > 0) {
             options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxRetryAttemptWaitTime);
         }
+
+        if (!enableAutoPurge) { options.put(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE, Boolean.FALSE); }
 
         final Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:
