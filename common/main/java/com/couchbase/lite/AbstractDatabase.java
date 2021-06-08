@@ -35,7 +35,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.json.JSONException;
 
 import com.couchbase.lite.internal.CBLInternalException;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -62,7 +61,6 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Internal;
-import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -688,24 +686,12 @@ abstract class AbstractDatabase extends BaseDatabase {
         return indexNames;
     }
 
-    public void createIndex(@NonNull String name, @NonNull Index idx) throws CouchbaseLiteException {
-        Preconditions.assertNotNull(name, "name");
-        final AbstractIndex index = (AbstractIndex) Preconditions.assertNotNull(idx, "index");
+    public void createIndex(@NonNull String name, @NonNull Index index) throws CouchbaseLiteException {
+        createIndexInternal(name, index);
+    }
 
-        synchronized (getDbLock()) {
-            final C4Database c4Db = getOpenC4DbLocked();
-            try {
-                final String json = JSONUtils.toJSON(index.items()).toString();
-                c4Db.createIndex(
-                    name,
-                    json,
-                    index.type().getValue(),
-                    index.language(),
-                    index.ignoreAccents());
-            }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-            catch (JSONException e) { throw new CouchbaseLiteException("Error encoding JSON", e); }
-        }
+    public void createIndex(@NonNull String name, @NonNull IndexConfiguration config) throws CouchbaseLiteException {
+        createIndexInternal(name, config);
     }
 
     public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
@@ -1094,6 +1080,28 @@ abstract class AbstractDatabase extends BaseDatabase {
             }
 
             throw CouchbaseLiteException.convertException(e);
+        }
+    }
+
+    //////// INDICES:
+
+    private void createIndexInternal(@NonNull String name, @NonNull AbstractIndex config)
+        throws CouchbaseLiteException {
+        Preconditions.assertNotNull(name, "name");
+        Preconditions.assertNotNull(config, "config");
+
+        synchronized (getDbLock()) {
+            final C4Database c4Db = getOpenC4DbLocked();
+            try {
+                c4Db.createIndex(
+                    name,
+                    config.getIndexSpec(),
+                    config.getQueryLanguage(),
+                    config.getIndexType(),
+                    config.getLanguage(),
+                    config.isIgnoringDiacritics());
+            }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
 

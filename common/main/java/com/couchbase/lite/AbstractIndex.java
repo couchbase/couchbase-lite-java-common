@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2021 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,18 +18,53 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import java.util.List;
 
-// This is an interface so that its methods can be package protected
-abstract class AbstractIndex implements Index {
+public abstract class AbstractIndex {
+    public enum QueryLanguage {
+        JSON(0), N1QL(1);
+
+        private final int value;
+
+        QueryLanguage(int value) { this.value = value; }
+
+        public int getValue() { return value; }
+    }
+
+    public enum IndexType {
+        VALUE(0), FULL_TEXT(1), PREDICTIVE(3);
+
+        private final int value;
+
+        IndexType(int value) { this.value = value; }
+
+        public int getValue() { return value; }
+    }
+
+    private final QueryLanguage queryLanguage;
+    private final IndexType indexType;
+
+    protected AbstractIndex(IndexType indexType, QueryLanguage queryLanguage) {
+        this.indexType = indexType;
+        this.queryLanguage = queryLanguage;
+    }
+
+    abstract String getIndexSpec() throws CouchbaseLiteException;
+
     @NonNull
-    abstract IndexType type();
+    final QueryLanguage getQueryLanguage() { return queryLanguage; }
 
+    @NonNull
+    final IndexType getIndexType() { return indexType; }
+
+    // Default value: may be overridden
+    @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
     @Nullable
-    abstract String language();
+    String getLanguage() { return null; }
 
-    abstract boolean ignoreAccents();
+    // Default value: may be overridden
+    boolean isIgnoringDiacritics() { return false; }
 
     @NonNull
-    abstract List<Object> items();
+    @Override
+    public String toString() { return "IndexDescriptor(" + getQueryLanguage() + ", " + indexType + "}"; }
 }

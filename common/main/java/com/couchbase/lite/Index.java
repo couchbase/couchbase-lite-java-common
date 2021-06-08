@@ -15,8 +15,26 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
+import java.util.List;
+
+import org.json.JSONException;
+
+import com.couchbase.lite.internal.utils.JSONUtils;
+
 /**
  * Index represents an index which could be a value index for regular queries or
  * full-text index for full-text queries (using the match operator).
  */
-public interface Index { }
+public abstract class Index extends AbstractIndex {
+    Index(IndexType type) { super(type, QueryLanguage.JSON); }
+
+    @NonNull
+    abstract List<Object> getJson();
+
+    String getIndexSpec() throws CouchbaseLiteException {
+        try { return JSONUtils.toJSON(getJson()).toString(); }
+        catch (JSONException e) { throw new CouchbaseLiteException("Error encoding JSON", e); }
+    }
+}

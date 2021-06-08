@@ -26,17 +26,15 @@ import java.util.Locale;
 /**
  * Index for Full-Text search
  */
-public final class FullTextIndex extends AbstractIndex {
-
-    private static String getDefaultLanguage() { return Locale.getDefault().getLanguage(); }
-
-
+public class FullTextIndex extends Index {
     private final List<FullTextIndexItem> indexItems;
+    private String language = Locale.getDefault().getLanguage();
+    private boolean ignoreDiacritics;
 
-    private String textLanguage = getDefaultLanguage();
-    private boolean shouldIgnoreAccents;
-
-    FullTextIndex(FullTextIndexItem... indexItems) { this.indexItems = Arrays.asList(indexItems); }
+    FullTextIndex(FullTextIndexItem... indexItems) {
+        super(IndexType.FULL_TEXT);
+        this.indexItems = Arrays.asList(indexItems);
+    }
 
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.
@@ -46,7 +44,7 @@ public final class FullTextIndex extends AbstractIndex {
      */
     @NonNull
     public FullTextIndex setLanguage(String language) {
-        this.textLanguage = language;
+        this.language = language;
         return this;
     }
 
@@ -55,25 +53,21 @@ public final class FullTextIndex extends AbstractIndex {
      */
     @NonNull
     public FullTextIndex ignoreAccents(boolean ignoreAccents) {
-        this.shouldIgnoreAccents = ignoreAccents;
+        this.ignoreDiacritics = ignoreAccents;
         return this;
     }
 
-    @NonNull
     @Override
-    IndexType type() { return IndexType.FullText; }
+    String getLanguage() { return language; }
 
     @Override
-    String language() { return textLanguage; }
-
-    @Override
-    boolean ignoreAccents() { return shouldIgnoreAccents; }
+    boolean isIgnoringDiacritics() { return ignoreDiacritics; }
 
     @NonNull
     @Override
-    List<Object> items() {
+    List<Object> getJson() {
         final List<Object> items = new ArrayList<>();
-        for (FullTextIndexItem item : indexItems) { items.add(item.expression.asJSON()); }
+        for (FullTextIndexItem item: indexItems) { items.add(item.expression.asJSON()); }
         return items;
     }
 }

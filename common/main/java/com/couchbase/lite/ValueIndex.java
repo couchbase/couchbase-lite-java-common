@@ -16,7 +16,6 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,28 +25,18 @@ import java.util.List;
 /**
  * Value (standard query) index
  */
-public final class ValueIndex extends AbstractIndex {
+public class ValueIndex extends Index {
     @NonNull
-    private final List<ValueIndexItem> indexItems;
+    protected final List<ValueIndexItem> indexItems;
 
     ValueIndex(@NonNull ValueIndexItem... indexItems) {
+        super(IndexType.VALUE);
         this.indexItems = Arrays.asList(indexItems);
     }
 
     @NonNull
     @Override
-    IndexType type() { return IndexType.Value; }
-
-    @Nullable
-    @Override
-    String language() { return null; }
-
-    @Override
-    boolean ignoreAccents() { return false; }
-
-    @NonNull
-    @Override
-    List<Object> items() {
+    List<Object> getJson() {
         final List<Object> items = new ArrayList<>();
         for (ValueIndexItem item: indexItems) { items.add(item.viExpression.asJSON()); }
         return items;
