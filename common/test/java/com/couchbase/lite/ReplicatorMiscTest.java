@@ -34,6 +34,7 @@ import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -163,6 +164,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         catch (CouchbaseLiteException ignore) { }
 
         synchronized (options) {
+            assertNull(options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
             assertFalse(options.containsKey(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
             assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
             assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
@@ -176,7 +178,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             .setContinuous(false)
             .setHeartbeat(33)
             .setMaxAttempts(78)
-            .setMaxAttemptWaitTime(45);
+            .setMaxAttemptWaitTime(45)
+            .setAutoPurgeEnabled(false);
 
         final Replicator repl = testReplicator(config);
 
@@ -193,6 +196,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         catch (CouchbaseLiteException ignore) { }
 
         synchronized (options) {
+            assertEquals(Boolean.FALSE, options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
             assertEquals(33L, options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
             assertEquals(45L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
             /* A friend once told me: Don't try to teach a pig to sing.  It won't work and it annoys the pig. */
