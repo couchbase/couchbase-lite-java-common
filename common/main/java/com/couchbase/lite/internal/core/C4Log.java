@@ -79,7 +79,7 @@ public final class C4Log {
 
         // This cannot be done synchronously because it will deadlock on the same mutex that is being held
         // for this callback
-        CouchbaseLiteInternal.getExecutionService().getMainExecutor().execute(() -> setCoreCallbackLevel(level));
+        CouchbaseLiteInternal.getExecutionService().getDefaultExecutor().execute(() -> setCoreCallbackLevel(level));
     }
 
     public static void setLevels(int level, String... domains) {

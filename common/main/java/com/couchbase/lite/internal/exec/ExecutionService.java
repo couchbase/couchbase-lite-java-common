@@ -60,13 +60,12 @@ public interface ExecutionService {
 
     /**
      * Get the main executor.  It is guaranteed to be a single thread.
-     * The thread on which most of the application runs.
      * Suitable for any task that doesn't take a long time to complete.
      *
      * @return the main executor.
      */
     @NonNull
-    Executor getMainExecutor();
+    Executor getDefaultExecutor();
 
     /**
      * Get a new, serial executor.  Not a single thread but does guarantee serial execution.

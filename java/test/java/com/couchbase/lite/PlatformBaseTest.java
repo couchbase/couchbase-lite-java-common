@@ -20,8 +20,11 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.JavaExecutionService;
+import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
@@ -42,6 +45,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
     private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
+
     static {
         final Map<String, Fn.Provider<Boolean>> m = new HashMap<>();
         m.put("windows", () -> {
@@ -84,6 +88,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
+    public AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
+        return new JavaExecutionService(executor);
+    }
+
+    @Override
     public void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
 
     @Override
@@ -95,6 +104,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public void executeAsync(long delayMs, Runnable task) {
         ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
-        executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
+        executionService.postDelayedOnExecutor(delayMs, executionService.getDefaultExecutor(), task);
     }
 }

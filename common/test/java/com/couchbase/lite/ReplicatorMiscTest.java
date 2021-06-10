@@ -51,7 +51,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         // UI thread Executor
         token = new ReplicatorChangeListenerToken(null, listener);
-        assertEquals(CouchbaseLiteInternal.getExecutionService().getMainExecutor(), token.getExecutor());
+        assertEquals(CouchbaseLiteInternal.getExecutionService().getDefaultExecutor(), token.getExecutor());
     }
 
     @Test

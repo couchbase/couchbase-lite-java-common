@@ -21,8 +21,11 @@ import android.support.test.InstrumentationRegistry;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 
+import com.couchbase.lite.internal.AndroidExecutionService;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
@@ -52,6 +55,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
+    public AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
+        return new AndroidExecutionService(executor);
+    }
+
+    @Override
     public void reloadStandardErrorMessages() {
         Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
     }
@@ -65,7 +73,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public final void executeAsync(long delayMs, Runnable task) {
         ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
-        executionService.postDelayedOnExecutor(delayMs, executionService.getMainExecutor(), task);
+        executionService.postDelayedOnExecutor(delayMs, executionService.getDefaultExecutor(), task);
     }
 
     private static String getSystemProperty(String name) throws Exception {

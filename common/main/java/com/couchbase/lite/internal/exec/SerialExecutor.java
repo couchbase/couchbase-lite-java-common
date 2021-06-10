@@ -55,9 +55,6 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
     @Nullable
     private CountDownLatch stopLatch;
 
-    @GuardedBy("this")
-    private boolean needsRestart;
-
     SerialExecutor(@NonNull ThreadPoolExecutor executor) {
         Preconditions.assertNotNull(executor, "executor");
         this.executor = executor;
@@ -78,8 +75,7 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
             if (stopLatch != null) { throw new ExecutorClosedException("Executor has been stopped"); }
 
             pendingTasks.add(new InstrumentedTask(task, this::scheduleNext));
-
-            if (needsRestart || (pendingTasks.size() == 1)) { executeTask(null); }
+            if (pendingTasks.size() == 1) { executeTask(null); }
         }
     }
 
@@ -110,6 +106,37 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
         return false;
     }
 
+    @NonNull
+    @Override
+    public String toString() { return "CBL serial executor"; }
+
+    public void dumpState(@Nullable InstrumentedTask prev, @Nullable Exception e) {
+        if (AbstractExecutionService.throttled()) { return; }
+
+        AbstractExecutionService.dumpState(executor, toString(), e);
+
+        Log.w(DOMAIN, "==== Executor");
+
+        if (prev != null) { Log.w(DOMAIN, "== Previous task: " + prev, prev.origin); }
+
+        final ArrayList<InstrumentedTask> waiting;
+        synchronized (this) { waiting = new ArrayList<>(pendingTasks); }
+
+        if (waiting.isEmpty()) {
+            Log.w(DOMAIN, "== Queue is empty");
+            return;
+        }
+
+        final InstrumentedTask current = waiting.remove(0);
+        Log.w(DOMAIN, "== Rejected task: " + current, current.origin);
+
+        if (waiting.isEmpty()) { return; }
+        Log.w(DOMAIN, "== Pending tasks: " + waiting.size());
+        int n = 0;
+        for (InstrumentedTask t: waiting) { Log.w(DOMAIN, "@" + (++n) + ": " + t, t.origin); }
+    }
+
+
     // Called on completion of the task at the head of the pending queue.
     private void scheduleNext() {
         final CountDownLatch latch;
@@ -125,41 +152,11 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
     private void executeTask(@Nullable InstrumentedTask prevTask) {
         final InstrumentedTask nextTask = pendingTasks.peek();
         if (nextTask == null) { return; }
-        try {
-            executor.execute(nextTask);
-            needsRestart = false;
-        }
-        catch (RejectedExecutionException e) {
-            needsRestart = true;
-            dumpExecutorState(e, prevTask);
-        }
-    }
 
-    private void dumpExecutorState(@NonNull RejectedExecutionException ex, @Nullable InstrumentedTask prev) {
-        if (AbstractExecutionService.throttled()) { return; }
-
-        AbstractExecutionService.dumpServiceState(executor, "size: " + pendingTasks.size(), ex);
-
-        Log.w(DOMAIN, "==== Serial Executor status: " + this);
-        if (needsRestart) { Log.w(DOMAIN, "= stalled"); }
-
-        if (prev != null) { Log.w(DOMAIN, "== Previous task: " + prev, prev.origin); }
-
-        if (pendingTasks.isEmpty()) { Log.w(DOMAIN, "== Queue is empty"); }
-        else {
-            final ArrayList<InstrumentedTask> waiting = new ArrayList<>(pendingTasks);
-
-            final InstrumentedTask current = waiting.remove(0);
-            Log.w(DOMAIN, "== Current task: " + current, current.origin);
-
-            Log.w(DOMAIN, "== Pending tasks: " + waiting.size());
-            int n = 0;
-            for (InstrumentedTask t: waiting) {
-                Log.w(
-                    DOMAIN,
-                    "@" + (++n) + ": " + t,
-                    t.origin);
-            }
+        try { executor.execute(nextTask); }
+        catch (RuntimeException e) {
+            dumpState(prevTask, e);
+            throw e;
         }
     }
 }

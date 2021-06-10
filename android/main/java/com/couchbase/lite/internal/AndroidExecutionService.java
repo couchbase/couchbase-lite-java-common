@@ -15,10 +15,10 @@
 //
 package com.couchbase.lite.internal;
 
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -26,6 +26,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
+import com.couchbase.lite.internal.exec.CBLExecutor;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -34,7 +35,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * ExecutionService for Android.
  */
 public final class AndroidExecutionService extends AbstractExecutionService {
-
     //---------------------------------------------
     // Types
     //---------------------------------------------
@@ -63,8 +63,11 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
-    public AndroidExecutionService() {
-        super((ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR);
+    public AndroidExecutionService() { this(new CBLExecutor("CBL worker")); }
+
+    @VisibleForTesting
+    public AndroidExecutionService(@NonNull ThreadPoolExecutor executor) {
+        super(executor);
         mainHandler = new Handler(Looper.getMainLooper());
         mainThreadExecutor = mainHandler::post;
     }
@@ -74,7 +77,7 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     //---------------------------------------------
     @NonNull
     @Override
-    public Executor getMainExecutor() { return mainThreadExecutor; }
+    public Executor getDefaultExecutor() { return mainThreadExecutor; }
 
     /**
      * This runs a task on Android's main thread for just long enough to enough to enqueue the passed task
@@ -99,24 +102,12 @@ public final class AndroidExecutionService extends AbstractExecutionService {
                 Log.w(LogDomain.DATABASE, "Scheduled on closed executor: " + task + ", " + executor);
             }
             catch (RejectedExecutionException e) {
-                if (!throttled()) { dumpServiceState(executor, "after: " + delayMs, e); }
+                if (!throttled()) { dumpState(executor, "after: " + delayMs, e); }
             }
         };
 
         mainHandler.postDelayed(delayedTask, delayMs);
 
         return new CancellableTask(mainHandler, delayedTask);
-    }
-
-    /**
-     * Best effort, delete the passed task (obtained from postDelayedOnExecutor, above)
-     * from the wait queue.  If it is already in the Executor, well, there you go.
-     *
-     * @param cancellableTask returned by a previous call to postDelayedOnExecutor.
-     */
-    @Override
-    public void cancelDelayedTask(@NonNull Cancellable cancellableTask) {
-        Preconditions.assertNotNull(cancellableTask, "cancellableTask");
-        cancellableTask.cancel();
     }
 }

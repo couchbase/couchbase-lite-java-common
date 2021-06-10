@@ -25,7 +25,7 @@ import com.couchbase.lite.internal.support.Log;
 class InstrumentedTask implements Runnable {
     // Putting a `new Exception()` here is useful but pretty expensive
     @SuppressWarnings("PMD.FinalFieldCouldBeStatic")
-    final Exception origin = null; // new Exception();
+    final Exception origin = null; //new Exception();
 
     @NonNull
     private final Runnable task;
@@ -37,8 +37,6 @@ class InstrumentedTask implements Runnable {
 
     @Nullable
     private volatile Runnable onComplete;
-
-    InstrumentedTask(@NonNull Runnable task) { this(task, null); }
 
     InstrumentedTask(@NonNull Runnable task, @Nullable Runnable onComplete) {
         this.task = task;

@@ -16,6 +16,11 @@
 
 package com.couchbase.lite;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
+import com.couchbase.lite.internal.exec.AbstractExecutionService;
+
+
 /**
  * Contains methods required for the tests to run on both Android and Java platforms.
  */
@@ -23,6 +28,8 @@ public interface PlatformTest {
 
     /* initialize the platform */
     void setupPlatform();
+
+    AbstractExecutionService getExecutionService(ThreadPoolExecutor executor);
 
     /* Reload the cross-platform error messages. */
     void reloadStandardErrorMessages();

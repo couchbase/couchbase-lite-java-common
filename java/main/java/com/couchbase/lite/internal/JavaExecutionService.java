@@ -16,21 +16,18 @@
 package com.couchbase.lite.internal;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.exec.CBLExecutor;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -38,30 +35,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * ExecutionService for Java.
  */
 public class JavaExecutionService extends AbstractExecutionService {
-
-    //---------------------------------------------
-    // Constants
-    //---------------------------------------------
-    private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-
-    private static final ThreadFactory THREAD_FACTORY = new ThreadFactory() {
-        private final AtomicInteger id = new AtomicInteger(1);
-
-        public Thread newThread(@NonNull Runnable r) {
-            final Thread thread = new Thread(r, "CBL #" + id.getAndIncrement());
-            // this, actually, should never happen...
-            thread.setUncaughtExceptionHandler((t, e) ->
-                Log.w(LogDomain.DATABASE, "Uncaught exception on thread" + thread.getName(), e));
-            return thread;
-        }
-    };
-
-    private static final ThreadPoolExecutor THREAD_POOL_EXECUTOR = new ThreadPoolExecutor(
-        2, CPU_COUNT * 2 + 1,        // pool varies between two threads and 2xCPUs
-        30, TimeUnit.SECONDS,        // unused threads die after 30 sec
-        new LinkedBlockingQueue<>(), // unbounded queue
-        THREAD_FACTORY);             // nice recognizable names for our threads.
-
     //---------------------------------------------
     // Types
     //---------------------------------------------
@@ -81,15 +54,18 @@ public class JavaExecutionService extends AbstractExecutionService {
     //---------------------------------------------
     // Instance variables
     //---------------------------------------------
-    private final Executor mainExecutor;
+    private final Executor defaultExecutor;
     private final ScheduledExecutorService scheduler;
 
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
-    public JavaExecutionService() {
-        super(THREAD_POOL_EXECUTOR);
-        mainExecutor = Executors.newSingleThreadExecutor();
+    public JavaExecutionService() { this(new CBLExecutor("CBL worker")); }
+
+    @VisibleForTesting
+    public JavaExecutionService(@NonNull ThreadPoolExecutor executor) {
+        super(executor);
+        defaultExecutor = Executors.newSingleThreadExecutor();
         scheduler = Executors.newSingleThreadScheduledExecutor();
     }
 
@@ -98,25 +74,22 @@ public class JavaExecutionService extends AbstractExecutionService {
     //---------------------------------------------
     @NonNull
     @Override
-    public Executor getMainExecutor() { return mainExecutor; }
+    public Executor getDefaultExecutor() { return defaultExecutor; }
 
     @NonNull
     @Override
     public Cancellable postDelayedOnExecutor(long delayMs, @NonNull Executor executor, @NonNull Runnable task) {
         Preconditions.assertNotNull(executor, "executor");
         Preconditions.assertNotNull(task, "task");
+
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
-            catch (RejectedExecutionException ignore) { }
+            catch (RejectedExecutionException e) {
+                if (!throttled()) { dumpState(executor, "after: " + delayMs, e); }
+            }
         };
 
         final Future<?> future = scheduler.schedule(delayedTask, delayMs, TimeUnit.MILLISECONDS);
         return new CancellableTask(future);
-    }
-
-    @Override
-    public void cancelDelayedTask(@NonNull Cancellable cancellableTask) {
-        Preconditions.assertNotNull(cancellableTask, "future");
-        cancellableTask.cancel();
     }
 }

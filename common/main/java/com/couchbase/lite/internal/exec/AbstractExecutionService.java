@@ -19,7 +19,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -27,6 +26,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -37,12 +37,9 @@ public abstract class AbstractExecutionService implements ExecutionService {
     //---------------------------------------------
     // Constants
     //---------------------------------------------
-    private static final LogDomain DOMAIN = LogDomain.DATABASE;
-    private static final int DUMP_INTERVAL_MS = 2000; // 2 seconds
 
-    @VisibleForTesting
-    public static final int MIN_CAPACITY = 64;
-
+    // Don't dump stats more than once every two seconds
+    private static final int DUMP_INTERVAL_MS = 2000;
 
     private static final Object DUMP_LOCK = new Object();
 
@@ -55,28 +52,6 @@ public abstract class AbstractExecutionService implements ExecutionService {
     // Class methods
     //---------------------------------------------
 
-    // check `throttled()` before calling.
-    public static void dumpServiceState(@NonNull Executor ex, @NonNull String msg, @Nullable Exception e) {
-        Log.w(LogDomain.DATABASE, "====== Catastrophic failure of executor " + ex + ": " + msg, e);
-
-        final Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
-        Log.w(DOMAIN, "==== Threads: " + stackTraces.size());
-        for (Map.Entry<Thread, StackTraceElement[]> stack: stackTraces.entrySet()) {
-            Log.w(DOMAIN, "== Thread: " + stack.getKey());
-            for (StackTraceElement frame: stack.getValue()) { Log.w(DOMAIN, "      at " + frame); }
-        }
-
-        if (!(ex instanceof ThreadPoolExecutor)) { return; }
-
-        final ArrayList<Runnable> waiting = new ArrayList<>(((ThreadPoolExecutor) ex).getQueue());
-        Log.w(DOMAIN, "==== Executor queue: " + waiting.size());
-        int n = 0;
-        for (Runnable r: waiting) {
-            final Exception orig = (!(r instanceof InstrumentedTask)) ? null : ((InstrumentedTask) r).origin;
-            Log.w(DOMAIN, "@" + (n++) + ": " + r, orig);
-        }
-    }
-
     public static boolean throttled() {
         final long now = System.currentTimeMillis();
         synchronized (DUMP_LOCK) {
@@ -84,6 +59,22 @@ public abstract class AbstractExecutionService implements ExecutionService {
             lastDump = now;
         }
         return false;
+    }
+
+    // check `throttled()` before calling.
+    public static void dumpState(@NonNull Executor ex, @NonNull String msg, @Nullable Exception e) {
+        Log.w(LogDomain.DATABASE, "====== Catastrophic failure of executor: " + msg, e);
+
+        final Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
+        if (stackTraces.isEmpty()) { return; }
+
+        Log.w(LogDomain.DATABASE, "==== Threads: " + stackTraces.size());
+        for (Map.Entry<Thread, StackTraceElement[]> stack: stackTraces.entrySet()) {
+            Log.w(LogDomain.DATABASE, "== Thread: " + stack.getKey());
+            for (StackTraceElement frame: stack.getValue()) { Log.w(LogDomain.DATABASE, "      at " + frame); }
+        }
+
+        if (ex instanceof CBLExecutor) { ((CBLExecutor) ex).dumpState(); }
     }
 
 
@@ -114,12 +105,13 @@ public abstract class AbstractExecutionService implements ExecutionService {
     @Override
     public CloseableExecutor getConcurrentExecutor() { return concurrentExecutor; }
 
-
-    //---------------------------------------------
-    // Package-private methods
-    //---------------------------------------------
+    @Override
+    public void cancelDelayedTask(@NonNull Cancellable cancellableTask) {
+        Preconditions.assertNotNull(cancellableTask, "cancellableTask");
+        cancellableTask.cancel();
+    }
 
     @VisibleForTesting
-    public void dumpExecutorState() { concurrentExecutor.dumpExecutorState(null, new RejectedExecutionException()); }
+    public void dumpState() { concurrentExecutor.dumpState(null, new RejectedExecutionException()); }
 }
 
