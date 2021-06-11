@@ -278,7 +278,6 @@ class SaveConflictResolutionTests : BaseDbTest() {
         val doc = MutableDocument(docID)
         doc.setString("location", "Olympia")
         saveDocInBaseTestDb(doc)
-
         assertEquals(1, baseTestDb.getNonNullDoc(docID).generation())
 
         val doc1a = baseTestDb.getNonNullDoc(docID).toMutable()
@@ -286,7 +285,6 @@ class SaveConflictResolutionTests : BaseDbTest() {
 
         doc1a.setString("artist", "Sheep Jones")
         baseTestDb.save(doc1a)
-
         assertEquals(2, baseTestDb.getNonNullDoc(docID).generation())
 
         doc1b.setString("artist", "Holly Sears")
@@ -301,6 +299,7 @@ class SaveConflictResolutionTests : BaseDbTest() {
                 doc1c.setBoolean("second update", true)
                 assertEquals(3L, saveDocInBaseTestDb(doc1c).generation())
             }
+
             val data = old?.toMap()?.toMutableMap() ?: mutableMapOf()
             for (key in cur.keys) {
                 data[key] = cur.getValue(key)

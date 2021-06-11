@@ -2467,21 +2467,24 @@ public class DocumentTest extends BaseDbTest {
     public void testRevisionIDExistingDoc() throws CouchbaseLiteException {
         MutableDocument mdoc = new MutableDocument("doc1");
         baseTestDb.save(mdoc);
+        String docRevID = mdoc.getRevisionID();
 
         Document doc = baseTestDb.getDocument("doc1");
-        String docRevID = mdoc.getRevisionID();
-        assertEquals(mdoc.getRevisionID(), docRevID);
+        assertEquals(docRevID, doc.getRevisionID());
+        assertEquals(docRevID, mdoc.getRevisionID());
 
         mdoc = doc.toMutable();
+        assertEquals(docRevID, doc.getRevisionID());
         assertEquals(docRevID, mdoc.getRevisionID());
 
         mdoc.setInt("int", 88);
-        baseTestDb.save(mdoc);
+        assertEquals(docRevID, doc.getRevisionID());
+        assertEquals(docRevID, mdoc.getRevisionID());
 
+        baseTestDb.save(mdoc);
         assertEquals(docRevID, doc.getRevisionID());
         assertNotEquals(docRevID, mdoc.getRevisionID());
     }
-
 
     ///////////////  JSON tests
 

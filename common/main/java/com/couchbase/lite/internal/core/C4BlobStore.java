@@ -17,6 +17,7 @@ package com.couchbase.lite.internal.core;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.VisibleForTesting;
 
 import java.io.File;
 
@@ -39,6 +40,7 @@ public abstract class C4BlobStore extends C4NativePeer {
     }
 
     // managed: Java code is responsible for freeing it
+    @VisibleForTesting
     private static final class ManagedC4BlobStore extends C4BlobStore {
         ManagedC4BlobStore(@NonNull String dirPath, long flags) throws LiteCoreException {
             super(openStore(dirPath, flags));
@@ -65,16 +67,7 @@ public abstract class C4BlobStore extends C4NativePeer {
         return new C4BlobStore.UnmanagedC4BlobStore(peer);
     }
 
-    /**
-     * Opens a BlobStore in a directory. If the flags allow creating, the directory will be
-     * created if necessary.
-     * NOTE: Call free() when finished using the BlobStore.
-     *
-     * @param dirPath The filesystem path of the directory holding the attachments.
-     * @param flags   Specifies options like create, read-only
-     * @return The BlobStore reference
-     * @throws LiteCoreException for any error
-     */
+    @VisibleForTesting
     @NonNull
     public static C4BlobStore open(@NonNull String dirPath, long flags) throws LiteCoreException {
         return new ManagedC4BlobStore(
@@ -91,11 +84,6 @@ public abstract class C4BlobStore extends C4NativePeer {
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
-
-    /**
-     * Deletes the BlobStore's blobs and directory, and (if successful) frees the object.
-     */
-    public void delete() throws LiteCoreException { releasePeer(null, C4BlobStore::deleteStore); }
 
     /**
      * Gets the content size of a blob given its key. Returns -1 if it doesn't exist.
@@ -160,6 +148,9 @@ public abstract class C4BlobStore extends C4NativePeer {
     @Override
     public abstract void close();
 
+    @VisibleForTesting
+    public void delete() throws LiteCoreException { releasePeer(null, C4BlobStore::deleteStore); }
+
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
@@ -172,13 +163,6 @@ public abstract class C4BlobStore extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private static native long getBlobStore(long db) throws LiteCoreException;
-
-    // !!! JNI bindings do not support c4blob_openStore() with an C4EncryptionKey
-    private static native long openStore(String dirPath, long flags) throws LiteCoreException;
-
-    private static native void deleteStore(long peer) throws LiteCoreException;
-
-    private static native void freeStore(long peer);
 
     private static native long getSize(long peer, long blobKey);
 
@@ -193,4 +177,13 @@ public abstract class C4BlobStore extends C4NativePeer {
     private static native long openReadStream(long peer, long blobKey) throws LiteCoreException;
 
     private static native long openWriteStream(long peer) throws LiteCoreException;
+
+    @VisibleForTesting
+    private static native long openStore(String dirPath, long flags) throws LiteCoreException;
+
+    @VisibleForTesting
+    private static native void deleteStore(long peer) throws LiteCoreException;
+
+    @VisibleForTesting
+    private static native void freeStore(long peer);
 }

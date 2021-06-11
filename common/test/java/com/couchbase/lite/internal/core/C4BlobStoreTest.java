@@ -99,6 +99,7 @@ public class C4BlobStoreTest extends C4BaseTest {
     }
 
     // - missing blobs
+
     @Test(expected = LiteCoreException.class)
     public void testMissingFilePath() throws LiteCoreException {
         assertEquals(-1, blobStore.getSize(bogusKey));
@@ -164,8 +165,8 @@ public class C4BlobStoreTest extends C4BaseTest {
             }
 
             try {
-                blobStore.getFilePath(key);
-                fail();
+                final String blobPath = blobStore.getFilePath(key);
+                fail("blob has path: " + blobPath);
             }
             catch (LiteCoreException ex) {
                 assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);

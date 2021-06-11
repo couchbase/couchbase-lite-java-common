@@ -253,9 +253,16 @@ public class C4QueryTest extends C4QueryBaseTest {
                 C4Document doc = c4Database.get("0000015", true);
                 assertNotNull(doc);
                 String[] history = {doc.getRevID()};
-                C4Document updatedDoc = c4Database.put((byte[]) null, doc.getDocID(),
-                    C4Constants.RevisionFlags.DELETED, false,
-                    false, history, true, 0, 0);
+                C4Document updatedDoc = c4Database.put(
+                    (byte[]) null,
+                    doc.getDocID(),
+                    C4Constants.RevisionFlags.DELETED,
+                    false,
+                    false,
+                    history,
+                    true,
+                    0,
+                    0);
                 assertNotNull(updatedDoc);
                 doc.close();
                 updatedDoc.close();
@@ -423,7 +430,8 @@ public class C4QueryTest extends C4QueryBaseTest {
             null,
             true);
         try {
-            c4Database.createJsonQuery(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]"));
+            c4Database
+                .createJsonQuery(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]"));
         }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);

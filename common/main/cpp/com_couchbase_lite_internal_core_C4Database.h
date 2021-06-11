@@ -113,22 +113,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_purgeDoc
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    getMaxRevTreeDepth
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL Java_com_couchbase_lite_internal_core_C4Database_getMaxRevTreeDepth
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    setMaxRevTreeDepth
- * Signature: (JI)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_setMaxRevTreeDepth
-  (JNIEnv *, jclass, jlong, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    getPublicUUID
  * Signature: (J)[B
  */
@@ -141,14 +125,6 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Database_ge
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Database_getPrivateUUID
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    compact
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_compact
   (JNIEnv *, jclass, jlong);
 
 /*

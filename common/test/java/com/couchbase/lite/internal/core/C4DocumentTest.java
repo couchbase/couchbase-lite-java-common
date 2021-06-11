@@ -16,15 +16,10 @@
 package com.couchbase.lite.internal.core;
 
 import java.io.IOException;
-import java.util.Locale;
 
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.internal.utils.Report;
-import com.couchbase.lite.internal.utils.SlowTest;
-import com.couchbase.lite.internal.utils.StopWatch;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -180,51 +175,6 @@ public class C4DocumentTest extends C4BaseTest {
             c4Database.endTransaction(commit);
         }
 
-        doc.close();
-    }
-
-    // - "Document maxRevTreeDepth"
-    @SlowTest
-    @Test
-    public void testMaxRevTreeDepth() throws LiteCoreException {
-        // NOTE: c4db_getMaxRevTreeDepth and c4db_setMaxRevTreeDepth are not supported by JNI.
-        assertEquals(20, c4Database.getMaxRevTreeDepth());
-        c4Database.setMaxRevTreeDepth(30);
-        assertEquals(30, c4Database.getMaxRevTreeDepth());
-        reopenDB();
-        assertEquals(30, c4Database.getMaxRevTreeDepth());
-
-        final int kNumRevs = 10000;
-        StopWatch timer = new StopWatch();
-
-        C4Document doc = c4Database.get(DOC_ID, false);
-        assertNotNull(doc);
-        boolean commit = false;
-        c4Database.beginTransaction();
-        try {
-            for (int i = 0; i < kNumRevs; i++) {
-                String[] history = {doc.getRevID()};
-                C4Document savedDoc = c4Database.put(fleeceBody, doc.getDocID(), 0, false, false, history, true, 30, 0);
-                assertNotNull(savedDoc);
-                doc.close();
-                doc = savedDoc;
-            }
-            commit = true;
-        }
-        finally {
-            c4Database.endTransaction(commit);
-        }
-        Report.log(
-            LogLevel.INFO,
-            String.format(Locale.ENGLISH, "Created %d revisions in %.3f ms", kNumRevs, timer.getElapsedTimeMillis()));
-
-        // Check rev tree depth:
-        int nRevs = 0;
-        assertTrue(doc.selectCurrentRevision());
-        do { nRevs++; }
-        while (doc.selectParentRevision());
-        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, "Document rev tree depth is %d", nRevs));
-        assertEquals(30, nRevs);
         doc.close();
     }
 

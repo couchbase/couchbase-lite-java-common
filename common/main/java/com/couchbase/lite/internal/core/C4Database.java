@@ -447,16 +447,10 @@ public abstract class C4Database extends C4NativePeer {
     }
 
     @VisibleForTesting
-    void compact() throws LiteCoreException { compact(getPeer()); }
+    void compact() throws LiteCoreException { maintenance(getPeer(), 0); }
 
     @VisibleForTesting
     long getLastSequence() { return getLastSequence(getPeer()); }
-
-    @VisibleForTesting
-    int getMaxRevTreeDepth() { return getMaxRevTreeDepth(getPeer()); }
-
-    @VisibleForTesting
-    void setMaxRevTreeDepth(int maxRevTreeDepth) { setMaxRevTreeDepth(getPeer(), maxRevTreeDepth); }
 
     @VisibleForTesting
     byte[] getPrivateUUID() throws LiteCoreException { return getPrivateUUID(getPeer()); }
@@ -601,17 +595,9 @@ public abstract class C4Database extends C4NativePeer {
 
     private static native void purgeDoc(long db, String id) throws LiteCoreException;
 
-    private static native int getMaxRevTreeDepth(long db);
-
-    private static native void setMaxRevTreeDepth(long db, int maxRevTreeDepth);
-
     private static native byte[] getPublicUUID(long db) throws LiteCoreException;
 
     private static native byte[] getPrivateUUID(long db) throws LiteCoreException;
-
-    // - Compaction
-
-    private static native void compact(long db) throws LiteCoreException;
 
     // - Transactions
 

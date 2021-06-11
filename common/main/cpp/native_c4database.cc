@@ -61,8 +61,6 @@ Java_com_couchbase_lite_internal_core_C4Database_open(
         return 0;
     }
 
-    c4db_startHousekeeping(db);
-
     return (jlong) db;
 }
 
@@ -218,30 +216,6 @@ Java_com_couchbase_lite_internal_core_C4Database_purgeDoc(
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    getMaxRevTreeDepth
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_getMaxRevTreeDepth(JNIEnv *env, jclass ignore, jlong jdb) {
-    return (jint) c4db_getMaxRevTreeDepth((C4Database *) jdb);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    setMaxRevTreeDepth
- * Signature: (JI)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_setMaxRevTreeDepth(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdb,
-        jint jmaxRevTreeDepth) {
-    c4db_setMaxRevTreeDepth((C4Database *) jdb, (uint32_t) jmaxRevTreeDepth);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    getPublicUUID
  * Signature: (J)[B
  */
@@ -268,18 +242,6 @@ Java_com_couchbase_lite_internal_core_C4Database_getPrivateUUID(JNIEnv *env, jcl
         throwError(env, error);
     C4Slice s = {&uuid, sizeof(uuid)};
     return toJByteArray(env, s);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    compact
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_compact(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4Error error;
-    if (!c4db_compact((C4Database *) jdb, &error))
-        throwError(env, error);
 }
 
 /*

@@ -234,12 +234,12 @@ static void socket_dispose(C4Socket *socket) {
         C4Warn("socket_dispose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    if (socket->nativeHandle != nullptr) {
+    if (c4Socket_getNativeHandle(socket) != nullptr) {
         jobject handle = nullptr;
         int i = 0;
         for (; i < nativeHandles.size(); i++) {
             jobject h = nativeHandles[i];
-            if (h == socket->nativeHandle) {
+            if (h == c4Socket_getNativeHandle(socket)) {
                 handle = h;
                 break;
             }
@@ -257,7 +257,7 @@ static void socket_dispose(C4Socket *socket) {
     }
 }
 
-static const C4SocketFactory kSocketFactory {
+static const C4SocketFactory kSocketFactory{
         kC4NoFraming,               // framing
         nullptr,                    // context
         &socket_open,               // open

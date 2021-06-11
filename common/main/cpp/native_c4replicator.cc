@@ -265,12 +265,13 @@ static void documentEndedCallback(C4Replicator *repl,
     }
 }
 
-static jboolean replicationFilter(C4String docID,
-                                  C4String revID,
-                                  C4RevisionFlags flags,
-                                  FLDict dict,
-                                  bool isPush,
-                                  void *ctx) {
+static jboolean replicationFilter(
+        C4String docID,
+        C4String revID,
+        C4RevisionFlags flags,
+        FLDict dict,
+        bool isPush,
+        void *ctx) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     bool res = false;
@@ -304,33 +305,47 @@ static jboolean replicationFilter(C4String docID,
     return (jboolean) res;
 }
 
-/*
- Callback that can choose to reject an incoming pulled revision by returning false.
-        (Note: In the case of an incoming revision, no flags other than 'deletion' and
-        'hasAttachments' will be set.)
+/**
+ * Callback that can choose to reject an incoming pulled revision by returning false.
+ * (Note: In the case of an incoming revision, no flags other than 'deletion' and
+ * 'hasAttachments' will be set.)
  *
+ * @param validationFunction
  * @param docID
  * @param revID
  * @param flags
  * @param dict
  * @param ctx
  */
-static bool validationFunction(C4String docID, C4String revID, C4RevisionFlags flags, FLDict dict, void *ctx) {
+static bool validationFunction(
+        C4String collectionName,
+        C4String docID,
+        C4String revID,
+        C4RevisionFlags flags,
+        FLDict dict,
+        void *ctx) {
     return (bool) replicationFilter(docID, revID, flags, dict, false, ctx);
 }
 
-/*
- Callback that can stop a local revision from being pushed by returning false.
-        (Note: In the case of an incoming revision, no flags other than 'deletion' and
-        'hasAttachments' will be set.)
+/**
+ * Callback that can stop a local revision from being pushed by returning false.
+ * (Note: In the case of an incoming revision, no flags other than 'deletion' and
+ * 'hasAttachments' will be set.)
  *
+ * @param validationFunction
  * @param docID
  * @param revID
  * @param flags
  * @param dict
  * @param ctx
  */
-static bool pushFilterFunction(C4String docID, C4String revID, C4RevisionFlags flags, FLDict dict, void *ctx) {
+static bool pushFilterFunction(
+        C4String collectionName,
+        C4String docID,
+        C4String revID,
+        C4RevisionFlags flags,
+        FLDict dict,
+        void *ctx) {
     return (bool) replicationFilter(docID, revID, flags, dict, true, ctx);
 }
 

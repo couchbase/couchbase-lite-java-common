@@ -1223,8 +1223,8 @@ public class DatabaseTest extends BaseDbTest {
         assertNull(baseTestDb.getDocument(doc1a.getId()));
 
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> baseTestDb.delete(doc1a));
+        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> baseTestDb.delete(doc1b));
 
-        baseTestDb.delete(doc1b);
         assertEquals(0, baseTestDb.getCount());
         assertNull(baseTestDb.getDocument(doc1b.getId()));
     }

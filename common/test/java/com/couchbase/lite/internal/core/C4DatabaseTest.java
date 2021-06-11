@@ -60,28 +60,6 @@ public class C4DatabaseTest extends C4BaseTest {
             assertEquals(C4Constants.LiteCoreError.WRONG_FORMAT, e.code);
             assertTrue(e.getMessage().startsWith("Parent directory does not exist"));
         }
-
-        try {
-            c4Database.get("a", true);
-            fail();
-        }
-        catch (LiteCoreException e) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, e.code);
-            assertEquals("not found", e.getMessage());
-        }
-
-        try {
-            c4Database.get(null, true);
-            fail();
-        }
-        catch (LiteCoreException e) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, e.code);
-            assertEquals("not found", e.getMessage());
-        }
-
-        // NOTE: c4error_getMessage() is not supported by Java
     }
 
     // - "Database Info"

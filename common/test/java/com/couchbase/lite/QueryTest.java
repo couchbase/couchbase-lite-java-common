@@ -1055,18 +1055,20 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testMathFunctions() throws CouchbaseLiteException {
-        double num = 0.6;
+        final String key = "number";
+        final double num = 0.6;
 
         MutableDocument doc = new MutableDocument("doc1");
-        doc.setValue("number", num);
+        doc.setValue(key, num);
         saveDocInBaseTestDb(doc);
 
         final Double[] expectedValues = {
             Math.abs(num),
             Math.acos(num),
             Math.asin(num),
+
             Math.atan(num),
-            // !!! BROKEN: Math.atan2(num, 90.0), // NOTE: Math.atan2(double y, double x);
+            Math.atan2(num, 90.0),
             Math.ceil(num),
             Math.cos(num),
             num * 180.0 / Math.PI,
@@ -1086,44 +1088,39 @@ public class QueryTest extends BaseQueryTest {
             0.6
         };
 
-        Expression p = Expression.property("number");
+        Expression propNumber = Expression.property(key);
         List<Expression> functions = Arrays.asList(
-            Function.abs(p),
-            Function.acos(p),
-            Function.asin(p),
-            Function.atan(p),
-            // !!! BROKEN: Function.atan2(Expression.doubleValue(90.0), Expression.doubleValue(num)),
-            Function.ceil(p),
-            Function.cos(p),
-            Function.degrees(p),
-            Function.exp(p),
-            Function.floor(p),
-            Function.ln(p),
-            Function.log(p),
-            Function.power(p, Expression.intValue(2)),
-            Function.radians(p),
-            Function.round(p),
-            Function.round(p, Expression.intValue(1)),
-            Function.sign(p),
-            Function.sin(p),
-            Function.sqrt(p),
-            Function.tan(p),
-            Function.trunc(p),
-            Function.trunc(p, Expression.intValue(1))
+        Function.abs(propNumber),
+            Function.acos(propNumber),
+            Function.asin(propNumber),
+            Function.atan(propNumber),
+            Function.atan2(Expression.doubleValue(num), Expression.doubleValue(90.0)),
+            Function.ceil(propNumber),
+            Function.cos(propNumber),
+            Function.degrees(propNumber),
+            Function.exp(propNumber),
+            Function.floor(propNumber),
+            Function.ln(propNumber),
+            Function.log(propNumber),
+            Function.power(propNumber, Expression.intValue(2)),
+            Function.radians(propNumber),
+            Function.round(propNumber),
+            Function.round(propNumber, Expression.intValue(1)),
+            Function.sign(propNumber),
+            Function.sin(propNumber),
+            Function.sqrt(propNumber),
+            Function.tan(propNumber),
+            Function.trunc(propNumber),
+            Function.trunc(propNumber, Expression.intValue(1))
         );
         final AtomicInteger index = new AtomicInteger(0);
         for (Expression f: functions) {
-            Query query = QueryBuilder
-                .select(SelectResult.expression(f))
-                .from(DataSource.database(baseTestDb));
+            final int i = index.getAndIncrement();
+            int rows = verifyQuery(
+                QueryBuilder.select(SelectResult.expression(f)).from(DataSource.database(baseTestDb)),
+                (n, result) -> { assertEquals(expectedValues[i], result.getDouble(0), 0.0001); });
 
-            int numRows = verifyQuery(query, (n, result) -> {
-                double expected = expectedValues[index.intValue()];
-                assertEquals(expected, result.getDouble(0), 0.0001);
-            });
-            assertEquals(1, numRows);
-
-            index.incrementAndGet();
+            assertEquals(1, rows);
         }
     }
 
