@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -99,6 +100,11 @@ public abstract class BaseTest extends PlatformBaseTest {
             "<<<<<<<< Test completed(%s): %s",
             formatInterval(System.currentTimeMillis() - startTime),
             testName);
+    }
+
+    protected final void skipTestWhen(@NonNull String tag) {
+        final Exclusion exclusion = getExclusions(tag);
+        if (exclusion != null) { Assume.assumeFalse(exclusion.msg, exclusion.test.get()); }
     }
 
     protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }

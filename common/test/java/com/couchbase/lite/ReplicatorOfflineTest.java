@@ -23,7 +23,6 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
 public class ReplicatorOfflineTest extends BaseReplicatorTest {
@@ -31,9 +30,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
         // this test crashes the test suite on Android <21
-        if (handlePlatformSpecially("android<21")) {
-            fail("Websockets not supported on Android v < 21");
-        }
+        skipTestWhen("android<21");
 
         Endpoint target = getRemoteTargetEndpoint();
         ReplicatorConfiguration config = makeConfig(baseTestDb, target, ReplicatorType.PULL, true);
@@ -59,7 +56,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testStartSingleShotReplicatorInOffline() throws URISyntaxException, InterruptedException {
         // this test crashes the test suite on Android <21
-        if (handlePlatformSpecially("android<21")) { fail("Websockets not supported on Android v < 21"); }
+        skipTestWhen("android<21");
 
         Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false));
         final CountDownLatch stopped = new CountDownLatch(1);

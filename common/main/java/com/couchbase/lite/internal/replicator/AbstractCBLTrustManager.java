@@ -75,15 +75,18 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
 
         notifyListener(serverCerts);
 
-        if (useCBLTrustManagement()) { cBLServerTrustCheck(serverCerts, authType); }
-        else {
-            if (CouchbaseLiteInternal.debugging()) {
-                Log.d(LogDomain.NETWORK, "Default trust check: %d, %s", (chain == null) ? 0 : chain.length, authType);
-            }
-
-            getDefaultTrustManager().checkServerTrusted(chain, authType);
+        if (useCBLTrustManagement()) {
+            cBLServerTrustCheck(serverCerts, authType);
+            return;
         }
+
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LogDomain.NETWORK, "Default trust check: %d, %s", (chain == null) ? 0 : chain.length, authType);
+        }
+
+        getDefaultTrustManager().checkServerTrusted(chain, authType);
     }
+
 
     // Check chain and authType precondition and throws IllegalArgumentException according to
     // https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/X509TrustManager.html:

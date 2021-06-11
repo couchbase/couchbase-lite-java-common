@@ -37,6 +37,7 @@ import org.json.JSONException;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.SlowTest;
 
@@ -2754,6 +2755,7 @@ public class QueryTest extends BaseQueryTest {
         assertThrows(IllegalArgumentException.class, () -> Function.upper(null));
     }
 
+    @FlakyTest(log = {"Java: 21/06/11"})
     @Test
     public void testStringToMillis() throws CouchbaseLiteException {
         createDateDocs();
@@ -2819,6 +2821,7 @@ public class QueryTest extends BaseQueryTest {
         });
     }
 
+    @FlakyTest(log = {"Java: 21/06/11"})
     @Test
     public void testStringToUTC() throws CouchbaseLiteException, ParseException {
         createDateDocs();

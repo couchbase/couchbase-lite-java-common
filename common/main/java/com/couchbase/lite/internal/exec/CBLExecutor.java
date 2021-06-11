@@ -43,17 +43,17 @@ public class CBLExecutor extends ThreadPoolExecutor {
 
     @VisibleForTesting
     public CBLExecutor(@NonNull String name, int min, int max, @NonNull BlockingQueue<Runnable> workQueue) {
-        super(min, max,                  // pool varies between two and 6
+        super(min, max,
             30, TimeUnit.SECONDS,        // unused threads die after 30 sec
             workQueue,
             new ThreadFactory() {        // thread factory that gives our threads nice recognizable names
                 private final String threadName = name + " #";
-                private final AtomicInteger threadId = new AtomicInteger(1);
+                private final AtomicInteger threadId = new AtomicInteger(0);
 
                 public Thread newThread(@NonNull Runnable r) {
-                    final Thread thread = new Thread(r, threadName + threadId.getAndIncrement());
+                    final Thread thread = new Thread(r, threadName + threadId.incrementAndGet());
 
-                    // this, actually, should never happen...
+                    // InstrumentedTask should prevent this from ever happening
                     thread.setUncaughtExceptionHandler((t, e) ->
                         Log.w(LogDomain.DATABASE, "Uncaught exception on thread" + thread.getName(), e));
 

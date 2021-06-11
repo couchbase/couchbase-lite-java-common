@@ -23,7 +23,6 @@ using namespace litecore;
 using namespace litecore::jni;
 
 
-
 #ifdef COUCHBASE_ENTERPRISE
 
 #include <c4PredictiveQuery.h>
@@ -31,16 +30,16 @@ using namespace litecore::jni;
 static jclass cls_C4PrediciveModel;
 static jmethodID m_prediction;
 
-static C4SliceResult prediction(void* context, FLDict input, C4Database* c4db, C4Error* error) {
+static C4SliceResult prediction(void *context, FLDict input, C4Database *c4db, C4Error *error) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_EDETACHED)
         attachCurrentThread(&env);
 
-    auto model = (jobject)context;
-    jlong result = env->CallLongMethod(model, m_prediction, (jlong)input, (jlong)c4db);
+    auto model = (jobject) context;
+    jlong result = env->CallLongMethod(model, m_prediction, (jlong) input, (jlong) c4db);
 
-    auto resultSlice = *(C4SliceResult*)result;
+    auto resultSlice = *(C4SliceResult *) result;
     ::free(reinterpret_cast<void *>(result));
 
     if (getEnvStat == JNI_EDETACHED)
@@ -49,13 +48,13 @@ static C4SliceResult prediction(void* context, FLDict input, C4Database* c4db, C
     return resultSlice;
 }
 
-static void unregistered(void* context) {
-    deleteGlobalRef((jobject)context);
+static void unregistered(void *context) {
+    deleteGlobalRef((jobject) context);
 }
 
 #endif
 
-
+extern "C" {
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Prediction_registerModel(
         JNIEnv *env,
@@ -74,7 +73,7 @@ Java_com_couchbase_lite_internal_core_C4Prediction_registerModel(
     C4PredictiveModel predModel = {
             gModel,           // .context
             &prediction,      // .prediction
-            &unregistered };  // .unregistered
+            &unregistered};   // .unregistered
 
     c4pred_registerModel(name.c_str(), predModel);
 #endif
@@ -86,9 +85,10 @@ Java_com_couchbase_lite_internal_core_C4Prediction_registerModel(
  * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Prediction_unregisterModel (JNIEnv *env, jclass ignore, jstring jname) {
+Java_com_couchbase_lite_internal_core_C4Prediction_unregisterModel(JNIEnv *env, jclass ignore, jstring jname) {
 #ifdef COUCHBASE_ENTERPRISE
     jstringSlice name(env, jname);
     c4pred_unregisterModel(name.c_str());
 #endif
+}
 }

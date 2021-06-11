@@ -24,8 +24,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
-import javax.net.ssl.X509TrustManager;
-
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
@@ -33,8 +31,6 @@ import com.couchbase.lite.internal.utils.Fn;
 
 
 public final class CBLTrustManager extends AbstractCBLTrustManager {
-    private static final X509Certificate[] CAST = new X509Certificate[0];
-
     public CBLTrustManager(
         @Nullable byte[] pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
@@ -53,6 +49,7 @@ public final class CBLTrustManager extends AbstractCBLTrustManager {
         @Nullable String host)
         throws CertificateException {
         final List<X509Certificate> serverCerts = asList(chain);
+
         notifyListener(serverCerts);
 
         if (useCBLTrustManagement()) {
@@ -64,12 +61,6 @@ public final class CBLTrustManager extends AbstractCBLTrustManager {
             Log.d(LogDomain.NETWORK, "Extended trust check: %d, %s, %s", serverCerts.size(), authType, host);
         }
 
-        final X509TrustManager defaultMgr = getDefaultTrustManager();
-        final X509TrustManagerExtensions trustManagerExtensions = new X509TrustManagerExtensions(defaultMgr);
-
-        final List<X509Certificate> validCerts = trustManagerExtensions.checkServerTrusted(chain, authType, host);
-        defaultMgr.checkServerTrusted(validCerts.toArray(CAST), authType);
-
-        return validCerts;
+        return new X509TrustManagerExtensions(getDefaultTrustManager()).checkServerTrusted(chain, authType, host);
     }
 }

@@ -32,9 +32,7 @@ class ChangeNotifier<T> {
     ChangeNotifier() { listenerTokens = new HashSet<>(); }
 
     @NonNull
-    ChangeListenerToken<T> addChangeListener(
-        @Nullable Executor executor,
-        @NonNull ChangeListener<T> listener) {
+    ChangeListenerToken<T> addChangeListener(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
         Preconditions.assertNotNull(listener, "listener");
 
         synchronized (lock) {

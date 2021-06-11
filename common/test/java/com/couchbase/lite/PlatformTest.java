@@ -16,27 +16,39 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 /**
  * Contains methods required for the tests to run on both Android and Java platforms.
  */
 public interface PlatformTest {
+    class Exclusion {
+        final String msg;
+        final Fn.Provider<Boolean> test;
+
+        Exclusion(@NonNull String msg, Fn.Provider<Boolean> test) {
+            this.msg = msg;
+            this.test = test;
+        }
+    }
 
     /* initialize the platform */
     void setupPlatform();
 
-    AbstractExecutionService getExecutionService(ThreadPoolExecutor executor);
-
     /* Reload the cross-platform error messages. */
     void reloadStandardErrorMessages();
 
-    /* Terminate the test with prejudice, on this platform */
-    boolean handlePlatformSpecially(String tag);
+    /* Skip the test on some platforms */
+    Exclusion getExclusions(@NonNull String tag);
 
-    /* Scheduled to execute a task asynchronously. */
+    AbstractExecutionService getExecutionService(ThreadPoolExecutor executor);
+
+    /* Schedule a task to be executed asynchronously. */
     void executeAsync(long delayMs, Runnable task);
 }

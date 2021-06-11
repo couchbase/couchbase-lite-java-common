@@ -47,8 +47,8 @@ class InstrumentedTask implements Runnable {
 
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public void run() {
+        startedAt = System.currentTimeMillis();
         try {
-            startedAt = System.currentTimeMillis();
             task.run();
             finishedAt = System.currentTimeMillis();
         }

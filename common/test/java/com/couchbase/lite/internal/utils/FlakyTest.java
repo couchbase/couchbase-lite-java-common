@@ -26,11 +26,11 @@ import java.lang.annotation.Target;
 public @interface FlakyTest {
 
     /**
-     * Optional description.
+     * Failure log.
      *
      * @return String
      */
-    String desc() default "";
+    String[] log() default "";
 
     /**
      * Optional id for associated bug.

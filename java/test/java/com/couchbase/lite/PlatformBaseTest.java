@@ -15,11 +15,10 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -28,7 +27,6 @@ import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.internal.utils.Fn;
 
 
 /**
@@ -44,17 +42,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
-    private static final Map<String, Fn.Provider<Boolean>> PLATFORM_DEPENDENT_TESTS;
-
-    static {
-        final Map<String, Fn.Provider<Boolean>> m = new HashMap<>();
-        m.put("windows", () -> {
-            final String os = System.getProperty("os.name");
-            return (os != null) && os.toLowerCase().contains("win");
-        });
-        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
-    }
-
     private static LogFileConfiguration logConfig;
 
     static { CouchbaseLite.init(true); }
@@ -62,7 +49,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     // set up the file logger...
     @Override
-    public void setupPlatform() {
+    public final void setupPlatform() {
         if (logConfig == null) {
             final String logDirPath;
             try {
@@ -88,21 +75,18 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
-    public AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
+    public final void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
+
+    @Override
+    public final Exclusion getExclusions(@NonNull String tag) { return null; }
+
+    @Override
+    public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
         return new JavaExecutionService(executor);
     }
 
     @Override
-    public void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
-
-    @Override
-    public final boolean handlePlatformSpecially(String tag) {
-        final Fn.Provider<Boolean> test = PLATFORM_DEPENDENT_TESTS.get(tag);
-        return (test != null) && test.get();
-    }
-
-    @Override
-    public void executeAsync(long delayMs, Runnable task) {
+    public final void executeAsync(long delayMs, Runnable task) {
         ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
         executionService.postDelayedOnExecutor(delayMs, executionService.getDefaultExecutor(), task);
     }
