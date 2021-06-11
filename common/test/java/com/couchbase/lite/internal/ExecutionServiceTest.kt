@@ -326,7 +326,7 @@ class ExecutionServiceTest : BaseTest() {
         val latch = CountDownLatch(1)
         try {
             // queue len > 2 so that std deviation calculation kicks in.
-            val exec = getExecutionService(CBLExecutor("test worker #", 1, 1, LinkedBlockingQueue<Runnable>(3)))
+            val exec = getExecutionService(CBLExecutor("test worker #", 1, 1, LinkedBlockingQueue(3)))
                 .concurrentExecutor
             exec.execute { latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS) } // this one blocks the thread
             exec.execute { }                                                // this one stays on the queue
