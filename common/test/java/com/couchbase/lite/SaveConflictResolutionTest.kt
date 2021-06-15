@@ -299,8 +299,7 @@ class SaveConflictResolutionTests : BaseDbTest() {
                 assertEquals(2L, cur.generation())
                 assertEquals(2L, old?.generation())
                 doc1c.setBoolean("second update", true)
-                saveDocInBaseTestDb(doc1c)
-                assertEquals(3L, baseTestDb.getNonNullDoc(docID).generation())
+                assertEquals(3L, saveDocInBaseTestDb(doc1c).generation())
             }
             val data = old?.toMap()?.toMutableMap() ?: mutableMapOf()
             for (key in cur.keys) {

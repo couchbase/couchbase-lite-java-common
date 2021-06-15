@@ -30,8 +30,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
         MutableDocument doc = new MutableDocument("doc" + i);
         doc.setValue("number1", i);
         doc.setValue("number2", num - i);
-        saveDocInBaseTestDb(doc);
-        return doc.getId();
+        return saveDocInBaseTestDb(doc).getId();
     }
 
     protected final List<Map<String, Object>> loadNumberedDocs(final int num) throws CouchbaseLiteException {

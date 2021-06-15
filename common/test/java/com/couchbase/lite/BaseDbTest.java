@@ -74,10 +74,9 @@ public abstract class BaseDbTest extends BaseTest {
 
         MutableDocument doc = new MutableDocument(docID);
         doc.setValue("key", 1);
-        saveDocInBaseTestDb(doc);
-        assertEquals(n + 1, baseTestDb.getCount());
+        Document savedDoc = saveDocInBaseTestDb(doc);
 
-        Document savedDoc = baseTestDb.getDocument(docID);
+        assertEquals(n + 1, baseTestDb.getCount());
         assertEquals(1, savedDoc.getSequence());
 
         return savedDoc;

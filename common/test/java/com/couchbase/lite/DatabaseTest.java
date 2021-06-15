@@ -222,8 +222,7 @@ public class DatabaseTest extends BaseDbTest {
     public void testSaveSameDocTwice() throws CouchbaseLiteException {
         String docID = "doc1";
         MutableDocument doc = createSingleDocInBaseTestDb(docID).toMutable();
-        saveDocInBaseTestDb(doc);
-        assertEquals(docID, doc.getId());
+        assertEquals(docID, saveDocInBaseTestDb(doc).getId());
         assertEquals(1, baseTestDb.getCount());
     }
 
@@ -1444,8 +1443,7 @@ public class DatabaseTest extends BaseDbTest {
         for (int i = 0; i < n; i++) {
             MutableDocument doc = new MutableDocument(String.format(Locale.US, "doc_%03d", i));
             doc.setValue("key", i);
-            Document savedDoc = saveDocInBaseTestDb(doc);
-            docs.add(savedDoc.getId());
+            docs.add(saveDocInBaseTestDb(doc).getId());
         }
         assertEquals(n, baseTestDb.getCount());
         return docs;

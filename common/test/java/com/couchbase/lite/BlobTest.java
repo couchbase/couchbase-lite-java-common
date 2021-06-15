@@ -154,9 +154,8 @@ public class BlobTest extends BaseDbTest {
         Blob blob = new Blob("image/png", blobContent);
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setBlob("blob", blob);
-        saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInBaseTestDb(mDoc);
 
-        Document doc = baseTestDb.getDocument("doc1");
         Blob savedBlob = doc.getBlob("blob");
         assertNotNull(savedBlob);
 
@@ -418,9 +417,8 @@ public class BlobTest extends BaseDbTest {
     public void testBlobInDocument() throws CouchbaseLiteException, JSONException {
         MutableDocument mDoc = new MutableDocument();
         mDoc.setBlob("blob", makeBlob());
-        saveDocInBaseTestDb(mDoc);
 
-        Blob dbBlob = baseTestDb.getDocument(mDoc.getId()).getBlob("blob");
+        Blob dbBlob = saveDocInBaseTestDb(mDoc).getBlob("blob");
 
         verifyBlob(dbBlob);
 

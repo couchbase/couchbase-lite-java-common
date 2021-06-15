@@ -365,8 +365,7 @@ public class DictionaryTest extends BaseDbTest {
 
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("dict", dict);
-        doc = saveDocInBaseTestDb(doc).toMutable();
-        dict = doc.getDictionary("dict");
+        dict = saveDocInBaseTestDb(doc).toMutable().getDictionary("dict");
 
         itr = dict.iterator();
         count = 0;
@@ -664,8 +663,7 @@ public class DictionaryTest extends BaseDbTest {
         MutableDocument mDoc = new MutableDocument("test");
         mDoc.setDictionary("dict", mDict);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
-        Dictionary dict = doc.getDictionary("dict");
+        Dictionary dict = saveDocInBaseTestDb(mDoc).getDictionary("dict");
 
         assertNotNull(dict);
         assertNull(dict.getDictionary("not-exists"));
@@ -692,8 +690,7 @@ public class DictionaryTest extends BaseDbTest {
         MutableDocument mDoc = new MutableDocument("test");
         mDoc.setValue("array", mArray);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
-        Array array = doc.getArray("array");
+        Array array = saveDocInBaseTestDb(mDoc).getArray("array");
 
         assertNotNull(array);
         assertNull(array.getArray(0));
@@ -722,9 +719,8 @@ public class DictionaryTest extends BaseDbTest {
 
         mDoc = doc.toMutable();
         mDoc.setValue("dict2", dict);
-        doc = saveDocInBaseTestDb(mDoc);
 
-        dict = doc.getDictionary("dict2");
+        dict = saveDocInBaseTestDb(mDoc).getDictionary("dict2");
         assertEquals(1, dict.count());
         assertEquals("world", dict.getString("hello"));
     }
@@ -743,9 +739,8 @@ public class DictionaryTest extends BaseDbTest {
 
         mDoc = doc.toMutable();
         mDoc.setValue("array2", array);
-        doc = saveDocInBaseTestDb(mDoc);
 
-        array = doc.getArray("array2");
+        array = saveDocInBaseTestDb(mDoc).getArray("array2");
         assertEquals(2, array.count());
         assertEquals("hello", array.getString(0));
         assertEquals("world", array.getString(1));
@@ -758,8 +753,7 @@ public class DictionaryTest extends BaseDbTest {
     @Test
     public void testDictToJSON() throws CouchbaseLiteException, JSONException {
         MutableDocument mDoc = new MutableDocument().setDictionary("dict", makeDict());
-        saveDocInBaseTestDb(mDoc);
-        verifyDict(new JSONObject(baseTestDb.getDocument(mDoc.getId()).getDictionary("dict").toJSON()));
+        verifyDict(new JSONObject(saveDocInBaseTestDb(mDoc).getDictionary("dict").toJSON()));
     }
 
     // JSON 3.6.?
@@ -771,8 +765,7 @@ public class DictionaryTest extends BaseDbTest {
     public void testDictFromJSON() throws JSONException, IOException, CouchbaseLiteException {
         MutableDictionary mDict = new MutableDictionary(readJSONResource("dictionary.json"));
         MutableDocument mDoc = new MutableDocument().setDictionary("dict", mDict);
-        saveDocInBaseTestDb(mDoc);
-        Dictionary dbDict = baseTestDb.getDocument(mDoc.getId()).getDictionary("dict");
+        Dictionary dbDict = saveDocInBaseTestDb(mDoc).getDictionary("dict");
         verifyDict(dbDict);
         verifyDict(new JSONObject(dbDict.toJSON()));
     }

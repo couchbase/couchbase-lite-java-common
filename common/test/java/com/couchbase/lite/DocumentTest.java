@@ -58,8 +58,7 @@ public class DocumentTest extends BaseDbTest {
         assertTrue(doc1a.getId().length() > 0);
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
-        saveDocInBaseTestDb(doc1a);
-        Document doc1b = baseTestDb.getDocument(doc1a.getId());
+        Document doc1b = saveDocInBaseTestDb(doc1a);
         assertNotNull(doc1b);
         assertNotSame(doc1a, doc1b);
         assertTrue(doc1b.exists());
@@ -73,8 +72,7 @@ public class DocumentTest extends BaseDbTest {
         assertEquals("doc1", doc1a.getId());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
-        saveDocInBaseTestDb(doc1a);
-        Document doc1b = baseTestDb.getDocument("doc1");
+        Document doc1b = saveDocInBaseTestDb(doc1a);
         assertNotNull(doc1b);
         assertNotSame(doc1a, doc1b);
         assertTrue(doc1b.exists());
@@ -95,8 +93,7 @@ public class DocumentTest extends BaseDbTest {
         assertTrue(doc1a.getId().length() > 0);
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
-        saveDocInBaseTestDb(doc1a);
-        Document doc1b = baseTestDb.getDocument(doc1a.getId());
+        Document doc1b = saveDocInBaseTestDb(doc1a);
         assertNotNull(doc1b);
         assertNotSame(doc1a, doc1b);
         assertTrue(doc1b.exists());
@@ -122,8 +119,7 @@ public class DocumentTest extends BaseDbTest {
         assertTrue(doc1a.getId().length() > 0);
         assertEquals(dict, doc1a.toMap());
 
-        saveDocInBaseTestDb(doc1a);
-        Document doc1b = baseTestDb.getDocument(doc1a.getId());
+        Document doc1b = saveDocInBaseTestDb(doc1a);
         assertNotNull(doc1b);
         assertNotSame(doc1a, doc1b);
         assertTrue(doc1b.exists());
@@ -150,8 +146,7 @@ public class DocumentTest extends BaseDbTest {
         assertEquals("doc1", doc1a.getId());
         assertEquals(dict, doc1a.toMap());
 
-        saveDocInBaseTestDb(doc1a);
-        Document doc1b = baseTestDb.getDocument("doc1");
+        Document doc1b = saveDocInBaseTestDb(doc1a);
         assertNotNull(doc1b);
         assertNotSame(doc1a, doc1b);
         assertTrue(doc1b.exists());
@@ -1126,7 +1121,6 @@ public class DocumentTest extends BaseDbTest {
 
         // Save:
         Document savedDoc = saveDocInBaseTestDb(doc);
-        //doc = db.getDocument(doc.getId());
 
         nuDict.put("zip", "94302");
         Map<String, Object> expected = new HashMap<>();

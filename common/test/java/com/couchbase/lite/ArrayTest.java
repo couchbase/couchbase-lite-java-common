@@ -1894,8 +1894,7 @@ public class ArrayTest extends BaseDbTest {
     @Test
     public void testArrayToJSON() throws CouchbaseLiteException, JSONException {
         MutableDocument mDoc = new MutableDocument().setArray("array", makeArray());
-        saveDocInBaseTestDb(mDoc);
-        verifyArray(new JSONArray(baseTestDb.getDocument(mDoc.getId()).getArray("array").toJSON()));
+        verifyArray(new JSONArray(saveDocInBaseTestDb(mDoc).getArray("array").toJSON()));
     }
 
     // JSON 3.7.?
@@ -1907,8 +1906,7 @@ public class ArrayTest extends BaseDbTest {
     public void testArrayFromJSON() throws JSONException, IOException, CouchbaseLiteException {
         MutableArray mArray = new MutableArray(readJSONResource("array.json"));
         MutableDocument mDoc = new MutableDocument().setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc);
-        Array dbArray = baseTestDb.getDocument(mDoc.getId()).getArray("array");
+        Array dbArray = saveDocInBaseTestDb(mDoc).getArray("array");
         verifyArray(dbArray);
         verifyArray(new JSONArray(dbArray.toJSON()));
     }
