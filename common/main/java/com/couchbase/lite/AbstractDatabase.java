@@ -52,6 +52,7 @@ import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.SharedKeys;
+import com.couchbase.lite.internal.exec.ClientTask;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -1272,14 +1273,17 @@ abstract class AbstractDatabase extends BaseDatabase {
                 resolver);
         }
 
-        final Document doc;
-        try { doc = resolver.resolve(conflict); }
-        catch (Exception err) {
+        final ClientTask<Document> task = new ClientTask<>(() -> resolver.resolve(conflict));
+        task.execute();
+
+        final Exception err = task.getFailure();
+        if (err != null) {
             final String msg = String.format(ERROR_RESOLVER_FAILED, docID, err.getLocalizedMessage());
             Log.w(DOMAIN, msg, err);
             throw new CouchbaseLiteException(msg, err, CBLError.Domain.CBLITE, CBLError.Code.UNEXPECTED_ERROR);
         }
 
+        final Document doc = task.getResult();
         if (doc == null) { return null; }
 
         final Database target = doc.getDatabase();

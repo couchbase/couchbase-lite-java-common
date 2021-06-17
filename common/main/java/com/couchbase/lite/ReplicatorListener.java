@@ -41,7 +41,6 @@ final class ReplicatorListener implements C4ReplicatorListener {
         @Nullable Object repl) {
         Log.i(DOMAIN, "ReplicatorListener.statusChanged, repl: %s, status: %s", repl, status);
 
-
         final AbstractReplicator replicator = verifyReplicator(c4Repl, repl);
         if (replicator == null) { return; }
 

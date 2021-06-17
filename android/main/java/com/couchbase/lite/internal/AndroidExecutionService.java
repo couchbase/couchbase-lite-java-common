@@ -102,7 +102,10 @@ public final class AndroidExecutionService extends AbstractExecutionService {
                 Log.w(LogDomain.DATABASE, "Scheduled on closed executor: " + task + ", " + executor);
             }
             catch (RejectedExecutionException e) {
-                if (!throttled()) { dumpState(executor, "after: " + delayMs, e); }
+                if (!throttled()) {
+                    Log.w(LogDomain.DATABASE, "!!! Execution rejected after delay: " + delayMs, e);
+                    dumpThreads();
+                }
             }
         };
 

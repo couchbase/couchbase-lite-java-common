@@ -16,12 +16,9 @@
 package com.couchbase.lite.internal.exec;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.LogDomain;
@@ -62,19 +59,20 @@ public abstract class AbstractExecutionService implements ExecutionService {
     }
 
     // check `throttled()` before calling.
-    public static void dumpState(@NonNull Executor ex, @NonNull String msg, @Nullable Exception e) {
-        Log.w(LogDomain.DATABASE, "====== Catastrophic failure of executor: " + msg, e);
-
+    public static void dumpThreads() {
         final Map<Thread, StackTraceElement[]> stackTraces = Thread.getAllStackTraces();
         if (stackTraces.isEmpty()) { return; }
 
+        final Thread curThread = Thread.currentThread();
+
         Log.w(LogDomain.DATABASE, "==== Threads: " + stackTraces.size());
         for (Map.Entry<Thread, StackTraceElement[]> stack: stackTraces.entrySet()) {
-            Log.w(LogDomain.DATABASE, "== Thread: " + stack.getKey());
+            final Thread thread = stack.getKey();
+            Log.w(
+                LogDomain.DATABASE,
+                ((thread.equals(curThread) ? "**" : "==")) + " " + thread + "(" + thread.getState() + ")");
             for (StackTraceElement frame: stack.getValue()) { Log.w(LogDomain.DATABASE, "      at " + frame); }
         }
-
-        if (ex instanceof CBLExecutor) { ((CBLExecutor) ex).dumpState(); }
     }
 
 
@@ -112,6 +110,6 @@ public abstract class AbstractExecutionService implements ExecutionService {
     }
 
     @VisibleForTesting
-    public void dumpState() { concurrentExecutor.dumpState(null, new RejectedExecutionException()); }
+    public void dumpState() { concurrentExecutor.dumpState(null); }
 }
 

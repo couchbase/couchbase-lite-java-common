@@ -18,57 +18,63 @@ package com.couchbase.lite.internal.exec;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
+import java.util.concurrent.atomic.AtomicLong;
 
 
-class InstrumentedTask implements Runnable {
+public class InstrumentedTask implements Runnable {
+    private static final AtomicLong ID = new AtomicLong(0);
+
+
     // Putting a `new Exception()` here is useful but pretty expensive
     @SuppressWarnings("PMD.FinalFieldCouldBeStatic")
-    final Exception origin = null; //new Exception();
+    final Exception origin = null; // new Exception("InstrumentedTask submitted at:");
 
+    private final long createdAt = System.currentTimeMillis();
+    private final long id;
     @NonNull
     private final Runnable task;
 
-    private final long createdAt = System.currentTimeMillis();
-    private long startedAt;
-    private long finishedAt;
-    private long completedAt;
+    private volatile long startedAt;
+    private volatile long finishedAt;
+    private volatile long completedAt;
 
     @Nullable
-    private volatile Runnable onComplete;
+    private final Runnable onComplete;
 
-    InstrumentedTask(@NonNull Runnable task, @Nullable Runnable onComplete) {
+    public InstrumentedTask(@NonNull Runnable task, @Nullable Runnable onComplete) {
         this.task = task;
         this.onComplete = onComplete;
+        this.id = ID.incrementAndGet();
     }
-
-    public void setCompletion(@NonNull Runnable onComplete) { this.onComplete = onComplete; }
 
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public void run() {
-        startedAt = System.currentTimeMillis();
+        synchronized (this) {
+            if (startedAt != 0L) {
+                throw new IllegalStateException("Attempt to execute a task multiple times");
+            }
+            startedAt = System.currentTimeMillis();
+        }
+
         try {
             task.run();
             finishedAt = System.currentTimeMillis();
         }
-        catch (Throwable t) {
-            Log.w(
-                LogDomain.DATABASE,
-                "Uncaught exception on thread " + Thread.currentThread().getName() + " in " + this,
-                t);
-            throw t;
-        }
         finally {
             final Runnable completionTask = onComplete;
             if (completionTask != null) { completionTask.run(); }
+            completedAt = System.currentTimeMillis();
         }
-        completedAt = System.currentTimeMillis();
     }
 
     @NonNull
     @Override
     public String toString() {
-        return "task[" + createdAt + "," + startedAt + "," + finishedAt + "," + completedAt + " @" + task + "]";
+        return "task[#" + id
+            + " @" + createdAt
+            + "(" + startedAt
+            + "<" + finishedAt
+            + "<" + completedAt
+            + "):" + task + "]";
     }
 }

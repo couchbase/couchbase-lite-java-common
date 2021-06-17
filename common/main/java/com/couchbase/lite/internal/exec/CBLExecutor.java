@@ -16,7 +16,6 @@
 package com.couchbase.lite.internal.exec;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
@@ -31,6 +30,9 @@ import com.couchbase.lite.internal.support.Log;
 
 
 public class CBLExecutor extends ThreadPoolExecutor {
+    private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+    private static final int POOL_SIZE = Math.max(4, CPU_COUNT - 1);
+
     private final String name;
 
     private long n;
@@ -39,9 +41,8 @@ public class CBLExecutor extends ThreadPoolExecutor {
     private float qSizeVariance;
     private float m2;
 
-    public CBLExecutor(@NonNull String name) { this(name, 2, 6, new LinkedBlockingQueue<>()); }
+    public CBLExecutor(@NonNull String name) { this(name, POOL_SIZE, POOL_SIZE, new LinkedBlockingQueue<>()); }
 
-    @VisibleForTesting
     public CBLExecutor(@NonNull String name, int min, int max, @NonNull BlockingQueue<Runnable> workQueue) {
         super(min, max,
             30, TimeUnit.SECONDS,        // unused threads die after 30 sec
@@ -53,9 +54,8 @@ public class CBLExecutor extends ThreadPoolExecutor {
                 public Thread newThread(@NonNull Runnable r) {
                     final Thread thread = new Thread(r, threadName + threadId.incrementAndGet());
 
-                    // InstrumentedTask should prevent this from ever happening
                     thread.setUncaughtExceptionHandler((t, e) ->
-                        Log.w(LogDomain.DATABASE, "Uncaught exception on thread" + thread.getName(), e));
+                        Log.e(LogDomain.DATABASE, "Uncaught exception on thread " + thread.getName(), e));
 
                     return thread;
                 }
@@ -69,18 +69,7 @@ public class CBLExecutor extends ThreadPoolExecutor {
     @Override
     public void execute(@NonNull Runnable task) {
         super.execute(task);
-
-        final int qSize = getQueue().size();
-
-        synchronized (name) {
-            if (qSizeMax < qSize) { qSizeMax = qSize; }
-
-            n++;
-            final float delta = ((float) qSize) - qSizeMean;
-            qSizeMean += delta / n;
-            m2 += delta * (((float) qSize) - qSizeMean);
-            if (n > 2) { qSizeVariance = m2 / (n - 1); }
-        }
+        computeQueueStats();
     }
 
     @NonNull
@@ -97,20 +86,40 @@ public class CBLExecutor extends ThreadPoolExecutor {
             stdDev = Math.sqrt(qSizeVariance);
         }
 
-        Log.w(LogDomain.DATABASE, "==== Executor %s: %s, %s, %s", name, isTerminating(), isTerminated(), isShutdown());
+        Log.w(
+            LogDomain.DATABASE,
+            "==== CBL Executor \"%s\" (%s)",
+            name,
+            (isShutdown()) ? "x" : ((isTerminated()) ? "o" : ((isTerminating()) ? "-" : "+")));
 
         Log.w(LogDomain.DATABASE, "== Tasks: %d, %d", getTaskCount(), getCompletedTaskCount());
 
-        Log.w(LogDomain.DATABASE, "== Pool: %d, %d", getPoolSize(), getLargestPoolSize());
+        Log.w(LogDomain.DATABASE, "== Pool: %d, %d, %d", getPoolSize(), getLargestPoolSize(), getMaximumPoolSize());
 
         final ArrayList<Runnable> waiting = new ArrayList<>(getQueue());
-        if (waiting.isEmpty()) { return; }
+        if (waiting.isEmpty()) {
+            Log.w(LogDomain.DATABASE, "== Queue is empty");
+            return;
+        }
 
         Log.w(LogDomain.DATABASE, "== Queue: %d, %d, %.2f, %.4f", waiting.size(), max, mean, stdDev);
         int n = 0;
         for (Runnable r: waiting) {
             final Exception orig = (!(r instanceof InstrumentedTask)) ? null : ((InstrumentedTask) r).origin;
             Log.w(LogDomain.DATABASE, "@" + (n++) + ": " + r, orig);
+        }
+    }
+
+    private void computeQueueStats() {
+        final int qSize = getQueue().size();
+        synchronized (name) {
+            if (qSizeMax < qSize) { qSizeMax = qSize; }
+
+            n++;
+            final float delta = ((float) qSize) - qSizeMean;
+            qSizeMean += delta / n;
+            m2 += delta * (((float) qSize) - qSizeMean);
+            if (n > 2) { qSizeVariance = m2 / (n - 1); }
         }
     }
 }

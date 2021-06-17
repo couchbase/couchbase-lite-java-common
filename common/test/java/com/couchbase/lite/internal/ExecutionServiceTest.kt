@@ -18,16 +18,22 @@ package com.couchbase.lite.internal
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.LogDomain
 import com.couchbase.lite.internal.exec.CBLExecutor
+import com.couchbase.lite.internal.exec.ClientTask
 import com.couchbase.lite.internal.exec.ExecutionService
+import com.couchbase.lite.internal.exec.InstrumentedTask
 import com.couchbase.lite.internal.support.Log
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import java.util.Stack
+import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
@@ -37,7 +43,7 @@ class ExecutionServiceTest : BaseTest() {
 
     @Before
     fun setUpExecutionServiceTest() {
-        cblService = getExecutionService(CBLExecutor("test worker #"))
+        cblService = getExecutionService(CBLExecutor("Test worker"))
     }
 
     // Serial Executor tests
@@ -137,7 +143,6 @@ class ExecutionServiceTest : BaseTest() {
         assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
 
-
     // Concurrent Executor tests
 
     // The concurrent executor can execute out of order.
@@ -180,6 +185,14 @@ class ExecutionServiceTest : BaseTest() {
             assertEquals("ONE", stack.pop())
             assertEquals("TWO", stack.pop())
         }
+    }
+
+    // A stopped concurrent executor throws on further attempts to schedule
+    @Test(expected = RejectedExecutionException::class)
+    fun testStoppedConcurrentExecutorRejects() {
+        val executor = cblService.concurrentExecutor
+        assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
+        executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
     }
 
     // A stopped concurrent executor finishes currently queued tasks.
@@ -228,17 +241,69 @@ class ExecutionServiceTest : BaseTest() {
         assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
 
-    // A stopped concurrent executor throws on further attempts to schedule
+    // The Concurrent Executor throws on fail
     @Test(expected = RejectedExecutionException::class)
-    fun testStoppedConcurrentExecutorRejects() {
-        val executor = cblService.concurrentExecutor
-        assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
-        executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
+    fun testConcurrentExecutroThrowAndDumpOnFail() {
+        val latch = CountDownLatch(1)
+        try {
+            // queue len > 2 so that std deviation calculation kicks in.
+            val exec = getExecutionService(CBLExecutor("Tiny test worker", 1, 1, LinkedBlockingQueue(3)))
+                .concurrentExecutor
+            exec.execute { latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS) } // this one blocks the thread
+            exec.execute { }                                                // this one stays on the queue
+            exec.execute { }                                                // two on the queue
+            exec.execute { }                                                // this one fills the queue
+            exec.execute { }                                                // this one should fail
+        } finally {
+            latch.countDown()
+        }
     }
 
+    // Client Task tests.
 
-    // Implementation tests
-    // These are tests of the platform specific implementations of the ExecutionService
+    @Test
+    fun testClientTaskReturnsValue() {
+        val task = ClientTask<Int>(object : Callable<Int> {
+            override fun call() = 42
+        })
+
+        task.execute(1, TimeUnit.SECONDS)
+        Thread.sleep(5)
+        assertEquals(42, task.result)
+    }
+
+    @Test
+    fun testClientTaskFail() {
+        val err = RuntimeException("bang")
+        val task = ClientTask<Int>(object : Callable<Int> {
+            override fun call(): Int {
+                throw err
+            }
+        })
+
+        task.execute(1, TimeUnit.SECONDS)
+        Thread.sleep(5)
+        assertEquals(err, task.failure)
+    }
+
+    @Test
+    fun testClientTaskTimeout() {
+        val latch = CountDownLatch(1);
+        val task = ClientTask<Int>(object : Callable<Int> {
+            override fun call(): Int {
+                latch.await(10, TimeUnit.SECONDS)
+                return 1
+            }
+        })
+
+        val startTime = System.currentTimeMillis();
+        task.execute(1, TimeUnit.SECONDS)
+        assertTrue(System.currentTimeMillis() - startTime < 2000)
+
+        latch.countDown();
+    }
+
+    // Other tests
 
     // The main executor always uses the same thread.
     @Test
@@ -321,20 +386,31 @@ class ExecutionServiceTest : BaseTest() {
         assertFalse(completed[0])
     }
 
-    @Test(expected = RejectedExecutionException::class)
-    fun testThrowAndDumpOnFail() {
-        val latch = CountDownLatch(1)
-        try {
-            // queue len > 2 so that std deviation calculation kicks in.
-            val exec = getExecutionService(CBLExecutor("test worker #", 1, 1, LinkedBlockingQueue(3)))
-                .concurrentExecutor
-            exec.execute { latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS) } // this one blocks the thread
-            exec.execute { }                                                // this one stays on the queue
-            exec.execute { }                                                // two on the queue
-            exec.execute { }                                                // this one fills the queue
-            exec.execute { }                                                // this one should fail
-        } finally {
-            latch.countDown()
+    @Test(expected = IllegalStateException::class)
+    fun testCantRunInstrumentedTaskTwice() {
+        val barrier = CyclicBarrier(2);
+        val exec = CBLExecutor("simple test worker", 1, 1, LinkedBlockingQueue(3))
+        val task = InstrumentedTask({ }, null)
+        var fail: Exception? = null;
+        val runnable = object : Runnable {
+            override fun run() {
+                try {
+                    task.run();
+                } catch (e: Exception) {
+                    fail = e;
+                } finally {
+                    barrier.await()
+                }
+            }
         }
+        exec.execute(runnable)
+        barrier.await()
+        assertNull(fail)
+
+        barrier.reset()
+        exec.execute(runnable)
+        barrier.await()
+        assertNotNull(fail)
+        throw fail!!
     }
 }

@@ -101,18 +101,16 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     @Override
     public String toString() { return "CBL concurrent executor"; }
 
-    public void dumpState(@Nullable InstrumentedTask current, @Nullable Exception e) {
-        if (AbstractExecutionService.throttled()) { return; }
-
-        AbstractExecutionService.dumpState(executor, toString(), e);
-
-        Log.w(DOMAIN, "==== Executor");
-
-        if (current != null) { Log.w(DOMAIN, "== Rejected task: " + current, current.origin); }
-
+    public void dumpState(@Nullable InstrumentedTask rejected) {
         final int nowRunning;
         synchronized (this) { nowRunning = running; }
-        Log.w(DOMAIN, "== Tasks: " + nowRunning);
+        Log.w(DOMAIN, "==== Concurrent Executor (" + nowRunning + ")");
+
+        if (rejected != null) { Log.w(DOMAIN, "== Rejected task: " + rejected, rejected.origin); }
+
+        if (executor instanceof CBLExecutor) { ((CBLExecutor) executor).dumpState(); }
+
+        AbstractExecutionService.dumpThreads();
     }
 
     void finishTask() {
@@ -132,7 +130,8 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
             running++;
         }
         catch (RuntimeException e) {
-            dumpState(newTask, e);
+            Log.w(LogDomain.DATABASE, "!!! Catastrophic executor failure (Concurrent Executor)", e);
+            if (!AbstractExecutionService.throttled()) { dumpState(newTask); }
             throw e;
         }
     }

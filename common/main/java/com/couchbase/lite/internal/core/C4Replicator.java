@@ -34,6 +34,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
+import com.couchbase.lite.internal.exec.ClientTask;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
@@ -191,7 +192,7 @@ public class C4Replicator extends C4NativePeer {
         }
 
         if (!(ctxt instanceof AbstractReplicator)) {
-            Log.w(LogDomain.DATABASE, "Validation function called with unrecognized context: " + ctxt);
+            Log.w(LogDomain.REPLICATOR, "Validation function called with unrecognized context: " + ctxt);
             return true;
         }
         final AbstractReplicator repl = (AbstractReplicator) ctxt;
@@ -200,7 +201,21 @@ public class C4Replicator extends C4NativePeer {
         if (c4Repl == null) { return true; }
 
         final C4ReplicationFilter filter = (isPush) ? c4Repl.pushFilter : c4Repl.pullFilter;
-        return (filter == null) || filter.validationFunction(docID, revID, flags, dict, isPush, repl);
+
+        if (filter == null) { return true; }
+
+        final ClientTask<Boolean> task
+            = new ClientTask<>(() -> filter.validationFunction(docID, revID, flags, dict, isPush, repl));
+        task.execute();
+
+        final Exception err = task.getFailure();
+        if (err != null) {
+            Log.w(LogDomain.REPLICATOR, "Replication filter failed", err);
+            return false;
+        }
+
+        final Boolean accepted = task.getResult();
+        return (accepted != null) && accepted;
     }
 
     //-------------------------------------------------------------------------

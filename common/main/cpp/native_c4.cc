@@ -258,7 +258,6 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_log(
         jint jlevel,
         jstring jmessage) {
     jstringSlice message(env, jmessage);
-
     const char *domain = env->GetStringUTFChars(jdomain, nullptr);
     C4LogDomain logDomain = c4log_getDomain(domain, true);
     c4slog(logDomain, (C4LogLevel) jlevel, message);

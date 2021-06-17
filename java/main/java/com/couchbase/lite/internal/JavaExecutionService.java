@@ -26,8 +26,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.CBLExecutor;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -84,8 +86,14 @@ public class JavaExecutionService extends AbstractExecutionService {
 
         final Runnable delayedTask = () -> {
             try { executor.execute(task); }
+            catch (CloseableExecutor.ExecutorClosedException e) {
+                Log.w(LogDomain.DATABASE, "Scheduled on closed executor: " + task + ", " + executor);
+            }
             catch (RejectedExecutionException e) {
-                if (!throttled()) { dumpState(executor, "after: " + delayMs, e); }
+                if (!throttled()) {
+                    Log.w(LogDomain.DATABASE, "!!! Execution rejected after delay: " + delayMs, e);
+                    dumpThreads();
+                }
             }
         };
 

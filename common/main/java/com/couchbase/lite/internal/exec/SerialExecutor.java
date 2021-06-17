@@ -75,6 +75,7 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
             if (stopLatch != null) { throw new ExecutorClosedException("Executor has been stopped"); }
 
             pendingTasks.add(new InstrumentedTask(task, this::scheduleNext));
+
             if (pendingTasks.size() == 1) { executeTask(null); }
         }
     }
@@ -110,30 +111,23 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
     @Override
     public String toString() { return "CBL serial executor"; }
 
-    public void dumpState(@Nullable InstrumentedTask prev, @Nullable Exception e) {
-        if (AbstractExecutionService.throttled()) { return; }
-
-        AbstractExecutionService.dumpState(executor, toString(), e);
-
-        Log.w(DOMAIN, "==== Executor");
+    public void dumpState(@Nullable InstrumentedTask prev) {
+        Log.w(DOMAIN, "==== Serial Executor");
 
         if (prev != null) { Log.w(DOMAIN, "== Previous task: " + prev, prev.origin); }
 
         final ArrayList<InstrumentedTask> waiting;
         synchronized (this) { waiting = new ArrayList<>(pendingTasks); }
-
-        if (waiting.isEmpty()) {
-            Log.w(DOMAIN, "== Queue is empty");
-            return;
+        if (waiting.isEmpty()) { Log.w(DOMAIN, "== Queue is empty"); }
+        else {
+            Log.w(DOMAIN, "== Queued tasks (" + waiting.size() + ")");
+            int n = 0;
+            for (InstrumentedTask t: waiting) { Log.w(DOMAIN, "@" + (n++) + ": " + t, t.origin); }
         }
 
-        final InstrumentedTask current = waiting.remove(0);
-        Log.w(DOMAIN, "== Rejected task: " + current, current.origin);
+        if (executor instanceof CBLExecutor) { ((CBLExecutor) executor).dumpState(); }
 
-        if (waiting.isEmpty()) { return; }
-        Log.w(DOMAIN, "== Pending tasks: " + waiting.size());
-        int n = 0;
-        for (InstrumentedTask t: waiting) { Log.w(DOMAIN, "@" + (++n) + ": " + t, t.origin); }
+         AbstractExecutionService.dumpThreads();
     }
 
 
@@ -155,7 +149,8 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
 
         try { executor.execute(nextTask); }
         catch (RuntimeException e) {
-            dumpState(prevTask, e);
+            Log.w(LogDomain.DATABASE, "!!! Catastrophic executor failure (Serial Executor)", e);
+            if (!AbstractExecutionService.throttled()) { dumpState(prevTask); }
             throw e;
         }
     }
