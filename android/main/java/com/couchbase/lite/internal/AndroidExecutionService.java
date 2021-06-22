@@ -15,16 +15,15 @@
 //
 package com.couchbase.lite.internal;
 
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.exec.CBLExecutor;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -63,7 +62,7 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     // Constructor
     //---------------------------------------------
     public AndroidExecutionService() {
-        super((ThreadPoolExecutor) AsyncTask.THREAD_POOL_EXECUTOR);
+        super(new CBLExecutor());
         mainHandler = new Handler(Looper.getMainLooper());
         mainThreadExecutor = mainHandler::post;
     }
