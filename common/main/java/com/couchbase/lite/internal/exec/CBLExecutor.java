@@ -32,10 +32,13 @@ import com.couchbase.lite.internal.support.Log;
 
 // ??? Kludge to keep changes minimal, until v 3.x
 public class CBLExecutor extends ThreadPoolExecutor {
+    private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+    private static final int POOL_SIZE = Math.max(4, CPU_COUNT - 1);
+
     private final String name;
 
     public CBLExecutor() {
-        this("CBL Worker", 2, 6, new LinkedBlockingQueue<>(AbstractExecutionService.MIN_CAPACITY * 2));
+        this("CBL Worker", POOL_SIZE, POOL_SIZE, new LinkedBlockingQueue<>(AbstractExecutionService.MIN_CAPACITY * 2));
     }
 
     @VisibleForTesting
