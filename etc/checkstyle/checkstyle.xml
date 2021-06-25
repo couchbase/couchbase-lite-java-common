@@ -390,13 +390,15 @@
             <property name="excludedPackages"
                 value="com.couchbase.lite.internal" />
         </module>
-        <!--
         <module name="com.couchbase.tools.checkstyle.kotlin.CheckFunctionalParameters">
             <property name="packages"
                 value="com.couchbase.lite" />
             <property name="excludedPackages"
                 value="com.couchbase.lite.internal" />
-            !- - Sorry: Checkstyle parses each file independently.  It would be difficult to drive this list programatically.  You'll have to search for @FunctionalInterfaces by hand - -
+            <!-- Sorry!
+                 Checkstyle parses each file independently.  It would be difficult to drive this list programatically.
+                 You'll have to search for @FunctionalInterfaces by hand, and list them here
+             -->
             <property name="functionalTypes"
                 value="ConflictHandler, ConflictResolver, DatabaseChangeListener, DocumentChangeListener, DocumentReplicationListener, ListenerCertificateAuthenticatorDelegate, ListenerPasswordAuthenticatorDelegate, MessageEndpointDelegate, MessageEndpointListenerChangeListener, MessagingCloseCompletion, MessagingCompletion, PredictiveModel, QueryChangeListener, ReplicationFilter, ReplicatorChangeListener, UnitOfWork, C4DatabaseObserverListener, C4DocumentObserverListener, C4ReplicationFilter, Observer, Base64Decoder, Base64Encoder, Consumer, ConsumerThrows, Function, FunctionThrows, Predicate, Provider, Runner, TaskThrows" />
         </module>
@@ -404,6 +406,5 @@
             <property name="packages"
                 value="com.couchbase.lite" />
         </module>
-        -->
     </module>
 </module>
