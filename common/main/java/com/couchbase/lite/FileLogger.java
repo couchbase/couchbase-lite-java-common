@@ -118,7 +118,7 @@ public final class FileLogger implements Logger {
             return;
         }
 
-        config = newConfig.readOnlyCopy();
+        config = new LogFileConfiguration(newConfig.getDirectory(), newConfig, true);
 
         initLog();
     }

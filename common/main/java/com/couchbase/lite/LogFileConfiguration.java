@@ -1,6 +1,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Objects;
 
@@ -22,46 +23,38 @@ public final class LogFileConfiguration {
     private final String directory;
     private boolean usePlaintext;
     private int maxRotateCount = 1;
-    private long maxSize = 1024 * 500;
+    private long maxSize;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
     /**
+     * Constructs a file configuration object with the given directory
+     *
+     * @param directory The directory that the logs will be written to
+     */
+    public LogFileConfiguration(@NonNull String directory) { this(directory, null); }
+
+    /**
      * Constructs a file configuration object based on another one so
      * that it may be modified
      *
      * @param config The other configuration to copy settings from
      */
-    public LogFileConfiguration(@NonNull LogFileConfiguration config) { this(config, false); }
+    public LogFileConfiguration(@NonNull LogFileConfiguration config) {
+        this((config == null) ? null : config.getDirectory(), config);
+    }
 
     /**
      * Constructs a file configuration object based on another one but changing
      * the directory
      *
      * @param directory The directory that the logs will be written to
-     * @param other     The other configuration to copy settings from
+     * @param config    The other configuration to copy settings from
      */
-    public LogFileConfiguration(@NonNull String directory, LogFileConfiguration other) {
-        this(directory);
-
-        if (other == null) { return; }
-        maxRotateCount = other.maxRotateCount;
-        maxSize = other.maxSize;
-        usePlaintext = other.usePlaintext;
-    }
-
-    /**
-     * Constructs a file configuration object with the given directory
-     *
-     * @param directory The directory that the logs will be written to
-     */
-    public LogFileConfiguration(@NonNull String directory) {
-        Preconditions.assertNotNull(directory, "directory");
-
-        this.directory = directory;
-        readonly = false;
+    public LogFileConfiguration(@NonNull String directory, @Nullable LogFileConfiguration config) {
+        this(directory, config, false);
     }
 
     /**
@@ -70,14 +63,25 @@ public final class LogFileConfiguration {
      *
      * @param config The other configuration to copy settings from
      */
-    private LogFileConfiguration(@NonNull LogFileConfiguration config, boolean readonly) {
-        Preconditions.assertNotNull(config, "config");
+    LogFileConfiguration(@NonNull String directory, @Nullable LogFileConfiguration config, boolean readonly) {
+        this(
+            Preconditions.assertNotNull(directory, "directory"),
+            (config == null) ? null : config.maxSize,
+            (config == null) ? null : config.maxRotateCount,
+            (config == null) ? null : config.usePlaintext,
+            readonly);
+    }
 
-        directory = config.directory;
-        maxRotateCount = config.maxRotateCount;
-        maxSize = config.maxSize;
-        usePlaintext = config.usePlaintext;
-
+    LogFileConfiguration(
+        @NonNull String directory,
+        @Nullable Long maxSize,
+        @Nullable Integer maxRotateCount,
+        @Nullable Boolean usePlaintext,
+        boolean readonly) {
+        this.directory = Preconditions.assertNotNull(directory, "directory");
+        this.maxSize = (maxSize == null) ? 1024 * 500 : maxSize;
+        this.maxRotateCount = (maxRotateCount == null) ? 1 : maxRotateCount;
+        this.usePlaintext = (usePlaintext != null) && usePlaintext;
         this.readonly = readonly;
     }
 
@@ -176,8 +180,6 @@ public final class LogFileConfiguration {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
-    LogFileConfiguration readOnlyCopy() { return new LogFileConfiguration(this, true); }
 
     @Override
     public boolean equals(Object o) {

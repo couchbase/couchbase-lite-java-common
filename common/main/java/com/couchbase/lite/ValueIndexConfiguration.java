@@ -16,7 +16,12 @@
 package com.couchbase.lite;
 
 
-public class ValueIndexConfiguration extends IndexConfiguration {
-    public ValueIndexConfiguration(String expressions) { super(IndexType.VALUE, expressions); }
-}
+import java.util.Arrays;
+import java.util.List;
 
+
+public class ValueIndexConfiguration extends IndexConfiguration {
+    public ValueIndexConfiguration(String... expressions) { this(Arrays.asList(expressions)); }
+
+    ValueIndexConfiguration(List<String> expressions) { super(IndexType.VALUE, expressions); }
+}

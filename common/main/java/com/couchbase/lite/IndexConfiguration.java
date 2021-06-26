@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -24,10 +27,18 @@ import com.couchbase.lite.internal.utils.StringUtils;
 public class IndexConfiguration extends AbstractIndex {
     private final List<String> expressions;
 
-    IndexConfiguration(IndexType type, String expressions) {
-        super(type, QueryLanguage.N1QL);
-        this.expressions = Arrays.asList(expressions);
+    IndexConfiguration(IndexType type, String... expressions) {
+        this(type, Arrays.asList(expressions));
     }
 
+    IndexConfiguration(IndexType type, List<String> expressions) {
+        super(type, QueryLanguage.N1QL);
+        this.expressions = expressions;
+    }
+
+    @NonNull
     String getIndexSpec() { return StringUtils.join(",", expressions); }
+
+    @NonNull
+    List<String> getExpressions() { return new ArrayList<>(expressions); }
 }
