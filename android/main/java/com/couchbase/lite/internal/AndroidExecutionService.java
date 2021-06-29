@@ -57,7 +57,9 @@ public final class AndroidExecutionService extends AbstractExecutionService {
     //---------------------------------------------
     // Instance variables
     //---------------------------------------------
+    @NonNull
     private final Handler mainHandler;
+    @NonNull
     private final Executor mainThreadExecutor;
 
     //---------------------------------------------

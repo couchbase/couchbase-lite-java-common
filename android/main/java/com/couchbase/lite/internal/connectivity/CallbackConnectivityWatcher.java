@@ -28,6 +28,7 @@ import com.couchbase.lite.internal.support.Log;
  * Base class for ConnectivityManager.NetworkCallback based Watchers.
  */
 abstract class CallbackConnectivityWatcher extends ConnectivityWatcher {
+    @NonNull
     protected final ConnectivityManager.NetworkCallback connectivityCallback =
         new ConnectivityManager.NetworkCallback() {
             @Override

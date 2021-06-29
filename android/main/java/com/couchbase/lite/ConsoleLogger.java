@@ -24,7 +24,7 @@ import android.util.Log;
  */
 public final class ConsoleLogger extends AbstractConsoleLogger {
     @Override
-    protected void doLog(LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+    protected void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         final String tag = "CouchbaseLite/" + domain.toString();
         switch (level) {
             case DEBUG:

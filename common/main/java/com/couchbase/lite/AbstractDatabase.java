@@ -127,7 +127,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         public int hashCode() { return process.hashCode(); }
 
         @Override
-        public boolean equals(Object o) {
+        public boolean equals(@Nullable Object o) {
             if (this == o) { return true; }
             if (!(o instanceof ActiveProcess)) { return false; }
             final ActiveProcess<?> other = (ActiveProcess<?>) o;

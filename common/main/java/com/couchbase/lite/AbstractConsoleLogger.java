@@ -29,7 +29,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * The base console logger class.
  */
 abstract class AbstractConsoleLogger implements Logger {
+    @NonNull
     private EnumSet<LogDomain> logDomains;
+    @NonNull
     private LogLevel logLevel;
 
     // Singleton instance accessible from Database.log.getConsole()
@@ -86,7 +88,7 @@ abstract class AbstractConsoleLogger implements Logger {
         setDomains(EnumSet.copyOf(Arrays.asList(domains)));
     }
 
-    protected abstract void doLog(LogLevel level, @NonNull LogDomain domain, @NonNull String message);
+    protected abstract void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message);
 
     @VisibleForTesting
     final void reset() {

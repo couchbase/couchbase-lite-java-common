@@ -43,6 +43,7 @@ public final class CBLTrustManager extends AbstractCBLTrustManager {
      * This method is called using introspection by conscrypt and android.net.http.X509TrustManagerExtensions
      */
     @SuppressWarnings("unused")
+    @Nullable
     public List<X509Certificate> checkServerTrusted(
         @Nullable X509Certificate[] chain,
         @Nullable String authType,

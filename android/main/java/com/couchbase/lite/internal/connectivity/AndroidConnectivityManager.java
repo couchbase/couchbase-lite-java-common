@@ -33,6 +33,7 @@ import com.couchbase.lite.internal.utils.Fn;
 
 
 public class AndroidConnectivityManager implements NetworkConnectivityManager {
+    @NonNull
     public static AndroidConnectivityManager newInstance() {
         final Handler mainHandler = new Handler(Looper.getMainLooper());
         return new AndroidConnectivityManager(mainHandler::post);
@@ -50,7 +51,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     private final Fn.Runner runner;
     private final int androidVersion;
 
-    // Distinct API code paths are: 19 22 26 29
+    // Distinct API code paths are: (obsolete: 19), 22, 26, 29
     AndroidConnectivityManager(@NonNull Fn.Runner runner) { this(Build.VERSION.SDK_INT, runner); }
 
     @VisibleForTesting

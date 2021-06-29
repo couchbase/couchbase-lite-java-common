@@ -117,6 +117,7 @@ public final class CouchbaseLiteInternal {
         return ctxt;
     }
 
+    @NonNull
     public static NetworkConnectivityManager getNetworkConnectivityManager() {
         final NetworkConnectivityManager connectivityMgr = CONNECTIVITY_MANAGER.get();
         if (connectivityMgr != null) { return connectivityMgr; }
@@ -124,6 +125,7 @@ public final class CouchbaseLiteInternal {
         return CONNECTIVITY_MANAGER.get();
     }
 
+    @NonNull
     public static ExecutionService getExecutionService() {
         final ExecutionService executionService = EXECUTION_SERVICE.get();
         if (executionService != null) { return executionService; }
