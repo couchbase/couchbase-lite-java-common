@@ -41,7 +41,7 @@ public final class OrderBy extends BuilderQuery implements LimitRouter {
     // Constructor
     //---------------------------------------------
 
-    OrderBy(BuilderQuery query, List<Ordering> orderings) {
+    OrderBy(@NonNull BuilderQuery query, List<Ordering> orderings) {
         copy(query);
         this.orderings = orderings;
         setOrderBy(this);
@@ -79,6 +79,7 @@ public final class OrderBy extends BuilderQuery implements LimitRouter {
     // Package level access
     //---------------------------------------------
 
+    @NonNull
     Object asJSON() {
         final List<Object> json = new ArrayList<>();
         for (Ordering ordering : orderings) { json.add(ordering.asJSON()); }

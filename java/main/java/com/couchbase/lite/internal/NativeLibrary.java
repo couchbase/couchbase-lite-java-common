@@ -51,6 +51,7 @@ final class NativeLibrary {
 
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
 
+    @NonNull
     private static final List<String> LIBRARIES;
 
     static {
@@ -118,6 +119,7 @@ final class NativeLibrary {
     /**
      * Calculate the MD5 digest for all of the libraries.
      */
+    @NonNull
     private static BigInteger computeTargetDirectory(
         @NonNull String resDirPath,
         @NonNull List<String> libs,

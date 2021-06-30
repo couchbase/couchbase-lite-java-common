@@ -25,8 +25,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public abstract class MCollection implements Encodable {
+    @android.support.annotation.Nullable
     private MValue slot;
+    @android.support.annotation.Nullable
     private MContext context;
+    @android.support.annotation.Nullable
     private MCollection parent;
     private boolean mutable;
     private boolean mutated;
@@ -59,9 +62,10 @@ public abstract class MCollection implements Encodable {
 
     public boolean hasMutableChildren() { return mutableChildren; }
 
+    @android.support.annotation.Nullable
     public MContext getContext() { return context; }
 
-    public void initAsCopyOf(MCollection original, boolean isMutable) {
+    public void initAsCopyOf(@NonNull MCollection original, boolean isMutable) {
         if (context != MContext.NULL) { throw new IllegalStateException("Current context is not null."); }
 
         context = original.getContext();
@@ -73,7 +77,7 @@ public abstract class MCollection implements Encodable {
     // Protected Methods
     //---------------------------------------------
 
-    protected void setSlot(MValue newSlot, MValue oldSlot) {
+    protected void setSlot(@android.support.annotation.Nullable MValue newSlot, MValue oldSlot) {
         if (slot.equals(oldSlot)) {
             slot = newSlot;
             if (newSlot == null) { parent = null; }

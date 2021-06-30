@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.CallSuper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
@@ -28,7 +29,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 @SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
 public class C4Document extends C4NativePeer {
-    public static boolean dictContainsBlobs(FLSliceResult dict, FLSharedKeys sk) {
+    public static boolean dictContainsBlobs(@NonNull FLSliceResult dict, @NonNull FLSharedKeys sk) {
         return dictContainsBlobs(dict.getHandle(), sk.getHandle());
     }
 
@@ -64,6 +65,7 @@ public class C4Document extends C4NativePeer {
 
     public long getSelectedSequence() { return withPeer(0L, C4Document::getSelectedSequence); }
 
+    @Nullable
     public FLDict getSelectedBody2() {
         final long value = withPeer(0L, C4Document::getSelectedBody2);
         return value == 0 ? null : new FLDict(value);
@@ -92,12 +94,14 @@ public class C4Document extends C4NativePeer {
 
     // - Creating and Updating Documents
 
-    public C4Document update(FLSliceResult body, int flags) throws LiteCoreException {
+    @Nullable
+    public C4Document update(@Nullable FLSliceResult body, int flags) throws LiteCoreException {
         final long bodyHandle = (body != null) ? body.getHandle() : 0;
         final long newDoc = withPeer(0L, h -> update2(h, bodyHandle, flags));
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
 
+    @Nullable
     @VisibleForTesting
     public C4Document update(byte[] body, int flags) throws LiteCoreException {
         final long newDoc = withPeer(0L, h -> update(h, body, flags));
@@ -224,20 +228,24 @@ public class C4Document extends C4NativePeer {
 
     private static native int getFlags(long doc);
 
+    @NonNull
     private static native String getDocID(long doc);
 
+    @NonNull
     private static native String getRevID(long doc);
 
     private static native long getSequence(long doc);
 
     // - C4Revision
 
+    @NonNull
     private static native String getSelectedRevID(long doc);
 
     private static native int getSelectedFlags(long doc);
 
     private static native long getSelectedSequence(long doc);
 
+    @NonNull
     private static native byte[] getSelectedBody(long doc);
 
     // return pointer to FLValue

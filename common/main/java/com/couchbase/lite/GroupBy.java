@@ -39,7 +39,7 @@ public final class GroupBy extends BuilderQuery implements HavingRouter, OrderBy
     //---------------------------------------------
     // Constructor
     //--------------------------------------------
-    GroupBy(BuilderQuery query, List<Expression> expressions) {
+    GroupBy(@NonNull BuilderQuery query, List<Expression> expressions) {
         copy(query);
         this.expressions = expressions;
         setGroupBy(this);
@@ -112,6 +112,7 @@ public final class GroupBy extends BuilderQuery implements HavingRouter, OrderBy
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+    @NonNull
     Object asJSON() {
         final List<Object> groupBy = new ArrayList<>();
         for (Expression expression : expressions) { groupBy.add(expression.asJSON()); }

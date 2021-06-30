@@ -42,6 +42,7 @@ public class ConsoleLogger extends AbstractConsoleLogger {
             : System.err;
     }
 
+    @NonNull
     public static String formatLog(@NonNull LogLevel level, @NonNull String domain, @NonNull String message) {
         final String tf = THREAD_FIELD_PAD + Thread.currentThread().getId();
         return TS_FORMAT.get().format(LocalDateTime.now())

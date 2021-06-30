@@ -25,6 +25,7 @@ public final class MathUtils {
 
     @NonNull
     public static final ThreadLocal<Random> RANDOM = new ThreadLocal<Random>() {
+        @NonNull
         protected synchronized Random initialValue() { return new Random(); }
     };
 }

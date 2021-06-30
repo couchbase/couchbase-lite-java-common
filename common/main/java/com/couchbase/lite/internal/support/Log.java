@@ -57,6 +57,7 @@ public final class Log {
 
     public static final String LOG_HEADER = "[JAVA] ";
 
+    @NonNull
     private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
     static {
         final Map<String, LogDomain> m = new HashMap<>();
@@ -73,6 +74,7 @@ public final class Log {
         LOGGING_DOMAINS_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
+    @NonNull
     private static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
     static {
         final Map<LogDomain, String> m = new HashMap<>();
@@ -84,6 +86,7 @@ public final class Log {
         LOGGING_DOMAINS_TO_C4 = Collections.unmodifiableMap(m);
     }
 
+    @NonNull
     private static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
     static {
         final Map<Integer, LogLevel> m = new HashMap<>();
@@ -95,6 +98,7 @@ public final class Log {
         LOG_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
+    @NonNull
     private static final Map<LogLevel, Integer> LOG_LEVEL_TO_C4;
     static {
         final Map<LogLevel, Integer> m = new HashMap<>();
@@ -435,7 +439,7 @@ public final class Log {
         @NonNull LogDomain domain,
         @Nullable Throwable err,
         @NonNull String msg,
-        Object... args) {
+        @Nullable Object... args) {
         // Don't let logging errors cause a failure
         if (level == null) { level = LogLevel.INFO; }
         if (domain == null) { domain = LogDomain.DATABASE; }
@@ -452,13 +456,14 @@ public final class Log {
         sendToLoggers(level, domain, LOG_HEADER + message);
     }
 
-    private static String formatMessage(String msg, Object... args) {
+    @NonNull
+    private static String formatMessage(@NonNull String msg, Object... args) {
         try { return String.format(Locale.ENGLISH, msg, args); }
-        catch (IllegalFormatException | FormatterClosedException ignore) { }
+        catch (@NonNull IllegalFormatException | FormatterClosedException ignore) { }
         return msg;
     }
 
-    private static void sendToLoggers(LogLevel level, LogDomain domain, String msg) {
+    private static void sendToLoggers(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String msg) {
         final com.couchbase.lite.Log logger = Database.log;
 
         // Console logging:

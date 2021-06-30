@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -116,6 +117,7 @@ public class SelectResult {
     // Package level access
     //---------------------------------------------
 
+    @Nullable
     String getColumnName() {
         if (alias != null) { return alias; }
 
@@ -129,6 +131,7 @@ public class SelectResult {
         return null;
     }
 
+    @Nullable
     Object asJSON() { return selectExpression.asJSON(); }
 
     private SelectResult(Expression expression) { this.selectExpression = expression; }

@@ -53,7 +53,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     @Override
     public String toString() { return Long.toHexString(peer); }
 
-    protected final <T, E extends Exception> T withPeer(T def, Fn.FunctionThrows<Long, T, E> fn) throws E {
+    protected final <T, E extends Exception> T withPeer(T def, @NonNull Fn.FunctionThrows<Long, T, E> fn) throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
             if (peer == 0) {
@@ -87,7 +87,9 @@ public abstract class C4NativePeer implements AutoCloseable {
      * @param <E>    The type of exception (typically none) thrown by the goodbye-kiss
      * @throws E the goodbye kiss failed.
      */
-    protected final <E extends Exception> void releasePeer(@Nullable LogDomain domain, Fn.ConsumerThrows<Long, E> fn)
+    protected final <E extends Exception> void releasePeer(
+        @Nullable LogDomain domain,
+        @NonNull Fn.ConsumerThrows<Long, E> fn)
         throws E {
         final long peer;
 
@@ -133,6 +135,7 @@ public abstract class C4NativePeer implements AutoCloseable {
      *
      * @return the lock used by this object
      */
+    @NonNull
     protected final Object getPeerLock() { return lock; }
 
     //-------------------------------------------------------------------------

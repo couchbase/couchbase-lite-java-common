@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.Nullable;
+
 import java.util.EnumMap;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -66,6 +68,7 @@ public enum LogLevel {
         LEVELS.put(ERROR, "E");
         LEVELS.put(NONE, "");
     }
+    @Nullable
     @Override
     public String toString() {
         final String s = LEVELS.get(this);

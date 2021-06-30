@@ -63,6 +63,7 @@ public abstract class AbstractSocketFactory {
         this.serverCertsListener = serverCertsListener;
     }
 
+    @Nullable
     public final C4Socket createSocket(long peer, String scheme, String host, int port, String path, byte[] opts) {
         final C4Socket socket = (endpoint instanceof URLEndpoint)
             ? createCBLWebSocket(peer, scheme, host, port, path, opts)
@@ -115,6 +116,7 @@ public abstract class AbstractSocketFactory {
         return scheme;
     }
 
+    @Nullable
     private Fn.Consumer<C4Socket> getListener() {
         synchronized (endpoint) { return listener; }
     }

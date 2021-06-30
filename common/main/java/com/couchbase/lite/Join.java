@@ -30,10 +30,12 @@ public class Join {
     enum Type {
         INNER("INNER"), LEFT_OUTER("LEFT OUTER"), CROSS("CROSS");
 
+        @NonNull
         private final String tag;
 
         Type(@NonNull String tag) { this.tag = tag; }
 
+        @NonNull
         public String getTag() { return tag; }
     }
 
@@ -49,7 +51,7 @@ public class Join {
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
-        private On(Type type, DataSource datasource) { super(type, datasource); }
+        private On(@NonNull Type type, @NonNull DataSource datasource) { super(type, datasource); }
 
         //---------------------------------------------
         // API - public methods
@@ -170,6 +172,7 @@ public class Join {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
+    @NonNull
     Object asJSON() {
         final Map<String, Object> json = new HashMap<>();
         json.put("JOIN", type.getTag());

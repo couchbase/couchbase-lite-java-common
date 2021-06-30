@@ -25,10 +25,11 @@ import java.util.List;
  * Provides details about a Database change.
  */
 public final class DatabaseChange {
+    @NonNull
     private final List<String> documentIDs;
     private final Database database;
 
-    DatabaseChange(Database database, List<String> documentIDs) {
+    DatabaseChange(@NonNull Database database, @NonNull List<String> documentIDs) {
         this.database = database;
         this.documentIDs = Collections.unmodifiableList(documentIDs);
     }
@@ -47,6 +48,7 @@ public final class DatabaseChange {
     @NonNull
     public List<String> getDocumentIDs() { return documentIDs; }
 
+    @NonNull
     @Override
     public String toString() {
         return "DatabaseChange{" + "database=" + database + ", documentIDs=" + documentIDs + '}';

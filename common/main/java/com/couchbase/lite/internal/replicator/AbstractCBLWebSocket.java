@@ -208,7 +208,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Invoked when a web socket has been closed due to an error reading from or writing to the network.
         // Outgoing and incoming messages may have been lost. OkHTTP will not make any more calls to this listener
         @Override
-        public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, Response response) {
+        public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, @Nullable Response response) {
             if (CouchbaseLiteInternal.debugging()) {
                 Log.d(TAG, "%s#OkHTTP failed: %s", err, AbstractCBLWebSocket.this, response);
             }
@@ -311,16 +311,21 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     // assert these are thread-safe
+    @NonNull
     private final URI uri;
+    @NonNull
     private final OkHttpRemote okHttpRemote;
+    @NonNull
     private final OkHttpClient okHttpSocketFactory;
     @Nullable
     private final Map<String, Object> options;
     @NonNull
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
 
+    @Nullable
     @GuardedBy("getPeerLock()")
     private final StateMachine<State> state = WS_STATE_BUILDER.build();
+    @NonNull
     @GuardedBy("getPeerLock()")
     private final CBLCookieStore cookieStore;
 
@@ -367,6 +372,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
     }
 
+    @NonNull
     @VisibleForTesting
     public final OkHttpClient getOkHttpSocketFactory() { return okHttpSocketFactory; }
 
@@ -443,7 +449,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     @GuardedBy("getPeerLock()")
-    private void receivedHTTPResponse(Response response) {
+    private void receivedHTTPResponse(@NonNull Response response) {
         if (CouchbaseLiteInternal.debugging()) { Log.d(TAG, "CBLWebSocket received HTTP response %s", response); }
 
         // Post the response headers to LiteCore:
@@ -495,7 +501,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     }
 
     @GuardedBy("getPeerLock()")
-    private void closeWithError(Throwable error) {
+    private void closeWithError(@Nullable Throwable error) {
         if (error == null) {
             closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
             return;
@@ -532,6 +538,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         closed(domain, code, error.toString());
     }
 
+    @NonNull
     private OkHttpClient setupOkHttpFactory() throws GeneralSecurityException {
         final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
 
@@ -556,6 +563,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         return builder.build();
     }
 
+    @NonNull
     private Request newRequest() {
         final Request.Builder builder = new Request.Builder();
 
@@ -585,6 +593,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         return builder.build();
     }
 
+    @Nullable
     private Authenticator getBasicAuthenticator() {
         if (options == null) { return null; }
 
@@ -603,7 +612,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         return (route, response) -> authenticate(response, (String) username, (String) password);
     }
 
-    private void setupSSLSocketFactory(OkHttpClient.Builder builder) throws GeneralSecurityException {
+    private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) throws GeneralSecurityException {
         byte[] pinnedServerCert = null;
         boolean acceptOnlySelfSignedServerCert = false;
         KeyManager[] keyManagers = null;
@@ -637,6 +646,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
     }
 
+    @Nullable
     private KeyManager getAuthenticator() {
         if (options == null) { return null; }
 

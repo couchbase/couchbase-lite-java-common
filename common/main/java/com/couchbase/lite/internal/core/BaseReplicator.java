@@ -56,6 +56,7 @@ public class BaseReplicator implements AutoCloseable {
         synchronized (getReplicatorLock()) { c4Replicator = c4Repl; }
     }
 
+    @NonNull
     protected Object getReplicatorLock() { return lock; }
 
     @SuppressWarnings("NoFinalizer")

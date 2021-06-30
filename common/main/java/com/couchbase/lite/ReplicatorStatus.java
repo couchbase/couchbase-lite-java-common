@@ -30,6 +30,7 @@ import com.couchbase.lite.internal.support.Log;
  * Combined activity level and progress of a replicator.
  */
 public final class ReplicatorStatus {
+    @NonNull
     private static final Map<Integer, ReplicatorActivityLevel> ACTIVITY_LEVEL_FROM_C4;
     static {
         final Map<Integer, ReplicatorActivityLevel> m = new HashMap<>();
@@ -40,6 +41,7 @@ public final class ReplicatorStatus {
         m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ReplicatorActivityLevel.BUSY);
         ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
+    @Nullable
     private static ReplicatorActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
         final ReplicatorActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
         if (level != null) { return level; }

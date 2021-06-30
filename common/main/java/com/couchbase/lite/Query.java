@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.concurrent.Executor;
 
@@ -33,6 +34,7 @@ public interface Query {
     /**
      * Returns a copies of the current parameters.
      */
+    @Nullable
     Parameters getParameters();
 
     /**

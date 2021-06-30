@@ -27,6 +27,7 @@ import java.util.Locale;
  * Index for Full-Text search
  */
 public class FullTextIndex extends Index {
+    @NonNull
     private final List<FullTextIndexItem> indexItems;
     private String language = Locale.getDefault().getLanguage();
     private boolean ignoreDiacritics;

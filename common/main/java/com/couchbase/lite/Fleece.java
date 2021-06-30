@@ -16,6 +16,8 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +40,7 @@ final class Fleece {
         = "MutableDictionary, Dictionary, MutableArray, Array, Map, List, Date, String, Number, Boolean, Blob or null";
 
     // Assume that array and dict values are always different to avoid expensive comparisons.
-    static boolean willMutate(Object newValue, MValue oldValue, MCollection container) {
+    static boolean willMutate(Object newValue, @NonNull MValue oldValue, MCollection container) {
         final FLValue val = oldValue.getValue();
 
         final int oldType = (val != null) ? val.getType() : FLConstants.ValueType.UNDEFINED;
@@ -50,6 +52,7 @@ final class Fleece {
             || !Objects.equals(newValue, oldValue.asNative(container)));
     }
 
+    @android.support.annotation.Nullable
     @SuppressWarnings("unchecked")
     static Object toCBLObject(@Nullable Object value) {
         if ((value == null)
@@ -74,6 +77,7 @@ final class Fleece {
                 SUPPORTED_TYPES));
     }
 
+    @android.support.annotation.Nullable
     static Object toObject(@Nullable Object value) {
         if (value == null) { return null; }
         else if (value instanceof Dictionary) { return ((Dictionary) value).toMap(); }

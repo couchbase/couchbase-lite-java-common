@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class DataSource {
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
-        As(Database source) { super(source); }
+        As(@NonNull Database source) { super(source); }
 
         //---------------------------------------------
         // API - public methods
@@ -72,27 +73,32 @@ public class DataSource {
     // Data members
     //---------------------------------------------
 
+    @NonNull
     private final Object source;
-    String alias;
+    @Nullable
+    protected String alias;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    private DataSource(Object source) { this.source = source; }
+    private DataSource(@NonNull Object source) { this.source = source; }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
+    @NonNull
     Object getSource() { return this.source; }
 
+    @Nullable
     String getColumnName() {
         if (alias != null) { return alias; }
 
         return (!(source instanceof Database)) ? null : ((Database) source).getName();
     }
 
+    @NonNull
     Map<String, Object> asJSON() {
         final Map<String, Object> json = new HashMap<>();
         if (alias != null) { json.put("AS", alias); }

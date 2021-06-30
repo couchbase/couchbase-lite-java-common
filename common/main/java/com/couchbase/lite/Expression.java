@@ -549,6 +549,7 @@ public abstract class Expression {
     // Base class
     //---------------------------------------------
 
+    @Nullable
     abstract Object asJSON();
 
     /**

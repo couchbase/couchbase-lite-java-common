@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
@@ -27,6 +29,7 @@ public class MRoot extends MCollection {
     // Data members
     //---------------------------------------------
 
+    @NonNull
     private final MValue data;
 
     //---------------------------------------------
@@ -49,12 +52,14 @@ public class MRoot extends MCollection {
     //---------------------------------------------
 
     @Override
-    public void encodeTo(FLEncoder enc) { data.encodeTo(enc); }
+    public void encodeTo(@NonNull FLEncoder enc) { data.encodeTo(enc); }
 
     public boolean isMutated() { return data.isMutated(); }
 
+    @Nullable
     public Object asNative() { return data.asNative(this); }
 
+    @NonNull
     public FLSliceResult encode() throws LiteCoreException {
         try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
             data.encodeTo(encoder);

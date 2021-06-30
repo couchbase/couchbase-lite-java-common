@@ -50,7 +50,9 @@ public final class C4Key {
         throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
     }
 
+    @NonNull
     private static native byte[] pbkdf2(String password, byte[] salt, int rounds, int keysize);
 
+    @NonNull
     private static native byte[] deriveKeyFromPassword(String password, int alg);
 }

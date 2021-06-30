@@ -32,6 +32,7 @@ import com.couchbase.lite.internal.utils.Fn;
 public final class C4Log {
     private C4Log() {} // Utility class
 
+    @NonNull
     private static LogLevel callbackLevel = LogLevel.NONE;
 
     @VisibleForTesting
@@ -57,7 +58,7 @@ public final class C4Log {
     public static void registerListener(Fn.Consumer<RawLog> listener) { rawListener = listener; }
 
     // This class and this method are referenced by name, from native code.
-    public static void logCallback(String c4Domain, int c4Level, String message) {
+    public static void logCallback(@NonNull String c4Domain, int c4Level, @NonNull String message) {
         if (rawListener != null) { rawListener.accept(new RawLog(c4Domain, c4Level, message)); }
 
         final LogLevel level = Log.getLogLevelForC4Level(c4Level);
@@ -82,7 +83,7 @@ public final class C4Log {
         CouchbaseLiteInternal.getExecutionService().getDefaultExecutor().execute(() -> setCoreCallbackLevel(level));
     }
 
-    public static void setLevels(int level, String... domains) {
+    public static void setLevels(int level, @Nullable String... domains) {
         if ((domains == null) || (domains.length <= 0)) { return; }
         for (String domain: domains) { setLevel(domain, level); }
     }

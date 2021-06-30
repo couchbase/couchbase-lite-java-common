@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,10 +53,13 @@ public class FLArray {
      * @param index index for value
      * @return the FLValue at index
      */
+    @NonNull
     public FLValue get(long index) { return new FLValue(get(peer, index)); }
 
+    @NonNull
     public List<Object> asArray() { return asTypedArray(); }
 
+    @NonNull
     @SuppressWarnings("unchecked")
     public <T> List<T> asTypedArray() {
         final List<T> results = new ArrayList<>();
@@ -74,7 +79,8 @@ public class FLArray {
     // package level access
     //-------------------------------------------------------------------------
 
-    <T> T withContent(Fn.Function<Long, T> fn) { return fn.apply(peer); }
+    @NonNull
+    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
 
     //-------------------------------------------------------------------------
     // native methods

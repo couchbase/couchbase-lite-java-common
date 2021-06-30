@@ -87,6 +87,7 @@ public class C4BlobReadStream extends C4NativePeer {
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
+    @NonNull
     private static native byte[] read(long peer, long maxBytesToRead) throws LiteCoreException;
 
     private static native int read(long peer, byte[] b, int offset, long maxBytesToRead) throws LiteCoreException;

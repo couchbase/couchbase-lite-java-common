@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,11 +39,13 @@ public class FLDict {
     // public methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     public FLValue toFLValue() { return new FLValue(handle); }
 
     public long count() { return count(handle); }
 
-    public FLValue get(String key) {
+    @Nullable
+    public FLValue get(@Nullable String key) {
         if (key == null) { return null; }
 
         final long hValue = get(handle, key.getBytes(StandardCharsets.UTF_8));
@@ -48,6 +53,7 @@ public class FLDict {
         return hValue != 0L ? new FLValue(hValue) : null;
     }
 
+    @NonNull
     public Map<String, Object> asDict() {
         final Map<String, Object> results = new HashMap<>();
         final FLDictIterator itr = new FLDictIterator();
@@ -67,7 +73,8 @@ public class FLDict {
     // protected methods
     //-------------------------------------------------------------------------
 
-    <T> T withContent(Fn.Function<Long, T> fn) { return fn.apply(handle); }
+    @NonNull
+    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
 
     //-------------------------------------------------------------------------
     // native methods

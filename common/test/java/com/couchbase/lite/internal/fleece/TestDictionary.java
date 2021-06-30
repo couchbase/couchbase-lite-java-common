@@ -15,13 +15,13 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.NonNull;
+
 import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.jetbrains.annotations.NotNull;
 
 
 // Simplified com.couchbase.lite.Dictionary, for testing
@@ -88,11 +88,11 @@ public class TestDictionary implements Map<String, Object>, Encodable {
     @Override
     public void clear() { dict.clear(); }
 
-    @NotNull
+    @NonNull
     @Override
     public Set<String> keySet() { return new HashSet<>(dict.getKeys()); }
 
-    @NotNull
+    @NonNull
     @Override
     public Set<Entry<String, Object>> entrySet() {
         Set<Entry<String, Object>> entrySet = new HashSet<>();
@@ -106,11 +106,11 @@ public class TestDictionary implements Map<String, Object>, Encodable {
     }
 
     @Override
-    public void putAll(@NotNull Map<? extends String, ?> map) {
+    public void putAll(@NonNull Map<? extends String, ?> map) {
         throw new UnsupportedOperationException("putAll(Map) not supported for FleeceDict");
     }
 
-    @NotNull
+    @NonNull
     @Override
     public Collection<Object> values() {
         throw new UnsupportedOperationException("values() not supported for FleeceDict");

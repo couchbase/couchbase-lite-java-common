@@ -64,9 +64,11 @@ final class LiveQuery implements DatabaseChangeListener {
     @NonNull
     private final AtomicReference<State> state = new AtomicReference<>(State.STOPPED);
 
+    @Nullable
     @GuardedBy("lock")
     private ListenerToken dbListenerToken;
 
+    @Nullable
     @GuardedBy("lock")
     private ResultSet previousResults;
 
@@ -103,13 +105,14 @@ final class LiveQuery implements DatabaseChangeListener {
      * <p>
      * NOTE: this method is synchronized with Query level.
      */
-    ListenerToken addChangeListener(@Nullable Executor executor, QueryChangeListener listener) {
+    @NonNull
+    ListenerToken addChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener) {
         final ChangeListenerToken<?> token = changeNotifier.addChangeListener(executor, listener);
         start(false);
         return token;
     }
 
-    void removeChangeListener(ListenerToken token) {
+    void removeChangeListener(@NonNull ListenerToken token) {
         if (changeNotifier.removeChangeListener(token) <= 0) { stop(); }
     }
 

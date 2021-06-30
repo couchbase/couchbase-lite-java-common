@@ -31,6 +31,7 @@ import com.couchbase.lite.internal.core.C4Document;
  */
 public final class MutableDocument extends Document implements MutableDictionaryInterface {
 
+    @NonNull
     private static String createUUID() { return UUID.randomUUID().toString().toLowerCase(Locale.ENGLISH); }
 
     //---------------------------------------------

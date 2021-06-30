@@ -39,7 +39,7 @@ public final class Joins extends BuilderQuery implements WhereRouter, OrderByRou
     // Constructors
     //---------------------------------------------
 
-    Joins(BuilderQuery query, List<Join> joins) {
+    Joins(@NonNull BuilderQuery query, List<Join> joins) {
         copy(query);
         this.joins = joins;
         setJoins(this);
@@ -112,6 +112,7 @@ public final class Joins extends BuilderQuery implements WhereRouter, OrderByRou
     // Package level access
     //---------------------------------------------
 
+    @NonNull
     Object asJSON() {
         final List<Object> json = new ArrayList<>();
         for (Join join : joins) { json.add(join.asJSON()); }

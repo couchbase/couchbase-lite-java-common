@@ -30,7 +30,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public class MDict extends MCollection implements Iterable<String> {
     // ??? What is this for?
     private final List<String> newKey = new ArrayList<>();
+    @NonNull
     private Map<String, MValue> valueMap = new HashMap<>();
+    @Nullable
     private FLDict flDict;
     private long valCount;
 
@@ -69,7 +71,7 @@ public class MDict extends MCollection implements Iterable<String> {
         return (value == null) ? MValue.EMPTY : setInMap(key, new MValue(value));
     }
 
-    public boolean set(String key, MValue value) {
+    public boolean set(String key, @NonNull MValue value) {
         Preconditions.assertNotNull(key, "key");
         Preconditions.assertThat(this, "Cannot call set() on an immutable MDict", MCollection::isMutable);
 
@@ -104,6 +106,7 @@ public class MDict extends MCollection implements Iterable<String> {
         return (mValue != null) ? !mValue.isEmpty() : ((flDict != null) && (flDict.get(key) != null));
     }
 
+    @NonNull
     public List<String> getKeys() {
         final List<String> keys = new ArrayList<>();
         for (Map.Entry<String, MValue> entry: valueMap.entrySet()) {

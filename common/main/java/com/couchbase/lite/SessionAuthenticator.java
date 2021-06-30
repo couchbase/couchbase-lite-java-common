@@ -37,7 +37,9 @@ public final class SessionAuthenticator extends Authenticator {
     // member variables
     //---------------------------------------------
 
+    @NonNull
     private final String sessionID;
+    @NonNull
     private final String cookieName;
 
     //---------------------------------------------
@@ -82,6 +84,7 @@ public final class SessionAuthenticator extends Authenticator {
      * Return session cookie name that the session ID value will be set to when communicating
      * the Sync Gateway.
      */
+    @Nullable
     public String getCookieName() {
         return cookieName;
     }
@@ -91,7 +94,7 @@ public final class SessionAuthenticator extends Authenticator {
     //---------------------------------------------
 
     @Override
-    void authenticate(Map<String, Object> options) {
+    void authenticate(@NonNull Map<String, Object> options) {
         final String current = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
         final StringBuffer cookieStr = current != null ? new StringBuffer(current) : new StringBuffer();
 

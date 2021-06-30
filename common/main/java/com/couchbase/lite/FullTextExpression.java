@@ -45,6 +45,7 @@ public final class FullTextExpression {
         // package level access
         //---------------------------------------------
 
+        @NonNull
         @Override
         Object asJSON() { return Arrays.asList("MATCH()", indexName, text); }
     }

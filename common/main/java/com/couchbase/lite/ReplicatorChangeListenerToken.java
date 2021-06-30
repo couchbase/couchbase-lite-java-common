@@ -25,7 +25,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 final class ReplicatorChangeListenerToken implements ListenerToken {
+    @NonNull
     private final ReplicatorChangeListener listener;
+    @Nullable
     private final Executor executor;
 
     ReplicatorChangeListenerToken(@Nullable Executor executor, @NonNull ReplicatorChangeListener listener) {
@@ -33,25 +35,30 @@ final class ReplicatorChangeListenerToken implements ListenerToken {
         this.listener = Preconditions.assertNotNull(listener, "listener");
     }
 
-    void notify(final ReplicatorChange change) { getExecutor().execute(() -> listener.changed(change)); }
+    void notify(@NonNull final ReplicatorChange change) { getExecutor().execute(() -> listener.changed(change)); }
 
+    @Nullable
     Executor getExecutor() {
         return (executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();
     }
 }
 
 final class DocumentReplicationListenerToken implements ListenerToken {
+    @Nullable
     private final DocumentReplicationListener listener;
     private final Executor executor;
 
-    DocumentReplicationListenerToken(Executor executor, DocumentReplicationListener listener) {
+    DocumentReplicationListenerToken(Executor executor, @Nullable DocumentReplicationListener listener) {
         if (listener == null) { throw new IllegalArgumentException("a listener parameter is null"); }
         this.executor = executor;
         this.listener = listener;
     }
 
-    void notify(final DocumentReplication update) { getExecutor().execute(() -> listener.replication(update)); }
+    void notify(@NonNull final DocumentReplication update) {
+        getExecutor().execute(() -> listener.replication(update));
+    }
 
+    @NonNull
     Executor getExecutor() {
         return (executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();
     }

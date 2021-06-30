@@ -63,6 +63,7 @@ public abstract class C4BlobStore extends C4NativePeer {
     // Factory Methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     public static C4BlobStore getUnmanagedBlobStore(long peer) throws LiteCoreException {
         return new C4BlobStore.UnmanagedC4BlobStore(peer);
     }
@@ -90,7 +91,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      * WARNING: If the blob is encrypted, the return value is a conservative estimate that may
      * be up to 16 bytes larger than the actual size.
      */
-    public long getSize(C4BlobKey blobKey) { return getSize(getPeer(), getBlobKeyPeer(blobKey)); }
+    public long getSize(@NonNull C4BlobKey blobKey) { return getSize(getPeer(), getBlobKeyPeer(blobKey)); }
 
     /**
      * Reads the entire contents of a blob into memory. Caller is responsible for freeing it.
@@ -125,7 +126,9 @@ public abstract class C4BlobStore extends C4NativePeer {
     /**
      * Deletes a blob from the store given its key.
      */
-    public void delete(C4BlobKey blobKey) throws LiteCoreException { delete(getPeer(), getBlobKeyPeer(blobKey)); }
+    public void delete(@NonNull C4BlobKey blobKey) throws LiteCoreException {
+        delete(getPeer(), getBlobKeyPeer(blobKey));
+    }
 
     /**
      * Opens a blob for reading, as a random-access byte stream.
@@ -168,6 +171,7 @@ public abstract class C4BlobStore extends C4NativePeer {
 
     private static native long getContents(long peer, long blobKey) throws LiteCoreException;
 
+    @NonNull
     private static native String getFilePath(long peer, long blobKey) throws LiteCoreException;
 
     private static native long create(long peer, byte[] contents) throws LiteCoreException;

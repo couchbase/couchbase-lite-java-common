@@ -62,6 +62,7 @@ public class MetaExpression extends Expression {
     // package level access
     //---------------------------------------------
 
+    @NonNull
     @Override
     Object asJSON() {
         final List<Object> json = new ArrayList<>();

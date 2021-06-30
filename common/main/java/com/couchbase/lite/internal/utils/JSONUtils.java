@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -35,6 +38,7 @@ public final class JSONUtils {
     private JSONUtils() { }
 
     private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+        @NonNull
         protected synchronized SimpleDateFormat initialValue() {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
             sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -42,7 +46,8 @@ public final class JSONUtils {
         }
     };
 
-    public static JSONObject toJSON(Map<?, ?> map) throws JSONException {
+    @Nullable
+    public static JSONObject toJSON(@Nullable Map<?, ?> map) throws JSONException {
         if (map == null) { return null; }
 
         final JSONObject json = new JSONObject();
@@ -50,7 +55,8 @@ public final class JSONUtils {
         return json;
     }
 
-    public static JSONArray toJSON(List<?> list) throws JSONException {
+    @Nullable
+    public static JSONArray toJSON(@Nullable List<?> list) throws JSONException {
         if (list == null) { return null; }
 
         final JSONArray json = new JSONArray();
@@ -59,8 +65,10 @@ public final class JSONUtils {
         return json;
     }
 
-    public static String toJSONString(Date date) { return DATE_FORMAT.get().format(date); }
+    @NonNull
+    public static String toJSONString(@NonNull Date date) { return DATE_FORMAT.get().format(date); }
 
+    @Nullable
     public static Object toJSON(Object val) throws JSONException {
         if (val instanceof Map<?, ?>) { return toJSON((Map<?, ?>) val); }
         if (val instanceof List<?>) { return toJSON((List<?>) val); }
@@ -68,7 +76,8 @@ public final class JSONUtils {
         return val;
     }
 
-    public static Map<String, Object> fromJSON(JSONObject json) throws JSONException {
+    @Nullable
+    public static Map<String, Object> fromJSON(@Nullable JSONObject json) throws JSONException {
         if (json == null) { return null; }
 
         final Map<String, Object> result = new HashMap<>();
@@ -81,7 +90,8 @@ public final class JSONUtils {
         return result;
     }
 
-    public static List<Object> fromJSON(JSONArray json) throws JSONException {
+    @Nullable
+    public static List<Object> fromJSON(@Nullable JSONArray json) throws JSONException {
         if (json == null) { return null; }
 
         final List<Object> result = new ArrayList<>();
@@ -90,6 +100,7 @@ public final class JSONUtils {
         return result;
     }
 
+    @Nullable
     private static Object fromJSON(Object value) throws JSONException {
         if (value instanceof JSONObject) { return fromJSON((JSONObject) value); }
         if (value instanceof JSONArray) { return fromJSON((JSONArray) value); }
@@ -97,7 +108,8 @@ public final class JSONUtils {
         return value;
     }
 
-    public static Date toDate(String json) {
+    @Nullable
+    public static Date toDate(@Nullable String json) {
         if (json == null) { return null; }
 
         try { return DATE_FORMAT.get().parse(json); }

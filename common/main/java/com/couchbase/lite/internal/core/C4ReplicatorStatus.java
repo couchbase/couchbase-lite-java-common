@@ -17,6 +17,8 @@
 package com.couchbase.lite.internal.core;
 
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
 
@@ -73,6 +75,7 @@ public final class C4ReplicatorStatus {
         }
     }
 
+    @NonNull
     public C4ReplicatorStatus copy() {
         return new C4ReplicatorStatus(
             activityLevel,
@@ -98,8 +101,10 @@ public final class C4ReplicatorStatus {
 
     public int getErrorInternalInfo() { return errorInternalInfo; }
 
+    @NonNull
     public C4Error getC4Error() { return new C4Error(errorDomain, errorCode, errorInternalInfo); }
 
+    @NonNull
     @Override
     public String toString() {
         return "C4ReplicatorStatus{"

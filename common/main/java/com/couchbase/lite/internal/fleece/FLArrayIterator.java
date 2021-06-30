@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LogDomain;
@@ -52,10 +53,12 @@ public abstract class FLArrayIterator extends C4NativePeer {
     // Factory Methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     public static FLArrayIterator getUnmanagedArrayIterator(long peer) {
         return new FLArrayIterator.UnmanagedFLArrayIterator(peer);
     }
 
+    @NonNull
     public static FLArrayIterator getManagedArrayIterator() {
         return new FLArrayIterator.ManagedFLArrayIterator();
     }
@@ -72,7 +75,7 @@ public abstract class FLArrayIterator extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    public void begin(FLArray array) {
+    public void begin(@NonNull FLArray array) {
         final long peer = getPeer();
         array.withContent(hdl -> {
             begin(hdl, peer);
@@ -82,11 +85,13 @@ public abstract class FLArrayIterator extends C4NativePeer {
 
     public boolean next() { return next(getPeer()); }
 
+    @Nullable
     public FLValue getValue() {
         final long hValue = getValue(getPeer());
         return hValue == 0L ? null : new FLValue(hValue);
     }
 
+    @Nullable
     public FLValue getValueAt(int index) {
         final long hValue = getValueAt(getPeer(), index);
         return hValue == 0L ? null : new FLValue(hValue);

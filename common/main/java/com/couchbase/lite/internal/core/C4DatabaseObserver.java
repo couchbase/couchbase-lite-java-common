@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.CallSuper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.util.Collections;
@@ -61,6 +62,7 @@ public class C4DatabaseObserver extends C4NativePeer {
     // Static factory methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     static C4DatabaseObserver newObserver(long db, C4DatabaseObserverListener listener, Object context) {
         final C4DatabaseObserver observer = new C4DatabaseObserver(db, listener, context);
         REVERSE_LOOKUP_TABLE.put(observer.getPeer(), observer);
@@ -89,6 +91,7 @@ public class C4DatabaseObserver extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     public C4DatabaseChange[] getChanges(int maxChanges) { return getChanges(getPeer(), maxChanges); }
 
     @CallSuper
@@ -115,6 +118,7 @@ public class C4DatabaseObserver extends C4NativePeer {
 
     private static native long create(long db);
 
+    @NonNull
     private static native C4DatabaseChange[] getChanges(long peer, int maxChanges);
 
     private static native void free(long peer);

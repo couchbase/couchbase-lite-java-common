@@ -46,6 +46,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     // member variables
     //---------------------------------------------
     private final ResultSet rs;
+    @NonNull
     private final List<FLValue> values;
     private final long missingColumns;
     private final DbContext context;
@@ -53,7 +54,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
     // constructors
     //---------------------------------------------
-    Result(ResultSet rs, C4QueryEnumerator c4enum, DbContext context) {
+    Result(ResultSet rs, @NonNull C4QueryEnumerator c4enum, DbContext context) {
         this.rs = rs;
         this.values = extractColumns(c4enum.getColumns());
         this.missingColumns = c4enum.getMissingColumns();
@@ -96,6 +97,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @param index the index of the required value.
      * @return a String value.
      */
+    @Nullable
     @Override
     public String getString(int index) {
         assertInBounds(index);
@@ -186,6 +188,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @param index the index of the required value.
      * @return a Blob.
      */
+    @Nullable
     @Override
     public Blob getBlob(int index) {
         assertInBounds(index);
@@ -211,6 +214,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @param index the index of the required value.
      * @return an Array.
      */
+    @Nullable
     @Override
     public Array getArray(int index) {
         assertInBounds(index);
@@ -224,6 +228,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @param index the index of the required value.
      * @return a Dictionary.
      */
+    @Nullable
     @Override
     public Dictionary getDictionary(int index) {
         assertInBounds(index);
@@ -492,12 +497,13 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     // private access
     //---------------------------------------------
 
-    private int indexForColumnName(String name) {
+    private int indexForColumnName(@NonNull String name) {
         final int index = rs.getColumnIndex(name);
         if (index < 0) { return -1; }
         return ((missingColumns & (1L << index)) == 0) ? index : -1;
     }
 
+    @Nullable
     private Object fleeceValueToObject(int index) {
         final FLValue value = values.get(index);
         if (value == null) { return null; }
@@ -507,7 +513,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         synchronized (db.getDbLock()) { return root.asNative(); }
     }
 
-    private List<FLValue> extractColumns(FLArrayIterator columns) {
+    @NonNull
+    private List<FLValue> extractColumns(@NonNull FLArrayIterator columns) {
         final List<FLValue> values = new ArrayList<>();
         final int count = rs.getColumnCount();
         for (int i = 0; i < count; i++) { values.add(columns.getValueAt(i)); }

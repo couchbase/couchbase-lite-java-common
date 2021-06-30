@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.connectivity;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.annotation.RequiresApi;
 
 
@@ -27,7 +28,7 @@ import android.support.annotation.RequiresApi;
  */
 @RequiresApi(api = Build.VERSION_CODES.N)
 final class ConnectivityListener24to28 extends CallbackConnectivityWatcher {
-    ConnectivityListener24to28(AndroidConnectivityManager mgr) { super("24-28", mgr); }
+    ConnectivityListener24to28(@NonNull AndroidConnectivityManager mgr) { super("24-28", mgr); }
 
     @Override
     public void start() {

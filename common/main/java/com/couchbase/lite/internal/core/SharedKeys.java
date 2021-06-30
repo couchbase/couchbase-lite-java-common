@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 
 
@@ -28,7 +30,7 @@ public final class SharedKeys {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    public SharedKeys(final C4Database c4db) { flSharedKeys = c4db.getFLSharedKeys(); }
+    public SharedKeys(@NonNull final C4Database c4db) { flSharedKeys = c4db.getFLSharedKeys(); }
 
     public SharedKeys(final FLSharedKeys flSharedKeys) { this.flSharedKeys = flSharedKeys; }
 

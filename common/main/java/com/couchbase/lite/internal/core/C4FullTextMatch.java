@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.support.annotation.NonNull;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -36,6 +38,7 @@ public class C4FullTextMatch extends C4NativePeer {
 
     public long length() { return length(getPeerUnchecked()); }
 
+    @NonNull
     public List<Long> toList() { return Arrays.asList(dataSource(), property(), term(), start(), length()); }
 
     @Override

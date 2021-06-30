@@ -115,6 +115,7 @@ public abstract class FLEncoder extends C4NativePeer {
     @Override
     public abstract void close();
 
+    @NonNull
     public FLEncoder setArg(@NonNull String key, @Nullable Object arg) {
         synchronized (arguments) { arguments.put(key, arg); }
         return this;
@@ -142,7 +143,7 @@ public abstract class FLEncoder extends C4NativePeer {
     public boolean writeKey(String slice) { return writeKey(getPeer(), slice); }
 
     @SuppressWarnings({"unchecked", "PMD.NPathComplexity"})
-    public boolean writeValue(Object value) {
+    public boolean writeValue(@Nullable Object value) {
         final long peer = getPeer();
         // null
         if (value == null) { return writeNull(peer); }
@@ -204,7 +205,7 @@ public abstract class FLEncoder extends C4NativePeer {
         return false;
     }
 
-    public boolean write(Map<String, Object> map) {
+    public boolean write(@Nullable Map<String, Object> map) {
         if (map == null) { beginDict(0); }
         else {
             beginDict(map.size());
@@ -216,7 +217,7 @@ public abstract class FLEncoder extends C4NativePeer {
         return endDict();
     }
 
-    public boolean write(List<?> list) {
+    public boolean write(@Nullable List<?> list) {
         if (list == null) { beginArray(0); }
         else {
             beginArray(list.size());
@@ -227,6 +228,7 @@ public abstract class FLEncoder extends C4NativePeer {
 
     public void reset() { reset(getPeer()); }
 
+    @NonNull
     public byte[] finish() throws LiteCoreException { return finish(getPeer()); }
 
     @NonNull
@@ -276,6 +278,7 @@ public abstract class FLEncoder extends C4NativePeer {
 
     private static native boolean writeKey(long encoder, String slice);
 
+    @NonNull
     private static native byte[] finish(long encoder) throws LiteCoreException;
 
     private static native long finish2(long encoder) throws LiteCoreException;

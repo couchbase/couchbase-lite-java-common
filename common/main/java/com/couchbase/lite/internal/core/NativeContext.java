@@ -109,6 +109,7 @@ public class NativeContext<T> {
     @VisibleForTesting
     synchronized void clear() { contexts.clear(); }
 
+    @NonNull
     @VisibleForTesting
     synchronized Set<Integer> keySet() { return contexts.keySet(); }
 }

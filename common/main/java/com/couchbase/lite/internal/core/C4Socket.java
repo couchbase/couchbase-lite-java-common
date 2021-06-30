@@ -96,7 +96,7 @@ public abstract class C4Socket extends C4NativePeer {
     }
 
     // This method is called by reflection.  Don't change its signature.
-    static void write(long peer, byte[] allocatedData) {
+    static void write(long peer, @Nullable byte[] allocatedData) {
         if (allocatedData == null) {
             if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "C4Socket.write: allocatedData is null"); }
             return;
@@ -247,7 +247,7 @@ public abstract class C4Socket extends C4NativePeer {
         }
     }
 
-    protected final void received(byte[] data) {
+    protected final void received(@NonNull byte[] data) {
         final long peer;
         synchronized (getPeerLock()) {
             peer = getPeerUnchecked();

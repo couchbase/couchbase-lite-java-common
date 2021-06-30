@@ -33,6 +33,7 @@ public class CBLExecutor extends ThreadPoolExecutor {
     private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
     private static final int POOL_SIZE = Math.max(4, CPU_COUNT - 1);
 
+    @NonNull
     private final String name;
 
     private long n;
@@ -51,6 +52,7 @@ public class CBLExecutor extends ThreadPoolExecutor {
                 private final String threadName = name + " #";
                 private final AtomicInteger threadId = new AtomicInteger(0);
 
+                @NonNull
                 public Thread newThread(@NonNull Runnable r) {
                     final Thread thread = new Thread(r, threadName + threadId.incrementAndGet());
 

@@ -207,8 +207,10 @@ public final class Parameters {
     //---------------------------------------------
     // package level access
     //---------------------------------------------
+    @NonNull
     Parameters readonlyCopy() { return new Parameters(this, true); }
 
+    @NonNull
     FLSliceResult encode() throws LiteCoreException {
         try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
             encoder.setArg(Blob.ENCODER_ARG_QUERY_PARAM, true);

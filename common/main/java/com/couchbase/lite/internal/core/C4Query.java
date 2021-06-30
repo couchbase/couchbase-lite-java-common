@@ -29,11 +29,11 @@ import com.couchbase.lite.internal.fleece.FLValue;
 
 public class C4Query extends C4NativePeer {
     public static void createIndex(
-        C4Database db,
+        @NonNull C4Database db,
         String name,
         String queryExpression,
-        AbstractIndex.QueryLanguage queryLanguage,
-        AbstractIndex.IndexType indexType,
+        @NonNull AbstractIndex.QueryLanguage queryLanguage,
+        @NonNull AbstractIndex.IndexType indexType,
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
@@ -47,11 +47,12 @@ public class C4Query extends C4NativePeer {
             ignoreDiacritics);
     }
 
-    public static FLValue getIndexInfo(C4Database db) throws LiteCoreException {
+    @NonNull
+    public static FLValue getIndexInfo(@NonNull C4Database db) throws LiteCoreException {
         return new FLValue(getIndexInfo(db.getPeer()));
     }
 
-    public static void deleteIndex(C4Database db, String name) throws LiteCoreException {
+    public static void deleteIndex(@NonNull C4Database db, String name) throws LiteCoreException {
         deleteIndex(db.getPeer(), name);
     }
 
@@ -60,7 +61,7 @@ public class C4Query extends C4NativePeer {
     // Constructors
     //-------------------------------------------------------------------------
 
-    C4Query(long db, AbstractIndex.QueryLanguage queryLanguage, String expression) throws LiteCoreException {
+    C4Query(long db, @NonNull AbstractIndex.QueryLanguage queryLanguage, String expression) throws LiteCoreException {
         super(createQuery(db, queryLanguage.getValue(), expression));
     }
 
@@ -88,7 +89,7 @@ public class C4Query extends C4NativePeer {
     }
 
     @SuppressWarnings("PMD.MethodReturnsInternalArray")
-    public byte[] getFullTextMatched(C4FullTextMatch match) throws LiteCoreException {
+    public byte[] getFullTextMatched(@NonNull C4FullTextMatch match) throws LiteCoreException {
         return withPeer(null, h -> getFullTextMatched(h, match.getPeer()));
     }
 
@@ -193,5 +194,6 @@ public class C4Query extends C4NativePeer {
      * Given a docID and sequence number from the enumerator, returns the text that was emitted
      * during indexing.
      */
+    @NonNull
     private static native byte[] getFullTextMatched(long peer, long fullTextMatch) throws LiteCoreException;
 }

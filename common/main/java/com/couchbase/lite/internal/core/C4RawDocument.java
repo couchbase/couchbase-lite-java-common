@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.CallSuper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
@@ -46,6 +47,7 @@ public class C4RawDocument extends C4NativePeer {
     @Nullable
     public String meta() { return meta(getPeer()); }
 
+    @NonNull
     public byte[] body() { return body(getPeer()); }
 
     @CallSuper
@@ -75,9 +77,12 @@ public class C4RawDocument extends C4NativePeer {
     // native methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     private static native String key(long peer);
 
+    @NonNull
     private static native String meta(long peer);
 
+    @NonNull
     private static native byte[] body(long peer);
 }

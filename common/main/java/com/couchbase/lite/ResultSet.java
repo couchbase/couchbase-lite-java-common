@@ -211,6 +211,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     // Private level access
     //---------------------------------------------
 
+    @NonNull
     private Object getDbLock() {
         final AbstractQuery q = query;
         if (q != null) {

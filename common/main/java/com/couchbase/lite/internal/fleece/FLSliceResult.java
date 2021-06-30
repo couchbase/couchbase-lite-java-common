@@ -64,12 +64,16 @@ public abstract class FLSliceResult extends C4NativePeer {
     // Factory Methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     public static FLSliceResult getUnmanagedSliceResult() { return new UnmanagedFLSliceResult(); }
 
+    @NonNull
     public static FLSliceResult getUnmanagedSliceResult(long peer) { return new UnmanagedFLSliceResult(peer); }
 
+    @NonNull
     public static FLSliceResult getManagedSliceResult() { return new ManagedFLSliceResult(); }
 
+    @NonNull
     public static FLSliceResult getManagedSliceResult(long peer) { return new ManagedFLSliceResult(peer); }
 
 
@@ -95,6 +99,7 @@ public abstract class FLSliceResult extends C4NativePeer {
     // !!!  Exposes the peer handle
     public long getHandle() { return getPeer(); }
 
+    @NonNull
     public byte[] getBuf() { return getBuf(getPeer()); }
 
     public long getSize() { return getSize(getPeer()); }
@@ -107,6 +112,7 @@ public abstract class FLSliceResult extends C4NativePeer {
 
     private static native long init();
 
+    @NonNull
     private static native byte[] getBuf(long slice);
 
     private static native long getSize(long slice);

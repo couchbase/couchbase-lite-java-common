@@ -57,10 +57,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     /// Factory methods
 
+    @NonNull
     static Document getDocument(@NonNull Database database, @NonNull String id) throws CouchbaseLiteException {
         return getDocument(database, id, true);
     }
 
+    @NonNull
     static Document getDocument(@NonNull Database database, @NonNull String id, boolean includeDeleted)
         throws CouchbaseLiteException {
         Preconditions.assertNotNull(database, "database");

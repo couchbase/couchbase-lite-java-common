@@ -78,6 +78,7 @@ public abstract class C4Database extends C4NativePeer {
     }
 
     // These enum values must match the ones in DataFile::MaintenanceType
+    @NonNull
     private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
 
     static {
@@ -120,6 +121,7 @@ public abstract class C4Database extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // unmanaged: someone else owns it
+    @NonNull
     public static C4Database getUnmanagedDatabase(long peer) { return new UnmanagedC4Database(peer); }
 
     // managed: Java code is responsible for freeing it
@@ -237,6 +239,7 @@ public abstract class C4Database extends C4NativePeer {
 
     public void purgeDoc(String docID) throws LiteCoreException { purgeDoc(getPeer(), docID); }
 
+    @NonNull
     public byte[] getPublicUUID() throws LiteCoreException { return getPublicUUID(getPeer()); }
 
     // - Transactions
@@ -258,6 +261,7 @@ public abstract class C4Database extends C4NativePeer {
     // C4Document
     ////////////////////////////////
 
+    @NonNull
     public C4Document get(String docID) throws LiteCoreException { return new C4Document(getPeer(), docID, true); }
 
     // - Purging and Expiration
@@ -271,7 +275,7 @@ public abstract class C4Database extends C4NativePeer {
     }
 
     @NonNull
-    public C4Document create(String docID, FLSliceResult body, int flags) throws LiteCoreException {
+    public C4Document create(String docID, @Nullable FLSliceResult body, int flags) throws LiteCoreException {
         return new C4Document(C4Document.create2(getPeer(), docID, body != null ? body.getHandle() : 0, flags));
     }
 
@@ -316,8 +320,8 @@ public abstract class C4Database extends C4NativePeer {
     public void createIndex(
         String name,
         String queryExpression,
-        AbstractIndex.QueryLanguage queryLanguage,
-        AbstractIndex.IndexType indexType,
+        @NonNull AbstractIndex.QueryLanguage queryLanguage,
+        @NonNull AbstractIndex.IndexType indexType,
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
@@ -326,6 +330,7 @@ public abstract class C4Database extends C4NativePeer {
 
     public void deleteIndex(String name) throws LiteCoreException { C4Query.deleteIndex(this, name); }
 
+    @NonNull
     public FLValue getIndexesInfo() throws LiteCoreException { return C4Query.getIndexInfo(this); }
 
     public boolean performMaintenance(MaintenanceType type) throws LiteCoreException {
@@ -428,6 +433,7 @@ public abstract class C4Database extends C4NativePeer {
         return getCookies(getPeer(), uri.toString());
     }
 
+    @NonNull
     @VisibleForTesting
     public C4Document get(String docID, boolean mustExist) throws LiteCoreException {
         return new C4Document(getPeer(), docID, mustExist);
@@ -440,8 +446,10 @@ public abstract class C4Database extends C4NativePeer {
     // !!!  Exposes the peer handle
     long getHandle() { return getPeer(); }
 
+    @NonNull
     FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
 
+    @NonNull
     @VisibleForTesting
     C4Document create(String docID, byte[] body, int revisionFlags) throws LiteCoreException {
         return new C4Document(C4Document.create(getPeer(), docID, body, revisionFlags));
@@ -453,17 +461,21 @@ public abstract class C4Database extends C4NativePeer {
     @VisibleForTesting
     long getLastSequence() { return getLastSequence(getPeer()); }
 
+    @NonNull
     @VisibleForTesting
     byte[] getPrivateUUID() throws LiteCoreException { return getPrivateUUID(getPeer()); }
 
+    @NonNull
     @VisibleForTesting
-    FLSliceResult encodeJSON(String data) throws LiteCoreException {
+    FLSliceResult encodeJSON(@NonNull String data) throws LiteCoreException {
         return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8)));
     }
 
+    @NonNull
     @VisibleForTesting
     C4Document getBySequence(long sequence) throws LiteCoreException { return new C4Document(getPeer(), sequence); }
 
+    @NonNull
     @VisibleForTesting
     public C4Document put(
         byte[] body,
@@ -489,9 +501,10 @@ public abstract class C4Database extends C4NativePeer {
             remoteDBID));
     }
 
+    @NonNull
     @VisibleForTesting
     C4Document put(
-        FLSliceResult body, // C4Slice*
+        @NonNull FLSliceResult body, // C4Slice*
         String docID,
         int revFlags,
         boolean existingRevision,
@@ -519,6 +532,7 @@ public abstract class C4Database extends C4NativePeer {
         rawPut(getPeer(), storeName, key, meta, body);
     }
 
+    @NonNull
     @VisibleForTesting
     C4RawDocument rawGet(String storeName, String docID) throws LiteCoreException {
         return new C4RawDocument(rawGet(getPeer(), storeName, docID));
@@ -596,8 +610,10 @@ public abstract class C4Database extends C4NativePeer {
 
     private static native void purgeDoc(long db, String id) throws LiteCoreException;
 
+    @NonNull
     private static native byte[] getPublicUUID(long db) throws LiteCoreException;
 
+    @NonNull
     private static native byte[] getPrivateUUID(long db) throws LiteCoreException;
 
     // - Transactions
@@ -614,6 +630,7 @@ public abstract class C4Database extends C4NativePeer {
 
     private static native void setCookie(long db, String url, String setCookieHeader) throws LiteCoreException;
 
+    @NonNull
     private static native String getCookies(long db, String url) throws LiteCoreException;
 
     ////////////////////////////////

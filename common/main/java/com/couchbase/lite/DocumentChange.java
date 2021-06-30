@@ -23,11 +23,12 @@ import android.support.annotation.NonNull;
  * Provides details about a Document change.
  */
 public final class DocumentChange {
+    @NonNull
     private final Database database;
-
+    @NonNull
     private final String documentID;
 
-    DocumentChange(Database database, String documentID) {
+    DocumentChange(@NonNull Database database, @NonNull String documentID) {
         this.database = database;
         this.documentID = documentID;
     }
@@ -36,17 +37,13 @@ public final class DocumentChange {
      * Return the Database instance
      */
     @NonNull
-    public Database getDatabase() {
-        return database;
-    }
+    public Database getDatabase() { return database; }
 
     /**
      * Returns the changed document ID
      */
     @NonNull
-    public String getDocumentID() {
-        return documentID;
-    }
+    public String getDocumentID() { return documentID; }
 
     @NonNull
     @Override

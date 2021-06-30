@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +36,7 @@ public class Limit extends BuilderQuery {
     // Constructors
     //---------------------------------------------
 
-    Limit(BuilderQuery query, Expression limit, Expression offset) {
+    Limit(@NonNull BuilderQuery query, Expression limit, Expression offset) {
         copy(query);
         this.limit = limit;
         this.offset = offset;
@@ -45,6 +47,7 @@ public class Limit extends BuilderQuery {
     // Package level access
     //---------------------------------------------
 
+    @NonNull
     Object asJSON() {
         final List<Object> json = new ArrayList<>();
         json.add(limit.asJSON());

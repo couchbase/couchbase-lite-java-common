@@ -68,6 +68,7 @@ public final class StateMachine<T extends Enum<T>> {
          * @param target1 the end of the first arc
          * @param targets the ends of other arcs
          */
+        @NonNull
         @SafeVarargs
         public final Builder<S> addTransition(@NonNull S source, @NonNull S target1, @NonNull S... targets) {
             if (source == errorState) {
@@ -84,6 +85,7 @@ public final class StateMachine<T extends Enum<T>> {
          *
          * @return a new state machine instance.
          */
+        @Nullable
         public StateMachine<S> build() { return new StateMachine<>(initialState, errorState, transitions); }
     }
 

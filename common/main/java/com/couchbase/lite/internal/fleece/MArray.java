@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.fleece;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,20 +24,23 @@ import java.util.List;
 
 // ??? Why isn't this iterable?
 public class MArray extends MCollection {
+    @NonNull
     private List<MValue> values = new ArrayList<>();
 
+    @Nullable
     private FLArray baseArray;
 
-    public void initInSlot(MValue mv, MCollection parent) {
+    public void initInSlot(@NonNull MValue mv, @Nullable MCollection parent) {
         initInSlot(mv, parent, (parent != null) && parent.hasMutableChildren());
     }
 
-    public void initAsCopyOf(MArray array, boolean isMutable) {
+    public void initAsCopyOf(@Nullable MArray array, boolean isMutable) {
         super.initAsCopyOf(array, isMutable);
         baseArray = array != null ? array.getBaseArray() : null;
         values = array != null ? new ArrayList<>(array.values) : new ArrayList<>();
     }
 
+    @Nullable
     public FLArray getBaseArray() { return baseArray; }
 
     public long count() { return values.size(); }
@@ -115,7 +119,7 @@ public class MArray extends MCollection {
 
     /* Encodable */
 
-    public void encodeTo(FLEncoder enc) {
+    public void encodeTo(@NonNull FLEncoder enc) {
         if (!isMutated()) {
             if (baseArray == null) {
                 enc.beginArray(0);

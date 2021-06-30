@@ -25,8 +25,10 @@ public final class JSONEncoder extends FLEncoder.ManagedFLEncoder {
 
     public JSONEncoder() { super(newJSONEncoder()); }
 
+    @NonNull
     public String finishJSON() throws LiteCoreException { return finishJSON(getPeer()); }
 
+    @NonNull
     public byte[] finish() throws LiteCoreException {
         throw new UnsupportedOperationException("finish not supported for JSONEncoders");
     }
@@ -44,5 +46,6 @@ public final class JSONEncoder extends FLEncoder.ManagedFLEncoder {
 
     static native long newJSONEncoder();
 
+    @NonNull
     static native String finishJSON(long peer);
 }

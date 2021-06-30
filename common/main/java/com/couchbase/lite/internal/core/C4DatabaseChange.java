@@ -23,12 +23,15 @@ import com.couchbase.lite.internal.support.Log;
 
 
 public final class C4DatabaseChange {
+    @Nullable
     private final String docID;
+    @NonNull
     private final String revID;
     private final long sequence;
     private final boolean external;
 
     // This method is called by reflection.  Don't change its signature.
+    @Nullable
     public static C4DatabaseChange createC4DatabaseChange(
         @Nullable String docId,
         @Nullable String revId,
@@ -47,8 +50,10 @@ public final class C4DatabaseChange {
         this.external = ext;
     }
 
+    @Nullable
     public String getDocID() { return docID; }
 
+    @NonNull
     public String getRevID() { return revID; }
 
     public long getSequence() { return sequence; }

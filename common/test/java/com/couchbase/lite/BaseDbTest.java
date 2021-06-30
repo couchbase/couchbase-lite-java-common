@@ -26,7 +26,6 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -199,7 +198,7 @@ public abstract class BaseDbTest extends BaseTest {
         return buf.toString();
     }
 
-    @NotNull
+    @NonNull
     protected final MutableArray makeArray() {
         // A small array
         final MutableArray simpleArray = new MutableArray();
@@ -683,7 +682,7 @@ public abstract class BaseDbTest extends BaseTest {
         assertTrue(array.getDictionary(26) instanceof Dictionary);
     }
 
-    @NotNull
+    @NonNull
     protected final MutableDictionary makeDict() {
         // A small array
         final MutableArray simpleArray = new MutableArray();

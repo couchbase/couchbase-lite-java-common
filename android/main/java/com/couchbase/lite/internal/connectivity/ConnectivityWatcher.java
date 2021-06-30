@@ -36,7 +36,9 @@ import com.couchbase.lite.internal.support.Log;
  * </li>
  */
 abstract class ConnectivityWatcher {
+    @NonNull
     protected final String name;
+    @NonNull
     private final WeakReference<AndroidConnectivityManager> mgr;
 
     ConnectivityWatcher(@NonNull String name, @NonNull AndroidConnectivityManager mgr) {
@@ -50,6 +52,7 @@ abstract class ConnectivityWatcher {
 
     protected final AndroidConnectivityManager getCblMgr() { return mgr.get(); }
 
+    @NonNull
     protected final ConnectivityManager getSysMgr() {
         return (ConnectivityManager)
             CouchbaseLiteInternal.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);

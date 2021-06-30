@@ -28,11 +28,12 @@ import com.couchbase.lite.internal.utils.JSONUtils;
  * full-text index for full-text queries (using the match operator).
  */
 public abstract class Index extends AbstractIndex {
-    Index(IndexType type) { super(type, QueryLanguage.JSON); }
+    Index(@NonNull IndexType type) { super(type, QueryLanguage.JSON); }
 
     @NonNull
     abstract List<Object> getJson();
 
+    @NonNull
     String getIndexSpec() throws CouchbaseLiteException {
         try { return JSONUtils.toJSON(getJson()).toString(); }
         catch (JSONException e) { throw new CouchbaseLiteException("Error encoding JSON", e); }

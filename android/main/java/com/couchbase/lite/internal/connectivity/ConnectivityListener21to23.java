@@ -18,13 +18,14 @@ package com.couchbase.lite.internal.connectivity;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.NetworkRequest;
+import android.support.annotation.NonNull;
 
 
 /**
  * Listener for API 21 - 23: use a ConnectivityCallback for updates and ActiveNetworkInfo for status
  */
 final class ConnectivityListener21to23 extends CallbackConnectivityWatcher {
-    ConnectivityListener21to23(AndroidConnectivityManager mgr) { super("21-23", mgr); }
+    ConnectivityListener21to23(@NonNull AndroidConnectivityManager mgr) { super("21-23", mgr); }
 
     @Override
     public void start() {

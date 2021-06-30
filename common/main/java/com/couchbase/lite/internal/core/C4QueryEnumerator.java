@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.CallSuper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
@@ -47,6 +48,7 @@ public class C4QueryEnumerator extends C4NativePeer {
 
     public long getRowCount() throws LiteCoreException { return getRowCount(getPeer()); }
 
+    @Nullable
     public C4QueryEnumerator refresh() throws LiteCoreException {
         final long newPeer = refresh(getPeer());
         return (newPeer == 0) ? null : new C4QueryEnumerator(newPeer);
@@ -57,6 +59,7 @@ public class C4QueryEnumerator extends C4NativePeer {
      * The columns of this result, in the same order as in the query's `WHAT` clause.
      * NOTE: FLArrayIterator is member variable of C4QueryEnumerator. Not necessary to release.
      */
+    @NonNull
     public FLArrayIterator getColumns() { return FLArrayIterator.getUnmanagedArrayIterator(getColumns(getPeer())); }
 
     /**
@@ -96,6 +99,7 @@ public class C4QueryEnumerator extends C4NativePeer {
     /**
      * Return an array of details of each full-text match
      */
+    @NonNull
     C4FullTextMatch getFullTextMatches(int idx) { return new C4FullTextMatch(getFullTextMatch(getPeer(), idx)); }
 
     //-------------------------------------------------------------------------

@@ -29,8 +29,10 @@ public final class StringUtils {
     public static final String ALPHANUMERIC = NUMERIC + ALPHA + ALPHA.toLowerCase(Locale.ROOT);
     private static final char[] CHARS = ALPHANUMERIC.toCharArray();
 
+    @NonNull
     public static String getUniqueName(@NonNull String prefix, int len) { return prefix + '-' + randomString(len); }
 
+    @NonNull
     public static String randomString(int len) {
         final char[] buf = new char[len];
         for (int idx = 0; idx < buf.length; ++idx) { buf[idx] = CHARS[MathUtils.RANDOM.get().nextInt(CHARS.length)]; }
@@ -39,10 +41,10 @@ public final class StringUtils {
 
     private StringUtils() { }
 
-    public static boolean isEmpty(String str) { return (str == null) || str.isEmpty(); }
+    public static boolean isEmpty(@Nullable String str) { return (str == null) || str.isEmpty(); }
 
     @NonNull
-    public static String getArrayString(String[] strs, int idx) {
+    public static String getArrayString(@Nullable String[] strs, int idx) {
         return (strs == null) || (idx < 0) || (idx >= strs.length) ? "" : strs[idx];
     }
 

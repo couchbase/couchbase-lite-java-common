@@ -33,7 +33,7 @@ public final class From extends BuilderQuery
     // Constructor
     //---------------------------------------------
 
-    From(BuilderQuery query, DataSource dataSource) {
+    From(@NonNull BuilderQuery query, DataSource dataSource) {
         copy(query);
         setFrom(dataSource);
     }

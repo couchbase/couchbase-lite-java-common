@@ -20,6 +20,8 @@ import android.support.annotation.NonNull;
 
 import java.util.EnumSet;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.couchbase.lite.internal.core.C4Constants;
 
 
@@ -28,6 +30,7 @@ public final class ReplicatedDocument {
     // member variables
     //---------------------------------------------
     private final String id;
+    @NotNull
     private final EnumSet<DocumentFlag> documentFlags;
     private final CouchbaseLiteException error;
 

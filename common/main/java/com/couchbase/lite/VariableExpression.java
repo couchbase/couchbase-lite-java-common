@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +35,7 @@ public final class VariableExpression extends Expression {
         return name;
     }
 
+    @NonNull
     @Override
     Object asJSON() {
         final List<Object> json = new ArrayList<>();

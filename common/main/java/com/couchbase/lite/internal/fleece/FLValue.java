@@ -34,7 +34,7 @@ public class FLValue {
     //-------------------------------------------------------------------------
 
     @Nullable
-    public static FLValue fromData(FLSliceResult slice) {
+    public static FLValue fromData(@Nullable FLSliceResult slice) {
         if (slice == null) { return null; }
         final long value = fromData(slice.getHandle());
         return value == 0 ? null : new FLValue(value);
@@ -54,7 +54,7 @@ public class FLValue {
     public static FLValue fromData(byte[] data) { return new FLValue(fromTrustedData(data)); }
 
     @Nullable
-    public static Object toObject(FLValue flValue) { return flValue.asObject(); }
+    public static Object toObject(@NonNull FLValue flValue) { return flValue.asObject(); }
 
 
     //-------------------------------------------------------------------------
@@ -117,6 +117,7 @@ public class FLValue {
      *
      * @return string rep
      */
+    @Nullable
     public String toStr() { return toString(handle); }
 
     /**
@@ -124,6 +125,7 @@ public class FLValue {
      *
      * @return json rep
      */
+    @Nullable
     public String toJSON() { return toJSON(handle); }
 
     /**
@@ -131,6 +133,7 @@ public class FLValue {
      *
      * @return json5 rep
      */
+    @Nullable
     public String toJSON5() { return toJSON5(handle); }
 
     /**
@@ -138,6 +141,7 @@ public class FLValue {
      *
      * @return byte[]
      */
+    @NonNull
     public byte[] asData() { return asData(handle); }
 
     /**
@@ -182,10 +186,13 @@ public class FLValue {
      *
      * @return String
      */
+    @NonNull
     public String asString() { return asString(handle); }
 
+    @NonNull
     public List<Object> asArray() { return asFLArray().asArray(); }
 
+    @NonNull
     public <T> List<T> asTypedArray() { return asFLArray().asTypedArray(); }
 
     /**
@@ -193,6 +200,7 @@ public class FLValue {
      *
      * @return String
      */
+    @NonNull
     public FLDict asFLDict() { return new FLDict(asDict(handle)); }
 
     /**
@@ -200,6 +208,7 @@ public class FLValue {
      *
      * @return long (FLDict)
      */
+    @NonNull
     public Map<String, Object> asDict() { return asFLDict().asDict(); }
 
     /**
@@ -207,6 +216,7 @@ public class FLValue {
      *
      * @return Object
      */
+    @Nullable
     public Object asObject() {
         switch (getType(handle)) {
             case FLConstants.ValueType.BOOLEAN:
@@ -233,8 +243,10 @@ public class FLValue {
     // package level access
     //-------------------------------------------------------------------------
 
-    <T> T withContent(Fn.Function<Long, T> fn) { return fn.apply(handle); }
+    @NonNull
+    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
 
+    @NonNull
     FLArray asFLArray() { return new FLArray(asArray(handle)); }
 
     //-------------------------------------------------------------------------
@@ -268,6 +280,7 @@ public class FLValue {
     @Nullable
     private static native String toJSON5(long handle);
 
+    @NonNull
     private static native byte[] asData(long value);
 
     private static native boolean asBool(long value);
@@ -280,6 +293,7 @@ public class FLValue {
 
     private static native double asDouble(long value);
 
+    @NonNull
     private static native String asString(long value);
 
     private static native long asArray(long value);

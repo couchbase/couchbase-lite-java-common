@@ -16,15 +16,20 @@
 
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import com.couchbase.lite.internal.core.C4DocumentObserver;
 
 
 class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
+    @NonNull
     private final Database db;
+    @NonNull
     private final String docID;
+    @NonNull
     private final C4DocumentObserver observer;
 
-    DocumentChangeNotifier(final Database db, final String docID) {
+    DocumentChangeNotifier(@NonNull final Database db, @NonNull final String docID) {
         this.db = db;
         this.docID = docID;
         this.observer = db.createDocumentObserver(

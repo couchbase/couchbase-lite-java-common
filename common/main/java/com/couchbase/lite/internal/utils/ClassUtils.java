@@ -15,11 +15,19 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
+
 public final class ClassUtils {
     private ClassUtils() { }
 
+    @Nullable
     @SuppressWarnings("unchecked")
-    public static <T> T castOrNull(Class<T> clazz, Object obj) { return (!clazz.isInstance(obj)) ? null : (T) obj; }
+    public static <T> T castOrNull(@NonNull Class<T> clazz, Object obj) {
+        return (!clazz.isInstance(obj)) ? null : (T) obj;
+    }
 
+    @NonNull
     public static String objId(Object obj) { return "@0x" + Integer.toHexString(System.identityHashCode(obj)); }
 }

@@ -68,6 +68,7 @@ public class C4DocumentEnded {
 
     public boolean errorIsTransient() { return errorIsTransient; }
 
+    @NonNull
     public C4Error getC4Error() { return new C4Error(errorDomain, errorCode, errorInternalInfo); }
 
     public boolean isConflicted() {

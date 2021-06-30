@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.CallSuper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
@@ -45,6 +46,7 @@ public class C4DocEnumerator extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
+    @NonNull
     public C4Document getDocument() throws LiteCoreException {
         return new C4Document(getDocument(getPeer()));
     }

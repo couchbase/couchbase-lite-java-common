@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,8 @@ import java.util.List;
 public final class PropertyExpression extends Expression {
     static final String PROPS_ALL = "";
 
-    static PropertyExpression allFrom(String from) {
+    @NonNull
+    static PropertyExpression allFrom(@Nullable String from) {
         // Use data source alias name as the column name if specified:
         return new PropertyExpression(PROPS_ALL, from, (from != null ? from : PROPS_ALL));
     }
@@ -65,6 +67,7 @@ public final class PropertyExpression extends Expression {
         return new PropertyExpression(this.keyPath, alias);
     }
 
+    @NonNull
     @Override
     Object asJSON() {
         final List<Object> json = new ArrayList<>();

@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -66,6 +67,7 @@ public abstract class Ordering {
             return this;
         }
 
+        @Nullable
         Object asJSON() {
             if (isAscending) { return expression.asJSON(); }
 
@@ -113,5 +115,6 @@ public abstract class Ordering {
     // Package level access
     //---------------------------------------------
 
+    @Nullable
     abstract Object asJSON();
 }

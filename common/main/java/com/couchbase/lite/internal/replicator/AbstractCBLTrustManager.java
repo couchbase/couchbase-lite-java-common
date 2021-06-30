@@ -57,6 +57,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
         this.serverCertsListener = serverCertsListener;
     }
 
+    @NonNull
     @Override
     public X509Certificate[] getAcceptedIssuers() {
         return (useCBLTrustManagement()) ? new X509Certificate[0] : getDefaultTrustManager().getAcceptedIssuers();
@@ -154,7 +155,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
             trustManagerFactory.init((KeyStore) null);
             trustManagers = trustManagerFactory.getTrustManagers();
         }
-        catch (NoSuchAlgorithmException | KeyStoreException e) {
+        catch (@NonNull NoSuchAlgorithmException | KeyStoreException e) {
             throw new IllegalStateException("Cannot find the default trust manager", e);
         }
 
@@ -174,14 +175,14 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
     /**
      * Check if the certificate is a self-signed certificate.
      */
-    private boolean isSelfSignedCertificate(X509Certificate cert) {
+    private boolean isSelfSignedCertificate(@NonNull X509Certificate cert) {
         if (!cert.getSubjectDN().equals(cert.getIssuerDN())) { return false; }
 
         try {
             cert.verify(cert.getPublicKey());
             return true;
         }
-        catch (CertificateException | NoSuchAlgorithmException |
+        catch (@NonNull CertificateException | NoSuchAlgorithmException |
             InvalidKeyException | NoSuchProviderException |
             SignatureException e) {
             return false;

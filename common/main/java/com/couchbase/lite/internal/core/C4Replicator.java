@@ -606,6 +606,7 @@ public class C4Replicator extends C4NativePeer {
     /**
      * Returns the current state of a replicator.
      */
+    @NonNull
     private static native C4ReplicatorStatus getStatus(long replicator);
 
     /**

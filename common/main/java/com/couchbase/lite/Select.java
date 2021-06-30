@@ -34,6 +34,7 @@ public final class Select extends BuilderQuery implements FromRouter {
     // Member variables
     //---------------------------------------------
     private final boolean distinct;                 // DISTINCT
+    @NonNull
     private final List<SelectResult> selectResults; // result-columns
 
     //---------------------------------------------
@@ -67,12 +68,14 @@ public final class Select extends BuilderQuery implements FromRouter {
     // Package level access
     //---------------------------------------------
 
+    @NonNull
     List<SelectResult> getSelectResults() { return selectResults; }
 
     boolean isDistinct() { return distinct; }
 
     boolean hasSelectResults() { return !selectResults.isEmpty(); }
 
+    @NonNull
     Object asJSON() {
         final List<Object> json = new ArrayList<>();
         for (SelectResult sr : selectResults) { json.add(sr.asJSON()); }
