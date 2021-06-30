@@ -41,6 +41,7 @@ public final class N1qlQuery extends AbstractQuery {
         return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ", n1ql=" + n1ql + "}";
     }
 
+    @NonNull
     @Override
     protected C4Query prepQueryLocked() throws CouchbaseLiteException {
         if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "N1QL query: %s", n1ql); }
@@ -49,6 +50,7 @@ public final class N1qlQuery extends AbstractQuery {
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
+    @NonNull
     @Override
     protected AbstractDatabase getDatabase() { return db; }
 }

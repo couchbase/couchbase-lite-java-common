@@ -84,5 +84,6 @@ abstract class AbstractDatabaseConfiguration {
     // Protected level access
     //---------------------------------------------
 
+    @NonNull
     protected abstract DatabaseConfiguration getDatabaseConfiguration();
 }

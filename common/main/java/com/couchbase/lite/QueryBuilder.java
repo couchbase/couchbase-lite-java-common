@@ -60,5 +60,7 @@ public final class QueryBuilder {
      * @return database The database against which the query will be run.
      */
     @NonNull
-    public static Query createQuery(String query, Database database) { return database.createQuery(query); }
+    public static Query createQuery(@NonNull String query, @NonNull Database database) {
+        return database.createQuery(query);
+    }
 }

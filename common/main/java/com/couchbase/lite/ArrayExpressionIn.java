@@ -27,10 +27,12 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * against the satisfies expression.
  */
 public final class ArrayExpressionIn {
+    @NonNull
     private final ArrayExpression.QuantifiesType type;
+    @NonNull
     private final VariableExpression variable;
 
-    ArrayExpressionIn(ArrayExpression.QuantifiesType type, VariableExpression variable) {
+    ArrayExpressionIn(@NonNull ArrayExpression.QuantifiesType type, @NonNull VariableExpression variable) {
         this.type = type;
         this.variable = variable;
     }

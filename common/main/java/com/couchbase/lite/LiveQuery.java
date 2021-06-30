@@ -17,6 +17,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.Executor;
@@ -102,7 +103,7 @@ final class LiveQuery implements DatabaseChangeListener {
      * <p>
      * NOTE: this method is synchronized with Query level.
      */
-    ListenerToken addChangeListener(Executor executor, QueryChangeListener listener) {
+    ListenerToken addChangeListener(@Nullable Executor executor, QueryChangeListener listener) {
         final ChangeListenerToken<?> token = changeNotifier.addChangeListener(executor, listener);
         start(false);
         return token;

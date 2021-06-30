@@ -658,7 +658,8 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     // Queries:
 
-    public Query createQuery(String query) {
+    @NonNull
+    public Query createQuery(@NonNull String query) {
         synchronized (getDbLock()) {
             mustBeOpen();
             return new N1qlQuery(this, query);
@@ -766,6 +767,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     }
 
     // Instead of clone()
+    @NonNull
     Database copy() throws CouchbaseLiteException { return new Database(name, config); }
 
     //////// DATABASES:
@@ -803,6 +805,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     // !!! This method is *NOT* thread safe.
     // Used wo/synchronization, there is a race on the open db
+    @NonNull
     ListenerToken addActiveLiveQuery(@NonNull LiveQuery query) {
         synchronized (getDbLock()) { mustBeOpen(); }
 
@@ -833,6 +836,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         synchronized (getDbLock()) { return getOpenC4DbLocked().createN1qlQuery(n1ql); }
     }
 
+    @NonNull
     C4Document getC4Document(@NonNull String id) throws LiteCoreException {
         synchronized (getDbLock()) { return getOpenC4DbLocked().get(id); }
     }
@@ -1036,6 +1040,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     abstract int getEncryptionAlgorithm();
 
+    @Nullable
     abstract byte[] getEncryptionKey();
 
     //---------------------------------------------
@@ -1056,6 +1061,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
+    @NonNull
     private C4Database openC4Db() throws CouchbaseLiteException {
         final String parentDirPath = config.getDirectory();
         if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "Opening db %s at path %s", this, parentDirPath); }
@@ -1239,6 +1245,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
+    @NonNull
     private Document getConflictingRevision(@NonNull String docID)
         throws CouchbaseLiteException, CBLInternalException {
         final Document remoteDoc = Document.getDocument((Database) this, docID);
@@ -1254,6 +1261,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         return remoteDoc;
     }
 
+    @Nullable
     private Document resolveConflict(
         @NonNull ConflictResolver resolver,
         @NonNull String docID,

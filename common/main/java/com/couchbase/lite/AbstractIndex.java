@@ -40,14 +40,17 @@ public abstract class AbstractIndex {
         public int getValue() { return value; }
     }
 
+    @NonNull
     private final QueryLanguage queryLanguage;
+    @NonNull
     private final IndexType indexType;
 
-    protected AbstractIndex(IndexType indexType, QueryLanguage queryLanguage) {
+    protected AbstractIndex(@NonNull IndexType indexType, @NonNull QueryLanguage queryLanguage) {
         this.indexType = indexType;
         this.queryLanguage = queryLanguage;
     }
 
+    @NonNull
     abstract String getIndexSpec() throws CouchbaseLiteException;
 
     @NonNull

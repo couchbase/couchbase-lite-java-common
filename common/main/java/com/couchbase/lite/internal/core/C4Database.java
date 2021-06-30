@@ -123,6 +123,7 @@ public abstract class C4Database extends C4NativePeer {
     public static C4Database getUnmanagedDatabase(long peer) { return new UnmanagedC4Database(peer); }
 
     // managed: Java code is responsible for freeing it
+    @NonNull
     public static C4Database getDatabase(
         @NonNull String parentDirPath,
         @NonNull String name,

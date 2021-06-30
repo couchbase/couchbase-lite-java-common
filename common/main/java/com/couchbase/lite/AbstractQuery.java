@@ -43,12 +43,13 @@ abstract class AbstractQuery implements Query {
     private C4Query c4query;
     @GuardedBy("lock")
     private LiveQuery liveQuery;
-    // PARAMETERS
+    @Nullable
     private Parameters parameters;
 
     /**
      * Returns a copies of the current parameters.
      */
+    @Nullable
     @Override
     public Parameters getParameters() { return parameters; }
 
@@ -58,7 +59,7 @@ abstract class AbstractQuery implements Query {
      * changes.
      */
     @Override
-    public void setParameters(Parameters parameters) {
+    public void setParameters(@Nullable Parameters parameters) {
         final LiveQuery newQuery;
         synchronized (lock) {
             this.parameters = (parameters == null) ? null : parameters.readonlyCopy();
@@ -154,7 +155,7 @@ abstract class AbstractQuery implements Query {
      */
     @NonNull
     @Override
-    public ListenerToken addChangeListener(Executor executor, @NonNull QueryChangeListener listener) {
+    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
         return getLiveQuery().addChangeListener(executor, listener);
     }
@@ -170,11 +171,13 @@ abstract class AbstractQuery implements Query {
         getLiveQuery().removeChangeListener(token);
     }
 
+    @NonNull
     protected abstract C4Query prepQueryLocked() throws CouchbaseLiteException;
 
     @Nullable
     protected abstract AbstractDatabase getDatabase();
 
+    @NonNull
     @VisibleForTesting
     LiveQuery getLiveQuery() {
         synchronized (lock) {
@@ -183,6 +186,7 @@ abstract class AbstractQuery implements Query {
         }
     }
 
+    @NonNull
     private Object getDbLock() {
         final BaseDatabase db = getDatabase();
         if (db != null) { return db.getDbLock(); }

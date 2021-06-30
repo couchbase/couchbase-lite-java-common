@@ -51,6 +51,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         @Override
         public boolean hasNext() { return index < count; }
 
+        @Nullable
         @Override
         public Object next() { return getValue(index++); }
     }

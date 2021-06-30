@@ -52,12 +52,13 @@ public abstract class AbstractReplicatorConfiguration {
     @Deprecated
     public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
 
-    protected static final int verifyHeartbeat(int heartbeat) {
+    protected static int verifyHeartbeat(int heartbeat) {
         Util.checkDuration("heartbeat", Preconditions.assertNotNegative(heartbeat, "heartbeat"), TimeUnit.SECONDS);
         return heartbeat;
     }
 
-    protected static final byte[] copyCert(@Nullable byte[] cert) {
+    @Nullable
+    protected static byte[] copyCert(@Nullable byte[] cert) {
         if (cert == null) { return null; }
         final byte[] newCert = new byte[cert.length];
         System.arraycopy(cert, 0, newCert, 0, newCert.length);
@@ -93,6 +94,7 @@ public abstract class AbstractReplicatorConfiguration {
     private int maxAttemptWaitTime;
     private int heartbeat;
     private boolean enableAutoPurge = true;
+    @NonNull
     private final Endpoint target;
 
     //---------------------------------------------
@@ -219,7 +221,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @param conflictResolver A conflict resolver.
      * @return this.
      */
-    @Nullable
+    @NonNull
     public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
         this.conflictResolver = conflictResolver;
         return getReplicatorConfiguration();
@@ -298,7 +300,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setPushFilter(ReplicationFilter pushFilter) {
+    public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
         this.pushFilter = pushFilter;
         return getReplicatorConfiguration();
     }
@@ -351,6 +353,7 @@ public abstract class AbstractReplicatorConfiguration {
      *
      * @param maxAttempts max retry attempts
      */
+    @NonNull
     public final ReplicatorConfiguration setMaxAttempts(int maxAttempts) {
         this.maxAttempts = Preconditions.assertNotNegative(maxAttempts, "max attempts");
         return getReplicatorConfiguration();
@@ -362,6 +365,7 @@ public abstract class AbstractReplicatorConfiguration {
      *
      * @param maxAttemptWaitTime max attempt wait time
      */
+    @NonNull
     public final ReplicatorConfiguration setMaxAttemptWaitTime(int maxAttemptWaitTime) {
         this.maxAttemptWaitTime = Preconditions.assertNotNegative(maxAttemptWaitTime, "max attempt wait time");
         return getReplicatorConfiguration();
@@ -373,6 +377,7 @@ public abstract class AbstractReplicatorConfiguration {
      * <p>
      * Must be non-negative and less than Integer.MAX_VALUE milliseconds
      */
+    @NonNull
     public final ReplicatorConfiguration setHeartbeat(int heartbeat) {
         this.heartbeat = verifyHeartbeat(heartbeat);
         return getReplicatorConfiguration();
@@ -382,6 +387,7 @@ public abstract class AbstractReplicatorConfiguration {
      * Enable/disable auto-purge.
      * Default is enabled.
      */
+    @NonNull
     public final ReplicatorConfiguration setAutoPurgeEnabled(boolean enabled) {
         this.enableAutoPurge = enabled;
         return getReplicatorConfiguration();
@@ -544,8 +550,9 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     //---------------------------------------------
-    // Package level access
+    // Protecte access
     //---------------------------------------------
 
-    abstract ReplicatorConfiguration getReplicatorConfiguration();
+    @NonNull
+    protected abstract ReplicatorConfiguration getReplicatorConfiguration();
 }

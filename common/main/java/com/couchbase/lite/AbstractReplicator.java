@@ -72,9 +72,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
     static class ReplicatorCookieStore implements CBLCookieStore {
+        @NonNull
         private final Database db;
 
-        ReplicatorCookieStore(Database db) { this.db = db; }
+        ReplicatorCookieStore(@NonNull Database db) { this.db = db; }
 
         @Override
         public void setCookie(@NonNull URI uri, @NonNull String header) { db.setCookie(uri, header); }
@@ -86,11 +87,11 @@ public abstract class AbstractReplicator extends BaseReplicator {
         }
     }
 
-    static boolean isStopped(C4ReplicatorStatus c4Status) {
+    static boolean isStopped(@NonNull C4ReplicatorStatus c4Status) {
         return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.STOPPED;
     }
 
-    static boolean isOffline(C4ReplicatorStatus c4Status) {
+    static boolean isOffline(@NonNull C4ReplicatorStatus c4Status) {
         return c4Status.getActivityLevel() == C4ReplicatorStatus.ActivityLevel.OFFLINE;
     }
 
@@ -129,6 +130,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @GuardedBy("getReplicatorLock()")
     private C4ReplicationFilter c4ReplPullFilter;
 
+    @Nullable
     @GuardedBy("getReplicatorLock()")
     private CouchbaseLiteException lastError;
 
@@ -302,7 +304,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
      * @param listener callback
      */
     @NonNull
-    public ListenerToken addChangeListener(Executor executor, @NonNull ReplicatorChangeListener listener) {
+    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull ReplicatorChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (getReplicatorLock()) {
             final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
@@ -376,9 +378,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
     //---------------------------------------------
 
     @GuardedBy("getDbLock()")
-    protected abstract C4Replicator createReplicatorForTarget(Endpoint target) throws LiteCoreException;
+    @NonNull
+    protected abstract C4Replicator createReplicatorForTarget(@NonNull Endpoint target) throws LiteCoreException;
 
-    protected abstract void handleOffline(ReplicatorActivityLevel prevState, boolean nowOnline);
+    protected abstract void handleOffline(@NonNull ReplicatorActivityLevel prevState, boolean nowOnline);
 
     /**
      * Create and return a c4Replicator targeting the passed URI
@@ -475,6 +478,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     // Some of these are package protected only to avoid a synthetic accessor
     //---------------------------------------------
 
+    @Nullable
     @VisibleForTesting
     CouchbaseLiteException getLastError() { return lastError; }
 
@@ -512,7 +516,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         for (ReplicatorChangeListenerToken token: tokens) { token.notify(change); }
     }
 
-    void documentEnded(boolean pushing, C4DocumentEnded... docEnds) {
+    void documentEnded(boolean pushing, @NonNull C4DocumentEnded... docEnds) {
         final List<ReplicatedDocument> unconflictedDocs = new ArrayList<>();
 
         for (C4DocumentEnded docEnd: docEnds) {
@@ -611,6 +615,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         }
     }
 
+    @NonNull
     @GuardedBy("getReplicatorLock()")
     private C4ReplicatorStatus updateStatus(@NonNull C4ReplicatorStatus c4Status) {
         final ReplicatorStatus oldStatus = status;
@@ -647,6 +652,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         }
     }
 
+    @Nullable
     private byte[] getFleeceOptions() {
         final Map<String, Object> options = new HashMap<>();
 
@@ -688,6 +694,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         return mode.getVal();
     }
 
+    @NonNull
     private EnumSet<DocumentFlag> getDocumentFlags(int flags) {
         final EnumSet<DocumentFlag> documentFlags = EnumSet.noneOf(DocumentFlag.class);
         if ((flags & C4Constants.RevisionFlags.DELETED) == C4Constants.RevisionFlags.DELETED) {
@@ -700,9 +707,9 @@ public abstract class AbstractReplicator extends BaseReplicator {
     }
 
     private boolean filterDocument(
-        String docId,
+        @NonNull String docId,
         String revId,
-        EnumSet<DocumentFlag> flags,
+        @NonNull EnumSet<DocumentFlag> flags,
         long dict,
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
@@ -734,9 +741,11 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @NonNull
     private String description() { return baseDesc() + "," + getDatabase() + " => " + config.getTarget() + "}"; }
 
+    @NonNull
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private String simpleDesc() { return baseDesc() + "}"; }
 
+    @NonNull
     private String baseDesc() {
         return "Replicator{" + ClassUtils.objId(this) + "("
             + (config.isPull() ? "<" : "")
@@ -746,7 +755,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
     }
 
     // Decompose a path into its elements.
-    private Deque<String> splitPath(String fullPath) {
+    @NonNull
+    private Deque<String> splitPath(@NonNull String fullPath) {
         final Deque<String> path = new ArrayDeque<>();
         for (String element: fullPath.split("/")) {
             if (element.length() > 0) { path.addLast(element); }
