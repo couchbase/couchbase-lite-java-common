@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,22 +35,17 @@ public class Collation {
      * ASCII collation compares two strings by using binary comparison.
      */
     public static final class ASCII extends Collation {
-        ASCII() {
-            this.isUnicode = false;
-        }
+        ASCII() { super(false, null); }
 
         /**
-         * Specifies whether the collation is case-sensitive or not. Case-insensitive
+         * Specifies whether the collation is case-insensitive or not. Case-insensitive
          * collation will treat ASCII uppercase and lowercase letters as equivalent.
          *
-         * @param ignoreCase True for case-insensitive; false for case-sensitive.
-         * @return The ASCII Collation object.
+         * @param ignCase True for case-insensitive; false for case-sensitive.
+         * @return The Unicode Collation object.
          */
         @NonNull
-        public ASCII ignoreCase(boolean ignoreCase) {
-            this.ignoreCase = ignoreCase;
-            return this;
-        }
+        public ASCII setIgnoreCase(boolean ignCase) { return (ASCII) super.setIgnoreCase(ignCase); }
     }
 
     /**
@@ -59,55 +55,41 @@ public class Collation {
      * the base letter
      */
     public static final class Unicode extends Collation {
-        Unicode() {
-            this.isUnicode = true;
-            // NOTE: System.getProperty("user.country") returns null for country code
-            this.locale = System.getProperty("user.language");
-        }
+        // NOTE: System.getProperty("user.country") returns null for country code
+        Unicode() { super(true, System.getProperty("user.language")); }
 
         /**
-         * Specifies whether the collation is case-insensitive or not. Case-insensitive
-         * collation will treat ASCII uppercase and lowercase letters as equivalent.
+         * Specifies the locale to allow the collation to compare strings appropriately based on
+         * the locale.  The local code is an [ISO-639](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
+         * language code plus, optionally, an underscore and an
+         * [ISO-3166](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
+         * country code: "en", "en_US", "fr_CA", etc.
          *
-         * @param ignoreCase True for case-insensitive; false for case-sensitive.
-         * @return The Unicode Collation object.
+         * @param locale The locale code
+         * @return this
          */
         @NonNull
-        public Unicode ignoreCase(boolean ignoreCase) {
-            this.ignoreCase = ignoreCase;
-            return this;
-        }
+        public Unicode setLocale(@Nullable String locale) { return (Unicode) super.setLocale(locale); }
 
         /**
          * Specifies whether the collation ignore the accents or diacritics when
          * comparing the strings or not.
          *
-         * @param ignoreAccents True for accent-insensitive; false for accent-sensitive.
+         * @param ignAccents True for accent-insensitive; false for accent-sensitive.
          * @return The Unicode Collation object.
          */
         @NonNull
-        public Unicode ignoreAccents(boolean ignoreAccents) {
-            this.ignoreAccents = ignoreAccents;
-            return this;
-        }
+        public Unicode setIgnoreAccents(boolean ignAccents) { return (Unicode) super.setIgnoreAccents(ignAccents); }
 
         /**
-         * Specifies the locale to allow the collation to compare strings appropriately base on
-         * the locale.
+         * Specifies whether the collation is case-insensitive or not. Case-insensitive
+         * collation will treat ASCII uppercase and lowercase letters as equivalent.
          *
-         * @param locale The locale code which is an [ISO-639](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes)
-         *               language code plus, optionally, an underscore and an
-         *               [ISO-3166](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)
-         *               country code: "en", "en_US", "fr_CA", etc.
-         *               Specifying the locale will allow the collation to compare strings
-         *               appropriately base on the locale.
-         * @return this
+         * @param ignCase True for case-insensitive; false for case-sensitive.
+         * @return The Unicode Collation object.
          */
         @NonNull
-        public Unicode locale(String locale) {
-            this.locale = locale;
-            return this;
-        }
+        public Unicode setIgnoreCase(boolean ignCase) { return (Unicode) super.setIgnoreCase(ignCase); }
     }
 
     /**
@@ -116,9 +98,7 @@ public class Collation {
      * @return The ASCII collation.
      */
     @NonNull
-    public static ASCII ascii() {
-        return new ASCII();
-    }
+    public static ASCII ascii() { return new ASCII(); }
 
     /**
      * Creates a Unicode collation that will compare two strings by using Unicode Collation
@@ -128,35 +108,45 @@ public class Collation {
      * @return The Unicode collation.
      */
     @NonNull
-    public static Unicode unicode() {
-        return new Unicode();
+    public static Unicode unicode() { return new Unicode(); }
+
+    private final boolean isUnicode;
+
+    @Nullable
+    private String locale;
+    private boolean ignoreAccents;
+    private boolean ignoreCase;
+
+    protected Collation(boolean isUnicode, @Nullable String locale) {
+        this.isUnicode = isUnicode;
+        this.locale = locale;
     }
 
-    boolean isUnicode;
-    boolean ignoreCase;
-    boolean ignoreAccents;
-    //---------------------------------------------
-    // API - public methods
-    //---------------------------------------------
-    String locale;
+    @NonNull
+    protected Collation setLocale(@Nullable String locale) {
+        this.locale = locale;
+        return this;
+    }
 
-    //---------------------------------------------
-    // Constructors
-    //---------------------------------------------
-    private Collation() {
+    @NonNull
+    protected Collation setIgnoreAccents(boolean ignoreAccents) {
+        this.ignoreAccents = ignoreAccents;
+        return this;
+    }
+
+    @NonNull
+    protected Collation setIgnoreCase(boolean ignoreCase) {
+        this.ignoreCase = ignoreCase;
+        return this;
     }
 
     @NonNull
     @Override
     public String toString() {
-        return "Collation{"
-            + "isUnicode=" + isUnicode
-            + ",ignoreCase=" + ignoreCase
-            + ",ignoreAccents=" + ignoreAccents
-            + ",locale=" + locale
-            + '}';
+        return "Collation{" + locale + ", " + isUnicode + ", " + ignoreAccents + ", " + ignoreCase + '}';
     }
 
+    @NonNull
     Object asJSON() {
         final Map<String, Object> json = new HashMap<>();
         json.put("UNICODE", isUnicode);

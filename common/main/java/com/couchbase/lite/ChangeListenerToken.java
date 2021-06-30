@@ -29,6 +29,7 @@ class ChangeListenerToken<T> implements ListenerToken {
     @Nullable
     private final Executor executor;
 
+    @Nullable
     private Object key;
 
     ChangeListenerToken(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
@@ -36,11 +37,12 @@ class ChangeListenerToken<T> implements ListenerToken {
         this.listener = listener;
     }
 
+    @Nullable
     public Object getKey() { return key; }
 
-    public void setKey(Object key) { this.key = key; }
+    public void setKey(@Nullable Object key) { this.key = key; }
 
-    void postChange(final T change) {
+    void postChange(@Nullable T change) {
         final Executor exec = (executor != null)
             ? executor
             : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();

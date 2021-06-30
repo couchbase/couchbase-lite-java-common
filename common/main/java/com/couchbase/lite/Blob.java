@@ -651,7 +651,7 @@ public final class Blob implements FLEncodable {
     }
 
     @NonNull
-    private C4BlobKey getBlobKey(C4BlobStore store) throws LiteCoreException, IOException {
+    private C4BlobKey getBlobKey(@NonNull C4BlobStore store) throws LiteCoreException, IOException {
         if (blobContent != null) { return store.create(blobContent); }
         if (blobContentStream != null) { return writeDatabaseFromInitStream(store); }
         throw new IllegalStateException(Log.lookupStandardMessage("BlobContentNull"));

@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 
 /**
@@ -35,10 +36,12 @@ public interface ConflictResolver {
      * @param conflict Description of the conflicting documents.
      * @return the resolved doc.
      */
-    Document resolve(Conflict conflict);
+    @Nullable
+    Document resolve(@NonNull Conflict conflict);
 }
 
 class DefaultConflictResolver implements ConflictResolver {
+    @Nullable
     @Override
     public Document resolve(@NonNull Conflict conflict) {
         // deletion always wins.

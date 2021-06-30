@@ -31,22 +31,27 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 public final class ArrayExpressionSatisfies {
     private static final class QuantifiedExpression extends Expression {
+        @NonNull
         private final ArrayExpression.QuantifiesType type;
+        @NonNull
         private final VariableExpression variable;
+        @NonNull
         private final Expression inExpression;
+        @NonNull
         private final Expression satisfiedExpression;
 
         QuantifiedExpression(
-            ArrayExpression.QuantifiesType type,
-            VariableExpression variable,
-            Expression inExpression,
-            Expression satisfiesExpression) {
+            @NonNull ArrayExpression.QuantifiesType type,
+            @NonNull VariableExpression variable,
+            @NonNull Expression inExpression,
+            @NonNull Expression satisfiesExpression) {
             this.type = type;
             this.variable = variable;
             this.inExpression = inExpression;
             this.satisfiedExpression = satisfiesExpression;
         }
 
+        @NonNull
         @Override
         Object asJSON() {
             final List<Object> json = new ArrayList<>(4);
@@ -76,14 +81,19 @@ public final class ArrayExpressionSatisfies {
             return json;
         }
     }
+
+
+    @NonNull
     private final ArrayExpression.QuantifiesType type;
+    @NonNull
     private final VariableExpression variable;
+    @NonNull
     private final Expression inExpression;
 
     ArrayExpressionSatisfies(
-        ArrayExpression.QuantifiesType type,
-        VariableExpression variable,
-        Expression inExpression) {
+        @NonNull ArrayExpression.QuantifiesType type,
+        @NonNull VariableExpression variable,
+        @NonNull Expression inExpression) {
         this.type = type;
         this.variable = variable;
         this.inExpression = inExpression;

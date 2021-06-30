@@ -90,6 +90,7 @@ abstract class BuilderQuery extends AbstractQuery {
 
     // https://issues.couchbase.com/browse/CBL-21
     // Using c4query_columnTitle is not an improvement, as of 12/2019
+    @NonNull
     protected Map<String, Integer> getColumnNames() throws CouchbaseLiteException {
         final Map<String, Integer> map = new HashMap<>();
         int index = 0;

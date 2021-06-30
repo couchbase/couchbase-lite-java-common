@@ -554,5 +554,5 @@ public abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
 
     @NonNull
-    protected abstract ReplicatorConfiguration getReplicatorConfiguration();
+    abstract ReplicatorConfiguration getReplicatorConfiguration();
 }

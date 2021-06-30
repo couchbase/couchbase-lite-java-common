@@ -54,12 +54,14 @@ public final class CouchbaseLiteException extends Exception {
             : toCouchbaseLiteException(e.domain, e.code, msg, e);
     }
 
+    @NonNull
     public static CouchbaseLiteException toCouchbaseLiteException(int domain, int status, int info) {
         return ((domain == 0) || (status == 0))
             ? toCouchbaseLiteException(domain, status, null, null)
             : toCouchbaseLiteException(domain, status, C4Base.getMessage(domain, status, info), null);
     }
 
+    @NonNull
     public static CouchbaseLiteException toCouchbaseLiteException(
         int domainCode,
         int statusCode,
@@ -206,7 +208,7 @@ public final class CouchbaseLiteException extends Exception {
      * @deprecated Must supply an error message
      */
     @Deprecated
-    public CouchbaseLiteException(@NonNull String domain, int code, Map<String, Object> info) {
+    public CouchbaseLiteException(@NonNull String domain, int code, @Nullable Map<String, Object> info) {
         this(null, null, domain, code, info);
     }
 

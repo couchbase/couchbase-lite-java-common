@@ -1090,7 +1090,7 @@ public class QueryTest extends BaseQueryTest {
 
         Expression propNumber = Expression.property(key);
         List<Expression> functions = Arrays.asList(
-        Function.abs(propNumber),
+            Function.abs(propNumber),
             Function.acos(propNumber),
             Function.asin(propNumber),
             Function.atan(propNumber),
@@ -1263,9 +1263,9 @@ public class QueryTest extends BaseQueryTest {
         }
 
         Collation noLocale = Collation.unicode()
-            .locale(null)
-            .ignoreCase(false)
-            .ignoreAccents(false);
+            .setLocale(null)
+            .setIgnoreCase(false)
+            .setIgnoreAccents(false);
 
         Query query = QueryBuilder.select(SelectResult.property("string"))
             .from(DataSource.database(baseTestDb))
@@ -1286,9 +1286,9 @@ public class QueryTest extends BaseQueryTest {
         }
 
         Collation localeEspanol = Collation.unicode()
-            .locale("es")
-            .ignoreCase(false)
-            .ignoreAccents(false);
+            .setLocale("es")
+            .setIgnoreCase(false)
+            .setIgnoreAccents(false);
 
         Query query = QueryBuilder.select(SelectResult.property("string"))
             .from(DataSource.database(baseTestDb))
@@ -1310,9 +1310,9 @@ public class QueryTest extends BaseQueryTest {
         }
 
         Collation localeSvenska = Collation.unicode()
-            .locale("se")
-            .ignoreCase(false)
-            .ignoreAccents(false);
+            .setLocale("se")
+            .setIgnoreCase(false)
+            .setIgnoreAccents(false);
 
         Query query = QueryBuilder.select(SelectResult.property("string"))
             .from(DataSource.database(baseTestDb))
@@ -1325,10 +1325,10 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testCompareWithUnicodeCollation() throws CouchbaseLiteException {
-        Collation bothSensitive = Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(false);
-        Collation accentSensitive = Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(false);
-        Collation caseSensitive = Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(true);
-        Collation noSensitive = Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(true);
+        Collation bothSensitive = Collation.unicode().setLocale(null).setIgnoreCase(false).setIgnoreAccents(false);
+        Collation accentSensitive = Collation.unicode().setLocale(null).setIgnoreCase(true).setIgnoreAccents(false);
+        Collation caseSensitive = Collation.unicode().setLocale(null).setIgnoreCase(false).setIgnoreAccents(true);
+        Collation noSensitive = Collation.unicode().setLocale(null).setIgnoreCase(true).setIgnoreAccents(true);
 
         List<List<Object>> testData = new ArrayList<>(
             Arrays.asList(
@@ -1801,14 +1801,14 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testGenerateJSONCollation() {
         Collation[] collations = {
-            Collation.ascii().ignoreCase(false),
-            Collation.ascii().ignoreCase(true),
-            Collation.unicode().locale(null).ignoreCase(false).ignoreAccents(false),
-            Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(false),
-            Collation.unicode().locale(null).ignoreCase(true).ignoreAccents(true),
-            Collation.unicode().locale("en").ignoreCase(false).ignoreAccents(false),
-            Collation.unicode().locale("en").ignoreCase(true).ignoreAccents(false),
-            Collation.unicode().locale("en").ignoreCase(true).ignoreAccents(true)
+            Collation.ascii().setIgnoreCase(false),
+            Collation.ascii().setIgnoreCase(true),
+            Collation.unicode().setLocale(null).setIgnoreCase(false).setIgnoreAccents(false),
+            Collation.unicode().setLocale(null).setIgnoreCase(true).setIgnoreAccents(false),
+            Collation.unicode().setLocale(null).setIgnoreCase(true).setIgnoreAccents(true),
+            Collation.unicode().setLocale("en").setIgnoreCase(false).setIgnoreAccents(false),
+            Collation.unicode().setLocale("en").setIgnoreCase(true).setIgnoreAccents(false),
+            Collation.unicode().setLocale("en").setIgnoreCase(true).setIgnoreAccents(true)
         };
 
         List<Map<String, Object>> expected = new ArrayList<>();
@@ -1875,7 +1875,7 @@ public class QueryTest extends BaseQueryTest {
         List<List<Object>> testData = new ArrayList<>();
         testData.add(Arrays.asList("BINARY collation", Collation.ascii(),
             Arrays.asList("Aardvark", "Apple", "Zebra", "Ångström", "äpple")));
-        testData.add(Arrays.asList("NOCASE collation", Collation.ascii().ignoreCase(true),
+        testData.add(Arrays.asList("NOCASE collation", Collation.ascii().setIgnoreCase(true),
             Arrays.asList("Aardvark", "Apple", "Zebra", "Ångström", "äpple")));
         testData.add(Arrays.asList(
             "Unicode case-sensitive, diacritic-sensitive collation",
@@ -1883,15 +1883,15 @@ public class QueryTest extends BaseQueryTest {
             Arrays.asList("Aardvark", "Ångström", "Apple", "äpple", "Zebra")));
         testData.add(Arrays.asList(
             "Unicode case-INsensitive, diacritic-sensitive collation",
-            Collation.unicode().ignoreCase(true),
+            Collation.unicode().setIgnoreCase(true),
             Arrays.asList("Aardvark", "Ångström", "Apple", "äpple", "Zebra")));
         testData.add(Arrays.asList(
             "Unicode case-sensitive, diacritic-INsensitive collation",
-            Collation.unicode().ignoreAccents(true),
+            Collation.unicode().setIgnoreAccents(true),
             Arrays.asList("Aardvark", "Ångström", "äpple", "Apple", "Zebra")));
         testData.add(Arrays.asList(
             "Unicode case-INsensitive, diacritic-INsensitive collation",
-            Collation.unicode().ignoreAccents(true).ignoreCase(true),
+            Collation.unicode().setIgnoreAccents(true).setIgnoreCase(true),
             Arrays.asList("Aardvark", "Ångström", "Apple", "äpple", "Zebra")));
 
         Expression property = Expression.property("hey");

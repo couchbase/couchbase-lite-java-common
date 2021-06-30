@@ -19,7 +19,7 @@ public final class ClassUtils {
     private ClassUtils() { }
 
     @SuppressWarnings("unchecked")
-    public static <T> T cast(Object obj, Class<T> clazz) { return (!clazz.isInstance(obj)) ? null : (T) obj; }
+    public static <T> T castOrNull(Class<T> clazz, Object obj) { return (!clazz.isInstance(obj)) ? null : (T) obj; }
 
     public static String objId(Object obj) { return "@0x" + Integer.toHexString(System.identityHashCode(obj)); }
 }

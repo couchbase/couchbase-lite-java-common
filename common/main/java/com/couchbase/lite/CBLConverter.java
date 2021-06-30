@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MValue;
@@ -22,56 +25,55 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 
 
 final class CBLConverter {
-    private CBLConverter() {}
+    private CBLConverter() { }
 
-    static Number asNumber(Object value) {
+    @Nullable
+    static Number asNumber(@Nullable Object value) {
         // special handling for Boolean
-        if (value instanceof Boolean) {
-            return ((Boolean) value) ? Integer.valueOf(1) : Integer.valueOf(0);
-        }
-        else { return ClassUtils.cast(value, Number.class); }
+        if (value instanceof Boolean) { return ((Boolean) value) ? 1 : 0; }
+
+        return ClassUtils.castOrNull(Number.class, value);
     }
 
-    static boolean asBoolean(Object value) {
+    static boolean asBoolean(@Nullable Object value) {
         if (value == null) { return false; }
-        else if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); }
-        else if (value instanceof Number) { return ((Number) value).intValue() != 0; }
-        else { return true; }
+
+        if (value instanceof Boolean) { return ((Boolean) value).booleanValue(); }
+
+        if (value instanceof Number) { return ((Number) value).intValue() != 0; }
+
+        return true;
     }
 
-    static int asInteger(MValue val, MCollection container) {
+    static int asInteger(@NonNull MValue val, @Nullable MCollection container) {
         final FLValue value = val.getValue();
         if (value != null) { return (int) value.asInt(); }
-        else {
-            final Number num = asNumber(val.asNative(container));
-            return num != null ? num.intValue() : 0;
-        }
+
+        final Number num = asNumber(val.asNative(container));
+        return num != null ? num.intValue() : 0;
     }
 
-    static long asLong(MValue val, MCollection container) {
+    static long asLong(@NonNull MValue val, @Nullable MCollection container) {
         final FLValue value = val.getValue();
         if (value != null) { return value.asInt(); }
-        else {
-            final Number num = asNumber(val.asNative(container));
-            return num != null ? num.longValue() : 0L;
-        }
+
+        final Number num = asNumber(val.asNative(container));
+        return num != null ? num.longValue() : 0L;
     }
 
-    static float asFloat(MValue val, MCollection container) {
+    static float asFloat(@NonNull MValue val, @Nullable MCollection container) {
         final FLValue value = val.getValue();
         if (value != null) { return value.asFloat(); }
-        else {
-            final Number num = asNumber(val.asNative(container));
-            return num != null ? num.floatValue() : 0L;
-        }
+
+        final Number num = asNumber(val.asNative(container));
+        return num != null ? num.floatValue() : 0L;
     }
 
-    static double asDouble(MValue val, MCollection container) {
+    static double asDouble(@NonNull MValue val, @Nullable MCollection container) {
         final FLValue value = val.getValue();
         if (value != null) { return value.asDouble(); }
-        else {
-            final Number num = asNumber(val.asNative(container));
-            return num != null ? num.doubleValue() : 0L;
-        }
+
+        final Number num = asNumber(val.asNative(container));
+        return num != null ? num.doubleValue() : 0L;
     }
 }
