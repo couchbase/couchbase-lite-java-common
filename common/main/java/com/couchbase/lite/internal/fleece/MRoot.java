@@ -33,7 +33,7 @@ public class MRoot extends MCollection {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    public MRoot(MContext context, FLValue value, boolean isMutable) {
+    public MRoot(@Nullable MContext context, @Nullable FLValue value, boolean isMutable) {
         super(context, isMutable);
         data = new MValue(value);
     }

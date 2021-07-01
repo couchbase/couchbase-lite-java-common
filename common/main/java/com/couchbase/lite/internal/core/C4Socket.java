@@ -78,7 +78,7 @@ public abstract class C4Socket extends C4NativePeer {
         @Nullable String hostname,
         int port,
         @Nullable String path,
-        byte[] options) {
+        @NonNull byte[] options) {
         C4Socket socket = getSocketForPeer(peer);
         if (CouchbaseLiteInternal.debugging()) {
             Log.d(LOG_DOMAIN, "C4Socket.open @%x: %s, %s", peer, socket, factory);
@@ -192,7 +192,7 @@ public abstract class C4Socket extends C4NativePeer {
     // !!! This should be re-written to use C4NativePeer
     //     It should not pass a reference to this, to the native code
     //     and it should eliminate the vector holding GlobalRefs on the JNI side
-    protected C4Socket(String schema, String host, int port, String path, int framing) {
+    protected C4Socket(@NonNull String schema, @NonNull String host, int port, @NonNull String path, int framing) {
         setPeer(fromNative(this, schema, host, port, path, framing));
         bindSocket(this);
     }

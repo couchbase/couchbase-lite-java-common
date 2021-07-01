@@ -52,6 +52,9 @@ public class MValue implements Encodable {
     // Static members
     //-------------------------------------------------------------------------
 
+
+    @SuppressWarnings("NotNullFieldNotInitialized")
+    @NonNull
     private static Delegate delegate;
 
     //-------------------------------------------------------------------------
@@ -64,7 +67,8 @@ public class MValue implements Encodable {
     }
 
     @VisibleForTesting
-    public static Delegate getRegisteredDelegate() { return delegate; }
+    @NonNull
+    public static Delegate getRegisteredDelegate() { return Preconditions.assertNotNull(delegate, "delegate"); }
 
 
     //-------------------------------------------------------------------------

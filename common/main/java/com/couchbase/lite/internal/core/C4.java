@@ -26,10 +26,10 @@ public final class C4 {
     // native methods
     //-------------------------------------------------------------------------
 
-    public static native void setenv(String name, String value, int overwrite);
+    public static native void setenv(@NonNull String name, @NonNull String value, int overwrite);
 
     @NonNull
-    public static native String getenv(String name);
+    public static native String getenv(@NonNull String name);
 
     @Nullable
     public static native String getBuildInfo();

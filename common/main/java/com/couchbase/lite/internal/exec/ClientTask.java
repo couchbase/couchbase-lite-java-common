@@ -59,11 +59,9 @@ public class ClientTask<T> {
 
     public ClientTask(@NonNull Callable<T> task) { this.task = task; }
 
-    @Nullable
     public void execute() { execute(30, TimeUnit.SECONDS); }
 
     @SuppressWarnings({"PMD.PreserveStackTrace", "PMD.AvoidThrowingRawExceptionTypes"})
-    @Nullable
     public void execute(long timeout, @NonNull TimeUnit timeUnit) {
         final FutureTask<T> future = new FutureTask<>(task);
         try { EXECUTOR.execute(new InstrumentedTask(future, null)); }
@@ -75,7 +73,7 @@ public class ClientTask<T> {
 
         // block until complete or timeout
         try { result = future.get(timeout, timeUnit); }
-        catch (@NonNull InterruptedException | TimeoutException e) { err = e; }
+        catch (InterruptedException | TimeoutException e) { err = e; }
         catch (ExecutionException e) {
             final Throwable t = e.getCause();
             if (!(t instanceof Exception)) { throw new Error("Client task error", t); }
@@ -83,6 +81,7 @@ public class ClientTask<T> {
         }
     }
 
+    @Nullable
     public T getResult() { return result; }
 
     @Nullable

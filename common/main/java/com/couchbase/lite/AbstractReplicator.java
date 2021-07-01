@@ -120,8 +120,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
     // Server certificates received from the server during the TLS handshake
     private final AtomicReference<List<Certificate>> serverCertificates = new AtomicReference<>();
 
-    @GuardedBy("getReplicatorLock()")
     @NonNull
+    @GuardedBy("getReplicatorLock()")
     private ReplicatorStatus status
         = new ReplicatorStatus(ReplicatorActivityLevel.STOPPED, new ReplicatorProgress(0, 0), null);
 
@@ -130,8 +130,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @GuardedBy("getReplicatorLock()")
     private C4ReplicationFilter c4ReplPullFilter;
 
-    @Nullable
     @GuardedBy("getReplicatorLock()")
+    @Nullable
     private CouchbaseLiteException lastError;
 
     private volatile String desc;

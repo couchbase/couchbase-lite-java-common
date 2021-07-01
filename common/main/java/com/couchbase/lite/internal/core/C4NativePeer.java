@@ -53,7 +53,11 @@ public abstract class C4NativePeer implements AutoCloseable {
     @Override
     public String toString() { return Long.toHexString(peer); }
 
-    protected final <T, E extends Exception> T withPeer(T def, @NonNull Fn.FunctionThrows<Long, T, E> fn) throws E {
+    @Nullable
+    protected final <T, E extends Exception> T withPeer(
+        @Nullable T def,
+        @NonNull Fn.FunctionThrows<Long, T, E> fn)
+        throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
             if (peer == 0) {

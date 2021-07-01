@@ -35,6 +35,7 @@ import com.couchbase.lite.internal.replicator.CBLCookieStore;
 import com.couchbase.lite.internal.replicator.CBLWebSocket;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -64,7 +65,13 @@ public abstract class AbstractSocketFactory {
     }
 
     @Nullable
-    public final C4Socket createSocket(long peer, String scheme, String host, int port, String path, byte[] opts) {
+    public final C4Socket createSocket(
+        long peer,
+        @NonNull String scheme,
+        @NonNull String host,
+        int port,
+        @NonNull String path,
+        @NonNull byte[] opts) {
         final C4Socket socket = (endpoint instanceof URLEndpoint)
             ? createCBLWebSocket(peer, scheme, host, port, path, opts)
             : createPlatformSocket(peer);
@@ -91,7 +98,13 @@ public abstract class AbstractSocketFactory {
     protected abstract C4Socket createPlatformSocket(long peer);
 
     @Nullable
-    private C4Socket createCBLWebSocket(long peer, String scheme, String host, int port, String path, byte[] opts) {
+    private C4Socket createCBLWebSocket(
+        long peer,
+        @NonNull String scheme,
+        @NonNull String host,
+        int port,
+        @NonNull String path,
+        @NonNull byte[] opts) {
         final URI uri;
         try { uri = new URI(translateScheme(scheme), null, host, port, path, null, null); }
         catch (URISyntaxException e) {
@@ -106,7 +119,10 @@ public abstract class AbstractSocketFactory {
     }
 
     // OkHttp doesn't understand blip or blips
-    private String translateScheme(String scheme) {
+    @NonNull
+    private String translateScheme(@NonNull String scheme) {
+        Preconditions.assertNotNull(scheme, "scheme");
+
         if (C4Replicator.C4_REPLICATOR_SCHEME_2.equalsIgnoreCase(scheme)) { return C4Replicator.WEBSOCKET_SCHEME; }
 
         if (C4Replicator.C4_REPLICATOR_TLS_SCHEME_2.equalsIgnoreCase(scheme)) {

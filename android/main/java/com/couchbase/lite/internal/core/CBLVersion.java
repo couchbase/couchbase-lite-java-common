@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import android.os.Build;
+import android.support.annotation.NonNull;
 
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,6 +39,7 @@ public final class CBLVersion {
     private static final AtomicReference<String> LIB_INFO = new AtomicReference<>();
     private static final AtomicReference<String> SYS_INFO = new AtomicReference<>();
 
+    @NonNull
     public static String getUserAgent() {
         String agent = USER_AGENT.get();
 
@@ -56,6 +58,7 @@ public final class CBLVersion {
     }
 
     // The whole megillah
+    @NonNull
     public static String getVersionInfo() {
         String info = VERSION_INFO.get();
         if (info == null) {
@@ -75,6 +78,7 @@ public final class CBLVersion {
     }
 
     // This is information about this library build.
+    @NonNull
     public static String getLibInfo() {
         String info = LIB_INFO.get();
         if (info == null) {
@@ -93,6 +97,7 @@ public final class CBLVersion {
     }
 
     // This is information about the Android on which we are running.
+    @NonNull
     public static String getSysInfo() {
         String info = SYS_INFO.get();
 

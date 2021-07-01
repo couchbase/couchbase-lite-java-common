@@ -851,7 +851,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         @NonNull ChangeNotifier<?> context,
         @NonNull String docID,
         @NonNull C4DocumentObserverListener listener) {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().createDocumentObserver(docID, listener, context); }
+        synchronized (getDbLock()) { return getOpenC4DbLocked().createDocumentObserver(docID, context, listener); }
     }
 
     //////// REPLICATORS:
@@ -1169,8 +1169,8 @@ abstract class AbstractDatabase extends BaseDatabase {
     private void registerC4DbObserver() {
         if (!isOpen()) { return; }
         c4DbObserver = getOpenC4DbLocked().createDatabaseObserver(
-            (observer, context) -> scheduleOnPostNotificationExecutor(this::postDatabaseChanged, 0),
-            this);
+            this, (observer, context) -> scheduleOnPostNotificationExecutor(this::postDatabaseChanged, 0)
+        );
     }
 
     private void postDatabaseChanged() {

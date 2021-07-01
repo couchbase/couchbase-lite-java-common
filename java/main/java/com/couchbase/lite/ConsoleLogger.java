@@ -36,6 +36,7 @@ public class ConsoleLogger extends AbstractConsoleLogger {
         = ThreadLocal.withInitial(() -> DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS"));
 
 
+    @NonNull
     public static PrintStream getLogStream(@NonNull LogLevel level) {
         return ((CouchbaseLiteInternal.debugging()) || (LogLevel.WARNING.compareTo(level) > 0))
             ? System.out

@@ -22,21 +22,35 @@ import android.support.annotation.Nullable;
 
 public interface Fn {
     @FunctionalInterface
-    interface FunctionThrows<T, R, E extends Throwable> { @NonNull
-    R apply(T x) throws E; }
+    interface FunctionThrows<T, R, E extends Throwable> {
+        @NonNull
+        R apply(@Nullable T x) throws E;
+    }
+
     @FunctionalInterface
-    interface Function<T, R> { @NonNull
-    R apply(T x); }
+    interface Function<T, R> {
+        @NonNull
+        R apply(@Nullable T x);
+    }
+
     @FunctionalInterface
-    interface Predicate<T> { boolean test(T x); }
+    interface Provider<T> {
+        @Nullable
+        T get();
+    }
+
     @FunctionalInterface
-    interface Provider<T> { @Nullable T get(); }
+    interface Predicate<T> { boolean test(@Nullable T x); }
+
     @FunctionalInterface
-    interface ConsumerThrows<T, E extends Exception> { void accept(T x) throws E; }
+    interface ConsumerThrows<T, E extends Exception> { void accept(@Nullable T x) throws E; }
+
     @FunctionalInterface
-    interface Consumer<T> { void accept(T x); }
+    interface Consumer<T> { void accept(@Nullable T x); }
+
     @FunctionalInterface
     interface TaskThrows<E extends Exception> { void run() throws E; }
+
     @FunctionalInterface
-    interface Runner { void run(Runnable r); }
+    interface Runner { void run(@Nullable Runnable r); }
 }

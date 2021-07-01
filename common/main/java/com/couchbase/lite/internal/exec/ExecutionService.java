@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.exec;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -31,9 +32,9 @@ public interface ExecutionService {
     interface CloseableExecutor extends Executor {
         class ExecutorClosedException extends RejectedExecutionException {
             public ExecutorClosedException() {}
-            public ExecutorClosedException(String msg) { super(msg); }
-            public ExecutorClosedException(String msg, Throwable err) { super(msg, err); }
-            public ExecutorClosedException(Throwable err) { super(err); }
+            public ExecutorClosedException(@Nullable String msg) { super(msg); }
+            public ExecutorClosedException(@Nullable String msg, @Nullable Throwable err) { super(msg, err); }
+            public ExecutorClosedException(@Nullable Throwable err) { super(err); }
         }
 
         /**

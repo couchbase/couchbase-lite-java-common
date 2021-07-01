@@ -36,7 +36,9 @@ public class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
-    C4Document(long db, String docID, boolean mustExist) throws LiteCoreException { this(get(db, docID, mustExist)); }
+    C4Document(long db, @NonNull String docID, boolean mustExist) throws LiteCoreException {
+        this(get(db, docID, mustExist));
+    }
 
     C4Document(long db, long sequence) throws LiteCoreException { this(getBySequence(db, sequence)); }
 
@@ -101,9 +103,9 @@ public class C4Document extends C4NativePeer {
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
 
-    @Nullable
     @VisibleForTesting
-    public C4Document update(byte[] body, int flags) throws LiteCoreException {
+    @Nullable
+    public C4Document update(@NonNull byte[] body, int flags) throws LiteCoreException {
         final long newDoc = withPeer(0L, h -> update(h, body, flags));
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
@@ -144,6 +146,7 @@ public class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @VisibleForTesting
+    @Nullable
     byte[] getSelectedBody() { return withPeer(null, C4Document::getSelectedBody); }
 
     @VisibleForTesting

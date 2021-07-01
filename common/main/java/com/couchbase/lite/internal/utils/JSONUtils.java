@@ -69,7 +69,7 @@ public final class JSONUtils {
     public static String toJSONString(@NonNull Date date) { return DATE_FORMAT.get().format(date); }
 
     @Nullable
-    public static Object toJSON(Object val) throws JSONException {
+    public static Object toJSON(@Nullable Object val) throws JSONException {
         if (val instanceof Map<?, ?>) { return toJSON((Map<?, ?>) val); }
         if (val instanceof List<?>) { return toJSON((List<?>) val); }
         if (val == null) { return JSONObject.NULL; }
@@ -101,7 +101,7 @@ public final class JSONUtils {
     }
 
     @Nullable
-    private static Object fromJSON(Object value) throws JSONException {
+    private static Object fromJSON(@Nullable Object value) throws JSONException {
         if (value instanceof JSONObject) { return fromJSON((JSONObject) value); }
         if (value instanceof JSONArray) { return fromJSON((JSONArray) value); }
         if (value == JSONObject.NULL) { return null; }

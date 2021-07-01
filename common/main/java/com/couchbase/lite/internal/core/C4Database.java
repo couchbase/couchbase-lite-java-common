@@ -131,7 +131,7 @@ public abstract class C4Database extends C4NativePeer {
         @NonNull String name,
         int flags,
         int algorithm,
-        byte[] encryptionKey)
+        @Nullable byte[] encryptionKey)
         throws LiteCoreException {
 
         // Stupid LiteCore will throw a total hissy fit if we pass
@@ -262,20 +262,22 @@ public abstract class C4Database extends C4NativePeer {
     ////////////////////////////////
 
     @NonNull
-    public C4Document get(String docID) throws LiteCoreException { return new C4Document(getPeer(), docID, true); }
+    public C4Document get(@NonNull String docID) throws LiteCoreException {
+        return new C4Document(getPeer(), docID, true);
+    }
 
     // - Purging and Expiration
 
-    public void setExpiration(String docID, long timestamp) throws LiteCoreException {
+    public void setExpiration(@NonNull String docID, long timestamp) throws LiteCoreException {
         C4Document.setExpiration(getPeer(), docID, timestamp);
     }
 
-    public long getExpiration(String docID) throws LiteCoreException {
+    public long getExpiration(@NonNull String docID) throws LiteCoreException {
         return C4Document.getExpiration(getPeer(), docID);
     }
 
     @NonNull
-    public C4Document create(String docID, @Nullable FLSliceResult body, int flags) throws LiteCoreException {
+    public C4Document create(@NonNull String docID, @Nullable FLSliceResult body, int flags) throws LiteCoreException {
         return new C4Document(C4Document.create2(getPeer(), docID, body != null ? body.getHandle() : 0, flags));
     }
 
@@ -284,15 +286,17 @@ public abstract class C4Database extends C4NativePeer {
     ////////////////////////////////////////////////////////////////
 
     @NonNull
-    public C4DatabaseObserver createDatabaseObserver(C4DatabaseObserverListener listener, Object context) {
+    public C4DatabaseObserver createDatabaseObserver(
+        @NonNull Object context,
+        @NonNull C4DatabaseObserverListener listener) {
         return C4DatabaseObserver.newObserver(getPeer(), listener, context);
     }
 
     @NonNull
     public C4DocumentObserver createDocumentObserver(
-        String docID,
-        C4DocumentObserverListener listener,
-        Object context) {
+        @NonNull String docID,
+        @NonNull Object context,
+        @NonNull C4DocumentObserverListener listener) {
         return C4DocumentObserver.newObserver(getPeer(), docID, listener, context);
     }
 
@@ -343,6 +347,7 @@ public abstract class C4Database extends C4NativePeer {
     // C4Replicator
     ////////////////////////////////
 
+    @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public C4Replicator createRemoteReplicator(
         @Nullable String scheme,
@@ -378,6 +383,7 @@ public abstract class C4Database extends C4NativePeer {
             framing);
     }
 
+    @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public C4Replicator createLocalReplicator(
         @NonNull C4Database otherLocalDB,
@@ -433,9 +439,9 @@ public abstract class C4Database extends C4NativePeer {
         return getCookies(getPeer(), uri.toString());
     }
 
-    @NonNull
     @VisibleForTesting
-    public C4Document get(String docID, boolean mustExist) throws LiteCoreException {
+    @NonNull
+    public C4Document get(@NonNull String docID, boolean mustExist) throws LiteCoreException {
         return new C4Document(getPeer(), docID, mustExist);
     }
 
@@ -449,9 +455,9 @@ public abstract class C4Database extends C4NativePeer {
     @NonNull
     FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
 
-    @NonNull
     @VisibleForTesting
-    C4Document create(String docID, byte[] body, int revisionFlags) throws LiteCoreException {
+    @NonNull
+    C4Document create(@NonNull String docID, @NonNull byte[] body, int revisionFlags) throws LiteCoreException {
         return new C4Document(C4Document.create(getPeer(), docID, body, revisionFlags));
     }
 
@@ -465,25 +471,25 @@ public abstract class C4Database extends C4NativePeer {
     @VisibleForTesting
     byte[] getPrivateUUID() throws LiteCoreException { return getPrivateUUID(getPeer()); }
 
-    @NonNull
     @VisibleForTesting
+    @NonNull
     FLSliceResult encodeJSON(@NonNull String data) throws LiteCoreException {
         return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8)));
     }
 
-    @NonNull
     @VisibleForTesting
+    @NonNull
     C4Document getBySequence(long sequence) throws LiteCoreException { return new C4Document(getPeer(), sequence); }
 
-    @NonNull
     @VisibleForTesting
+    @NonNull
     public C4Document put(
-        byte[] body,
-        String docID,
+        @NonNull byte[] body,
+        @NonNull String docID,
         int revFlags,
         boolean existingRevision,
         boolean allowConflict,
-        String[] history,
+        @NonNull String[] history,
         boolean save,
         int maxRevTreeDepth,
         int remoteDBID)
@@ -505,11 +511,11 @@ public abstract class C4Database extends C4NativePeer {
     @VisibleForTesting
     C4Document put(
         @NonNull FLSliceResult body, // C4Slice*
-        String docID,
+        @NonNull String docID,
         int revFlags,
         boolean existingRevision,
         boolean allowConflict,
-        String[] history,
+        @NonNull String[] history,
         boolean save,
         int maxRevTreeDepth,
         int remoteDBID)
@@ -532,9 +538,9 @@ public abstract class C4Database extends C4NativePeer {
         rawPut(getPeer(), storeName, key, meta, body);
     }
 
-    @NonNull
     @VisibleForTesting
-    C4RawDocument rawGet(String storeName, String docID) throws LiteCoreException {
+    @NonNull
+    C4RawDocument rawGet(@NonNull String storeName, @NonNull String docID) throws LiteCoreException {
         return new C4RawDocument(rawGet(getPeer(), storeName, docID));
     }
 
@@ -631,7 +637,7 @@ public abstract class C4Database extends C4NativePeer {
     private static native void setCookie(long db, String url, String setCookieHeader) throws LiteCoreException;
 
     @NonNull
-    private static native String getCookies(long db, String url) throws LiteCoreException;
+    private static native String getCookies(long db, @NonNull String url) throws LiteCoreException;
 
     ////////////////////////////////
     // c4Document+Fleece.h

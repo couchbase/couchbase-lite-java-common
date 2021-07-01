@@ -61,7 +61,8 @@ public class C4Query extends C4NativePeer {
     // Constructors
     //-------------------------------------------------------------------------
 
-    C4Query(long db, @NonNull AbstractIndex.QueryLanguage queryLanguage, String expression) throws LiteCoreException {
+    C4Query(long db, @NonNull AbstractIndex.QueryLanguage queryLanguage, @NonNull String expression)
+        throws LiteCoreException {
         super(createQuery(db, queryLanguage.getValue(), expression));
     }
 
@@ -82,12 +83,14 @@ public class C4Query extends C4NativePeer {
 
     // - Creates a database index, to speed up subsequent queries.
 
+    @Nullable
     public C4QueryEnumerator run(@NonNull C4QueryOptions opts, @NonNull FLSliceResult params) throws LiteCoreException {
         return withPeer(
             null,
             h -> new C4QueryEnumerator(run(h, opts.isRankFullText(), params.getHandle())));
     }
 
+    @Nullable
     @SuppressWarnings("PMD.MethodReturnsInternalArray")
     public byte[] getFullTextMatched(@NonNull C4FullTextMatch match) throws LiteCoreException {
         return withPeer(null, h -> getFullTextMatched(h, match.getPeer()));
@@ -117,6 +120,7 @@ public class C4Query extends C4NativePeer {
 
     int columnCount() { return withPeer(0, C4Query::columnCount); }
 
+    @Nullable
     @VisibleForTesting
     C4QueryEnumerator run(@NonNull C4QueryOptions opts) throws LiteCoreException {
         try (FLSliceResult params = FLSliceResult.getManagedSliceResult()) { return run(opts, params); }

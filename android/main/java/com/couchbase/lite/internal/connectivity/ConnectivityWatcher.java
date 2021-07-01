@@ -50,6 +50,7 @@ abstract class ConnectivityWatcher {
     public abstract boolean isConnected();
     public abstract void stop();
 
+    @NonNull
     protected final AndroidConnectivityManager getCblMgr() { return mgr.get(); }
 
     @NonNull

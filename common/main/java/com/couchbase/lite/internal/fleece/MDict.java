@@ -61,7 +61,7 @@ public class MDict extends MCollection implements Iterable<String> {
     public long count() { return valCount; }
 
     @NonNull
-    public MValue get(String key) {
+    public MValue get(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
 
         final MValue v = valueMap.get(key);
@@ -223,7 +223,8 @@ public class MDict extends MCollection implements Iterable<String> {
     // Private (in class only)
     //---------------------------------------------
 
-    private MValue setInMap(String key, MValue value) {
+    @NonNull
+    private MValue setInMap(@NonNull String key, @NonNull MValue value) {
         newKey.add(key);
         valueMap.put(key, value);
         return value;

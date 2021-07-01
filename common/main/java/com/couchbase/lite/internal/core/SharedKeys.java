@@ -25,17 +25,19 @@ public final class SharedKeys {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    @NonNull
     private final FLSharedKeys flSharedKeys;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    public SharedKeys(@NonNull final C4Database c4db) { flSharedKeys = c4db.getFLSharedKeys(); }
+    public SharedKeys(@NonNull C4Database c4db) { flSharedKeys = c4db.getFLSharedKeys(); }
 
-    public SharedKeys(final FLSharedKeys flSharedKeys) { this.flSharedKeys = flSharedKeys; }
+    public SharedKeys(@NonNull FLSharedKeys flSharedKeys) { this.flSharedKeys = flSharedKeys; }
 
     //---------------------------------------------
     // Public level methods
     //---------------------------------------------
+    @NonNull
     public FLSharedKeys getFLSharedKeys() { return flSharedKeys; }
 }

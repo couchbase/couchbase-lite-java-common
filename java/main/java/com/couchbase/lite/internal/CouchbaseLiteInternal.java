@@ -91,6 +91,7 @@ public final class CouchbaseLiteInternal {
     /**
      * This method is for internal used only and will be removed in the future release.
      */
+    @NonNull
     public static ExecutionService getExecutionService() {
         final ExecutionService executionService = EXECUTION_SERVICE.get();
         if (executionService != null) { return executionService; }

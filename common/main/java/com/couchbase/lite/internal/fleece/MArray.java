@@ -49,6 +49,7 @@ public class MArray extends MCollection {
      * Returns a reference to the MValue of the item at the given index.
      * If the index is out of range, returns an empty MValue.
      */
+    @NonNull
     public MValue get(long index) {
         if (index < 0 || index >= values.size()) { return MValue.EMPTY; }
 

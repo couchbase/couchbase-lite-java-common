@@ -33,8 +33,8 @@ import com.couchbase.lite.internal.utils.MathUtils;
  * @param <T> The type of the Java peer.
  */
 public class NativeContext<T> {
-    @NonNull
     @GuardedBy("this")
+    @NonNull
     private final Map<Integer, WeakReference<T>> contexts = new HashMap<>();
 
     /**

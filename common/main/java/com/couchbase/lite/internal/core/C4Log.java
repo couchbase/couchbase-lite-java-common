@@ -37,11 +37,13 @@ public final class C4Log {
 
     @VisibleForTesting
     public static class RawLog {
+        @NonNull
         public final String domain;
         public final int level;
+        @NonNull
         public final String message;
 
-        RawLog(String domain, int level, String message) {
+        RawLog(@NonNull String domain, int level, @NonNull String message) {
             this.domain = domain;
             this.level = level;
             this.message = message;

@@ -63,7 +63,10 @@ public class C4DatabaseObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    static C4DatabaseObserver newObserver(long db, C4DatabaseObserverListener listener, Object context) {
+    static C4DatabaseObserver newObserver(
+        long db,
+        @NonNull C4DatabaseObserverListener listener,
+        @NonNull Object context) {
         final C4DatabaseObserver observer = new C4DatabaseObserver(db, listener, context);
         REVERSE_LOOKUP_TABLE.put(observer.getPeer(), observer);
         return observer;
@@ -74,14 +77,16 @@ public class C4DatabaseObserver extends C4NativePeer {
     // Member Variables
     //-------------------------------------------------------------------------
 
+    @NonNull
     private final C4DatabaseObserverListener listener;
+    @NonNull
     private final Object context;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4DatabaseObserver(long db, C4DatabaseObserverListener listener, Object context) {
+    C4DatabaseObserver(long db, @NonNull C4DatabaseObserverListener listener, @NonNull Object context) {
         super(create(db));
         this.listener = listener;
         this.context = context;

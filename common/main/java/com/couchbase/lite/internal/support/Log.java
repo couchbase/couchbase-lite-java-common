@@ -364,7 +364,7 @@ public final class Log {
     }
 
     @NonNull
-    public static String formatStandardMessage(@Nullable String msg, Object... args) {
+    public static String formatStandardMessage(@Nullable String msg, @NonNull Object... args) {
         return String.format(Locale.ENGLISH, lookupStandardMessage(msg), args);
     }
 
@@ -457,9 +457,9 @@ public final class Log {
     }
 
     @NonNull
-    private static String formatMessage(@NonNull String msg, Object... args) {
+    private static String formatMessage(@NonNull String msg, @NonNull Object... args) {
         try { return String.format(Locale.ENGLISH, msg, args); }
-        catch (@NonNull IllegalFormatException | FormatterClosedException ignore) { }
+        catch (IllegalFormatException | FormatterClosedException ignore) { }
         return msg;
     }
 

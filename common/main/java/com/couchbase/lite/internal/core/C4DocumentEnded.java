@@ -23,7 +23,9 @@ import android.support.annotation.NonNull;
  * This class and its members are referenced by name, from native code.
  */
 public class C4DocumentEnded {
+    @NonNull
     private final String docID;
+    @NonNull
     private final String revID;
     private final int flags;
     private final long sequence;
@@ -34,8 +36,8 @@ public class C4DocumentEnded {
 
     // Called from native code
     public C4DocumentEnded(
-        String docID,
-        String revID,
+        @NonNull String docID,
+        @NonNull String revID,
         int flags,
         long sequence,
         int errorDomain,
@@ -52,8 +54,10 @@ public class C4DocumentEnded {
         this.errorIsTransient = errorIsTransient;
     }
 
+    @NonNull
     public String getDocID() { return docID; }
 
+    @NonNull
     public String getRevID() { return revID; }
 
     public int getFlags() { return flags; }

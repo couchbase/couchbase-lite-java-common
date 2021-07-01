@@ -49,10 +49,10 @@ public class C4ObserverTest extends C4BaseTest {
     // - DB Observer
     @Test
     public void testDBObserver() throws LiteCoreException {
-        dbObserver = this.c4Database.createDatabaseObserver((observer, context) -> {
+        dbObserver = this.c4Database.createDatabaseObserver(this, (observer, context) -> {
             assertEquals(C4ObserverTest.this, context);
             dbCallbackCalls.incrementAndGet();
-        }, this);
+        });
         assertEquals(0, dbCallbackCalls.get());
 
         createRev("A", "1-aa", fleeceBody);
@@ -81,12 +81,12 @@ public class C4ObserverTest extends C4BaseTest {
     public void testDocObserver() throws LiteCoreException {
         createRev("A", "1-aa", fleeceBody);
 
-        docObserver = this.c4Database.createDocumentObserver("A", (observer, docID, sequence, context) -> {
+        docObserver = this.c4Database.createDocumentObserver("A", this, (observer, docID, sequence, context) -> {
             assertEquals(C4ObserverTest.this, context);
             assertEquals("A", docID);
             assertTrue(sequence > 0);
             dbCallbackCalls.incrementAndGet();
-        }, this);
+        });
         assertEquals(0, dbCallbackCalls.get());
 
         createRev("A", "2-bb", fleeceBody);
@@ -98,11 +98,11 @@ public class C4ObserverTest extends C4BaseTest {
     @Test
     public void testMultiDBsObserver() throws LiteCoreException {
         dbObserver = this.c4Database.createDatabaseObserver(
-            (observer, context) -> {
+            this, (observer, context) -> {
                 assertEquals(C4ObserverTest.this, context);
                 dbCallbackCalls.incrementAndGet();
-            },
-            this);
+            }
+        );
         assertEquals(0, dbCallbackCalls.get());
 
         createRev("A", "1-aa", fleeceBody);
@@ -147,17 +147,17 @@ public class C4ObserverTest extends C4BaseTest {
     // - Multi-DBObservers
     @Test
     public void testMultiDBObservers() throws LiteCoreException {
-        dbObserver = this.c4Database.createDatabaseObserver((observer, context) -> {
+        dbObserver = this.c4Database.createDatabaseObserver(this, (observer, context) -> {
             assertEquals(C4ObserverTest.this, context);
             dbCallbackCalls.incrementAndGet();
-        }, this);
+        });
         assertEquals(0, dbCallbackCalls.get());
 
         final AtomicInteger dbCallbackCalls1 = new AtomicInteger(0);
-        C4DatabaseObserver dbObserver1 = this.c4Database.createDatabaseObserver((observer, context) -> {
+        C4DatabaseObserver dbObserver1 = this.c4Database.createDatabaseObserver(this, (observer, context) -> {
             assertEquals(C4ObserverTest.this, context);
             dbCallbackCalls1.incrementAndGet();
-        }, this);
+        });
         assertEquals(0, dbCallbackCalls1.get());
 
 

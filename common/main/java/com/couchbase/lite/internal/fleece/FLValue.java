@@ -48,10 +48,10 @@ public class FLValue {
      * @throws LiteCoreException on parse failure
      */
     @Nullable
-    public static String getJSONForJSON5(String json5) throws LiteCoreException { return json5toJson(json5); }
+    public static String getJSONForJSON5(@Nullable String json5) throws LiteCoreException { return json5toJson(json5); }
 
     @NonNull
-    public static FLValue fromData(byte[] data) { return new FLValue(fromTrustedData(data)); }
+    public static FLValue fromData(@NonNull byte[] data) { return new FLValue(fromTrustedData(data)); }
 
     @Nullable
     public static Object toObject(@NonNull FLValue flValue) { return flValue.asObject(); }
@@ -301,6 +301,6 @@ public class FLValue {
     private static native long asDict(long value);
 
     @Nullable
-    private static native String json5toJson(String json5) throws LiteCoreException;
+    private static native String json5toJson(@Nullable String json5) throws LiteCoreException;
 }
 

@@ -322,11 +322,11 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @NonNull
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
 
+    @GuardedBy("getPeerLock()")
     @Nullable
-    @GuardedBy("getPeerLock()")
     private final StateMachine<State> state = WS_STATE_BUILDER.build();
-    @NonNull
     @GuardedBy("getPeerLock()")
+    @NonNull
     private final CBLCookieStore cookieStore;
 
     @GuardedBy("getPeerLock()")

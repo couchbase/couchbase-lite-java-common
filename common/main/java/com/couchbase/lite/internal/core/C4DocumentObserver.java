@@ -46,7 +46,11 @@ public class C4DocumentObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    static C4DocumentObserver newObserver(long db, String docID, C4DocumentObserverListener listener, Object context) {
+    static C4DocumentObserver newObserver(
+        long db,
+        @NonNull String docID,
+        @NonNull C4DocumentObserverListener listener,
+        @NonNull Object context) {
         final C4DocumentObserver observer = new C4DocumentObserver(db, docID, listener, context);
         REVERSE_LOOKUP_TABLE.put(observer.getPeer(), observer);
         return observer;
@@ -78,14 +82,20 @@ public class C4DocumentObserver extends C4NativePeer {
     // Member Variables
     //-------------------------------------------------------------------------
 
+    @NonNull
     private final C4DocumentObserverListener listener;
+    @NonNull
     private final Object context;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4DocumentObserver(long db, String docID, C4DocumentObserverListener listener, Object context) {
+    C4DocumentObserver(
+        long db,
+        @NonNull String docID,
+        @NonNull C4DocumentObserverListener listener,
+        @NonNull Object context) {
         super(create(db, docID));
         this.listener = listener;
         this.context = context;

@@ -40,8 +40,8 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     }
 
     // This is just a weak Set
-    @NonNull
     @GuardedBy("observers")
+    @NonNull
     private final WeakHashMap<Observer, Boolean> observers = new WeakHashMap<>();
 
     @NonNull

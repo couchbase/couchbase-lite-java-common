@@ -16,11 +16,8 @@
 package com.couchbase.lite.internal.fleece;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.VisibleForTesting;
+import android.support.annotation.Nullable;
 
-import edu.umd.cs.findbugs.annotations.Nullable;
-
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -41,7 +38,7 @@ public abstract class MCollection implements Encodable {
 
     protected MCollection() { this(MContext.NULL, true); }
 
-    MCollection(MContext context, boolean isMutable) {
+    MCollection(@Nullable MContext context, boolean isMutable) {
         this.context = context;
         this.mutable = isMutable;
         mutableChildren = isMutable;
@@ -72,7 +69,7 @@ public abstract class MCollection implements Encodable {
     // Protected Methods
     //---------------------------------------------
 
-    protected void setSlot(@android.support.annotation.Nullable MValue newSlot, MValue oldSlot) {
+    protected void setSlot(@Nullable MValue newSlot, MValue oldSlot) {
         if (slot.equals(oldSlot)) {
             slot = newSlot;
             if (newSlot == null) { parent = null; }

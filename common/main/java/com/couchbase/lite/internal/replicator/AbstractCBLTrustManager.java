@@ -144,6 +144,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
     /**
      * Get the default trust manager.
      */
+    @NonNull
     protected final X509TrustManager getDefaultTrustManager() {
         X509TrustManager trustManager = defaultTrustManager.get();
         if (trustManager != null) { return trustManager; }
@@ -155,7 +156,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
             trustManagerFactory.init((KeyStore) null);
             trustManagers = trustManagerFactory.getTrustManagers();
         }
-        catch (@NonNull NoSuchAlgorithmException | KeyStoreException e) {
+        catch (NoSuchAlgorithmException | KeyStoreException e) {
             throw new IllegalStateException("Cannot find the default trust manager", e);
         }
 
@@ -182,9 +183,8 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
             cert.verify(cert.getPublicKey());
             return true;
         }
-        catch (@NonNull CertificateException | NoSuchAlgorithmException |
-            InvalidKeyException | NoSuchProviderException |
-            SignatureException e) {
+        catch (CertificateException | NoSuchAlgorithmException | InvalidKeyException
+            | NoSuchProviderException | SignatureException e) {
             return false;
         }
     }

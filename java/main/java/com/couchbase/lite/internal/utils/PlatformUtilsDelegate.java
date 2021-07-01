@@ -34,8 +34,9 @@ public final class PlatformUtilsDelegate implements PlatformUtils.Delegate {
         return new PlatformUtils.Base64Encoder() {
             private final Base64.Encoder encoder = Base64.getEncoder();
 
+            @NonNull
             @Override
-            public String encodeToString(byte[] src) { return encoder.encodeToString(src); }
+            public String encodeToString(@NonNull byte[] src) { return encoder.encodeToString(src); }
         };
     }
 
