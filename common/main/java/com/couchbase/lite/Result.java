@@ -45,16 +45,19 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    @NonNull
     private final ResultSet rs;
     @NonNull
     private final List<FLValue> values;
+    @NonNull
     private final long missingColumns;
+    @NonNull
     private final DbContext context;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
-    Result(ResultSet rs, @NonNull C4QueryEnumerator c4enum, DbContext context) {
+    Result(@NonNull ResultSet rs, @NonNull C4QueryEnumerator c4enum, @NonNull DbContext context) {
         this.rs = rs;
         this.values = extractColumns(c4enum.getColumns());
         this.missingColumns = c4enum.getMissingColumns();
@@ -85,6 +88,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @param index the index of the required value.
      * @return the value.
      */
+    @Nullable
     @Override
     public Object getValue(int index) {
         assertInBounds(index);
@@ -111,6 +115,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @param index the index of the required value.
      * @return a Number value.
      */
+    @Nullable
     @Override
     public Number getNumber(int index) {
         assertInBounds(index);
@@ -202,6 +207,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @param index the index of the required value.
      * @return a Date.
      */
+    @Nullable
     @Override
     public Date getDate(int index) {
         assertInBounds(index);
@@ -507,8 +513,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     private Object fleeceValueToObject(int index) {
         final FLValue value = values.get(index);
         if (value == null) { return null; }
-        final AbstractDatabase db = rs.getQuery().getDatabase();
-        if (db == null) { throw new IllegalStateException("Null database on attempt to get lock"); }
+        final AbstractDatabase db = Preconditions.assertNotNull(rs.getQuery().getDatabase(), "db");
         final MRoot root = new MRoot(context, value, false);
         synchronized (db.getDbLock()) { return root.asNative(); }
     }

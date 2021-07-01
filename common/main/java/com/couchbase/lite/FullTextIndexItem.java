@@ -36,9 +36,8 @@ public final class FullTextIndexItem {
         return new FullTextIndexItem(Expression.property(property));
     }
 
+    @NonNull
     final Expression expression;
 
-    private FullTextIndexItem(Expression expression) {
-        this.expression = expression;
-    }
+    private FullTextIndexItem(@NonNull Expression expression) { this.expression = expression; }
 }

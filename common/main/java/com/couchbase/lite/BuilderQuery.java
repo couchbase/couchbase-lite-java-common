@@ -68,9 +68,9 @@ abstract class BuilderQuery extends AbstractQuery {
     // Protected access
     //---------------------------------------------
 
+    @GuardedBy("lock")
     @NonNull
     @Override
-    @GuardedBy("lock")
     protected final C4Query prepQueryLocked() throws CouchbaseLiteException {
         final String json = marshalAsJSONSafely();
         if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "JSON query: %s", json); }
@@ -84,7 +84,7 @@ abstract class BuilderQuery extends AbstractQuery {
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
-    @Nullable
+    @NonNull
     @Override
     protected final AbstractDatabase getDatabase() { return (AbstractDatabase) from.getSource(); }
 
@@ -120,7 +120,7 @@ abstract class BuilderQuery extends AbstractQuery {
 
     void setSelect(Select select) { this.select = select; }
 
-    void setFrom(DataSource from) { this.from = from; }
+    void setFrom(@NonNull DataSource from) { this.from = from; }
 
     void setJoins(Joins joins) { this.joins = joins; }
 

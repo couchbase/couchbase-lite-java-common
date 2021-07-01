@@ -16,7 +16,6 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +36,11 @@ public abstract class Ordering {
      * descending order. The default order is ascending.
      */
     public static class SortOrder extends Ordering {
+        @NonNull
         private final Expression expression;
         private boolean isAscending;
 
-        SortOrder(Expression expression) {
+        SortOrder(@NonNull Expression expression) {
             this.expression = expression;
             this.isAscending = true;
         }
@@ -67,13 +67,14 @@ public abstract class Ordering {
             return this;
         }
 
-        @Nullable
+        @NonNull
         Object asJSON() {
             if (isAscending) { return expression.asJSON(); }
 
             final List<Object> json = new ArrayList<>();
             json.add("DESC");
             json.add(expression.asJSON());
+
             return json;
         }
     }
@@ -115,6 +116,6 @@ public abstract class Ordering {
     // Package level access
     //---------------------------------------------
 
-    @Nullable
+    @NonNull
     abstract Object asJSON();
 }

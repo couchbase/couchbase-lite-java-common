@@ -17,10 +17,8 @@ package com.couchbase.lite.internal.fleece;
 
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.DbContext;
 
 
 public class MRoot extends MCollection {
@@ -35,15 +33,8 @@ public class MRoot extends MCollection {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-
-    public MRoot(DbContext context, FLValue value, boolean isMutable) {
+    public MRoot(MContext context, FLValue value, boolean isMutable) {
         super(context, isMutable);
-        data = new MValue(value);
-    }
-
-    @VisibleForTesting
-    public MRoot(MContext context, FLValue value) {
-        super(context);
         data = new MValue(value);
     }
 

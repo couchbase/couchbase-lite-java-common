@@ -34,7 +34,7 @@ public class SelectResult {
      * SelectResult.From is a SelectResult that you can specify the data source alias name.
      */
     public static final class From extends SelectResult {
-        private From(Expression expression) { super(expression); }
+        private From(@NonNull Expression expression) { super(expression); }
 
         /**
          * Species the data source alias name to the SelectResult object.
@@ -57,7 +57,7 @@ public class SelectResult {
      * object.
      */
     public static final class As extends SelectResult {
-        private As(Expression expression) { super(expression); }
+        private As(@NonNull Expression expression) { super(expression); }
 
         /**
          * Specifies the alias name to the SelectResult object.
@@ -110,7 +110,9 @@ public class SelectResult {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    @NonNull
     Expression selectExpression;
+    @Nullable
     String alias;
 
     //---------------------------------------------
@@ -134,5 +136,5 @@ public class SelectResult {
     @Nullable
     Object asJSON() { return selectExpression.asJSON(); }
 
-    private SelectResult(Expression expression) { this.selectExpression = expression; }
+    private SelectResult(@NonNull Expression expression) { this.selectExpression = expression; }
 }

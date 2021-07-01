@@ -35,13 +35,14 @@ public final class OrderBy extends BuilderQuery implements LimitRouter {
     // Member variables
     //---------------------------------------------
 
+    @NonNull
     private final List<Ordering> orderings;
 
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
 
-    OrderBy(@NonNull BuilderQuery query, List<Ordering> orderings) {
+    OrderBy(@NonNull BuilderQuery query, @NonNull List<Ordering> orderings) {
         copy(query);
         this.orderings = orderings;
         setOrderBy(this);

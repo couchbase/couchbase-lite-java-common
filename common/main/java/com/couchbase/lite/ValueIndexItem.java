@@ -50,7 +50,7 @@ public final class ValueIndexItem {
 
     final Expression viExpression;
 
-    private ValueIndexItem(Expression expression) {
+    private ValueIndexItem(@NonNull Expression expression) {
         this.viExpression = expression;
     }
 }

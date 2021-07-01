@@ -26,5 +26,5 @@ interface LimitRouter {
     Limit limit(@NonNull Expression limit);
 
     @NonNull
-    Limit limit(@NonNull Expression limit, Expression offset);
+    Limit limit(@NonNull Expression limit, @NonNull Expression offset);
 }

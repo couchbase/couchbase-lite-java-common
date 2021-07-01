@@ -29,10 +29,11 @@ import java.util.Locale;
 public class FullTextIndex extends Index {
     @NonNull
     private final List<FullTextIndexItem> indexItems;
+    @NonNull
     private String language = Locale.getDefault().getLanguage();
     private boolean ignoreDiacritics;
 
-    FullTextIndex(FullTextIndexItem... indexItems) {
+    FullTextIndex(@NonNull FullTextIndexItem... indexItems) {
         super(IndexType.FULL_TEXT);
         this.indexItems = Arrays.asList(indexItems);
     }
@@ -44,7 +45,7 @@ public class FullTextIndex extends Index {
      * a nil or "" value to disable the language features.
      */
     @NonNull
-    public FullTextIndex setLanguage(String language) {
+    public FullTextIndex setLanguage(@NonNull String language) {
         this.language = language;
         return this;
     }
@@ -58,6 +59,7 @@ public class FullTextIndex extends Index {
         return this;
     }
 
+    @NonNull
     @Override
     String getLanguage() { return language; }
 

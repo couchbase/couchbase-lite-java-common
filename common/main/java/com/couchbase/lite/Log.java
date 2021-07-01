@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -68,6 +69,7 @@ public final class Log {
      * @return The custom logger that was registered by
      * the application, or null.
      */
+    @Nullable
     public Logger getCustom() { return customLogger; }
 
     /**

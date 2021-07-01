@@ -29,14 +29,16 @@ public class Limit extends BuilderQuery {
     // member variables
     //---------------------------------------------
 
+    @NonNull
     private final Expression limit;
+    @NonNull
     private final Expression offset;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    Limit(@NonNull BuilderQuery query, Expression limit, Expression offset) {
+    Limit(@NonNull BuilderQuery query, @NonNull Expression limit, @NonNull Expression offset) {
         copy(query);
         this.limit = limit;
         this.offset = offset;

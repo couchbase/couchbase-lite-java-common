@@ -22,10 +22,12 @@ import android.support.annotation.NonNull;
  * ReplicatorChange contains the replicator status information.
  */
 public final class ReplicatorChange {
+    @NonNull
     private final Replicator replicator;
+    @NonNull
     private final ReplicatorStatus status;
 
-    ReplicatorChange(Replicator replicator, ReplicatorStatus status) {
+    ReplicatorChange(@NonNull Replicator replicator, @NonNull ReplicatorStatus status) {
         this.replicator = replicator;
         this.status = status;
     }
@@ -44,5 +46,5 @@ public final class ReplicatorChange {
 
     @NonNull
     @Override
-    public String toString() {return "ReplicatorChange{replicator=" + replicator + ", status=" + status + '}'; }
+    public String toString() {return "ReplicatorChange{" + replicator + " => " + status + '}'; }
 }

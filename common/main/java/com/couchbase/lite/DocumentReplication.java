@@ -28,14 +28,16 @@ public final class DocumentReplication {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    @NonNull
     private final Replicator replicator;
+    @NonNull
     private final List<ReplicatedDocument> documents;
     private final boolean pushing;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    DocumentReplication(Replicator replicator, boolean isPush, List<ReplicatedDocument> documents) {
+    DocumentReplication(@NonNull Replicator replicator, boolean isPush, @NonNull List<ReplicatedDocument> documents) {
         this.replicator = replicator;
         this.pushing = isPush;
         this.documents = documents;

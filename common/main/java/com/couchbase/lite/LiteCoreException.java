@@ -16,20 +16,21 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 
-// This class and its static method referenced by name, from native code.
+// This class is referenced by name, from native code.
 public class LiteCoreException extends Exception {
-    // NOTE called to throw LiteCoreException from native code to Java
-    public static void throwException(int domain, int code, String msg) throws LiteCoreException {
+    // This method is referenced by name, from native code.
+    public static void throwException(int domain, int code, @Nullable String msg) throws LiteCoreException {
         throw new LiteCoreException(domain, code, msg);
     }
 
 
-    public final int domain; // TODO: Should be an enum
+    public final int domain;
     public final int code;
 
-    public LiteCoreException(int domain, int code, String message) {
+    public LiteCoreException(int domain, int code, @Nullable String message) {
         super(message);
         this.domain = domain;
         this.code = code;
@@ -41,7 +42,5 @@ public class LiteCoreException extends Exception {
 
     @NonNull
     @Override
-    public String toString() {
-        return "LiteCoreException{domain=" + domain + ", code=" + code + ", msg=" + super.getMessage() + "}";
-    }
+    public String toString() { return "LiteCoreException{" + domain + ", " + code + ", \"" + getMessage() + "\"}"; }
 }

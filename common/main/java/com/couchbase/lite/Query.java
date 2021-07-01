@@ -101,7 +101,7 @@ public interface Query {
      * @return An opaque listener token object for removing the listener.
      */
     @NonNull
-    ListenerToken addChangeListener(Executor executor, @NonNull QueryChangeListener listener);
+    ListenerToken addChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener);
 
     /**
      * Removes a change listener wih the given listener token.

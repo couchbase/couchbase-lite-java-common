@@ -25,11 +25,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public abstract class MCollection implements Encodable {
-    @android.support.annotation.Nullable
-    private MValue slot;
-    @android.support.annotation.Nullable
+    @Nullable
     private MContext context;
-    @android.support.annotation.Nullable
+    @Nullable
+    private MValue slot;
+    @Nullable
     private MCollection parent;
     private boolean mutable;
     private boolean mutated;
@@ -41,12 +41,7 @@ public abstract class MCollection implements Encodable {
 
     protected MCollection() { this(MContext.NULL, true); }
 
-    protected MCollection(DbContext context, boolean isMutable) { this((MContext) context, isMutable); }
-
-    @VisibleForTesting
-    protected MCollection(MContext context) { this(context, true); }
-
-    private MCollection(MContext context, boolean isMutable) {
+    MCollection(MContext context, boolean isMutable) {
         this.context = context;
         this.mutable = isMutable;
         mutableChildren = isMutable;
@@ -62,7 +57,7 @@ public abstract class MCollection implements Encodable {
 
     public boolean hasMutableChildren() { return mutableChildren; }
 
-    @android.support.annotation.Nullable
+    @Nullable
     public MContext getContext() { return context; }
 
     public void initAsCopyOf(@NonNull MCollection original, boolean isMutable) {
@@ -91,7 +86,7 @@ public abstract class MCollection implements Encodable {
         this.mutable = isMutable;
         mutableChildren = isMutable;
         mutated = this.slot.isMutated();
-        if (this.slot.getValue() != null) { context = parent != null ? parent.getContext() : null; }
+        if (this.slot.getValue() != null) { context = (parent == null) ? null : parent.getContext(); }
     }
 
     protected void mutate() {

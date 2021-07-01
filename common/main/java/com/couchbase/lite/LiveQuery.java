@@ -64,12 +64,12 @@ final class LiveQuery implements DatabaseChangeListener {
     @NonNull
     private final AtomicReference<State> state = new AtomicReference<>(State.STOPPED);
 
-    @Nullable
     @GuardedBy("lock")
+    @Nullable
     private ListenerToken dbListenerToken;
 
-    @Nullable
     @GuardedBy("lock")
+    @Nullable
     private ResultSet previousResults;
 
     //---------------------------------------------
@@ -167,6 +167,7 @@ final class LiveQuery implements DatabaseChangeListener {
         }
     }
 
+    @NonNull
     State getState() { return state.get(); }
 
     //---------------------------------------------

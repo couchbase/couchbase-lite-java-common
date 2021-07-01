@@ -25,13 +25,14 @@ import com.couchbase.lite.internal.utils.StringUtils;
 
 
 public class IndexConfiguration extends AbstractIndex {
+    @NonNull
     private final List<String> expressions;
 
-    IndexConfiguration(@NonNull IndexType type, String... expressions) {
+    IndexConfiguration(@NonNull IndexType type, @NonNull String... expressions) {
         this(type, Arrays.asList(expressions));
     }
 
-    IndexConfiguration(@NonNull IndexType type, List<String> expressions) {
+    IndexConfiguration(@NonNull IndexType type, @NonNull List<String> expressions) {
         super(type, QueryLanguage.N1QL);
         this.expressions = expressions;
     }

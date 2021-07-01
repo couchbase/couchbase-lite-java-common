@@ -444,6 +444,6 @@ public class C4MutableFleeceTest extends C4BaseTest {
     }
 
     private MRoot getMRoot(FLSliceResult data) {
-        return new MRoot(new FLContext(data), FLValue.fromData(data));
+        return new MRoot(new FLContext(data), FLValue.fromData(data), true);
     }
 }

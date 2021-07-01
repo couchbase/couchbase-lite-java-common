@@ -41,7 +41,7 @@ public final class Select extends BuilderQuery implements FromRouter {
     // Constructor
     //---------------------------------------------
 
-    Select(boolean distinct, SelectResult... selectResults) {
+    Select(boolean distinct, @NonNull SelectResult... selectResults) {
         this.distinct = distinct;
         this.selectResults = Arrays.asList(selectResults);
         setSelect(this);

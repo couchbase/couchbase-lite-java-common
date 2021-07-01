@@ -17,13 +17,12 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import edu.umd.cs.findbugs.annotations.Nullable;
 
 import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -52,7 +51,7 @@ final class Fleece {
             || !Objects.equals(newValue, oldValue.asNative(container)));
     }
 
-    @android.support.annotation.Nullable
+    @Nullable
     @SuppressWarnings("unchecked")
     static Object toCBLObject(@Nullable Object value) {
         if ((value == null)
@@ -77,7 +76,7 @@ final class Fleece {
                 SUPPORTED_TYPES));
     }
 
-    @android.support.annotation.Nullable
+    @Nullable
     static Object toObject(@Nullable Object value) {
         if (value == null) { return null; }
         else if (value instanceof Dictionary) { return ((Dictionary) value).toMap(); }

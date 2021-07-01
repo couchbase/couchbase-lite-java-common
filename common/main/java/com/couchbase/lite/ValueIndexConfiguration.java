@@ -15,13 +15,14 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
 
 import java.util.Arrays;
 import java.util.List;
 
 
 public class ValueIndexConfiguration extends IndexConfiguration {
-    public ValueIndexConfiguration(String... expressions) { this(Arrays.asList(expressions)); }
+    public ValueIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
-    ValueIndexConfiguration(List<String> expressions) { super(IndexType.VALUE, expressions); }
+    ValueIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.VALUE, expressions); }
 }

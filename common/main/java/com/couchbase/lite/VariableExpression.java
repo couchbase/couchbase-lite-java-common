@@ -25,15 +25,13 @@ import java.util.List;
  * Variable expression
  */
 public final class VariableExpression extends Expression {
+    @NonNull
     private final String name;
 
-    VariableExpression(String name) {
-        this.name = name;
-    }
+    VariableExpression(@NonNull String name) { this.name = name; }
 
-    String getName() {
-        return name;
-    }
+    @NonNull
+    String getName() { return name; }
 
     @NonNull
     @Override

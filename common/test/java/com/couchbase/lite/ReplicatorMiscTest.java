@@ -79,8 +79,6 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertEquals(repChange.getStatus().getProgress().getTotal(), total);
         assertEquals(repChange.getStatus().getError().getCode(), errorCode);
         assertEquals(repChange.getStatus().getError().getDomain(), CBLError.Domain.CBLITE);
-        String changeInString = "ReplicatorChange{replicator=" + baseTestReplicator + ", status=" + status + '}';
-        assertEquals(repChange.toString(), changeInString);
     }
 
     @Test

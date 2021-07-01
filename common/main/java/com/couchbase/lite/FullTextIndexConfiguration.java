@@ -16,6 +16,9 @@
 package com.couchbase.lite;
 
 
+import android.support.annotation.NonNull;
+
+
 public class FullTextIndexConfiguration extends IndexConfiguration {
-    public FullTextIndexConfiguration(String expressions) { super(IndexType.FULL_TEXT, expressions); }
+    public FullTextIndexConfiguration(@NonNull String expressions) { super(IndexType.FULL_TEXT, expressions); }
 }

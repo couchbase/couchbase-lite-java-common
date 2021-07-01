@@ -34,19 +34,22 @@ public final class PropertyExpression extends Expression {
         return new PropertyExpression(PROPS_ALL, from, (from != null ? from : PROPS_ALL));
     }
 
+    @NonNull
     private final String keyPath;
+    @Nullable
     private final String fromAlias; // Data Source Alias
+    @Nullable
     private String columnName;
 
-    PropertyExpression(String keyPath) { this(keyPath, null); }
+    PropertyExpression(@NonNull String keyPath) { this(keyPath, null); }
 
-    private PropertyExpression(String keyPath, String from) { this(keyPath, from, null); }
+    private PropertyExpression(@NonNull String keyPath, @Nullable String from) { this(keyPath, from, null); }
 
     //---------------------------------------------
     // public level access
     //---------------------------------------------
 
-    private PropertyExpression(String keyPath, String from, String columnName) {
+    private PropertyExpression(@NonNull String keyPath, @Nullable String from, @Nullable String columnName) {
         this.keyPath = keyPath;
         this.fromAlias = from;
         this.columnName = columnName;
@@ -63,8 +66,8 @@ public final class PropertyExpression extends Expression {
      * @return The property Expression with the given data source alias name.
      */
     @NonNull
-    public Expression from(String alias) {
-        return new PropertyExpression(this.keyPath, alias);
+    public Expression from(@Nullable String alias) {
+        return new PropertyExpression(keyPath, alias);
     }
 
     @NonNull
@@ -76,6 +79,7 @@ public final class PropertyExpression extends Expression {
         return json;
     }
 
+    @NonNull
     String getColumnName() {
         synchronized (this) {
             if (columnName == null) {

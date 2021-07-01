@@ -36,7 +36,7 @@ public final class Having extends BuilderQuery implements OrderByRouter, LimitRo
     //---------------------------------------------
     // Constructor
     //---------------------------------------------
-    Having(@NonNull BuilderQuery query, Expression expression) {
+    Having(@NonNull BuilderQuery query, @NonNull Expression expression) {
         copy(query);
         this.expression = expression;
         setHaving(this);

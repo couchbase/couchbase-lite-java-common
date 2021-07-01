@@ -17,10 +17,9 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.EnumSet;
-
-import org.jetbrains.annotations.NotNull;
 
 import com.couchbase.lite.internal.core.C4Constants;
 
@@ -29,9 +28,11 @@ public final class ReplicatedDocument {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    @NonNull
     private final String id;
-    @NotNull
+    @NonNull
     private final EnumSet<DocumentFlag> documentFlags;
+    @Nullable
     private final CouchbaseLiteException error;
 
     //---------------------------------------------
@@ -41,7 +42,7 @@ public final class ReplicatedDocument {
     /**
      * Document replicated update of a replicator.
      */
-    ReplicatedDocument(String id, int flags, CouchbaseLiteException error, boolean errorIsTransient) {
+    ReplicatedDocument(@NonNull String id, int flags, @Nullable CouchbaseLiteException error, boolean ignore) {
         this.id = id;
         this.error = error;
 
@@ -74,6 +75,7 @@ public final class ReplicatedDocument {
     /**
      * The current document replication error.
      */
+    @Nullable
     public CouchbaseLiteException getError() { return error; }
 
     @NonNull

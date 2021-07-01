@@ -33,13 +33,14 @@ public final class Joins extends BuilderQuery implements WhereRouter, OrderByRou
     // member variables
     //---------------------------------------------
 
+    @NonNull
     private final List<Join> joins;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    Joins(@NonNull BuilderQuery query, List<Join> joins) {
+    Joins(@NonNull BuilderQuery query, @NonNull List<Join> joins) {
         copy(query);
         this.joins = joins;
         setJoins(this);

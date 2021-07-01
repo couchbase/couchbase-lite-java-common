@@ -57,25 +57,25 @@ public interface MutableDictionaryInterface extends DictionaryInterface {
     MutableDictionaryInterface setBoolean(@NonNull String key, boolean value);
 
     @NonNull
-    MutableDictionaryInterface setNumber(@NonNull String key, Number value);
+    MutableDictionaryInterface setNumber(@NonNull String key, @NonNull Number value);
 
     @NonNull
-    MutableDictionaryInterface setString(@NonNull String key, String value);
+    MutableDictionaryInterface setString(@NonNull String key, @NonNull String value);
 
     @NonNull
-    MutableDictionaryInterface setDate(@NonNull String key, Date value);
+    MutableDictionaryInterface setDate(@NonNull String key, @NonNull Date value);
 
     @NonNull
-    MutableDictionaryInterface setBlob(@NonNull String key, Blob value);
+    MutableDictionaryInterface setBlob(@NonNull String key, @NonNull Blob value);
 
     @NonNull
-    MutableDictionaryInterface setValue(@NonNull String key, Object value);
+    MutableDictionaryInterface setValue(@NonNull String key, @Nullable Object value);
 
     @NonNull
-    MutableDictionaryInterface setArray(@NonNull String key, Array value);
+    MutableDictionaryInterface setArray(@NonNull String key, @NonNull Array value);
 
     @NonNull
-    MutableDictionaryInterface setDictionary(@NonNull String key, Dictionary value);
+    MutableDictionaryInterface setDictionary(@NonNull String key, @NonNull Dictionary value);
 
     @NonNull
     MutableDictionaryInterface setData(@NonNull Map<String, Object> data);

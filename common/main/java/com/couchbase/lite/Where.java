@@ -33,7 +33,7 @@ public final class Where extends BuilderQuery implements GroupByRouter, OrderByR
     // Constructor
     //---------------------------------------------
 
-    Where(@NonNull BuilderQuery query, Expression where) {
+    Where(@NonNull BuilderQuery query, @NonNull Expression where) {
         copy(query);
         setWhere(where);
     }

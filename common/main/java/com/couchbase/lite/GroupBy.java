@@ -34,12 +34,13 @@ public final class GroupBy extends BuilderQuery implements HavingRouter, OrderBy
     //---------------------------------------------
     // Member variables
     //---------------------------------------------
+    @NonNull
     private final List<Expression> expressions;
 
     //---------------------------------------------
     // Constructor
     //--------------------------------------------
-    GroupBy(@NonNull BuilderQuery query, List<Expression> expressions) {
+    GroupBy(@NonNull BuilderQuery query, @NonNull List<Expression> expressions) {
         copy(query);
         this.expressions = expressions;
         setGroupBy(this);

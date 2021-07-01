@@ -30,13 +30,15 @@ public final class FullTextExpression {
         //---------------------------------------------
         // member variables
         //---------------------------------------------
+        @NonNull
         private final String indexName;
+        @NonNull
         private final String text;
 
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
-        FullTextMatchExpression(String indexName, String text) {
+        FullTextMatchExpression(@NonNull String indexName, @NonNull String text) {
             this.indexName = indexName;
             this.text = text;
         }
@@ -65,12 +67,13 @@ public final class FullTextExpression {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    @NonNull
     private final String name;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    private FullTextExpression(String name) { this.name = name; }
+    private FullTextExpression(@NonNull String name) { this.name = name; }
 
     /**
      * Creates a full-text match expression with the given search text.

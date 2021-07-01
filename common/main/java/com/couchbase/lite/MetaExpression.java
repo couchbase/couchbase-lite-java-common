@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,16 +28,14 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * A meta property expression.
  */
 public class MetaExpression extends Expression {
+    @NonNull
     private final String keyPath;
+    @Nullable
     private final String fromAlias; // Data Source Alias
+    @Nullable
     private String columnName;
 
-    private MetaExpression(String keyPath, String from) {
-        this.keyPath = keyPath;
-        this.fromAlias = from;
-    }
-
-    MetaExpression(String keyPath, String columnName, String from) {
+    MetaExpression(@NonNull String keyPath, @Nullable String columnName, @Nullable String from) {
         this.keyPath = keyPath;
         this.columnName = columnName;
         this.fromAlias = from;
@@ -55,7 +54,7 @@ public class MetaExpression extends Expression {
     @NonNull
     public Expression from(@NonNull String alias) {
         Preconditions.assertNotNull(alias, "alias");
-        return new MetaExpression(this.keyPath, alias);
+        return new MetaExpression(keyPath, null, alias);
     }
 
     //---------------------------------------------
@@ -71,6 +70,7 @@ public class MetaExpression extends Expression {
         return json;
     }
 
+    @NonNull
     String getColumnName() {
         if (columnName == null) {
             final String[] paths = keyPath.split("\\.");

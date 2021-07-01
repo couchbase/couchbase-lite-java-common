@@ -224,7 +224,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setBlob(@NonNull String key, Blob value) { return setValue(key, value); }
+    public MutableDictionary setBlob(@NonNull String key, @NonNull Blob value) { return setValue(key, value); }
 
     /**
      * Set a Date object for the given key.
@@ -235,7 +235,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setDate(@NonNull String key, Date value) { return setValue(key, value); }
+    public MutableDictionary setDate(@NonNull String key, @NonNull Date value) { return setValue(key, value); }
 
     /**
      * Set an Array object for the given key.
@@ -246,7 +246,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setArray(@NonNull String key, Array value) { return setValue(key, value); }
+    public MutableDictionary setArray(@NonNull String key, @NonNull Array value) { return setValue(key, value); }
 
     /**
      * Set a Dictionary object for the given key.
@@ -257,7 +257,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setDictionary(@NonNull String key, Dictionary value) {
+    public MutableDictionary setDictionary(@NonNull String key, @NonNull Dictionary value) {
         checkSelf(value);
         return setValue(key, value);
     }

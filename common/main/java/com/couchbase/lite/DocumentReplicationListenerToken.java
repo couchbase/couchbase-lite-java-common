@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2021 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,22 +24,24 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-final class ReplicatorChangeListenerToken implements ListenerToken {
+final class DocumentReplicationListenerToken implements ListenerToken {
     @NonNull
-    private final ReplicatorChangeListener listener;
+    private final DocumentReplicationListener listener;
     @Nullable
     private final Executor executor;
 
-    ReplicatorChangeListenerToken(@Nullable Executor executor, @NonNull ReplicatorChangeListener listener) {
+    DocumentReplicationListenerToken(@Nullable Executor executor, @NonNull DocumentReplicationListener listener) {
+        Preconditions.assertNotNull(listener, "listener");
         this.executor = executor;
-        this.listener = Preconditions.assertNotNull(listener, "listener");
+        this.listener = listener;
     }
 
-    void notify(@NonNull final ReplicatorChange change) { getExecutor().execute(() -> listener.changed(change)); }
+    void notify(@NonNull final DocumentReplication update) {
+        getExecutor().execute(() -> listener.replication(update));
+    }
 
-    @Nullable
+    @NonNull
     Executor getExecutor() {
         return (executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();
     }
 }
-
