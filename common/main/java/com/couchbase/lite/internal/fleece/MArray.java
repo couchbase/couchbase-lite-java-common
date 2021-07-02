@@ -34,10 +34,10 @@ public class MArray extends MCollection {
         initInSlot(mv, parent, (parent != null) && parent.hasMutableChildren());
     }
 
-    public void initAsCopyOf(@Nullable MArray array, boolean isMutable) {
+    public void initAsCopyOf(@NonNull MArray array, boolean isMutable) {
         super.initAsCopyOf(array, isMutable);
-        baseArray = array != null ? array.getBaseArray() : null;
-        values = array != null ? new ArrayList<>(array.values) : new ArrayList<>();
+        baseArray = array.getBaseArray();
+        values = new ArrayList<>(array.values);
     }
 
     @Nullable
@@ -122,23 +122,26 @@ public class MArray extends MCollection {
 
     public void encodeTo(@NonNull FLEncoder enc) {
         if (!isMutated()) {
-            if (baseArray == null) {
-                enc.beginArray(0);
-                enc.endArray();
+            if (baseArray != null) {
+                enc.writeValue(baseArray);
+                return;
             }
-            else { enc.writeValue(baseArray); }
-        }
-        else {
-            enc.beginArray(count());
-            long i = 0;
-            for (MValue value: values) {
-                if (value.isEmpty()) { enc.writeValue(baseArray.get(i)); }
-                else { value.encodeTo(enc); }
-                i++;
-            }
+
+            enc.beginArray(0);
             enc.endArray();
+            return;
         }
+
+        enc.beginArray(count());
+        long i = 0;
+        for (MValue value: values) {
+            if (!value.isEmpty()) { value.encodeTo(enc); }
+            else if (baseArray != null) { enc.writeValue(baseArray.get(i)); }
+            i++;
+        }
+        enc.endArray();
     }
+
 
     @Override
     protected void initInSlot(@NonNull MValue mv, MCollection parent, boolean isMutable) {

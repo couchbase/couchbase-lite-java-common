@@ -21,6 +21,8 @@ import android.support.annotation.VisibleForTesting;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -53,6 +55,7 @@ public class MValue implements Encodable {
     //-------------------------------------------------------------------------
 
 
+    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
     @SuppressWarnings("NotNullFieldNotInitialized")
     @NonNull
     private static Delegate delegate;

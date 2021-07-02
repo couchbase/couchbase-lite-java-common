@@ -52,27 +52,19 @@ class NetworkConnectivityManagerTest : BaseTest() {
 
     @Test
     fun testStartStopPre21() = testStartStop(
-        AndroidConnectivityManager(
-            19
-        ) { r -> r.run() })
+        AndroidConnectivityManager(19) { r -> r?.run() })
 
     @Test
     fun testStartStop21to23() = testStartStop(
-        AndroidConnectivityManager(
-            22
-        ) { r -> r.run() })
+        AndroidConnectivityManager(22) { r -> r?.run() })
 
     @Test
     fun testStartStop24to28() = testStartStop(
-        AndroidConnectivityManager(
-            26
-        ) { r -> r.run() })
+        AndroidConnectivityManager(26) { r -> r?.run() })
 
     @Test
     fun testStartStopPost29() = testStartStop(
-        AndroidConnectivityManager(
-            29
-        ) { r -> r.run() })
+        AndroidConnectivityManager(29) { r -> r?.run() })
 
     @Test
     fun testOffline() {

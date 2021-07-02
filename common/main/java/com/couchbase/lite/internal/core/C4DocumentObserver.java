@@ -71,10 +71,7 @@ public class C4DocumentObserver extends C4NativePeer {
         final C4DocumentObserver obs = REVERSE_LOOKUP_TABLE.get(peer);
         if (obs == null) { return; }
 
-        final C4DocumentObserverListener listener = obs.listener;
-        if (listener == null) { return; }
-
-        listener.callback(obs, docID, sequence, obs.context);
+        obs.listener.callback(obs, docID, sequence, obs.context);
     }
 
 

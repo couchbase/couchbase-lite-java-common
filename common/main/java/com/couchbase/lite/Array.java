@@ -57,13 +57,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     }
 
     //---------------------------------------------
-    // package level access
-    //---------------------------------------------
-    static void throwRangeException(int index) {
-        throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
-    }
-
-    //---------------------------------------------
     // Instance members
     //---------------------------------------------
     @NonNull
@@ -380,7 +373,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @NonNull
     private MValue getMValue(@NonNull MArray array, int index) {
         final MValue value = array.get(index);
-        if (value.isEmpty()) { throwRangeException(index); }
+        if (value.isEmpty()) {
+            throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
+        }
         return value;
     }
 }

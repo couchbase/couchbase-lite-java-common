@@ -41,7 +41,7 @@ public final class ReplicatorStatus {
         m.put(C4ReplicatorStatus.ActivityLevel.BUSY, ReplicatorActivityLevel.BUSY);
         ACTIVITY_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
     }
-    @Nullable
+    @NonNull
     private static ReplicatorActivityLevel getActivityLevelFromC4(int c4ActivityLevel) {
         final ReplicatorActivityLevel level = ACTIVITY_LEVEL_FROM_C4.get(c4ActivityLevel);
         if (level != null) { return level; }

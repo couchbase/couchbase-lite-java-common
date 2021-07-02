@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,14 +32,14 @@ public class Limit extends BuilderQuery {
 
     @NonNull
     private final Expression limit;
-    @NonNull
+    @Nullable
     private final Expression offset;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    Limit(@NonNull BuilderQuery query, @NonNull Expression limit, @NonNull Expression offset) {
+    Limit(@NonNull BuilderQuery query, @NonNull Expression limit, @Nullable Expression offset) {
         copy(query);
         this.limit = limit;
         this.offset = offset;

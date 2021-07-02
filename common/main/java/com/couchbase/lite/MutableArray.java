@@ -131,7 +131,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
         synchronized (lock) {
             if (Fleece.willMutate(value, internalArray.get(index), internalArray)
                 && (!internalArray.set(index, Fleece.toCBLObject(value)))) {
-                throwRangeException(index);
+                throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
             return this;
         }
@@ -404,7 +404,9 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray insertValue(int index, @Nullable Object value) {
         checkSelf(value);
         synchronized (lock) {
-            if (!internalArray.insert(index, Fleece.toCBLObject(value))) { throwRangeException(index); }
+            if (!internalArray.insert(index, Fleece.toCBLObject(value))) {
+                throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
+            }
             return this;
         }
     }
@@ -545,7 +547,9 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray remove(int index) {
         synchronized (lock) {
-            if (!internalArray.remove(index)) { throwRangeException(index); }
+            if (!internalArray.remove(index)) {
+                throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
+            }
             return this;
         }
     }

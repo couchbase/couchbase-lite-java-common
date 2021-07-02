@@ -85,7 +85,7 @@ public final class StateMachine<T extends Enum<T>> {
          *
          * @return a new state machine instance.
          */
-        @Nullable
+        @NonNull
         public StateMachine<S> build() { return new StateMachine<>(initialState, errorState, transitions); }
     }
 

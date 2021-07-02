@@ -596,8 +596,9 @@ public class Document implements DictionaryInterface, Iterable<String> {
         if (db == null) { throw new IllegalStateException("document has not been saved to a database"); }
 
         final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
+        final Dictionary dict = (Dictionary) Preconditions.assertNotNull(newRoot.asNative(), "root dictionary");
         root = newRoot;
 
-        synchronized (db.getDbLock()) { internalDict = (Dictionary) newRoot.asNative(); }
+        synchronized (db.getDbLock()) { internalDict = dict; }
     }
 }

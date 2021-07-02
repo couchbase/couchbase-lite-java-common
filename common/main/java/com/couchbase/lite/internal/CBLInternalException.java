@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal;
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 
@@ -34,7 +33,7 @@ public class CBLInternalException extends Exception {
 
     public CBLInternalException(final int code, @Nullable String message) { this(code, message, null); }
 
-    public CBLInternalException(final int code, @NonNull String message, @Nullable Throwable cause) {
+    public CBLInternalException(final int code, @Nullable String message, @Nullable Throwable cause) {
         super(message, cause);
         this.code = code;
     }

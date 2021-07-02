@@ -30,12 +30,12 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 abstract class AbstractConsoleLogger implements Logger {
     @NonNull
-    private EnumSet<LogDomain> logDomains;
+    private EnumSet<LogDomain> logDomains = LogDomain.ALL_DOMAINS;
     @NonNull
-    private LogLevel logLevel;
+    private LogLevel logLevel = LogLevel.WARNING;
 
     // Singleton instance accessible from Database.log.getConsole()
-    AbstractConsoleLogger() { reset(); }
+    protected AbstractConsoleLogger() { }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {

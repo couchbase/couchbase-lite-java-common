@@ -233,7 +233,7 @@ public class C4Replicator extends C4NativePeer {
         @Nullable String remoteDatabaseName,
         int push,
         int pull,
-        @NonNull byte[] options,
+        @Nullable byte[] options,
         @Nullable C4ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
@@ -272,7 +272,7 @@ public class C4Replicator extends C4NativePeer {
         @NonNull C4Database otherLocalDB,
         int push,
         int pull,
-        @NonNull byte[] options,
+        @Nullable byte[] options,
         @Nullable C4ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
@@ -378,7 +378,7 @@ public class C4Replicator extends C4NativePeer {
         @Nullable String remoteDatabaseName,
         int push,
         int pull,
-        @NonNull byte[] options,
+        @Nullable byte[] options,
         @Nullable C4ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
@@ -416,7 +416,7 @@ public class C4Replicator extends C4NativePeer {
         long targetDb,
         int push,
         int pull,
-        @NonNull byte[] options,
+        @Nullable byte[] options,
         @Nullable C4ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
@@ -473,7 +473,7 @@ public class C4Replicator extends C4NativePeer {
         closePeer(null);
     }
 
-    public void setOptions(@NonNull byte[] options) { setOptions(getPeer(), options); }
+    public void setOptions(@Nullable byte[] options) { setOptions(getPeer(), options); }
 
     @Nullable
     public C4ReplicatorStatus getStatus() { return getStatus(getPeer()); }

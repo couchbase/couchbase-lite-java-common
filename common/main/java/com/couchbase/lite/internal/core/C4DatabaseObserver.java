@@ -52,10 +52,7 @@ public class C4DatabaseObserver extends C4NativePeer {
         final C4DatabaseObserver obs = REVERSE_LOOKUP_TABLE.get(peer);
         if (obs == null) { return; }
 
-        final C4DatabaseObserverListener listener = obs.listener;
-        if (listener == null) { return; }
-
-        listener.callback(obs, obs.context);
+        obs.listener.callback(obs, obs.context);
     }
 
     //-------------------------------------------------------------------------
@@ -96,7 +93,7 @@ public class C4DatabaseObserver extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    @NonNull
+    @Nullable
     public C4DatabaseChange[] getChanges(int maxChanges) { return getChanges(getPeer(), maxChanges); }
 
     @CallSuper

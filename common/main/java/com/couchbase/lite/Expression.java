@@ -86,14 +86,14 @@ public abstract class Expression {
         }
 
         private void verifySupportedType(@Nullable Object value) {
-            if (value == null
-                || value instanceof String
-                || value instanceof Number   // including int, long, float, double
-                || value instanceof Boolean
-                || value instanceof Date
-                || value instanceof Map
-                || value instanceof List
-                || value instanceof Expression) {
+            if ((value == null)
+                || (value instanceof String)
+                || (value instanceof Number)   // including int, long, float, double
+                || (value instanceof Boolean)
+                || (value instanceof Date)
+                || (value instanceof Map)
+                || (value instanceof List)
+                || (value instanceof Expression)) {
                 return;
             }
 

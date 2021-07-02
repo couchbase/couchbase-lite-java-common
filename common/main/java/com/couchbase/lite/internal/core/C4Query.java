@@ -77,7 +77,7 @@ public class C4Query extends C4NativePeer {
     //////// RUNNING QUERIES:
 
     @Nullable
-    public String explain() { return withPeer(null, C4Query::explain); }
+    public String explain() { return withPeerOrNull(C4Query::explain); }
 
     //////// INDEXES:
 
@@ -85,15 +85,13 @@ public class C4Query extends C4NativePeer {
 
     @Nullable
     public C4QueryEnumerator run(@NonNull C4QueryOptions opts, @NonNull FLSliceResult params) throws LiteCoreException {
-        return withPeer(
-            null,
-            h -> new C4QueryEnumerator(run(h, opts.isRankFullText(), params.getHandle())));
+        return withPeerOrNull(h -> new C4QueryEnumerator(run(h, opts.isRankFullText(), params.getHandle())));
     }
 
     @Nullable
     @SuppressWarnings("PMD.MethodReturnsInternalArray")
     public byte[] getFullTextMatched(@NonNull C4FullTextMatch match) throws LiteCoreException {
-        return withPeer(null, h -> getFullTextMatched(h, match.getPeer()));
+        return withPeerOrNull(h -> getFullTextMatched(h, match.getPeer()));
     }
 
     //-------------------------------------------------------------------------

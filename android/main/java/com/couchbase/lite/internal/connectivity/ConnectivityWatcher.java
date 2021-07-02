@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.connectivity;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.lang.ref.WeakReference;
 
@@ -50,10 +51,10 @@ abstract class ConnectivityWatcher {
     public abstract boolean isConnected();
     public abstract void stop();
 
-    @NonNull
+    @Nullable
     protected final AndroidConnectivityManager getCblMgr() { return mgr.get(); }
 
-    @NonNull
+    @Nullable
     protected final ConnectivityManager getSysMgr() {
         return (ConnectivityManager)
             CouchbaseLiteInternal.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);

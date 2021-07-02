@@ -46,22 +46,17 @@ public final class JSONUtils {
         }
     };
 
-    @Nullable
-    public static JSONObject toJSON(@Nullable Map<?, ?> map) throws JSONException {
-        if (map == null) { return null; }
-
+    @NonNull
+    public static JSONObject toJSON(@NonNull Map<?, ?> map) throws JSONException {
         final JSONObject json = new JSONObject();
         for (Map.Entry<?, ?> entry: map.entrySet()) { json.put(entry.getKey().toString(), toJSON(entry.getValue())); }
         return json;
     }
 
-    @Nullable
-    public static JSONArray toJSON(@Nullable List<?> list) throws JSONException {
-        if (list == null) { return null; }
-
+    @NonNull
+    public static JSONArray toJSON(@NonNull List<?> list) throws JSONException {
         final JSONArray json = new JSONArray();
         for (Object value: list) { json.put(toJSON(value)); }
-
         return json;
     }
 
@@ -76,10 +71,8 @@ public final class JSONUtils {
         return val;
     }
 
-    @Nullable
-    public static Map<String, Object> fromJSON(@Nullable JSONObject json) throws JSONException {
-        if (json == null) { return null; }
-
+    @NonNull
+    public static Map<String, Object> fromJSON(@NonNull JSONObject json) throws JSONException {
         final Map<String, Object> result = new HashMap<>();
         final Iterator<String> itr = json.keys();
         while (itr.hasNext()) {
@@ -90,13 +83,10 @@ public final class JSONUtils {
         return result;
     }
 
-    @Nullable
-    public static List<Object> fromJSON(@Nullable JSONArray json) throws JSONException {
-        if (json == null) { return null; }
-
+    @NonNull
+    public static List<Object> fromJSON(@NonNull JSONArray json) throws JSONException {
         final List<Object> result = new ArrayList<>();
         for (int i = 0; i < json.length(); i++) { result.add(fromJSON(json.get(i))); }
-
         return result;
     }
 

@@ -53,17 +53,17 @@ public class C4Document extends C4NativePeer {
     public int getFlags() { return withPeer(0, C4Document::getFlags); }
 
     @Nullable
-    public String getDocID() { return withPeer(null, C4Document::getDocID); }
+    public String getDocID() { return withPeerOrNull(C4Document::getDocID); }
 
     @Nullable
-    public String getRevID() { return withPeer(null, C4Document::getRevID); }
+    public String getRevID() { return withPeerOrNull(C4Document::getRevID); }
 
     public long getSequence() { return withPeer(0L, C4Document::getSequence); }
 
     // - C4Revision
 
     @Nullable
-    public String getSelectedRevID() { return withPeer(null, C4Document::getSelectedRevID); }
+    public String getSelectedRevID() { return withPeerOrNull(C4Document::getSelectedRevID); }
 
     public long getSelectedSequence() { return withPeer(0L, C4Document::getSelectedSequence); }
 
@@ -123,7 +123,7 @@ public class C4Document extends C4NativePeer {
 
     @Nullable
     public String bodyAsJSON(boolean canonical) throws LiteCoreException {
-        return withPeer(null, h -> bodyAsJSON(h, canonical));
+        return withPeerOrNull(h -> bodyAsJSON(h, canonical));
     }
 
     @CallSuper
@@ -147,7 +147,7 @@ public class C4Document extends C4NativePeer {
 
     @VisibleForTesting
     @Nullable
-    byte[] getSelectedBody() { return withPeer(null, C4Document::getSelectedBody); }
+    byte[] getSelectedBody() { return withPeerOrNull(C4Document::getSelectedBody); }
 
     @VisibleForTesting
     int purgeRevision(String revID) throws LiteCoreException { return withPeer(0, h -> purgeRevision(h, revID)); }

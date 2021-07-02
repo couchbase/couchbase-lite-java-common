@@ -43,11 +43,7 @@ class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try {
-            final C4DocumentObserver obs = observer;
-            if (obs == null) { return; }
-            obs.close();
-        }
+        try { observer.close(); }
         finally { super.finalize(); }
     }
 

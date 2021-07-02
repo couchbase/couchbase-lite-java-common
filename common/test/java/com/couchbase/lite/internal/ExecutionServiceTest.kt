@@ -31,12 +31,12 @@ import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import java.util.Stack
-import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
+
 
 class ExecutionServiceTest : BaseTest() {
     private lateinit var cblService: ExecutionService
@@ -243,7 +243,7 @@ class ExecutionServiceTest : BaseTest() {
 
     // The Concurrent Executor throws on fail
     @Test(expected = RejectedExecutionException::class)
-    fun testConcurrentExecutroThrowAndDumpOnFail() {
+    fun testConcurrentExecutorThrowAndDumpOnFail() {
         val latch = CountDownLatch(1)
         try {
             // queue len > 2 so that std deviation calculation kicks in.
@@ -263,9 +263,7 @@ class ExecutionServiceTest : BaseTest() {
 
     @Test
     fun testClientTaskReturnsValue() {
-        val task = ClientTask<Int>(object : Callable<Int> {
-            override fun call() = 42
-        })
+        val task = ClientTask { 42 }
 
         task.execute(1, TimeUnit.SECONDS)
         Thread.sleep(5)
@@ -275,11 +273,7 @@ class ExecutionServiceTest : BaseTest() {
     @Test
     fun testClientTaskFail() {
         val err = RuntimeException("bang")
-        val task = ClientTask<Int>(object : Callable<Int> {
-            override fun call(): Int {
-                throw err
-            }
-        })
+        val task = ClientTask<Int> { throw err }
 
         task.execute(1, TimeUnit.SECONDS)
         Thread.sleep(5)
@@ -288,19 +282,17 @@ class ExecutionServiceTest : BaseTest() {
 
     @Test
     fun testClientTaskTimeout() {
-        val latch = CountDownLatch(1);
-        val task = ClientTask<Int>(object : Callable<Int> {
-            override fun call(): Int {
-                latch.await(10, TimeUnit.SECONDS)
-                return 1
-            }
-        })
+        val latch = CountDownLatch(1)
+        val task = ClientTask {
+            latch.await(10, TimeUnit.SECONDS)
+            1
+        }
 
-        val startTime = System.currentTimeMillis();
+        val startTime = System.currentTimeMillis()
         task.execute(1, TimeUnit.SECONDS)
         assertTrue(System.currentTimeMillis() - startTime < 2000)
 
-        latch.countDown();
+        latch.countDown()
     }
 
     // Other tests
@@ -345,14 +337,11 @@ class ExecutionServiceTest : BaseTest() {
 
         var t = System.currentTimeMillis()
         val delay: Long = 777
-        cblService.postDelayedOnExecutor(
-            delay,
-            executor,
-            {
-                t = System.currentTimeMillis() - t
-                threads[1] = Thread.currentThread()
-                finishLatch.countDown()
-            })
+        cblService.postDelayedOnExecutor(delay, executor) {
+            t = System.currentTimeMillis() - t
+            threads[1] = Thread.currentThread()
+            finishLatch.countDown()
+        }
 
         try {
             assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
@@ -371,10 +360,9 @@ class ExecutionServiceTest : BaseTest() {
 
         // schedule far enough in the future so that there is plenty of time to cancel it
         // but not so far that we have to wait a long time to be sure it didn't run.
-        val task = cblService.postDelayedOnExecutor(
-            100,
-            cblService.concurrentExecutor,
-            { completed[0] = true })
+        val task = cblService.postDelayedOnExecutor(100, cblService.concurrentExecutor) {
+            completed[0] = true
+        }
 
         cblService.cancelDelayedTask(task)
 
@@ -388,19 +376,17 @@ class ExecutionServiceTest : BaseTest() {
 
     @Test(expected = IllegalStateException::class)
     fun testCantRunInstrumentedTaskTwice() {
-        val barrier = CyclicBarrier(2);
+        val barrier = CyclicBarrier(2)
         val exec = CBLExecutor("simple test worker", 1, 1, LinkedBlockingQueue(3))
         val task = InstrumentedTask({ }, null)
-        var fail: Exception? = null;
-        val runnable = object : Runnable {
-            override fun run() {
-                try {
-                    task.run();
-                } catch (e: Exception) {
-                    fail = e;
-                } finally {
-                    barrier.await()
-                }
+        var fail: Exception? = null
+        val runnable = Runnable {
+            try {
+                task.run();
+            } catch (e: Exception) {
+                fail = e;
+            } finally {
+                barrier.await()
             }
         }
         exec.execute(runnable)

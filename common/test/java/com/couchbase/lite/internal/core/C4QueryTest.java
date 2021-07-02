@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -472,9 +473,6 @@ public class C4QueryTest extends C4QueryBaseTest {
                 + ".first']]}"));
 
         assertEquals(2, query.columnCount());
-        // ??? Names currently wrong
-        // String name0 = query.nameOfColumn(0);
-        // String name1 = query.nameOfColumn(1);
 
         C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);

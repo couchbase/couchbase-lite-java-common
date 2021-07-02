@@ -149,7 +149,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // OkHTTP callback, proxied to C4Socket
         // Remote sent data
         @Override
-        public void onMessage(@NonNull WebSocket webSocket, String text) {
+        public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
             if (CouchbaseLiteInternal.debugging()) {
                 Log.d(TAG, "%s#OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
             }
@@ -162,7 +162,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // OkHTTP callback, proxied to C4Socket
         // Remote sent data
         @Override
-        public void onMessage(@NonNull WebSocket webSocket, ByteString bytes) {
+        public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
             if (CouchbaseLiteInternal.debugging()) {
                 Log.d(TAG, "%s#OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
             }
@@ -323,7 +323,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     private final Fn.Consumer<List<Certificate>> serverCertsListener;
 
     @GuardedBy("getPeerLock()")
-    @Nullable
+    @NonNull
     private final StateMachine<State> state = WS_STATE_BUILDER.build();
     @GuardedBy("getPeerLock()")
     @NonNull

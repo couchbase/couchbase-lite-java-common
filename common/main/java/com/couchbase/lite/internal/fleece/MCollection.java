@@ -18,6 +18,8 @@ package com.couchbase.lite.internal.fleece;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.Objects;
+
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -60,7 +62,7 @@ public abstract class MCollection implements Encodable {
     public void initAsCopyOf(@NonNull MCollection original, boolean isMutable) {
         if (context != MContext.NULL) { throw new IllegalStateException("Current context is not null."); }
 
-        context = original.getContext();
+        context = Preconditions.assertNotNull(original, "original MCollection").getContext();
         this.mutable = isMutable;
         mutableChildren = isMutable;
     }
@@ -69,16 +71,16 @@ public abstract class MCollection implements Encodable {
     // Protected Methods
     //---------------------------------------------
 
-    protected void setSlot(@Nullable MValue newSlot, MValue oldSlot) {
-        if (slot.equals(oldSlot)) {
+    protected void setSlot(@Nullable MValue newSlot, @Nullable MValue oldSlot) {
+        if (Objects.equals(slot, oldSlot)) {
             slot = newSlot;
             if (newSlot == null) { parent = null; }
         }
     }
 
     protected void initInSlot(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
-        if (context != MContext.NULL) { throw new IllegalStateException("Current context must be MContext.Null"); }
         this.slot = Preconditions.assertNotNull(slot, "slot");
+        if (context != MContext.NULL) { throw new IllegalStateException("Current context must be MContext.Null"); }
         this.parent = parent;
         this.mutable = isMutable;
         mutableChildren = isMutable;

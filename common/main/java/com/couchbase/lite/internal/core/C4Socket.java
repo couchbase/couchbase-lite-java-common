@@ -27,6 +27,7 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -84,15 +85,24 @@ public abstract class C4Socket extends C4NativePeer {
             Log.d(LOG_DOMAIN, "C4Socket.open @%x: %s, %s", peer, socket, factory);
         }
 
+        // !!! What happens when a C thread gets an exception???
+
         // This socket will be bound in C4Socket.<init>
         if (socket == null) {
             if (!(factory instanceof SocketFactory)) {
                 throw new IllegalArgumentException("Context is not a socket factory: " + factory);
             }
-            socket = ((SocketFactory) factory).createSocket(peer, scheme, hostname, port, path, options);
+
+            socket = ((SocketFactory) factory).createSocket(
+                peer,
+                Preconditions.assertNotNull(scheme, "scheme"),
+                Preconditions.assertNotNull(hostname, "hostname"),
+                port,
+                Preconditions.assertNotNull(path, "path"),
+                options);
         }
 
-        socket.openSocket();
+        Preconditions.assertNotNull(socket, "socket").openSocket();
     }
 
     // This method is called by reflection.  Don't change its signature.

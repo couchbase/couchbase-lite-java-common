@@ -37,7 +37,7 @@ final class ReplicatorChangeListenerToken implements ListenerToken {
 
     void notify(@NonNull final ReplicatorChange change) { getExecutor().execute(() -> listener.changed(change)); }
 
-    @Nullable
+    @NonNull
     Executor getExecutor() {
         return (executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();
     }

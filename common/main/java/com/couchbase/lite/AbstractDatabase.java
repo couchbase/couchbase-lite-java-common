@@ -867,7 +867,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         @Nullable String remoteDatabaseName,
         int push,
         int pull,
-        @NonNull byte[] options,
+        @Nullable byte[] options,
         @Nullable C4ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
@@ -902,7 +902,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         @NonNull Database otherLocalDb,
         int push,
         int pull,
-        @NonNull byte[] options,
+        @Nullable byte[] options,
         @Nullable C4ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter)
