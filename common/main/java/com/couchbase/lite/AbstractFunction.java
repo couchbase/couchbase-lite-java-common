@@ -16,7 +16,6 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import java.util.Arrays;
 
@@ -42,7 +41,7 @@ abstract class AbstractFunction {
      * @return The AVG(expr) function.
      */
     @NonNull
-    public static Expression avg(@NonNull Expression operand) { return expr("AVG()", operand); }
+    public static Expression avg(@NonNull Expression operand) { return sexpr("AVG()", operand); }
 
     /**
      * Creates a COUNT(expr) function expression that returns the count of all values
@@ -53,7 +52,7 @@ abstract class AbstractFunction {
      * @return The COUNT(expr) function.
      */
     @NonNull
-    public static Expression count(@Nullable Expression operand) { return expr("COUNT()", operand); }
+    public static Expression count(@NonNull Expression operand) { return sexpr("COUNT()", operand); }
 
     /**
      * Creates a MIN(expr) function expression that returns the minimum value
@@ -63,7 +62,7 @@ abstract class AbstractFunction {
      * @return The MIN(expr) function.
      */
     @NonNull
-    public static Expression min(@NonNull Expression operand) { return expr("MIN()", operand); }
+    public static Expression min(@NonNull Expression operand) { return sexpr("MIN()", operand); }
 
     /**
      * Creates a MAX(expr) function expression that returns the maximum value
@@ -73,7 +72,7 @@ abstract class AbstractFunction {
      * @return The MAX(expr) function.
      */
     @NonNull
-    public static Expression max(@NonNull Expression operand) { return expr("MAX()", operand); }
+    public static Expression max(@NonNull Expression operand) { return sexpr("MAX()", operand); }
 
     /**
      * Creates a SUM(expr) function expression that return the sum of all number values
@@ -83,7 +82,7 @@ abstract class AbstractFunction {
      * @return The SUM(expr) function.
      */
     @NonNull
-    public static Expression sum(@NonNull Expression operand) { return expr("SUM()", operand); }
+    public static Expression sum(@NonNull Expression operand) { return sexpr("SUM()", operand); }
 
     //---------------------------------------------
     // Math
@@ -97,7 +96,7 @@ abstract class AbstractFunction {
      * @return The ABS(expr) function.
      */
     @NonNull
-    public static Expression abs(@NonNull Expression operand) { return expr("ABS()", operand); }
+    public static Expression abs(@NonNull Expression operand) { return sexpr("ABS()", operand); }
 
     /**
      * Creates an ACOS(expr) function that returns the inverse cosine of the given numeric
@@ -107,7 +106,7 @@ abstract class AbstractFunction {
      * @return The ACOS(expr) function.
      */
     @NonNull
-    public static Expression acos(@NonNull Expression operand) { return expr("ACOS()", operand); }
+    public static Expression acos(@NonNull Expression operand) { return sexpr("ACOS()", operand); }
 
     /**
      * Creates an ASIN(expr) function that returns the inverse sin of the given numeric
@@ -117,7 +116,7 @@ abstract class AbstractFunction {
      * @return The ASIN(expr) function.
      */
     @NonNull
-    public static Expression asin(@NonNull Expression operand) { return expr("ASIN()", operand); }
+    public static Expression asin(@NonNull Expression operand) { return sexpr("ASIN()", operand); }
 
     /**
      * Creates an ATAN(expr) function that returns the inverse tangent of the numeric
@@ -127,7 +126,7 @@ abstract class AbstractFunction {
      * @return The ATAN(expr) function.
      */
     @NonNull
-    public static Expression atan(@NonNull Expression operand) { return expr("ATAN()", operand); }
+    public static Expression atan(@NonNull Expression operand) { return sexpr("ATAN()", operand); }
 
     /**
      * Returns the angle theta from the conversion of rectangular coordinates (x, y)
@@ -140,9 +139,7 @@ abstract class AbstractFunction {
      */
     @NonNull
     public static Expression atan2(@NonNull Expression x, @NonNull Expression y) {
-        return new Expression.FunctionExpression(
-            "ATAN2()",
-            Arrays.asList(Preconditions.assertNotNull(y, "y"), Preconditions.assertNotNull(x, "x")));
+        return expr("ATAN2()", Preconditions.assertNotNull(y, "y"), Preconditions.assertNotNull(x, "x"));
     }
 
     /**
@@ -153,7 +150,7 @@ abstract class AbstractFunction {
      * @return The CEIL(expr) function.
      */
     @NonNull
-    public static Expression ceil(@NonNull Expression operand) { return expr("CEIL()", operand); }
+    public static Expression ceil(@NonNull Expression operand) { return sexpr("CEIL()", operand); }
 
     /**
      * Creates a COS(expr) function that returns the cosine of the given numeric expression.
@@ -162,7 +159,7 @@ abstract class AbstractFunction {
      * @return The COS(expr) function.
      */
     @NonNull
-    public static Expression cos(@NonNull Expression operand) { return expr("COS()", operand); }
+    public static Expression cos(@NonNull Expression operand) { return sexpr("COS()", operand); }
 
     /**
      * Creates a DEGREES(expr) function that returns the degrees value of the given radiants
@@ -172,7 +169,7 @@ abstract class AbstractFunction {
      * @return The DEGREES(expr) function.
      */
     @NonNull
-    public static Expression degrees(@NonNull Expression operand) { return expr("DEGREES()", operand); }
+    public static Expression degrees(@NonNull Expression operand) { return sexpr("DEGREES()", operand); }
 
     /**
      * Creates a E() function that return the value of the mathematical constant 'e'.
@@ -180,7 +177,7 @@ abstract class AbstractFunction {
      * @return The E() constant function.
      */
     @NonNull
-    public static Expression e() { return new Expression.FunctionExpression("E()", null); }
+    public static Expression e() { return expr("E()", (Expression) null); }
 
     /**
      * Creates a EXP(expr) function that returns the value of 'e' power by the given numeric
@@ -190,7 +187,7 @@ abstract class AbstractFunction {
      * @return The EXP(expr) function.
      */
     @NonNull
-    public static Expression exp(@NonNull Expression operand) { return expr("EXP()", operand); }
+    public static Expression exp(@NonNull Expression operand) { return sexpr("EXP()", operand); }
 
     /**
      * Creates a FLOOR(expr) function that returns the floor value of the given
@@ -200,7 +197,7 @@ abstract class AbstractFunction {
      * @return The FLOOR(expr) function.
      */
     @NonNull
-    public static Expression floor(@NonNull Expression operand) { return expr("FLOOR()", operand); }
+    public static Expression floor(@NonNull Expression operand) { return sexpr("FLOOR()", operand); }
 
     /**
      * Creates a LN(expr) function that returns the natural log of the given numeric expression.
@@ -209,7 +206,7 @@ abstract class AbstractFunction {
      * @return The LN(expr) function.
      */
     @NonNull
-    public static Expression ln(@NonNull Expression operand) { return expr("LN()", operand); }
+    public static Expression ln(@NonNull Expression operand) { return sexpr("LN()", operand); }
 
     /**
      * Creates a LOG(expr) function that returns the base 10 log of the given numeric expression.
@@ -218,7 +215,7 @@ abstract class AbstractFunction {
      * @return The LOG(expr) function.
      */
     @NonNull
-    public static Expression log(@NonNull Expression operand) { return expr("LOG()", operand);}
+    public static Expression log(@NonNull Expression operand) { return sexpr("LOG()", operand); }
 
     /**
      * Creates a PI() function that returns the mathematical constant Pi.
@@ -226,7 +223,7 @@ abstract class AbstractFunction {
      * @return The PI() constant function.
      */
     @NonNull
-    public static Expression pi() { return new Expression.FunctionExpression("PI()", null); }
+    public static Expression pi() { return expr("PI()", (Expression) null); }
 
     /**
      * Creates a POWER(base, exponent) function that returns the value of the given base
@@ -238,9 +235,7 @@ abstract class AbstractFunction {
      */
     @NonNull
     public static Expression power(@NonNull Expression base, @NonNull Expression exp) {
-        return new Expression.FunctionExpression(
-            "POWER()",
-            Arrays.asList(Preconditions.assertNotNull(base, "base"), Preconditions.assertNotNull(exp, "exponent")));
+        return expr("POWER()", Preconditions.assertNotNull(base, "base"), Preconditions.assertNotNull(exp, "exponent"));
     }
 
     /**
@@ -251,7 +246,7 @@ abstract class AbstractFunction {
      * @return The RADIANS(expr) function.
      */
     @NonNull
-    public static Expression radians(@NonNull Expression operand) { return expr("RADIANS()", operand); }
+    public static Expression radians(@NonNull Expression operand) { return sexpr("RADIANS()", operand); }
 
     /**
      * Creates a ROUND(expr) function that returns the rounded value of the given numeric
@@ -261,7 +256,7 @@ abstract class AbstractFunction {
      * @return The ROUND(expr) function.
      */
     @NonNull
-    public static Expression round(@NonNull Expression operand) { return expr("ROUND()", operand); }
+    public static Expression round(@NonNull Expression operand) { return sexpr("ROUND()", operand); }
 
     /**
      * Creates a ROUND(expr, digits) function that returns the rounded value to the given
@@ -273,11 +268,10 @@ abstract class AbstractFunction {
      */
     @NonNull
     public static Expression round(@NonNull Expression operand, @NonNull Expression digits) {
-        return new Expression.FunctionExpression(
+        return expr(
             "ROUND()",
-            Arrays.asList(
-                Preconditions.assertNotNull(operand, "operand"),
-                Preconditions.assertNotNull(digits, "digits")));
+            Preconditions.assertNotNull(operand, "operand"),
+            Preconditions.assertNotNull(digits, "digits"));
     }
 
     /**
@@ -288,7 +282,7 @@ abstract class AbstractFunction {
      * @return The SIGN(expr) function.
      */
     @NonNull
-    public static Expression sign(@NonNull Expression operand) { return expr("SIGN()", operand); }
+    public static Expression sign(@NonNull Expression operand) { return sexpr("SIGN()", operand); }
 
     /**
      * Creates a SIN(expr) function that returns the sin of the given numeric expression.
@@ -297,7 +291,7 @@ abstract class AbstractFunction {
      * @return The SIN(expr) function.
      */
     @NonNull
-    public static Expression sin(@NonNull Expression operand) { return expr("SIN()", operand); }
+    public static Expression sin(@NonNull Expression operand) { return sexpr("SIN()", operand); }
 
     /**
      * Creates a SQRT(expr) function that returns the square root of the given numeric expression.
@@ -306,7 +300,7 @@ abstract class AbstractFunction {
      * @return The SQRT(expr) function.
      */
     @NonNull
-    public static Expression sqrt(@NonNull Expression operand) { return expr("SQRT()", operand); }
+    public static Expression sqrt(@NonNull Expression operand) { return sexpr("SQRT()", operand); }
 
     /**
      * Creates a TAN(expr) function that returns the tangent of the given numeric expression.
@@ -315,7 +309,7 @@ abstract class AbstractFunction {
      * @return The TAN(expr) function.
      */
     @NonNull
-    public static Expression tan(@NonNull Expression operand) { return expr("TAN()", operand); }
+    public static Expression tan(@NonNull Expression operand) { return sexpr("TAN()", operand); }
 
     /**
      * Creates a TRUNC(expr) function that truncates all of the digits after the decimal place
@@ -325,7 +319,7 @@ abstract class AbstractFunction {
      * @return The trunc function.
      */
     @NonNull
-    public static Expression trunc(@NonNull Expression operand) { return expr("TRUNC()", operand); }
+    public static Expression trunc(@NonNull Expression operand) { return sexpr("TRUNC()", operand); }
 
     /**
      * Creates a TRUNC(expr, digits) function that truncates the number of the digits after
@@ -337,11 +331,10 @@ abstract class AbstractFunction {
      */
     @NonNull
     public static Expression trunc(@NonNull Expression operand, @NonNull Expression digits) {
-        return new Expression.FunctionExpression(
+        return expr(
             "TRUNC()",
-            Arrays.asList(
-                Preconditions.assertNotNull(operand, "operand"),
-                Preconditions.assertNotNull(digits, "digits")));
+            Preconditions.assertNotNull(operand, "operand"),
+            Preconditions.assertNotNull(digits, "digits"));
     }
 
     //---------------------------------------------
@@ -358,11 +351,10 @@ abstract class AbstractFunction {
      */
     @NonNull
     public static Expression contains(@NonNull Expression operand, @NonNull Expression substring) {
-        return new Expression.FunctionExpression(
+        return expr(
             "CONTAINS()",
-            Arrays.asList(
-                Preconditions.assertNotNull(operand, "operand"),
-                Preconditions.assertNotNull(substring, "substring")));
+            Preconditions.assertNotNull(operand, "operand"),
+            Preconditions.assertNotNull(substring, "substring"));
     }
 
     /**
@@ -372,7 +364,7 @@ abstract class AbstractFunction {
      * @return The LENGTH(expr) function.
      */
     @NonNull
-    public static Expression length(@NonNull Expression operand) { return expr("LENGTH()", operand); }
+    public static Expression length(@NonNull Expression operand) { return sexpr("LENGTH()", operand); }
 
     /**
      * Creates a LOWER(expr) function that returns the lowercase string of the given string
@@ -382,7 +374,7 @@ abstract class AbstractFunction {
      * @return The LOWER(expr) function.
      */
     @NonNull
-    public static Expression lower(@NonNull Expression operand) { return expr("LOWER()", operand); }
+    public static Expression lower(@NonNull Expression operand) { return sexpr("LOWER()", operand); }
 
     /**
      * Creates a LTRIM(expr) function that removes the whitespace from the beginning of the
@@ -392,7 +384,7 @@ abstract class AbstractFunction {
      * @return The LTRIM(expr) function.
      */
     @NonNull
-    public static Expression ltrim(@NonNull Expression operand) { return expr("LTRIM()", operand); }
+    public static Expression ltrim(@NonNull Expression operand) { return sexpr("LTRIM()", operand); }
 
     /**
      * Creates a RTRIM(expr) function that removes the whitespace from the end of the
@@ -402,7 +394,7 @@ abstract class AbstractFunction {
      * @return The RTRIM(expr) function.
      */
     @NonNull
-    public static Expression rtrim(@NonNull Expression operand) { return expr("RTRIM()", operand); }
+    public static Expression rtrim(@NonNull Expression operand) { return sexpr("RTRIM()", operand); }
 
     /**
      * Creates a TRIM(expr) function that removes the whitespace from the beginning and
@@ -412,7 +404,7 @@ abstract class AbstractFunction {
      * @return The TRIM(expr) function.
      */
     @NonNull
-    public static Expression trim(@NonNull Expression operand) { return expr("TRIM()", operand); }
+    public static Expression trim(@NonNull Expression operand) { return sexpr("TRIM()", operand); }
 
     /**
      * Creates a UPPER(expr) function that returns the uppercase string of the given string expression.
@@ -421,7 +413,7 @@ abstract class AbstractFunction {
      * @return The UPPER(expr) function.
      */
     @NonNull
-    public static Expression upper(@NonNull Expression operand) { return expr("UPPER()", operand); }
+    public static Expression upper(@NonNull Expression operand) { return sexpr("UPPER()", operand); }
 
     /**
      * Creates a MILLIS_TO_STR(expr) function that will convert a numeric input representing
@@ -432,7 +424,7 @@ abstract class AbstractFunction {
      * @return The MILLIS_TO_STR(expr) function.
      */
     @NonNull
-    public static Expression millisToString(@NonNull Expression operand) { return expr("MILLIS_TO_STR()", operand); }
+    public static Expression millisToString(@NonNull Expression operand) { return sexpr("MILLIS_TO_STR()", operand); }
 
     /**
      * Creates a MILLIS_TO_UTC(expr) function that will convert a numeric input representing
@@ -443,7 +435,7 @@ abstract class AbstractFunction {
      * @return The MILLIS_TO_UTC(expr) function.
      */
     @NonNull
-    public static Expression millisToUTC(@NonNull Expression operand) { return expr("MILLIS_TO_UTC()", operand); }
+    public static Expression millisToUTC(@NonNull Expression operand) { return sexpr("MILLIS_TO_UTC()", operand); }
 
     /**
      * Creates a STR_TO_MILLIS(expr) that will convert an ISO8601 datetime string
@@ -464,7 +456,7 @@ abstract class AbstractFunction {
      * @return The STR_TO_MILLIS(expr) function.
      */
     @NonNull
-    public static Expression stringToMillis(@NonNull Expression operand) { return expr("STR_TO_MILLIS()", operand); }
+    public static Expression stringToMillis(@NonNull Expression operand) { return sexpr("STR_TO_MILLIS()", operand); }
 
     /**
      * Creates a STR_TO_UTC(expr) that will convert an ISO8601 datetime string
@@ -485,11 +477,17 @@ abstract class AbstractFunction {
      * @return The STR_TO_UTC(expr) function.
      */
     @NonNull
-    public static Expression stringToUTC(@NonNull Expression operand) { return expr("STR_TO_UTC()", operand); }
+    public static Expression stringToUTC(@NonNull Expression operand) { return sexpr("STR_TO_UTC()", operand); }
 
-    private static Expression.FunctionExpression expr(@NonNull String expr, @NonNull Expression ops) {
+    @NonNull
+    private static Expression.FunctionExpression sexpr(@NonNull String expr, @NonNull Expression op) {
         return new Expression.FunctionExpression(
             expr,
-            Arrays.asList(Preconditions.assertNotNull(ops, "operand expression")));
+            Arrays.asList(Preconditions.assertNotNull(op, "operand expression")));
+    }
+
+    @NonNull
+    private static Expression.FunctionExpression expr(@NonNull String expr, @NonNull Expression... ops) {
+        return new Expression.FunctionExpression(expr, Arrays.asList(ops));
     }
 }
