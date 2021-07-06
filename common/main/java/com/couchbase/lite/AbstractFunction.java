@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Arrays;
 
@@ -27,7 +28,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.AbstractClassWithoutAbstractMethod"})
 abstract class AbstractFunction {
-    private static final String PARAM_EXPRESSION = "expression";
 
     //---------------------------------------------
     // Aggregation
@@ -36,67 +36,54 @@ abstract class AbstractFunction {
     /**
      * Creates an AVG(expr) function expression that returns the average of all the number values
      * in the group of the values expressed by the given expression.
+     * <p>
+     * The expression.
      *
-     * @param expression The expression.
      * @return The AVG(expr) function.
      */
     @NonNull
-    public static Expression avg(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("AVG()", Arrays.asList(expression));
-    }
+    public static Expression avg(@NonNull Expression operand) { return expr("AVG()", operand); }
 
     /**
      * Creates a COUNT(expr) function expression that returns the count of all values
      * in the group of the values expressed by the given expression.
+     * Null expression is count *
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The COUNT(expr) function.
      */
     @NonNull
-    public static Expression count(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("COUNT()", Arrays.asList(expression));
-    } // null expression -> count *
+    public static Expression count(@Nullable Expression operand) { return expr("COUNT()", operand); }
 
     /**
      * Creates a MIN(expr) function expression that returns the minimum value
      * in the group of the values expressed by the given expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The MIN(expr) function.
      */
     @NonNull
-    public static Expression min(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("MIN()", Arrays.asList(expression));
-    }
+    public static Expression min(@NonNull Expression operand) { return expr("MIN()", operand); }
 
     /**
      * Creates a MAX(expr) function expression that returns the maximum value
      * in the group of the values expressed by the given expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The MAX(expr) function.
      */
     @NonNull
-    public static Expression max(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("MAX()", Arrays.asList(expression));
-    }
+    public static Expression max(@NonNull Expression operand) { return expr("MAX()", operand); }
 
     /**
      * Creates a SUM(expr) function expression that return the sum of all number values
      * in the group of the values expressed by the given expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The SUM(expr) function.
      */
     @NonNull
-    public static Expression sum(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("SUM()", Arrays.asList(expression));
-    }
+    public static Expression sum(@NonNull Expression operand) { return expr("SUM()", operand); }
 
     //---------------------------------------------
     // Math
@@ -106,53 +93,41 @@ abstract class AbstractFunction {
      * Creates an ABS(expr) function that returns the absolute value of the given numeric
      * expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The ABS(expr) function.
      */
     @NonNull
-    public static Expression abs(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("ABS()", Arrays.asList(expression));
-    }
+    public static Expression abs(@NonNull Expression operand) { return expr("ABS()", operand); }
 
     /**
      * Creates an ACOS(expr) function that returns the inverse cosine of the given numeric
      * expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The ACOS(expr) function.
      */
     @NonNull
-    public static Expression acos(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("ACOS()", Arrays.asList(expression));
-    }
+    public static Expression acos(@NonNull Expression operand) { return expr("ACOS()", operand); }
 
     /**
      * Creates an ASIN(expr) function that returns the inverse sin of the given numeric
      * expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The ASIN(expr) function.
      */
     @NonNull
-    public static Expression asin(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("ASIN()", Arrays.asList(expression));
-    }
+    public static Expression asin(@NonNull Expression operand) { return expr("ASIN()", operand); }
 
     /**
      * Creates an ATAN(expr) function that returns the inverse tangent of the numeric
      * expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The ATAN(expr) function.
      */
     @NonNull
-    public static Expression atan(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("ATAN()", Arrays.asList(expression));
-    }
+    public static Expression atan(@NonNull Expression operand) { return expr("ATAN()", operand); }
 
     /**
      * Returns the angle theta from the conversion of rectangular coordinates (x, y)
@@ -165,48 +140,39 @@ abstract class AbstractFunction {
      */
     @NonNull
     public static Expression atan2(@NonNull Expression x, @NonNull Expression y) {
-        Preconditions.assertNotNull(x, "x");
-        Preconditions.assertNotNull(y, "y");
-        return new Expression.FunctionExpression("ATAN2()", Arrays.asList(x, y));
+        return new Expression.FunctionExpression(
+            "ATAN2()",
+            Arrays.asList(Preconditions.assertNotNull(y, "y"), Preconditions.assertNotNull(x, "x")));
     }
 
     /**
      * Creates a CEIL(expr) function that returns the ceiling value of the given numeric
      * expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The CEIL(expr) function.
      */
     @NonNull
-    public static Expression ceil(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("CEIL()", Arrays.asList(expression));
-    }
+    public static Expression ceil(@NonNull Expression operand) { return expr("CEIL()", operand); }
 
     /**
      * Creates a COS(expr) function that returns the cosine of the given numeric expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The COS(expr) function.
      */
     @NonNull
-    public static Expression cos(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("COS()", Arrays.asList(expression));
-    }
+    public static Expression cos(@NonNull Expression operand) { return expr("COS()", operand); }
 
     /**
      * Creates a DEGREES(expr) function that returns the degrees value of the given radiants
      * value expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The DEGREES(expr) function.
      */
     @NonNull
-    public static Expression degrees(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("DEGREES()", Arrays.asList(expression));
-    }
+    public static Expression degrees(@NonNull Expression operand) { return expr("DEGREES()", operand); }
 
     /**
      * Creates a E() function that return the value of the mathematical constant 'e'.
@@ -214,59 +180,45 @@ abstract class AbstractFunction {
      * @return The E() constant function.
      */
     @NonNull
-    public static Expression e() {
-        return new Expression.FunctionExpression("E()", Arrays.asList((Expression) null));
-    }
+    public static Expression e() { return new Expression.FunctionExpression("E()", null); }
 
     /**
      * Creates a EXP(expr) function that returns the value of 'e' power by the given numeric
      * expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The EXP(expr) function.
      */
     @NonNull
-    public static Expression exp(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("EXP()", Arrays.asList(expression));
-    }
+    public static Expression exp(@NonNull Expression operand) { return expr("EXP()", operand); }
 
     /**
      * Creates a FLOOR(expr) function that returns the floor value of the given
      * numeric expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The FLOOR(expr) function.
      */
     @NonNull
-    public static Expression floor(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("FLOOR()", Arrays.asList(expression));
-    }
+    public static Expression floor(@NonNull Expression operand) { return expr("FLOOR()", operand); }
 
     /**
      * Creates a LN(expr) function that returns the natural log of the given numeric expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The LN(expr) function.
      */
     @NonNull
-    public static Expression ln(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("LN()", Arrays.asList(expression));
-    }
+    public static Expression ln(@NonNull Expression operand) { return expr("LN()", operand); }
 
     /**
      * Creates a LOG(expr) function that returns the base 10 log of the given numeric expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The LOG(expr) function.
      */
     @NonNull
-    public static Expression log(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("LOG()", Arrays.asList(expression));
-    }
+    public static Expression log(@NonNull Expression operand) { return expr("LOG()", operand);}
 
     /**
      * Creates a PI() function that returns the mathematical constant Pi.
@@ -274,141 +226,122 @@ abstract class AbstractFunction {
      * @return The PI() constant function.
      */
     @NonNull
-    public static Expression pi() {
-        return new Expression.FunctionExpression("PI()", Arrays.asList((Expression) null));
-    }
+    public static Expression pi() { return new Expression.FunctionExpression("PI()", null); }
 
     /**
      * Creates a POWER(base, exponent) function that returns the value of the given base
      * expression power the given exponent expression.
      *
-     * @param base     The base expression.
-     * @param exponent The exponent expression.
+     * @param base The base expression.
+     * @param exp  The exponent expression.
      * @return The POWER(base, exponent) function.
      */
     @NonNull
-    public static Expression power(@NonNull Expression base, @NonNull Expression exponent) {
-        Preconditions.assertNotNull(base, "base");
-        Preconditions.assertNotNull(exponent, "exponent");
-        return new Expression.FunctionExpression("POWER()", Arrays.asList(base, exponent));
+    public static Expression power(@NonNull Expression base, @NonNull Expression exp) {
+        return new Expression.FunctionExpression(
+            "POWER()",
+            Arrays.asList(Preconditions.assertNotNull(base, "base"), Preconditions.assertNotNull(exp, "exponent")));
     }
 
     /**
      * Creates a RADIANS(expr) function that returns the radians value of the given degrees
      * value expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The RADIANS(expr) function.
      */
     @NonNull
-    public static Expression radians(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("RADIANS()", Arrays.asList(expression));
-    }
+    public static Expression radians(@NonNull Expression operand) { return expr("RADIANS()", operand); }
 
     /**
      * Creates a ROUND(expr) function that returns the rounded value of the given numeric
      * expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The ROUND(expr) function.
      */
     @NonNull
-    public static Expression round(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("ROUND()", Arrays.asList(expression));
-    }
+    public static Expression round(@NonNull Expression operand) { return expr("ROUND()", operand); }
 
     /**
      * Creates a ROUND(expr, digits) function that returns the rounded value to the given
      * number of digits of the given numeric expression.
      *
-     * @param expression The numeric expression.
-     * @param digits     The number of digits.
+     * @param operand The numeric expression.
+     * @param digits  The number of digits.
      * @return The ROUND(expr, digits) function.
      */
     @NonNull
-    public static Expression round(@NonNull Expression expression, @NonNull Expression digits) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        Preconditions.assertNotNull(digits, "digits");
-        return new Expression.FunctionExpression("ROUND()", Arrays.asList(expression, digits));
+    public static Expression round(@NonNull Expression operand, @NonNull Expression digits) {
+        return new Expression.FunctionExpression(
+            "ROUND()",
+            Arrays.asList(
+                Preconditions.assertNotNull(operand, "operand"),
+                Preconditions.assertNotNull(digits, "digits")));
     }
 
     /**
      * Creates a SIGN(expr) function that returns the sign (1: positive, -1: negative, 0: zero)
      * of the given numeric expression.
      *
-     * @param expression The expression.
+     * @param operand The expression.
      * @return The SIGN(expr) function.
      */
     @NonNull
-    public static Expression sign(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("SIGN()", Arrays.asList(expression));
-    }
+    public static Expression sign(@NonNull Expression operand) { return expr("SIGN()", operand); }
 
     /**
      * Creates a SIN(expr) function that returns the sin of the given numeric expression.
      *
-     * @param expression The numeric expression.
+     * @param operand The numeric expression.
      * @return The SIN(expr) function.
      */
     @NonNull
-    public static Expression sin(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("SIN()", Arrays.asList(expression));
-    }
+    public static Expression sin(@NonNull Expression operand) { return expr("SIN()", operand); }
 
     /**
      * Creates a SQRT(expr) function that returns the square root of the given numeric expression.
      *
-     * @param expression The numeric expression.
+     * @param operand The numeric expression.
      * @return The SQRT(expr) function.
      */
     @NonNull
-    public static Expression sqrt(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("SQRT()", Arrays.asList(expression));
-    }
+    public static Expression sqrt(@NonNull Expression operand) { return expr("SQRT()", operand); }
 
     /**
      * Creates a TAN(expr) function that returns the tangent of the given numeric expression.
      *
-     * @param expression The numeric expression.
+     * @param operand The numeric expression.
      * @return The TAN(expr) function.
      */
     @NonNull
-    public static Expression tan(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("TAN()", Arrays.asList(expression));
-    }
+    public static Expression tan(@NonNull Expression operand) { return expr("TAN()", operand); }
 
     /**
      * Creates a TRUNC(expr) function that truncates all of the digits after the decimal place
      * of the given numeric expression.
      *
-     * @param expression The numeric expression.
+     * @param operand The numeric expression.
      * @return The trunc function.
      */
     @NonNull
-    public static Expression trunc(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("TRUNC()", Arrays.asList(expression));
-    }
+    public static Expression trunc(@NonNull Expression operand) { return expr("TRUNC()", operand); }
 
     /**
      * Creates a TRUNC(expr, digits) function that truncates the number of the digits after
      * the decimal place of the given numeric expression.
      *
-     * @param expression The numeric expression.
-     * @param digits     The number of digits to truncate.
+     * @param operand The numeric expression.
+     * @param digits  The number of digits to truncate.
      * @return The TRUNC(expr, digits) function.
      */
     @NonNull
-    public static Expression trunc(@NonNull Expression expression, @NonNull Expression digits) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        Preconditions.assertNotNull(digits, "digits");
-        return new Expression.FunctionExpression("TRUNC()", Arrays.asList(expression, digits));
+    public static Expression trunc(@NonNull Expression operand, @NonNull Expression digits) {
+        return new Expression.FunctionExpression(
+            "TRUNC()",
+            Arrays.asList(
+                Preconditions.assertNotNull(operand, "operand"),
+                Preconditions.assertNotNull(digits, "digits")));
     }
 
     //---------------------------------------------
@@ -419,120 +352,98 @@ abstract class AbstractFunction {
      * Creates a CONTAINS(expr, substr) function that evaluates whether the given string
      * expression conatins the given substring expression or not.
      *
-     * @param expression The string expression.
-     * @param substring  The substring expression.
+     * @param operand   The string expression.
+     * @param substring The substring expression.
      * @return The CONTAINS(expr, substr) function.
      */
     @NonNull
-    public static Expression contains(@NonNull Expression expression, @NonNull Expression substring) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        Preconditions.assertNotNull(substring, "substring");
-        return new Expression.FunctionExpression("CONTAINS()", Arrays.asList(expression, substring));
+    public static Expression contains(@NonNull Expression operand, @NonNull Expression substring) {
+        return new Expression.FunctionExpression(
+            "CONTAINS()",
+            Arrays.asList(
+                Preconditions.assertNotNull(operand, "operand"),
+                Preconditions.assertNotNull(substring, "substring")));
     }
 
     /**
      * Creates a LENGTH(expr) function that returns the length of the given string expression.
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The LENGTH(expr) function.
      */
     @NonNull
-    public static Expression length(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("LENGTH()", Arrays.asList(expression));
-    }
+    public static Expression length(@NonNull Expression operand) { return expr("LENGTH()", operand); }
 
     /**
      * Creates a LOWER(expr) function that returns the lowercase string of the given string
      * expression.
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The LOWER(expr) function.
      */
     @NonNull
-    public static Expression lower(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("LOWER()", Arrays.asList(expression));
-    }
+    public static Expression lower(@NonNull Expression operand) { return expr("LOWER()", operand); }
 
     /**
      * Creates a LTRIM(expr) function that removes the whitespace from the beginning of the
      * given string expression.
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The LTRIM(expr) function.
      */
     @NonNull
-    public static Expression ltrim(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("LTRIM()", Arrays.asList(expression));
-    }
+    public static Expression ltrim(@NonNull Expression operand) { return expr("LTRIM()", operand); }
 
     /**
      * Creates a RTRIM(expr) function that removes the whitespace from the end of the
      * given string expression.
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The RTRIM(expr) function.
      */
     @NonNull
-    public static Expression rtrim(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("RTRIM()", Arrays.asList(expression));
-    }
+    public static Expression rtrim(@NonNull Expression operand) { return expr("RTRIM()", operand); }
 
     /**
      * Creates a TRIM(expr) function that removes the whitespace from the beginning and
      * the end of the given string expression.
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The TRIM(expr) function.
      */
     @NonNull
-    public static Expression trim(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("TRIM()", Arrays.asList(expression));
-    }
+    public static Expression trim(@NonNull Expression operand) { return expr("TRIM()", operand); }
 
     /**
      * Creates a UPPER(expr) function that returns the uppercase string of the given string expression.
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The UPPER(expr) function.
      */
     @NonNull
-    public static Expression upper(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("UPPER()", Arrays.asList(expression));
-    }
+    public static Expression upper(@NonNull Expression operand) { return expr("UPPER()", operand); }
 
     /**
      * Creates a MILLIS_TO_STR(expr) function that will convert a numeric input representing
      * milliseconds since the Unix epoch into a full ISO8601 date and time
      * string in the device local time zone.
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The MILLIS_TO_STR(expr) function.
      */
     @NonNull
-    public static Expression millisToString(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("MILLIS_TO_STR()", Arrays.asList(expression));
-    }
+    public static Expression millisToString(@NonNull Expression operand) { return expr("MILLIS_TO_STR()", operand); }
 
     /**
      * Creates a MILLIS_TO_UTC(expr) function that will convert a numeric input representing
      * milliseconds since the Unix epoch into a full ISO8601 date and time
      * string in UTC time.
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The MILLIS_TO_UTC(expr) function.
      */
     @NonNull
-    public static Expression millisToUTC(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("MILLIS_TO_UTC()", Arrays.asList(expression));
-    }
+    public static Expression millisToUTC(@NonNull Expression operand) { return expr("MILLIS_TO_UTC()", operand); }
 
     /**
      * Creates a STR_TO_MILLIS(expr) that will convert an ISO8601 datetime string
@@ -549,14 +460,11 @@ abstract class AbstractFunction {
      * (+/-)HHMM
      * Z (which represents UTC)
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The STR_TO_MILLIS(expr) function.
      */
     @NonNull
-    public static Expression stringToMillis(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("STR_TO_MILLIS()", Arrays.asList(expression));
-    }
+    public static Expression stringToMillis(@NonNull Expression operand) { return expr("STR_TO_MILLIS()", operand); }
 
     /**
      * Creates a STR_TO_UTC(expr) that will convert an ISO8601 datetime string
@@ -573,12 +481,15 @@ abstract class AbstractFunction {
      * (+/-)HHMM
      * Z (which represents UTC)
      *
-     * @param expression The string expression.
+     * @param operand The string expression.
      * @return The STR_TO_UTC(expr) function.
      */
     @NonNull
-    public static Expression stringToUTC(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new Expression.FunctionExpression("STR_TO_UTC()", Arrays.asList(expression));
+    public static Expression stringToUTC(@NonNull Expression operand) { return expr("STR_TO_UTC()", operand); }
+
+    private static Expression.FunctionExpression expr(@NonNull String expr, @NonNull Expression ops) {
+        return new Expression.FunctionExpression(
+            expr,
+            Arrays.asList(Preconditions.assertNotNull(ops, "operand expression")));
     }
 }

@@ -62,6 +62,18 @@ public class QueryTest extends BaseQueryTest {
     private static final SelectResult SR_ALL = SelectResult.all();
     private static final SelectResult SR_NUMBER1 = SelectResult.property("number1");
 
+    private static class MathFn {
+        final String name;
+        final Expression expr;
+        final double expected;
+
+        public MathFn(String name, Expression expr, double expected) {
+            this.name = name;
+            this.expr = expr;
+            this.expected = expected;
+        }
+    }
+
     @Test
     public void testQueryDocumentExpiration() throws CouchbaseLiteException, InterruptedException {
         long now = System.currentTimeMillis();
@@ -1062,65 +1074,41 @@ public class QueryTest extends BaseQueryTest {
         doc.setValue(key, num);
         saveDocInBaseTestDb(doc);
 
-        final Double[] expectedValues = {
-            Math.abs(num),
-            Math.acos(num),
-            Math.asin(num),
+        Expression propNumber = Expression.property(key);
 
-            Math.atan(num),
-            Math.atan2(num, 90.0),
-            Math.ceil(num),
-            Math.cos(num),
-            num * 180.0 / Math.PI,
-            Math.exp(num),
-            Math.floor(num),
-            Math.log(num),
-            Math.log10(num),
-            Math.pow(num, 2),
-            num * Math.PI / 180.0,
-            (double) Math.round(num),
-            Math.round(num * 10.0) / 10.0,
-            (double) 1,
-            Math.sin(num),
-            Math.sqrt(num),
-            Math.tan(num),
-            (double) 0,
-            0.6
+        final MathFn[] fns = {
+            new MathFn("abs", Function.abs(propNumber), Math.abs(num)),
+            new MathFn("acos", Function.acos(propNumber), Math.acos(num)),
+            new MathFn("asin", Function.asin(propNumber), Math.asin(num)),
+            new MathFn("atan", Function.atan(propNumber), Math.atan(num)),
+            new MathFn(
+                "atan2",
+                Function.atan2(Expression.doubleValue(90.0), Expression.doubleValue(num)),
+                Math.atan2(num, 90.0)),
+            new MathFn("ceil", Function.ceil(propNumber), Math.ceil(num)),
+            new MathFn("cos", Function.cos(propNumber), Math.cos(num)),
+            new MathFn("degrees", Function.degrees(propNumber), num * 180.0 / Math.PI),
+            new MathFn("exp", Function.exp(propNumber), Math.exp(num)),
+            new MathFn("floor", Function.floor(propNumber), Math.floor(num)),
+            new MathFn("ln", Function.ln(propNumber), Math.log(num)),
+            new MathFn("log10", Function.log(propNumber), Math.log10(num)),
+            new MathFn("pow", Function.power(propNumber, Expression.intValue(2)), Math.pow(num, 2)),
+            new MathFn("rad", Function.radians(propNumber), num * Math.PI / 180.0),
+            new MathFn("round", Function.round(propNumber), (double) Math.round(num)),
+            new MathFn("round 10", Function.round(propNumber, Expression.intValue(1)), Math.round(num * 10.0) / 10.0),
+            new MathFn("sign", Function.sign(propNumber), 1.0),
+            new MathFn("sin", Function.sin(propNumber), Math.sin(num)),
+            new MathFn("sqrt", Function.sqrt(propNumber), Math.sqrt(num)),
+            new MathFn("tan", Function.tan(propNumber), Math.tan(num)),
+            new MathFn("trunc", Function.trunc(propNumber), 0.0),
+            new MathFn("trunc 10", Function.trunc(propNumber, Expression.intValue(1)), 0.6)
         };
 
-        Expression propNumber = Expression.property(key);
-        List<Expression> functions = Arrays.asList(
-            Function.abs(propNumber),
-            Function.acos(propNumber),
-            Function.asin(propNumber),
-            Function.atan(propNumber),
-            Function.atan2(Expression.doubleValue(num), Expression.doubleValue(90.0)),
-            Function.ceil(propNumber),
-            Function.cos(propNumber),
-            Function.degrees(propNumber),
-            Function.exp(propNumber),
-            Function.floor(propNumber),
-            Function.ln(propNumber),
-            Function.log(propNumber),
-            Function.power(propNumber, Expression.intValue(2)),
-            Function.radians(propNumber),
-            Function.round(propNumber),
-            Function.round(propNumber, Expression.intValue(1)),
-            Function.sign(propNumber),
-            Function.sin(propNumber),
-            Function.sqrt(propNumber),
-            Function.tan(propNumber),
-            Function.trunc(propNumber),
-            Function.trunc(propNumber, Expression.intValue(1))
-        );
-        final AtomicInteger index = new AtomicInteger(0);
-        for (Expression f: functions) {
-            final int i = index.getAndIncrement();
-            int rows = verifyQuery(
-                QueryBuilder.select(SelectResult.expression(f)).from(DataSource.database(baseTestDb)),
-                (n, result) -> { assertEquals(expectedValues[i], result.getDouble(0), 0.0001); });
-
-            assertEquals(1, rows);
+        for (MathFn f: fns) {
+            int nRows = verifyQuery(
+                QueryBuilder.select(SelectResult.expression(f.expr)).from(DataSource.database(baseTestDb)),
+                (n, result) -> { assertEquals(f.name, f.expected, result.getDouble(0), 1E-12); } );
+            assertEquals(1, nRows);
         }
     }
 
