@@ -427,7 +427,10 @@ Java_com_couchbase_lite_internal_core_C4Database_getFLSharedKeys(JNIEnv *env, jc
  * Signature: (JI)J
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_maintenance(JNIEnv *env, jclass ignore, jlong db, jint type) {
+Java_com_couchbase_lite_internal_core_C4Database_maintenance(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db, jint type) {
     C4Error error = {};
     bool success = c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
     if (error.domain != 0 && error.code != 0)

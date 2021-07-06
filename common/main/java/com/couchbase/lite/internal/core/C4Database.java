@@ -86,6 +86,8 @@ public abstract class C4Database extends C4NativePeer {
         m.put(MaintenanceType.COMPACT, 0);
         m.put(MaintenanceType.REINDEX, 1);
         m.put(MaintenanceType.INTEGRITY_CHECK, 2);
+        m.put(MaintenanceType.OPTIMIZE, 3);
+        m.put(MaintenanceType.FULL_OPTIMIZE, 4);
         MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
     }
     public static void copyDb(
