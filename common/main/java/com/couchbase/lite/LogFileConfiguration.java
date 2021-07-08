@@ -20,6 +20,7 @@ public final class LogFileConfiguration {
     //---------------------------------------------
     private final boolean readonly;
 
+    @NonNull
     private final String directory;
     private boolean usePlaintext;
     private int maxRotateCount = 1;

@@ -16,14 +16,17 @@
 package com.couchbase.lite
 
 
-val IndexConfigurationFactory: IndexConfiguration? = null
-fun IndexConfiguration?.create(
-    type: AbstractIndex.IndexType? = null,
-    expressions: List<String>? = null
-) = IndexConfiguration(
-    type ?: this?.indexType,
-    expressions ?: this?.expressions
+val FullTextIndexConfigurationFactory: FullTextIndexConfiguration? = null
+fun FullTextIndexConfiguration?.create(
+    expression: String? = null
+) = FullTextIndexConfiguration(
+    expression ?: this?.expressions?.get(0) ?: error("Must specify an expression")
 )
+
+val ValueIndexConfigurationFactory: ValueIndexConfiguration? = null
+fun ValueIndexConfiguration?.create(
+    vararg expressions: String = emptyArray()
+) = ValueIndexConfiguration(*expressions)
 
 val LogFileConfigurationFactory: LogFileConfiguration? = null
 fun LogFileConfiguration?.create(
@@ -37,11 +40,4 @@ fun LogFileConfiguration?.create(
     maxRotateCount ?: this?.maxRotateCount,
     usePlainText ?: this?.usesPlaintext(),
     true
-)
-
-val ValueIndexConfigurationFactory: ValueIndexConfiguration? = null
-fun ValueIndexConfiguration?.create(
-    expressions: List<String>? = null
-) = ValueIndexConfiguration(
-    expressions ?: this?.expressions
 )
