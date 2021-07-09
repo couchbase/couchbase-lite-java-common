@@ -26,7 +26,10 @@ fun FullTextIndexConfiguration?.create(
 val ValueIndexConfigurationFactory: ValueIndexConfiguration? = null
 fun ValueIndexConfiguration?.create(
     vararg expressions: String = emptyArray()
-) = ValueIndexConfiguration(*expressions)
+) = ValueIndexConfiguration(
+    if (!expressions.isEmpty()) expressions.asList() else this?.expressions
+        ?: error("Must specify an expression")
+)
 
 val LogFileConfigurationFactory: LogFileConfiguration? = null
 fun LogFileConfiguration?.create(
@@ -35,7 +38,7 @@ fun LogFileConfiguration?.create(
     maxRotateCount: Int? = null,
     usePlainText: Boolean? = null
 ) = LogFileConfiguration(
-    directory ?: this?.directory ?: error("Must specify a database"),
+    directory ?: this?.directory ?: error("Must specify a db directory"),
     maxSize ?: this?.maxSize,
     maxRotateCount ?: this?.maxRotateCount,
     usePlainText ?: this?.usesPlaintext(),
