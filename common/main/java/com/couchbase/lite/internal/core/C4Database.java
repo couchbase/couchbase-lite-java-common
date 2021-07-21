@@ -324,11 +324,11 @@ public abstract class C4Database extends C4NativePeer {
     }
 
     public void createIndex(
-        String name,
-        String queryExpression,
+        @NonNull String name,
+        @NonNull String queryExpression,
         @NonNull AbstractIndex.QueryLanguage queryLanguage,
         @NonNull AbstractIndex.IndexType indexType,
-        String language,
+        @Nullable String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
         C4Query.createIndex(this, name, queryExpression, queryLanguage, indexType, language, ignoreDiacritics);

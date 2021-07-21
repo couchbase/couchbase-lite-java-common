@@ -30,11 +30,11 @@ import com.couchbase.lite.internal.fleece.FLValue;
 public class C4Query extends C4NativePeer {
     public static void createIndex(
         @NonNull C4Database db,
-        String name,
-        String queryExpression,
+        @NonNull String name,
+        @NonNull String queryExpression,
         @NonNull AbstractIndex.QueryLanguage queryLanguage,
         @NonNull AbstractIndex.IndexType indexType,
-        String language,
+        @Nullable String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
         createIndex(

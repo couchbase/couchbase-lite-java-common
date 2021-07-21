@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1337,14 +1338,19 @@ abstract class AbstractDatabase extends BaseDatabase {
         try {
             // Unless the remote revision is being used as-is, we need a new revision:
             if (resolvedDoc != remoteDoc) {
-                if ((resolvedDoc != null) && !resolvedDoc.isDeleted()) {
-                    try (FLSliceResult mergedBody = resolvedDoc.encode()) { mergedBodyBytes = mergedBody.getBuf(); }
-                }
-                else {
+                if ((resolvedDoc == null) || resolvedDoc.isDeleted()) {
                     mergedFlags |= C4Constants.RevisionFlags.DELETED;
                     try (FLEncoder enc = getSharedFleeceEncoder()) {
-                        enc.writeValue(new HashMap<>());
+                        enc.writeValue(Collections.emptyMap());
                         try (FLSliceResult mergedBody = enc.finish2()) { mergedBodyBytes = mergedBody.getBuf(); }
+                    }
+                }
+                else {
+                    try (FLSliceResult mergedBody = resolvedDoc.encode()) {
+                        if (C4Document.dictContainsBlobs(mergedBody, sharedKeys.getFLSharedKeys())) {
+                            mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
+                        }
+                        mergedBodyBytes = mergedBody.getBuf();
                     }
                 }
             }
