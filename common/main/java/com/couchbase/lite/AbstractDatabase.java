@@ -1430,7 +1430,13 @@ abstract class AbstractDatabase {
         try {
             // Unless the remote revision is being used as-is, we need a new revision:
             if (resolvedDoc != remoteDoc) {
-                if ((resolvedDoc != null) && !resolvedDoc.isDeleted()) { mergedBody = resolvedDoc.encode(); }
+                if ((resolvedDoc != null) && !resolvedDoc.isDeleted())
+                {
+                    mergedBody = resolvedDoc.encode();
+                    if (C4Document.dictContainsBlobs(mergedBody, sharedKeys.getFLSharedKeys())) {
+                        mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
+                    }
+                }
                 else {
                     mergedFlags |= C4Constants.RevisionFlags.DELETED;
                     final FLEncoder enc = getSharedFleeceEncoder();
