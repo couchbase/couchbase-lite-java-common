@@ -349,6 +349,7 @@ public class BlobTest extends BaseDbTest {
     public void testUnsavedBlobToJSON() { makeBlob().toJSON(); }
 
     // 3.1.d
+    @Test
     public void testDbGetNonexistentBlob() {
         Map<String, Object> props = new HashMap<>();
         props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);

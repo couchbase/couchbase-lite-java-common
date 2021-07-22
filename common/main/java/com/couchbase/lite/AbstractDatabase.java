@@ -1332,6 +1332,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
             final C4Document c4Doc = resolvedDoc.getC4doc();
             if (c4Doc != null) { mergedFlags = c4Doc.getSelectedFlags(); }
+            else { Log.w(LogDomain.DATABASE, "Unable to get flags for resolved doc %s", resolvedDoc.getId()); }
         }
 
         byte[] mergedBodyBytes = null;
@@ -1347,6 +1348,10 @@ abstract class AbstractDatabase extends BaseDatabase {
                 }
                 else {
                     try (FLSliceResult mergedBody = resolvedDoc.encode()) {
+                        // Although I cannot see how this is necessary,
+                        // https://forums.couchbase.com/t/conflict-resolver-dont-sync-blob/31053/4
+                        // asserts that this code fixes an issue. I have yet to create a test that verifies
+                        // the problem  so don't go removing this just because it looks redundant.
                         if (C4Document.dictContainsBlobs(mergedBody, sharedKeys.getFLSharedKeys())) {
                             mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
                         }

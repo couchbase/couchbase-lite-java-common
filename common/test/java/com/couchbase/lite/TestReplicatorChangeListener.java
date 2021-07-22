@@ -62,7 +62,6 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
         }
     }
 
-
     private void checkContinuousStatus(ReplicatorStatus status) throws CouchbaseLiteException {
         final ReplicatorProgress progress = status.getProgress();
         final CouchbaseLiteException error = status.getError();
