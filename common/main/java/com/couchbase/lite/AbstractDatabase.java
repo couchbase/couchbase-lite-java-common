@@ -1315,7 +1315,6 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     // Call in a transaction
     @GuardedBy("getDbLock()")
-    @SuppressWarnings("PMD.NPathComplexity")
     private void saveResolvedDocument(
         @Nullable Document resolvedDoc,
         @NonNull Document localDoc,
@@ -1332,46 +1331,50 @@ abstract class AbstractDatabase extends BaseDatabase {
 
             final C4Document c4Doc = resolvedDoc.getC4doc();
             if (c4Doc != null) { mergedFlags = c4Doc.getSelectedFlags(); }
-            else { Log.w(LogDomain.DATABASE, "Unable to get flags for resolved doc %s", resolvedDoc.getId()); }
         }
 
+        try { saveResolvedDocumentWithFlags(resolvedDoc, localDoc, remoteDoc, mergedFlags); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+    }
+
+    @GuardedBy("getDbLock()")
+    private void saveResolvedDocumentWithFlags(
+        @Nullable Document resolvedDoc,
+        @NonNull Document localDoc,
+        @NonNull Document remoteDoc,
+        int mergedFlags)
+        throws LiteCoreException {
         byte[] mergedBodyBytes = null;
-        try {
-            // Unless the remote revision is being used as-is, we need a new revision:
-            if (resolvedDoc != remoteDoc) {
-                if ((resolvedDoc == null) || resolvedDoc.isDeleted()) {
-                    mergedFlags |= C4Constants.RevisionFlags.DELETED;
-                    try (FLEncoder enc = getSharedFleeceEncoder()) {
-                        enc.writeValue(Collections.emptyMap());
-                        try (FLSliceResult mergedBody = enc.finish2()) { mergedBodyBytes = mergedBody.getBuf(); }
-                    }
-                }
-                else {
-                    try (FLSliceResult mergedBody = resolvedDoc.encode()) {
-                        // Although I cannot see how this is necessary,
-                        // https://forums.couchbase.com/t/conflict-resolver-dont-sync-blob/31053/4
-                        // asserts that this code fixes an issue. I have yet to create a test that verifies
-                        // the problem  so don't go removing this just because it looks redundant.
-                        if (C4Document.dictContainsBlobs(mergedBody, sharedKeys.getFLSharedKeys())) {
-                            mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
-                        }
-                        mergedBodyBytes = mergedBody.getBuf();
-                    }
+
+        // Unless the remote revision is being used as-is, we need a new revision:
+        if (resolvedDoc != remoteDoc) {
+            if ((resolvedDoc == null) || resolvedDoc.isDeleted()) {
+                mergedFlags |= C4Constants.RevisionFlags.DELETED;
+                try (FLEncoder enc = getSharedFleeceEncoder()) {
+                    enc.writeValue(Collections.emptyMap());
+                    try (FLSliceResult mergedBody = enc.finish2()) { mergedBodyBytes = mergedBody.getBuf(); }
                 }
             }
-
-            // Ask LiteCore to do the resolution:
-            final C4Document rawDoc = Preconditions.assertNotNull(localDoc.getC4doc(), "raw doc is null");
-            // The remote branch has to win so that the doc revision history matches the server's.
-            rawDoc.resolveConflict(remoteDoc.getRevisionID(), localDoc.getRevisionID(), mergedBodyBytes, mergedFlags);
-            rawDoc.save(0);
-
-            if (CouchbaseLiteInternal.debugging()) {
-                Log.d(DOMAIN, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
+            else {
+                try (FLSliceResult mergedBody = resolvedDoc.encode()) {
+                    // if the resolved doc has attachments, be sure has the flag
+                    if (C4Document.dictContainsBlobs(mergedBody, sharedKeys.getFLSharedKeys())) {
+                        mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
+                    }
+                    mergedBodyBytes = mergedBody.getBuf();
+                }
             }
         }
-        catch (LiteCoreException e) {
-            throw CouchbaseLiteException.convertException(e);
+
+        // Ask LiteCore to do the resolution:
+        final C4Document rawDoc = Preconditions.assertNotNull(localDoc.getC4doc(), "raw doc is null");
+
+        // The remote branch has to win so that the doc revision history matches the server's.
+        rawDoc.resolveConflict(remoteDoc.getRevisionID(), localDoc.getRevisionID(), mergedBodyBytes, mergedFlags);
+        rawDoc.save(0);
+
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(DOMAIN, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
         }
     }
 
