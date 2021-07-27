@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -29,80 +30,122 @@ import static org.junit.Assert.assertTrue;
 
 public class NotificationTest extends BaseDbTest {
     @Test
-    public void testDatabaseChange()
-        throws InterruptedException, CouchbaseLiteException {
+    public void testDatabaseChange() throws InterruptedException, CouchbaseLiteException {
         final CountDownLatch latch = new CountDownLatch(1);
-        baseTestDb.addChangeListener(testSerialExecutor, change -> {
-            assertNotNull(change);
-            assertNotNull(change.getDocumentIDs());
-            assertEquals(10, change.getDocumentIDs().size());
-            assertEquals(baseTestDb, change.getDatabase());
-            latch.countDown();
-        });
-        baseTestDb.inBatch(() -> {
-            for (int i = 0; i < 10; i++) {
-                MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
-                doc.setValue("type", "demo");
-                saveDocInBaseTestDb(doc);
-            }
-        });
+
+        int[] n = {0};
+        baseTestDb.addChangeListener(
+            testSerialExecutor,
+            change -> {
+                assertNotNull(change);
+                assertEquals(baseTestDb, change.getDatabase());
+                List<String> ids = change.getDocumentIDs();
+                assertNotNull(ids);
+                n[0] += ids.size();
+                if (n[0] >= 10) { latch.countDown(); }
+            });
+
+        for (int i = 0; i < 10; i++) {
+            MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%d", i));
+            doc.setValue("type", "demo");
+            saveDocInBaseTestDb(doc);
+        }
+
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
     }
 
     @Test
-    public void testDocumentChange()
-        throws InterruptedException, CouchbaseLiteException {
+    public void testDocumentChangeOnSave() throws InterruptedException, CouchbaseLiteException {
         MutableDocument mDocA = new MutableDocument("A");
+        mDocA.setValue("theanswer", 18);
         MutableDocument mDocB = new MutableDocument("B");
+        mDocB.setValue("thewronganswer", 18);
 
         // save doc
-        final CountDownLatch latch1 = new CountDownLatch(1);
-        DocumentChangeListener listener1 = change -> {
-            assertNotNull(change);
-            assertEquals("A", change.getDocumentID());
-            assertEquals(1, latch1.getCount());
-            latch1.countDown();
-        };
-        ListenerToken token = baseTestDb.addDocumentChangeListener("A", listener1);
-        mDocB.setValue("thewronganswer", 18);
-        saveDocInBaseTestDb(mDocB);
-        mDocA.setValue("theanswer", 18);
-        Document docA = saveDocInBaseTestDb(mDocA);
-        assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
-        baseTestDb.removeChangeListener(token);
-
-        // update doc
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        DocumentChangeListener listener2 = change -> {
-            assertNotNull(change);
-            assertEquals("A", change.getDocumentID());
-            assertEquals(1, latch2.getCount());
-            latch2.countDown();
-        };
-        token = baseTestDb.addDocumentChangeListener("A", listener2);
-        mDocA = docA.toMutable();
-        mDocA.setValue("thewronganswer", 18);
-        docA = saveDocInBaseTestDb(mDocA);
-        assertTrue(latch2.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
-        baseTestDb.removeChangeListener(token);
-
-        // delete doc
-        final CountDownLatch latch3 = new CountDownLatch(1);
-        DocumentChangeListener listener3 = change -> {
-            assertNotNull(change);
-            assertEquals("A", change.getDocumentID());
-            assertEquals(1, latch3.getCount());
-            latch3.countDown();
-        };
-        token = baseTestDb.addDocumentChangeListener("A", listener3);
-        baseTestDb.delete(docA);
-        assertTrue(latch3.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
-        baseTestDb.removeChangeListener(token);
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ListenerToken token = baseTestDb.addDocumentChangeListener(
+            mDocA.getId(),
+            change -> {
+                assertNotNull(change);
+                assertEquals("A", change.getDocumentID());
+                assertEquals(1, latch.getCount());
+                latch.countDown();
+            });
+        try {
+            saveDocInBaseTestDb(mDocB);
+            saveDocInBaseTestDb(mDocA);
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
+        finally {
+            baseTestDb.removeChangeListener(token);
+        }
     }
 
     @Test
-    public void testExternalChanges()
-        throws InterruptedException, CouchbaseLiteException {
+    public void testDocumentChangeOnUpdate() throws InterruptedException, CouchbaseLiteException {
+        MutableDocument mDocA = new MutableDocument("A");
+        mDocA.setValue("theanswer", 18);
+        Document docA = saveDocInBaseTestDb(mDocA);
+        MutableDocument mDocB = new MutableDocument("B");
+        mDocB.setValue("thewronganswer", 18);
+        Document docB = saveDocInBaseTestDb(mDocB);
+
+        // update doc
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ListenerToken token = baseTestDb.addDocumentChangeListener(
+            docA.getId(),
+            change -> {
+                assertNotNull(change);
+                assertEquals("A", change.getDocumentID());
+                assertEquals(1, latch.getCount());
+                latch.countDown();
+            });
+        try {
+            mDocB = docB.toMutable();
+            mDocB.setValue("thewronganswer", 42);
+            saveDocInBaseTestDb(mDocB);
+
+            mDocA = docA.toMutable();
+            mDocA.setValue("thewronganswer", 18);
+            saveDocInBaseTestDb(mDocA);
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
+        finally {
+            baseTestDb.removeChangeListener(token);
+        }
+    }
+
+    @Test
+    public void testDocumentChangeOnDelete() throws InterruptedException, CouchbaseLiteException {
+        MutableDocument mDocA = new MutableDocument("A");
+        mDocA.setValue("theanswer", 18);
+        Document docA = saveDocInBaseTestDb(mDocA);
+        MutableDocument mDocB = new MutableDocument("B");
+        mDocB.setValue("thewronganswer", 18);
+        Document docB = saveDocInBaseTestDb(mDocB);
+
+        // delete doc
+        final CountDownLatch latch = new CountDownLatch(1);
+        final ListenerToken token = baseTestDb.addDocumentChangeListener(
+            docA.getId(),
+            change -> {
+                assertNotNull(change);
+                assertEquals("A", change.getDocumentID());
+                assertEquals(1, latch.getCount());
+                latch.countDown();
+            });
+        try {
+            baseTestDb.delete(docB);
+            baseTestDb.delete(docA);
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
+        finally {
+            baseTestDb.removeChangeListener(token);
+        }
+    }
+
+    @Test
+    public void testExternalChanges() throws InterruptedException, CouchbaseLiteException {
         final Database db2 = baseTestDb.copy();
         assertNotNull(db2);
         try {

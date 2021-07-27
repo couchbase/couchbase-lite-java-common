@@ -19,6 +19,7 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.test.InstrumentationRegistry;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,6 +48,14 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext(), true); }
+
+    static {
+        try { Runtime.getRuntime().exec("logcat -P '" + android.os.Process.myPid() + "'").waitFor(); }
+        catch (InterruptedException | IOException e) {
+            android.util.Log.w("TEST", "Failed adding to chatty whitelist");
+        }
+    }
+
     @Override
     public void setupPlatform() {
         final ConsoleLogger console = Database.log.getConsole();

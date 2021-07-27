@@ -23,8 +23,10 @@ import android.support.annotation.VisibleForTesting;
 import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.support.Log;
 
 
 public class C4Query extends C4NativePeer {
@@ -37,6 +39,8 @@ public class C4Query extends C4NativePeer {
         @Nullable String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LogDomain.QUERY, "creating index: " + queryExpression); }
+
         createIndex(
             db.getPeer(),
             name,

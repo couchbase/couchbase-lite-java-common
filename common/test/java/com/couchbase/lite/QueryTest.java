@@ -2740,7 +2740,7 @@ public class QueryTest extends BaseQueryTest {
         assertThrows(IllegalArgumentException.class, () -> Function.upper(null));
     }
 
-    @FlakyTest(log = {"Linux: 21/06/11", "Linux: 21/06/18"})
+    @FlakyTest(log = {"Linux: 21/06/11", "Linux: 21/06/18", "Linux: 21/07/30"})
     @Test
     public void testStringToMillis() throws CouchbaseLiteException {
         createDateDocs();
@@ -2806,7 +2806,7 @@ public class QueryTest extends BaseQueryTest {
         });
     }
 
-    @FlakyTest(log = {"Linux: 21/06/11", "Linux: 21/06/18", "Linux: 21/07/06"})
+    @FlakyTest(log = {"Linux: 21/06/11", "Linux: 21/06/18", "Linux: 21/07/06", "Linux: 21/07/30"})
     @Test
     public void testStringToUTC() throws CouchbaseLiteException, ParseException {
         createDateDocs();
