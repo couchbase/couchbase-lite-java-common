@@ -698,10 +698,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
     private EnumSet<DocumentFlag> getDocumentFlags(int flags) {
         final EnumSet<DocumentFlag> documentFlags = EnumSet.noneOf(DocumentFlag.class);
         if ((flags & C4Constants.RevisionFlags.DELETED) == C4Constants.RevisionFlags.DELETED) {
-            documentFlags.add(DocumentFlag.DocumentFlagsDeleted);
+            documentFlags.add(DocumentFlag.DELETED);
         }
         if ((flags & C4Constants.RevisionFlags.PURGED) == C4Constants.RevisionFlags.PURGED) {
-            documentFlags.add(DocumentFlag.DocumentFlagsAccessRemoved);
+            documentFlags.add(DocumentFlag.ACCESS_REMOVED);
         }
         return documentFlags;
     }

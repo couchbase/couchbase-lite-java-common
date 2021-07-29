@@ -31,7 +31,7 @@ public final class ReplicatedDocument {
     @NonNull
     private final String id;
     @NonNull
-    private final EnumSet<DocumentFlag> documentFlags;
+    private final EnumSet<DocumentFlag> flags;
     @Nullable
     private final CouchbaseLiteException error;
 
@@ -46,13 +46,13 @@ public final class ReplicatedDocument {
         this.id = id;
         this.error = error;
 
-        documentFlags = EnumSet.noneOf(DocumentFlag.class);
+        this.flags = EnumSet.noneOf(DocumentFlag.class);
         if ((flags & C4Constants.RevisionFlags.DELETED) == C4Constants.RevisionFlags.DELETED) {
-            documentFlags.add(DocumentFlag.DocumentFlagsDeleted);
+            this.flags.add(DocumentFlag.DELETED);
         }
 
         if ((flags & C4Constants.RevisionFlags.PURGED) == C4Constants.RevisionFlags.PURGED) {
-            documentFlags.add(DocumentFlag.DocumentFlagsAccessRemoved);
+            this.flags.add(DocumentFlag.ACCESS_REMOVED);
         }
     }
 
@@ -70,7 +70,7 @@ public final class ReplicatedDocument {
      * The current status flag of the document. eg. deleted, access removed
      */
     @NonNull
-    public EnumSet<DocumentFlag> flags() { return documentFlags; }
+    public EnumSet<DocumentFlag> getFlags() { return flags; }
 
     /**
      * The current document replication error.
@@ -80,6 +80,6 @@ public final class ReplicatedDocument {
 
     @NonNull
     @Override
-    public String toString() { return "ReplicatedDocument{" + id + ",err=" + error + "}"; }
+    public String toString() { return "ReplicatedDocument{@" + id + ", " + error + "}"; }
 }
 

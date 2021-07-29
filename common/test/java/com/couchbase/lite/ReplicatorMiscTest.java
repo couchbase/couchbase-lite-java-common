@@ -235,7 +235,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         ReplicatedDocument doc = new ReplicatedDocument(docID, flags, error, true);
 
         assertEquals(doc.getID(), docID);
-        assertTrue(doc.flags().contains(DocumentFlag.DocumentFlagsDeleted));
+        assertTrue(doc.getFlags().contains(DocumentFlag.DELETED));
         assertEquals(doc.getError().getDomain(), CBLError.Domain.CBLITE);
         assertEquals(doc.getError().getCode(), CBLError.Code.BUSY);
     }

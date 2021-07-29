@@ -24,12 +24,12 @@ public enum DocumentFlag {
     /**
      * The current deleted status of the document.
      */
-    DocumentFlagsDeleted(1),
+    DELETED(1),
 
     /**
      * The current access removed status of the document.
      */
-    DocumentFlagsAccessRemoved(1 << 1);
+    ACCESS_REMOVED(1 << 1);
 
     private final int rawValue;
 
