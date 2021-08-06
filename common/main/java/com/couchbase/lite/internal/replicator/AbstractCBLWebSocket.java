@@ -21,6 +21,8 @@ import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
 import java.io.EOFException;
+import java.net.NoRouteToHostException;
+import java.net.PortUnreachableException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -28,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -387,6 +390,9 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Allow subclass to handle errors.
     protected abstract boolean handleClose(Throwable error);
 
+    protected abstract int handleCloseCause(Throwable error);
+
+
     //-------------------------------------------------------------------------
     // Implementations of abstract methods from C4Socket (Core to Remote)
     //
@@ -502,32 +508,46 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     @GuardedBy("getPeerLock()")
     private void closeWithError(@Nullable Throwable error) {
+        Log.i(TAG, "WebSocket CLOSED with error", error);
+
+        // this probably doesn't happen
         if (error == null) {
             closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
             return;
         }
 
-        Log.i(TAG, "WebSocket CLOSED with error", error);
         if (handleClose(error)) { return; }
+        // ??? this is a kludge to get this test to handle Android versioning,
+        //  and still fit into this if-then-else chain.
+        // ... which, in itself is a kludge: this implementation is incredibly fragile,
+        // being all order dependent and ad-hoc
+        final int causeCode = getCodeForCause(error);
 
-        final int code;
         int domain = C4Constants.ErrorDomain.NETWORK;
+        final int code;
 
-        final Throwable cause = error.getCause();
-
-        if ((error instanceof SocketException) || (error instanceof EOFException)) {
-            domain = C4Constants.ErrorDomain.WEB_SOCKET;
-            code = C4Constants.WebSocketError.USER_TRANSIENT;
+        if ((error instanceof NoRouteToHostException) || (error instanceof PortUnreachableException)) {
+            code = C4Constants.NetworkError.HOST_UNREACHABLE;
         }
 
-        // UnknownHostException - this is thrown when in Airplane mode or offline
-        else if (error instanceof UnknownHostException) { code = C4Constants.NetworkError.UNKNOWN_HOST; }
+        else if ((error instanceof SocketException) || (error instanceof EOFException)) {
+            code = C4Constants.NetworkError.NOT_CONNECTED;
+        }
 
-        else if (cause instanceof CertificateException) { code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED; }
+        else if (causeCode > 0) { code = causeCode; }
 
-        else if (error instanceof SSLHandshakeException) { code = C4Constants.NetworkError.TLS_HANDSHAKE_FAILED; }
+        // UnknownHostException - this is also thrown when in Airplane mode or offline
+        else if (error instanceof UnknownHostException) {
+            code = C4Constants.NetworkError.UNKNOWN_HOST;
+        }
 
-        else if (error instanceof SSLPeerUnverifiedException) { code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED; }
+        else if (error instanceof SSLHandshakeException) {
+            code = C4Constants.NetworkError.TLS_HANDSHAKE_FAILED;
+        }
+
+        else if (error instanceof SSLPeerUnverifiedException) {
+            code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED;
+        }
 
         // default: no idea what happened.
         else {
@@ -536,6 +556,24 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
 
         closed(domain, code, error.toString());
+    }
+
+    private int getCodeForCause(Throwable error) {
+        final Throwable cause = error.getCause();
+        if (cause == null) { return -1; }
+
+        final int code = handleCloseCause(cause);
+        if (code > 0) { return code; }
+
+        if (cause instanceof CertificateExpiredException) {
+            return C4Constants.NetworkError.TLS_CERT_REVOKED;
+        }
+
+        if (cause instanceof CertificateException) {
+            return C4Constants.NetworkError.TLS_CERT_UNTRUSTED;
+        }
+
+        return 0;
     }
 
     @NonNull

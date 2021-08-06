@@ -15,13 +15,17 @@
 //
 package com.couchbase.lite.internal.replicator;
 
+import android.annotation.SuppressLint;
+import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.system.ErrnoException;
 
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4Constants;
@@ -29,6 +33,7 @@ import com.couchbase.lite.internal.utils.Fn;
 
 
 public class CBLWebSocket extends AbstractCBLWebSocket {
+
     // Framing is always MESSAGE_STREAM
     public CBLWebSocket(
         long peer,
@@ -50,5 +55,16 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
         }
 
         return false;
+    }
+
+    @SuppressLint("NewApi")
+    @Override
+    protected int handleCloseCause(@NonNull Throwable cause) {
+        return (Build.VERSION.SDK_INT < 24) ? 0 : handleCloseCausePostAPI23(cause);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    private int handleCloseCausePostAPI23(Throwable cause) {
+        return (!(cause instanceof CertificateRevokedException)) ? 0 : C4Constants.NetworkError.TLS_CERT_EXPIRED;
     }
 }

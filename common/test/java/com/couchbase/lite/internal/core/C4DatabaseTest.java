@@ -43,6 +43,7 @@ import static org.junit.Assert.fail;
 
 
 public class C4DatabaseTest extends C4BaseTest {
+    public static final int POSIX_EEXIST = 17;
 
     static C4Document nextDocument(C4DocEnumerator e) throws LiteCoreException {
         return e.next() ? e.getDocument() : null;
@@ -606,7 +607,7 @@ public class C4DatabaseTest extends C4BaseTest {
         }
         catch (LiteCoreException ex) {
             assertEquals(C4Constants.ErrorDomain.POSIX, ex.domain);
-            assertEquals(C4Constants.PosixError.EEXIST, ex.code);
+            assertEquals(POSIX_EEXIST, ex.code);
         }
 
         targetDb = C4Database.getDatabase(

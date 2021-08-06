@@ -38,7 +38,7 @@ public final class N1qlQuery extends AbstractQuery {
     @NonNull
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ", n1ql=" + n1ql + "}";
+        return "N1qlQuery{" + ClassUtils.objId(this) + ", n1ql=" + n1ql + "}";
     }
 
     @NonNull

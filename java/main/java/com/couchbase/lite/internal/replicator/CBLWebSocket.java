@@ -21,8 +21,10 @@ import android.support.annotation.Nullable;
 import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
+import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -39,4 +41,9 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
 
     @Override
     protected boolean handleClose(@NonNull Throwable err) { return false; }
+
+    @Override
+    protected int handleCloseCause(@NonNull Throwable cause) {
+        return (!(cause instanceof CertificateRevokedException)) ? 0 : C4Constants.NetworkError.TLS_CERT_EXPIRED;
+    }
 }
