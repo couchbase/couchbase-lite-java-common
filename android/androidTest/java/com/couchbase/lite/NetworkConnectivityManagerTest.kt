@@ -15,12 +15,14 @@
 //
 package com.couchbase.lite
 
+import android.os.Build
 import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager
 import com.couchbase.lite.internal.core.C4Replicator
 import com.couchbase.lite.internal.replicator.AndroidConnectivityObserver
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager
 import com.couchbase.lite.internal.utils.Fn
 import org.junit.Assert
+import org.junit.Assume
 import org.junit.Test
 
 
@@ -51,20 +53,25 @@ class NetworkConnectivityManagerTest : BaseTest() {
     }
 
     @Test
-    fun testStartStopPre21() = testStartStop(
-        AndroidConnectivityManager(19) { r -> r?.run() })
+    fun testStartStopPre21() = testStartStop(AndroidConnectivityManager(19) { r -> r?.run() })
 
     @Test
-    fun testStartStop21to23() = testStartStop(
-        AndroidConnectivityManager(22) { r -> r?.run() })
+    fun testStartStop21to23() {
+        Assume.assumeTrue("StartStop 21-23 can't be tested on SDK " + Build.VERSION.SDK_INT, Build.VERSION.SDK_INT > 20)
+        testStartStop(AndroidConnectivityManager(22) { r -> r?.run() })
+    }
 
     @Test
-    fun testStartStop24to28() = testStartStop(
-        AndroidConnectivityManager(26) { r -> r?.run() })
+    fun testStartStop24to28() {
+        Assume.assumeTrue("StartStop 24-28 can't be tested on SDK " + Build.VERSION.SDK_INT, Build.VERSION.SDK_INT > 23)
+        testStartStop(AndroidConnectivityManager(26) { r -> r?.run() })
+    }
 
     @Test
-    fun testStartStopPost29() = testStartStop(
-        AndroidConnectivityManager(29) { r -> r?.run() })
+    fun testStartStopPost29() {
+        Assume.assumeTrue("StartStop >29 can't be tested on SDK " + Build.VERSION.SDK_INT, Build.VERSION.SDK_INT > 29)
+        testStartStop(AndroidConnectivityManager(29) { r -> r?.run() })
+    }
 
     @Test
     fun testOffline() {

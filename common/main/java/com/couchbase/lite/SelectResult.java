@@ -18,6 +18,9 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -26,18 +29,14 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 public class SelectResult {
 
-    //---------------------------------------------
-    // Public Inner Classes
-    //---------------------------------------------
-
     /**
-     * SelectResult.From is a SelectResult that you can specify the data source alias name.
+     * SelectResult.From is a SelectResult for which you can specify a data source alias.
      */
     public static final class From extends SelectResult {
         private From(@NonNull Expression expression) { super(expression); }
 
         /**
-         * Species the data source alias name to the SelectResult object.
+         * Specifies the data source alias name for the SelectResult object.
          *
          * @param alias The data source alias name.
          * @return The SelectResult object with the data source alias name specified.
@@ -45,18 +44,20 @@ public class SelectResult {
         @NonNull
         public SelectResult from(@NonNull String alias) {
             Preconditions.assertNotNull(alias, "alias");
-            this.selectExpression = PropertyExpression.allFrom(alias);
-            this.alias = alias;
+            setExpression(PropertyExpression.allFrom(alias));
             return this;
         }
     }
 
     /**
-     * SelectResult.As is a SelectResult that you can specify an alias name to it. The
-     * alias name can be used as the key for accessing the result value from the query Result
+     * SelectResult.As is a SelectResult with an alias. The alias name can be used as the key
+     * for accessing the result value from the query Result
      * object.
      */
     public static final class As extends SelectResult {
+        @Nullable
+        private String alias;
+
         private As(@NonNull Expression expression) { super(expression); }
 
         /**
@@ -66,10 +67,22 @@ public class SelectResult {
          * @return The SelectResult object with the alias name specified.
          */
         @NonNull
-        public SelectResult as(@NonNull String alias) {
+        public As as(@NonNull String alias) {
             Preconditions.assertNotNull(alias, "alias");
             this.alias = alias;
             return this;
+        }
+
+        @Nullable
+        Object asJSON() {
+            final Object prop = super.asJSON();
+            if (alias == null) { return prop; }
+
+            final List<Object> json = new ArrayList<>();
+            json.add("AS");
+            json.add(prop);
+            json.add(alias);
+            return json;
         }
     }
 
@@ -111,30 +124,12 @@ public class SelectResult {
     // member variables
     //---------------------------------------------
     @NonNull
-    Expression selectExpression;
-    @Nullable
-    String alias;
+    private Expression selectExpression;
 
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
+    protected SelectResult(@NonNull Expression expression) { this.selectExpression = expression; }
 
-    @Nullable
-    String getColumnName() {
-        if (alias != null) { return alias; }
-
-        if (selectExpression instanceof PropertyExpression) {
-            return ((PropertyExpression) selectExpression).getColumnName();
-        }
-        if (selectExpression instanceof MetaExpression) {
-            return ((MetaExpression) selectExpression).getColumnName();
-        }
-
-        return null;
-    }
+    protected final void setExpression(@NonNull Expression expression) { this.selectExpression = expression; }
 
     @Nullable
     Object asJSON() { return selectExpression.asJSON(); }
-
-    private SelectResult(@NonNull Expression expression) { this.selectExpression = expression; }
 }

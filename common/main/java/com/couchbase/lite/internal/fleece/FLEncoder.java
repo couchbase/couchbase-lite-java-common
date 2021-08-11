@@ -183,17 +183,20 @@ public abstract class FLEncoder extends C4NativePeer {
 
         // FLValue
         if (value instanceof FLValue) {
-            return ((FLValue) value).withContent(hdl -> (writeValue(peer, hdl)));
+            final Boolean val = ((FLValue) value).withContent(hdl -> (writeValue(peer, hdl)));
+            return (val != null) && val.booleanValue();
         }
 
         // FLDict
         if (value instanceof FLDict) {
-            return ((FLDict) value).withContent(hdl -> (writeValue(peer, hdl)));
+            final Boolean val = ((FLDict) value).withContent(hdl -> (writeValue(peer, hdl)));
+            return (val != null) && val.booleanValue();
         }
 
         // FLArray
         if (value instanceof FLArray) {
-            return ((FLArray) value).withContent(hdl -> (writeValue(peer, hdl)));
+            final Boolean val = ((FLArray) value).withContent(hdl -> (writeValue(peer, hdl)));
+            return (val != null) && val.booleanValue();
         }
 
         // FLEncodable

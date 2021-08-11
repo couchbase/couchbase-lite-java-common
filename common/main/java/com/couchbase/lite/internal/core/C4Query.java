@@ -120,7 +120,10 @@ public class C4Query extends C4NativePeer {
     // package protected methods
     //-------------------------------------------------------------------------
 
-    int columnCount() { return withPeer(0, C4Query::columnCount); }
+    public int getColumnCount() { return withPeer(0, C4Query::columnCount); }
+
+    @Nullable
+    public String getColumnNameForIndex(int idx) { return withPeerOrNull(peer -> columnName(peer, idx)); }
 
     @Nullable
     @VisibleForTesting
@@ -192,6 +195,15 @@ public class C4Query extends C4NativePeer {
      * @return the number of columns
      */
     private static native int columnCount(long peer);
+
+    /**
+     * Returns the name of the indexed column.
+     *
+     * @param peer   (C4Query*)
+     * @param colIdx the index of the column whose name is sought
+     */
+    @Nullable
+    private static native String columnName(long peer, int colIdx);
 
     private static native long run(long peer, boolean rankFullText, /*FLSliceResult*/ long parameters)
         throws LiteCoreException;

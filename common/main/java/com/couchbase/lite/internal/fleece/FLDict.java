@@ -73,7 +73,7 @@ public class FLDict {
     // protected methods
     //-------------------------------------------------------------------------
 
-    @NonNull
+    @Nullable
     <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
 
     //-------------------------------------------------------------------------

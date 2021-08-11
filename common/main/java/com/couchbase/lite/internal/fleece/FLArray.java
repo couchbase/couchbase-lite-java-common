@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.fleece;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -79,7 +80,7 @@ public class FLArray {
     // package level access
     //-------------------------------------------------------------------------
 
-    @NonNull
+    @Nullable
     <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
 
     //-------------------------------------------------------------------------

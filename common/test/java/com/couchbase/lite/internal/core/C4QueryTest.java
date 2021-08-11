@@ -16,7 +16,6 @@
 package com.couchbase.lite.internal.core;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -472,7 +471,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             "{WHAT: ['.name.first', '.name.last'], WHERE: ['>=', ['length()', ['.name.first']], 9],ORDER_BY: [['.name"
                 + ".first']]}"));
 
-        assertEquals(2, query.columnCount());
+        assertEquals(2, query.getColumnCount());
 
         C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
@@ -495,7 +494,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         List<String> expectedLast = Arrays.asList("Bejcek", "Kolding", "Ogwynn");
         compileSelect(json5(
             "{WHAT: ['.name'], WHERE: ['>=', ['length()', ['.name.first']], 9], ORDER_BY: [['.name.first']]}"));
-        assertEquals(1, query.columnCount());
+        assertEquals(1, query.getColumnCount());
 
         C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);

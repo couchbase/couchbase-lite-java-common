@@ -65,7 +65,8 @@ public abstract class C4NativePeer implements AutoCloseable {
                 return def;
             }
 
-            return fn.apply(peer);
+            final T val = fn.apply(peer);
+            return (val == null) ? def : val;
         }
     }
 

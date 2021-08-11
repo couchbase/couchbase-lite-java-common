@@ -37,20 +37,19 @@ public final class N1qlQuery extends AbstractQuery {
 
     @NonNull
     @Override
-    public String toString() {
-        return "N1qlQuery{" + ClassUtils.objId(this) + ", n1ql=" + n1ql + "}";
-    }
-
-    @NonNull
-    @Override
-    protected C4Query prepQueryLocked() throws CouchbaseLiteException {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "N1QL query: %s", n1ql); }
-
-        try { return db.createN1qlQuery(n1ql); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-    }
+    public String toString() { return "N1qlQuery{" + ClassUtils.objId(this) + ", n1ql=" + n1ql + "}"; }
 
     @NonNull
     @Override
     protected AbstractDatabase getDatabase() { return db; }
+
+    @NonNull
+    @Override
+    protected C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException {
+        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "N1QL query: %s", n1ql); }
+        if (n1ql == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
+
+        try { return db.createN1qlQuery(n1ql); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+    }
 }

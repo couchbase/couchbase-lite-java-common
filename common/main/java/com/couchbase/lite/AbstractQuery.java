@@ -20,25 +20,41 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryOptions;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 abstract class AbstractQuery implements Query {
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
 
+    private static final Set<String> RESERVED_NAMES;
+    static {
+        final Set<String> s = new HashSet<>();
+        s.add(PropertyExpression.PROPS_ALL);
+        s.add("*");
+        s.add("_doc");
+        s.add("_default");
+        RESERVED_NAMES = Collections.unmodifiableSet(s);
+    }
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
     private final Object lock = new Object();
     // column names
-    protected Map<String, Integer> columnNames;
+    @GuardedBy("lock")
+    private Map<String, Integer> columnNames;
     @GuardedBy("lock")
     private C4Query c4query;
     @GuardedBy("lock")
@@ -90,15 +106,16 @@ abstract class AbstractQuery implements Query {
             final C4QueryOptions options = new C4QueryOptions();
             if (parameters == null) { parameters = new Parameters(); }
             final C4QueryEnumerator c4enum;
+            final Map<String, Integer> colNames;
             try (FLSliceResult params = parameters.encode()) {
                 synchronized (getDbLock()) {
                     synchronized (lock) {
-                        if (c4query == null) { c4query = prepQueryLocked(); }
-                        c4enum = c4query.run(options, params);
+                        c4enum = getC4QueryLocked().run(options, params);
+                        colNames = columnNames;
                     }
                 }
             }
-            return new ResultSet(this, c4enum, columnNames);
+            return new ResultSet(this, c4enum, new HashMap<>(colNames));
         }
         catch (LiteCoreException e) {
             throw CouchbaseLiteException.convertException(e);
@@ -124,8 +141,7 @@ abstract class AbstractQuery implements Query {
     public String explain() throws CouchbaseLiteException {
         synchronized (getDbLock()) {
             synchronized (lock) {
-                if (c4query == null) { c4query = prepQueryLocked(); }
-                final String exp = c4query.explain();
+                final String exp = getC4QueryLocked().explain();
                 if (exp == null) { throw new CouchbaseLiteException("Could not explain query"); }
                 return exp;
             }
@@ -172,7 +188,7 @@ abstract class AbstractQuery implements Query {
     }
 
     @NonNull
-    protected abstract C4Query prepQueryLocked() throws CouchbaseLiteException;
+    protected abstract C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException;
 
     @Nullable
     protected abstract AbstractDatabase getDatabase();
@@ -184,6 +200,40 @@ abstract class AbstractQuery implements Query {
             if (liveQuery == null) { liveQuery = new LiveQuery(this); }
             return liveQuery;
         }
+    }
+
+    @GuardedBy("lock")
+    @NonNull
+    private C4Query getC4QueryLocked() throws CouchbaseLiteException {
+        if (c4query != null) { return c4query; }
+
+        final AbstractDatabase db = getDatabase();
+        if (db == null) { throw new IllegalStateException("Attempt to prep query with no database"); }
+
+        final C4Query c4Q = prepQueryLocked(db);
+
+        final int nCols = c4Q.getColumnCount();
+        final Map<String, Integer> colNames = new HashMap<>();
+        for (int i = 0; i < nCols; i++) {
+            String colName = c4Q.getColumnNameForIndex(i);
+
+            if (RESERVED_NAMES.contains(colName)) { colName = db.getName(); }
+            if (colName == null) { continue; }
+
+            if (colNames.containsKey(colName)) {
+                throw new CouchbaseLiteException(
+                    Log.formatStandardMessage("DuplicateSelectResultName", colName),
+                    CBLError.Domain.CBLITE,
+                    CBLError.Code.INVALID_QUERY);
+            }
+
+            colNames.put(colName, i);
+        }
+
+        columnNames = colNames;
+
+        c4query = c4Q;
+        return c4query;
     }
 
     @NonNull

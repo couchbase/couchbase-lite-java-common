@@ -243,7 +243,7 @@ public class FLValue {
     // package level access
     //-------------------------------------------------------------------------
 
-    @NonNull
+    @Nullable
     <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
 
     @NonNull

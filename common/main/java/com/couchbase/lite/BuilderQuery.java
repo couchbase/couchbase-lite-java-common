@@ -68,50 +68,20 @@ abstract class BuilderQuery extends AbstractQuery {
     // Protected access
     //---------------------------------------------
 
-    @GuardedBy("lock")
-    @NonNull
-    @Override
-    protected final C4Query prepQueryLocked() throws CouchbaseLiteException {
-        final String json = marshalAsJSONSafely();
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "JSON query: %s", json); }
-        if (json == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
-
-        if (columnNames == null) { columnNames = getColumnNames(); }
-
-        final AbstractDatabase db = getDatabase();
-        if (db == null) { throw new IllegalStateException("Attempt to prep query with no database"); }
-        try { return db.createJsonQuery(json); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-    }
-
     @NonNull
     @Override
     protected final AbstractDatabase getDatabase() { return (AbstractDatabase) from.getSource(); }
 
-    // https://issues.couchbase.com/browse/CBL-21
-    // Using c4query_columnTitle is not an improvement, as of 12/2019
+    @GuardedBy("lock")
     @NonNull
-    protected Map<String, Integer> getColumnNames() throws CouchbaseLiteException {
-        final Map<String, Integer> map = new HashMap<>();
-        int index = 0;
-        int provisionKeyIndex = 0;
-        for (SelectResult selectResult: select.getSelectResults()) {
-            String name = selectResult.getColumnName();
+    @Override
+    protected final C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException {
+        final String json = marshalAsJSONSafely();
+        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "JSON query: %s", json); }
+        if (json == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
 
-            if (name != null && name.equals(PropertyExpression.PROPS_ALL)) { name = from.getColumnName(); }
-
-            if (name == null) { name = "$" + (++provisionKeyIndex); }
-
-            if (map.containsKey(name)) {
-                throw new CouchbaseLiteException(
-                    Log.formatStandardMessage("DuplicateSelectResultName", name),
-                    CBLError.Domain.CBLITE,
-                    CBLError.Code.INVALID_QUERY);
-            }
-            map.put(name, index);
-            index++;
-        }
-        return map;
+        try { return db.createJsonQuery(json); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     //---------------------------------------------

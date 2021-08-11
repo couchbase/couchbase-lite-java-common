@@ -16,20 +16,19 @@
 package com.couchbase.lite.internal.utils;
 
 
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 
 public interface Fn {
     @FunctionalInterface
     interface FunctionThrows<T, R, E extends Throwable> {
-        @NonNull
+        @Nullable
         R apply(@Nullable T x) throws E;
     }
 
     @FunctionalInterface
     interface Function<T, R> {
-        @NonNull
+        @Nullable
         R apply(@Nullable T x);
     }
 
@@ -40,17 +39,33 @@ public interface Fn {
     }
 
     @FunctionalInterface
-    interface Predicate<T> { boolean test(@Nullable T x); }
+    interface ProviderThrows<T, E extends Exception> {
+        @Nullable
+        T get() throws E;
+    }
 
     @FunctionalInterface
-    interface ConsumerThrows<T, E extends Exception> { void accept(@Nullable T x) throws E; }
+    interface Predicate<T> {
+        boolean test(@Nullable T x);
+    }
 
     @FunctionalInterface
-    interface Consumer<T> { void accept(@Nullable T x); }
+    interface ConsumerThrows<T, E extends Exception> {
+        void accept(@Nullable T x) throws E;
+    }
 
     @FunctionalInterface
-    interface TaskThrows<E extends Exception> { void run() throws E; }
+    interface Consumer<T> {
+        void accept(@Nullable T x);
+    }
 
     @FunctionalInterface
-    interface Runner { void run(@Nullable Runnable r); }
+    interface TaskThrows<E extends Exception> {
+        void run() throws E;
+    }
+
+    @FunctionalInterface
+    interface Runner {
+        void run(@Nullable Runnable r);
+    }
 }

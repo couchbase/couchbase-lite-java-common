@@ -65,6 +65,14 @@ JNIEXPORT jint JNICALL Java_com_couchbase_lite_internal_core_C4Query_columnCount
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query
+ * Method:    columnCount
+ * Signature: (JI)Ljava/lang/String
+ */
+JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4Query_columnName
+        (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Query
  * Method:    run
  * Signature: (JZJ)J
  */

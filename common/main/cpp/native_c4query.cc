@@ -92,6 +92,20 @@ Java_com_couchbase_lite_internal_core_C4Query_columnCount(JNIEnv *env, jclass ig
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query
+ * Method:    columnName
+ * Signature: (JI)Ljava/lang/String;
+ *
+ * ??? Check this to see how expensive it is...
+ * Might want to replace it with a function that creates
+ * the entire map of column names to indices in one fell swoop...
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_C4Query_columnName(JNIEnv *env, jclass ignore, jlong jquery, jint colIdx) {
+    return toJString(env, c4query_columnTitle((C4Query *) jquery, colIdx));
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Query
  * Method:    run
  * Signature: (JZJ)J
  */
