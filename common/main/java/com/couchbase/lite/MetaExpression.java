@@ -32,13 +32,12 @@ public class MetaExpression extends Expression {
     private final String keyPath;
     @Nullable
     private final String fromAlias; // Data Source Alias
-    @Nullable
-    private String columnName;
 
-    MetaExpression(@NonNull String keyPath, @Nullable String columnName, @Nullable String from) {
+    MetaExpression(@NonNull String keyPath) { this(keyPath, null); }
+
+    private MetaExpression(@NonNull String keyPath, @Nullable String fromAlias) {
         this.keyPath = keyPath;
-        this.columnName = columnName;
-        this.fromAlias = from;
+        this.fromAlias = fromAlias;
     }
 
     //---------------------------------------------
@@ -48,13 +47,13 @@ public class MetaExpression extends Expression {
     /**
      * Specifies an alias name of the data source to query the data from.
      *
-     * @param alias The data source alias name.
+     * @param fromAlias The data source alias name.
      * @return The Meta expression with the given alias name specified.
      */
     @NonNull
-    public Expression from(@NonNull String alias) {
-        Preconditions.assertNotNull(alias, "alias");
-        return new MetaExpression(keyPath, null, alias);
+    public Expression from(@NonNull String fromAlias) {
+        Preconditions.assertNotNull(fromAlias, "fromAlias");
+        return new MetaExpression(keyPath, fromAlias);
     }
 
     //---------------------------------------------
@@ -65,17 +64,7 @@ public class MetaExpression extends Expression {
     @Override
     Object asJSON() {
         final List<Object> json = new ArrayList<>();
-        if (fromAlias != null) { json.add("." + fromAlias + "." + keyPath); }
-        else { json.add("." + keyPath); }
+        json.add("." + ((fromAlias == null) ? "" : fromAlias + ".") + keyPath);
         return json;
-    }
-
-    @NonNull
-    String getColumnName() {
-        if (columnName == null) {
-            final String[] paths = keyPath.split("\\.");
-            columnName = paths[paths.length - 1];
-        }
-        return columnName;
     }
 }

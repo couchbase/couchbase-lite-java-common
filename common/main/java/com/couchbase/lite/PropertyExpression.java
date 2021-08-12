@@ -21,6 +21,8 @@ import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.couchbase.lite.internal.utils.Preconditions;
+
 
 /**
  * Property expression
@@ -29,30 +31,22 @@ public final class PropertyExpression extends Expression {
     static final String PROPS_ALL = "";
 
     @NonNull
-    static PropertyExpression allFrom(@Nullable String from) {
-        // Use data source alias name as the column name if specified:
-        return new PropertyExpression(PROPS_ALL, from, (from != null ? from : PROPS_ALL));
-    }
+    static PropertyExpression allFrom(@Nullable String from) { return new PropertyExpression(PROPS_ALL, from); }
 
     @NonNull
     private final String keyPath;
     @Nullable
     private final String fromAlias; // Data Source Alias
-    @Nullable
-    private String columnName;
 
     PropertyExpression(@NonNull String keyPath) { this(keyPath, null); }
-
-    private PropertyExpression(@NonNull String keyPath, @Nullable String from) { this(keyPath, from, null); }
 
     //---------------------------------------------
     // public level access
     //---------------------------------------------
 
-    private PropertyExpression(@NonNull String keyPath, @Nullable String from, @Nullable String columnName) {
+    private PropertyExpression(@NonNull String keyPath, @Nullable String fromAlias) {
         this.keyPath = keyPath;
-        this.fromAlias = from;
-        this.columnName = columnName;
+        this.fromAlias = fromAlias;
     }
 
     //---------------------------------------------
@@ -62,31 +56,20 @@ public final class PropertyExpression extends Expression {
     /**
      * Specifies an alias name of the data source to query the data from.
      *
-     * @param alias The alias name of the data source.
+     * @param fromAlias The alias name of the data source.
      * @return The property Expression with the given data source alias name.
      */
     @NonNull
-    public Expression from(@Nullable String alias) {
-        return new PropertyExpression(keyPath, alias);
+    public Expression from(@NonNull String fromAlias) {
+        Preconditions.assertNotNull(fromAlias, "fromAlias");
+        return new PropertyExpression(keyPath, fromAlias);
     }
 
     @NonNull
     @Override
     Object asJSON() {
         final List<Object> json = new ArrayList<>();
-        if (fromAlias != null) { json.add("." + fromAlias + "." + keyPath); }
-        else { json.add("." + keyPath); }
+        json.add("." + ((fromAlias == null) ? "" : fromAlias + ".") + keyPath);
         return json;
-    }
-
-    @NonNull
-    String getColumnName() {
-        synchronized (this) {
-            if (columnName == null) {
-                final String[] paths = keyPath.split("\\.");
-                columnName = paths[paths.length - 1];
-            }
-            return columnName;
-        }
     }
 }

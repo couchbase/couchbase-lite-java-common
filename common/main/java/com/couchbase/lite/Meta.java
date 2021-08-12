@@ -32,15 +32,16 @@ public final class Meta {
 
     /**
      * A metadata expression referring to the ID of the document.
+     * Can't change these to CAPITAL_SNAKE case, cuz they are part of the API.
      */
     @NonNull
-    public static final MetaExpression id = new MetaExpression("_id", "id", null);
+    public static final MetaExpression id = new MetaExpression("_id");
 
     /**
      * A metadata expression referring to the RevisionId of the document.
      */
     @NonNull
-    public static final MetaExpression revisionID = new MetaExpression("_revisionID", "revisionID", null);
+    public static final MetaExpression revisionID = new MetaExpression("_revisionID");
 
     /**
      * A metadata expression referring to the sequence number of the document.
@@ -48,17 +49,17 @@ public final class Meta {
      * `sequence` is greater than another's, that means it was changed more recently.
      */
     @NonNull
-    public static final MetaExpression sequence = new MetaExpression("_sequence", "sequence", null);
+    public static final MetaExpression sequence = new MetaExpression("_sequence");
 
     /**
      * A metadata expression referring to the deleted boolean flag of the document.
      */
     @NonNull
-    public static final MetaExpression deleted = new MetaExpression("_deleted", "deleted", null);
+    public static final MetaExpression deleted = new MetaExpression("_deleted");
 
     /**
      * A metadata expression referring to the expiration date of the document.
      */
     @NonNull
-    public static final MetaExpression expiration = new MetaExpression("_expiration", "expiration", null);
+    public static final MetaExpression expiration = new MetaExpression("_expiration");
 }
