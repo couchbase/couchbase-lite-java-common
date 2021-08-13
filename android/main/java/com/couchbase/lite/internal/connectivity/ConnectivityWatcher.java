@@ -67,15 +67,11 @@ abstract class ConnectivityWatcher {
             return;
         }
 
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(LogDomain.NETWORK, "Changed %s connectivity for %s: %s", name, getCblMgr(), this);
-        }
+        Log.d(LogDomain.NETWORK, "Changed %s connectivity for %s: %s", name, getCblMgr(), this);
         cblConnectivityMgr.connectivityChanged(networkState);
     }
 
     protected final void logStart() {
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(LogDomain.NETWORK, "Started %s network listener for %s: %s", name, getCblMgr(), this);
-        }
+        Log.d(LogDomain.NETWORK, "Started %s network listener for %s: %s", name, getCblMgr(), this);
     }
 }

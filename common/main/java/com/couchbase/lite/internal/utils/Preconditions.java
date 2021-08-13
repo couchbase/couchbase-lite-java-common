@@ -81,8 +81,10 @@ public final class Preconditions {
         return obj;
     }
 
-    public static void assertNotEmpty(String str, @NonNull String name) {
+    @NonNull
+    public static String assertNotEmpty(@Nullable String str, @NonNull String name) {
         if (StringUtils.isEmpty(str)) { throw new IllegalArgumentException(name + " must not be empty"); }
+        return str;
     }
 
     @NonNull
@@ -91,7 +93,9 @@ public final class Preconditions {
         return obj;
     }
 
-    public static <T> void assertThat(T obj, @NonNull String msg, @NonNull Fn.Predicate<T> predicate) {
+    @Nullable
+    public static <T> T assertThat(@Nullable T obj, @NonNull String msg, @NonNull Fn.Predicate<T> predicate) {
         if (!predicate.test(obj)) { throw new IllegalArgumentException(msg); }
+        return obj;
     }
 }

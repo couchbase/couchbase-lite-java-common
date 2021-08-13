@@ -25,7 +25,6 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 
@@ -58,9 +57,7 @@ public final class CBLTrustManager extends AbstractCBLTrustManager {
             return serverCerts;
         }
 
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(LogDomain.NETWORK, "Extended trust check: %d, %s, %s", serverCerts.size(), authType, host);
-        }
+        Log.d(LogDomain.NETWORK, "Extended trust check: %d, %s, %s", serverCerts.size(), authType, host);
 
         return new X509TrustManagerExtensions(getDefaultTrustManager()).checkServerTrusted(chain, authType, host);
     }

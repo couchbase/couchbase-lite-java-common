@@ -136,7 +136,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     // This is the only constructor that child classes should call
     protected Document(@Nullable Database database, @NonNull String id, @Nullable C4Document c4doc, boolean mutable) {
         this.database = database;
-        this.id = id;
+        this.id = Preconditions.assertNotNull(id, "id");
         this.mutable = mutable;
         setC4Document(c4doc, mutable);
     }

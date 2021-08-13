@@ -17,7 +17,6 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -46,7 +45,7 @@ public final class N1qlQuery extends AbstractQuery {
     @NonNull
     @Override
     protected C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "N1QL query: %s", n1ql); }
+        Log.d(DOMAIN, "N1QL query: %s", n1ql);
         if (n1ql == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
 
         try { return db.createN1qlQuery(n1ql); }

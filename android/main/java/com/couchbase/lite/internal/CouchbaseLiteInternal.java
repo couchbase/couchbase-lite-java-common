@@ -70,6 +70,7 @@ public final class CouchbaseLiteInternal {
     private static final Object LOCK = new Object();
 
     private static volatile boolean debugging;
+
     private static volatile File rootDir;
     private static volatile File scratchDir;
 
@@ -84,6 +85,7 @@ public final class CouchbaseLiteInternal {
         @NonNull Context ctxt) {
         if (INITIALIZED.getAndSet(true)) { return; }
 
+        // set early to catch initialization errors
         debugging = debug;
 
         CONTEXT.set(new SoftReference<>(Preconditions.assertNotNull(ctxt.getApplicationContext(), "context")));
@@ -95,16 +97,14 @@ public final class CouchbaseLiteInternal {
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
-        C4Base.debug(debug);
+        C4Base.debug(debugging);
+
+        Log.initLogging(loadErrorMessages(ctxt));
 
         setC4TmpDirPath(scratchDir);
 
         MValue.registerDelegate(mValueDelegate);
-
-        Log.initLogging(loadErrorMessages(ctxt));
     }
-
-    public static boolean debugging() { return debugging; }
 
     @NonNull
     public static Context getContext() {
@@ -116,6 +116,8 @@ public final class CouchbaseLiteInternal {
 
         return ctxt;
     }
+
+    public static boolean debugging() { return debugging; }
 
     @NonNull
     public static NetworkConnectivityManager getNetworkConnectivityManager() {

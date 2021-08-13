@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.couchbase.lite.internal.core.C4Document;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
@@ -112,7 +113,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     }
 
     private MutableDocument(@Nullable Database database, @Nullable String id, @Nullable C4Document c4doc) {
-        super(database, id != null ? id : createUUID(), c4doc, true);
+        super(database, (id != null) ? id : createUUID(), c4doc, true);
     }
 
     //---------------------------------------------

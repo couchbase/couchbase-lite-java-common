@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.json.JSONException;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -77,7 +76,7 @@ abstract class BuilderQuery extends AbstractQuery {
     @Override
     protected final C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException {
         final String json = marshalAsJSONSafely();
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "JSON query: %s", json); }
+        Log.d(DOMAIN, "JSON query: %s", json);
         if (json == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
 
         try { return db.createJsonQuery(json); }

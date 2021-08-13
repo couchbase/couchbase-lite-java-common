@@ -19,7 +19,6 @@ import android.support.annotation.NonNull;
 
 import java.util.EnumMap;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -67,14 +66,12 @@ public enum LogLevel {
         LEVELS.put(ERROR, "E");
         LEVELS.put(NONE, "");
     }
-
-
     @NonNull
     @Override
     public String toString() {
         final String s = LEVELS.get(this);
         if (s != null) { return s; }
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LogDomain.DATABASE, "Unrecognized log level: %s", this); }
+        Log.d(LogDomain.DATABASE, "Unrecognized log level: %s", this);
         return "?";
     }
 }

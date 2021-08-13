@@ -22,7 +22,6 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.StringUtils;
@@ -81,9 +80,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
             return;
         }
 
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(LogDomain.NETWORK, "Default trust check: %d, %s", (chain == null) ? 0 : chain.length, authType);
-        }
+        Log.d(LogDomain.NETWORK, "Default trust check: %d, %s", (chain == null) ? 0 : chain.length, authType);
 
         getDefaultTrustManager().checkServerTrusted(chain, authType);
     }
@@ -93,9 +90,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
     // https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/X509TrustManager.html:
     protected final void cBLServerTrustCheck(@Nullable List<X509Certificate> certs, @Nullable String authType)
         throws CertificateException {
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(LogDomain.NETWORK, "CBL trust check: %d, %s", (certs == null) ? 0 : certs.size(), authType);
-        }
+        Log.d(LogDomain.NETWORK, "CBL trust check: %d, %s", (certs == null) ? 0 : certs.size(), authType);
 
         if ((certs == null) || certs.isEmpty()) {
             throw new IllegalArgumentException("No server certificates");

@@ -58,6 +58,7 @@ public final class CouchbaseLiteInternal {
     private static final Object LOCK = new Object();
 
     private static volatile boolean debugging;
+
     private static volatile File rootDir;
     private static volatile File scratchDir;
 
@@ -68,6 +69,7 @@ public final class CouchbaseLiteInternal {
         @NonNull File scratchDir) {
         if (INITIALIZED.getAndSet(true)) { return; }
 
+        // set early to catch initialization errors
         debugging = debug;
 
         Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
@@ -77,13 +79,13 @@ public final class CouchbaseLiteInternal {
 
         NativeLibrary.load(scratchDir);
 
-        C4Base.debug(debugging());
+        C4Base.debug(debugging);
+
+        Log.initLogging(loadErrorMessages());
 
         setC4TmpDirPath(scratchDir);
 
         MValue.registerDelegate(mValueDelegate);
-
-        Log.initLogging(loadErrorMessages());
     }
 
     public static boolean debugging() { return debugging; }

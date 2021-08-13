@@ -61,7 +61,6 @@ import okio.ByteString;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4Socket;
@@ -137,9 +136,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // We have an open connection to the remote
         @Override
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
-            if (CouchbaseLiteInternal.debugging()) {
-                Log.d(TAG, "%s#OkHTTP open: %s", AbstractCBLWebSocket.this, response);
-            }
+            Log.d(TAG, "%s#OkHTTP open: %s", AbstractCBLWebSocket.this, response);
             synchronized (getPeerLock()) {
                 if (!state.setState(State.OPEN)) { return; }
                 AbstractCBLWebSocket.this.webSocket = webSocket;
@@ -153,9 +150,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote sent data
         @Override
         public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
-            if (CouchbaseLiteInternal.debugging()) {
-                Log.d(TAG, "%s#OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
-            }
+            Log.d(TAG, "%s#OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
             synchronized (getPeerLock()) {
                 if (!state.assertState(State.OPEN)) { return; }
                 received(text.getBytes(StandardCharsets.UTF_8));
@@ -166,9 +161,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote sent data
         @Override
         public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
-            if (CouchbaseLiteInternal.debugging()) {
-                Log.d(TAG, "%s#OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
-            }
+            Log.d(TAG, "%s#OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
             synchronized (getPeerLock()) {
                 if (!state.assertState(State.OPEN)) { return; }
                 received(bytes.toByteArray());
@@ -179,9 +172,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote wants to close the connection
         @Override
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            if (CouchbaseLiteInternal.debugging()) {
-                Log.d(TAG, "%s#OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
-            }
+            Log.d(TAG, "%s#OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
             synchronized (getPeerLock()) {
                 if (!state.setState(State.CLOSE_REQUESTED)) { return; }
                 closeRequested(code, reason);
@@ -192,9 +183,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Remote connection has been closed
         @Override
         public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            if (CouchbaseLiteInternal.debugging()) {
-                Log.d(TAG, "%s#OkHTTP closed: (%d) %s", AbstractCBLWebSocket.this, code, reason);
-            }
+            Log.d(TAG, "%s#OkHTTP closed: (%d) %s", AbstractCBLWebSocket.this, code, reason);
             synchronized (getPeerLock()) {
                 if (!state.setState(State.CLOSED)) { return; }
                 closeWithCode(code, reason);
@@ -212,9 +201,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Outgoing and incoming messages may have been lost. OkHTTP will not make any more calls to this listener
         @Override
         public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, @Nullable Response response) {
-            if (CouchbaseLiteInternal.debugging()) {
-                Log.d(TAG, "%s#OkHTTP failed: %s", err, AbstractCBLWebSocket.this, response);
-            }
+            Log.d(TAG, "%s#OkHTTP failed: %s", err, AbstractCBLWebSocket.this, response);
             synchronized (getPeerLock()) {
                 state.setState(State.FAILED);
 
@@ -362,6 +349,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Implementation of AutoClosable.close()
     @Override
     public void close() {
+        Log.d(TAG, "%s#External told to close: %s", this, uri);
         synchronized (getPeerLock()) {
             if (!state.setState(State.CLOSE_REQUESTED)) {
                 closeRequested(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
@@ -403,7 +391,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Core needs a connection to the remote
     @Override
     protected final void openSocket() {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(TAG, "%s#Core connect: %s", this, uri); }
+        Log.d(TAG, "%s#Core connect: %s", this, uri);
         synchronized (getPeerLock()) {
             if (!state.setState(State.CONNECTING)) { return; }
             okHttpSocketFactory.newWebSocket(newRequest(), okHttpRemote);
@@ -414,7 +402,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Core wants to transfer data to the remote
     @Override
     protected final void send(@NonNull byte[] allocatedData) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(TAG, "%s#Core send: %d", this, allocatedData.length); }
+        Log.d(TAG, "%s#Core send: %d", this, allocatedData.length);
         synchronized (getPeerLock()) {
             if (!state.assertState(State.OPEN)) { return; }
 
@@ -437,7 +425,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Core wants to break the connection
     @Override
     protected final void requestClose(int code, String message) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(TAG, "%s#Core request close: %d", this, code); }
+        Log.d(TAG, "%s#Core request close: %d", this, code);
         synchronized (getPeerLock()) {
             if (!state.setState(State.CLOSE_REQUESTED)) { return; }
             closeWebSocket(code, message);
@@ -456,7 +444,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     @GuardedBy("getPeerLock()")
     private void receivedHTTPResponse(@NonNull Response response) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(TAG, "CBLWebSocket received HTTP response %s", response); }
+        Log.d(TAG, "CBLWebSocket received HTTP response %s", response);
 
         // Post the response headers to LiteCore:
         final Headers hs = response.headers();
@@ -472,7 +460,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
         catch (LiteCoreException e) {
             Log.w(TAG, "CBLWebSocket failed to encode response headers", e);
-            if (CouchbaseLiteInternal.debugging()) { Log.d(TAG, StringUtils.toString(headers)); }
+            Log.d(TAG, StringUtils.toString(headers));
         }
 
         gotHTTPResponse(response.code(), headersFleece);
@@ -705,13 +693,13 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // http://www.ietf.org/rfc/rfc2617.txt
     @Nullable
     private Request authenticate(@NonNull Response resp, @NonNull String user, @NonNull String pwd) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(TAG, "CBLWebSocket.authenticate: %s", resp); }
+        Log.d(TAG, "CBLWebSocket.authenticate: %s", resp);
 
         // If failed 3 times, give up.
         if (responseCount(resp) >= MAX_AUTH_RETRIES) { return null; }
 
         final List<Challenge> challenges = resp.challenges();
-        if (CouchbaseLiteInternal.debugging()) { Log.d(TAG, "CBLWebSocket challenges: %s", challenges); }
+        Log.d(TAG, "CBLWebSocket challenges: %s", challenges);
         if (challenges == null) { return null; }
 
         for (Challenge challenge: challenges) {

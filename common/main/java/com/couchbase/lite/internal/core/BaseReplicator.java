@@ -19,7 +19,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 
@@ -48,11 +47,10 @@ public class BaseReplicator implements AutoCloseable {
     }
 
     protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(
-                LogDomain.REPLICATOR,
-                "Setting c4 replicator %s for replicator %s", ClassUtils.objId(c4Repl), ClassUtils.objId(this));
-        }
+        Log.d(
+            LogDomain.REPLICATOR,
+            "Setting c4 replicator %s for replicator %s", ClassUtils.objId(c4Repl), ClassUtils.objId(this));
+
         synchronized (getReplicatorLock()) { c4Replicator = c4Repl; }
     }
 

@@ -442,6 +442,8 @@ public final class Log {
         @Nullable Object... args) {
         // Don't let logging errors cause a failure
         if (level == null) { level = LogLevel.INFO; }
+        if (!shouldLog(level)) { return; }
+
         if (domain == null) { domain = LogDomain.DATABASE; }
         String message = lookupStandardMessage(msg);
 
@@ -454,6 +456,12 @@ public final class Log {
         }
 
         sendToLoggers(level, domain, LOG_HEADER + message);
+    }
+
+    private static boolean shouldLog(@NonNull LogLevel logLevel) {
+        final LogLevel callbackLevel = C4Log.getCallbackLevel();
+        final LogLevel fileLogLevel = Database.log.getFile().getLevel();
+        return ((callbackLevel.compareTo(fileLogLevel) < 0) ? callbackLevel : fileLogLevel).compareTo(logLevel) <= 0;
     }
 
     @NonNull

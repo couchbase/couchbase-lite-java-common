@@ -159,7 +159,7 @@ abstract class AbstractDatabase extends BaseDatabase {
                 CBLError.Code.NOT_FOUND);
         }
 
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "Delete database %s in %s", name, directory); }
+        Log.d(DOMAIN, "Delete database %s in %s", name, directory);
         try { C4Database.deleteNamedDb(directory.getCanonicalPath(), name); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new CouchbaseLiteException("No canonical path for " + directory, e); }
@@ -328,17 +328,14 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Nullable
     public Document getDocument(@NonNull String id) {
-        Preconditions.assertNotNull(id, "id");
+        Preconditions.assertNotEmpty(id, "id");
 
         synchronized (getDbLock()) {
             mustBeOpen();
             try { return Document.getDocument((Database) this, id, false); }
-            catch (CouchbaseLiteException e) {
-                // Probably 404 - Not Found
-                Log.i(LogDomain.DATABASE, "Document %s not found", e, id);
-                return null;
-            }
+            catch (CouchbaseLiteException e) { Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", e, id); }
         }
+        return null;
     }
 
     /**
@@ -641,7 +638,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void close() throws CouchbaseLiteException {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "Closing %s at path %s", this, getDbPath()); }
+        Log.d(DOMAIN, "Closing %s at path %s", this, getDbPath());
         shutdown(false, C4Database::closeDb);
     }
 
@@ -653,7 +650,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
      */
     public void delete() throws CouchbaseLiteException {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "Deleting %s at path %s", this, getDbPath()); }
+        Log.d(DOMAIN, "Deleting %s at path %s", this, getDbPath());
         shutdown(true, C4Database::deleteDb);
     }
 
@@ -1026,16 +1023,12 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     void registerProcess(ActiveProcess<?> process) {
         synchronized (activeProcesses) { activeProcesses.add(process); }
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(DOMAIN, "Added active process(%s): %s", getName(), process);
-        }
+        Log.d(DOMAIN, "Added active process(%s): %s", getName(), process);
     }
 
     <T> void unregisterProcess(T process) {
         synchronized (activeProcesses) { activeProcesses.remove(new ActiveProcess<>(process)); }
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(DOMAIN, "Removed active process(%s): %s", getName(), process);
-        }
+        Log.d(DOMAIN, "Removed active process(%s): %s", getName(), process);
         verifyActiveProcesses();
     }
 
@@ -1065,7 +1058,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     @NonNull
     private C4Database openC4Db() throws CouchbaseLiteException {
         final String parentDirPath = config.getDirectory();
-        if (CouchbaseLiteInternal.debugging()) { Log.d(DOMAIN, "Opening db %s at path %s", this, parentDirPath); }
+        Log.d(DOMAIN, "Opening db %s at path %s", this, parentDirPath);
         try {
             return C4Database.getDatabase(
                 parentDirPath,
@@ -1272,15 +1265,13 @@ abstract class AbstractDatabase extends BaseDatabase {
         final Conflict conflict
             = new Conflict(localDoc.isDeleted() ? null : localDoc, remoteDoc.isDeleted() ? null : remoteDoc);
 
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(
-                DOMAIN,
-                "Resolving doc '%s' (local=%s and remote=%s) with resolver %s",
-                docID,
-                localDoc.getRevisionID(),
-                remoteDoc.getRevisionID(),
-                resolver);
-        }
+        Log.d(
+            DOMAIN,
+            "Resolving doc '%s' (local=%s and remote=%s) with resolver %s",
+            docID,
+            localDoc.getRevisionID(),
+            remoteDoc.getRevisionID(),
+            resolver);
 
         final ClientTask<Document> task = new ClientTask<>(() -> resolver.resolve(conflict));
         task.execute();
@@ -1373,9 +1364,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         rawDoc.resolveConflict(remoteDoc.getRevisionID(), localDoc.getRevisionID(), mergedBodyBytes, mergedFlags);
         rawDoc.save(0);
 
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(DOMAIN, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
-        }
+        Log.d(DOMAIN, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
     }
 
     private void saveWithConflictHandler(@NonNull MutableDocument document, @NonNull ConflictHandler handler)
@@ -1568,9 +1557,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
         final int activeProcessCount;
         synchronized (activeProcesses) { activeProcessCount = activeProcesses.size(); }
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(DOMAIN, "Active processes(%s): %d", getName(), activeProcessCount);
-        }
+        Log.d(DOMAIN, "Active processes(%s): %d", getName(), activeProcessCount);
         if (activeProcessCount <= 0) { closeLatch.countDown(); }
     }
 

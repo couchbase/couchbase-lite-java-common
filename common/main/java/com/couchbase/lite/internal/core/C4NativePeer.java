@@ -122,7 +122,7 @@ public abstract class C4NativePeer implements AutoCloseable {
             fn.accept(peer);
         }
 
-        if ((domain != null) && CouchbaseLiteInternal.debugging()) {
+        if (domain != null) {
             Log.d(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName());
         }
     }

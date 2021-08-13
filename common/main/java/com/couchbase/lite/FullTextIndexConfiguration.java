@@ -17,12 +17,45 @@ package com.couchbase.lite;
 
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
-import com.couchbase.lite.internal.utils.Preconditions;
+import java.util.Arrays;
+import java.util.Locale;
 
 
 public class FullTextIndexConfiguration extends IndexConfiguration {
-    public FullTextIndexConfiguration(@NonNull String expression) {
-        super(IndexType.FULL_TEXT, Preconditions.assertNotNull(expression, "expression"));
+    private String textLanguage = Locale.getDefault().getLanguage();
+    private boolean ignoreDiacritics;
+
+    public FullTextIndexConfiguration(@NonNull String... expressions) {
+        super(IndexType.FULL_TEXT, Arrays.asList(expressions));
     }
+
+    /**
+     * The language code which is an ISO-639 language such as "en", "fr", etc.
+     * Setting the language code affects how word breaks and word stems are parsed.
+     * Without setting the value, the current locale's language will be used. Setting
+     * a null or "" value to disable the language features.
+     */
+    @NonNull
+    public FullTextIndexConfiguration setLanguage(@Nullable String language) {
+        this.textLanguage = language;
+        return this;
+    }
+
+    /**
+     * Set the true value to ignore accents/diacritical marks. The default value is false.
+     */
+    @NonNull
+    public FullTextIndexConfiguration ignoreAccents(boolean ignoreAccents) {
+        this.ignoreDiacritics = ignoreAccents;
+        return this;
+    }
+
+    @NonNull
+    @Override
+    String getLanguage() { return textLanguage; }
+
+    @Override
+    boolean isIgnoringDiacritics() { return ignoreDiacritics; }
 }
