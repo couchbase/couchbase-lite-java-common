@@ -135,7 +135,11 @@ public abstract class C4NativePeer implements AutoCloseable {
     protected final void setPeer(long peer) { setPeerInternal(peer); }
 
     // ??? questionable design
-    protected final long getPeerUnchecked() { return get(); }
+    protected final long getPeerUnchecked() {
+        final long peer = get();
+        if (peer == 0L) { Log.v(LogDomain.DATABASE, "Unchecked peer is 0", new Exception("peer is 0")); }
+        return peer;
+    }
 
     // ??? questionable design
     protected final long getPeer() {

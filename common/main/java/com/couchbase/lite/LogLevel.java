@@ -28,12 +28,12 @@ import com.couchbase.lite.internal.support.Log;
 public enum LogLevel {
 
     /**
-     * Debugging information. Only visible when CouchbaseLiteInternal.debugging() is true.
+     * Debugging information.
      */
     DEBUG,
 
     /**
-     * Used by core. Please do not use in platform coded.
+     * Low level logging.
      */
     VERBOSE,
 
