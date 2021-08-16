@@ -457,6 +457,35 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
+    public void testFullTextIndexConfig() throws JSONException, IOException, CouchbaseLiteException {
+        loadJSONResource("sentences.json");
+
+        final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense");
+        assertFalse(idxConfig.isIgnoringDiacritics());
+        assertEquals("en", idxConfig.getLanguage());
+
+        idxConfig.setLanguage("en-ca").ignoreAccents(true);
+        assertEquals("en-ca", idxConfig.getLanguage());
+        assertTrue(idxConfig.isIgnoringDiacritics());
+
+        baseTestDb.createIndex("sentence", idxConfig);
+
+        Query query = QueryBuilder
+            .select(SR_DOCID, SelectResult.property("sentence"))
+            .from(DataSource.database(baseTestDb))
+            .where(FullTextExpression.index("sentence").match("'Dummie woman'"))
+            .orderBy(Ordering.expression(FullTextFunction.rank("sentence")).descending());
+
+        int numRows = verifyQuery(
+            query,
+            (n, result) -> {
+                assertNotNull(result.getString(0));
+                assertNotNull(result.getString(1));
+            });
+        assertEquals(2, numRows);
+    }
+
+    @Test
     public void testOrderBy() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
 

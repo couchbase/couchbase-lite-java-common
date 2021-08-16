@@ -934,8 +934,8 @@ public class DatabaseTest extends BaseDbTest {
             assertEquals(nDocs, newDb.getCount());
 
             try (ResultSet rs = QueryBuilder.select(SelectResult.expression(Meta.id))
-                    .from(DataSource.database(newDb))
-                    .execute()) {
+                .from(DataSource.database(newDb))
+                .execute()) {
                 for (Result r: rs) {
                     String docID = r.getString(0);
                     assertNotNull(docID);
@@ -985,6 +985,21 @@ public class DatabaseTest extends BaseDbTest {
         assertEquals(4, baseTestDb.getIndexes().size());
 
         assertEquals(Arrays.asList("index1", "index2", "index3", "index4"), baseTestDb.getIndexes());
+    }
+
+    @Test
+    public void testCreateIndexWithConfig() throws CouchbaseLiteException {
+        assertEquals(0, baseTestDb.getIndexes().size());
+
+        baseTestDb.createIndex("index1", new ValueIndexConfiguration("firstName", "lastName"));
+        assertEquals(1, baseTestDb.getIndexes().size());
+
+        baseTestDb.createIndex(
+            "index2",
+            new FullTextIndexConfiguration("detail").ignoreAccents(true).setLanguage("es"));
+        assertEquals(2, baseTestDb.getIndexes().size());
+
+        assertEquals(Arrays.asList("index1", "index2"), baseTestDb.getIndexes());
     }
 
     @Test(expected = IllegalArgumentException.class)

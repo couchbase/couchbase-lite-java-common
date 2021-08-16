@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.couchbase.lite.internal.core.C4Document;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
