@@ -123,7 +123,7 @@ public abstract class C4Socket extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void completedReceive(long peer, long byteCount) {
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.receive @%x: %s", peer, socket);
+        Log.d(LOG_DOMAIN, "C4Socket.completedReceive @%x: %s", peer, socket);
 
         if (socket == null) {
             Log.w(LogDomain.NETWORK, "No socket for peer @%x! Receipt dropped!", peer);
@@ -218,7 +218,7 @@ public abstract class C4Socket extends C4NativePeer {
     }
 
     // !!! This should be re-written to use C4NativePeer
-    //     It should not pass a reference to this, to the native code
+    //     It should not pass a reference to <b>this</b>, to the native code
     //     and it should eliminate the vector holding GlobalRefs on the JNI side
     protected C4Socket(@NonNull String schema, @NonNull String host, int port, @NonNull String path, int framing) {
         setPeer(fromNative(this, schema, host, port, path, framing));
