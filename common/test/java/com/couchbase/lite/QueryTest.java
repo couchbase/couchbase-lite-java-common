@@ -490,7 +490,10 @@ public class QueryTest extends BaseQueryTest {
         loadJSONResource("names_100.json");
 
         Ordering.SortOrder order = Ordering.expression(Expression.property("name.first"));
-        testOrdered(order.ascending(), Comparator.naturalOrder());
+
+        // Don't replace this with Comparator.naturalOrder.
+        // it doesn't exist on older versions of Android
+        testOrdered(order.ascending(), (c1, c2) -> c1.compareTo(c2));
         testOrdered(order.descending(), String::compareTo);
     }
 
