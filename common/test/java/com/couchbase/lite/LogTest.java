@@ -498,7 +498,7 @@ public class LogTest extends BaseDbTest {
         assertEquals(fileLogger.getConfig(), new LogFileConfiguration(scratchDirPath + "/foo"));
     }
 
-    @FlakyTest(log={"Linux: 21/06/11"})
+    @FlakyTest(log = {"Linux: 21/06/11"})
     @Test
     public void testNonASCII() throws CouchbaseLiteException {
         String hebrew = "מזג האוויר נחמד היום"; // The weather is nice today.
