@@ -39,6 +39,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * Readonly version of the Document.
+ * Probably should be closeable.
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity"})
 public class Document implements DictionaryInterface, Iterable<String> {
@@ -67,7 +68,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
         throws CouchbaseLiteException {
         Preconditions.assertNotNull(database, "database");
 
-        // ??? c4Doc can be closed/freed?
         final C4Document c4Doc;
         try { c4Doc = database.getC4Document(id); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
@@ -99,6 +99,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @NonNull
     private Dictionary internalDict;
 
+    // ??? A single C4Document may be shared by multiple Documents/C4Documents.
+    // Don't even try to close it.
     @GuardedBy("lock")
     @Nullable
     private C4Document c4Document;

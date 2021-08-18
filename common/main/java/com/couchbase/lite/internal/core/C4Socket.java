@@ -110,7 +110,7 @@ public abstract class C4Socket extends C4NativePeer {
         }
 
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.write @%x: %s", peer, socket);
+        Log.d(LOG_DOMAIN, "C4Socket.write(%d) @%x: %s", allocatedData.length, peer, socket);
 
         if (socket == null) {
             Log.w(LogDomain.NETWORK, "No socket for peer @%x! Packet(%d) dropped!", peer, allocatedData.length);
@@ -123,7 +123,7 @@ public abstract class C4Socket extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void completedReceive(long peer, long byteCount) {
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.completedReceive @%x: %s", peer, socket);
+        Log.d(LOG_DOMAIN, "C4Socket.completedReceive(%d) @%x: %s", byteCount, peer, socket);
 
         if (socket == null) {
             Log.w(LogDomain.NETWORK, "No socket for peer @%x! Receipt dropped!", peer);
@@ -136,7 +136,7 @@ public abstract class C4Socket extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void requestClose(long peer, int status, @Nullable String message) {
         final C4Socket socket = getSocketForPeer(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.requestClose @%x: %s, (%d) '%s'", peer, socket, status, message);
+        Log.d(LOG_DOMAIN, "C4Socket.requestClose(%d) @%x: %s, '%s'", status, peer, socket, message);
 
         if (socket == null) {
             Log.w(LogDomain.NETWORK, "No socket for peer @%x! Close request dropped!", peer);
@@ -181,7 +181,7 @@ public abstract class C4Socket extends C4NativePeer {
             n = HANDLES_TO_SOCKETS.size();
         }
 
-        Log.d(LOG_DOMAIN, "Bind socket @%x to %s (%d)", peer, socket, n);
+        Log.d(LOG_DOMAIN, "Bind socket(%d) %s to @%x", n, socket, peer);
     }
 
     @Nullable
@@ -197,7 +197,7 @@ public abstract class C4Socket extends C4NativePeer {
             if (socket != null) { socket.releasePeer(); }
             n = HANDLES_TO_SOCKETS.size();
         }
-        Log.d(LOG_DOMAIN, "Unbind socket @%x to %s (%d)", peer, socket, n);
+        Log.d(LOG_DOMAIN, "Unbind socket(%d) %s from @%x", n, socket, peer);
     }
 
 
@@ -250,7 +250,7 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { opened(peer); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.opened @%x %s", peer, ((peer != 0) ? "" : "BAD PEER"));
+        Log.d(LOG_DOMAIN, "C4Socket.opened @%x: %s", peer, this);
     }
 
     protected final void gotHTTPResponse(int httpStatus, @Nullable byte[] responseHeadersFleece) {
@@ -259,7 +259,7 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { gotHTTPResponse(peer, httpStatus, responseHeadersFleece); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse @%x: %d %s", peer, httpStatus, ((peer != 0) ? "" : "BAD PEER"));
+        Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse(%d) @%x: %s", httpStatus, peer, this);
     }
 
     protected final void completedWrite(long byteCount) {
@@ -268,7 +268,7 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { completedWrite(peer, byteCount); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.completedWrite @%x: %d %s", peer, byteCount, ((peer != 0) ? "" : "BAD PEER"));
+        Log.d(LOG_DOMAIN, "C4Socket.completedWrite(%d) @%x: %s", byteCount, peer, this);
     }
 
     protected final void received(@NonNull byte[] data) {
@@ -277,7 +277,7 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { received(peer, data); }
         }
-        Log.d(LOG_DOMAIN, "C4Socket.received @%x: %d %s", peer, data.length, ((peer != 0) ? "" : "BAD PEER"));
+        Log.d(LOG_DOMAIN, "C4Socket.received(%d) @%x: %s", data.length, peer, this);
     }
 
     protected final void closeRequested(int status, String message) {
@@ -286,9 +286,7 @@ public abstract class C4Socket extends C4NativePeer {
             peer = getPeerUnchecked();
             if (peer != 0) { closeRequested(peer, status, message); }
         }
-        Log.d(
-            LOG_DOMAIN,
-            "C4Socket.closeRequested @%x: (%d) '%s' %s", peer, status, message, ((peer != 0) ? "" : "BAD PEER"));
+        Log.d(LOG_DOMAIN, "C4Socket.closeRequested(%d) @%x: %s, '%s'", status, peer, this, message);
     }
 
     protected final void closed(int errorDomain, int errorCode, String message) {
@@ -319,7 +317,7 @@ public abstract class C4Socket extends C4NativePeer {
             if (!closing && (peer != 0)) { closed(peer, domain, code, msg); }
             closing = true;
         }
-        Log.d(LOG_DOMAIN, "C4Socket.closed @%x: (%d,%d) '%s'", peer, domain, code, msg);
+        Log.d(LOG_DOMAIN, "C4Socket.closed(%d,%d) @%x: %s, '%s'", domain, code, peer, this, msg);
     }
 
     //-------------------------------------------------------------------------

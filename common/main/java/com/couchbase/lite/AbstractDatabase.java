@@ -1460,7 +1460,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     @GuardedBy("getDbLock()")
     private boolean saveConflicted(@NonNull Document document, boolean deleting)
         throws CouchbaseLiteException {
-
         final C4Document curDoc;
 
         try { curDoc = getC4Document(document.getId()); }
