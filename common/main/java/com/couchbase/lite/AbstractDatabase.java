@@ -497,18 +497,10 @@ abstract class AbstractDatabase extends BaseDatabase {
 
         synchronized (getDbLock()) {
             try {
-                if (getC4Document(id) == null) {
-                    throw new CouchbaseLiteException(
-                        "DocumentNotFound",
-                        CBLError.Domain.CBLITE,
-                        CBLError.Code.NOT_FOUND);
-                }
                 final long timestamp = getOpenC4DbLocked().getExpiration(id);
                 return (timestamp == 0) ? null : new Date(timestamp);
             }
-            catch (LiteCoreException e) {
-                throw CouchbaseLiteException.convertException(e);
-            }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
 
