@@ -485,6 +485,20 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(2, numRows);
     }
 
+    // Test courtesy of Jayahari Vavachan
+    @Test
+    public void testN1QLFTSQuery() throws IOException, CouchbaseLiteException, JSONException {
+        loadJSONResource("sentences.json");
+
+        baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
+
+        int numRows = verifyQuery(
+            baseTestDb.createQuery("SELECT _id FROM _default WHERE MATCH(sentence, 'Dummie woman')"),
+            (n, result) -> { assertNotNull(result.getString(0)); });
+
+        assertEquals(2, numRows);
+    }
+
     @Test
     public void testOrderBy() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
