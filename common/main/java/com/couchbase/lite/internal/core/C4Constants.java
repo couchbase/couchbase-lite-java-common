@@ -173,6 +173,7 @@ public final class C4Constants {
         private LiteCoreError() {}
 
         // @formatter:off
+        public static final int SUCCESS = 0;                 // Couchbase Lite Core error code (see below)
         public static final int ASSERTION_FAILED = 1;        // Internal assertion failure
         public static final int UNIMPLEMENTED = 2;           // Oops, an unimplemented API call
         public static final int UNSUPPORTED_ENCRYPTION = 3;  // Unsupported encryption algorithm
@@ -277,7 +278,7 @@ public final class C4Constants {
     ////////////////////////////////////
 
     // CloseCode, in domain NETWORK
-    // These codes start at 1000, so that they annot be confused with HTTP errors
+    // WebSocket close codes start at 1000, so that they cannot be confused with HTTP errors
     // (which are always less than 600)
     public static final class WebSocketError {
         private WebSocketError() {}

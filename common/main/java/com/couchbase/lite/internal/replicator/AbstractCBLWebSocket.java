@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.TrustManager;
@@ -190,11 +191,6 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
             }
         }
 
-        // NOTE: from CBLStatus.mm
-        // {kCFErrorHTTPConnectionLost,                {POSIXDomain, ECONNRESET}},
-        // {kCFURLErrorCannotConnectToHost,            {POSIXDomain, ECONNREFUSED}},
-        // {kCFURLErrorNetworkConnectionLost,          {POSIXDomain, ECONNRESET}},
-
         // OkHTTP callback, proxied to C4Socket
         // Remote connection failed
         // Invoked when a web socket has been closed due to an error reading from or writing to the network.
@@ -210,16 +206,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
                     return;
                 }
 
-                int httpStatus = response.code();
-                if (httpStatus == C4Constants.HttpError.SWITCH_PROTOCOL) {
-                    httpStatus = C4Constants.WebSocketError.PROTOCOL_ERROR;
-                }
-                else if ((httpStatus < C4Constants.HttpError.MULTIPLE_CHOICE)
-                    || (httpStatus >= C4Constants.WebSocketError.NORMAL)) {
-                    httpStatus = C4Constants.WebSocketError.POLICY_ERROR;
-                }
-
-                closeWithCode(httpStatus, response.message());
+                closeWithCode(response.code(), response.message());
             }
         }
     }
@@ -351,11 +338,11 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     public void close() {
         Log.d(TAG, "%s#External told to close: %s", this, uri);
         synchronized (getPeerLock()) {
-            if (!state.setState(State.CLOSE_REQUESTED)) {
+            if (state.setState(State.CLOSE_REQUESTED)) {
                 closeRequested(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
                 return;
             }
-            if (!state.setState(State.CLOSING)) {
+            if (state.setState(State.CLOSING)) {
                 closeWebSocket(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
                 return;
             }
@@ -485,12 +472,14 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     @GuardedBy("getPeerLock()")
     private void closeWithCode(int code, String reason) {
+        Log.v(TAG, "WebSocket CLOSED with code: " + code + "(" + reason + ")");
+
+        // success
         if (code == C4Constants.WebSocketError.NORMAL) {
-            closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
+            closed(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.SUCCESS, null);
             return;
         }
 
-        Log.i(TAG, "WebSocket CLOSED abnormally: " + code + "(" + reason + ")");
         closed(C4Constants.ErrorDomain.WEB_SOCKET, code, reason);
     }
 
@@ -505,6 +494,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
 
         if (handleClose(error)) { return; }
+
         // ??? this is a kludge to get this test to handle Android versioning,
         //  and still fit into this if-then-else chain.
         // ... which, in itself is a kludge: this implementation is incredibly fragile,
@@ -537,10 +527,15 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
             code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED;
         }
 
+        else if (error instanceof SSLException) {
+            domain = C4Constants.ErrorDomain.WEB_SOCKET;
+            code = C4Constants.WebSocketError.TLS_FAILURE;
+        }
+
         // default: no idea what happened.
         else {
             domain = C4Constants.ErrorDomain.WEB_SOCKET;
-            code = C4Constants.WebSocketError.PROTOCOL_ERROR;
+            code = C4Constants.WebSocketError.POLICY_ERROR;
         }
 
         closed(domain, code, error.toString());
