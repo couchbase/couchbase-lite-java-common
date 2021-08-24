@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.NonNull;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.Certificate;
