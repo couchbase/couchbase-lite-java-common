@@ -2803,18 +2803,10 @@ public class QueryTest extends BaseQueryTest {
         assertThrows(IllegalArgumentException.class, () -> Function.upper(null));
     }
 
-    @FlakyTest(log = {"Linux: 21/06/11", "Linux: 21/06/18", "Linux: 21/07/30"})
+    @FlakyTest(log = {"Linux: 21/06/11", "Linux: 21/06/18", "Linux: 21/07/30", "Linux: 21/08/24"})
     @Test
     public void testStringToMillis() throws CouchbaseLiteException {
         createDateDocs();
-
-        SelectResult[] selections = new SelectResult[6];
-        selections[0] = (SelectResult.expression(Function.stringToMillis(Expression.property("local"))));
-        selections[1] = (SelectResult.expression(Function.stringToMillis(Expression.property("JST"))));
-        selections[2] = (SelectResult.expression(Function.stringToMillis(Expression.property("JST2"))));
-        selections[3] = (SelectResult.expression(Function.stringToMillis(Expression.property("PST"))));
-        selections[4] = (SelectResult.expression(Function.stringToMillis(Expression.property("PST2"))));
-        selections[5] = (SelectResult.expression(Function.stringToMillis(Expression.property("UTC"))));
 
         ArrayList<Number> expectedJST = new ArrayList<>();
         expectedJST.add(null);
@@ -2840,12 +2832,10 @@ public class QueryTest extends BaseQueryTest {
         expectedUTC.add(499137690550L);
         expectedUTC.add(499137690555L);
 
-        Calendar calendar = new GregorianCalendar();
-        TimeZone timeZone = calendar.getTimeZone();
-        long offset = timeZone.getOffset(499132800000L);
+        long offset = new GregorianCalendar().getTimeZone().getOffset(499132800000L);
+        Report.log("Local offset: %d", offset);
         ArrayList<Number> expectedLocal = new ArrayList<>();
         expectedLocal.add(499132800000L - offset);
-
         boolean first = true;
         for (Number entry: expectedUTC) {
             if (first) {
@@ -2855,7 +2845,13 @@ public class QueryTest extends BaseQueryTest {
             expectedLocal.add((long) entry - offset);
         }
 
-        Query query = QueryBuilder.select(selections)
+        Query query = QueryBuilder.select(
+            SelectResult.expression(Function.stringToMillis(Expression.property("local"))),
+            SelectResult.expression(Function.stringToMillis(Expression.property("JST"))),
+            SelectResult.expression(Function.stringToMillis(Expression.property("JST2"))),
+            SelectResult.expression(Function.stringToMillis(Expression.property("PST"))),
+            SelectResult.expression(Function.stringToMillis(Expression.property("PST2"))),
+            SelectResult.expression(Function.stringToMillis(Expression.property("UTC"))))
             .from(DataSource.database(baseTestDb))
             .orderBy(Ordering.property("local").ascending());
 
@@ -2876,13 +2872,13 @@ public class QueryTest extends BaseQueryTest {
     public void testStringToUTC() throws CouchbaseLiteException, ParseException {
         createDateDocs();
 
-        SelectResult[] selections = new SelectResult[6];
-        selections[0] = (SelectResult.expression(Function.stringToUTC(Expression.property("local"))));
-        selections[1] = (SelectResult.expression(Function.stringToUTC(Expression.property("JST"))));
-        selections[2] = (SelectResult.expression(Function.stringToUTC(Expression.property("JST2"))));
-        selections[3] = (SelectResult.expression(Function.stringToUTC(Expression.property("PST"))));
-        selections[4] = (SelectResult.expression(Function.stringToUTC(Expression.property("PST2"))));
-        selections[5] = (SelectResult.expression(Function.stringToUTC(Expression.property("UTC"))));
+        ArrayList<String> expectedLocal = new ArrayList<>();
+        expectedLocal.add(localToUTC("yyyy-MM-dd", "1985-10-26"));
+        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm", "1985-10-26 01:21"));
+        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss", "1985-10-26 01:21:30"));
+        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.500"));
+        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.550"));
+        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.555"));
 
         ArrayList<String> expectedJST = new ArrayList<>();
         expectedJST.add(null);
@@ -2908,15 +2904,13 @@ public class QueryTest extends BaseQueryTest {
         expectedUTC.add("1985-10-26T01:21:30.550Z");
         expectedUTC.add("1985-10-26T01:21:30.555Z");
 
-        ArrayList<String> expectedLocal = new ArrayList<>();
-        expectedLocal.add(localToUTC("yyyy-MM-dd", "1985-10-26"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm", "1985-10-26 01:21"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss", "1985-10-26 01:21:30"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.500"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.550"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.555"));
-
-        Query query = QueryBuilder.select(selections)
+        Query query = QueryBuilder.select(
+            SelectResult.expression(Function.stringToUTC(Expression.property("local"))),
+            SelectResult.expression(Function.stringToUTC(Expression.property("JST"))),
+            SelectResult.expression(Function.stringToUTC(Expression.property("JST2"))),
+            SelectResult.expression(Function.stringToUTC(Expression.property("PST"))),
+            SelectResult.expression(Function.stringToUTC(Expression.property("PST2"))),
+            SelectResult.expression(Function.stringToUTC(Expression.property("UTC"))))
             .from(DataSource.database(baseTestDb))
             .orderBy(Ordering.property("local").ascending());
 
