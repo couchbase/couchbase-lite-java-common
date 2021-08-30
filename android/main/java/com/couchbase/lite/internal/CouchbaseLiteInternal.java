@@ -31,6 +31,7 @@ import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -173,6 +174,7 @@ public final class CouchbaseLiteInternal {
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }
 
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     @VisibleForTesting
     @NonNull
     public static Map<String, String> loadErrorMessages(@NonNull Context ctxt) {
