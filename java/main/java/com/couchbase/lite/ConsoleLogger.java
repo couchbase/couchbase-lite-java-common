@@ -35,7 +35,6 @@ public class ConsoleLogger extends AbstractConsoleLogger {
     private static final ThreadLocal<DateTimeFormatter> TS_FORMAT
         = ThreadLocal.withInitial(() -> DateTimeFormatter.ofPattern("MM-dd HH:mm:ss.SSS"));
 
-
     @NonNull
     public static PrintStream getLogStream(@NonNull LogLevel level) {
         return ((CouchbaseLiteInternal.debugging()) || (LogLevel.WARNING.compareTo(level) > 0))
@@ -53,7 +52,12 @@ public class ConsoleLogger extends AbstractConsoleLogger {
     }
 
     @Override
-    public void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+        super.log(level, domain, message);
+    }
+
+    @Override
+    protected void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         getLogStream(level).println(formatLog(level, domain.name(), message));
     }
 }

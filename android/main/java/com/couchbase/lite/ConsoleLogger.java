@@ -23,6 +23,12 @@ import android.util.Log;
  * A class that sends log messages to Android's system log, available via 'logcat'.
  */
 public final class ConsoleLogger extends AbstractConsoleLogger {
+
+    @Override
+    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+        super.log(level, domain, message);
+    }
+
     @Override
     protected void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         final String tag = "CouchbaseLite/" + domain.toString();
