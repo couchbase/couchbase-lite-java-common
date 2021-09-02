@@ -143,7 +143,7 @@ public final class Blob implements FLEncodable {
 
             try {
                 final byte[] bytes = blobStream.read(1);
-                return (bytes.length <= 0) ? -1 : bytes[0];
+                return (bytes.length <= 0) ? -1 : (((int) bytes[0]) & 0xff);
             }
             catch (LiteCoreException e) {
                 throw new IOException(e);

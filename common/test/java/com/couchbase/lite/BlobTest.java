@@ -441,6 +441,23 @@ public class BlobTest extends BaseDbTest {
         assertNull(baseTestDb.getBlob(props));
     }
 
+    // https://issues.couchbase.com/browse/CBL-2320
+    @Test
+    public void testBlobStreamReadNotNegative() throws CouchbaseLiteException, IOException {
+        MutableDocument mDoc = new MutableDocument("blobDoc");
+        mDoc.setBlob(
+            "blob",
+            new Blob("application/octet-stream", new byte[] {-1, (byte) 255, (byte) 0xf0, (byte) 0xa0}));
+        saveDocInBaseTestDb(mDoc);
+
+        InputStream blobStream = baseTestDb.getDocument("blobDoc").getBlob("blob").getContentStream();
+
+        assertEquals(255, blobStream.read());
+        assertEquals(255, blobStream.read());
+        assertEquals(0xf0, blobStream.read());
+        assertEquals(0xa0, blobStream.read());
+    }
+
     private Map<String, Object> getPropsForSavedBlob() {
         Blob blob = makeBlob();
         baseTestDb.saveBlob(blob);
