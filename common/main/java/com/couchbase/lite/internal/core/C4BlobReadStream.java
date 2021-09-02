@@ -16,7 +16,6 @@
 package com.couchbase.lite.internal.core;
 
 import android.support.annotation.CallSuper;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
@@ -43,9 +42,6 @@ public class C4BlobReadStream extends C4NativePeer {
      *
      * @param maxBytesToRead The maximum number of bytes to read to the buffer
      */
-    @NonNull
-    public byte[] read(long maxBytesToRead) throws LiteCoreException { return read(getPeer(), maxBytesToRead); }
-
     public int read(byte[] b, int offset, long maxBytesToRead) throws LiteCoreException {
         return read(getPeer(), b, offset, maxBytesToRead);
     }
@@ -87,9 +83,6 @@ public class C4BlobReadStream extends C4NativePeer {
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
-    @NonNull
-    private static native byte[] read(long peer, long maxBytesToRead) throws LiteCoreException;
-
     private static native int read(long peer, byte[] b, int offset, long maxBytesToRead) throws LiteCoreException;
 
     private static native long getLength(long peer) throws LiteCoreException;

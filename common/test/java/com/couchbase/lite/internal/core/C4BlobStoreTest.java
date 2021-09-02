@@ -179,6 +179,7 @@ public class C4BlobStoreTest extends C4BaseTest {
     @Test
     public void testReadBlobWithStream() throws LiteCoreException {
         String blob = "This is a blob to store in the store!";
+        byte[] buf = new byte[6];
 
         // Add blob to the store:
         try (C4BlobKey key = blobStore.create(blob.getBytes(StandardCharsets.UTF_8))) {
@@ -191,19 +192,17 @@ public class C4BlobStoreTest extends C4BaseTest {
 
                 // Read it back, 6 bytes at a time:
                 StringBuilder readBack = new StringBuilder();
-                byte[] bytes;
-                do {
-                    bytes = stream.read(6);
-                    readBack.append(new String(bytes));
+
+                int n;
+                while ((n = stream.read(buf, 0, buf.length)) > 0) {
+                    readBack.append(new String(buf, 0, n, StandardCharsets.UTF_8));
                 }
-                while (bytes.length == 6);
                 assertEquals(blob, readBack.toString());
 
                 // Try seeking:
                 stream.seek(10);
-                bytes = stream.read(4);
-                assertEquals(4, bytes.length);
-                assertEquals("blob", new String(bytes));
+                assertEquals(4, stream.read(buf, 0, 4));
+                assertEquals("blob", new String(buf, 0, 4, StandardCharsets.UTF_8));
             }
         }
     }
@@ -241,7 +240,8 @@ public class C4BlobStoreTest extends C4BaseTest {
                         Report.log(LogLevel.VERBOSE, "Reading line " + line + " at offset " + (18 * line));
                         String buf = String.format(Locale.ENGLISH, "This is line %03d.\n", line);
                         reader.seek(18 * line);
-                        byte[] readBuf = reader.read(18);
+                        byte[] readBuf = new byte[18];
+                        reader.read(readBuf, 0, 18);
                         assertNotNull(readBuf);
                         assertEquals(18, readBuf.length);
                         assertArrayEquals(readBuf, buf.getBytes(StandardCharsets.UTF_8));

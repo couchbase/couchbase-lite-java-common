@@ -89,10 +89,13 @@ public final class Blob implements FLEncodable {
     // Types
     //---------------------------------------------
 
+    // This class is nothing like thread safe
     static final class BlobInputStream extends InputStream {
+        private final byte[] buf = new byte[1];
         private C4BlobKey key;
         private C4BlobStore store;
         private C4BlobReadStream blobStream;
+
 
         BlobInputStream(@NonNull C4BlobKey key, @NonNull C4BlobStore store) throws LiteCoreException {
             Preconditions.assertNotNull(key, "key");
@@ -141,13 +144,11 @@ public final class Blob implements FLEncodable {
         public int read() throws IOException {
             if (key == null) { throw new IOException("Stream is closed"); }
 
-            try {
-                final byte[] bytes = blobStream.read(1);
-                return (bytes.length <= 0) ? -1 : bytes[0];
-            }
-            catch (LiteCoreException e) {
-                throw new IOException(e);
-            }
+            if (read(buf, 0, buf.length) <= 0) { return -1; }
+
+            final int b = (((int) buf[0]) & 0xff);
+            buf[0] = 0;
+            return b;
         }
 
         @Override
@@ -158,7 +159,6 @@ public final class Blob implements FLEncodable {
             Preconditions.assertNotNull(buf, "buffer");
             if (off < 0) { throw new IndexOutOfBoundsException("Read offset < 0: " + off); }
             if (len < 0) { throw new IndexOutOfBoundsException("Read length < 0: " + len); }
-
             if (off + len > buf.length) {
                 throw new IndexOutOfBoundsException(
                     "off + len > buf.length (" + off + ", " + len + ", " + buf.length + ")");
