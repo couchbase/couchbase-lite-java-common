@@ -42,7 +42,11 @@ class ChangeListenerToken<T> implements ListenerToken {
 
     public void setKey(@Nullable Object key) { this.key = key; }
 
-    void postChange(@Nullable T change) {
+    @NonNull
+    @Override
+    public String toString() { return "ChangeListenerToken{" + key + ", " + listener + ", " + executor + "}"; }
+
+    void postChange(@NonNull T change) {
         final Executor exec = (executor != null)
             ? executor
             : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();

@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.utils;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,18 +33,15 @@ public final class FileUtils {
     private FileUtils() { }
 
     @NonNull
-    public static File verifyDir(@NonNull String dirPath) {
-        Preconditions.assertNotNull(dirPath, "dirPath");
-        return verifyDir(new File(dirPath));
+    public static File verifyDir(@Nullable String dirPath) {
+        return verifyDir(new File(Preconditions.assertNotNull(dirPath, "directory path")));
     }
 
     @NonNull
-    public static File verifyDir(@NonNull File dir) {
-        Preconditions.assertNotNull(dir, "directory");
-
+    public static File verifyDir(@Nullable File dir) {
         IOException err = null;
         try {
-            dir = dir.getCanonicalFile();
+            dir = Preconditions.assertNotNull(dir, "directory").getCanonicalFile();
             if ((dir.exists() && dir.isDirectory()) || dir.mkdirs()) { return dir; }
         }
         catch (IOException e) { err = e; }
@@ -97,6 +95,12 @@ public final class FileUtils {
             }
         }
         return fileOrDirectory.setReadable(readable) && fileOrDirectory.setWritable(writable);
+    }
+
+    @NonNull
+    public static File getCurrentDirectory() {
+        try { return new File("").getCanonicalFile(); }
+        catch (IOException e) { throw new IllegalStateException("Can't open current directory", e); }
     }
 
     private static boolean deleteRecursive(File fileOrDirectory) {

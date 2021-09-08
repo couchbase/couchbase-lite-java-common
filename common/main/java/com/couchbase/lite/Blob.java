@@ -144,10 +144,15 @@ public final class Blob implements FLEncodable {
         public int read() throws IOException {
             if (key == null) { throw new IOException("Stream is closed"); }
 
+            // Jens says:
+            // LiteCore’s stream API is blocking.
+            // It always returns one or more bytes, until you hit EOF.
+            // (It’s always reading from the filesystem, so the latency should be pretty low.)
             if (read(buf, 0, buf.length) <= 0) { return -1; }
 
             final int b = (((int) buf[0]) & 0xff);
             buf[0] = 0;
+
             return b;
         }
 

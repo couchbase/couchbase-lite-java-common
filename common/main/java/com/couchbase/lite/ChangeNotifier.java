@@ -34,7 +34,6 @@ class ChangeNotifier<T> {
     @NonNull
     ChangeListenerToken<T> addChangeListener(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
         Preconditions.assertNotNull(listener, "listener");
-
         synchronized (lock) {
             final ChangeListenerToken<T> token = new ChangeListenerToken<>(executor, listener);
             listenerTokens.add(token);
@@ -45,18 +44,16 @@ class ChangeNotifier<T> {
     @SuppressWarnings("SuspiciousMethodCalls")
     int removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
-
         synchronized (lock) {
             listenerTokens.remove(token);
             return listenerTokens.size();
         }
     }
 
-    void postChange(T change) {
-        if (change == null) { throw new IllegalArgumentException("change is null"); }
-
+    void postChange(@NonNull T change) {
+        Preconditions.assertNotNull(change, "change");
         synchronized (lock) {
-            for (ChangeListenerToken<T> token : listenerTokens) { token.postChange(change); }
+            for (ChangeListenerToken<T> token: listenerTokens) { token.postChange(change); }
         }
     }
 }

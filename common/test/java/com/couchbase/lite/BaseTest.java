@@ -127,8 +127,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     protected final String getScratchDirectoryPath(@NonNull String name) {
         try {
-            String path = FileUtils.verifyDir(new File(CouchbaseLiteInternal.getScratchDir().getCanonicalFile(), name))
-                .getCanonicalPath();
+            String path = FileUtils.verifyDir(new File(getTmpDir(), name)).getCanonicalPath();
             SCRATCH_DIRS.add(path);
             return path;
         }

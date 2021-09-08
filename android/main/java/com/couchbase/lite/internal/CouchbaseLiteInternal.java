@@ -72,7 +72,6 @@ public final class CouchbaseLiteInternal {
     private static volatile boolean debugging;
 
     private static volatile File rootDir;
-    private static volatile File scratchDir;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
@@ -92,8 +91,7 @@ public final class CouchbaseLiteInternal {
 
         Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
 
-        CouchbaseLiteInternal.rootDir = Preconditions.assertNotNull(FileUtils.verifyDir(rootDir), "rootDir");
-        CouchbaseLiteInternal.scratchDir = Preconditions.assertNotNull(FileUtils.verifyDir(scratchDir), "scratchDir");
+        CouchbaseLiteInternal.rootDir = FileUtils.verifyDir(rootDir);
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
@@ -101,7 +99,7 @@ public final class CouchbaseLiteInternal {
 
         Log.initLogging(loadErrorMessages(ctxt));
 
-        setC4TmpDirPath(scratchDir);
+        setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
 
         MValue.registerDelegate(mValueDelegate);
     }
@@ -149,15 +147,6 @@ public final class CouchbaseLiteInternal {
 
     @NonNull
     public static String getRootDirPath() { return rootDir.getAbsolutePath(); }
-
-    @NonNull
-    public static File getScratchDir() {
-        requireInit("Can't create Scratch path");
-        return scratchDir;
-    }
-
-    @NonNull
-    public static String getScratchDirPath() { return scratchDir.getAbsolutePath(); }
 
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }

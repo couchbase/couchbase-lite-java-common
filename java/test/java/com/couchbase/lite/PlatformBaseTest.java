@@ -34,6 +34,7 @@ import com.couchbase.lite.internal.utils.FileUtils;
  */
 public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Java";
+    public static final String SCRATCH_DIR_NAME = "cbl_test_scratch";
 
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%&'()_+{}][=-.,;'ABCDEabcde";
 
@@ -43,10 +44,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
     private static LogFileConfiguration logConfig;
-
     static { CouchbaseLite.init(true); }
-
-
     // set up the file logger...
     @Override
     public final void setupPlatform() {
@@ -72,6 +70,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
         final ConsoleLogger consoleLogger = logger.getConsole();
         consoleLogger.setLevel(LogLevel.DEBUG);
         consoleLogger.setDomains(LogDomain.ALL_DOMAINS);
+    }
+
+    @Override
+    public final File getTmpDir() {
+        return FileUtils.verifyDir(new File(FileUtils.getCurrentDirectory(), SCRATCH_DIR_NAME));
     }
 
     @Override

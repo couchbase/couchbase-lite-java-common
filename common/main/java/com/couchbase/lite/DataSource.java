@@ -91,13 +91,6 @@ public class DataSource {
     @NonNull
     Object getSource() { return this.source; }
 
-    @Nullable
-    String getColumnName() {
-        if (alias != null) { return alias; }
-
-        return (!(source instanceof Database)) ? null : ((Database) source).getName();
-    }
-
     @NonNull
     Map<String, Object> asJSON() {
         final Map<String, Object> json = new HashMap<>();

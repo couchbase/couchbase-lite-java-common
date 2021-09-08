@@ -60,7 +60,6 @@ public final class CouchbaseLiteInternal {
     private static volatile boolean debugging;
 
     private static volatile File rootDir;
-    private static volatile File scratchDir;
 
     public static void init(
         @NonNull MValue.Delegate mValueDelegate,
@@ -74,16 +73,16 @@ public final class CouchbaseLiteInternal {
 
         Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
 
-        CouchbaseLiteInternal.rootDir = Preconditions.assertNotNull(FileUtils.verifyDir(rootDir), "rootDir");
-        CouchbaseLiteInternal.scratchDir = Preconditions.assertNotNull(FileUtils.verifyDir(scratchDir), "scratchDir");
+        CouchbaseLiteInternal.rootDir = FileUtils.verifyDir(rootDir);
+        final File tmpDir = FileUtils.verifyDir(scratchDir);
 
-        NativeLibrary.load(scratchDir);
+        NativeLibrary.load(tmpDir);
 
         C4Base.debug(debugging);
 
         Log.initLogging(loadErrorMessages());
 
-        setC4TmpDirPath(scratchDir);
+        setC4TmpDirPath(tmpDir);
 
         MValue.registerDelegate(mValueDelegate);
     }
@@ -115,15 +114,6 @@ public final class CouchbaseLiteInternal {
 
     @NonNull
     public static String getRootDirPath() { return rootDir.getAbsolutePath(); }
-
-    @NonNull
-    public static File getScratchDir() {
-        requireInit("Can't create Scratch path");
-        return scratchDir;
-    }
-
-    @NonNull
-    public static String getScratchDirPath() { return scratchDir.getAbsolutePath(); }
 
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }

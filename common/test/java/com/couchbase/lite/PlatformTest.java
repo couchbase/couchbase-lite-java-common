@@ -18,6 +18,7 @@ package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
 
+import java.io.File;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
@@ -40,6 +41,9 @@ public interface PlatformTest {
 
     /* initialize the platform */
     void setupPlatform();
+
+    /* get a scratch directory */
+    File getTmpDir();
 
     /* Reload the cross-platform error messages. */
     void reloadStandardErrorMessages();

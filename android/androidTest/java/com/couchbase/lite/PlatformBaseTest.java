@@ -19,6 +19,7 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.test.InstrumentationRegistry;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.FileUtils;
 
 
 /**
@@ -37,6 +39,7 @@ import com.couchbase.lite.internal.support.Log;
  */
 public abstract class PlatformBaseTest implements PlatformTest {
     public static final String PRODUCT = "Android";
+    public static final String SCRATCH_DIR_NAME = "cbl_test_scratch";
 
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%^&()_+{}][=-.,;'12345ABCDEabcde";
 
@@ -55,21 +58,25 @@ public abstract class PlatformBaseTest implements PlatformTest {
             android.util.Log.w("TEST", "Failed adding to chatty whitelist");
         }
     }
-
     @Override
-    public void setupPlatform() {
+    public final void setupPlatform() {
         final ConsoleLogger console = Database.log.getConsole();
         console.setLevel(LogLevel.DEBUG);
         console.setDomains(LogDomain.ALL_DOMAINS);
     }
 
     @Override
-    public void reloadStandardErrorMessages() {
+    public final File getTmpDir() {
+        return FileUtils.verifyDir(InstrumentationRegistry.getTargetContext().getExternalFilesDir(SCRATCH_DIR_NAME));
+    }
+
+    @Override
+    public final void reloadStandardErrorMessages() {
         Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
     }
 
     @Override
-    public AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
+    public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
         return new AndroidExecutionService(executor);
     }
 
