@@ -24,16 +24,45 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
 
 public final class CouchbaseLite {
-    // Singleton
+    // Utility class
     private CouchbaseLite() {}
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     * <p>
+     * This method expects <code>Context.getExternalFilesDir(...)</code> to return a non-null value
+     * and will throw an <code>IllegalStateException</code> if it does not.
+     * On the rare device on which that occurs, you may want to do something like this:
+     * <code>
+     * try { init(); }
+     * catch (IllegalStateException e) {
+     *     final File rootDir = ctxt.getFilesDir();
+     *     init(false, rootDIr, new File(rootDir, "cbl_scratch"));
+     * }
+     * </code>
+     *
+     * @param ctxt the ApplicationContext.
+     * @throws IllegalStateException on initialization failure
      */
     public static void init(@NonNull Context ctxt) { init(ctxt, BuildConfig.CBL_DEBUG); }
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     * <p>
+     * This method expects <code>Context.getExternalFilesDir(...)</code> to return a non-null value
+     * and will throw an <code>IllegalStateException</code> if it does not.
+     * On the rare device on which that occurs, you may want to do something like this:
+     * <code>
+     * try { init(); }
+     * catch (IllegalStateException e) {
+     *     final File rootDir = ctxt.getFilesDir();
+     *     init(false, rootDIr, new File(rootDir, "cbl_scratch"));
+     * }
+     * </code>
+     *
+     * @param ctxt the ApplicationContext.
+     * @param debug true to enable debugging
+     * @throws IllegalStateException on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug) {
         init(ctxt, debug, ctxt.getFilesDir(), ctxt.getExternalFilesDir(CouchbaseLiteInternal.SCRATCH_DIR_NAME));
@@ -45,11 +74,12 @@ public final class CouchbaseLite {
      * Use this version with great caution.
      *
      * @param ctxt       Application context
-     * @param debug      true if debugging
-     * @param rootDbDir  default directory for databases
+     * @param debug      to enable debugging
+     * @param rootDir    default directory for databases
      * @param scratchDir scratch directory for SQLite
+     * @throws IllegalStateException on initialization failure
      */
-    public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDbDir, @NonNull File scratchDir) {
-        CouchbaseLiteInternal.init(new MValueDelegate(), debug, rootDbDir, scratchDir, ctxt);
+    public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
+        CouchbaseLiteInternal.init(new MValueDelegate(), debug, rootDir, scratchDir, ctxt);
     }
 }

@@ -59,13 +59,17 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @GuardedBy("getDbLock()")
     private boolean isAllEnumerated;
 
+    // ??? Nasty hack for LiveQuery
     @GuardedBy("getDbLock()")
-    private boolean uncloseable;
+    private boolean retained;
+    @GuardedBy("getDbLock()")
+    private boolean closed;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
 
+    // This object is the sole owner of the c4enum passed as the second argument.
     ResultSet(
         @NonNull AbstractQuery query,
         @Nullable C4QueryEnumerator c4enum,
@@ -151,13 +155,28 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @Override
     public void close() {
         synchronized (getDbLock()) {
-            if (!uncloseable) {
+            closed = true;
+            if (!retained) {
                 forceClose();
                 return;
             }
         }
+
         // Make a guess about why this is retained...
-        Log.i(LogDomain.QUERY, "Attempt to close a retained ResultSet.  Do not close the Results from a LiveQuery");
+        Log.i(LogDomain.QUERY, "Attempt to close the ResultSet from a LiveQuery");
+    }
+
+    //---------------------------------------------
+    // Protected access
+    //---------------------------------------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            // ??? Hail Mary: no lock, no synchronization...
+            if (c4enum != null) { c4enum.close(); }
+        }
+        finally { super.finalize(); }
     }
 
     //---------------------------------------------
@@ -166,7 +185,14 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     // An ugly little hack for LiveQueries
     void retain() {
-        synchronized (getDbLock()) { uncloseable = true; }
+        synchronized (getDbLock()) { retained = true; }
+    }
+
+    void release() {
+        synchronized (getDbLock()) {
+            retained = false;
+            if (closed) { forceClose(); }
+        }
     }
 
     void forceClose() {

@@ -7,13 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/*
- * Class:     com_couchbase_lite_internal_core_C4BlobReadStream
- * Method:    read
- * Signature: (JJ)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4BlobReadStream_read__JJ
-  (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4BlobReadStream

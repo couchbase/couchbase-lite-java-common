@@ -18,15 +18,18 @@ package com.couchbase.lite;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
 public class LiveQueryTest extends BaseDbTest {
     private static final String KEY = "number";
+    private static final long SLOP_MS = 20;
 
     private volatile Query globalQuery;
     private volatile CountDownLatch globalLatch;
@@ -115,7 +118,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         // There should be two callbacks:
         //  - immediately on registration
-        //  - after LIVE_QUERY_UPDATE_INTERVAL_MS when the change gets noticed.
+        //  - after LiveQuery.UPDATE_INTERVAL_MS when the change gets noticed.
         final long[] times = new long[] {1, System.currentTimeMillis(), 0, 0};
         ListenerToken token = query.addChangeListener(
             testSerialExecutor,
@@ -125,21 +128,22 @@ public class LiveQueryTest extends BaseDbTest {
                 times[n] = System.currentTimeMillis();
             });
 
-        // give it a few ms to deliver the first notification
-        Thread.sleep(50);
-
-        createDocNumbered(12);
-        createDocNumbered(13);
-        createDocNumbered(14);
-        createDocNumbered(15);
-        createDocNumbered(16);
-
         try {
-            Thread.sleep(4 * LiveQuery.LIVE_QUERY_UPDATE_INTERVAL_MS);
+
+            // give it a few ms to deliver the first notification
+            Thread.sleep(SLOP_MS);
+
+            createDocNumbered(12);
+            createDocNumbered(13);
+            createDocNumbered(14);
+            createDocNumbered(15);
+            createDocNumbered(16);
+
+            Thread.sleep(LiveQuery.UPDATE_INTERVAL_MS + SLOP_MS);
 
             assertEquals(3, times[0]);
-            assertTrue(times[2] - times[1] < 200);
-            assertTrue(times[3] - times[1] > 200);
+            assertTrue(times[2] - times[1] < LiveQuery.UPDATE_INTERVAL_MS);
+            assertTrue(times[3] - times[1] > LiveQuery.UPDATE_INTERVAL_MS);
         }
         finally {
             query.removeChangeListener(token);
@@ -201,6 +205,50 @@ public class LiveQueryTest extends BaseDbTest {
         }
         finally {
             globalQuery.removeChangeListener(globalToken);
+        }
+    }
+
+    @Test
+    public void testLiveQueryRefresh() throws CouchbaseLiteException, InterruptedException {
+        final AtomicReference<CountDownLatch> latchHolder = new AtomicReference<>();
+        final AtomicReference<List<Result>> resultsHolder = new AtomicReference<>();
+
+        createDocNumbered(10);
+
+        final Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property(KEY).greaterThan(Expression.intValue(0)));
+
+        latchHolder.set(new CountDownLatch(1));
+        ListenerToken token = query.addChangeListener(
+            testSerialExecutor,
+            change -> {
+                resultsHolder.set(change.getResults().allResults());
+                latchHolder.get().countDown();
+            }
+        );
+
+        try {
+            // this update should happen nearly instantaneously
+            assertTrue(latchHolder.get().await(SLOP_MS, TimeUnit.MILLISECONDS));
+            assertEquals(1, resultsHolder.get().size());
+
+            // adding this document will trigger the query but since it does not meet the query
+            // criteria, it will not produce a new result. The listener should not be called.
+            // Wait for 2 full update intervals and a little bit more.
+            latchHolder.set(new CountDownLatch(1));
+            createDocNumbered(0);
+            assertFalse(latchHolder.get().await((2 * LiveQuery.UPDATE_INTERVAL_MS) + SLOP_MS, TimeUnit.MILLISECONDS));
+
+            // adding this document should cause a call to the listener in not much more than an update interval
+            latchHolder.set(new CountDownLatch(1));
+            createDocNumbered(11);
+            assertTrue(latchHolder.get().await(LiveQuery.UPDATE_INTERVAL_MS + SLOP_MS, TimeUnit.MILLISECONDS));
+            assertEquals(2, resultsHolder.get().size());
+        }
+        finally {
+            query.removeChangeListener(token);
         }
     }
 

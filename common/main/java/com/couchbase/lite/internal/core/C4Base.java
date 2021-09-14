@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
@@ -30,7 +31,7 @@ public final class C4Base {
 
     public static native void debug(boolean debugging);
 
-    public static native void setTempDir(String tempDir) throws LiteCoreException;
+    public static native void setTempDir(@NonNull String tempDir) throws LiteCoreException;
 
     @Nullable
     public static native String getMessage(int domain, int code, int internalInfo);

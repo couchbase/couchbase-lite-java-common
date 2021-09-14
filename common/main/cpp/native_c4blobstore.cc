@@ -269,27 +269,6 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_freeStore(JNIEnv *env, jclass 
 /*
  * Class:     com_couchbase_lite_internal_core_C4BlobReadStream
  * Method:    read
- * Signature: (JJ)[B
- */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4BlobReadStream_read__JJ(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jstream,
-        jlong jsize) {
-    C4Error error = {};
-    char *buff = new char[(size_t) jsize];
-    size_t read = c4stream_read((C4ReadStream *) jstream,
-                                buff,
-                                (size_t) jsize,
-                                &error);
-    C4Slice s = {buff, read};
-    return toJByteArray(env, s);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4BlobReadStream
- * Method:    read
  * Signature: (J[BIJ)I
  */
 JNIEXPORT jint JNICALL
@@ -308,10 +287,7 @@ Java_com_couchbase_lite_internal_core_C4BlobReadStream_read__J_3BIJ(
 
     jbyte *buff = env->GetByteArrayElements(buffer, nullptr);
 
-    size_t read = c4stream_read((C4ReadStream *) jstream,
-                                buff + offset,
-                                (size_t) jsize,
-                                &error);
+    size_t read = c4stream_read((C4ReadStream *) jstream, buff + offset, (size_t) jsize, &error);
 
     env->ReleaseByteArrayElements(buffer, buff, 0);
 

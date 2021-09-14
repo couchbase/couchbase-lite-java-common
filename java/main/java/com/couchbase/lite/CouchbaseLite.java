@@ -18,27 +18,38 @@ package com.couchbase.lite;
 import android.support.annotation.NonNull;
 
 import java.io.File;
-import java.io.IOException;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.FileUtils;
 
 
 public final class CouchbaseLite {
-    // Singleton
-    private CouchbaseLite() {}
+    // Utility class
+    private CouchbaseLite() { }
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     * <p>
+     * This method expects the current directory to be writeable
+     * and will throw an <code>IllegalStateException</code> if it is not.
+     * Use <code>init(boolean, File, File)</code> to specify alternative root and scratch directories.
+     *
+     * @throws IllegalStateException on initialization failure
      */
     public static void init() { init(false); }
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     * <p>
+     * This method expects the current directory to be writeable
+     * and will throw an <code>IllegalStateException</code> if it is not.
+     * Use <code>init(boolean, File, File)</code> to specify alternative root and scratch directories.
+     *
+     * @param debug true if debugging
+     * @throws IllegalStateException on initialization failure
      */
     public static void init(boolean debug) {
-        final File curDir;
-        try { curDir = new File("").getCanonicalFile(); }
-        catch (IOException e) { throw new IllegalStateException("cannot find current directory", e); }
+        final File curDir = FileUtils.getCurrentDirectory();
         init(debug, curDir, new File(curDir, CouchbaseLiteInternal.SCRATCH_DIR_NAME));
     }
 
@@ -47,10 +58,11 @@ public final class CouchbaseLite {
      * This method allows specifying a root directory for CBL files.
      *
      * @param debug      true if debugging
-     * @param rootDbDir  default directory for databases
+     * @param rootDir    default directory for databases
      * @param scratchDir scratch directory for SQLite
+     * @throws IllegalStateException on initialization failure
      */
-    public static void init(boolean debug, @NonNull File rootDbDir, @NonNull File scratchDir) {
-        CouchbaseLiteInternal.init(new MValueDelegate(), debug, rootDbDir, scratchDir);
+    public static void init(boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
+        CouchbaseLiteInternal.init(new MValueDelegate(), debug, rootDir, scratchDir);
     }
 }

@@ -43,7 +43,7 @@ final class LiveQuery implements DatabaseChangeListener {
     private static final LogDomain DOMAIN = LogDomain.QUERY;
 
     @VisibleForTesting
-    static final long LIVE_QUERY_UPDATE_INTERVAL_MS = 200; // 0.2sec (200ms)
+    static final long UPDATE_INTERVAL_MS = 200; // 0.2sec (200ms)
 
     @VisibleForTesting
     enum State {STOPPED, STARTED, SCHEDULED}
@@ -87,14 +87,14 @@ final class LiveQuery implements DatabaseChangeListener {
 
     @NonNull
     @Override
-    public String toString() { return "LiveQuery{" + ClassUtils.objId(this) + "," + query.toString() + "}"; }
+    public String toString() { return "LiveQuery{" + ClassUtils.objId(this) + "," + query + "}"; }
 
     //---------------------------------------------
     // Implementation of DatabaseChangeListener
     //---------------------------------------------
 
     @Override
-    public void changed(@NonNull DatabaseChange change) { update(LIVE_QUERY_UPDATE_INTERVAL_MS); }
+    public void changed(@NonNull DatabaseChange change) { update(UPDATE_INTERVAL_MS); }
 
     //---------------------------------------------
     // package
@@ -120,51 +120,43 @@ final class LiveQuery implements DatabaseChangeListener {
      * Starts observing database changes and reports changes in the query result.
      */
     void start(boolean shouldClearResults) {
-        final AbstractDatabase db = Preconditions.assertNotNull(query.getDatabase(), "Live query database");
+        final boolean started;
 
-        // can't have the db closing while a query is starting.
+        final AbstractDatabase db = Preconditions.assertNotNull(query.getDatabase(), "Live query database");
         synchronized (db.getDbLock()) {
+            // can't have the db closing while a query is starting.
             db.mustBeOpen();
 
-            if (state.compareAndSet(State.STOPPED, State.STARTED)) {
+            started = state.compareAndSet(State.STOPPED, State.STARTED);
+
+            if (started) {
                 synchronized (lock) { dbListenerToken = db.addActiveLiveQuery(this); }
             }
-            else {
-                // Here if the live query was already running.  This can happen in two ways:
-                // 1) when adding another listener
-                // 2) when the query parameters have changed.
-                // In either case we probably want to kick off a new query.
-                // In the latter case the current query results are irrelevant and need to be cleared.
-                if (shouldClearResults) {
-                    synchronized (lock) { closePrevResults(); }
-                }
-            }
         }
+
+        // There are two ways that the query might already be running:
+        // 1) when adding another listener
+        // 2) when the query parameters have changed.
+        // In either case we should kick off a new query.
+        // In the latter case, though, the current query results are irrelevant and need to be cleared.
+        if ((!started) && (shouldClearResults)) { closePrevResults(); }
+
         update(0);
     }
 
     void stop() {
         final AbstractDatabase db = query.getDatabase();
         if (db == null) {
-            if (State.STOPPED != state.get()) {
-                Log.w(LogDomain.DATABASE, "Null db when stopping LiveQuery");
-            }
+            if (State.STOPPED != state.get()) { Log.w(LogDomain.DATABASE, "Null db when stopping LiveQuery"); }
             return;
         }
 
         synchronized (db.getDbLock()) {
             if (State.STOPPED == state.getAndSet(State.STOPPED)) { return; }
-
-            synchronized (lock) {
-                closePrevResults();
-
-                final ListenerToken token = dbListenerToken;
-                dbListenerToken = null;
-                if (token == null) { return; }
-
-                db.removeActiveLiveQuery(this, token);
-            }
+            closeDbListener(db);
         }
+
+        closePrevResults();
     }
 
     @NonNull
@@ -181,50 +173,67 @@ final class LiveQuery implements DatabaseChangeListener {
         db.scheduleOnQueryExecutor(this::refreshResults, delay);
     }
 
-    // Runs on the query.database.queryExecutor
-    // Assumes that call to `previousResults.refresh` is safe, even if previousResults has been freed.
+    // Runs on the query.database.queryExecutor which is single threaded
+    // CAUTION: This is very sensitive code!
+    // Several bugs have been discovered in this method.
     @SuppressWarnings("PMD.CloseResource")
     private void refreshResults() {
-        try {
-            final ResultSet prevResults;
-            synchronized (lock) {
-                if (!state.compareAndSet(State.SCHEDULED, State.STARTED)) { return; }
-                prevResults = previousResults;
-            }
+        final ResultSet prevResults;
+        synchronized (lock) { prevResults = previousResults; }
 
-            final ResultSet newResults;
-            if (prevResults == null) { newResults = query.execute(); }
-            else {
-                newResults = prevResults.refresh();
-                previousResults.forceClose();
-            }
-            Log.i(DOMAIN, "LiveQuery refresh: %s > %s", prevResults, newResults);
+        if (!state.compareAndSet(State.SCHEDULED, State.STARTED)) { return; }
 
-            if (newResults == null) { return; }
-
-            newResults.retain();
-
-            boolean update = false;
-            synchronized (lock) {
-                if (state.get() != State.STOPPED) {
-                    previousResults = newResults;
-                    update = true;
-                }
-            }
-
-            // Listeners may be notified even after the LiveQuery has been stopped.
-            if (update) { changeNotifier.postChange(new QueryChange(query, newResults, null)); }
-        }
+        // Assumes that call to `prevResults.refresh` is safe, even if it has been closed/freed.
+        final ResultSet newResults;
+        try { newResults = (prevResults == null) ? query.execute() : prevResults.refresh(); }
         catch (CouchbaseLiteException err) {
             changeNotifier.postChange(new QueryChange(query, null, err));
+            return;
         }
+
+        Log.i(DOMAIN, "LiveQuery refresh: %s ==> %s", prevResults, newResults);
+
+        // Refresh returns null if there have been no changes
+        if (newResults == null) { return; }
+
+        if (prevResults != null) { prevResults.release(); }
+
+        // There is a race here: if client code stops
+        // the live query between this line and the next
+        // we will leak a result set.  Since the LiveQuery
+        // itself is likely to be GCed soon, perhaps that
+        // isn't such a big deal.
+        if (state.get() == State.STOPPED) { return; }
+
+        // We need this result set.  Don't let the user close it.
+        newResults.retain();
+        synchronized (lock) { previousResults = newResults; }
+
+        // Listeners may be notified even after the LiveQuery has been stopped.
+        // This call to postChange will cause a call to LiveQuery.changed,
+        // if there is anybody still listening to the query.
+        changeNotifier.postChange(new QueryChange(query, newResults, null));
     }
 
-    @GuardedBy("lock")
+    @SuppressWarnings("PMD.CloseResource")
     private void closePrevResults() {
-        if (previousResults == null) { return; }
-        previousResults.forceClose();
-        previousResults = null;
+        final ResultSet prevResults;
+        synchronized (lock) {
+            prevResults = previousResults;
+            previousResults = null;
+        }
+
+        if (prevResults != null) { prevResults.release(); }
+    }
+
+    private void closeDbListener(AbstractDatabase db) {
+        final ListenerToken token;
+        synchronized (lock) {
+            token = dbListenerToken;
+            dbListenerToken = null;
+        }
+        if (token == null) { return; }
+        db.removeActiveLiveQuery(this, token);
     }
 }
 
