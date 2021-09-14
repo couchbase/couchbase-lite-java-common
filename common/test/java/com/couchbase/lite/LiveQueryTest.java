@@ -208,6 +208,7 @@ public class LiveQueryTest extends BaseDbTest {
         }
     }
 
+    // CBL-2344: Live query may stop refreshing
     @Test
     public void testLiveQueryRefresh() throws CouchbaseLiteException, InterruptedException {
         final AtomicReference<CountDownLatch> latchHolder = new AtomicReference<>();
