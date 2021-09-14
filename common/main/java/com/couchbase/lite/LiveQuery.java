@@ -194,19 +194,19 @@ final class LiveQuery implements DatabaseChangeListener {
 
             final ResultSet newResults;
             if (prevResults == null) { newResults = query.execute(); }
-            else {
-                newResults = prevResults.refresh();
-                previousResults.forceClose();
-            }
+            else { newResults = prevResults.refresh(); }
             Log.i(DOMAIN, "LiveQuery refresh: %s > %s", prevResults, newResults);
 
             if (newResults == null) { return; }
 
-            newResults.retain();
+            // ??? This could close a result set to which
+            // client code still has a reference.
+            if (prevResults != null) { prevResults.forceClose(); }
 
             boolean update = false;
             synchronized (lock) {
                 if (state.get() != State.STOPPED) {
+                    newResults.retain();
                     previousResults = newResults;
                     update = true;
                 }
