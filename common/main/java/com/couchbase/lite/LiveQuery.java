@@ -43,7 +43,7 @@ final class LiveQuery implements DatabaseChangeListener {
     private static final LogDomain DOMAIN = LogDomain.QUERY;
 
     @VisibleForTesting
-    static final long LIVE_QUERY_UPDATE_INTERVAL_MS = 200; // 0.2sec (200ms)
+    static final long UPDATE_INTERVAL_MS = 200; // 0.2sec (200ms)
 
     @VisibleForTesting
     enum State {STOPPED, STARTED, SCHEDULED}
@@ -94,7 +94,7 @@ final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
 
     @Override
-    public void changed(@NonNull DatabaseChange change) { update(LIVE_QUERY_UPDATE_INTERVAL_MS); }
+    public void changed(@NonNull DatabaseChange change) { update(UPDATE_INTERVAL_MS); }
 
     //---------------------------------------------
     // package
