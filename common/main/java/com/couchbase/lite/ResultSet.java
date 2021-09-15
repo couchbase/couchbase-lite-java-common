@@ -161,6 +161,19 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     }
 
     //---------------------------------------------
+    // Protected access
+    //---------------------------------------------
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            // ??? Hail Mary: no lock, no synchronization...
+            if (c4enum != null) { c4enum.close(); }
+        }
+        finally { super.finalize(); }
+    }
+
+    //---------------------------------------------
     // Package level access
     //---------------------------------------------
 
