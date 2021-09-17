@@ -42,6 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 
 // There are other blob tests in test suites...
@@ -439,6 +440,19 @@ public class BlobTest extends BaseDbTest {
         props.put(Blob.PROP_DIGEST, blob.digest());
 
         assertNull(baseTestDb.getBlob(props));
+    }
+
+    @Test
+    public void testIsBlob() throws IOException, CouchbaseLiteException {
+        try (InputStream is = PlatformUtils.getAsset("attachment.png")) {
+            Blob blob = new Blob("image/png", is);
+            MutableDocument mDoc = new MutableDocument("doc1");
+            mDoc.setBlob("blob", blob);
+            baseTestDb.save(mDoc);
+        }
+
+        assertTrue(Blob.isBlob(
+            new MutableDictionary().setJSON(baseTestDb.getDocument("doc1").getBlob("blob").toJSON()).toMap()));
     }
 
     // https://issues.couchbase.com/browse/CBL-2320
