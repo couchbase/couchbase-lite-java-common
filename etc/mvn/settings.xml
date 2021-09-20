@@ -1,0 +1,14 @@
+<settings>
+  <profiles>
+    <profile>
+      <id>CblInternalMaven</id>
+      <repositories>
+        <repository>
+          <id>my-repo2</id>
+          <name>CBL_Internal</name>
+          <url>http://proget.build.couchbase.com/maven2/internalmaven</url>
+        </repository>
+      </repositories>
+    </profile>
+  </profiles>
+</settings>
