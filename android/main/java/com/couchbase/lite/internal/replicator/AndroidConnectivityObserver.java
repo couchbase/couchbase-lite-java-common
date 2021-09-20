@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite.internal.replicator;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.ReplicatorActivityLevel;

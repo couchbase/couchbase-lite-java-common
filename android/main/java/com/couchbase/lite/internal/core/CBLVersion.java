@@ -16,7 +16,8 @@
 package com.couchbase.lite.internal.core;
 
 import android.os.Build;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;

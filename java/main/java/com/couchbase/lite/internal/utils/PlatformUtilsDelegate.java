@@ -15,8 +15,8 @@
 //
 package com.couchbase.lite.internal.utils;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.InputStream;
 import java.util.Base64;

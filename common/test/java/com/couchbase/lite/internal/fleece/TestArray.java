@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import java.util.Collection;
 import java.util.Iterator;

@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4Document;

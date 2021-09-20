@@ -15,10 +15,10 @@
 //
 package com.couchbase.lite.internal.replicator;
 
-import android.support.annotation.GuardedBy;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.annotation.VisibleForTesting;
+import androidx.annotation.GuardedBy;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.io.EOFException;
 import java.net.NoRouteToHostException;

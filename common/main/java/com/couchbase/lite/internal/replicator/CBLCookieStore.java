@@ -14,8 +14,8 @@
 //
 package com.couchbase.lite.internal.replicator;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.net.URI;
 import java.util.ArrayList;

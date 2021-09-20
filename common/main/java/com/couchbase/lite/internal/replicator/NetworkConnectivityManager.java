@@ -1,6 +1,6 @@
 package com.couchbase.lite.internal.replicator;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 
 public interface NetworkConnectivityManager {

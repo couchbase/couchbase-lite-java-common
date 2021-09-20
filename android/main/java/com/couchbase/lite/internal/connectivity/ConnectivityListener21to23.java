@@ -18,7 +18,8 @@ package com.couchbase.lite.internal.connectivity;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.NetworkRequest;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 
 /**

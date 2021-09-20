@@ -17,7 +17,8 @@ package com.couchbase.lite.internal.connectivity;
 
 import android.net.ConnectivityManager;
 import android.net.Network;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;

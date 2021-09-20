@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite.internal;
 
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 
 import com.couchbase.lite.BaseDatabase;
 import com.couchbase.lite.internal.fleece.MContext;

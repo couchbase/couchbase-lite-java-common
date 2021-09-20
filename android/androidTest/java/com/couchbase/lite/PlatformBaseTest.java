@@ -15,9 +15,11 @@
 //
 package com.couchbase.lite;
 
+import android.content.Context;
 import android.os.Build;
-import android.support.annotation.NonNull;
-import android.support.test.InstrumentationRegistry;
+
+import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
 
 import java.io.File;
 import java.io.IOException;
@@ -50,7 +52,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    static { CouchbaseLite.init(InstrumentationRegistry.getTargetContext(), true); }
+    static { CouchbaseLite.init(getAppContext(), true); }
 
     static {
         try { Runtime.getRuntime().exec("logcat -P '" + android.os.Process.myPid() + "'").waitFor(); }
@@ -58,6 +60,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
             android.util.Log.w("TEST", "Failed adding to chatty whitelist");
         }
     }
+    private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
     @Override
     public final void setupPlatform() {
         final ConsoleLogger console = Database.log.getConsole();
@@ -67,12 +70,12 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     @Override
     public final File getTmpDir() {
-        return FileUtils.verifyDir(InstrumentationRegistry.getTargetContext().getExternalFilesDir(SCRATCH_DIR_NAME));
+        return FileUtils.verifyDir(getAppContext().getExternalFilesDir(SCRATCH_DIR_NAME));
     }
 
     @Override
     public final void reloadStandardErrorMessages() {
-        Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(InstrumentationRegistry.getTargetContext()));
+        Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(getAppContext()));
     }
 
     @Override

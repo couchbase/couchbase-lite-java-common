@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 

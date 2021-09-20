@@ -15,8 +15,8 @@
 //
 package com.couchbase.lite;
 
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 
 // This class is referenced by name, from native code.
