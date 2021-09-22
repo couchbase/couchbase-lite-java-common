@@ -124,7 +124,15 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     private static final String CHALLENGE_BASIC = "Basic";
     private static final String HEADER_AUTH = "Authorization";
 
-    private enum State {INIT, CONNECTING, OPEN, CLOSE_REQUESTED, CLOSING, CLOSED, FAILED}
+    private enum State {
+        INIT,            // Initial state
+        CONNECTING,      // Core has requested a connection
+        OPEN,            // OkHttp has confirmed an open connection
+        CLOSE_REQUESTED, // Somebody has requested that the connection be closed
+        CLOSING,         // We've asked OkHTTP to close the connection
+        CLOSED,          // No more traffic on this connection, in either direction
+        FAILED           // There's been an error: No more traffic.
+    }
 
     //-------------------------------------------------------------------------
     // Internal types
@@ -139,8 +147,12 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
             Log.d(TAG, "%s#OkHTTP open: %s", AbstractCBLWebSocket.this, response);
             synchronized (getPeerLock()) {
-                if (!state.setState(State.OPEN)) { return; }
                 AbstractCBLWebSocket.this.webSocket = webSocket;
+                if (!state.setState(State.OPEN)) {
+                    forceClose();
+                    return;
+                }
+
                 receivedHTTPResponse(response);
                 opened();
             }
@@ -153,7 +165,10 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
             Log.d(TAG, "%s#OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
             synchronized (getPeerLock()) {
-                if (!state.assertState(State.OPEN)) { return; }
+                if (!state.assertState(State.OPEN)) {
+                    forceClose();
+                    return;
+                }
                 received(text.getBytes(StandardCharsets.UTF_8));
             }
         }
@@ -164,7 +179,10 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
             Log.d(TAG, "%s#OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
             synchronized (getPeerLock()) {
-                if (!state.assertState(State.OPEN)) { return; }
+                if (!state.assertState(State.OPEN)) {
+                    forceClose();
+                    return;
+                }
                 received(bytes.toByteArray());
             }
         }
@@ -337,17 +355,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @Override
     public void close() {
         Log.d(TAG, "%s#External told to close: %s", this, uri);
-        synchronized (getPeerLock()) {
-            if (state.setState(State.CLOSE_REQUESTED)) {
-                closeRequested(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
-                return;
-            }
-            if (state.setState(State.CLOSING)) {
-                closeWebSocket(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
-                return;
-            }
-            state.setState(State.CLOSED);
-        }
+        synchronized (getPeerLock()) { forceClose(); }
     }
 
     @NonNull
@@ -423,7 +431,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Used in byte stream mode: irrelevant here
     @SuppressWarnings("PMD.EmptyMethodInAbstractClassShouldBeAbstract")
     @Override
-    protected final void closeSocket() { }
+    protected final void closeSocket() { state.setState(State.CLOSED); }
 
     //-------------------------------------------------------------------------
     // private methods
@@ -453,11 +461,25 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         gotHTTPResponse(response.code(), headersFleece);
     }
 
+    private void forceClose() {
+        if (state.setState(State.CLOSE_REQUESTED)) {
+            closeRequested(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
+            return;
+        }
+        if (state.setState(State.CLOSING)) {
+            closeWebSocket(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
+            return;
+        }
+        state.setState(State.CLOSED);
+    }
+
     // Close the OkHTTP connection to the remote
     @GuardedBy("getPeerLock()")
     private void closeWebSocket(int code, String message) {
-        // never got opened...
-        if (webSocket == null) { return; }
+        if (webSocket == null) {
+            Log.i(TAG, "%s#WebSocket is null on attempt to close (%d, %s)", this, code, message);
+            return;
+        }
 
         // We've told Core to leave the connection to us, so it might pass us the HTTP status
         // If it does, we need to convert it to a WS status for the other side.
@@ -465,9 +487,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
             code = C4Constants.WebSocketError.POLICY_ERROR;
         }
 
-        if (!webSocket.close(code, message)) {
-            Log.i(TAG, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
-        }
+        if (!webSocket.close(code, message)) { Log.i(TAG, "WebSocket could not be shut down gracefully."); }
     }
 
     @GuardedBy("getPeerLock()")
