@@ -343,7 +343,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
                 return;
             }
             if (state.setState(State.CLOSING)) {
-                closeWebSocket(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
+                if (webSocket != null) { closeWebSocket(C4Constants.WebSocketError.GOING_AWAY, "Closed by client"); }
                 return;
             }
             state.setState(State.CLOSED);
@@ -415,7 +415,15 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         Log.d(TAG, "%s#Core request close: %d", this, code);
         synchronized (getPeerLock()) {
             if (!state.setState(State.CLOSE_REQUESTED)) { return; }
-            closeWebSocket(code, message);
+
+            if (webSocket != null) {
+                closeWebSocket(code, message);
+                return;
+            }
+
+            // Core is requesting that we close a socket for which there is no connection
+            state.setState(State.CLOSED);
+            closeWithCode(code, message);
         }
     }
 
@@ -456,9 +464,6 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Close the OkHTTP connection to the remote
     @GuardedBy("getPeerLock()")
     private void closeWebSocket(int code, String message) {
-        // never got opened...
-        if (webSocket == null) { return; }
-
         // We've told Core to leave the connection to us, so it might pass us the HTTP status
         // If it does, we need to convert it to a WS status for the other side.
         if ((code > C4Constants.HttpError.STATUS_MIN) && (code < C4Constants.HttpError.STATUS_MAX)) {
