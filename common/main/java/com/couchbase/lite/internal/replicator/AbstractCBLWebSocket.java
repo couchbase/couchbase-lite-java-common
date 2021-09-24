@@ -139,7 +139,11 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
             Log.d(TAG, "%s#OkHTTP open: %s", AbstractCBLWebSocket.this, response);
             synchronized (getPeerLock()) {
-                if (!state.setState(State.OPEN)) { return; }
+                if (!state.setState(State.OPEN)) {
+                    if (state.assertState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
+                    return;
+                }
+
                 AbstractCBLWebSocket.this.webSocket = webSocket;
                 receivedHTTPResponse(response);
                 opened();
@@ -153,7 +157,11 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
             Log.d(TAG, "%s#OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
             synchronized (getPeerLock()) {
-                if (!state.assertState(State.OPEN)) { return; }
+                if (!state.assertState(State.OPEN))  {
+                    if (state.assertState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
+                    return;
+                }
+
                 received(text.getBytes(StandardCharsets.UTF_8));
             }
         }
@@ -164,7 +172,11 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
             Log.d(TAG, "%s#OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
             synchronized (getPeerLock()) {
-                if (!state.assertState(State.OPEN)) { return; }
+                if (!state.assertState(State.OPEN))  {
+                    if (state.assertState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
+                    return;
+                }
+
                 received(bytes.toByteArray());
             }
         }
@@ -175,7 +187,11 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.d(TAG, "%s#OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
             synchronized (getPeerLock()) {
-                if (!state.setState(State.CLOSE_REQUESTED)) { return; }
+                if (!state.setState(State.CLOSE_REQUESTED))  {
+                    if (state.assertState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
+                    return;
+                }
+
                 closeRequested(code, reason);
             }
         }
@@ -199,6 +215,11 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, @Nullable Response response) {
             Log.d(TAG, "%s#OkHTTP failed: %s", err, AbstractCBLWebSocket.this, response);
             synchronized (getPeerLock()) {
+                if (state.assertState(State.CLOSED, State.FAILED)) {
+                    webSocket.cancel();
+                    return;
+                }
+
                 state.setState(State.FAILED);
 
                 if (response == null) {
