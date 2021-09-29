@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 
@@ -27,9 +28,9 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
     private String textLanguage = Locale.getDefault().getLanguage();
     private boolean ignoreDiacritics;
 
-    public FullTextIndexConfiguration(@NonNull String... expressions) {
-        super(IndexType.FULL_TEXT, Arrays.asList(expressions));
-    }
+    public FullTextIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
+
+    FullTextIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.FULL_TEXT, expressions); }
 
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.

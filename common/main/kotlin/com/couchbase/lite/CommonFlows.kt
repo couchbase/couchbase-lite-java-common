@@ -20,30 +20,67 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import java.util.concurrent.Executor
 
+/**
+ * A Flow of database changes.
+ *
+ * @param executor Optional executor on which to run the change listener: default is the main executor
+ *
+ * @see com.couchbase.lite.Database.addChangeListener
+ */
 @ExperimentalCoroutinesApi
 fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow<DatabaseChange> {
     val token = this@databaseChangeFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { this@databaseChangeFlow.removeChangeListener(token) }
 }
 
+/**
+ * A Flow of document changes.
+ *
+ * @param executor Optional executor on which to run the change listener: default is the main executor
+ *
+ * @see com.couchbase.lite.Database.addDocumentChangeListener
+ */
 @ExperimentalCoroutinesApi
 fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) = callbackFlow {
-    val token = this@documentChangeFlow.addDocumentChangeListener(documentId, executor) { trySend(it) }
+    val token =
+        this@documentChangeFlow.addDocumentChangeListener(documentId, executor) { trySend(it) }
     awaitClose { this@documentChangeFlow.removeChangeListener(token) }
 }
 
+/**
+ * A Flow of replicator state changes.
+ *
+ * @param executor Optional executor on which to run the change listener: default is the main executor
+ *
+ * @see com.couchbase.lite.Replicator.addChangeListener
+ */
 @ExperimentalCoroutinesApi
 fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow {
     val token = this@replicatorChangesFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { this@replicatorChangesFlow.removeChangeListener(token) }
 }
 
+/**
+ * A Flow of document replications.
+ *
+ * @param executor Optional executor on which to run the change listener: default is the main executor
+ *
+ * @see com.couchbase.lite.Replicator.addDocumentReplicationListener
+ */
 @ExperimentalCoroutinesApi
 fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlow {
-    val token = this@documentReplicationFlow.addDocumentReplicationListener(executor) { trySend(it) }
+    val token =
+        this@documentReplicationFlow.addDocumentReplicationListener(executor) { trySend(it) }
     awaitClose { this@documentReplicationFlow.removeChangeListener(token) }
 }
 
+/**
+ * A Flow of query changes.
+ *
+ * @param executor Optional executor on which to run the change listener: default is the main executor
+ *
+ * @see com.couchbase.lite.Query.addChangeListener
+ */
 @ExperimentalCoroutinesApi
 fun Query.queryChangeFlow(executor: Executor? = null) = callbackFlow {
     val token = this@queryChangeFlow.addChangeListener(executor) { trySend(it) }
