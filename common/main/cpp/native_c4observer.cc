@@ -18,6 +18,7 @@
 #include <c4.h>
 #include "com_couchbase_lite_internal_core_C4DatabaseObserver.h"
 #include "com_couchbase_lite_internal_core_C4DocumentObserver.h"
+#include "com_couchbase_lite_internal_core_NativeC4QueryObserver.h"
 #include "native_glue.hh"
 
 using namespace litecore;
@@ -233,23 +234,31 @@ Java_com_couchbase_lite_internal_core_C4DocumentObserver_free(JNIEnv *env, jclas
  */
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_create(JNIEnv *env, jclass clazz, jlong c4_query) {
+Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_create(
+        JNIEnv *env, jclass clazz,
+        jlong c4_query) {
     // TODO: implement create()
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_setEnabled(JNIEnv *env, jclass clazz, jlong handle,
-                                                                       jboolean enabled) {
+Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_setEnabled(
+        JNIEnv *env, jclass clazz,
+        jlong handle,
+        jboolean enabled) {
     // TODO: implement setEnabled()
 }
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_free(JNIEnv *env, jclass clazz, jlong observer) {
+Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_free(
+        JNIEnv *env, jclass clazz,
+        jlong observer) {
     // TODO: implement free()
 }
 extern "C"
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_getEnumerator(JNIEnv *env, jclass clazz, jlong observer,
-                                                                          jboolean forget) {
+Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_getEnumerator(
+        JNIEnv *env, jclass clazz,
+        jlong observer,
+        jboolean forget) {
     // TODO: implement getEnumerator()
 }

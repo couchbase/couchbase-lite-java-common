@@ -1,8 +1,11 @@
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.VisibleForTesting;
+
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.impl.NativeC4Listener;
 
 
 public class C4QueryObserver extends C4NativePeer {
@@ -14,14 +17,24 @@ public class C4QueryObserver extends C4NativePeer {
         long nGetEnumerator(long handle, boolean forget) throws LiteCoreException;
     }
 
+
+    @VisibleForTesting
+    static NativeImpl nativeImpl = new NativeC4QueryObserver();
+
     private final NativeImpl impl;
 
+    @VisibleForTesting
     public C4QueryObserver(NativeImpl impl) { this.impl = impl; }
 
     @Override
-    public void close() throws Exception {
-        closePeer(null);
+    public void close() throws Exception { closePeer(null); }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try { closePeer(LogDomain.LISTENER); }
+        finally { super.finalize(); }
     }
+
 
     public C4QueryObserver newObserver(C4Query c4Query) {
         // TODO: implement newObserver()
@@ -32,8 +45,9 @@ public class C4QueryObserver extends C4NativePeer {
         //TODO: implement setEnabled()
     }
 
-    public void getEnumerator(boolean forget) throws CouchbaseLiteException {
+    public C4QueryEnumerator getEnumerator(boolean forget) throws CouchbaseLiteException {
         //TODO: implement getEnumerator()
+        return null;
     }
 
     private void closePeer(LogDomain domain) { releasePeer(domain, impl::nFree); }

@@ -38,4 +38,5 @@ public class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
     private static native void free(long observer);
 
     private static native long getEnumerator(long observer, boolean forget) throws LiteCoreException;
+
 }
