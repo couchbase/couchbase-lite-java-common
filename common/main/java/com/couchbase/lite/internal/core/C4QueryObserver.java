@@ -17,24 +17,11 @@ public class C4QueryObserver extends C4NativePeer {
         long nGetEnumerator(long handle, boolean forget) throws LiteCoreException;
     }
 
-
-    @VisibleForTesting
-    static NativeImpl nativeImpl = new NativeC4QueryObserver();
-
-    private final NativeImpl impl;
-
     @VisibleForTesting
     public C4QueryObserver(NativeImpl impl) { this.impl = impl; }
 
     @Override
     public void close() throws Exception { closePeer(null); }
-
-    @Override
-    protected void finalize() throws Throwable {
-        try { closePeer(LogDomain.LISTENER); }
-        finally { super.finalize(); }
-    }
-
 
     public C4QueryObserver newObserver(C4Query c4Query) {
         // TODO: implement newObserver()
@@ -49,6 +36,17 @@ public class C4QueryObserver extends C4NativePeer {
         //TODO: implement getEnumerator()
         return null;
     }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try { closePeer(LogDomain.LISTENER); }
+        finally { super.finalize(); }
+    }
+
+    @VisibleForTesting
+    static NativeImpl nativeImpl = new NativeC4QueryObserver();
+
+    private final NativeImpl impl;
 
     private void closePeer(LogDomain domain) { releasePeer(domain, impl::nFree); }
 }

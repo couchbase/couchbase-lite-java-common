@@ -228,18 +228,17 @@ Java_com_couchbase_lite_internal_core_C4DocumentObserver_free(JNIEnv *env, jclas
     if (obs != 0)
         c4docobs_free((C4DocumentObserver *) obs);
 }
-}
+
 /*
  * Query observer
  */
-extern "C"
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_create(
         JNIEnv *env, jclass clazz,
         jlong c4_query) {
     // TODO: implement create()
 }
-extern "C"
+
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_setEnabled(
         JNIEnv *env, jclass clazz,
@@ -247,18 +246,19 @@ Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_setEnabled(
         jboolean enabled) {
     // TODO: implement setEnabled()
 }
-extern "C"
+
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_free(
         JNIEnv *env, jclass clazz,
         jlong observer) {
     // TODO: implement free()
 }
-extern "C"
+
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_getEnumerator(
         JNIEnv *env, jclass clazz,
         jlong observer,
         jboolean forget) {
     // TODO: implement getEnumerator()
+}
 }
