@@ -160,7 +160,11 @@ public class AbstractCBLWebSocket extends C4Socket {
         public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
             Log.v(TAG, "%s:OkHTTP open: %s", AbstractCBLWebSocket.this, response);
             synchronized (state) {
-                if (!state.setState(State.OPEN)) { return; }
+                if (!state.setState(State.OPEN)) {
+                    if (state.checkState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
+                    return;
+                }
+
                 AbstractCBLWebSocket.this.webSocket = webSocket;
                 receivedHTTPResponse(response);
                 opened();
@@ -172,7 +176,11 @@ public class AbstractCBLWebSocket extends C4Socket {
         public void onMessage(@NonNull WebSocket webSocket, String text) {
             Log.v(TAG, "%s:OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
             synchronized (state) {
-                if (!state.checkState(State.OPEN)) { return; }
+                if (!state.checkState(State.OPEN)) {
+                    if (state.checkState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
+                    return;
+                }
+
                 received(text.getBytes(StandardCharsets.UTF_8));
             }
         }
@@ -181,7 +189,11 @@ public class AbstractCBLWebSocket extends C4Socket {
         public void onMessage(@NonNull WebSocket webSocket, ByteString bytes) {
             Log.v(TAG, "%s:OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
             synchronized (state) {
-                if (!state.checkState(State.OPEN)) { return; }
+                if (!state.checkState(State.OPEN)) {
+                    if (state.checkState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
+                    return;
+                }
+
                 received(bytes.toByteArray());
             }
         }
@@ -190,7 +202,11 @@ public class AbstractCBLWebSocket extends C4Socket {
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.v(TAG, "%s:OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
             synchronized (state) {
-                if (!state.setState(State.CLOSE_REQUESTED)) { return; }
+                if (!state.setState(State.CLOSE_REQUESTED)) {
+                    if (state.checkState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
+                    return;
+                }
+
                 closeRequested(code, reason);
             }
         }
@@ -211,8 +227,13 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         @Override
         public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable t, Response response) {
-            Log.v(TAG, "%s:OkHTTP failed: %s", AbstractCBLWebSocket.this, response, t);
+            Log.v(TAG, "%s:OkHTTP failed: %s", t, AbstractCBLWebSocket.this, response);
             synchronized (state) {
+                if (state.checkState(State.CLOSED, State.FAILED)) {
+                    webSocket.cancel();
+                    return;
+                }
+
                 state.setState(State.FAILED);
 
                 // Invoked when a web socket has been closed due to an error reading from or writing to the network.
@@ -384,8 +405,12 @@ public class AbstractCBLWebSocket extends C4Socket {
         synchronized (state) {
             if (!state.setState(State.CLOSING)) { return; }
 
-            // never got opened...
-            if (webSocket == null) { return; }
+            // Core is requesting that we close a socket for which we have no connection
+            if (webSocket == null) {
+                state.setState(State.CLOSED);
+                didClose(status, message);
+                return;
+            }
 
             // Core will, apparently, randomly send HTTP statuses in this, purely WS, call.
             // Just recast them as policy errors.
