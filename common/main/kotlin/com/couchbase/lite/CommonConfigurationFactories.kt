@@ -18,9 +18,10 @@ package com.couchbase.lite
 
 val FullTextIndexConfigurationFactory: FullTextIndexConfiguration? = null
 fun FullTextIndexConfiguration?.create(
-    expression: String? = null
+    vararg expressions: String = emptyArray()
 ) = FullTextIndexConfiguration(
-    expression ?: this?.expressions?.get(0) ?: error("Must specify an expression")
+    if (!expressions.isEmpty()) expressions.asList() else this?.expressions
+        ?: error("Must specify an expression")
 )
 
 val ValueIndexConfigurationFactory: ValueIndexConfiguration? = null
