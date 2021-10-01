@@ -72,7 +72,7 @@ public final class CouchbaseLiteInternal {
 
     private static volatile boolean debugging;
 
-    private static volatile File rootDir;
+    private static volatile File defaultDbDir;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
@@ -80,7 +80,7 @@ public final class CouchbaseLiteInternal {
     public static void init(
         @NonNull MValue.Delegate mValueDelegate,
         boolean debug,
-        @NonNull File rootDir,
+        @NonNull File defaultDbDir,
         @NonNull File scratchDir,
         @NonNull Context ctxt) {
         if (INITIALIZED.getAndSet(true)) { return; }
@@ -92,7 +92,7 @@ public final class CouchbaseLiteInternal {
 
         Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
 
-        CouchbaseLiteInternal.rootDir = FileUtils.verifyDir(rootDir);
+        CouchbaseLiteInternal.defaultDbDir = FileUtils.verifyDir(defaultDbDir);
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
@@ -141,13 +141,13 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
-    public static File getRootDir() {
+    public static File getDefaultDbDir() {
         requireInit("Can't create DB path");
-        return rootDir;
+        return defaultDbDir;
     }
 
     @NonNull
-    public static String getRootDirPath() { return rootDir.getAbsolutePath(); }
+    public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
 
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }

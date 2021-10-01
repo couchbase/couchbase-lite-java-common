@@ -44,7 +44,7 @@ abstract class AbstractDatabaseConfiguration {
 
     protected AbstractDatabaseConfiguration(@Nullable String dbDir) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
-        this.dbDirectory = (dbDir != null) ? dbDir : CouchbaseLiteInternal.getRootDirPath();
+        this.dbDirectory = (dbDir != null) ? dbDir : CouchbaseLiteInternal.getDefaultDbDirPath();
     }
 
     //---------------------------------------------

@@ -69,7 +69,7 @@ public class C4BaseTest extends BaseTest {
         try {
             C4.setenv("TMPDIR", getScratchDirectoryPath(testDirName), 1);
 
-            final File parentDir = new File(CouchbaseLiteInternal.getRootDir(), testDirName);
+            final File parentDir = new File(CouchbaseLiteInternal.getDefaultDbDir(), testDirName);
             if (!parentDir.mkdirs()) { throw new IOException("Can't create test db directory: " + parentDir); }
             dbParentDirPath = parentDir.getCanonicalPath();
 

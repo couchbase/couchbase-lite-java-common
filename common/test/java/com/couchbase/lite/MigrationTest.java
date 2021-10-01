@@ -43,7 +43,7 @@ public class MigrationTest extends BaseTest {
 
     @Before
     public final void setUpMigrationTest() {
-        dbDir = new File(CouchbaseLiteInternal.getRootDir(), getUniqueName("migration-test-dir"));
+        dbDir = new File(CouchbaseLiteInternal.getDefaultDbDir(), getUniqueName("migration-test-dir"));
     }
 
     @After

@@ -150,7 +150,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     public static void delete(@NonNull String name, @Nullable File directory) throws CouchbaseLiteException {
         Preconditions.assertNotNull(name, "name");
 
-        if (directory == null) { directory = CouchbaseLiteInternal.getRootDir(); }
+        if (directory == null) { directory = CouchbaseLiteInternal.getDefaultDbDir(); }
 
         if (!exists(name, directory)) {
             throw new CouchbaseLiteException(
@@ -1632,7 +1632,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     private void fixHydrogenBug(@NonNull ImmutableDatabaseConfiguration config, @NonNull String dbName)
         throws CouchbaseLiteException {
         // This is the real default directory
-        final String defaultDirPath = CouchbaseLiteInternal.getRootDir().getAbsolutePath();
+        final String defaultDirPath = CouchbaseLiteInternal.getDefaultDbDir().getAbsolutePath();
 
         // Check to see if the rootDirPath refers to the default directory.  If not, none of this is relevant.
         // Both rootDir and defaultDir are canonical, so string comparison should work.

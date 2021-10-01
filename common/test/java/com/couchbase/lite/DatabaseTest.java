@@ -1273,7 +1273,7 @@ public class DatabaseTest extends BaseDbTest {
         final String dbName = getUniqueName("test-db");
 
         // verify that the db directory is no longer in the misguided 2.8.0 subdirectory
-        final String dbDirectory = CouchbaseLiteInternal.getRootDir().getAbsolutePath();
+        final String dbDirectory = CouchbaseLiteInternal.getDefaultDbDir().getAbsolutePath();
         assertFalse(dbDirectory.endsWith(".couchbase"));
 
         Database db = null;
@@ -1302,7 +1302,7 @@ public class DatabaseTest extends BaseDbTest {
     public void testReOpenExisting2Dot8DotOhDb() throws CouchbaseLiteException, IOException {
         final String dbName = getUniqueName("test-db");
         final String twoDot8DotOhDirPath
-            = new File(CouchbaseLiteInternal.getRootDir(), ".couchbase").getCanonicalPath();
+            = new File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").getCanonicalPath();
 
         Database db = null;
         try {
@@ -1336,7 +1336,7 @@ public class DatabaseTest extends BaseDbTest {
     public void testReOpenExisting2Dot8DotOhDbCopyFails() throws CouchbaseLiteException, IOException {
         final String dbName = getUniqueName("test-db");
         final String twoDot8DotOhDirPath
-            = new File(CouchbaseLiteInternal.getRootDir(), ".couchbase").getCanonicalPath();
+            = new File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").getCanonicalPath();
 
         Database db = null;
         try {
@@ -1364,7 +1364,7 @@ public class DatabaseTest extends BaseDbTest {
             // the (uncopyable) 2.8.0 db should still exist
             assertTrue(C4Database.getDatabaseFile(twoDot8DotOhDir, dbName).exists());
             // the copy should not exist
-            assertFalse(C4Database.getDatabaseFile(CouchbaseLiteInternal.getRootDir(), dbName).exists());
+            assertFalse(C4Database.getDatabaseFile(CouchbaseLiteInternal.getDefaultDbDir(), dbName).exists());
         }
         finally {
             try {
@@ -1379,7 +1379,7 @@ public class DatabaseTest extends BaseDbTest {
     public void testReOpenExistingLegacyAnd2Dot8DotOhDb() throws CouchbaseLiteException, IOException {
         final String dbName = getUniqueName("test-db");
         final String twoDot8DotOhDirPath
-            = new File(CouchbaseLiteInternal.getRootDir(), ".couchbase").getCanonicalPath();
+            = new File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").getCanonicalPath();
 
 
         Database db = null;

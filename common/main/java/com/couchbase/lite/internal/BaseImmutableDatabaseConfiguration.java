@@ -38,7 +38,7 @@ public class BaseImmutableDatabaseConfiguration {
     //-------------------------------------------------------------------------
     protected BaseImmutableDatabaseConfiguration(@Nullable DatabaseConfiguration config) {
         final String dbDirectory = (config == null) ? null : config.getDirectory();
-        this.dbDir = (dbDirectory != null) ? dbDirectory : CouchbaseLiteInternal.getRootDirPath();
+        this.dbDir = (dbDirectory != null) ? dbDirectory : CouchbaseLiteInternal.getDefaultDbDirPath();
     }
 
     //-------------------------------------------------------------------------
