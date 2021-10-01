@@ -232,13 +232,25 @@ Java_com_couchbase_lite_internal_core_C4DocumentObserver_free(JNIEnv *env, jclas
 /*
  * Query observer
  */
+
+/*
+ * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver
+ * Method:    create
+ * Signature: (J)J
+ */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_create(
         JNIEnv *env, jclass clazz,
         jlong c4_query) {
     // TODO: implement create()
+    return -1;
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver
+ * Method:    setEnabled
+ * Signature: (JZ)V
+ */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_setEnabled(
         JNIEnv *env, jclass clazz,
@@ -247,6 +259,11 @@ Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_setEnabled(
     // TODO: implement setEnabled()
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver
+ * Method:    free
+ * Signature: (J)V
+ */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_free(
         JNIEnv *env, jclass clazz,
@@ -254,11 +271,17 @@ Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_free(
     // TODO: implement free()
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver
+ * Method:    getEnumerator
+ * Signature: (JZ)J
+ */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_getEnumerator(
         JNIEnv *env, jclass clazz,
         jlong observer,
         jboolean forget) {
     // TODO: implement getEnumerator()
+    return -1;
 }
 }
