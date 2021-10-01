@@ -276,7 +276,7 @@ public abstract class Expression {
     //---------------------------------------------
     static final class UnaryExpression extends Expression {
         @SuppressWarnings("PMD.FieldNamingConventions")
-        private enum OpType {Missing, NotMissing, NotNull, Null}
+        private enum OpType {Missing, NotMissing, NotNull, Null, Valued}
 
         @NonNull
         private final Expression operand;
@@ -310,6 +310,9 @@ public abstract class Expression {
 
                 case NotNull:
                     return Arrays.asList("IS NOT", opd, null);
+
+                case Valued:
+                    return Arrays.asList("IS VALUED", opd);
 
                 default:
                     Log.i(LogDomain.QUERY, "Unexpected unary type: " + type);
@@ -792,7 +795,9 @@ public abstract class Expression {
      * expression is null or missing.
      *
      * @return An IS NULL expression.
+     * @deprecated use Expression.isValued
      */
+    @Deprecated
     @SuppressWarnings("PMD.LinguisticNaming")
     @NonNull
     public Expression isNullOrMissing() {
@@ -805,9 +810,33 @@ public abstract class Expression {
      * expression is NOT null or missing.
      *
      * @return An IS NOT NULL expression.
+     * @deprecated use Expression.isValued
      */
+    @Deprecated
     @NonNull
     public Expression notNullOrMissing() { return negated(isNullOrMissing()); }
+
+    /**
+     * Creates an IS VALUED expression that returns true if the current
+     * expression is valued.
+     *
+     * @return An IS VALUED expression.
+     */
+    @SuppressWarnings("PMD.LinguisticNaming")
+    @NonNull
+    public Expression isValued() {
+        return new UnaryExpression(this, UnaryExpression.OpType.Valued);
+    }
+
+    /**
+     * Creates an NOT IS VALUED expression that returns true if the current
+     * expression is NOT VALUED.
+     *
+     * @return An IS NOT VALUED expression.
+     */
+    @SuppressWarnings("PMD.LinguisticNaming")
+    @NonNull
+    public Expression isNotValued() { return negated(isValued()); }
 
     /**
      * Creates a Collate expression with the given Collation specification. Commonly

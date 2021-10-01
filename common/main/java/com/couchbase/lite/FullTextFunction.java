@@ -33,6 +33,21 @@ public final class FullTextFunction {
     private FullTextFunction() { }
 
     /**
+     * Creates a full-text expression with the given full-text index name and search text.
+     *
+     * @param indexName The full-text index name.
+     * @param text The search text
+     * @return The full-text match expression
+     */
+    @NonNull
+    public static Expression match(@NonNull String indexName, @NonNull String text) {
+        Preconditions.assertNotNull(indexName, "indexName");
+        return new Expression.FunctionExpression(
+            "MATCH()",
+            Arrays.asList(Expression.string(indexName), Expression.string(text)));
+    }
+
+    /**
      * Creates a full-text rank function with the given full-text index name.
      * The rank function indicates how well the current query result matches
      * the full-text query when performing the match comparison.
