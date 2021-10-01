@@ -308,6 +308,46 @@ public class QueryTest extends BaseQueryTest {
             assertEquals(testCase.docIds.size(), numRows);
         }
     }
+    @Test
+    public void testWhereValued() throws CouchbaseLiteException {
+        MutableDocument doc1 = new MutableDocument("doc1");
+        doc1.setValue("name", "Scott");
+        doc1.setValue("address", null);
+        saveDocInBaseTestDb(doc1);
+
+        MutableDocument doc2 = new MutableDocument("doc2");
+        doc2.setValue("name", "Tiger");
+        doc2.setValue("address", "123 1st ave.");
+        doc2.setValue("age", 20);
+        saveDocInBaseTestDb(doc2);
+
+        Expression name = Expression.property("name");
+        Expression address = Expression.property("address");
+        Expression age = Expression.property("age");
+        Expression work = Expression.property("work");
+
+        TestCase[] cases = {
+            new TestCase(name.isNotValued()),
+            new TestCase(name.isValued(), 1, 2),
+            new TestCase(address.isNotValued(), 1),
+            new TestCase(address.isNotValued(), 2),
+            new TestCase(age.isNotValued(), 1),
+            new TestCase(age.isValued(), 2),
+            new TestCase(work.isNotValued(), 1, 2),
+            new TestCase(work.isValued())
+        };
+
+        for (TestCase testCase: cases) {
+            int numRows = verifyQuery(
+                QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).where(testCase.expr),
+                (n, result) -> {
+                    if (n < testCase.docIds.size()) {
+                        assertEquals(testCase.docIds.get(n - 1), result.getString(0));
+                    }
+                });
+            assertEquals(testCase.docIds.size(), numRows);
+        }
+    }
 
     @Test
     public void testWhereIs() throws CouchbaseLiteException {
@@ -436,7 +476,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testWhereMatch() throws JSONException, IOException, CouchbaseLiteException {
+    public void testWhereIndexMatch() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("sentences.json");
 
         baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
@@ -445,6 +485,27 @@ public class QueryTest extends BaseQueryTest {
             .select(SR_DOCID, SelectResult.property("sentence"))
             .from(DataSource.database(baseTestDb))
             .where(FullTextExpression.index("sentence").match("'Dummie woman'"))
+            .orderBy(Ordering.expression(FullTextFunction.rank("sentence")).descending());
+
+        int numRows = verifyQuery(
+            query,
+            (n, result) -> {
+                assertNotNull(result.getString(0));
+                assertNotNull(result.getString(1));
+            });
+        assertEquals(2, numRows);
+    }
+
+    @Test
+    public void testWhereMatch() throws JSONException, IOException, CouchbaseLiteException {
+        loadJSONResource("sentences.json");
+
+        baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
+
+        Query query = QueryBuilder
+            .select(SR_DOCID, SelectResult.property("sentence"))
+            .from(DataSource.database(baseTestDb))
+            .where(FullTextFunction.match("sentence", "'Dummie woman'"))
             .orderBy(Ordering.expression(FullTextFunction.rank("sentence")).descending());
 
         int numRows = verifyQuery(
@@ -1095,7 +1156,7 @@ public class QueryTest extends BaseQueryTest {
             new MathFn(
                 "atan2",
                 Function.atan2(Expression.doubleValue(90.0), Expression.doubleValue(num)),
-                Math.atan2(num, 90.0)),
+                Math.atan2(90.0, num)),
             new MathFn("ceil", Function.ceil(propNumber), Math.ceil(num)),
             new MathFn("cos", Function.cos(propNumber), Math.cos(num)),
             new MathFn("degrees", Function.degrees(propNumber), num * 180.0 / Math.PI),
