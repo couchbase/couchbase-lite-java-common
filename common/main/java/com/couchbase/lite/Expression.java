@@ -21,12 +21,12 @@ import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -123,102 +123,51 @@ public abstract class Expression {
         }
     }
 
+    //---------------------------------------------
+    // Binary Expression
+    //---------------------------------------------
     @SuppressWarnings("PMD.FieldNamingConventions")
     static final class BinaryExpression extends Expression {
-        private enum OpType {
-            Add,
-            Between,
-            Divide,
-            EqualTo,
-            GreaterThan,
-            GreaterThanOrEqualTo,
-            In,
-            Is,
-            IsNot,
-            LessThan,
-            LessThanOrEqualTo,
-            Like,
-            Modulus,
-            Multiply,
-            NotEqualTo,
-            Subtract,
-            RegexLike
-        }
+        private static final String OP_ADD = "+";
+        private static final String OP_BETWEEN = "BETWEEN";
+        private static final String OP_DIVIDE = "/";
+        private static final String OP_EQUALS = "=";
+        private static final String OP_GREATER = ">";
+        private static final String OP_GREATER_OR_EQUAL = ">=";
+        private static final String OP_IN = "IN";
+        private static final String OP_IS = "IS";
+        private static final String OP_IS_NOT = "IS NOT";
+        private static final String OP_LESS = "<";
+        private static final String OP_LESS_OR_EQUAL = "<=";
+        private static final String OP_LIKE = "LIKE";
+        private static final String OP_MODULO = "%";
+        private static final String OP_MULTIPLY = "*";
+        private static final String OP_NOT_EQUAL = "!=";
+        private static final String OP_SUBTRACT = "-";
+        private static final String OP_REGEX_LIKE = "regexp_like()";
 
         @NonNull
         private final Expression lhs;
         @NonNull
         private final Expression rhs;
         @NonNull
-        private final OpType type;
+        private final String op;
 
-        BinaryExpression(@NonNull Expression lhs, @NonNull Expression rhs, @NonNull OpType type) {
+        BinaryExpression(@NonNull Expression lhs, @NonNull Expression rhs, @NonNull String op) {
             this.lhs = lhs;
             this.rhs = rhs;
-            this.type = type;
+            this.op = op;
         }
 
         @NonNull
         @Override
         Object asJSON() {
             final List<Object> json = new ArrayList<>();
-            switch (type) {
-                case Add:
-                    json.add("+");
-                    break;
-                case Between:
-                    json.add("BETWEEN");
-                    break;
-                case Divide:
-                    json.add("/");
-                    break;
-                case EqualTo:
-                    json.add("=");
-                    break;
-                case GreaterThan:
-                    json.add(">");
-                    break;
-                case GreaterThanOrEqualTo:
-                    json.add(">=");
-                    break;
-                case In:
-                    json.add("IN");
-                    break;
-                case Is:
-                    json.add("IS");
-                    break;
-                case IsNot:
-                    json.add("IS NOT");
-                    break;
-                case LessThan:
-                    json.add("<");
-                    break;
-                case LessThanOrEqualTo:
-                    json.add("<=");
-                    break;
-                case Like:
-                    json.add("LIKE");
-                    break;
-                case Modulus:
-                    json.add("%");
-                    break;
-                case Multiply:
-                    json.add("*");
-                    break;
-                case NotEqualTo:
-                    json.add("!=");
-                    break;
-                case RegexLike:
-                    json.add("regexp_like()");
-                    break;
-                case Subtract:
-                    json.add("-");
-                    break;
-            }
+            json.add(op);
 
             json.add(lhs.asJSON());
 
-            if (type != OpType.Between) { json.add(rhs.asJSON()); }
+            if (!op.equals(OP_BETWEEN)) { json.add(rhs.asJSON()); }
             else {
                 // "between"'s RHS is an aggregate of the min and max, but the min and max need to be
                 // written out as parameters to the BETWEEN operation:
@@ -235,17 +184,18 @@ public abstract class Expression {
     // Compound Expression
     //---------------------------------------------
     static final class CompoundExpression extends Expression {
-        @SuppressWarnings("PMD.FieldNamingConventions")
-        private enum OpType {And, Or, Not}
+        private static final String OP_AND = "AND";
+        private static final String OP_OR = "OR";
+        private static final String OP_NOT = "NOT";
 
         @NonNull
-        private final OpType type;
+        private final String op;
         @NonNull
         private final List<Expression> subexpressions;
 
-        CompoundExpression(@NonNull List<Expression> subexpressions, @NonNull OpType type) {
+        CompoundExpression(@NonNull List<Expression> subexpressions, @NonNull String op) {
             Preconditions.assertNotNull(subexpressions, "subexpressions");
-            this.type = type;
+            this.op = op;
             this.subexpressions = subexpressions;
         }
 
@@ -253,17 +203,7 @@ public abstract class Expression {
         @Override
         Object asJSON() {
             final List<Object> json = new ArrayList<>();
-            switch (type) {
-                case And:
-                    json.add("AND");
-                    break;
-                case Or:
-                    json.add("OR");
-                    break;
-                case Not:
-                    json.add("NOT");
-                    break;
-            }
+            json.add(op);
 
             for (Expression expr: subexpressions) { json.add(expr.asJSON()); }
 
@@ -275,46 +215,50 @@ public abstract class Expression {
     // Unary Expression
     //---------------------------------------------
     static final class UnaryExpression extends Expression {
-        @SuppressWarnings("PMD.FieldNamingConventions")
-        private enum OpType {Missing, NotMissing, NotNull, Null}
+        private static final int OP_VALUED = 1001;
+        @Deprecated
+        private static final int OP_NULL = 1002;
+        @Deprecated
+        private static final int OP_MISSING = 1003;
 
         @NonNull
         private final Expression operand;
-        @NonNull
-        private final OpType type;
+        private final int op;
 
-        UnaryExpression(@NonNull Expression operand, @NonNull OpType type) {
+        UnaryExpression(@NonNull Expression operand, int op) {
             Preconditions.assertNotNull(operand, "operand");
             this.operand = operand;
-            this.type = type;
+            this.op = op;
         }
 
         @NonNull
         @Override
         Object asJSON() {
-            final List<Object> values;
-            final Object opd = operand.asJSON();
-            switch (type) {
-                case Missing:
-                    values = new ArrayList<>();
-                    values.add("MISSING");
-                    return Arrays.asList("IS", opd, values);
+            final List<Object> json = new ArrayList<>();
 
-                case NotMissing:
-                    values = new ArrayList<>();
-                    values.add("MISSING");
-                    return Arrays.asList("IS NOT", opd, values);
+            String opStr = "IS";
+            if (op == OP_VALUED) { opStr = opStr + " VALUED"; }
+            json.add(opStr);
 
-                case Null:
-                    return Arrays.asList("IS", opd, null);
+            json.add(operand.asJSON());
 
-                case NotNull:
-                    return Arrays.asList("IS NOT", opd, null);
+            switch (op) {
+                case OP_VALUED:
+                    break;
+
+                case OP_NULL:
+                    json.add(null);
+                    break;
+
+                case OP_MISSING:
+                    json.add(Collections.singletonList("MISSING"));
+                    break;
 
                 default:
-                    Log.i(LogDomain.QUERY, "Unexpected unary type: " + type);
-                    return Arrays.asList();
+                    throw new IllegalStateException("Unexpected unary type: " + op);
             }
+
+            return json;
         }
     }
 
@@ -529,7 +473,7 @@ public abstract class Expression {
     @NonNull
     public static Expression negated(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new CompoundExpression(Arrays.asList(expression), CompoundExpression.OpType.Not);
+        return new CompoundExpression(Collections.singletonList(expression), CompoundExpression.OP_NOT);
     }
 
     /**
@@ -552,6 +496,12 @@ public abstract class Expression {
     @Nullable
     abstract Object asJSON();
 
+    @NonNull
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ",json=" + asJSON() + "}";
+    }
+
     /**
      * Create a multiply expression to multiply the current expression by the given expression.
      *
@@ -561,7 +511,7 @@ public abstract class Expression {
     @NonNull
     public Expression multiply(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.Multiply);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_MULTIPLY);
     }
 
     /**
@@ -573,7 +523,7 @@ public abstract class Expression {
     @NonNull
     public Expression divide(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.Divide);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_DIVIDE);
     }
 
     /**
@@ -585,7 +535,7 @@ public abstract class Expression {
     @NonNull
     public Expression modulo(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.Modulus);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_MODULO);
     }
 
     /**
@@ -597,7 +547,7 @@ public abstract class Expression {
     @NonNull
     public Expression add(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.Add);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_ADD);
     }
 
     /**
@@ -609,7 +559,7 @@ public abstract class Expression {
     @NonNull
     public Expression subtract(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.Subtract);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_SUBTRACT);
     }
 
     /**
@@ -622,7 +572,7 @@ public abstract class Expression {
     @NonNull
     public Expression lessThan(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.LessThan);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_LESS);
     }
 
     /**
@@ -635,7 +585,7 @@ public abstract class Expression {
     @NonNull
     public Expression lessThanOrEqualTo(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.LessThanOrEqualTo);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_LESS_OR_EQUAL);
     }
 
     /**
@@ -648,7 +598,7 @@ public abstract class Expression {
     @NonNull
     public Expression greaterThan(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.GreaterThan);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_GREATER);
     }
 
     /**
@@ -661,7 +611,7 @@ public abstract class Expression {
     @NonNull
     public Expression greaterThanOrEqualTo(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.GreaterThanOrEqualTo);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_GREATER_OR_EQUAL);
     }
 
     /**
@@ -674,7 +624,7 @@ public abstract class Expression {
     @NonNull
     public Expression equalTo(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.EqualTo);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_EQUALS);
     }
 
     // Null or Missing:
@@ -689,7 +639,7 @@ public abstract class Expression {
     @NonNull
     public Expression notEqualTo(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.NotEqualTo);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_NOT_EQUAL);
     }
 
     /**
@@ -702,7 +652,7 @@ public abstract class Expression {
     @NonNull
     public Expression and(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OpType.And);
+        return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OP_AND);
     }
 
     /**
@@ -715,7 +665,7 @@ public abstract class Expression {
     @NonNull
     public Expression or(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OpType.Or);
+        return new CompoundExpression(Arrays.asList(this, expression), CompoundExpression.OP_OR);
     }
 
     /**
@@ -728,7 +678,7 @@ public abstract class Expression {
     @NonNull
     public Expression like(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.Like);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_LIKE);
     }
 
     /**
@@ -741,7 +691,7 @@ public abstract class Expression {
     @NonNull
     public Expression regex(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.RegexLike);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_REGEX_LIKE);
     }
 
     /**
@@ -754,7 +704,7 @@ public abstract class Expression {
     @NonNull
     public Expression is(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.Is);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_IS);
     }
 
     /**
@@ -768,7 +718,7 @@ public abstract class Expression {
     @NonNull
     public Expression isNot(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
-        return new BinaryExpression(this, expression, BinaryExpression.OpType.IsNot);
+        return new BinaryExpression(this, expression, BinaryExpression.OP_IS_NOT);
     }
 
     /**
@@ -784,30 +734,8 @@ public abstract class Expression {
         Preconditions.assertNotNull(expression1, "lower bound");
         Preconditions.assertNotNull(expression2, "upper bound");
         final Expression aggr = new AggregateExpression(Arrays.asList(expression1, expression2));
-        return new BinaryExpression(this, aggr, BinaryExpression.OpType.Between);
+        return new BinaryExpression(this, aggr, BinaryExpression.OP_BETWEEN);
     }
-
-    /**
-     * Creates an IS NULL OR MISSING expression that evaluates whether or not the current
-     * expression is null or missing.
-     *
-     * @return An IS NULL expression.
-     */
-    @SuppressWarnings("PMD.LinguisticNaming")
-    @NonNull
-    public Expression isNullOrMissing() {
-        return new UnaryExpression(this, UnaryExpression.OpType.Null)
-            .or(new UnaryExpression(this, UnaryExpression.OpType.Missing));
-    }
-
-    /**
-     * Creates an IS NOT NULL OR MISSING expression that evaluates whether or not the current
-     * expression is NOT null or missing.
-     *
-     * @return An IS NOT NULL expression.
-     */
-    @NonNull
-    public Expression notNullOrMissing() { return negated(isNullOrMissing()); }
 
     /**
      * Creates a Collate expression with the given Collation specification. Commonly
@@ -834,12 +762,52 @@ public abstract class Expression {
     public Expression in(@NonNull Expression... expressions) {
         if (expressions.length <= 0) { throw new IllegalArgumentException("empty 'IN'."); }
         final Expression aggr = new AggregateExpression(Arrays.asList(expressions));
-        return new BinaryExpression(this, aggr, BinaryExpression.OpType.In);
+        return new BinaryExpression(this, aggr, BinaryExpression.OP_IN);
     }
 
+    /**
+     * Creates an IS VALUED expression that returns true if the current
+     * expression is valued.
+     *
+     * @return An IS VALUED expression.
+     */
+    @SuppressWarnings("PMD.LinguisticNaming")
     @NonNull
-    @Override
-    public String toString() {
-        return getClass().getSimpleName() + "{" + ClassUtils.objId(this) + ",json=" + asJSON() + "}";
+    public Expression isValued() { return new UnaryExpression(this, UnaryExpression.OP_VALUED); }
+
+    /**
+     * Creates an IS NOT VALUED expression that returns true if the current
+     * expression is NOT VALUED.
+     *
+     * @return An IS NOT VALUED expression.
+     */
+    @SuppressWarnings("PMD.LinguisticNaming")
+    @NonNull
+    public Expression isNotValued() { return negated(new UnaryExpression(this, UnaryExpression.OP_VALUED)); }
+
+    /**
+     * Creates an IS NULL OR MISSING expression that evaluates whether or not the current
+     * expression is null or missing.
+     *
+     * @return An IS NULL expression.
+     * @deprecated use Expression.isValued
+     */
+    @Deprecated
+    @SuppressWarnings("PMD.LinguisticNaming")
+    @NonNull
+    public Expression isNullOrMissing() {
+        return new UnaryExpression(this, UnaryExpression.OP_NULL)
+            .or(new UnaryExpression(this, UnaryExpression.OP_MISSING));
     }
+
+    /**
+     * Creates an NOT IS NULL OR MISSING expression that evaluates whether or not the current
+     * expression is NOT null or missing.
+     *
+     * @return An NOT IS NULL expression.
+     * @deprecated use Expression.isValued
+     */
+    @Deprecated
+    @NonNull
+    public Expression notNullOrMissing() { return negated(isNullOrMissing()); }
 }

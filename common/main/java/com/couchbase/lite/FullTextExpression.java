@@ -24,7 +24,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * Full-text expression
+ *
+ * @deprecated Use FullTextFunction.match()
  */
+@Deprecated
 public final class FullTextExpression {
     static final class FullTextMatchExpression extends Expression {
         //---------------------------------------------
@@ -57,7 +60,9 @@ public final class FullTextExpression {
      *
      * @param name The full-text index name.
      * @return The full-text expression.
+     * @deprecated Use FullTextFunction.match()
      */
+    @Deprecated
     @NonNull
     public static FullTextExpression index(@NonNull String name) {
         Preconditions.assertNotNull(name, "name");
@@ -80,7 +85,9 @@ public final class FullTextExpression {
      *
      * @param query The search text
      * @return The full-text match expression
+     * @deprecated Use FullTextFunction.match()
      */
+    @Deprecated
     @NonNull
     public Expression match(@NonNull String query) {
         Preconditions.assertNotNull(query, "query");

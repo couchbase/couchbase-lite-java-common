@@ -138,7 +138,7 @@ abstract class AbstractFunction {
      * to the point (x, y) in Cartesian coordinates.
      */
     @NonNull
-    public static Expression atan2(@NonNull Expression x, @NonNull Expression y) {
+    public static Expression atan2(@NonNull Expression y, @NonNull Expression x) {
         return expr("ATAN2()", Preconditions.assertNotNull(y, "y"), Preconditions.assertNotNull(x, "x"));
     }
 

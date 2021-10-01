@@ -113,7 +113,7 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
-    public static String defaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
+    public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
 
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }
