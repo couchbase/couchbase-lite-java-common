@@ -400,8 +400,10 @@ Java_com_couchbase_lite_internal_fleece_FLValue_json5toJson(JNIEnv *env, jclass 
     jstringSlice json5(env, jjson5);
     FLError error = kFLNoError;
     FLStringResult json = FLJSON5_ToJSON(json5, nullptr, nullptr, &error);
-    if (error != kFLNoError)
+    if (error != kFLNoError) {
         throwError(env, {FleeceDomain, error});
+        return nullptr;
+    }
     jstring res = toJString(env, json);
     FLSliceResult_Release(json);
     return res;

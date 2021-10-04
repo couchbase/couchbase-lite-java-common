@@ -41,12 +41,9 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_next(JNIEnv *env, jclass
         return false;
     C4Error error = {};
     jboolean result = c4queryenum_next(e, &error);
-    if (!result) {
-// NOTE: Please keep following line of code for a while.
-// At end of iteration, proactively free the enumerator:
-// c4queryenum_free((C4QueryEnumerator *) handle);
-        if (error.code != 0)
-            throwError(env, error);
+    if (!result && (error.code != 0)) {
+        throwError(env, error);
+        return false;
     }
     return result;
 }
@@ -63,8 +60,10 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getRowCount(JNIEnv *env,
         return 0L;
     C4Error error = {};
     int64_t res = c4queryenum_getRowCount(e, &error);
-    if (res == -1)
+    if (res == -1) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) res;
 }
 
@@ -80,8 +79,10 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_seek(JNIEnv *env, jclass
         return false;
     C4Error error = {};
     jboolean result = c4queryenum_seek(e, (uint64_t) rowIndex, &error);
-    if (!result)
+    if (!result) {
         throwError(env, error);
+        return false;
+    }
     return result;
 }
 
@@ -98,8 +99,10 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_refresh(JNIEnv *env, jcl
     C4Error error = {};
     C4QueryEnumerator *result = c4queryenum_refresh(e, &error);
     // NOTE: if result is null, it indicates no update. it is not error.
-    if (error.code != 0)
+    if (error.code != 0) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) result;
 }
 

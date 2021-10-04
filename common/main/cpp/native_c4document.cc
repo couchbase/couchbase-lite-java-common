@@ -150,8 +150,10 @@ Java_com_couchbase_lite_internal_core_C4Document_get(
 
     C4Error error;
     C4Document *doc = c4db_getDoc((C4Database *) jdb, docID, mustExist, kDocGetAll, &error);
-    if (doc == nullptr)
+    if (doc == nullptr) {
         throwError(env, error);
+        return 0;
+    }
 
     return (jlong) doc;
 }
@@ -169,8 +171,11 @@ Java_com_couchbase_lite_internal_core_C4Document_getBySequence(
         jlong jsequence) {
     C4Error error;
     C4Document *doc = c4doc_getBySequence((C4Database *) jdb, (uint16_t) jsequence, &error);
-    if (doc == nullptr)
+    if (doc == nullptr) {
         throwError(env, error);
+        return 0;
+    }
+
     return (jlong) doc;
 }
 
@@ -300,8 +305,10 @@ Java_com_couchbase_lite_internal_core_C4Document_purgeRevision(
     jstringSlice revID(env, jrevID);
     C4Error error;
     int num = c4doc_purgeRevision((C4Document *) jdoc, revID, &error);
-    if (num == -1)
+    if (num == -1) {
         throwError(env, error);
+        return -1;
+    }
     return num;
 }
 
@@ -359,8 +366,10 @@ Java_com_couchbase_lite_internal_core_C4Document_getExpiration(
     jstringSlice docID(env, jdocID);
     C4Error error;
     jlong exp = c4doc_getExpiration((C4Database *) jdb, docID, &error);
-    if (exp < 0)
+    if (exp < 0) {
         throwError(env, error);
+        return 0;
+    }
     return exp;
 }
 
@@ -424,8 +433,10 @@ Java_com_couchbase_lite_internal_core_C4Document_put(
     for (jsize i = 0; i < n; i++)
         delete historyAlloc.at(i);
 
-    if (!doc)
+    if (!doc) {
         throwError(env, error);
+        return 0;
+    }
 
     return (jlong) doc;
 }
@@ -491,8 +502,10 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2(
     for (jsize i = 0; i < n; i++)
         delete historyAlloc.at(i);
 
-    if (!doc)
+    if (!doc) {
         throwError(env, error);
+        return 0;
+    }
 
     return (jlong) doc;
 }
@@ -514,8 +527,11 @@ Java_com_couchbase_lite_internal_core_C4Document_create(
     jbyteArraySlice body(env, jbody, false);
     C4Error error;
     C4Document *doc = c4doc_create((C4Database *) jdb, docID, body, (unsigned) flags, &error);
-    if (!doc)
+    if (!doc) {
         throwError(env, error);
+        return 0;
+    }
+
     return (jlong) doc;
 }
 
@@ -539,8 +555,10 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_create2
     jstringSlice docID(env, jdocID);
     C4Error error;
     C4Document *doc = c4doc_create((C4Database *) jdb, docID, body, (unsigned) flags, &error);
-    if (!doc)
+    if (!doc) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) doc;
 }
 
@@ -559,8 +577,10 @@ Java_com_couchbase_lite_internal_core_C4Document_update(
     jbyteArraySlice body(env, jbody, false);
     C4Error error;
     C4Document *doc = c4doc_update((C4Document *) jdoc, body, (unsigned) flags, &error);
-    if (!doc)
+    if (!doc) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) doc;
 }
 
@@ -576,18 +596,24 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_update2
         jlong jbody,
         jint flags) {
     auto doc = (C4Document *) jdoc;
-    if (doc == nullptr)
+    if (doc == nullptr) {
         throwError(env, {LiteCoreDomain, kC4ErrorAssertionFailed});
+        return 0;
+    }
 
     C4Slice body;
     if (jbody != 0)
         body = *(C4Slice *) jbody;
     else
         body = kC4SliceNull;
+
     C4Error error;
     C4Document *newDoc = c4doc_update((C4Document *) jdoc, body, (unsigned) flags, &error);
-    if (!newDoc)
+    if (!newDoc) {
         throwError(env, error);
+        return 0;
+    }
+
     return (jlong) newDoc;
 }
 
@@ -622,8 +648,11 @@ Java_com_couchbase_lite_internal_core_C4Document_bodyAsJSON(
         jboolean canonical) {
     C4Error error = {};
     C4StringResult result = c4doc_bodyAsJSON((C4Document *) jdoc, canonical, &error);
-    if (error.code != 0)
+    if (error.code != 0) {
         throwError(env, error);
+        return nullptr;
+    }
+
     jstring jstr = toJString(env, result);
     c4slice_free(result);
     return jstr;

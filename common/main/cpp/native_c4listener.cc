@@ -221,10 +221,10 @@ static bool decryptKeyCallback(void *externalKey, C4Slice input, void *output, s
 // containing the signature. This method creates the parameter byte array
 // and then copies the result to its destination.
 static bool doSignCallback(JNIEnv *env,
-               void *externalKey,
-               C4SignatureDigestAlgorithm digestAlgorithm,
-               C4Slice inputData,
-               void *outSignature) {
+                           void *externalKey,
+                           C4SignatureDigestAlgorithm digestAlgorithm,
+                           C4Slice inputData,
+                           void *outSignature) {
     jbyteArray data = env->NewByteArray(inputData.size);
     env->SetByteArrayRegion(data, 0, inputData.size, (jbyte *) inputData.buf);
 
@@ -464,7 +464,9 @@ static jobject toList(JNIEnv *env, FLMutableArray array) {
     return result;
 }
 
-static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
+static C4Cert *getCert(JNIEnv *env, jbyteArray cert, bool &didThrow) {
+    didThrow = false;
+
     if (!cert)
         return nullptr;
 
@@ -482,6 +484,7 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert) {
 
     if (!c4cert) {
         throwError(env, error);
+        didThrow = true;
         return nullptr;
     }
 
@@ -522,8 +525,8 @@ extern "C" {
 // com.couchbase.lite.internal.core.impl.NativeC4Listener
 //-------------------------------------------------------------------------
 
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
         JNIEnv *env,
         jclass ignore,
         jint port,
@@ -554,8 +557,8 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
             nullptr));
 }
 
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         JNIEnv *env,
         jclass ignore,
         jint port,
@@ -576,16 +579,23 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
     C4TLSConfig tlsConfig = {};
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
     tlsConfig.key = (C4KeyPair *) keyPair;
-    tlsConfig.certificate = getCert(env, cert);
+
+    bool failed;
+
+    tlsConfig.certificate = getCert(env, cert, failed);
+    if (failed)
+        return 0;
 
     // Client Cert Authentication:
     tlsConfig.requireClientCerts = requireClientCerts;
     if (requireClientCerts == true) {
-        if (rootClientCerts != NULL) {
-            tlsConfig.rootClientCerts = getCert(env, rootClientCerts);
-        } else {
+        if (rootClientCerts == NULL) {
             tlsConfig.certAuthCallback = &certAuthCallback;
             tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
+        } else {
+            tlsConfig.rootClientCerts = getCert(env, rootClientCerts, failed);
+            if (failed)
+                return 0;
         }
     }
 
@@ -605,19 +615,24 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             &tlsConfig));
 }
 
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_free
-        (JNIEnv *env, jclass ignore, jlong c4Listener) {
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_free(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4Listener) {
     c4listener_free(reinterpret_cast<C4Listener *>(c4Listener));
 }
 
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb
-        (JNIEnv *env, jclass ignore, jlong c4Listener, jstring dbName, jlong c4Database) {
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4Listener,
+        jstring dbName,
+        jlong c4Database) {
     jstringSlice name(env, dbName);
 
     C4Error error;
-
     if (!c4listener_shareDB(
             reinterpret_cast<C4Listener *>(c4Listener),
             name,
@@ -627,12 +642,13 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb
     }
 }
 
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareDb
-        (JNIEnv *env, jclass ignore, jlong c4Listener, jlong c4Database) {
-
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareDb(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4Listener,
+        jlong c4Database) {
     C4Error error;
-
     if (!c4listener_unshareDB(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
@@ -641,12 +657,13 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareDb
     }
 }
 
-JNIEXPORT jobject
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls
-        (JNIEnv *env, jclass ignore, jlong c4Listener, jlong c4Database) {
-
+JNIEXPORT jobject JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4Listener,
+        jlong c4Database) {
     C4Error error;
-
     auto urls = c4listener_getURLs(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
@@ -661,16 +678,19 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls
     return toList(env, urls);
 }
 
-JNIEXPORT jint
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getPort
-        (JNIEnv *env, jclass ignore, jlong c4Listener) {
+JNIEXPORT jint JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getPort(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4Listener) {
     return (jint) c4listener_getPort(reinterpret_cast<C4Listener *>(c4Listener));
 }
 
-JNIEXPORT jobject
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getConnectionStatus
-        (JNIEnv *env, jclass ignore, jlong c4Listener) {
-
+JNIEXPORT jobject JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getConnectionStatus(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4Listener) {
     unsigned connections;
     unsigned activeConnections;
 
@@ -679,9 +699,11 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getConnectio
     return toConnectionStatus(env, connections, activeConnections);
 }
 
-JNIEXPORT jstring
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUriFromPath
-        (JNIEnv *env, jclass ignore, jstring path) {
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUriFromPath(
+        JNIEnv *env,
+        jclass ignore,
+        jstring path) {
     jstringSlice pathSlice(env, path);
     auto uri = c4db_URINameFromPath(pathSlice);
     jstring jstr = toJString(env, uri);
@@ -693,20 +715,26 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUriFromPa
 // com.couchbase.lite.internal.core.impl.NativeC4KeyPair
 //-------------------------------------------------------------------------
 
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_fromExternal
-        (JNIEnv *env, jclass ignore, jbyte algorithm, jint keyBits, jlong context) {
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_fromExternal(
+        JNIEnv *env,
+        jclass ignore,
+        jbyte algorithm,
+        jint keyBits,
+        jlong context) {
     return (jlong) createKeyPair(env, algorithm, keyBits, context);
 }
 
-JNIEXPORT jbyteArray
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate
-        (JNIEnv *env, jclass ignore,
-         jlong c4KeyPair,
-         jbyte algorithm,
-         jint keyBits,
-         jobjectArray nameComponents,
-         jbyte usage,
-         jlong validityInSeconds) {
+JNIEXPORT jbyteArray JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4KeyPair,
+        jbyte algorithm,
+        jint keyBits,
+        jobjectArray nameComponents,
+        jbyte usage,
+        jlong validityInSeconds) {
     auto keys = (C4KeyPair *) c4KeyPair;
 
     int size = env->GetArrayLength(nameComponents);
@@ -759,9 +787,8 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfS
     return certData;
 }
 
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_free
-        (JNIEnv *env, jclass ignore, jlong hdl) {
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_free(JNIEnv *env, jclass ignore, jlong hdl) {
     c4keypair_release((C4KeyPair *) hdl);
 }
 }

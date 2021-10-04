@@ -230,8 +230,11 @@ JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_fleece_FLEncoder_finish(JNIEnv *env, jclass ignore, jlong jenc) {
     FLError error = kFLNoError;
     FLSliceResult result = FLEncoder_Finish((FLEncoder) jenc, &error);
-    if (error != kFLNoError)
+    if (error != kFLNoError) {
         throwError(env, {FleeceDomain, error});
+        return nullptr;
+    }
+
     jbyteArray res = toJByteArray(env, (C4Slice) result);
     FLSliceResult_Release(result);
     return res;
@@ -246,8 +249,11 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_fleece_FLEncoder_finish2(JNIEnv *env, jclass ignore, jlong jenc) {
     FLError error = kFLNoError;
     FLSliceResult res = FLEncoder_Finish((FLEncoder) jenc, &error);
-    if (error != kFLNoError)
+    if (error != kFLNoError) {
         throwError(env, {FleeceDomain, error});
+        return 0;
+    }
+
     auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
     sliceResult->buf = res.buf;
     sliceResult->size = res.size;
@@ -287,8 +293,10 @@ JNIEXPORT jstring JNICALL
 Java_com_couchbase_lite_internal_fleece_JSONEncoder_finishJSON(JNIEnv *env, jclass ignore, jlong jenc) {
     FLError error = kFLNoError;
     FLSliceResult result = FLEncoder_Finish((FLEncoder) jenc, &error);
-    if (error != kFLNoError)
+    if (error != kFLNoError) {
         throwError(env, {FleeceDomain, error});
+        return nullptr;
+    }
 
     jstring json = toJString(env, result);
 

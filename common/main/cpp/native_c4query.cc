@@ -50,9 +50,12 @@ Java_com_couchbase_lite_internal_core_C4Query_createQuery(
             expr,
             &errorLoc,
             &error);
+
     // !!! Should put the error location into the exception message.
-    if (!query)
+    if (!query) {
         throwError(env, error);
+        return 0;
+    }
 
     return (jlong) query;
 }
@@ -121,8 +124,10 @@ Java_com_couchbase_lite_internal_core_C4Query_run(
     C4Error error = {};
     C4Slice s = {params->buf, params->size};
     C4QueryEnumerator *e = c4query_run((C4Query *) jquery, &options, s, &error);
-    if (!e)
+    if (!e) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) e;
 }
 
@@ -178,8 +183,10 @@ Java_com_couchbase_lite_internal_core_C4Query_createIndex(
             (C4IndexType) indexType,
             &options,
             &error);
-    if (!res)
+    if (!res) {
         throwError(env, error);
+        return false;
+    }
 
     return (jboolean) res;
 }

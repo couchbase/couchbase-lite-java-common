@@ -41,17 +41,6 @@ public abstract class AbstractReplicatorConfiguration {
      */
     public static final int DISABLE_HEARTBEAT = 2147483;
 
-    /**
-     * Replicator type
-     * PUSH_AND_PULL: Bidirectional; both push and pull
-     * PUSH: Pushing changes to the target
-     * PULL: Pulling changes from the target
-     *
-     * @deprecated Use AbstractReplicator.ReplicatorType
-     */
-    @Deprecated
-    public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
-
     protected static int verifyHeartbeat(int heartbeat) {
         Util.checkDuration("heartbeat", Preconditions.assertNotNegative(heartbeat, "heartbeat"), TimeUnit.SECONDS);
         return heartbeat;
@@ -149,7 +138,7 @@ public abstract class AbstractReplicatorConfiguration {
     @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
     protected AbstractReplicatorConfiguration(
         @NonNull Database database,
-        @NonNull com.couchbase.lite.ReplicatorType type,
+        @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Authenticator authenticator,
         @Nullable Map<String, String> headers,
@@ -306,34 +295,6 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     /**
-     * Old setter for replicator type, indicating the direction of the replicator.
-     * The default value is PUSH_AND_PULL which is bi-directional.
-     *
-     * @param replicatorType The replicator type.
-     * @return this.
-     * @deprecated Use setType(AbstractReplicator.ReplicatorType)
-     */
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setReplicatorType(@NonNull ReplicatorType replicatorType) {
-        final com.couchbase.lite.ReplicatorType type;
-        switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
-            case PUSH_AND_PULL:
-                type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
-                break;
-            case PUSH:
-                type = com.couchbase.lite.ReplicatorType.PUSH;
-                break;
-            case PULL:
-                type = com.couchbase.lite.ReplicatorType.PULL;
-                break;
-            default:
-                throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
-        }
-        return setType(type);
-    }
-
-    /**
      * Sets the replicator type indicating the direction of the replicator.
      * The default value is .pushAndPull which is bi-directional.
      *
@@ -341,7 +302,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setType(@NonNull com.couchbase.lite.ReplicatorType type) {
+    public final ReplicatorConfiguration setType(@NonNull ReplicatorType type) {
         this.type = Preconditions.assertNotNull(type, "replicator type");
         return getReplicatorConfiguration();
     }
@@ -463,30 +424,10 @@ public abstract class AbstractReplicatorConfiguration {
     public final ReplicationFilter getPushFilter() { return pushFilter; }
 
     /**
-     * Old getter for Replicator type indicating the direction of the replicator.
-     *
-     * @deprecated Use getType()
-     */
-    @Deprecated
-    @NonNull
-    public final ReplicatorType getReplicatorType() {
-        switch (type) {
-            case PUSH_AND_PULL:
-                return AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
-            case PUSH:
-                return AbstractReplicatorConfiguration.ReplicatorType.PUSH;
-            case PULL:
-                return AbstractReplicatorConfiguration.ReplicatorType.PULL;
-            default:
-                throw new IllegalStateException("Unrecognized replicator type: " + type);
-        }
-    }
-
-    /**
      * Return Replicator type indicating the direction of the replicator.
      */
     @NonNull
-    public final com.couchbase.lite.ReplicatorType getType() { return type; }
+    public final ReplicatorType getType() { return type; }
 
     /**
      * Return the replication target to replicate with.
@@ -526,15 +467,15 @@ public abstract class AbstractReplicatorConfiguration {
         final StringBuilder buf = new StringBuilder();
 
         if (pullFilter != null) { buf.append('|'); }
-        if ((type == com.couchbase.lite.ReplicatorType.PULL)
-            || (type == com.couchbase.lite.ReplicatorType.PUSH_AND_PULL)) {
+        if ((type == ReplicatorType.PULL)
+            || (type == ReplicatorType.PUSH_AND_PULL)) {
             buf.append('<');
         }
 
         buf.append(continuous ? '*' : '=');
 
-        if ((type == com.couchbase.lite.ReplicatorType.PUSH)
-            || (type == com.couchbase.lite.ReplicatorType.PUSH_AND_PULL)) {
+        if ((type == ReplicatorType.PUSH)
+            || (type == ReplicatorType.PUSH_AND_PULL)) {
             buf.append('>');
         }
         if (pushFilter != null) { buf.append('|'); }

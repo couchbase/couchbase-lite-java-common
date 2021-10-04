@@ -573,8 +573,10 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds(JNIEnv *env,
 
     C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, &c4Error);
 
-    if (c4Error.domain != 0 && c4Error.code != 0)
+    if (c4Error.domain != 0 && c4Error.code != 0) {
         throwError(env, c4Error);
+        return 0L;
+    }
 
     auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
 
@@ -600,8 +602,10 @@ Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending(
     C4Error c4Error = {};
     bool pending = c4repl_isDocumentPending((C4Replicator *) repl, docId, &c4Error);
 
-    if (c4Error.domain != 0 && c4Error.code != 0)
+    if (c4Error.domain != 0 && c4Error.code != 0) {
         throwError(env, c4Error);
+        return false;
+    }
 
     return (jboolean) pending;
 }

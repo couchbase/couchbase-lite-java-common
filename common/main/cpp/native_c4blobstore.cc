@@ -39,8 +39,10 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4BlobStore_getBlobStore(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error = {};
     C4BlobStore *store = c4db_getBlobStore((C4Database *) jdb, &error);
-    if (store == nullptr)
+    if (store == nullptr) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) store;
 }
 
@@ -56,6 +58,7 @@ Java_com_couchbase_lite_internal_core_C4BlobKey_fromString(JNIEnv *env, jclass i
     if (!c4blob_keyFromString(str, pBlobKey)) {
         ::free(pBlobKey);
         throwError(env, {LiteCoreDomain, 0});
+        return 0;
     }
     return (jlong) pBlobKey;
 }
@@ -115,10 +118,14 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_getContents(
         jlong jblobstore,
         jlong jblobkey) {
     auto pBlobKey = (C4BlobKey *) jblobkey;
+
     C4Error error = {};
     C4SliceResult res = c4blob_getContents((C4BlobStore *) jblobstore, *pBlobKey, &error);
-    if (error.domain != 0 && error.code != 0)
+    if (error.domain != 0 && error.code != 0) {
         throwError(env, error);
+        return 0;
+    }
+
     auto sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
     sliceResult->buf = res.buf;
     sliceResult->size = res.size;
@@ -137,10 +144,14 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_getFilePath(
         jlong jblobstore,
         jlong jblobkey) {
     auto pBlobKey = (C4BlobKey *) jblobkey;
+
     C4Error error = {};
     C4StringResult res = c4blob_getFilePath((C4BlobStore *) jblobstore, *pBlobKey, &error);
-    if (error.domain != 0 && error.code != 0)
+    if (error.domain != 0 && error.code != 0) {
         throwError(env, error);
+        return nullptr;
+    }
+
     jstring ret = toJString(env, res);
     c4slice_free(res);
     return ret;
@@ -163,6 +174,7 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_create(
     C4Error error = {};
     if (!c4blob_create((C4BlobStore *) jblobstore, ccontents, nullptr, &blobKey, &error)) {
         throwError(env, error);
+        return 0;
     }
 
     auto pBlobKey = (C4BlobKey *) ::malloc(sizeof(C4BlobKey));
@@ -201,8 +213,10 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_openReadStream(
     auto pBlobKey = (C4BlobKey *) jblobkey;
     C4Error error = {};
     C4ReadStream *stream = c4blob_openReadStream((C4BlobStore *) jblobstore, *pBlobKey, &error);
-    if (stream == nullptr)
+    if (stream == nullptr) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) stream;
 }
 
@@ -215,8 +229,10 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4BlobStore_openWriteStream(JNIEnv *env, jclass ignore, jlong jblobstore) {
     C4Error error = {};
     C4WriteStream *stream = c4blob_openWriteStream((C4BlobStore *) jblobstore, &error);
-    if (stream == nullptr)
+    if (stream == nullptr) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) stream;
 }
 
@@ -235,8 +251,10 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_openStore(
     C4Error error;
     // TODO: Need to work for encryption
     C4BlobStore *store = c4blob_openStore(dirPath, (C4DatabaseFlags) jflags, nullptr, &error);
-    if (store == nullptr)
+    if (store == nullptr) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) store;
 }
 
@@ -282,8 +300,10 @@ Java_com_couchbase_lite_internal_core_C4BlobReadStream_read__J_3BIJ(
     C4Error error = {};
 
     int bufSize = env->GetArrayLength(buffer);
-    if (offset + jsize > bufSize)
+    if (offset + jsize > bufSize) {
         throwError(env, error);
+        return -1;
+    }
 
     jbyte *buff = env->GetByteArrayElements(buffer, nullptr);
 
@@ -303,8 +323,10 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4BlobReadStream_getLength(JNIEnv *env, jclass ignore, jlong jstream) {
     C4Error error = {};
     int64_t length = c4stream_getLength((C4ReadStream *) jstream, &error);
-    if (length == -1)
+    if (length == -1) {
         throwError(env, error);
+        return 0;
+    }
     return (jlong) length;
 }
 
