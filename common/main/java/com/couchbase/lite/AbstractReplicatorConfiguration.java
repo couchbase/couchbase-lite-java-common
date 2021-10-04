@@ -385,7 +385,14 @@ public abstract class AbstractReplicatorConfiguration {
 
     /**
      * Enable/disable auto-purge.
-     * Default is enabled.
+     * <p>
+     * Auto-purge is enabled, by default.
+     * <p>
+     * When the autoPurge flag is disabled, the replicator will notify the registered DocumentReplication listeners
+     * with an "access removed" event when access to the document is revoked on the Sync Gateway. On receiving the
+     * event, the application may decide to manually purge the document. However, for performance reasons, any
+     * DocumentReplication listeners added to the replicator after the replicator is started will not receive the
+     * access removed events until the replicator is restarted or reconnected with Sync Gateway.
      */
     @NonNull
     public final ReplicatorConfiguration setAutoPurgeEnabled(boolean enabled) {
