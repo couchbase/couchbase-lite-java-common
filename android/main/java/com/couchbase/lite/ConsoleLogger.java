@@ -19,11 +19,14 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.couchbase.lite.internal.core.C4Log;
+
 
 /**
  * A class that sends log messages to Android's system log, available via 'logcat'.
  */
 public final class ConsoleLogger extends AbstractConsoleLogger {
+    ConsoleLogger(@NonNull C4Log c4Log) { super(c4Log); }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {

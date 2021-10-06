@@ -132,7 +132,7 @@ public final class Log {
 
     @VisibleForTesting
     public static void initLogging() {
-        C4Log.forceCallbackLevel(Database.log.getConsole().getLevel());
+        C4Log.get().forceCallbackLevel(Database.log.getConsole().getLevel());
         setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
     }
 
@@ -401,26 +401,27 @@ public final class Log {
 
     private static void setC4LogLevel(@NonNull EnumSet<LogDomain> domains, @NonNull LogLevel level) {
         final int c4Level = getC4LevelForLogLevel(level);
+        final C4Log c4Log = C4Log.get();
         for (LogDomain domain: domains) {
             switch (domain) {
                 case DATABASE:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.DATABASE);
+                    c4Log.setLevels(c4Level, C4Constants.LogDomain.DATABASE);
                     break;
 
                 case LISTENER:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.LISTENER);
+                    c4Log.setLevels(c4Level, C4Constants.LogDomain.LISTENER);
                     break;
 
                 case QUERY:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY, C4Constants.LogDomain.SQL);
+                    c4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY, C4Constants.LogDomain.SQL);
                     break;
 
                 case REPLICATOR:
-                    C4Log.setLevels(c4Level, C4Constants.LogDomain.SYNC, C4Constants.LogDomain.SYNC_BUSY);
+                    c4Log.setLevels(c4Level, C4Constants.LogDomain.SYNC, C4Constants.LogDomain.SYNC_BUSY);
                     break;
 
                 case NETWORK:
-                    C4Log.setLevels(
+                    c4Log.setLevels(
                         c4Level,
                         C4Constants.LogDomain.BLIP,
                         C4Constants.LogDomain.WEB_SOCKET,
@@ -459,7 +460,7 @@ public final class Log {
     }
 
     private static boolean shouldLog(@NonNull LogLevel logLevel) {
-        final LogLevel callbackLevel = C4Log.getCallbackLevel();
+        final LogLevel callbackLevel = C4Log.get().getCallbackLevel();
         final LogLevel fileLogLevel = Database.log.getFile().getLevel();
         return ((callbackLevel.compareTo(fileLogLevel) < 0) ? callbackLevel : fileLogLevel).compareTo(logLevel) <= 0;
     }

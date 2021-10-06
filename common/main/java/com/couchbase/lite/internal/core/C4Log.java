@@ -28,45 +28,66 @@ import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.Logger;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.Fn;
 
 
-public final class C4Log {
-    private C4Log() {} // Utility class
-
+public class C4Log {
     @VisibleForTesting
-    public static class RawLog {
-        @NonNull
-        public final String domain;
-        public final int level;
-        @NonNull
-        public final String message;
-
-        RawLog(@NonNull String domain, int level, @NonNull String message) {
-            this.domain = domain;
-            this.level = level;
-            this.message = message;
-        }
-
-        @NonNull
-        @Override
-        public String toString() { return "RawLog{" + domain + "/" + level + ": " + message + "}"; }
-    }
+    @NonNull
+    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(new C4Log());
 
     @NonNull
     private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
 
-    @Nullable
-    private static volatile Fn.Consumer<RawLog> rawListener;
-
-    @VisibleForTesting
-    public static void registerListener(Fn.Consumer<RawLog> listener) { rawListener = listener; }
+    @NonNull
+    public static C4Log get() { return LOGGER.get(); }
 
     // This class and this method are referenced by name, from native code.
     public static void logCallback(@NonNull String c4Domain, int c4Level, @NonNull String message) {
-        final Fn.Consumer<RawLog> listener = rawListener;
-        if (listener != null) { listener.accept(new RawLog(c4Domain, c4Level, message)); }
+        get().logInternal(c4Domain, c4Level, message);
+    }
 
+
+    public final void logToCore(String domain, int level, String message) { log(domain, level, message); }
+
+    public final int getFileLogLevel() { return getBinaryFileLevel(); }
+
+    public final void setFileFileLevel(int level) { setBinaryFileLevel(level); }
+
+    public final void initFileLogger(
+        String path,
+        int level,
+        int maxRotate,
+        long maxSize,
+        boolean plainText,
+        String header) {
+        writeToBinaryFile(path, level, maxRotate, maxSize, plainText, header);
+    }
+
+    public final void setLevels(int level, @Nullable String... domains) {
+        if ((domains == null) || (domains.length <= 0)) { return; }
+        for (String domain: domains) { setLevel(domain, level); }
+    }
+
+    public final void setCallbackLevel(@NonNull LogLevel consoleLevel) {
+        final LogLevel newLogLevel = getCallbackLevel(consoleLevel, Database.log.getCustom());
+        if (CALLBACK_LEVEL.getAndSet(newLogLevel) == newLogLevel) { return; }
+        setCoreCallbackLevel();
+    }
+
+    @NonNull
+    public final LogLevel getCallbackLevel() { return CALLBACK_LEVEL.get(); }
+
+    @VisibleForTesting
+    public final int getLogLevel(String domain) { return getLevel(domain); }
+
+    @VisibleForTesting
+    public final void forceCallbackLevel(@NonNull LogLevel logLevel) {
+        CALLBACK_LEVEL.set(logLevel);
+        setCoreCallbackLevel();
+    }
+
+    @VisibleForTesting
+    protected void logInternal(@NonNull String c4Domain, int c4Level, @NonNull String message) {
         final LogLevel level = Log.getLogLevelForC4Level(c4Level);
         final LogDomain domain = Log.getLoggingDomainForC4Domain(c4Domain);
 
@@ -86,36 +107,16 @@ public final class C4Log {
 
         // This cannot be done synchronously because it will deadlock
         // on the same mutex that is being held for this callback
-        CouchbaseLiteInternal.getExecutionService().getDefaultExecutor().execute(C4Log::setCoreCallbackLevel);
+        CouchbaseLiteInternal.getExecutionService().getDefaultExecutor().execute(this::setCoreCallbackLevel);
     }
 
-    public static void setLevels(int level, @Nullable String... domains) {
-        if ((domains == null) || (domains.length <= 0)) { return; }
-        for (String domain: domains) { setLevel(domain, level); }
-    }
-
-    @NonNull
-    public static LogLevel getCallbackLevel() { return CALLBACK_LEVEL.get(); }
-
-    public static void setCallbackLevel(@NonNull LogLevel consoleLevel) {
-        final LogLevel newLogLevel = getCallbackLevel(consoleLevel, Database.log.getCustom());
-        if (CALLBACK_LEVEL.getAndSet(newLogLevel) == newLogLevel) { return; }
-        setCoreCallbackLevel();
-    }
-
-    @VisibleForTesting
-    public static void forceCallbackLevel(@NonNull LogLevel logLevel) {
-        CALLBACK_LEVEL.set(logLevel);
-        setCoreCallbackLevel();
-    }
-
-    private static void setCoreCallbackLevel() {
+    private void setCoreCallbackLevel() {
         final LogLevel logLevel = CALLBACK_LEVEL.get();
         setCallbackLevel(Log.getC4LevelForLogLevel(logLevel));
     }
 
     @NonNull
-    private static LogLevel getCallbackLevel(@NonNull LogLevel consoleLevel, @Nullable Logger customLogger) {
+    private LogLevel getCallbackLevel(@NonNull LogLevel consoleLevel, @Nullable Logger customLogger) {
         if (customLogger == null) { return consoleLevel; }
 
         final LogLevel customLogLevel = customLogger.getLevel();
@@ -127,24 +128,23 @@ public final class C4Log {
     // native methods
     //-------------------------------------------------------------------------
 
-    public static native void log(String domain, int level, String message);
+    private static native void log(String domain, int level, String message);
 
-    public static native int getBinaryFileLevel();
+    private static native int getLevel(String domain);
 
-    public static native void setBinaryFileLevel(int level);
+    private static native void setLevel(String domain, int level);
 
-    public static native void writeToBinaryFile(
+    private static native void setCallbackLevel(int level);
+
+    private static native int getBinaryFileLevel();
+
+    private static native void setBinaryFileLevel(int level);
+
+    private static native void writeToBinaryFile(
         String path,
         int level,
         int maxRotateCount,
         long maxSize,
         boolean usePlaintext,
         String header);
-
-    @VisibleForTesting
-    public static native int getLevel(String domain);
-
-    private static native void setCallbackLevel(int level);
-
-    private static native void setLevel(String domain, int level);
 }

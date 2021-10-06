@@ -37,6 +37,8 @@ import com.couchbase.lite.internal.support.Log;
  * the thread safety and the several races are tolerable.
  */
 public final class FileLogger implements Logger {
+    @NonNull
+    private final C4Log c4Log;
     @Nullable
     private volatile LogFileConfiguration config;
     @Nullable
@@ -45,7 +47,8 @@ public final class FileLogger implements Logger {
     private volatile LogLevel logLevel;
 
     // The singleton instance is available from Database.log.getFile()
-    FileLogger() {
+    FileLogger(@NonNull C4Log c4Log) {
+        this.c4Log = c4Log;
         logLevel = LogLevel.NONE;
         reset();
     }
@@ -53,7 +56,7 @@ public final class FileLogger implements Logger {
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         if ((config == null) || (level.compareTo(logLevel) < 0)) { return; }
-        C4Log.log(Log.getC4DomainForLoggingDomain(domain), Log.getC4LevelForLogLevel(level), message);
+        c4Log.logToCore(Log.getC4DomainForLoggingDomain(domain), Log.getC4LevelForLogLevel(level), message);
     }
 
     @NonNull
@@ -73,7 +76,7 @@ public final class FileLogger implements Logger {
         if (logLevel == level) { return; }
         logLevel = level;
 
-        if (!initLog()) { C4Log.setBinaryFileLevel(Log.getC4LevelForLogLevel(level)); }
+        if (!initLog()) { c4Log.setFileFileLevel(Log.getC4LevelForLogLevel(level)); }
 
         if (level == LogLevel.NONE) { Log.warn(); }
     }
@@ -140,7 +143,7 @@ public final class FileLogger implements Logger {
         if (logDirPath.equals(initializedPath)) { return false; }
         initializedPath = logDirPath;
 
-        C4Log.writeToBinaryFile(
+        c4Log.initFileLogger(
             logDirPath,
             Log.getC4LevelForLogLevel(level),
             cfg.getMaxRotateCount(),

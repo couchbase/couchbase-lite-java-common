@@ -99,16 +99,18 @@ public class LogTest extends BaseDbTest {
         String getContent() { return content.toString(); }
     }
 
-    private static class RawLogListener implements Fn.Consumer<C4Log.RawLog> {
+    private static class TestLogger extends C4Log {
         private final String domainFilter;
         private int minLevel;
 
-        public RawLogListener(String domainFilter) { this.domainFilter = domainFilter; }
+        public TestLogger(String domainFilter) {
+            this.domainFilter = domainFilter;
+        }
 
         @Override
-        public void accept(C4Log.RawLog log) {
-            if (!domainFilter.equals(log.domain)) { return; }
-            if (log.level < minLevel) { minLevel = log.level; }
+        public void logInternal(@NonNull String c4Domain, int c4Level, @NonNull String message) {
+            if (!domainFilter.equals(c4Domain)) { return; }
+            if (c4Level < minLevel) { minLevel = c4Level; }
         }
 
         public int getMinLevel() { return minLevel; }
@@ -613,35 +615,34 @@ public class LogTest extends BaseDbTest {
     public void testInternalLogging() throws CouchbaseLiteException {
         final String c4Domain = "foo";
 
-        final RawLogListener rawLogListener = new RawLogListener(c4Domain);
-        C4Log.registerListener(rawLogListener);
-        int originalLogLevel = C4Log.getLevel(c4Domain);
+        final TestLogger testLogger = new TestLogger(c4Domain);
+        final C4Log oldLogger = C4Log.LOGGER.getAndSet(testLogger);
         try {
-            rawLogListener.reset();
+            testLogger.reset();
             QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(baseTestDb))
                 .execute();
-            int actualMinLevel = rawLogListener.getMinLevel();
-            assertTrue(actualMinLevel >= originalLogLevel);
+            int actualMinLevel = testLogger.getMinLevel();
+            assertTrue(actualMinLevel >= oldLogger.getLogLevel(c4Domain));
 
-            C4Log.setLevels(actualMinLevel + 1, c4Domain);
-            rawLogListener.reset();
+            testLogger.setLevels(actualMinLevel + 1, c4Domain);
+            testLogger.reset();
             QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(baseTestDb))
                 .execute();
             // If level > maxLevel, should be no logs
-            assertEquals(C4Constants.LogLevel.NONE, rawLogListener.getMinLevel());
+            assertEquals(C4Constants.LogLevel.NONE, testLogger.getMinLevel());
 
-            rawLogListener.reset();
-            C4Log.setLevels(originalLogLevel, c4Domain);
+            testLogger.reset();
+            testLogger.setLevels(oldLogger.getLogLevel(c4Domain), c4Domain);
             QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.database(baseTestDb))
                 .execute();
-            assertEquals(actualMinLevel, rawLogListener.getMinLevel());
+            assertEquals(actualMinLevel, testLogger.getMinLevel());
         }
         finally {
-            C4Log.registerListener(null);
-            C4Log.setLevels(originalLogLevel, c4Domain);
+            testLogger.setLevels(oldLogger.getLogLevel(c4Domain), c4Domain);
+            C4Log.LOGGER.set(oldLogger);
         }
     }
 

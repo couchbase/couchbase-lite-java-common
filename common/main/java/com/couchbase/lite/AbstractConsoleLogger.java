@@ -30,12 +30,14 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 abstract class AbstractConsoleLogger implements Logger {
     @NonNull
+    private final C4Log c4Log;
+    @NonNull
     private EnumSet<LogDomain> logDomains = LogDomain.ALL_DOMAINS;
     @NonNull
     private LogLevel logLevel = LogLevel.WARNING;
 
     // Singleton instance accessible from Database.log.getConsole()
-    protected AbstractConsoleLogger() { }
+    protected AbstractConsoleLogger(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
@@ -58,7 +60,7 @@ abstract class AbstractConsoleLogger implements Logger {
         if (logLevel == level) { return; }
 
         logLevel = level;
-        C4Log.setCallbackLevel(logLevel);
+        c4Log.setCallbackLevel(logLevel);
     }
 
     /**

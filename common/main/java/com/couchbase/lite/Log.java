@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.core.C4Log;
 
 
 /**
@@ -29,10 +30,10 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
  */
 public final class Log {
     // Singleton instance.
-    private final ConsoleLogger consoleLogger = new ConsoleLogger();
+    private final ConsoleLogger consoleLogger = new ConsoleLogger(C4Log.get());
 
     // Singleton instance.
-    private final FileLogger fileLogger = new FileLogger();
+    private final FileLogger fileLogger = new FileLogger(C4Log.get());
 
     // Singleton instance.
     private Logger customLogger;

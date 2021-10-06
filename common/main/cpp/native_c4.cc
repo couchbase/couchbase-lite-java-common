@@ -154,8 +154,8 @@ extern "C" {
  * Method:    setenv
  * Signature: (Ljava/lang/String;Ljava/lang/String;I)V
  */
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4_setenv(
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4_setenv(
         JNIEnv *env,
         jclass ignore,
         jstring jname,
@@ -176,8 +176,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4_setenv(
  * Method:    getenv
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jstring
-JNICALL Java_com_couchbase_lite_internal_core_C4_getenv(JNIEnv *env, jclass ignore, jstring jname) {
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_C4_getenv(JNIEnv *env, jclass ignore, jstring jname) {
     jstringSlice name(env, jname);
     return env->NewStringUTF(getenv(name.c_str()));
 }
@@ -187,8 +187,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4_getenv(JNIEnv *env, jclass igno
  * Method:    getBuildInfo
  * Signature: ()Ljava/lang/String;
  */
-JNIEXPORT jstring
-JNICALL Java_com_couchbase_lite_internal_core_C4_getBuildInfo(JNIEnv *env, jclass ignore) {
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_C4_getBuildInfo(JNIEnv *env, jclass ignore) {
     C4StringResult result = c4_getBuildInfo();
     jstring jstr = toJString(env, result);
     c4slice_free(result);
@@ -200,8 +200,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4_getBuildInfo(JNIEnv *env, jclas
  * Method:    getVersion
  * Signature: ()Ljava/lang/String;
  */
-JNIEXPORT jstring
-JNICALL Java_com_couchbase_lite_internal_core_C4_getVersion(JNIEnv *env, jclass ignore) {
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_C4_getVersion(JNIEnv *env, jclass ignore) {
     C4StringResult result = c4_getVersion();
     jstring jstr = toJString(env, result);
     c4slice_free(result);
@@ -216,8 +216,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4_getVersion(JNIEnv *env, jclass 
  * Method:    getLevel
  * Signature: (Ljava/lang/String;I)V
  */
-JNIEXPORT jint
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_getLevel(JNIEnv *env, jclass ignore, jstring jdomain) {
+JNIEXPORT jint JNICALL
+Java_com_couchbase_lite_internal_core_C4Log_getLevel(JNIEnv *env, jclass ignore, jstring jdomain) {
     jstringSlice domain(env, jdomain);
     C4LogDomain logDomain = c4log_getDomain(domain.c_str(), false);
     return (!logDomain) ? -1 : (jint) c4log_getLevel(logDomain);
@@ -234,8 +234,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_getLevel(JNIEnv *env, jclass
  * for debugging, we need to log for a dynamically created domain, we can initialize
  * that domain at any time, including before Core creates it.
  */
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_setLevel(
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Log_setLevel(
         JNIEnv *env,
         jclass ignore,
         jstring jdomain,
@@ -250,8 +250,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_setLevel(
  * Method:    log
  * Signature: (Ljava/lang/String;I;Ljava/lang/String)V
  */
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_log(
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Log_log(
         JNIEnv *env,
         jclass ignore,
         jstring jdomain,
@@ -269,8 +269,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_log(
  * Method:    getBinaryFileLevel
  * Signature: (V)I
  */
-JNIEXPORT jint
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_getBinaryFileLevel(JNIEnv *env, jclass ignore) {
+JNIEXPORT jint JNICALL
+Java_com_couchbase_lite_internal_core_C4Log_getBinaryFileLevel(JNIEnv *env, jclass ignore) {
     return c4log_binaryFileLevel();
 }
 
@@ -279,8 +279,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_getBinaryFileLevel(JNIEnv *e
  * Method:    setBinaryFileLevel
  * Signature: (I)V
  */
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_setBinaryFileLevel(JNIEnv *env, jclass ignore, jint level) {
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Log_setBinaryFileLevel(JNIEnv *env, jclass ignore, jint level) {
     c4log_setBinaryFileLevel((C4LogLevel) level);
 }
 
@@ -289,8 +289,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_setBinaryFileLevel(JNIEnv *e
  * Method:    writeToBinaryFile
  * Signature: (Ljava/lang/String;IIJZLjava/lang/String;)V
  */
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(
         JNIEnv *env,
         jclass ignore,
         jstring jpath,
@@ -311,9 +311,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(
     };
 
     C4Error err;
-    if (!c4log_writeToBinaryFile(options, &err)) {
+    if (!c4log_writeToBinaryFile(options, &err))
         throwError(env, err);
-    }
 }
 
 /*
@@ -321,8 +320,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(
  * Method:    setCallbackLevel
  * Signature: (I)V
  */
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env, jclass clazz, jint jlevel) {
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env, jclass clazz, jint jlevel) {
     c4log_setCallbackLevel((C4LogLevel) jlevel);
 }
 
@@ -335,8 +334,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env
  * Method:    pbkdf2
  * Signature: (Ljava/lang/String;[BII)[B
  */
-JNIEXPORT jbyteArray
-JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(
+JNIEXPORT jbyteArray JNICALL
+Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(
         JNIEnv *env,
         jclass ignore,
         jstring jpassword,
@@ -417,8 +416,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(
  * Method:    deriveKeyFromPassword
  * Signature: (Ljava/lang/String;I)[B
  */
-JNIEXPORT jbyteArray
-JNICALL Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(
+JNIEXPORT jbyteArray JNICALL
+Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(
         JNIEnv *env,
         jclass ignore,
         jstring password,

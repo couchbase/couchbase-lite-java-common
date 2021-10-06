@@ -23,6 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.core.C4Log;
 
 
 /**
@@ -50,6 +51,8 @@ public class ConsoleLogger extends AbstractConsoleLogger {
             + " " + level + LOG_TAG + domain
             + ": " + message;
     }
+
+    ConsoleLogger(@NonNull C4Log c4Log) { super(c4Log); }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {

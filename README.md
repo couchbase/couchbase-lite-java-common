@@ -1,5 +1,5 @@
 
-# Couchbase Lite 2.8
+# Couchbase Lite 3.1
 
 **Couchbase Lite** is an embedded lightweight, document-oriented (NoSQL), syncable database engine.
 
