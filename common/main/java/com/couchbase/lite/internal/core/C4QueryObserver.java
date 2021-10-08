@@ -38,7 +38,10 @@ public class C4QueryObserver extends C4NativePeer {
     public void close() throws Exception { closePeer(null); }
 
     @Nullable
-    public C4QueryObserver newObserver(@NonNull C4Query c4Query) {
+    public C4QueryObserver newObserver(
+        @NonNull C4Query c4Query,
+        @NonNull C4QueryObserverListener listener,
+        @NonNull Object context) {
         // TODO: implement newObserver()
         return null;
     }

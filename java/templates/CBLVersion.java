@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 // Edit the version in that directory!
 // Changes made to this file in the source directory will be lost.
 // See the "copyVersion" task in the build file.
+@SuppressWarnings("LineLength")
 public final class CBLVersion {
     private CBLVersion() {}
 

@@ -36,9 +36,10 @@ public class LiveQueryTest extends BaseDbTest {
     private volatile ListenerToken globalToken;
 
     // Null query is illegal
+    /*
     @Test(expected = IllegalArgumentException.class)
     public void testIllegalArgumentException() { new LiveQuery(null); }
-
+    */
     // Creating a document that a query can see should cause an update
     @Test
     public void testBasicLiveQuery() throws CouchbaseLiteException, InterruptedException {
@@ -107,7 +108,7 @@ public class LiveQueryTest extends BaseDbTest {
             query.removeChangeListener(token2);
         }
     }
-
+/*
     @Test
     public void testLiveQueryDelay() throws CouchbaseLiteException, InterruptedException {
         Query query = QueryBuilder
@@ -149,7 +150,7 @@ public class LiveQueryTest extends BaseDbTest {
             query.removeChangeListener(token);
         }
     }
-
+*/
     // Changing query parameters should cause an update.
     @Test
     public void testChangeParameters() throws CouchbaseLiteException, InterruptedException {
@@ -207,7 +208,7 @@ public class LiveQueryTest extends BaseDbTest {
             globalQuery.removeChangeListener(globalToken);
         }
     }
-
+/*
     // CBL-2344: Live query may stop refreshing
     @Test
     public void testLiveQueryRefresh() throws CouchbaseLiteException, InterruptedException {
@@ -252,7 +253,7 @@ public class LiveQueryTest extends BaseDbTest {
             query.removeChangeListener(token);
         }
     }
-
+*/
     // create test docs
     private void createDocNumbered(int i) throws CouchbaseLiteException {
         String docID = "doc-" + i;

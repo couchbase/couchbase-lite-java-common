@@ -45,6 +45,7 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.core.C4DatabaseChange;
 import com.couchbase.lite.internal.core.C4DatabaseObserver;
+import com.couchbase.lite.internal.core.C4DatabaseObserverListener;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.core.C4DocumentObserver;
 import com.couchbase.lite.internal.core.C4DocumentObserverListener;
@@ -793,28 +794,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     //////// DOCUMENTS:
 
-    // !!! This method is *NOT* thread safe.
-    // Used wo/synchronization, there is a race on the open db
-    @NonNull
-    ListenerToken addActiveLiveQuery(@NonNull LiveQuery query) {
-        synchronized (getDbLock()) { mustBeOpen(); }
-
-        registerProcess(new ActiveProcess<LiveQuery>(query) {
-            @Override
-            public void stop() { query.stop(); }
-
-            @Override
-            public boolean isActive() { return !LiveQuery.State.STOPPED.equals(query.getState()); }
-        });
-
-        return addChangeListener(query);
-    }
-
     // This method is not thread safe
-    void removeActiveLiveQuery(@NonNull LiveQuery query, @NonNull ListenerToken token) {
-        removeChangeListener(token);
-        unregisterProcess(query);
-    }
 
     @NonNull
     C4Query createJsonQuery(@NonNull String json) throws LiteCoreException {
@@ -1155,7 +1135,14 @@ abstract class AbstractDatabase extends BaseDatabase {
     private void registerC4DbObserver() {
         if (!isOpen()) { return; }
         c4DbObserver = getOpenC4DbLocked().createDatabaseObserver(
-            this, (observer, context) -> scheduleOnPostNotificationExecutor(this::postDatabaseChanged, 0)
+            this, new C4DatabaseObserverListener() {
+                @Override
+                public void callback(C4DatabaseObserver observer, Object context) {
+                    AbstractDatabase.this.scheduleOnPostNotificationExecutor(
+                        AbstractDatabase.this::postDatabaseChanged,
+                        0);
+                }
+            }
         );
     }
 

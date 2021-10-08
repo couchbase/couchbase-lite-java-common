@@ -18,7 +18,6 @@ package com.couchbase.lite;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +28,8 @@ import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
+import com.couchbase.lite.internal.core.C4QueryObserver;
+import com.couchbase.lite.internal.core.C4QueryObserverListener;
 import com.couchbase.lite.internal.core.C4QueryOptions;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
@@ -47,6 +48,8 @@ abstract class AbstractQuery implements Query {
         s.add("_default");
         RESERVED_NAMES = Collections.unmodifiableSet(s);
     }
+    private static final Map<ListenerToken, C4QueryObserver> TOKEN_C_4_QUERY_OBSERVER_MAP
+        = Collections.synchronizedMap(new HashMap<>());
 
     //---------------------------------------------
     // member variables
@@ -55,12 +58,13 @@ abstract class AbstractQuery implements Query {
     // column names
     @GuardedBy("lock")
     private Map<String, Integer> columnNames;
+
     @GuardedBy("lock")
     private C4Query c4query;
-    @GuardedBy("lock")
-    private LiveQuery liveQuery;
+
     @Nullable
     private Parameters parameters;
+
 
     /**
      * Returns a copies of the current parameters.
@@ -73,18 +77,13 @@ abstract class AbstractQuery implements Query {
      * Set parameters should copy the given parameters. Set a new parameter will
      * also re-execute the query if there is at least one listener listening for
      * changes.
+     * METHOD NEEDS TO BE REWRITTEN with core c4query_setParameters
      */
     @Override
     public void setParameters(@Nullable Parameters parameters) {
-        final LiveQuery newQuery;
         synchronized (lock) {
             this.parameters = (parameters == null) ? null : parameters.readonlyCopy();
-            newQuery = liveQuery;
         }
-
-        // https://github.com/couchbase/couchbase-lite-android/issues/1727
-        // Shouldn't call start() method inside the lock to prevent deadlock:
-        if (newQuery != null) { newQuery.start(true); }
     }
 
     /**
@@ -173,18 +172,21 @@ abstract class AbstractQuery implements Query {
     @Override
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-        return getLiveQuery().addChangeListener(executor, listener);
+        final ChangeListenerToken token = new ChangeListenerToken(executor, listener);
+        registerC4QueryObserver(token);
+        return token;
     }
 
     /**
      * Removes a change listener wih the given listener token.
+     *
      *
      * @param token The listener token.
      */
     @Override
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
-        getLiveQuery().removeChangeListener(token);
+        TOKEN_C_4_QUERY_OBSERVER_MAP.remove(token);
     }
 
     @NonNull
@@ -193,12 +195,34 @@ abstract class AbstractQuery implements Query {
     @Nullable
     protected abstract AbstractDatabase getDatabase();
 
-    @NonNull
-    @VisibleForTesting
-    LiveQuery getLiveQuery() {
-        synchronized (lock) {
-            if (liveQuery == null) { liveQuery = new LiveQuery(this); }
-            return liveQuery;
+    private void registerC4QueryObserver(ChangeListenerToken token) {
+        final C4QueryObserver c4QueryObserver = C4QueryObserver.create();
+        //add into a map
+        TOKEN_C_4_QUERY_OBSERVER_MAP.put(token, c4QueryObserver);
+
+        // ??? create() and newObserver() both have the same purpose
+        // ??? need to rewrite call back so it takes in a token
+        c4QueryObserver.newObserver(c4query, new C4QueryObserverListener() {
+            @Override
+            public void callback(C4QueryObserver observer, Object context) {
+                //post query change upon callback
+                // need to add delay?
+                postQueryChanged(token);
+            }
+        }, this);
+    }
+
+    private void postQueryChanged(ChangeListenerToken token) {
+        try {
+            final C4QueryObserver curObserver = TOKEN_C_4_QUERY_OBSERVER_MAP.get(token);
+            final C4QueryEnumerator c4QueryEnumerator = curObserver.getEnumerator(true);
+            token.postChange(new QueryChange(
+                this,
+                new ResultSet(this, c4QueryEnumerator, columnNames),
+                null));
+        }
+        catch (CouchbaseLiteException e) {
+            token.postChange(new QueryChange(this, null, e));
         }
     }
 
