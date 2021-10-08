@@ -795,28 +795,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     //////// DOCUMENTS:
 
-    // !!! This method is *NOT* thread safe.
-    // Used wo/synchronization, there is a race on the open db
-    @NonNull
-    ListenerToken addActiveLiveQuery(@NonNull LiveQuery query) {
-        synchronized (getDbLock()) { mustBeOpen(); }
-
-        registerProcess(new ActiveProcess<LiveQuery>(query) {
-            @Override
-            public void stop() { query.stop(); }
-
-            @Override
-            public boolean isActive() { return !LiveQuery.State.STOPPED.equals(query.getState()); }
-        });
-
-        return addChangeListener(query);
-    }
-
     // This method is not thread safe
-    void removeActiveLiveQuery(@NonNull LiveQuery query, @NonNull ListenerToken token) {
-        removeChangeListener(token);
-        unregisterProcess(query);
-    }
 
     @NonNull
     C4Query createJsonQuery(@NonNull String json) throws LiteCoreException {
