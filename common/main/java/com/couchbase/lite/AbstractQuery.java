@@ -37,6 +37,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 abstract class AbstractQuery implements Query {
+    public static final long UPDATE_INTERVAL_MS = 200;
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
 
     private static final Set<String> RESERVED_NAMES;

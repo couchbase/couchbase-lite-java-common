@@ -15,12 +15,18 @@
 //
 package com.couchbase.lite;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
+
+import com.couchbase.lite.internal.core.C4Query;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,11 +41,6 @@ public class LiveQueryTest extends BaseDbTest {
     private volatile CountDownLatch globalLatch;
     private volatile ListenerToken globalToken;
 
-    // Null query is illegal
-    //Need Rewritten
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalArgumentException() { }
-
     // Creating a document that a query can see should cause an update
     @Test
     public void testBasicLiveQuery() throws CouchbaseLiteException, InterruptedException {
@@ -49,6 +50,8 @@ public class LiveQueryTest extends BaseDbTest {
             .where(Expression.property(KEY).greaterThanOrEqualTo(Expression.intValue(0)))
             .orderBy(Ordering.property(KEY).ascending());
 
+        final Query nullQ = null;
+        ListenerToken token2 = nullQ.addChangeListener(testSerialExecutor, change -> globalLatch.countDown());
         final CountDownLatch latch = new CountDownLatch(1);
 
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
@@ -87,9 +90,61 @@ public class LiveQueryTest extends BaseDbTest {
     }
 
     // All listeners should hear an update
-    // Rewrite this test
     @Test
     public void testLiveQueryWith2Listeners() throws CouchbaseLiteException, InterruptedException {
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property(KEY).greaterThanOrEqualTo(Expression.intValue(0)))
+            .orderBy(Ordering.property(KEY).ascending());
+
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        ListenerToken token1 = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
+        ListenerToken token2 = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
+
+        createDocNumbered(11);
+
+        try { assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+        finally {
+            query.removeChangeListener(token1);
+            query.removeChangeListener(token2);
+        }
+    }
+
+    //Test call-back delay
+    @Test
+    public void testLiveQueryDelay() throws CouchbaseLiteException, InterruptedException {
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property(KEY).greaterThanOrEqualTo(Expression.intValue(0)))
+            .orderBy(Ordering.property(KEY).ascending());
+
+        final long[] times = new long[] {1, System.currentTimeMillis(), 0};
+        ListenerToken token = query.addChangeListener(
+            testSerialExecutor,
+            change -> {
+                int n = (int) ++times[0];
+                if (n >= times.length) { return; }
+                times[n] = System.currentTimeMillis();
+            });
+
+        try {
+            createDocNumbered(12);
+            createDocNumbered(13);
+            createDocNumbered(14);
+            createDocNumbered(15);
+            createDocNumbered(16);
+
+            Thread.sleep(AbstractQuery.UPDATE_INTERVAL_MS);
+
+            assertEquals(2, times[0]); //there should only be one callback
+            assertEquals(times[2] - times[1], AbstractQuery.UPDATE_INTERVAL_MS); // call back delay should be 200ms
+        }
+        finally {
+            query.removeChangeListener(token);
+        }
     }
 
     // Changing query parameters should cause an update.
