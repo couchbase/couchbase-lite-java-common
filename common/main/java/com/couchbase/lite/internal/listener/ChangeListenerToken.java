@@ -13,17 +13,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.listener;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.concurrent.Executor;
 
+import com.couchbase.lite.ChangeListener;
+import com.couchbase.lite.ListenerToken;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
 
-class ChangeListenerToken<T> implements ListenerToken {
+public class ChangeListenerToken<T> implements ListenerToken {
     @NonNull
     private final ChangeListener<T> listener;
     @Nullable
@@ -32,7 +34,7 @@ class ChangeListenerToken<T> implements ListenerToken {
     @Nullable
     private Object key;
 
-    ChangeListenerToken(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
+    public ChangeListenerToken(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
         this.executor = executor;
         this.listener = listener;
     }
@@ -46,7 +48,7 @@ class ChangeListenerToken<T> implements ListenerToken {
     @Override
     public String toString() { return "ChangeListenerToken{" + key + ", " + listener + ", " + executor + "}"; }
 
-    void postChange(@NonNull T change) {
+    public void postChange(@NonNull T change) {
         final Executor exec = (executor != null)
             ? executor
             : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();

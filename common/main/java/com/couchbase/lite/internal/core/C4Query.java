@@ -76,19 +76,20 @@ public class C4Query extends C4NativePeer {
     @Override
     public void close() { closePeer(null); }
 
-    //////// RUNNING QUERIES:
+    public void setParameters(@NonNull FLSliceResult params) { setParameters(getPeer(), params.getPeer()); }
 
     @Nullable
     public String explain() { return withPeerOrNull(C4Query::explain); }
-
-    //////// INDEXES:
-
-    // - Creates a database index, to speed up subsequent queries.
 
     @Nullable
     public C4QueryEnumerator run(@NonNull C4QueryOptions opts, @NonNull FLSliceResult params) throws LiteCoreException {
         return withPeerOrNull(h -> new C4QueryEnumerator(run(h, opts.isRankFullText(), params.getHandle())));
     }
+
+    public int getColumnCount() { return withPeer(0, C4Query::columnCount); }
+
+    @Nullable
+    public String getColumnNameForIndex(int idx) { return withPeerOrNull(peer -> columnName(peer, idx)); }
 
     @Nullable
     @SuppressWarnings("PMD.MethodReturnsInternalArray")
@@ -118,11 +119,6 @@ public class C4Query extends C4NativePeer {
     // package protected methods
     //-------------------------------------------------------------------------
 
-    public int getColumnCount() { return withPeer(0, C4Query::columnCount); }
-
-    @Nullable
-    public String getColumnNameForIndex(int idx) { return withPeerOrNull(peer -> columnName(peer, idx)); }
-
     @Nullable
     @VisibleForTesting
     C4QueryEnumerator run(@NonNull C4QueryOptions opts) throws LiteCoreException {
@@ -150,34 +146,11 @@ public class C4Query extends C4NativePeer {
     //-------------------------------------------------------------------------
 
 
-    //////// DATABASE QUERIES:
+    //////// QUERIES:
 
-    /**
-     * Gets a fleece encoded array of indexes in the given database
-     * that were created by `c4db_createIndex`
-     */
-    private static native long getIndexInfo(long db) throws LiteCoreException;
+    private static native long createQuery(long db, int language, String params) throws LiteCoreException;
 
-    private static native void deleteIndex(long db, String name) throws LiteCoreException;
-
-    private static native boolean createIndex(
-        long db,
-        String name,
-        String queryExpressions,
-        int queryLanguage,
-        int indexType,
-        String language,
-        boolean ignoreDiacritics)
-        throws LiteCoreException;
-
-    private static native long createQuery(long db, int language, String expression) throws LiteCoreException;
-
-    /**
-     * Free C4Query* instance
-     *
-     * @param peer (C4Query*)
-     */
-    private static native void free(long peer);
+    private static native void setParameters(long peer, long params);
 
     /**
      * @param peer (C4Query*)
@@ -185,6 +158,9 @@ public class C4Query extends C4NativePeer {
      */
     @Nullable
     private static native String explain(long peer);
+
+    private static native long run(long peer, boolean rankFullText, /*FLSliceResult*/ long parameters)
+        throws LiteCoreException;
 
     /**
      * Returns the number of columns (the values specified in the WHAT clause) in each row.
@@ -203,8 +179,33 @@ public class C4Query extends C4NativePeer {
     @Nullable
     private static native String columnName(long peer, int colIdx);
 
-    private static native long run(long peer, boolean rankFullText, /*FLSliceResult*/ long parameters)
+    /**
+     * Free C4Query* instance
+     *
+     * @param peer (C4Query*)
+     */
+    private static native void free(long peer);
+
+
+    //////// INDICES
+
+    private static native boolean createIndex(
+        long db,
+        String name,
+        String queryExpressions,
+        int queryLanguage,
+        int indexType,
+        String language,
+        boolean ignoreDiacritics)
         throws LiteCoreException;
+
+    /**
+     * Gets a fleece encoded array of indexes in the given database
+     * that were created by `c4db_createIndex`
+     */
+    private static native long getIndexInfo(long db) throws LiteCoreException;
+
+    private static native void deleteIndex(long db, String name) throws LiteCoreException;
 
     /**
      * Given a docID and sequence number from the enumerator, returns the text that was emitted

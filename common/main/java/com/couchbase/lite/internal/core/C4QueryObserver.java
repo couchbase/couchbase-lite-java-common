@@ -1,62 +1,128 @@
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
 import javax.annotation.Nullable;
 
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.QueryChange;
+import com.couchbase.lite.internal.listener.ChangeListenerToken;
+import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 
 
 public class C4QueryObserver extends C4NativePeer {
+    @FunctionalInterface
+    public interface QueryChangeCallback {
+        void notify(
+            @NonNull ChangeListenerToken<QueryChange> listener,
+            @Nullable C4QueryEnumerator results,
+            @Nullable LiteCoreException err);
+    }
 
     public interface NativeImpl {
-        long nCreate(long c4Query);
+        long nCreate(long c4Query, int token);
         void nSetEnabled(long handle, boolean enabled);
         void nFree(long handle);
         long nGetEnumerator(long handle, boolean forget) throws LiteCoreException;
     }
 
+    @NonNull
+    @VisibleForTesting
+    static final NativeContext<C4QueryObserver> QUERY_OBSERVER_CONTEXT = new NativeContext<>();
+
     // Not final for testing.
     @NonNull
     @VisibleForTesting
-    private static final NativeImpl NATIVE_IMPL = new NativeC4QueryObserver();
+    static volatile NativeImpl nativeImpl = new NativeC4QueryObserver();
+
+    //-------------------------------------------------------------------------
+    // Static Factory Methods
+    //-------------------------------------------------------------------------
 
     @NonNull
-    public static C4QueryObserver create() { return new C4QueryObserver(NATIVE_IMPL); }
+    public static C4QueryObserver create(
+        @NonNull C4Query query,
+        @NonNull ChangeListenerToken<QueryChange> listener,
+        @NonNull QueryChangeCallback callback) {
+        final int token = QUERY_OBSERVER_CONTEXT.reserveKey();
+        final C4QueryObserver observer = new C4QueryObserver(token, nativeImpl, query, listener, callback);
+        QUERY_OBSERVER_CONTEXT.bind(token, observer);
+        return observer;
+    }
+
+    //-------------------------------------------------------------------------
+    // Native callback method
+    //-------------------------------------------------------------------------
+
+    // This method is called by reflection.  Don't change its signature.
+    static void onQueryChanged(long token) {
+        final C4QueryObserver observer = QUERY_OBSERVER_CONTEXT.getObjFromContext(token);
+        if (observer == null) {
+            Log.w(LogDomain.QUERY, "No observer for token: " + token);
+            return;
+        }
+        observer.queryChanged();
+    }
 
 
+    private final int token;
     @NonNull
-    private final NativeImpl impl;
+    private final C4QueryObserver.NativeImpl impl;
+    @NonNull
+    private final ChangeListenerToken<QueryChange> listener;
+    @NonNull
+    private final QueryChangeCallback callback;
 
     @VisibleForTesting
-    C4QueryObserver(@NonNull NativeImpl impl) { this.impl = impl; }
+    C4QueryObserver(
+        int token,
+        @NonNull NativeImpl impl,
+        @NonNull C4Query query,
+        @NonNull ChangeListenerToken<QueryChange> listener,
+        @NonNull QueryChangeCallback callback) {
+        this.token = token;
+        this.impl = impl;
+        this.listener = listener;
+        this.callback = callback;
+        setPeer(impl.nCreate(query.getPeer(), token));
+    }
 
+    @CallSuper
     @Override
-    public void close() throws Exception { closePeer(null); }
-
-    @Nullable
-    public C4QueryObserver newObserver(@NonNull C4Query c4Query) {
-        // TODO: implement newObserver()
-        return null;
+    public void close() {
+        QUERY_OBSERVER_CONTEXT.unbind(token);
+        closePeer(null);
     }
 
-    public void setEnabled(boolean enabled) {
-        //TODO: implement setEnabled()
+    @NonNull
+    @Override
+    public String toString() {
+        return "C4QueryObserver{" + ClassUtils.objId(this) + "/" + super.toString() + ": " + token + "}";
     }
 
+    public void setEnabled(boolean enabled) { impl.nSetEnabled(getPeer(), enabled); }
+
     @Nullable
-    public C4QueryEnumerator getEnumerator(boolean forget) throws CouchbaseLiteException {
-        //TODO: implement getEnumerator()
-        return null;
+    public C4QueryEnumerator getEnumerator(boolean forget) throws LiteCoreException {
+        return new C4QueryEnumerator(impl.nGetEnumerator(getPeer(), forget));
     }
 
     @Override
     protected void finalize() throws Throwable {
         try { closePeer(LogDomain.LISTENER); }
         finally { super.finalize(); }
+    }
+
+    void queryChanged() {
+        C4QueryEnumerator results = null;
+        LiteCoreException err = null;
+        try { results = new C4QueryEnumerator(impl.nGetEnumerator(getPeer(), false)); }
+        catch (LiteCoreException e) { err = e; }
+        callback.notify(listener, results, err);
     }
 
     private void closePeer(LogDomain domain) { releasePeer(domain, impl::nFree); }

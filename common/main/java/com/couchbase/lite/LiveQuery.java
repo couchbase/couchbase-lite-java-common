@@ -23,6 +23,8 @@ import androidx.annotation.VisibleForTesting;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.couchbase.lite.internal.listener.ChangeListenerToken;
+import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;

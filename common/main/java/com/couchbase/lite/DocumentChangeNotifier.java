@@ -19,6 +19,7 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.internal.core.C4DocumentObserver;
+import com.couchbase.lite.internal.listener.ChangeNotifier;
 
 
 class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {

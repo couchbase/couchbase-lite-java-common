@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver
  * Method:    create
- * Signature: (J)J
+ * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_create
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver

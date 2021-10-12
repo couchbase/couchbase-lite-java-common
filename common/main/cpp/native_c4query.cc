@@ -62,12 +62,18 @@ Java_com_couchbase_lite_internal_core_C4Query_createQuery(
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    free
- * Signature: (J)V
+ * Method:    setParameters
+ * Signature: (JJ)V;
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_free(JNIEnv *env, jclass ignore, jlong jquery) {
-    c4query_release((C4Query *) jquery);
+Java_com_couchbase_lite_internal_core_C4Query_setParameters(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jquery,
+        jlong jparameters) {
+    auto params = (FLSliceResult *) jparameters;
+    C4String s = {params->buf, params->size};
+    c4query_setParameters((C4Query *) jquery, s);
 }
 
 /*
@@ -81,30 +87,6 @@ Java_com_couchbase_lite_internal_core_C4Query_explain(JNIEnv *env, jclass ignore
     jstring jstr = toJString(env, result);
     c4slice_free(result);
     return jstr;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    columnCount
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_columnCount(JNIEnv *env, jclass ignore, jlong jquery) {
-    return c4query_columnCount((C4Query *) jquery);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    columnName
- * Signature: (JI)Ljava/lang/String;
- *
- * ??? Check this to see how expensive it is...
- * Might want to replace it with a function that creates
- * the entire map of column names to indices in one fell swoop...
- */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_columnName(JNIEnv *env, jclass ignore, jlong jquery, jint colIdx) {
-    return toJString(env, c4query_columnTitle((C4Query *) jquery, colIdx));
 }
 
 /*
@@ -133,21 +115,36 @@ Java_com_couchbase_lite_internal_core_C4Query_run(
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    getFullTextMatched
- * Signature: (JJ)[B
+ * Method:    columnCount
+ * Signature: (J)I
  */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_getFullTextMatched(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jquery,
-        jlong jterm) {
-    C4Error error = {};
-    const auto term = (const C4FullTextMatch *) jterm;
-    C4SliceResult s = c4query_fullTextMatched((C4Query *) jquery, term, &error);
-    jbyteArray res = toJByteArray(env, s);
-    c4slice_free(s);
-    return res;
+JNIEXPORT jint JNICALL
+Java_com_couchbase_lite_internal_core_C4Query_columnCount(JNIEnv *env, jclass ignore, jlong jquery) {
+    return c4query_columnCount((C4Query *) jquery);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Query
+ * Method:    columnName
+ * Signature: (JI)Ljava/lang/String;
+ *
+ * ??? Check this to see how expensive it is...
+ * Might want to replace it with a function that creates
+ * the entire map of column names to indices in one fell swoop...
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_C4Query_columnName(JNIEnv *env, jclass ignore, jlong jquery, jint colIdx) {
+    return toJString(env, c4query_columnTitle((C4Query *) jquery, colIdx));
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Query
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Query_free(JNIEnv *env, jclass ignore, jlong jquery) {
+    c4query_release((C4Query *) jquery);
 }
 
 /*
@@ -218,5 +215,24 @@ Java_com_couchbase_lite_internal_core_C4Query_deleteIndex(
     bool res = c4db_deleteIndex((C4Database *) jdb, name, &error);
     if (!res)
         throwError(env, error);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Query
+ * Method:    getFullTextMatched
+ * Signature: (JJ)[B
+ */
+JNIEXPORT jbyteArray JNICALL
+Java_com_couchbase_lite_internal_core_C4Query_getFullTextMatched(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jquery,
+        jlong jterm) {
+    C4Error error = {};
+    const auto term = (const C4FullTextMatch *) jterm;
+    C4SliceResult s = c4query_fullTextMatched((C4Query *) jquery, term, &error);
+    jbyteArray res = toJByteArray(env, s);
+    c4slice_free(s);
+    return res;
 }
 }

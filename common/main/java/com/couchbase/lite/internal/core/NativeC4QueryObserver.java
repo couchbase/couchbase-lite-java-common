@@ -6,7 +6,7 @@ import com.couchbase.lite.LiteCoreException;
 public class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
 
     @Override
-    public long nCreate(long c4Query) { return create(c4Query); }
+    public long nCreate(long c4Query, int token) { return create(c4Query, (long) token); }
 
     @Override
     public void nSetEnabled(long handle, boolean enabled) { setEnabled(handle, enabled); }
@@ -23,7 +23,7 @@ public class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
      * Native methods
      */
 
-    private static native long create(long c4Query);
+    private static native long create(long c4Query, long ctxt);
 
     private static native void setEnabled(long handle, boolean enabled);
 

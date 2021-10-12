@@ -41,6 +41,14 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Query_createQuer
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Query
+ * Method:    setParameters
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Query_setParameters(JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Query
  * Method:    free
  * Signature: (J)V
  */

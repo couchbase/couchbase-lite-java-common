@@ -27,10 +27,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
+import com.couchbase.lite.internal.core.C4QueryObserver;
 import com.couchbase.lite.internal.core.C4QueryOptions;
+import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -51,6 +55,8 @@ abstract class AbstractQuery implements Query {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+    private final Map<ChangeListenerToken<QueryChange>, C4QueryObserver> listeners = new HashMap<>();
+
     private final Object lock = new Object();
     // column names
     @GuardedBy("lock")
@@ -185,6 +191,42 @@ abstract class AbstractQuery implements Query {
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
         getLiveQuery().removeChangeListener(token);
+    }
+
+    @NonNull
+    public ListenerToken newAddChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener) {
+        Preconditions.assertNotNull(listener, "listener");
+
+        final ChangeListenerToken<QueryChange> token = new ChangeListenerToken<>(executor, listener);
+        final C4QueryObserver queryObserver;
+        try { queryObserver = C4QueryObserver.create(getC4QueryLocked(), token, this::onQueryChanged); }
+        catch (CouchbaseLiteException e) {
+            // !!! Can't throw this (API change), can't ignore it.
+            // Really need to do something better than this...
+            throw new IllegalStateException(e);
+        }
+        listeners.put(token, queryObserver);
+
+        final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
+        exec.postDelayedOnExecutor(
+            200, // 200 ms delay
+            executor != null ? executor : exec.getDefaultExecutor(),
+            () -> queryObserver.setEnabled(true));
+
+        return token;
+    }
+
+    public void newRemoveChangeListener(@NonNull ListenerToken token) {
+        Preconditions.assertNotNull(token, "token");
+        final C4QueryObserver queryObserver = listeners.remove(token);
+        if (queryObserver != null) { queryObserver.close(); }
+    }
+
+    private void onQueryChanged(
+        ChangeListenerToken<QueryChange> token,
+        C4QueryEnumerator enumerator,
+        LiteCoreException err) {
+        token.postChange(new QueryChange(this, new ResultSet(this, enumerator, columnNames), err));
     }
 
     @NonNull

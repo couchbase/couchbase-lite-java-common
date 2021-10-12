@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.listener;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,17 +22,19 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import com.couchbase.lite.ChangeListener;
+import com.couchbase.lite.ListenerToken;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-class ChangeNotifier<T> {
+public  class ChangeNotifier<T> {
     private final Object lock = new Object();
     private final Set<ChangeListenerToken<T>> listenerTokens;
 
-    ChangeNotifier() { listenerTokens = new HashSet<>(); }
+    public ChangeNotifier() { listenerTokens = new HashSet<>(); }
 
     @NonNull
-    ChangeListenerToken<T> addChangeListener(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
+    public ChangeListenerToken<T> addChangeListener(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (lock) {
             final ChangeListenerToken<T> token = new ChangeListenerToken<>(executor, listener);
@@ -42,7 +44,7 @@ class ChangeNotifier<T> {
     }
 
     @SuppressWarnings("SuspiciousMethodCalls")
-    int removeChangeListener(@NonNull ListenerToken token) {
+    public int removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
         synchronized (lock) {
             listenerTokens.remove(token);
@@ -50,7 +52,7 @@ class ChangeNotifier<T> {
         }
     }
 
-    void postChange(@NonNull T change) {
+    public void postChange(@NonNull T change) {
         Preconditions.assertNotNull(change, "change");
         synchronized (lock) {
             for (ChangeListenerToken<T> token: listenerTokens) { token.postChange(change); }
