@@ -137,10 +137,10 @@ public class LiveQueryTest extends BaseDbTest {
             createDocNumbered(15);
             createDocNumbered(16);
 
-            Thread.sleep(AbstractQuery.UPDATE_INTERVAL_MS);
+            Thread.sleep(AbstractQuery.UPDATE_INTERVAL_MS + SLOP_MS); //sleep for 200ms and a bit more
 
             assertEquals(2, times[0]); //there should only be one callback
-            assertEquals(times[2] - times[1], AbstractQuery.UPDATE_INTERVAL_MS); // call back delay should be 200ms
+            assertTrue(times[2] - times[1] > AbstractQuery.UPDATE_INTERVAL_MS);
         }
         finally {
             query.removeChangeListener(token);
@@ -206,10 +206,50 @@ public class LiveQueryTest extends BaseDbTest {
     }
 
     // CBL-2344: Live query may stop refreshing
-    // Need to rewrite
     @Test
     public void testLiveQueryRefresh() throws CouchbaseLiteException, InterruptedException {
+        final AtomicReference<CountDownLatch> latchHolder = new AtomicReference<>();
+        final AtomicReference<List<Result>> resultsHolder = new AtomicReference<>();
+
+        createDocNumbered(10);
+
+        final Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb))
+            .where(Expression.property(KEY).greaterThan(Expression.intValue(0)));
+
+        latchHolder.set(new CountDownLatch(1));
+        ListenerToken token = query.addChangeListener(
+            testSerialExecutor,
+            change -> {
+                resultsHolder.set(change.getResults().allResults());
+                latchHolder.get().countDown();
+            }
+        );
+
+        try {
+            // this update should happen nearly instantaneously
+            assertTrue(latchHolder.get().await(SLOP_MS, TimeUnit.MILLISECONDS));
+            assertEquals(1, resultsHolder.get().size());
+
+            // adding this document will trigger the query but since it does not meet the query
+            // criteria, it will not produce a new result. The listener should not be called.
+            // Wait for 2 full update intervals and a little bit more.
+            latchHolder.set(new CountDownLatch(1));
+            createDocNumbered(0);
+            assertFalse(latchHolder.get().await((2 * AbstractQuery.UPDATE_INTERVAL_MS) + SLOP_MS, TimeUnit.MILLISECONDS));
+
+            // adding this document should cause a call to the listener in not much more than an update interval
+            latchHolder.set(new CountDownLatch(1));
+            createDocNumbered(11);
+            assertTrue(latchHolder.get().await(AbstractQuery.UPDATE_INTERVAL_MS + SLOP_MS, TimeUnit.MILLISECONDS));
+            assertEquals(2, resultsHolder.get().size());
+        }
+        finally {
+            query.removeChangeListener(token);
+        }
     }
+
 
     // create test docs
     private void createDocNumbered(int i) throws CouchbaseLiteException {
