@@ -1135,21 +1135,16 @@ abstract class AbstractDatabase extends BaseDatabase {
     private void registerC4DbObserver() {
         if (!isOpen()) { return; }
         c4DbObserver = getOpenC4DbLocked().createDatabaseObserver(
-            this, new C4DatabaseObserverListener() {
-                @Override
-                public void callback(C4DatabaseObserver observer, Object context) {
-                    AbstractDatabase.this.scheduleOnPostNotificationExecutor(
-                        AbstractDatabase.this::postDatabaseChanged,
-                        0);
-                }
-            }
+            this, (observer, context) ->
+                AbstractDatabase.this.scheduleOnPostNotificationExecutor(
+                    AbstractDatabase.this::postDatabaseChanged,
+                    0)
         );
     }
 
     private void postDatabaseChanged() {
         synchronized (getDbLock()) {
             if (!isOpen() || (c4DbObserver == null)) { return; }
-
             boolean external = false;
             int nChanges;
             List<String> docIDs = new ArrayList<>();

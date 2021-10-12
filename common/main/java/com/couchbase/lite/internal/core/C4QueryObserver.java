@@ -35,16 +35,7 @@ public class C4QueryObserver extends C4NativePeer {
     C4QueryObserver(@NonNull NativeImpl impl) { this.impl = impl; }
 
     @Override
-    public void close() throws Exception { closePeer(null); }
-
-    @Nullable
-    public C4QueryObserver newObserver(
-        @NonNull C4Query c4Query,
-        @NonNull C4QueryObserverListener listener,
-        @NonNull Object context) {
-        // TODO: implement newObserver()
-        return null;
-    }
+    public void close() { closePeer(null); }
 
     public void setEnabled(boolean enabled) {
         //TODO: implement setEnabled()

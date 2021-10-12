@@ -48,8 +48,6 @@ abstract class AbstractQuery implements Query {
         s.add("_default");
         RESERVED_NAMES = Collections.unmodifiableSet(s);
     }
-    private static final Map<ListenerToken, C4QueryObserver> TOKEN_C_4_QUERY_OBSERVER_MAP
-        = Collections.synchronizedMap(new HashMap<>());
 
     //---------------------------------------------
     // member variables
@@ -58,6 +56,9 @@ abstract class AbstractQuery implements Query {
     // column names
     @GuardedBy("lock")
     private Map<String, Integer> columnNames;
+
+    //should this be synchronized? which threads will access this map
+    private final Map<ListenerToken, C4QueryObserver> tokenC4QueryObserverMap = new HashMap<>();
 
     @GuardedBy("lock")
     private C4Query c4query;
@@ -180,13 +181,14 @@ abstract class AbstractQuery implements Query {
     /**
      * Removes a change listener wih the given listener token.
      *
-     *
      * @param token The listener token.
      */
     @Override
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
-        TOKEN_C_4_QUERY_OBSERVER_MAP.remove(token);
+        C4QueryObserver observer = tokenC4QueryObserverMap.get(token);
+        tokenC4QueryObserverMap.remove(token);
+        observer.close();
     }
 
     @NonNull
@@ -198,32 +200,9 @@ abstract class AbstractQuery implements Query {
     private void registerC4QueryObserver(ChangeListenerToken token) {
         final C4QueryObserver c4QueryObserver = C4QueryObserver.create();
         //add into a map
-        TOKEN_C_4_QUERY_OBSERVER_MAP.put(token, c4QueryObserver);
-
-        // ??? create() and newObserver() both have the same purpose
-        // ??? need to rewrite call back so it takes in a token
-        c4QueryObserver.newObserver(c4query, new C4QueryObserverListener() {
-            @Override
-            public void callback(C4QueryObserver observer, Object context) {
-                //post query change upon callback
-                // need to add delay?
-                postQueryChanged(token);
-            }
-        }, this);
-    }
-
-    private void postQueryChanged(ChangeListenerToken token) {
-        try {
-            final C4QueryObserver curObserver = TOKEN_C_4_QUERY_OBSERVER_MAP.get(token);
-            final C4QueryEnumerator c4QueryEnumerator = curObserver.getEnumerator(true);
-            token.postChange(new QueryChange(
-                this,
-                new ResultSet(this, c4QueryEnumerator, columnNames),
-                null));
-        }
-        catch (CouchbaseLiteException e) {
-            token.postChange(new QueryChange(this, null, e));
-        }
+        tokenC4QueryObserverMap.put(token, c4QueryObserver);
+        // enable observer
+        c4QueryObserver.setEnabled(true);
     }
 
     @GuardedBy("lock")
