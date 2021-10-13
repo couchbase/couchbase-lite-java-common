@@ -60,7 +60,7 @@ abstract class AbstractQuery implements Query {
 
     //should this be synchronized? which threads will access this map
     private final Map<ListenerToken, C4QueryObserver> tokenC4QueryObserverMap = new HashMap<>();
-
+    private final Map<ChangeListenerToken<QueryChange>, C4QueryObserver> listeners = new HashMap<>();
     @GuardedBy("lock")
     private C4Query c4query;
 
@@ -178,6 +178,44 @@ abstract class AbstractQuery implements Query {
         registerC4QueryObserver(token);
         return token;
     }
+    /*
+    @NonNull
+    public ListenerToken newAddChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener) {
+        Preconditions.assertNotNull(listener, "listener");
+
+        final ChangeListenerToken<QueryChange> token = new ChangeListenerToken<>(executor, listener);
+        final C4QueryObserver queryObserver;
+        try { queryObserver = C4QueryObserver.create(getC4QueryLocked(), token, this::onQueryChanged); }
+        catch (CouchbaseLiteException e) {
+            // !!! Can't throw this (API change), can't ignore it.
+            // Really need to do something better than this...
+            throw new IllegalStateException(e);
+        }
+        listeners.put(token, queryObserver);
+
+        final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
+        exec.postDelayedOnExecutor(
+            200, // 200 ms delay
+            executor != null ? executor : exec.getDefaultExecutor(),
+            () -> queryObserver.setEnabled(true));
+
+        return token;
+    }
+
+    public void newRemoveChangeListener(@NonNull ListenerToken token) {
+        Preconditions.assertNotNull(token, "token");
+        final C4QueryObserver queryObserver = listeners.remove(token);
+        if (queryObserver != null) { queryObserver.close(); }
+    }
+
+    private void onQueryChanged(
+        ChangeListenerToken<QueryChange> token,
+        C4QueryEnumerator enumerator,
+        LiteCoreException err) {
+        token.postChange(new QueryChange(this, new ResultSet(this, enumerator, columnNames), err));
+    }
+    */
+
 
     /**
      * Removes a change listener wih the given listener token.
