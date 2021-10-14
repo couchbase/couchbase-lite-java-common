@@ -57,6 +57,7 @@ abstract class AbstractQuery implements Query {
     // member variables
     //---------------------------------------------
 
+
     private final Map<ChangeListenerToken<QueryChange>, C4QueryObserver> listeners = new HashMap<>();
 
     private final Object lock = new Object();
@@ -186,8 +187,15 @@ abstract class AbstractQuery implements Query {
         Preconditions.assertNotNull(listener, "listener");
 
         final ChangeListenerToken<QueryChange> token = new ChangeListenerToken<>(executor, listener);
-        final C4QueryObserver queryObserver = registerC4QueryObserver(token);
+        final C4QueryObserver queryObserver;
+        try { queryObserver = C4QueryObserver.create(getC4QueryLocked(), token, this::onQueryChanged); }
+        catch (CouchbaseLiteException e) {
+            // !!! Can't throw this (API change), can't ignore it.
+            // Really need to do something better than this...
+            throw new IllegalStateException(e);
+        }
         listeners.put(token, queryObserver);
+
         final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
         exec.postDelayedOnExecutor(
             UPDATE_DELAY_MS, // 200 ms delay
@@ -207,15 +215,6 @@ abstract class AbstractQuery implements Query {
         Preconditions.assertNotNull(token, "token");
         final C4QueryObserver observer = listeners.remove(token);
         if (observer != null) { observer.close(); }
-    }
-
-    private C4QueryObserver registerC4QueryObserver(ChangeListenerToken token) {
-        C4QueryObserver observer;
-        try { observer = C4QueryObserver.create(getC4QueryLocked(), token, this::onQueryChanged); }
-        catch (CouchbaseLiteException e) {
-            throw new IllegalStateException(e);
-        }
-        return observer;
     }
 
     private void onQueryChanged(
