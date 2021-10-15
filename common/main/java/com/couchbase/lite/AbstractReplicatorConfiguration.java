@@ -491,7 +491,7 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     //---------------------------------------------
-    // Protecte access
+    // Protected access
     //---------------------------------------------
 
     @NonNull

@@ -64,7 +64,7 @@ public abstract class AbstractSocketFactory {
         this.serverCertsListener = serverCertsListener;
     }
 
-    @Nullable
+    @NonNull
     public final C4Socket createSocket(
         long peer,
         @NonNull String scheme,

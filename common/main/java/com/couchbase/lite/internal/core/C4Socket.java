@@ -19,12 +19,9 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.SocketFactory;
+import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -64,7 +61,7 @@ public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // Lookup table: maps a handle to a peer native socket to its Java companion
-    private static final Map<Long, C4Socket> HANDLES_TO_SOCKETS = Collections.synchronizedMap(new HashMap<>());
+    private static final NativeRefPeerBinding<C4Socket> BOUND_SOCKETS = new NativeRefPeerBinding<>();
 
     //-------------------------------------------------------------------------
     // JNI callback methods
@@ -79,7 +76,7 @@ public abstract class C4Socket extends C4NativePeer {
         int port,
         @Nullable String path,
         @NonNull byte[] options) {
-        C4Socket socket = getSocketForPeer(peer);
+        C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.open @%x: %s, %s", peer, socket, factory);
 
         // !!! What happens when a C thread gets an exception???
@@ -109,7 +106,7 @@ public abstract class C4Socket extends C4NativePeer {
             return;
         }
 
-        final C4Socket socket = getSocketForPeer(peer);
+        final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.write(%d) @%x: %s", allocatedData.length, peer, socket);
 
         if (socket == null) {
@@ -122,7 +119,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     static void completedReceive(long peer, long byteCount) {
-        final C4Socket socket = getSocketForPeer(peer);
+        final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.completedReceive(%d) @%x: %s", byteCount, peer, socket);
 
         if (socket == null) {
@@ -135,7 +132,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     static void requestClose(long peer, int status, @Nullable String message) {
-        final C4Socket socket = getSocketForPeer(peer);
+        final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.requestClose(%d) @%x: %s, '%s'", status, peer, socket, message);
 
         if (socket == null) {
@@ -149,7 +146,7 @@ public abstract class C4Socket extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     // NOTE: close(long) method should not be called.
     static void close(long peer) {
-        final C4Socket socket = getSocketForPeer(peer);
+        final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.close @%x: %s", peer, socket);
 
         if (socket == null) {
@@ -166,39 +163,7 @@ public abstract class C4Socket extends C4NativePeer {
     // It is the second half of the asynchronous close process.
     // We are guaranteed this callback once we call `C4Socket.closed`
     // This is where we actually free the Java object.
-    static void dispose(long peer) { unbindSocket(peer); }
-
-    //-------------------------------------------------------------------------
-    // Private static methods
-    //-------------------------------------------------------------------------
-
-    private static void bindSocket(@NonNull C4Socket socket) {
-        final long peer;
-        final int n;
-        synchronized (HANDLES_TO_SOCKETS) {
-            peer = socket.getPeer();
-            HANDLES_TO_SOCKETS.put(peer, socket);
-            n = HANDLES_TO_SOCKETS.size();
-        }
-
-        Log.d(LOG_DOMAIN, "Bind socket(%d) %s to @%x", n, socket, peer);
-    }
-
-    @Nullable
-    private static C4Socket getSocketForPeer(long peer) {
-        synchronized (HANDLES_TO_SOCKETS) { return HANDLES_TO_SOCKETS.get(peer); }
-    }
-
-    private static void unbindSocket(long peer) {
-        final C4Socket socket;
-        final int n;
-        synchronized (HANDLES_TO_SOCKETS) {
-            socket = HANDLES_TO_SOCKETS.remove(peer);
-            if (socket != null) { socket.releasePeer(); }
-            n = HANDLES_TO_SOCKETS.size();
-        }
-        Log.d(LOG_DOMAIN, "Unbind socket(%d) %s from @%x", n, socket, peer);
-    }
+    static void dispose(long peer) { BOUND_SOCKETS.unbind(peer); }
 
 
     //-------------------------------------------------------------------------
@@ -214,15 +179,11 @@ public abstract class C4Socket extends C4NativePeer {
 
     protected C4Socket(long peer) {
         super(peer);
-        bindSocket(this);
+        BOUND_SOCKETS.bind(peer, this);
     }
 
-    // !!! This should be re-written to use C4NativePeer
-    //     It should not pass a reference to <b>this</b>, to the native code
-    //     and it should eliminate the vector holding GlobalRefs on the JNI side
     protected C4Socket(@NonNull String schema, @NonNull String host, int port, @NonNull String path, int framing) {
-        setPeer(fromNative(this, schema, host, port, path, framing));
-        bindSocket(this);
+        this(fromNative(0L, schema, host, port, path, framing));
     }
 
     //-------------------------------------------------------------------------
@@ -326,7 +287,7 @@ public abstract class C4Socket extends C4NativePeer {
 
     // wrap an existing Java C4Socket in a C-native C4Socket
     private static native long fromNative(
-        C4Socket socket,
+        long token,
         String schema,
         String host,
         int port,

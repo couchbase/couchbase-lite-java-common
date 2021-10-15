@@ -70,15 +70,6 @@ abstract class AbstractQuery implements Query {
     @Nullable
     private Parameters parameters;
 
-
-    /**
-     * method to check if query has an observer for testingq
-     */
-    @VisibleForTesting
-    boolean isLive(ListenerToken token) {
-        return listeners.get(token) != null;
-    }
-
     /**
      * Returns a copies of the current parameters.
      */
@@ -217,18 +208,17 @@ abstract class AbstractQuery implements Query {
         if (observer != null) { observer.close(); }
     }
 
-    private void onQueryChanged(
-        ChangeListenerToken<QueryChange> token,
-        C4QueryEnumerator enumerator,
-        LiteCoreException err) {
-        token.postChange(new QueryChange(this, new ResultSet(this, enumerator, columnNames), err));
-    }
-
     @NonNull
     protected abstract C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException;
 
     @Nullable
     protected abstract AbstractDatabase getDatabase();
+
+    /**
+     * Find out if a query has an observer
+     */
+    @VisibleForTesting
+    boolean isLive(ListenerToken token) { return listeners.get(token) != null; }
 
     @GuardedBy("lock")
     @NonNull
@@ -262,6 +252,13 @@ abstract class AbstractQuery implements Query {
 
         c4query = c4Q;
         return c4query;
+    }
+
+    private void onQueryChanged(
+        ChangeListenerToken<QueryChange> token,
+        C4QueryEnumerator enumerator,
+        LiteCoreException err) {
+        token.postChange(new QueryChange(this, new ResultSet(this, enumerator, columnNames), err));
     }
 
     @NonNull

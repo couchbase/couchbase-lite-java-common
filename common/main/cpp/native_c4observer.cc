@@ -287,9 +287,9 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_create(
         JNIEnv *env,
         jclass clazz,
-        jlong jquery,
-        jlong ctxt) {
-    return (jlong) c4queryobs_create((C4Query *) jquery, c4QueryObserverCallback, (void *) ctxt);
+        jlong token,
+        jlong jquery) {
+    return (jlong) c4queryobs_create((C4Query *) jquery, c4QueryObserverCallback, (void *) token);
 }
 
 /*
@@ -320,7 +320,7 @@ Java_com_couchbase_lite_internal_core_NativeC4QueryObserver_getEnumerator(
     C4QueryEnumerator *results = c4queryobs_getEnumerator((C4QueryObserver *) handle, (bool) forget, &error);
     if (!results) {
         throwError(env, error);
-        return 0    ;
+        return 0;
     }
     return (jlong) results;
 }

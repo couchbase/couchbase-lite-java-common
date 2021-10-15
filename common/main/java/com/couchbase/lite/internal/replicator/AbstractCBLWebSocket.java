@@ -65,7 +65,7 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4Socket;
-import com.couchbase.lite.internal.core.NativeContext;
+import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.support.Log;
@@ -248,7 +248,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     //-------------------------------------------------------------------------
 
     @NonNull
-    private static final NativeContext<KeyManager> KEY_MANAGERS = new NativeContext<>();
+    private static final TaggedWeakPeerBinding<KeyManager> KEY_MANAGERS = new TaggedWeakPeerBinding<>();
 
     private static final StateMachine.Builder<State> WS_STATE_BUILDER
         = new StateMachine.Builder<>(State.class, State.INIT, State.FAILED)
@@ -276,8 +276,8 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Static methods
     //-------------------------------------------------------------------------
 
-    public static int addKeyManager(@NonNull KeyManager keyManager) {
-        final int token = KEY_MANAGERS.reserveKey();
+    public static long addKeyManager(@NonNull KeyManager keyManager) {
+        final long token = KEY_MANAGERS.reserveKey();
         KEY_MANAGERS.bind(token, keyManager);
         return token;
     }
@@ -679,7 +679,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
         KeyManager keyManager = null;
         final Object certKey = auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY);
-        if (certKey instanceof Long) { keyManager = KEY_MANAGERS.getObjFromContext((long) certKey); }
+        if (certKey instanceof Long) { keyManager = KEY_MANAGERS.getBinding((long) certKey); }
         if (keyManager == null) { Log.i(TAG, "No key manager configured for client certificate authentication"); }
 
         return keyManager;

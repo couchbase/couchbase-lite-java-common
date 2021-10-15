@@ -16,10 +16,10 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
  * Method:    fromNative
- * Signature: (Lcom/couchbase/lite/internal/core/C4Socket;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;I)J
+ * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;I)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Socket_fromNative
-  (JNIEnv *, jclass, jobject, jstring, jstring, jint, jstring, jint);
+  (JNIEnv *, jclass, jlong, jstring, jstring, jint, jstring, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket

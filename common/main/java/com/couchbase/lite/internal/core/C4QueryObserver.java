@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.QueryChange;
+import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -17,22 +18,22 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 public class C4QueryObserver extends C4NativePeer {
     @FunctionalInterface
     public interface QueryChangeCallback {
-        void notify(
+        void onQueryChanged(
             @NonNull ChangeListenerToken<QueryChange> listener,
             @Nullable C4QueryEnumerator results,
             @Nullable LiteCoreException err);
     }
 
     public interface NativeImpl {
-        long nCreate(long c4Query, int token);
-        void nSetEnabled(long handle, boolean enabled);
-        void nFree(long handle);
-        long nGetEnumerator(long handle, boolean forget) throws LiteCoreException;
+        long nCreate(long token, long c4Query);
+        void nSetEnabled(long peer, boolean enabled);
+        void nFree(long peer);
+        long nGetEnumerator(long peer, boolean forget) throws LiteCoreException;
     }
 
     @NonNull
     @VisibleForTesting
-    static final NativeContext<C4QueryObserver> QUERY_OBSERVER_CONTEXT = new NativeContext<>();
+    static final TaggedWeakPeerBinding<C4QueryObserver> QUERY_OBSERVER_CONTEXT = new TaggedWeakPeerBinding<>();
 
     // Not final for testing.
     @NonNull
@@ -48,7 +49,7 @@ public class C4QueryObserver extends C4NativePeer {
         @NonNull C4Query query,
         @NonNull ChangeListenerToken<QueryChange> listener,
         @NonNull QueryChangeCallback callback) {
-        final int token = QUERY_OBSERVER_CONTEXT.reserveKey();
+        final long token = QUERY_OBSERVER_CONTEXT.reserveKey();
         final C4QueryObserver observer = new C4QueryObserver(token, nativeImpl, query, listener, callback);
         QUERY_OBSERVER_CONTEXT.bind(token, observer);
         return observer;
@@ -60,7 +61,7 @@ public class C4QueryObserver extends C4NativePeer {
 
     // This method is called by reflection.  Don't change its signature.
     static void onQueryChanged(long token) {
-        final C4QueryObserver observer = QUERY_OBSERVER_CONTEXT.getObjFromContext(token);
+        final C4QueryObserver observer = QUERY_OBSERVER_CONTEXT.getBinding(token);
         if (observer == null) {
             Log.w(LogDomain.QUERY, "No observer for token: " + token);
             return;
@@ -69,7 +70,7 @@ public class C4QueryObserver extends C4NativePeer {
     }
 
 
-    private final int token;
+    private final long token;
     @NonNull
     private final C4QueryObserver.NativeImpl impl;
     @NonNull
@@ -79,7 +80,7 @@ public class C4QueryObserver extends C4NativePeer {
 
     @VisibleForTesting
     C4QueryObserver(
-        int token,
+        long token,
         @NonNull NativeImpl impl,
         @NonNull C4Query query,
         @NonNull ChangeListenerToken<QueryChange> listener,
@@ -88,7 +89,7 @@ public class C4QueryObserver extends C4NativePeer {
         this.impl = impl;
         this.listener = listener;
         this.callback = callback;
-        setPeer(impl.nCreate(query.getPeer(), token));
+        setPeer(impl.nCreate(token, query.getPeer()));
     }
 
     @CallSuper
@@ -122,7 +123,7 @@ public class C4QueryObserver extends C4NativePeer {
         LiteCoreException err = null;
         try { results = new C4QueryEnumerator(impl.nGetEnumerator(getPeer(), false)); }
         catch (LiteCoreException e) { err = e; }
-        callback.notify(listener, results, err);
+        callback.onQueryChanged(listener, results, err);
     }
 
     private void closePeer(LogDomain domain) { releasePeer(domain, impl::nFree); }

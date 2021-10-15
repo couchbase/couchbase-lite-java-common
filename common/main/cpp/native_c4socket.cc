@@ -217,8 +217,6 @@ static void socket_close(C4Socket *socket) {
     }
 }
 
-static std::vector<jobject> nativeHandles;
-
 static void socket_dispose(C4Socket *socket) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
@@ -232,22 +230,6 @@ static void socket_dispose(C4Socket *socket) {
         }
     } else {
         C4Warn("socket_dispose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-    }
-
-    if (c4Socket_getNativeHandle(socket) != nullptr) {
-        jobject handle = nullptr;
-        int i = 0;
-        for (; i < nativeHandles.size(); i++) {
-            jobject h = nativeHandles[i];
-            if (h == c4Socket_getNativeHandle(socket)) {
-                handle = h;
-                break;
-            }
-        }
-        if (handle != nullptr) {
-            env->DeleteGlobalRef(handle);
-            nativeHandles.erase(nativeHandles.begin() + i);
-        }
     }
 
     if (getEnvStat == JNI_EDETACHED) {
@@ -268,9 +250,7 @@ static const C4SocketFactory kSocketFactory{
         &socket_dispose,            // dispose
 };
 
-const C4SocketFactory socket_factory() {
-    return kSocketFactory;
-}
+const C4SocketFactory socket_factory() { return kSocketFactory; }
 
 extern "C" {
 
@@ -371,18 +351,20 @@ Java_com_couchbase_lite_internal_core_C4Socket_received(JNIEnv *env, jclass igno
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
  * Method:    fromNative
- * Signature: (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;I)J
+ * Signature: (JLjava/lang/String;ILjava/lang/String;I)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Socket_fromNative(
         JNIEnv *env,
         jclass ignore,
-        jobject jnativeHandle,
+        jlong jcontext,
         jstring jscheme,
         jstring jhost,
         jint jport,
         jstring jpath,
         jint jframing) {
+    void *context = (void *) jcontext;
+
     jstringSlice scheme(env, jscheme);
     jstringSlice host(env, jhost);
     jstringSlice path(env, jpath);
@@ -393,13 +375,12 @@ Java_com_couchbase_lite_internal_core_C4Socket_fromNative(
     c4Address.port = jport;
     c4Address.path = path;
 
-    jobject gNativeHandle = env->NewGlobalRef(jnativeHandle);
-    nativeHandles.push_back(gNativeHandle);
-
     C4SocketFactory socketFactory = socket_factory();
     socketFactory.framing = (C4SocketFraming) jframing;
-    socketFactory.context = gNativeHandle;
-    C4Socket *c4socket = c4socket_fromNative(socketFactory, gNativeHandle, &c4Address);
+    socketFactory.context = context;
+
+    C4Socket *c4socket = c4socket_fromNative(socketFactory, context, &c4Address);
+
     return (jlong) c4socket;
 }
 }
