@@ -41,6 +41,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 abstract class AbstractQuery implements Query {
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
+    public static final long UPDATE_DELAY_MS = 200;
 
     private static final Set<String> RESERVED_NAMES;
     static {
@@ -55,6 +56,8 @@ abstract class AbstractQuery implements Query {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+
+
     private final Map<ChangeListenerToken<QueryChange>, C4QueryObserver> listeners = new HashMap<>();
 
     private final Object lock = new Object();
@@ -63,10 +66,18 @@ abstract class AbstractQuery implements Query {
     private Map<String, Integer> columnNames;
     @GuardedBy("lock")
     private C4Query c4query;
-    @GuardedBy("lock")
-    private LiveQuery liveQuery;
+
     @Nullable
     private Parameters parameters;
+
+
+    /**
+     * method to check if query has an observer for testingq
+     */
+    @VisibleForTesting
+    boolean isLive(ListenerToken token) {
+        return listeners.get(token) != null;
+    }
 
     /**
      * Returns a copies of the current parameters.
@@ -79,18 +90,13 @@ abstract class AbstractQuery implements Query {
      * Set parameters should copy the given parameters. Set a new parameter will
      * also re-execute the query if there is at least one listener listening for
      * changes.
+     * METHOD NEEDS TO BE REWRITTEN with core c4query_setParameters
      */
     @Override
     public void setParameters(@Nullable Parameters parameters) {
-        final LiveQuery newQuery;
         synchronized (lock) {
             this.parameters = (parameters == null) ? null : parameters.readonlyCopy();
-            newQuery = liveQuery;
         }
-
-        // https://github.com/couchbase/couchbase-lite-android/issues/1727
-        // Shouldn't call start() method inside the lock to prevent deadlock:
-        if (newQuery != null) { newQuery.start(true); }
     }
 
     /**
@@ -179,23 +185,6 @@ abstract class AbstractQuery implements Query {
     @Override
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-        return getLiveQuery().addChangeListener(executor, listener);
-    }
-
-    /**
-     * Removes a change listener wih the given listener token.
-     *
-     * @param token The listener token.
-     */
-    @Override
-    public void removeChangeListener(@NonNull ListenerToken token) {
-        Preconditions.assertNotNull(token, "token");
-        getLiveQuery().removeChangeListener(token);
-    }
-
-    @NonNull
-    public ListenerToken newAddChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener) {
-        Preconditions.assertNotNull(listener, "listener");
 
         final ChangeListenerToken<QueryChange> token = new ChangeListenerToken<>(executor, listener);
         final C4QueryObserver queryObserver;
@@ -209,17 +198,23 @@ abstract class AbstractQuery implements Query {
 
         final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
         exec.postDelayedOnExecutor(
-            200, // 200 ms delay
+            UPDATE_DELAY_MS, // 200 ms delay
             executor != null ? executor : exec.getDefaultExecutor(),
             () -> queryObserver.setEnabled(true));
 
         return token;
     }
 
-    public void newRemoveChangeListener(@NonNull ListenerToken token) {
+    /**
+     * Removes a change listener wih the given listener token.
+     *
+     * @param token The listener token.
+     */
+    @Override
+    public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
-        final C4QueryObserver queryObserver = listeners.remove(token);
-        if (queryObserver != null) { queryObserver.close(); }
+        final C4QueryObserver observer = listeners.remove(token);
+        if (observer != null) { observer.close(); }
     }
 
     private void onQueryChanged(
@@ -234,15 +229,6 @@ abstract class AbstractQuery implements Query {
 
     @Nullable
     protected abstract AbstractDatabase getDatabase();
-
-    @NonNull
-    @VisibleForTesting
-    LiveQuery getLiveQuery() {
-        synchronized (lock) {
-            if (liveQuery == null) { liveQuery = new LiveQuery(this); }
-            return liveQuery;
-        }
-    }
 
     @GuardedBy("lock")
     @NonNull
