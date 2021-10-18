@@ -193,6 +193,10 @@ abstract class AbstractQuery implements Query {
     @Nullable
     protected abstract AbstractDatabase getDatabase();
 
+    void getC4Query() throws CouchbaseLiteException {
+        synchronized (lock) { getC4QueryLocked(); }
+    }
+
     @NonNull
     @VisibleForTesting
     LiveQuery getLiveQuery() {
@@ -204,7 +208,7 @@ abstract class AbstractQuery implements Query {
 
     @GuardedBy("lock")
     @NonNull
-    C4Query getC4QueryLocked() throws CouchbaseLiteException {
+    private C4Query getC4QueryLocked() throws CouchbaseLiteException {
         if (c4query != null) { return c4query; }
 
         final AbstractDatabase db = getDatabase();

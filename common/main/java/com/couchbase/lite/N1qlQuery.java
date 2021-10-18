@@ -52,5 +52,5 @@ public final class N1qlQuery extends AbstractQuery {
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
-    void compile() throws CouchbaseLiteException { getC4QueryLocked(); }
+    void compile() throws CouchbaseLiteException { getC4Query(); }
 }
