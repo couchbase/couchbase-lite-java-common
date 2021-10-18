@@ -649,10 +649,12 @@ abstract class AbstractDatabase extends BaseDatabase {
     // Queries:
 
     @NonNull
-    public Query createQuery(@NonNull String query) {
+    public Query createQuery(@NonNull String query) throws CouchbaseLiteException {
         synchronized (getDbLock()) {
             mustBeOpen();
-            return new N1qlQuery(this, query);
+            final N1qlQuery n1qlQuery = new N1qlQuery(this, query);
+            n1qlQuery.compile();
+            return n1qlQuery;
         }
     }
 

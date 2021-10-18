@@ -21,6 +21,7 @@ import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 
 public final class N1qlQuery extends AbstractQuery {
@@ -46,9 +47,10 @@ public final class N1qlQuery extends AbstractQuery {
     @Override
     protected C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException {
         Log.d(DOMAIN, "N1QL query: %s", n1ql);
-        if (n1ql == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
-
+        if (StringUtils.isEmpty(n1ql)) { throw new CouchbaseLiteException("Query is null or empty."); }
         try { return db.createN1qlQuery(n1ql); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
+
+    void compile() throws CouchbaseLiteException { getC4QueryLocked(); }
 }
