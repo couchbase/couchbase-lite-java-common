@@ -193,6 +193,10 @@ abstract class AbstractQuery implements Query {
     @Nullable
     protected abstract AbstractDatabase getDatabase();
 
+    void getC4Query() throws CouchbaseLiteException {
+        synchronized (lock) { getC4QueryLocked(); }
+    }
+
     @NonNull
     @VisibleForTesting
     LiveQuery getLiveQuery() {
