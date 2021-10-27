@@ -41,9 +41,7 @@ public class LiveQueryTest extends BaseDbTest {
     private volatile CountDownLatch globalLatch;
     private volatile ListenerToken globalToken;
 
-
-    //Test flaky with 220ms
-    @FlakyTest
+    @Ignore("Test flaky with 220ms")
     @Test
     public void testCreateBasicListener() throws InterruptedException {
         final Query query = QueryBuilder
@@ -62,7 +60,7 @@ public class LiveQueryTest extends BaseDbTest {
 
     //Test create a second query, first query shouldn't get call back
     //Test flaky with 220ms
-    @FlakyTest
+    @Ignore("Test flaky with 220ms")
     @Test
     public void testCreateSecondListener() throws InterruptedException, CouchbaseLiteException {
         final Query query = QueryBuilder
@@ -71,34 +69,37 @@ public class LiveQueryTest extends BaseDbTest {
             .where(Expression.property(KEY).greaterThanOrEqualTo(Expression.intValue(0)))
             .orderBy(Ordering.property(KEY).ascending());
 
-        final CountDownLatch[] latch = new CountDownLatch[2];
-        latch[0] = new CountDownLatch(2);
-        latch[1] = new CountDownLatch(1);
+        final CountDownLatch latch1 = new CountDownLatch(2);
+        final CountDownLatch[] latch2 = new CountDownLatch[2];
+        for (int i = 0; i < latch2.length; i++) { latch2[i] = new CountDownLatch(1);}
+        final int[] count = new int[] {0};
 
         //latch 0 count down once when adding listener
-        ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch[0].countDown());
-        ListenerToken token1 = query.addChangeListener(testSerialExecutor, change -> latch[1].countDown());
+        ListenerToken token1 = query.addChangeListener(testSerialExecutor, change -> latch1.countDown());
+        ListenerToken token2 = query.addChangeListener(testSerialExecutor, change ->
+        {
+            int n = count[0]++;
+            latch2[n].countDown();
+        });
         try {
-            assertTrue(latch[1].await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
-            //creation of token1 should not trigger first listener callback
-            assertFalse(latch[0].await(2 * TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
+            assertTrue(latch2[0].await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
+            //creation of token2 should not trigger first listener callback
+            assertFalse(latch1.await(2 * TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
 
-            latch[1] = new CountDownLatch(1);
             createDocNumbered(11);
 
             //introducing change in database should trigger both listener callbacks
-            assertTrue(latch[0].await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
-            assertTrue(latch[1].await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
+            assertTrue(latch1.await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
+            assertTrue(latch2[1].await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
         }
         finally {
-            query.removeChangeListener(token);
             query.removeChangeListener(token1);
+            query.removeChangeListener(token2);
         }
     }
 
     // Creating a document that a query can see should cause an update
-    //Test is flaky with 220ms delay
-    @FlakyTest
+    @Ignore("Test is flaky with 220ms delay")
     @Test
     public void testAddChangeToBasicLiveQuery() throws CouchbaseLiteException, InterruptedException {
         final Query query = QueryBuilder
@@ -145,17 +146,15 @@ public class LiveQueryTest extends BaseDbTest {
         finally { query.removeChangeListener(token); }
     }
 
-    // Test close result set with 2 listener
-    // Flaky test with 220ms
-    @FlakyTest
+    @Ignore("Flaky test with 220ms")
     @Test
     public void testCloseRSWith2Listeners() throws InterruptedException, CouchbaseLiteException {
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.database(baseTestDb));
-        final CountDownLatch[] latch = new CountDownLatch[2];
-        latch[0] = new CountDownLatch(1);
-        latch[1] = new CountDownLatch(1);
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+
         ListenerToken token = query.addChangeListener(
             testSerialExecutor,
             change -> {
@@ -164,29 +163,29 @@ public class LiveQueryTest extends BaseDbTest {
                     if (rs != null) {
                         rs.close();
                     }
-                    latch[0].countDown();
+                    latch1.countDown();
                 }
             });
         ListenerToken token1 = query.addChangeListener(
             testSerialExecutor, change -> {
                 try (ResultSet rs = change.getResults()) {
                     assertTrue(rs.next() != null); //second listener can still iterate over the result
-                    latch[1].countDown();
+                    latch2.countDown();
                 }
             });
 
         createDocNumbered(11);
 
         //both listener get notified after create doc in database.
-        assertTrue(latch[1].await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
-        assertTrue(latch[0].await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
+        assertTrue(latch2.await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
+        assertTrue(latch1.await(TOLERABLE_DELAY_MS, TimeUnit.MILLISECONDS));
 
         query.removeChangeListener(token);
         query.removeChangeListener(token1);
     }
 
     // All listeners should hear an update
-    @FlakyTest
+    @Ignore("Flaky test")
     @Test
     public void testLiveQueryWith2Listeners() throws CouchbaseLiteException, InterruptedException {
         Query query = QueryBuilder
