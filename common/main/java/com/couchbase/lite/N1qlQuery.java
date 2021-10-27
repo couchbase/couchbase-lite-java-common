@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import android.support.annotation.GuardedBy;
 import android.support.annotation.NonNull;
 
 import com.couchbase.lite.internal.core.C4Query;
@@ -24,13 +25,13 @@ import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.StringUtils;
 
 
-public final class N1qlQuery extends AbstractQuery {
+final class N1qlQuery extends AbstractQuery {
     @NonNull
     private final String n1ql;
     @NonNull
     private final AbstractDatabase db;
 
-    public N1qlQuery(@NonNull AbstractDatabase db, @NonNull String n1ql) {
+    N1qlQuery(@NonNull AbstractDatabase db, @NonNull String n1ql) {
         this.n1ql = Preconditions.assertNotNull(n1ql, "query");
         this.db = Preconditions.assertNotNull(db, "database");
     }
@@ -43,6 +44,7 @@ public final class N1qlQuery extends AbstractQuery {
     @Override
     protected AbstractDatabase getDatabase() { return db; }
 
+    @GuardedBy("AbstractQuery.lock")
     @NonNull
     @Override
     protected C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException {
