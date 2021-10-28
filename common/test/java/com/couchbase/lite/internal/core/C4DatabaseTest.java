@@ -25,10 +25,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
-import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;

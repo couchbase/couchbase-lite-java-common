@@ -41,7 +41,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 abstract class AbstractQuery implements Query {
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
-    public static final long UPDATE_DELAY_MS = 200;
+
+    // !!! NEED INPUT FROM CORE FOR A REASONABLE NUMBER, HERE
+    public static final long UPDATE_DELAY_MS = 20;
 
     private static final Set<String> RESERVED_NAMES;
     static {
