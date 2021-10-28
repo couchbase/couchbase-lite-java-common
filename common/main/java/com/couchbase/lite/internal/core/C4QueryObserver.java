@@ -49,6 +49,7 @@ public class C4QueryObserver extends C4NativePeer {
         @NonNull C4Query query,
         @NonNull ChangeListenerToken<QueryChange> listener,
         @NonNull QueryChangeCallback callback) {
+
         final long token = QUERY_OBSERVER_CONTEXT.reserveKey();
         final C4QueryObserver observer = new C4QueryObserver(token, nativeImpl, query, listener, callback);
         QUERY_OBSERVER_CONTEXT.bind(token, observer);

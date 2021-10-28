@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.BaseTest;
