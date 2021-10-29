@@ -83,13 +83,23 @@ abstract class AbstractQuery implements Query {
      * Set parameters should copy the given parameters. Set a new parameter will
      * also re-execute the query if there is at least one listener listening for
      * changes.
-     * METHOD NEEDS TO BE REWRITTEN with core c4query_setParameters
+     *
+     * @throws IllegalStateException    on failure to create the query (e.g., database closed)
+     * @throws IllegalArgumentException on failure to encode the parameters (e.g., parameter value not supported)
      */
     @Override
     public void setParameters(@Nullable Parameters parameters) {
-        synchronized (lock) {
-            this.parameters = (parameters == null) ? null : parameters.readonlyCopy();
+        synchronized (lock) { this.parameters = (parameters == null) ? null : parameters.readonlyCopy(); }
+        try {
+            try {
+                if (this.parameters != null) {
+                    final FLSliceResult result = this.parameters.encode();
+                    getC4QueryLocked().setParameters(result);
+                }
+            }
+            catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
         }
+        catch (LiteCoreException e) { throw new IllegalArgumentException("Failed encoding parameters", e); }
     }
 
     /**
