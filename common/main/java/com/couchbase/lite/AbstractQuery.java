@@ -173,6 +173,7 @@ abstract class AbstractQuery implements Query {
      * @param executor The executor object that calls listener. If null, use default executor.
      * @param listener The listener to post changes.
      * @return An opaque listener token object for removing the listener.
+     * @throws IllegalStateException on failure to create the query (e.g., database closed)
      */
     @NonNull
     @Override
@@ -182,11 +183,8 @@ abstract class AbstractQuery implements Query {
         final ChangeListenerToken<QueryChange> token = new ChangeListenerToken<>(executor, listener);
         final C4QueryObserver queryObserver;
         try { queryObserver = C4QueryObserver.create(getC4QueryLocked(), token, this::onQueryChanged); }
-        catch (CouchbaseLiteException e) {
-            // !!! Can't throw this (API change), can't ignore it.
-            // Really need to do something better than this...
-            throw new IllegalStateException(e);
-        }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
+
         listeners.put(token, queryObserver);
 
         final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
