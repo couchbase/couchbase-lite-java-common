@@ -392,7 +392,7 @@ public final class Log {
     }
 
     public static void warn() {
-        if (WARNED.getAndSet(true)) { return; }
+        if (WARNED.getAndSet(true) || Database.log.getFile().getConfig() != null) { return; }
         Log.w(
             LogDomain.DATABASE,
             "Database.log.getFile().getConfig() is now null: logging is disabled.  "
