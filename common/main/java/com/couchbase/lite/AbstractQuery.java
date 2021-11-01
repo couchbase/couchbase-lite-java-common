@@ -91,14 +91,12 @@ abstract class AbstractQuery implements Query {
     public void setParameters(@Nullable Parameters parameters) {
         synchronized (lock) { this.parameters = (parameters == null) ? null : parameters.readonlyCopy(); }
         try {
-            try {
-                if (this.parameters != null) {
-                    final FLSliceResult result = this.parameters.encode();
-                    getC4QueryLocked().setParameters(result);
-                }
+            if (this.parameters != null) {
+                final FLSliceResult result = this.parameters.encode();
+                getC4QueryLocked().setParameters(result);
             }
-            catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
         }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
         catch (LiteCoreException e) { throw new IllegalArgumentException("Failed encoding parameters", e); }
     }
 
