@@ -255,8 +255,8 @@ public class LiveQueryTest extends BaseDbTest {
     }
 
     // Changing query parameters should cause an update.
+    @Ignore("Need to wait for core update on the implementation of setParameters")
     @Test
-    @Ignore("Flaky. Test passes in individual run but fails when run devTest")
     public void testChangeParameters() throws CouchbaseLiteException, InterruptedException {
         createDocNumbered(1);
         createDocNumbered(2);

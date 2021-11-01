@@ -41,8 +41,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     private volatile long peer;
 
     // Instrumentation
-    @GuardedBy("lock")
-    private Exception closedAt;
+    private volatile Exception closedAt;
 
     // ??? questionable design
     protected C4NativePeer() { }
@@ -60,14 +59,14 @@ public abstract class C4NativePeer implements AutoCloseable {
         throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
-            if (peer == 0) {
-                logBadCall();
-                return def;
+            if (peer != 0L) {
+                final T val = fn.apply(peer);
+                return (val == null) ? def : val;
             }
-
-            final T val = fn.apply(peer);
-            return (val == null) ? def : val;
         }
+
+        logBadCall();
+        return def;
     }
 
     @Nullable
@@ -76,13 +75,11 @@ public abstract class C4NativePeer implements AutoCloseable {
         throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
-            if (peer == 0) {
-                logBadCall();
-                return null;
-            }
-
-            return fn.apply(peer);
+            if (peer != 0L) { return fn.apply(peer); }
         }
+
+        logBadCall();
+        return null;
     }
 
     /**
@@ -94,7 +91,7 @@ public abstract class C4NativePeer implements AutoCloseable {
 
     /**
      * Release the native peer, giving it the passed goodbye-kiss.
-     * When this method is used to release a peer that should already have been release
+     * When this method is used to release a peer that should already have been released
      * (say, in a finalizer for an [Auto]Closable object) pass a non-null domain to produce
      * an error message if the peer has not already been freed.
      * If this method is expecting to free the object (e.g., from the close() method)
@@ -114,17 +111,20 @@ public abstract class C4NativePeer implements AutoCloseable {
         final long peer;
 
         // !!! This code occasionally causes the error message:
-        //       java.lang.NullPointerException: Null reference used for synchronization (monitor-enter)
+        //     java.lang.NullPointerException: Null reference used for synchronization (monitor-enter)
         synchronized (lock) {
             peer = releasePeerLocked();
-            if (peer == 0L) { return; }
-
-            fn.accept(peer);
+            if (peer != 0L) { fn.accept(peer); }
         }
 
-        if (domain != null) {
-            Log.d(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName());
+        if (domain == null) {
+            // here if we don't expect the peer to have been closed
+            if (peer == 0L) { logBadCall(); }
+            return;
         }
+
+        // here if we expected the peer to have been closed
+        if (peer != 0L) { Log.d(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName()); }
     }
 
     // The next three methods should go away.
@@ -144,12 +144,10 @@ public abstract class C4NativePeer implements AutoCloseable {
     // ??? questionable design
     protected final long getPeer() {
         final long peer = get();
-        if (peer == 0) {
-            logBadCall();
-            throw new IllegalStateException("Operation on closed native peer");
-        }
+        if (peer != 0L) { return peer; }
 
-        return peer;
+        logBadCall();
+        throw new IllegalStateException("Operation on closed native peer");
     }
 
     /**
@@ -181,15 +179,14 @@ public abstract class C4NativePeer implements AutoCloseable {
     @GuardedBy("lock")
     private long releasePeerLocked() {
         final long peer = this.peer;
-        if ((this.peer != 0) && CouchbaseLiteInternal.debugging()) { closedAt = new Exception(); }
         this.peer = 0L;
+        if ((peer != 0L) && CouchbaseLiteInternal.debugging()) { closedAt = new Exception(); }
         return peer;
     }
 
     private void logBadCall() {
         Log.e(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
-        final Exception closedLoc;
-        synchronized (getPeerLock()) { closedLoc = closedAt; }
+        final Exception closedLoc = closedAt;
         if (closedLoc != null) { Log.e(LogDomain.DATABASE, "Closed at", closedLoc); }
     }
 }

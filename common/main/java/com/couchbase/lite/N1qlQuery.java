@@ -15,21 +15,23 @@
 //
 package com.couchbase.lite;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 
-public final class N1qlQuery extends AbstractQuery {
+final class N1qlQuery extends AbstractQuery {
     @NonNull
     private final String n1ql;
     @NonNull
     private final AbstractDatabase db;
 
-    public N1qlQuery(@NonNull AbstractDatabase db, @NonNull String n1ql) {
+    N1qlQuery(@NonNull AbstractDatabase db, @NonNull String n1ql) {
         this.n1ql = Preconditions.assertNotNull(n1ql, "query");
         this.db = Preconditions.assertNotNull(db, "database");
     }
@@ -42,12 +44,12 @@ public final class N1qlQuery extends AbstractQuery {
     @Override
     protected AbstractDatabase getDatabase() { return db; }
 
+    @GuardedBy("AbstractQuery.lock")
     @NonNull
     @Override
     protected C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException {
         Log.d(DOMAIN, "N1QL query: %s", n1ql);
-        if (n1ql == null) { throw new CouchbaseLiteException("Failed to generate JSON query."); }
-
+        if (StringUtils.isEmpty(n1ql)) { throw new CouchbaseLiteException("Query is null or empty."); }
         try { return db.createN1qlQuery(n1ql); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }

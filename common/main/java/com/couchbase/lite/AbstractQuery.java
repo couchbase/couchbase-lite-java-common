@@ -91,10 +91,7 @@ abstract class AbstractQuery implements Query {
     public void setParameters(@Nullable Parameters parameters) {
         synchronized (lock) { this.parameters = (parameters == null) ? null : parameters.readonlyCopy(); }
         try {
-            if (this.parameters != null) {
-                final FLSliceResult result = this.parameters.encode();
-                getC4QueryLocked().setParameters(result);
-            }
+            if (this.parameters != null) { getC4QueryLocked().setParameters(this.parameters.encode()); }
         }
         catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
         catch (LiteCoreException e) { throw new IllegalArgumentException("Failed encoding parameters", e); }
@@ -216,11 +213,12 @@ abstract class AbstractQuery implements Query {
         if (observer != null) { observer.close(); }
     }
 
-    @NonNull
-    protected abstract C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException;
-
     @Nullable
     protected abstract AbstractDatabase getDatabase();
+
+    @GuardedBy("lock")
+    @NonNull
+    protected abstract C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException;
 
     /**
      * Find out if a query has an observer
