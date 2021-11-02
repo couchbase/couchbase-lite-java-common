@@ -216,23 +216,4 @@ Java_com_couchbase_lite_internal_core_C4Query_deleteIndex(
     if (!res)
         throwError(env, error);
 }
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    getFullTextMatched
- * Signature: (JJ)[B
- */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_getFullTextMatched(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jquery,
-        jlong jterm) {
-    C4Error error = {};
-    const auto term = (const C4FullTextMatch *) jterm;
-    C4SliceResult s = c4query_fullTextMatched((C4Query *) jquery, term, &error);
-    jbyteArray res = toJByteArray(env, s);
-    c4slice_free(s);
-    return res;
-}
 }

@@ -53,7 +53,6 @@ public class C4BaseTest extends BaseTest {
     public static final String REV_ID_2 = "2-c001d00d";
     public static final String REV_ID_3 = "3-deadbeef";
 
-
     protected C4Database c4Database;
 
     protected String dbParentDirPath;

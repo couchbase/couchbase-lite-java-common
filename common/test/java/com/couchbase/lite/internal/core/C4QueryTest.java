@@ -33,7 +33,6 @@ import com.couchbase.lite.internal.fleece.FLValue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -41,9 +40,7 @@ import static org.junit.Assert.fail;
 public class C4QueryTest extends C4QueryBaseTest {
 
     @Before
-    public final void setUpC4QueryTest() throws LiteCoreException, IOException {
-        loadJsonAsset("names_100.json");
-    }
+    public final void setUpC4QueryTest() throws LiteCoreException, IOException { loadJsonAsset("names_100.json"); }
 
     //-------------------------------------------------------------------------
     // tests
@@ -66,8 +63,9 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQuery() throws LiteCoreException {
         compile(json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"));
-        assertEquals(Arrays
-            .asList("0000001", "0000015", "0000036", "0000043", "0000053", "0000064", "0000072", "0000073"), run());
+        assertEquals(
+            Arrays.asList("0000001", "0000015", "0000036", "0000043", "0000053", "0000064", "0000072", "0000073"),
+            run());
 
         compile(json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"), "", true);
         Map<String, Object> params = new HashMap<>();
@@ -82,28 +80,30 @@ public class C4QueryTest extends C4QueryBaseTest {
         params.put("limit", 4);
         assertEquals(Arrays.asList("0000015", "0000036", "0000043", "0000053"), run(params));
 
-        compile(json5("['AND', ['=', ['array_count()', ['.', 'contact', 'phone']], 2],['=', ['.', 'gender'], "
-            + "'male']]"));
-        assertEquals(Arrays.asList(
-            "0000002",
-            "0000014",
-            "0000017",
-            "0000027",
-            "0000031",
-            "0000033",
-            "0000038",
-            "0000039",
-            "0000045",
-            "0000047",
-            "0000049",
-            "0000056",
-            "0000063",
-            "0000065",
-            "0000075",
-            "0000082",
-            "0000089",
-            "0000094",
-            "0000097"), run());
+        compile(json5(
+            "['AND', ['=', ['array_count()', ['.', 'contact', 'phone']], 2],['=', ['.', 'gender'], 'male']]"));
+        assertEquals(
+            Arrays.asList(
+                "0000002",
+                "0000014",
+                "0000017",
+                "0000027",
+                "0000031",
+                "0000033",
+                "0000038",
+                "0000039",
+                "0000045",
+                "0000047",
+                "0000049",
+                "0000056",
+                "0000063",
+                "0000065",
+                "0000075",
+                "0000082",
+                "0000089",
+                "0000094",
+                "0000097"),
+            run());
 
         // MISSING means no value is present (at that array index or dict key)
         compile(json5("['IS', ['.', 'contact', 'phone', [0]], ['MISSING']]"), "", true);
@@ -127,19 +127,21 @@ public class C4QueryTest extends C4QueryBaseTest {
         assertEquals(Arrays.asList("0000085"), run());
 
         compile(json5("['LIKE', ['.name.first'], '%J%']"));
-        assertEquals(Arrays.asList(
-            "0000002",
-            "0000004",
-            "0000008",
-            "0000017",
-            "0000028",
-            "0000030",
-            "0000045",
-            "0000052",
-            "0000067",
-            "0000071",
-            "0000088",
-            "0000094"), run());
+        assertEquals(
+            Arrays.asList(
+                "0000002",
+                "0000004",
+                "0000008",
+                "0000017",
+                "0000028",
+                "0000030",
+                "0000045",
+                "0000052",
+                "0000067",
+                "0000071",
+                "0000088",
+                "0000094"),
+            run());
 
         compile(json5("['LIKE', ['.name.first'], 'Jen%']"));
         assertEquals(Arrays.asList("0000008", "0000028"), run());
@@ -163,8 +165,9 @@ public class C4QueryTest extends C4QueryBaseTest {
         compile(
             json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"),
             json5("[['.', 'name', 'last']]"));
-        assertEquals(Arrays
-            .asList("0000015", "0000036", "0000072", "0000043", "0000001", "0000064", "0000073", "0000053"), run());
+        assertEquals(
+            Arrays.asList("0000015", "0000036", "0000072", "0000043", "0000001", "0000064", "0000073", "0000053"),
+            run());
     }
 
     // - DB Query bindings
@@ -281,20 +284,16 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Missing columns
     @Test
     public void testMissingColumns() throws LiteCoreException {
-        {
-            compileSelect(json5("['SELECT', {'WHAT': [['.name'], ['.gender']], 'LIMIT': 1}]"));
-            C4QueryEnumerator e = query.run(new C4QueryOptions());
-            while (e.next()) { assertEquals(0x00, e.getMissingColumns()); }
-            e.close();
-        }
+        compileSelect(json5("['SELECT', {'WHAT': [['.name'], ['.gender']], 'LIMIT': 1}]"));
+        C4QueryEnumerator e = query.run(new C4QueryOptions());
+        while (e.next()) { assertEquals(0x00, e.getMissingColumns()); }
+        e.close();
 
-        {
-            compileSelect(json5("['SELECT', {'WHAT': [['.XX'], ['.name'], ['.YY'], ['.gender'], ['.ZZ']], 'LIMIT': "
-                + "1}]"));
-            C4QueryEnumerator e = query.run(new C4QueryOptions());
-            while (e.next()) { assertEquals(0x15, e.getMissingColumns()); }
-            e.close();
-        }
+        compileSelect(
+            json5("['SELECT', {'WHAT': [['.XX'], ['.name'], ['.YY'], ['.gender'], ['.ZZ']], 'LIMIT': 1}]"));
+        e = query.run(new C4QueryOptions());
+        while (e.next()) { assertEquals(0x15, e.getMissingColumns()); }
+        e.close();
     }
 
     // ----- FTS:
@@ -310,13 +309,15 @@ public class C4QueryTest extends C4QueryBaseTest {
             null,
             true);
         compile(json5("['MATCH()', 'byStreet', 'Hwy']"));
-        assertEquals(Arrays.asList(
-            Arrays.asList(Arrays.asList(13L, 0L, 0L, 10L, 3L)),
-            Arrays.asList(Arrays.asList(15L, 0L, 0L, 11L, 3L)),
-            Arrays.asList(Arrays.asList(43L, 0L, 0L, 12L, 3L)),
-            Arrays.asList(Arrays.asList(44L, 0L, 0L, 12L, 3L)),
-            Arrays.asList(Arrays.asList(52L, 0L, 0L, 11L, 3L))
-        ), runFTS());
+        assertEquals(
+            Arrays.asList(
+                Arrays.asList(Arrays.asList(13L, 0L, 0L, 10L, 3L)),
+                Arrays.asList(Arrays.asList(15L, 0L, 0L, 11L, 3L)),
+                Arrays.asList(Arrays.asList(43L, 0L, 0L, 12L, 3L)),
+                Arrays.asList(Arrays.asList(44L, 0L, 0L, 12L, 3L)),
+                Arrays.asList(Arrays.asList(52L, 0L, 0L, 11L, 3L))
+            ),
+            runFTS());
     }
 
     // - Full-text multiple properties
@@ -332,19 +333,23 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         // Some docs match 'Santa' in the street name, some in the city name
         compile(json5("['MATCH()', 'byAddress', 'Santa']"));
-        assertEquals(Arrays.asList(
-            Arrays.asList(Arrays.asList(15L, 1L, 0L, 0L, 5L)),
-            Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
-            Arrays.asList(Arrays.asList(68L, 0L, 0L, 3L, 5L)),
-            Arrays.asList(Arrays.asList(72L, 1L, 0L, 0L, 5L))
-        ), runFTS());
+        assertEquals(
+            Arrays.asList(
+                Arrays.asList(Arrays.asList(15L, 1L, 0L, 0L, 5L)),
+                Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
+                Arrays.asList(Arrays.asList(68L, 0L, 0L, 3L, 5L)),
+                Arrays.asList(Arrays.asList(72L, 1L, 0L, 0L, 5L))
+            ),
+            runFTS());
 
         // Search only the street name:
         compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa']"));
-        assertEquals(Arrays.asList(
-            Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
-            Arrays.asList(Arrays.asList(68L, 0L, 0L, 3L, 5L))
-        ), runFTS());
+        assertEquals(
+            Arrays.asList(
+                Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
+                Arrays.asList(Arrays.asList(68L, 0L, 0L, 3L, 5L))
+            ),
+            runFTS());
 
         // Search for 'Santa' in the street name, and 'Saint' in either:
         compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa Saint']"));
@@ -353,18 +358,21 @@ public class C4QueryTest extends C4QueryBaseTest {
                 Arrays.asList(
                     Arrays.asList(68L, 0L, 0L, 3L, 5L),
                     Arrays.asList(68L, 1L, 1L, 0L, 5L))
-            ), runFTS());
+            ),
+            runFTS());
 
         // Search for 'Santa' in the street name, _or_ 'Saint' in either:
         compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa OR Saint']"));
-        assertEquals(Arrays.asList(
-            Arrays.asList(Arrays.asList(20L, 1L, 1L, 0L, 5L)),
-            Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
+        assertEquals(
             Arrays.asList(
-                Arrays.asList(68L, 0L, 0L, 3L, 5L),
-                Arrays.asList(68L, 1L, 1L, 0L, 5L)),
-            Arrays.asList(Arrays.asList(77L, 1L, 1L, 0L, 5L))
-        ), runFTS());
+                Arrays.asList(Arrays.asList(20L, 1L, 1L, 0L, 5L)),
+                Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
+                Arrays.asList(
+                    Arrays.asList(68L, 0L, 0L, 3L, 5L),
+                    Arrays.asList(68L, 1L, 1L, 0L, 5L)),
+                Arrays.asList(Arrays.asList(77L, 1L, 1L, 0L, 5L))
+            ),
+            runFTS());
     }
 
 
@@ -387,9 +395,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             true);
         compile(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]"));
         assertEquals(Arrays.asList("0000015"), run());
-        assertEquals(Arrays.asList(
-            Arrays.asList(Arrays.asList(15L, 0L, 0L, 11L, 3L))
-        ), runFTS());
+        assertEquals(Arrays.asList(Arrays.asList(Arrays.asList(15L, 0L, 0L, 11L, 3L))), runFTS());
     }
 
     // - Full-text query in multiple ANDs
@@ -410,12 +416,9 @@ public class C4QueryTest extends C4QueryBaseTest {
             null,
             true);
         compile(json5(
-            "['AND', ['AND', ['=', ['.gender'], 'male'], ['MATCH()', 'byCity', 'Santa']], ['=', ['.name.first'], "
-                + "'Cleveland']]"));
+            "['AND',['AND',['=',['.gender'],'male'],['MATCH()','byCity','Santa']],['=',['.name.first'],'Cleveland']]"));
         assertEquals(Arrays.asList("0000015"), run());
-        assertEquals(Arrays.asList(
-            Arrays.asList(Arrays.asList(15L, 0L, 0L, 0L, 5L))
-        ), runFTS());
+        assertEquals(Arrays.asList(Arrays.asList(Arrays.asList(15L, 0L, 0L, 0L, 5L))), runFTS());
     }
 
     // - Multiple Full-text queries
@@ -430,8 +433,8 @@ public class C4QueryTest extends C4QueryBaseTest {
             null,
             true);
         try {
-            c4Database
-                .createJsonQuery(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]"));
+            c4Database.createJsonQuery(
+                json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]"));
         }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
@@ -468,8 +471,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         List<String> expectedFirst = Arrays.asList("Cleveland", "Georgetta", "Margaretta");
         List<String> expectedLast = Arrays.asList("Bejcek", "Kolding", "Ogwynn");
         compileSelect(json5(
-            "{WHAT: ['.name.first', '.name.last'], WHERE: ['>=', ['length()', ['.name.first']], 9],ORDER_BY: [['.name"
-                + ".first']]}"));
+            "{WHAT: ['.name.first', '.name.last'], "
+            + "WHERE: ['>=', ['length()', ['.name.first']], 9],ORDER_BY: [['.name.first']]}"));
 
         assertEquals(2, query.getColumnCount());
 
@@ -541,8 +544,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         final int expectedRowCount = 42;
 
         compileSelect(json5(
-            "{WHAT: [['.contact.address.state'], ['min()', ['.name.last']], ['max()', ['.name.last']]],GROUP_BY: [['"
-                + ".contact.address.state']]}"));
+            "{WHAT: [['.contact.address.state'], ['min()', ['.name.last']], ['max()', ['.name.last']]],"
+            + "GROUP_BY: [['.contact.address.state']]}"));
 
         C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
@@ -569,9 +572,9 @@ public class C4QueryTest extends C4QueryBaseTest {
         List<String> expectedFirst = Arrays.asList("Cleveland", "Georgetta", "Margaretta");
         List<String> expectedState = Arrays.asList("California", "Ohio", "South Dakota");
         compileSelect(json5(
-            "{WHAT: ['.person.name.first', '.state.name'], FROM: [{as: 'person'}, {as: 'state', on: ['=', ['.state"
-                + ".abbreviation'], ['.person.contact.address.state']]}],WHERE: ['>=', ['length()', ['.person.name"
-                + ".first']], 9],ORDER_BY: [['.person.name.first']]}"));
+            "{WHAT: ['.person.name.first', '.state.name'],"
+            + "FROM: [{as:'person'},{as:'state',on:['=',['.state.abbreviation'],['.person.contact.address.state']]}],"
+            + "WHERE: ['>=', ['length()', ['.person.name.first']], 9],ORDER_BY: [['.person.name.first']]}"));
         C4QueryEnumerator e = query.run(new C4QueryOptions());
         assertNotNull(e);
         int i = 0;
@@ -588,32 +591,6 @@ public class C4QueryTest extends C4QueryBaseTest {
         assertEquals(3, i);
     }
 
-    // - DB Query Seek
-    @Test
-    public void testDBQuerySeek() throws LiteCoreException {
-        compile(json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"));
-        C4QueryEnumerator e = query.run(new C4QueryOptions());
-        assertNotNull(e);
-        e.next();
-        String docID = e.getColumns().getValueAt(0).asString();
-        assertEquals("0000001", docID);
-        e.next();
-        e.seek(0);
-        docID = e.getColumns().getValueAt(0).asString();
-        assertEquals("0000001", docID);
-        e.seek(7);
-        docID = e.getColumns().getValueAt(0).asString();
-        assertEquals("0000073", docID);
-        try {
-            e.seek(100);
-        }
-        catch (LiteCoreException ex) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
-            assertEquals(C4Constants.LiteCoreError.INVALID_PARAMETER, ex.code);
-        }
-        e.close();
-    }
-
     // - DB Query ANY nested
     // NOTE: in C4NestedQueryTest
 
@@ -628,27 +605,5 @@ public class C4QueryTest extends C4QueryBaseTest {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
             assertEquals(C4Constants.LiteCoreError.INVALID_QUERY, ex.code);
         }
-    }
-
-    // - Query refresh
-    @Test
-    public void testQueryRefresh() throws LiteCoreException {
-        compile(json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"));
-        String explanation = query.explain().substring(0, 129);
-        assertEquals(
-            "SELECT key, sequence"
-                + " FROM kv_default AS _doc"
-                + " WHERE (fl_value(_doc.body, 'contact.address.state') = 'CA') AND (_doc.flags & 1 = 0)",
-            explanation);
-        C4QueryEnumerator e = query.run(new C4QueryOptions());
-        assertNotNull(e);
-        C4QueryEnumerator refreshed = e.refresh();
-        assertNull(refreshed);
-
-        boolean commit = false;
-        c4Database.beginTransaction();
-        try { commit = true; }
-        finally { c4Database.endTransaction(commit); }
-        e.close();
     }
 }

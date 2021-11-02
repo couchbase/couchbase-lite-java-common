@@ -83,19 +83,13 @@ public class C4Query extends C4NativePeer {
 
     @Nullable
     public C4QueryEnumerator run(@NonNull C4QueryOptions opts, @NonNull FLSliceResult params) throws LiteCoreException {
-        return withPeerOrNull(h -> new C4QueryEnumerator(run(h, opts.isRankFullText(), params.getHandle())));
+        return withPeerOrNull(h -> C4QueryEnumerator.create(run(h, opts.isRankFullText(), params.getHandle())));
     }
 
     public int getColumnCount() { return withPeer(0, C4Query::columnCount); }
 
     @Nullable
     public String getColumnNameForIndex(int idx) { return withPeerOrNull(peer -> columnName(peer, idx)); }
-
-    @Nullable
-    @SuppressWarnings("PMD.MethodReturnsInternalArray")
-    public byte[] getFullTextMatched(@NonNull C4FullTextMatch match) throws LiteCoreException {
-        return withPeerOrNull(h -> getFullTextMatched(h, match.getPeer()));
-    }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -206,11 +200,4 @@ public class C4Query extends C4NativePeer {
     private static native long getIndexInfo(long db) throws LiteCoreException;
 
     private static native void deleteIndex(long db, String name) throws LiteCoreException;
-
-    /**
-     * Given a docID and sequence number from the enumerator, returns the text that was emitted
-     * during indexing.
-     */
-    @NonNull
-    private static native byte[] getFullTextMatched(long peer, long fullTextMatch) throws LiteCoreException;
 }

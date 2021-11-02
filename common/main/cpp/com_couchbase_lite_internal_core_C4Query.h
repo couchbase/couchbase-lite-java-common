@@ -87,14 +87,6 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4Query_columnNa
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Query_run
   (JNIEnv *, jclass, jlong, jboolean, jlong);
 
-/*
- * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    getFullTextMatched
- * Signature: (JJ)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Query_getFullTextMatched
-  (JNIEnv *, jclass, jlong, jlong);
-
 #ifdef __cplusplus
 }
 #endif

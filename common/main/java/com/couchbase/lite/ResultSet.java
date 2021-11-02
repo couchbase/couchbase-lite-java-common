@@ -216,22 +216,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         return (idx == null) ? -1 : idx;
     }
 
-    @Nullable
-    ResultSet refresh() throws CouchbaseLiteException {
-        Preconditions.assertNotNull(query, "query");
-
-        synchronized (getDbLock()) {
-            if (c4enum == null) { return null; }
-            try {
-                final C4QueryEnumerator newEnum = c4enum.refresh();
-                return (newEnum == null) ? null : new ResultSet(query, newEnum, columnNames);
-            }
-            catch (LiteCoreException e) {
-                throw CouchbaseLiteException.convertException(e);
-            }
-        }
-    }
-
     //---------------------------------------------
     // Private level access
     //---------------------------------------------

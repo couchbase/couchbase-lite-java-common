@@ -1,6 +1,7 @@
-package com.couchbase.lite.internal.core;
+package com.couchbase.lite.internal.core.impl;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.core.C4QueryObserver;
 
 
 public class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
@@ -19,9 +20,9 @@ public class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
     @Override
     public void nFree(long peer) { free(peer); }
 
-    /**
-     * Native methods
-     */
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
 
     private static native long create(long token, long c4Query);
 

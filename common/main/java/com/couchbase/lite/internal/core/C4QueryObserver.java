@@ -8,20 +8,17 @@ import javax.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.QueryChange;
+import com.couchbase.lite.internal.core.impl.NativeC4QueryObserver;
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
-import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 public class C4QueryObserver extends C4NativePeer {
     @FunctionalInterface
     public interface QueryChangeCallback {
-        void onQueryChanged(
-            @NonNull ChangeListenerToken<QueryChange> listener,
-            @Nullable C4QueryEnumerator results,
-            @Nullable LiteCoreException err);
+        void onQueryChanged(@Nullable C4QueryEnumerator results, @Nullable LiteCoreException err);
     }
 
     public interface NativeImpl {
@@ -40,17 +37,17 @@ public class C4QueryObserver extends C4NativePeer {
     @VisibleForTesting
     static volatile NativeImpl nativeImpl = new NativeC4QueryObserver();
 
+    @NonNull
+    private static final Fn.Function<Long, C4QueryEnumerator> C4ENUM_FACTORY = C4QueryEnumerator::create;
+
     //-------------------------------------------------------------------------
     // Static Factory Methods
     //-------------------------------------------------------------------------
 
     @NonNull
-    public static C4QueryObserver create(
-        @NonNull C4Query query,
-        @NonNull ChangeListenerToken<QueryChange> listener,
-        @NonNull QueryChangeCallback callback) {
+    public static C4QueryObserver create(@NonNull C4Query query, @NonNull QueryChangeCallback callback) {
         final long token = QUERY_OBSERVER_CONTEXT.reserveKey();
-        final C4QueryObserver observer = new C4QueryObserver(token, nativeImpl, query, listener, callback);
+        final C4QueryObserver observer = new C4QueryObserver(nativeImpl, C4ENUM_FACTORY, token, query, callback);
         QUERY_OBSERVER_CONTEXT.bind(token, observer);
         return observer;
     }
@@ -74,20 +71,20 @@ public class C4QueryObserver extends C4NativePeer {
     @NonNull
     private final C4QueryObserver.NativeImpl impl;
     @NonNull
-    private final ChangeListenerToken<QueryChange> listener;
+    private final Fn.Function<Long, C4QueryEnumerator> c4QueryEnumeratorFactory;
     @NonNull
     private final QueryChangeCallback callback;
 
     @VisibleForTesting
     C4QueryObserver(
-        long token,
         @NonNull NativeImpl impl,
+        @NonNull Fn.Function<Long, C4QueryEnumerator> c4QueryEnumeratorFactory,
+        long token,
         @NonNull C4Query query,
-        @NonNull ChangeListenerToken<QueryChange> listener,
         @NonNull QueryChangeCallback callback) {
-        this.token = token;
         this.impl = impl;
-        this.listener = listener;
+        this.c4QueryEnumeratorFactory = c4QueryEnumeratorFactory;
+        this.token = token;
         this.callback = callback;
         setPeer(impl.nCreate(token, query.getPeer()));
     }
@@ -107,11 +104,6 @@ public class C4QueryObserver extends C4NativePeer {
 
     public void setEnabled(boolean enabled) { impl.nSetEnabled(getPeer(), enabled); }
 
-    @Nullable
-    public C4QueryEnumerator getEnumerator(boolean forget) throws LiteCoreException {
-        return new C4QueryEnumerator(impl.nGetEnumerator(getPeer(), forget));
-    }
-
     @Override
     protected void finalize() throws Throwable {
         try { closePeer(LogDomain.LISTENER); }
@@ -121,9 +113,14 @@ public class C4QueryObserver extends C4NativePeer {
     void queryChanged() {
         C4QueryEnumerator results = null;
         LiteCoreException err = null;
-        try { results = new C4QueryEnumerator(impl.nGetEnumerator(getPeer(), false)); }
+        try { results = getEnumerator(false); }
         catch (LiteCoreException e) { err = e; }
-        callback.onQueryChanged(listener, results, err);
+        if ((results != null) || (err != null)) { callback.onQueryChanged(results, err); }
+    }
+
+    @Nullable
+    private C4QueryEnumerator getEnumerator(boolean forget) throws LiteCoreException {
+        return withPeerOrNull(h -> c4QueryEnumeratorFactory.apply(impl.nGetEnumerator(h, forget)));
     }
 
     private void closePeer(LogDomain domain) { releasePeer(domain, impl::nFree); }

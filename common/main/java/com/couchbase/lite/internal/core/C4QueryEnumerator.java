@@ -22,7 +22,9 @@ import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.impl.NativeC4QueryEnumerator;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -33,26 +35,51 @@ import com.couchbase.lite.internal.fleece.FLArrayIterator;
  * They are valid until the next call to c4queryenum_next or c4queryenum_free.
  */
 public class C4QueryEnumerator extends C4NativePeer {
+    public interface NativeImpl {
+        boolean nNext(long peer) throws LiteCoreException;
+        void nFree(long peer);
+        long nGetColumns(long peer);
+        long nGetMissingColumns(long peer);
+        long nGetFullTextMatchCount(long peer);
+        long nGetFullTextMatch(long peer, int idx);
+    }
+
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeC4QueryEnumerator();
+
+    //-------------------------------------------------------------------------
+    // Static factory method
+    //-------------------------------------------------------------------------
+
+    // Use a peer factory here, as some sort of assurance that we are the only ones with the peer handle.
+    @NonNull
+    static C4QueryEnumerator create(long peer) {
+        return new C4QueryEnumerator(NATIVE_IMPL, Preconditions.assertNotZero(peer, "query enumerator peer"));
+    }
+
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4QueryEnumerator(long peer) { super(peer); }
+    @VisibleForTesting
+    C4QueryEnumerator(@NonNull NativeImpl impl, long peer) {
+        super(peer);
+        this.impl = impl;
+    }
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
 
-    public boolean next() throws LiteCoreException { return next(getPeer()); }
-
-    public long getRowCount() throws LiteCoreException { return getRowCount(getPeer()); }
-
-    @Nullable
-    public C4QueryEnumerator refresh() throws LiteCoreException {
-        final long newPeer = refresh(getPeer());
-        return (newPeer == 0) ? null : new C4QueryEnumerator(newPeer);
-    }
+    public boolean next() throws LiteCoreException { return impl.nNext(getPeer()); }
 
     /**
      * FLArrayIterator columns
@@ -60,21 +87,20 @@ public class C4QueryEnumerator extends C4NativePeer {
      * NOTE: FLArrayIterator is member variable of C4QueryEnumerator. Not necessary to release.
      */
     @NonNull
-    public FLArrayIterator getColumns() { return FLArrayIterator.getUnmanagedArrayIterator(getColumns(getPeer())); }
+    public FLArrayIterator getColumns() {
+        return FLArrayIterator.getUnmanagedArrayIterator(impl.nGetColumns(getPeer()));
+    }
 
     /**
      * Returns a bitmap in which a 1 bit represents a column whose value is MISSING.
      * This is how you tell a missing property value from a value that is JSON 'null',
      * since the value in the `columns` array will be a Fleece `null` either way.
      */
-    public long getMissingColumns() { return getMissingColumns(getPeer()); }
+    public long getMissingColumns() { return impl.nGetMissingColumns(getPeer()); }
 
     @CallSuper
     @Override
     public void close() { closePeer(null); }
-
-    @VisibleForTesting
-    public boolean seek(long rowIndex) throws LiteCoreException { return seek(getPeer(), rowIndex); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -94,42 +120,19 @@ public class C4QueryEnumerator extends C4NativePeer {
     /**
      * Return the number of full-text matches (i.e. the number of items in `getFullTextMatches`)
      */
-    long getFullTextMatchCount() { return getFullTextMatchCount(getPeer()); }
+    @VisibleForTesting
+    long getFullTextMatchCount() { return impl.nGetFullTextMatchCount(getPeer()); }
 
     /**
      * Return an array of details of each full-text match
      */
+    @VisibleForTesting
     @NonNull
-    C4FullTextMatch getFullTextMatches(int idx) { return new C4FullTextMatch(getFullTextMatch(getPeer(), idx)); }
+    C4FullTextMatch getFullTextMatches(int idx) { return new C4FullTextMatch(impl.nGetFullTextMatch(getPeer(), idx)); }
 
     //-------------------------------------------------------------------------
     // Private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4QueryEnumerator::free); }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    private static native boolean next(long peer) throws LiteCoreException;
-
-    private static native long getRowCount(long peer) throws LiteCoreException;
-
-    private static native boolean seek(long peer, long rowIndex) throws LiteCoreException;
-
-    private static native long refresh(long peer) throws LiteCoreException;
-
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static native void close(long peer);
-
-    private static native void free(long peer);
-
-    private static native long getColumns(long peer);
-
-    private static native long getMissingColumns(long peer);
-
-    private static native long getFullTextMatchCount(long peer);
-
-    private static native long getFullTextMatch(long peer, int idx);
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
 }

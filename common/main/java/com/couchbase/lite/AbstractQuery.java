@@ -89,12 +89,17 @@ abstract class AbstractQuery implements Query {
      */
     @Override
     public void setParameters(@Nullable Parameters parameters) {
-        synchronized (lock) { this.parameters = (parameters == null) ? null : parameters.readonlyCopy(); }
-        try {
-            if (this.parameters != null) { getC4QueryLocked().setParameters(this.parameters.encode()); }
+        synchronized (lock) {
+            if (parameters != null) { parameters = parameters.readonlyCopy(); }
+
+            this.parameters = parameters;
+
+            if (parameters == null) { return; }
+
+            try { getC4QueryLocked().setParameters(parameters.encode()); }
+            catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
+            catch (LiteCoreException e) { throw new IllegalArgumentException("Failed encoding parameters", e); }
         }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
-        catch (LiteCoreException e) { throw new IllegalArgumentException("Failed encoding parameters", e); }
     }
 
     /**
@@ -187,7 +192,11 @@ abstract class AbstractQuery implements Query {
 
         final ChangeListenerToken<QueryChange> token = new ChangeListenerToken<>(executor, listener);
         final C4QueryObserver queryObserver;
-        try { queryObserver = C4QueryObserver.create(getC4QueryLocked(), token, this::onQueryChanged); }
+        try {
+            queryObserver = C4QueryObserver.create(
+                getC4QueryLocked(),
+                (results, err) -> onQueryChanged(token, results, err));
+        }
         catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
 
         listeners.put(token, queryObserver);

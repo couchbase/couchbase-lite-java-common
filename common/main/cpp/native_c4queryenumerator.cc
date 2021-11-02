@@ -17,7 +17,7 @@
 //
 #include <c4.h>
 #include <c4Base.h>
-#include "com_couchbase_lite_internal_core_C4QueryEnumerator.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator.h"
 #include "native_glue.hh"
 
 using namespace litecore;
@@ -26,162 +26,115 @@ using namespace litecore::jni;
 extern "C" {
 
 // ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4QueryEnumerator
+// com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
  * Method:    next
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_next(JNIEnv *env, jclass ignore, jlong handle) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_next(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return false;
+
     C4Error error = {};
     jboolean result = c4queryenum_next(e, &error);
     if (!result && (error.code != 0)) {
         throwError(env, error);
         return false;
     }
+
     return result;
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
- * Method:    getRowCount
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getRowCount(JNIEnv *env, jclass ignore, jlong handle) {
-    auto e = (C4QueryEnumerator *) handle;
-    if (e == nullptr)
-        return 0L;
-    C4Error error = {};
-    int64_t res = c4queryenum_getRowCount(e, &error);
-    if (res == -1) {
-        throwError(env, error);
-        return 0;
-    }
-    return (jlong) res;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
- * Method:    seek
- * Signature: (JJ)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_seek(JNIEnv *env, jclass ignore, jlong handle, jlong rowIndex) {
-    auto e = (C4QueryEnumerator *) handle;
-    if (e == nullptr)
-        return false;
-    C4Error error = {};
-    jboolean result = c4queryenum_seek(e, (uint64_t) rowIndex, &error);
-    if (!result) {
-        throwError(env, error);
-        return false;
-    }
-    return result;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
- * Method:    refresh
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_refresh(JNIEnv *env, jclass ignore, jlong handle) {
-    auto e = (C4QueryEnumerator *) handle;
-    if (e == nullptr)
-        return 0L;
-    C4Error error = {};
-    C4QueryEnumerator *result = c4queryenum_refresh(e, &error);
-    // NOTE: if result is null, it indicates no update. it is not error.
-    if (error.code != 0) {
-        throwError(env, error);
-        return 0;
-    }
-    return (jlong) result;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
- * Method:    close
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_close__J(JNIEnv *env, jclass ignore, jlong handle) {
-    auto e = (C4QueryEnumerator *) handle;
-    if (e == nullptr)
-        return;
-    c4queryenum_close(e);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
  * Method:    free
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_free(JNIEnv *env, jclass ignore, jlong handle) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_free(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return;
+
     c4queryenum_release(e);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
  * Method:    getColumns
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getColumns(JNIEnv *env, jclass ignore, jlong handle) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_getColumns(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return 0L;
+
     return (jlong) &(e->columns);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
  * Method:    getMissingColumns
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getMissingColumns(JNIEnv *env, jclass ignore, jlong handle) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_getMissingColumns(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return 0L;
+
     return (jlong) e->missingColumns;
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
  * Method:    getFullTextMatchCount
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getFullTextMatchCount
-        (JNIEnv *env, jclass ignore, jlong handle) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_getFullTextMatchCount(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return 0L;
+
     return (jlong) e->fullTextMatchCount;
 }
 /*
- * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
  * Method:    getFullTextMatch
  * Signature: (JI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_getFullTextMatch
-        (JNIEnv *env, jclass ignore, jlong handle, jint jidx) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_getFullTextMatch(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle,
+        jint jidx) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return 0L;
+
     return (jlong) &(e->fullTextMatches[(int) jidx]);
 }
 }
