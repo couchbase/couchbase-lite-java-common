@@ -35,6 +35,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class LogTest extends BaseDbTest {
     private static class SingleLineLogger implements Logger {
         private final String prefix;

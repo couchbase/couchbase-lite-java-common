@@ -20,7 +20,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -35,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.FlakyTest;
@@ -51,6 +49,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class QueryTest extends BaseQueryTest {
     private static final Expression EXPR_NUMBER1 = Expression.property("number1");
     private static final Expression EXPR_NUMBER2 = Expression.property("number2");
@@ -62,7 +61,6 @@ public class QueryTest extends BaseQueryTest {
     private static final SelectResult SR_EXPIRATION = SelectResult.expression(Meta.expiration);
     private static final SelectResult SR_ALL = SelectResult.all();
     private static final SelectResult SR_NUMBER1 = SelectResult.property("number1");
-    private static final SelectResult SR_NUMBER2 = SelectResult.property("number2");
 
     private static class MathFn {
         final String name;
@@ -82,7 +80,7 @@ public class QueryTest extends BaseQueryTest {
 
         public TestCase(Expression expr, int... documentIDs) {
             this.expr = expr;
-            final List<String> docIds = new ArrayList<String>();
+            final List<String> docIds = new ArrayList<>();
             for (int id: documentIDs) { docIds.add("doc" + id); }
             this.docIds = Collections.unmodifiableList(docIds);
         }
@@ -267,7 +265,7 @@ public class QueryTest extends BaseQueryTest {
         );
     }
 
-    // https://github.com/couchbase/couchbase-lite-ios/issues/1670
+    // Remove, when deprecated isNullOrMissing is removed
     @Test
     public void testWhereNullOrMissing() throws CouchbaseLiteException {
         MutableDocument doc1 = new MutableDocument("doc1");
@@ -308,6 +306,7 @@ public class QueryTest extends BaseQueryTest {
             assertEquals(testCase.docIds.size(), numRows);
         }
     }
+
     @Test
     public void testWhereValued() throws CouchbaseLiteException {
         MutableDocument doc1 = new MutableDocument("doc1");
@@ -555,7 +554,7 @@ public class QueryTest extends BaseQueryTest {
 
         int numRows = verifyQuery(
             baseTestDb.createQuery("SELECT _id FROM _default WHERE MATCH(sentence, 'Dummie woman')"),
-            (n, result) -> { assertNotNull(result.getString(0)); });
+            (n, result) -> assertNotNull(result.getString(0)));
 
         assertEquals(2, numRows);
     }
@@ -568,6 +567,7 @@ public class QueryTest extends BaseQueryTest {
 
         // Don't replace this with Comparator.naturalOrder.
         // it doesn't exist on older versions of Android
+        //noinspection Convert2MethodRef,ComparatorCombinators
         testOrdered(order.ascending(), (c1, c2) -> c1.compareTo(c2));
         testOrdered(order.descending(), String::compareTo);
     }
@@ -761,7 +761,7 @@ public class QueryTest extends BaseQueryTest {
         final long[] expectedNumbers = {2, 3, 4, 5};
         int numRows = verifyQuery(
             query,
-            (n, result) -> { assertEquals(expectedNumbers[n - 1], (long) result.getValue(0)); });
+            (n, result) -> assertEquals(expectedNumbers[n - 1], (long) result.getValue(0)));
         assertEquals(4, numRows);
     }
 
@@ -941,9 +941,7 @@ public class QueryTest extends BaseQueryTest {
         final long[] expectedNumbers = {4, 5, 6, 7, 8};
         int numRows = verifyQuery(
             query,
-            (n, result) -> {
-                assertEquals(expectedNumbers[n - 1], (long) result.getValue(0));
-            });
+            (n, result) -> assertEquals(expectedNumbers[n - 1], (long) result.getValue(0)));
         assertEquals(5, numRows);
 
         Expression paramLimitExpr = Expression.parameter("LIMIT_NUM");
@@ -961,9 +959,7 @@ public class QueryTest extends BaseQueryTest {
         final long[] expectedNumbers2 = {6, 7, 8};
         numRows = verifyQuery(
             query,
-            (n, result) -> {
-                assertEquals(expectedNumbers2[n - 1], (long) result.getValue(0));
-            });
+            (n, result) -> assertEquals(expectedNumbers2[n - 1], (long) result.getValue(0)));
         assertEquals(3, numRows);
     }
 
@@ -1182,7 +1178,7 @@ public class QueryTest extends BaseQueryTest {
         for (MathFn f: fns) {
             int nRows = verifyQuery(
                 QueryBuilder.select(SelectResult.expression(f.expr)).from(DataSource.database(baseTestDb)),
-                (n, result) -> { assertEquals(f.name, f.expected, result.getDouble(0), 1E-12); });
+                (n, result) -> assertEquals(f.name, f.expected, result.getDouble(0), 1E-12));
             assertEquals(1, nRows);
         }
     }
@@ -1373,9 +1369,11 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(expected.length, numRows);
     }
 
-    @Ignore("This test is platform dependent")
     @Test
     public void testUnicodeCollationWithLocaleSwedish() throws CouchbaseLiteException {
+        // ??? May need to skip on some platforms:
+        skipTestWhen("UNICODE");
+
         String[] letters = {"B", "A", "Z", "Å"};
         for (String letter: letters) {
             MutableDocument doc = new MutableDocument();
@@ -2410,7 +2408,7 @@ public class QueryTest extends BaseQueryTest {
 
         int numRows = verifyQuery(
             query,
-            (n, result) -> { assertEquals("doc" + n, result.getString(0)); });
+            (n, result) -> assertEquals("doc" + n, result.getString(0)));
         assertEquals(2, numRows);
 
         query = QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -2419,7 +2417,7 @@ public class QueryTest extends BaseQueryTest {
 
         numRows = verifyQuery(
             query,
-            (n, result) -> { assertEquals("doc" + n, result.getString(0)); });
+            (n, result) -> assertEquals("doc" + n, result.getString(0)));
         assertEquals(1, numRows);
     }
 
@@ -3024,7 +3022,6 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
-    @Ignore("Fails: CBSE-8554")
     @Test
     public void testQueryDocumentWithDollarSign() throws CouchbaseLiteException {
         baseTestDb.save(new MutableDocument("doc1")
@@ -3055,10 +3052,9 @@ public class QueryTest extends BaseQueryTest {
                 books++;
                 String p = r.getString("$price");
                 if (Integer.parseInt(p.substring(1)) < 100) { cheapBooks++; }
-
-                assertEquals(2, books);
-                assertEquals(1, cheapBooks);
             }
+            assertEquals(2, books);
+            assertEquals(1, cheapBooks);
         }
     }
 

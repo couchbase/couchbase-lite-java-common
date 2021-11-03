@@ -47,6 +47,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public abstract class BaseTest extends PlatformBaseTest {
     public static final long STD_TIMEOUT_SEC = 10;
     public static final long LONG_TIMEOUT_SEC = 30;
@@ -122,7 +123,9 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
         while (System.currentTimeMillis() < endTimes);
 
-        assertTrue(false); // more relevant message than using fail...
+        // assertTrue() provides a more relevant message than fail()
+        //noinspection SimplifiableAssertion
+        assertTrue(false);
     }
 
     protected final String getScratchDirectoryPath(@NonNull String name) {

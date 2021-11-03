@@ -44,6 +44,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public abstract class BaseDbTest extends BaseTest {
     @FunctionalInterface
     public interface DocValidator extends Fn.ConsumerThrows<Document, CouchbaseLiteException> {}
@@ -780,7 +781,7 @@ public abstract class BaseDbTest extends BaseTest {
     }
 
 
-    @SuppressWarnings({"UnnecessaryBoxing", "RedundantCast"})
+    @SuppressWarnings("UnnecessaryBoxing")
     protected final void verifyDict(@Nullable DictionaryInterface dict) {
         assertNotNull(dict);
 
@@ -1275,7 +1276,7 @@ public abstract class BaseDbTest extends BaseTest {
         verifyBlob(jObj.getJSONObject("doc-29"));
     }
 
-    @SuppressWarnings({"UnnecessaryBoxing", "RedundantCast"})
+    @SuppressWarnings("UnnecessaryBoxing")
     protected final void verifyDocument(DictionaryInterface doc) {
         assertEquals(29, doc.count());
 

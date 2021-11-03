@@ -17,7 +17,6 @@ package com.couchbase.lite;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -26,7 +25,6 @@ import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
@@ -37,9 +35,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
+@SuppressWarnings("ConstantConditions")
 public class DictionaryTest extends BaseDbTest {
     @Test
     public void testCreateDictionary() throws CouchbaseLiteException {
@@ -343,42 +341,38 @@ public class DictionaryTest extends BaseDbTest {
         });
     }
 
-    @Ignore("MDict has isMutated() method, but unable to check mutated to mutated.")
+    // ??? Surprisingly, no conncurrent modification exception.
     @Test
-    public void testDictionaryEnumerationWithDataModification() throws CouchbaseLiteException {
+    public void testDictionaryEnumerationWithDataModification1() {
         MutableDictionary dict = new MutableDictionary();
-        for (int i = 0; i < 2; i++) { dict.setValue(String.format(Locale.ENGLISH, "key%d", i), i); }
+        for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
 
-        Iterator<String> itr = dict.iterator();
-        int count = 0;
-        try {
-            while (itr.hasNext()) {
-                itr.next();
-                if (count++ == 0) { dict.setValue("key2", 2); }
-            }
-            fail("Expected ConcurrentModificationException");
-        }
-        catch (ConcurrentModificationException e) {
-            // Expected to come here!
-        }
         assertEquals(3, dict.count());
 
-        MutableDocument doc = new MutableDocument("doc1");
-        doc.setValue("dict", dict);
+        int n = 0;
+        for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
+            if (n++ == 1) { dict.setValue("key-3", 3); }
+        }
+
+        assertEquals(4, dict.count());
+    }
+
+    // ??? Surprisingly, no conncurrent modification exception.
+    @Test
+    public void testDictionaryEnumerationWithDataModification2() throws CouchbaseLiteException {
+        MutableDictionary dict = new MutableDictionary();
+        for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
+
+        assertEquals(3, dict.count());
+
+        MutableDocument doc = new MutableDocument("doc1").setValue("dict", dict);
         dict = saveDocInBaseTestDb(doc).toMutable().getDictionary("dict");
 
-        itr = dict.iterator();
-        count = 0;
-        try {
-            while (itr.hasNext()) {
-                itr.next();
-                if (count++ == 0) { dict.setValue("key3", 3); }
-            }
-            fail("Expected ConcurrentModificationException");
+        int n = 0;
+        for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
+            if (n++ == 1) { dict.setValue("key-3", 3); }
         }
-        catch (ConcurrentModificationException e) {
-            // Expected to come here!
-        }
+
         assertEquals(4, dict.count());
     }
 
