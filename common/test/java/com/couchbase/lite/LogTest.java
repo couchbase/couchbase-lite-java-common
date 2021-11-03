@@ -132,44 +132,49 @@ public class LogTest extends BaseDbTest {
 
     @Test
     public void testCustomLoggingLevels() {
-        LogTestLogger customLogger = new LogTestLogger("$$$TEST ");
-        Database.log.setCustom(customLogger);
+        try {
+            LogTestLogger customLogger = new LogTestLogger("$$$TEST ");
+            Database.log.setCustom(customLogger);
+            for (LogLevel level: LogLevel.values()) {
+                customLogger.setLevel(level);
+                Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
+                Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
+                Log.i(LogDomain.DATABASE, "$$$TEST INFO");
+                Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
+                Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
+            }
 
-        for (LogLevel level: LogLevel.values()) {
-            customLogger.setLevel(level);
+            assertEquals(2, customLogger.getLineCount(LogLevel.VERBOSE));
+            assertEquals(3, customLogger.getLineCount(LogLevel.INFO));
+            assertEquals(4, customLogger.getLineCount(LogLevel.WARNING));
+            assertEquals(5, customLogger.getLineCount(LogLevel.ERROR));
+        }
+        finally { Database.log.setCustom(null); }
+    }
+
+    @Test
+    public void testEnableAndDisableCustomLogging() {
+        try {
+            LogTestLogger customLogger = new LogTestLogger("$$$TEST ");
+            Database.log.setCustom(customLogger);
+
+            customLogger.setLevel(LogLevel.NONE);
             Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
             Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
             Log.i(LogDomain.DATABASE, "$$$TEST INFO");
             Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
             Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
+            assertEquals(0, customLogger.getLineCount());
+
+            customLogger.setLevel(LogLevel.VERBOSE);
+            Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
+            Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
+            Log.i(LogDomain.DATABASE, "$$$TEST INFO");
+            Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
+            Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
+            assertEquals(4, customLogger.getLineCount());
         }
-
-        assertEquals(2, customLogger.getLineCount(LogLevel.VERBOSE));
-        assertEquals(3, customLogger.getLineCount(LogLevel.INFO));
-        assertEquals(4, customLogger.getLineCount(LogLevel.WARNING));
-        assertEquals(5, customLogger.getLineCount(LogLevel.ERROR));
-    }
-
-    @Test
-    public void testEnableAndDisableCustomLogging() {
-        LogTestLogger customLogger = new LogTestLogger("$$$TEST ");
-        Database.log.setCustom(customLogger);
-
-        customLogger.setLevel(LogLevel.NONE);
-        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
-        Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
-        Log.i(LogDomain.DATABASE, "$$$TEST INFO");
-        Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
-        Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
-        assertEquals(0, customLogger.getLineCount());
-
-        customLogger.setLevel(LogLevel.VERBOSE);
-        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
-        Log.v(LogDomain.DATABASE, "$$$TEST VERBOSE");
-        Log.i(LogDomain.DATABASE, "$$$TEST INFO");
-        Log.w(LogDomain.DATABASE, "$$$TEST WARNING");
-        Log.e(LogDomain.DATABASE, "$$$TEST ERROR");
-        assertEquals(4, customLogger.getLineCount());
+        finally { Database.log.setCustom(null); }
     }
 
     @Test
@@ -362,27 +367,30 @@ public class LogTest extends BaseDbTest {
     public void testBasicLogFormatting() {
         String nl = System.lineSeparator();
 
-        SingleLineLogger logger = new SingleLineLogger("$$$TEST");
-        Database.log.setCustom(logger);
+        try {
+            SingleLineLogger logger = new SingleLineLogger("$$$TEST");
+            Database.log.setCustom(logger);
 
-        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
-        assertEquals(Log.LOG_HEADER + "$$$TEST DEBUG", logger.message);
+            Log.d(LogDomain.DATABASE, "$$$TEST DEBUG");
+            assertEquals(Log.LOG_HEADER + "$$$TEST DEBUG", logger.message);
 
-        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG", new Exception("whoops"));
-        String msg = logger.message;
-        assertNotNull(msg);
-        assertTrue(msg.startsWith(
-            Log.LOG_HEADER + "$$$TEST DEBUG" + nl + "java.lang.Exception: whoops" + System.lineSeparator()));
+            Log.d(LogDomain.DATABASE, "$$$TEST DEBUG", new Exception("whoops"));
+            String msg = logger.message;
+            assertNotNull(msg);
+            assertTrue(msg.startsWith(
+                Log.LOG_HEADER + "$$$TEST DEBUG" + nl + "java.lang.Exception: whoops" + System.lineSeparator()));
 
-        // test formatting, including argument ordering
-        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG %2$s %1$d %3$.2f", 1, "arg", 3.0F);
-        assertEquals(Log.LOG_HEADER + "$$$TEST DEBUG arg 1 3.00", logger.message);
+            // test formatting, including argument ordering
+            Log.d(LogDomain.DATABASE, "$$$TEST DEBUG %2$s %1$d %3$.2f", 1, "arg", 3.0F);
+            assertEquals(Log.LOG_HEADER + "$$$TEST DEBUG arg 1 3.00", logger.message);
 
-        Log.d(LogDomain.DATABASE, "$$$TEST DEBUG %2$s %1$d %3$.2f", new Exception("whoops"), 1, "arg", 3.0F);
-        msg = logger.message;
-        assertNotNull(msg);
-        assertTrue(msg.startsWith(
-            Log.LOG_HEADER + "$$$TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
+            Log.d(LogDomain.DATABASE, "$$$TEST DEBUG %2$s %1$d %3$.2f", new Exception("whoops"), 1, "arg", 3.0F);
+            msg = logger.message;
+            assertNotNull(msg);
+            assertTrue(msg.startsWith(
+                Log.LOG_HEADER + "$$$TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl));
+        }
+        finally { Database.log.setCustom(null); }
     }
 
     @Test
@@ -505,21 +513,25 @@ public class LogTest extends BaseDbTest {
     public void testNonASCII() throws CouchbaseLiteException {
         String hebrew = "מזג האוויר נחמד היום"; // The weather is nice today.
 
-        LogTestLogger customLogger = new LogTestLogger(null);
-        customLogger.setLevel(LogLevel.VERBOSE);
-        Database.log.setCustom(customLogger);
+        try {
+            LogTestLogger customLogger = new LogTestLogger(null);
+            customLogger.setLevel(LogLevel.VERBOSE);
 
-        // hack: The console logger sets the C4 callback level
-        Database.log.getConsole().setLevel(LogLevel.VERBOSE);
+            Database.log.setCustom(customLogger);
 
-        MutableDocument doc = new MutableDocument();
-        doc.setString("hebrew", hebrew);
-        saveDocInBaseTestDb(doc);
+            // hack: The console logger sets the C4 callback level
+            Database.log.getConsole().setLevel(LogLevel.VERBOSE);
 
-        Query query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(baseTestDb));
-        try (ResultSet rs = query.execute()) { assertEquals(rs.allResults().size(), 1); }
+            MutableDocument doc = new MutableDocument();
+            doc.setString("hebrew", hebrew);
+            saveDocInBaseTestDb(doc);
 
-        assertTrue(customLogger.getContent().contains("[{\"hebrew\":\"" + hebrew + "\"}]"));
+            Query query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(baseTestDb));
+            try (ResultSet rs = query.execute()) { assertEquals(rs.allResults().size(), 1); }
+
+            assertTrue(customLogger.getContent().contains("[{\"hebrew\":\"" + hebrew + "\"}]"));
+        }
+        finally { Database.log.setCustom(null); }
     }
 
     @Test
@@ -534,7 +546,9 @@ public class LogTest extends BaseDbTest {
             SingleLineLogger logger = new SingleLineLogger("$$$TEST DEBUG");
             Database.log.setCustom(logger);
 
-            Log.d(LogDomain.DATABASE, "FOO", new Exception("whoops"), 1, "arg", 3.0F);
+            // After initLogging, log level is WARN
+            Log.w(LogDomain.DATABASE, "FOO", new Exception("whoops"), 1, "arg", 3.0F);
+
             String msg = logger.message;
             assertNotNull(msg);
             assertTrue(msg.startsWith(
@@ -542,6 +556,7 @@ public class LogTest extends BaseDbTest {
         }
         finally {
             reloadStandardErrorMessages();
+            Database.log.setCustom(null);
         }
     }
 

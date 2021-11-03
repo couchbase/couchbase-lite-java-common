@@ -36,6 +36,7 @@ public final class Log {
     private final FileLogger fileLogger = new FileLogger(C4Log.get());
 
     // Singleton instance.
+    @Nullable
     private Logger customLogger;
 
     // The singleton instance is available from Database.log
@@ -78,12 +79,13 @@ public final class Log {
      *
      * @param customLogger A Logger implementation that will receive logging messages
      */
-    public void setCustom(Logger customLogger) { this.customLogger = customLogger; }
+    public void setCustom(@Nullable Logger customLogger) { this.customLogger = customLogger; }
 
     // Damn singletons...
     @VisibleForTesting
     void reset() {
         consoleLogger.reset();
         fileLogger.reset();
+        customLogger = null;
     }
 }
