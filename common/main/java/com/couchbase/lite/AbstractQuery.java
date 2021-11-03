@@ -41,10 +41,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 abstract class AbstractQuery implements Query {
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
-
-    // !!! NEED INPUT FROM CORE FOR A REASONABLE NUMBER, HERE
-    public static final long UPDATE_DELAY_MS = 20;
-
     private static final Set<String> RESERVED_NAMES;
     static {
         final Set<String> s = new HashSet<>();
@@ -198,14 +194,14 @@ abstract class AbstractQuery implements Query {
                 (results, err) -> onQueryChanged(token, results, err));
         }
         catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
-
         listeners.put(token, queryObserver);
 
         final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
         exec.postDelayedOnExecutor(
-            UPDATE_DELAY_MS, // 200 ms delay
+            10, // 10 ms delay. work around for CBL-2543. There won't be any delay after CBL-2543 is fixed
             executor != null ? executor : exec.getDefaultExecutor(),
             () -> queryObserver.setEnabled(true));
+
 
         return token;
     }
