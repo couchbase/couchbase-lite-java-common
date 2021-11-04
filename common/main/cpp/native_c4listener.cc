@@ -577,10 +577,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jboolean enableDeltaSync,
         jboolean requirePasswordAuth) {
     C4TLSConfig tlsConfig = {};
+    tlsConfig.rootClientCerts = nullptr;
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
     tlsConfig.key = (C4KeyPair *) keyPair;
 
     bool failed;
+
 
     tlsConfig.certificate = getCert(env, cert, failed);
     if (failed)
@@ -589,7 +591,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
     // Client Cert Authentication:
     tlsConfig.requireClientCerts = requireClientCerts;
     if (requireClientCerts == true) {
-        if (rootClientCerts == NULL) {
+        if (rootClientCerts == nullptr) {
             tlsConfig.certAuthCallback = &certAuthCallback;
             tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
         } else {
@@ -599,7 +601,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         }
     }
 
-    return reinterpret_cast<jlong>(startListener(
+    auto listener = reinterpret_cast<jlong>(startListener(
             env,
             port,
             networkInterface,
@@ -613,6 +615,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             enableDeltaSync,
             requirePasswordAuth,
             &tlsConfig));
+
+    c4cert_release(tlsConfig.certificate);
+    if (tlsConfig.rootClientCerts != nullptr)
+        c4cert_release(tlsConfig.rootClientCerts);
+
+    return listener;
 }
 
 JNIEXPORT void JNICALL
