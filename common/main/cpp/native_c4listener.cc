@@ -577,13 +577,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jboolean enableDeltaSync,
         jboolean requirePasswordAuth) {
     C4TLSConfig tlsConfig = {};
-    tlsConfig.rootClientCerts = nullptr;
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
     tlsConfig.key = (C4KeyPair *) keyPair;
 
     bool failed;
-
-
     tlsConfig.certificate = getCert(env, cert, failed);
     if (failed)
         return 0;
@@ -596,8 +593,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
         } else {
             tlsConfig.rootClientCerts = getCert(env, rootClientCerts, failed);
-            if (failed)
+            if (failed) {
+                c4cert_release(tlsConfig.certificate);
                 return 0;
+            }
         }
     }
 
@@ -617,8 +616,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             &tlsConfig));
 
     c4cert_release(tlsConfig.certificate);
-    if (tlsConfig.rootClientCerts != nullptr)
-        c4cert_release(tlsConfig.rootClientCerts);
+    c4cert_release(tlsConfig.rootClientCerts);
 
     return listener;
 }

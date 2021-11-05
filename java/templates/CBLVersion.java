@@ -32,7 +32,7 @@ public final class CBLVersion {
     private static final String USER_AGENT_TMPLT = "CouchbaseLite/@VERSION@ (%s) %s";
     private static final String VERSION_INFO_TMPLT = "CouchbaseLite Java v@VERSION@ (%s) %s";
     private static final String LIB_INFO_TMPLT = "@VARIANT@/@TYPE@ Build/@BUILD@ Commit/@COMMIT@ Core/%s";
-    private static final String SYS_INFO_TMPLT = "Java; %s";
+    private static final String SYS_INFO_TMPLT = "Java %s; %s";
 
     private static final AtomicReference<String> USER_AGENT = new AtomicReference<>();
     private static final AtomicReference<String> VERSION_INFO = new AtomicReference<>();
@@ -84,7 +84,10 @@ public final class CBLVersion {
         String info = SYS_INFO.get();
 
         if (info == null) {
-            info = String.format(Locale.ENGLISH, SYS_INFO_TMPLT, System.getProperty("os.name", "unknown"));
+            info = String.format(
+                Locale.ENGLISH, SYS_INFO_TMPLT,
+                System.getProperty("java.version", "?"),
+                System.getProperty("os.name", "unknown"));
 
             SYS_INFO.compareAndSet(null, info);
         }

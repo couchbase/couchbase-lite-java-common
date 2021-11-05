@@ -127,7 +127,9 @@ case $LIB in
             cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
 
             make -j $JOBS LiteCore
-            strip -x libLiteCore.dylib
+            if [[ "${BUILD_TYPE}" != "Debug" ]]; then
+                strip -x libLiteCore.dylib
+            fi
             cp -f libLiteCore.dylib $OUTPUT_DIR
 
             make -j $JOBS mbedcrypto
