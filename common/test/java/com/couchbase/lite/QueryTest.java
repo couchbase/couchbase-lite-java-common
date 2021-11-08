@@ -1369,7 +1369,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(expected.length, numRows);
     }
 
-    @FlakyTest(log = {"Android: 21/11/04"})
+    @FlakyTest(log = {"Android: 21/11/04", "Android: 21/11/07"})
     @Test
     public void testUnicodeCollationWithLocaleSwedish() throws CouchbaseLiteException {
         // ??? May need to skip on some platforms:
