@@ -589,7 +589,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         }
     }
 
-    return reinterpret_cast<jlong>(startListener(
+    auto listener = reinterpret_cast<jlong>(startListener(
             env,
             port,
             networkInterface,
@@ -603,6 +603,13 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             enableDeltaSync,
             requirePasswordAuth,
             &tlsConfig));
+
+    if (tlsConfig.certificate != nullptr)
+        c4cert_release(tlsConfig.certificate);
+    if (tlsConfig.rootClientCerts != nullptr)
+        c4cert_release(tlsConfig.rootClientCerts);
+
+    return listener;
 }
 
 JNIEXPORT void
