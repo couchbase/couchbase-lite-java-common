@@ -574,8 +574,6 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jboolean enableDeltaSync,
         jboolean requirePasswordAuth) {
     C4TLSConfig tlsConfig = {};
-    tlsConfig.rootClientCerts = nullptr;
-    tlsConfig.certificate = nullptr;
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
     tlsConfig.key = (C4KeyPair *) keyPair;
     tlsConfig.certificate = getCert(env, cert);
