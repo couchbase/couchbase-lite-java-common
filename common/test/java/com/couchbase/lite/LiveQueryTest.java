@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -29,15 +30,18 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class LiveQueryTest extends BaseDbTest {
     // query run time ranges from 1ms - 20ms depending on core,
     // doubling it should guarantee query finishes running in tests everytime
-    private static final long QUERY_RUN_TIME = 20;
-    private static final long TOLERABLE_QUERY_RUN_TIME = QUERY_RUN_TIME * 2;
+    private static final long QUERY_RUN_TIME_MS = 20;
+    private static final long TOLERABLE_QUERY_RUN_TIME_MS = QUERY_RUN_TIME_MS * 2;
 
     // when there's a rapid change within 250ms of previous query run,
     // delay is 500ms + query run time. Add some fudge to guarantee we get callback from core
-    private static final long TOLERABLE_DATABASE_CHANGE_DELAY = 600;
+    private static final long QUERY_DEBOUNCE_DELAY_MS = 500;
+    private static final long TOLERABLE_DATABASE_CHANGE_DELAY_MS =
+        QUERY_DEBOUNCE_DELAY_MS + TOLERABLE_QUERY_RUN_TIME_MS + ((QUERY_DEBOUNCE_DELAY_MS + QUERY_RUN_TIME_MS) / 10);
 
     private static final String KEY = "number";
 
@@ -55,7 +59,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
-        try { assertTrue(latch.await(TOLERABLE_QUERY_RUN_TIME, TimeUnit.MILLISECONDS)); }
+        try { assertTrue(latch.await(TOLERABLE_QUERY_RUN_TIME_MS, TimeUnit.MILLISECONDS)); }
         finally { query.removeChangeListener(token); }
     }
 
@@ -78,37 +82,44 @@ public class LiveQueryTest extends BaseDbTest {
         for (int i = 0; i < latch1.length; i++) { latch1[i] = new CountDownLatch(1); }
         for (int i = 0; i < latch2.length; i++) { latch2[i] = new CountDownLatch(1); }
 
-        final int[] count = new int[] {0, 0};
+        final AtomicIntegerArray atmCount = new AtomicIntegerArray(2);
         ListenerToken token1 = query.addChangeListener(
             testSerialExecutor,
             change -> {
-                int n = count[0]++;
-                latch1[n].countDown();
+                latch1[atmCount.get(0)].countDown();
+                atmCount.set(0, atmCount.get(0) + 1);
             });
 
         // listener 1 gets notified after observer subscribed
-        assertTrue(latch1[0].await(TOLERABLE_QUERY_RUN_TIME, TimeUnit.MILLISECONDS));
+        // if test fails, remove the listener before stopping the test
+        try {
+            assertTrue(latch1[0].await(TOLERABLE_QUERY_RUN_TIME_MS, TimeUnit.MILLISECONDS));
+        }
+        catch (AssertionError e) {
+            query.removeChangeListener(token1);
+            throw e;
+        }
 
         ListenerToken token2 = query.addChangeListener(
             testSerialExecutor,
             change -> {
-                int n = count[1]++;
-                latch2[n].countDown();
+                latch2[atmCount.get(1)].countDown();
+                atmCount.set(1, atmCount.get(1) + 1);
             });
 
         try {
             // listener should get notify after query run time
-            assertTrue(latch2[0].await(TOLERABLE_QUERY_RUN_TIME, TimeUnit.MILLISECONDS));
+            assertTrue(latch2[0].await(TOLERABLE_QUERY_RUN_TIME_MS, TimeUnit.MILLISECONDS));
 
             // creation of the second listener should not trigger first listener callback
-            assertFalse(latch1[1].await(TOLERABLE_QUERY_RUN_TIME * 2, TimeUnit.MILLISECONDS));
+            assertFalse(latch1[1].await(TOLERABLE_QUERY_RUN_TIME_MS * 2, TimeUnit.MILLISECONDS));
 
             createDocNumbered(11);
 
             // introducing change in database should trigger both listener callbacks after the time it takes
             // for core to wait and rerun query
-            assertTrue(latch1[1].await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
-            assertTrue(latch2[1].await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
+            assertTrue(latch1[1].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
+            assertTrue(latch2[1].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
         }
         finally {
             query.removeChangeListener(token1);
@@ -117,33 +128,32 @@ public class LiveQueryTest extends BaseDbTest {
     }
 
     // When a result set is closed, we should still be able to introduce a change
+    @SuppressWarnings("unused")
     @Test
     public void testCloseResultsInLiveQueryListener() throws CouchbaseLiteException, InterruptedException {
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.database(baseTestDb));
 
-        final int[] count = new int[] {0};
-
+        final AtomicIntegerArray atmCount = new AtomicIntegerArray(1);
         final CountDownLatch[] latches = new CountDownLatch[2];
         for (int i = 0; i < latches.length; i++) { latches[i] = new CountDownLatch(1); }
+
         ListenerToken token = query.addChangeListener(
             testSerialExecutor,
             change -> {
+                //this try-with resources will close the rs
                 try (ResultSet rs = change.getResults()) {
-                    if (rs != null) {
-                        //close the rs
-                        rs.close();
-                        latches[count[0]++].countDown();
-                    }
+                    latches[atmCount.get(0)].countDown();
+                    atmCount.set(0, atmCount.get(0) + 1);
                 }
             });
         try {
             createDocNumbered(10);
-            assertTrue(latches[0].await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
+            assertTrue(latches[0].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
 
             createDocNumbered(11);
-            assertTrue(latches[1].await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
+            assertTrue(latches[1].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
         }
         finally { query.removeChangeListener(token); }
     }
@@ -168,13 +178,8 @@ public class LiveQueryTest extends BaseDbTest {
                 // even if the other listener finishes running first and iterates through doc-11,
                 // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
                 try (ResultSet rs = change.getResults()) {
-                    if (rs != null) {
-                        Result r = rs.next();
-                        if (r != null && Objects.equals(r.getString(0), "doc-11")) {
-                            latch1.countDown();
-                        }
-                        rs.close();
-                    }
+                    Result r = rs.next();
+                    if (Objects.equals(r.getString(0), "doc-11")) { latch1.countDown(); }
                 }
             });
         ListenerToken token1 = query.addChangeListener(
@@ -182,13 +187,8 @@ public class LiveQueryTest extends BaseDbTest {
                 // even if the other listener finishes running first and iterates through doc-11,
                 // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
                 try (ResultSet rs = change.getResults()) {
-                    if (rs != null) {
-                        Result r = rs.next();
-                        if (r != null && Objects.equals(r.getString(0), "doc-11")) {
-                            latch2.countDown();
-                        }
-                        rs.close();
-                    }
+                    Result r = rs.next();
+                    if (Objects.equals(r.getString(0), "doc-11")) { latch2.countDown(); }
                 }
             });
         try {
@@ -196,8 +196,8 @@ public class LiveQueryTest extends BaseDbTest {
 
             // both listeners get notified after doc-11 is created in database
             // rs iterates through the correct value
-            assertTrue(latch1.await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
-            assertTrue(latch2.await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
+            assertTrue(latch1.await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
+            assertTrue(latch2.await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
         }
         finally {
             query.removeChangeListener(token);
@@ -221,7 +221,7 @@ public class LiveQueryTest extends BaseDbTest {
         for (int i = 0; i < latch.length; i++) { latch[i] = new CountDownLatch(1); }
 
         // count is used to get the next latch and also check size of rs
-        final int[] count = new int[] {0};
+        final AtomicIntegerArray atmCount = new AtomicIntegerArray(1);
 
         // VALUE is set to 2, we should expect that query will only get notification for doc 2, rs size is 1
         Parameters params = new Parameters();
@@ -231,35 +231,35 @@ public class LiveQueryTest extends BaseDbTest {
         ListenerToken token = query.addChangeListener(
             testSerialExecutor,
             change -> {
-                ResultSet rs = change.getResults();
-                //  query should only be notified 2 times:
-                //  1. query first gets doc 2, the rs size is 1
-                //  2. after param changes to 1, query gets a new rs that has doc 1 and 2, rs size is now 2
-                //  query should not be notified when doc 0 is added to the db
-                if (rs != null && rs.allResults().size() == count[0] + 1) {
-                    latch[count[0]++].countDown();
-                    rs.close();
+                try (ResultSet rs = change.getResults()) {
+                    //  query should only be notified 2 times:
+                    //  1. query first gets doc 2, the rs size is 1
+                    //  2. after param changes to 1, query gets a new rs that has doc 1 and 2, rs size is now 2
+                    //  query should not be notified when doc 0 is added to the db
+                    if (rs.allResults().size() == atmCount.get(0) + 1) {
+                        latch[atmCount.get(0)].countDown();
+                        atmCount.set(0,atmCount.get(0)+1);
+                    }
                 }
             });
         try {
-            assertTrue(latch[0].await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
+            assertTrue(latch[0].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
 
             params = new Parameters();
             params.setInt("VALUE", 1);
             query.setParameters(params);
 
             // VALUE changes to 1, query now gets a new rs for doc 1 and 2
-            assertTrue(latch[1].await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
+            assertTrue(latch[1].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
 
             // This doc does not meet the condition of the query, thus query should not get notified
             createDocNumbered(0);
-            assertFalse(latch[2].await(TOLERABLE_DATABASE_CHANGE_DELAY * 2, TimeUnit.MILLISECONDS));
+            assertFalse(latch[2].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS * 2, TimeUnit.MILLISECONDS));
         }
         finally { query.removeChangeListener(token); }
     }
 
     // CBL-2344: Live query may stop refreshing
-    @SuppressWarnings("ConstantConditions")
     @Test
     public void testLiveQueryRefresh() throws CouchbaseLiteException, InterruptedException {
         final AtomicReference<CountDownLatch> latchHolder = new AtomicReference<>();
@@ -283,7 +283,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         try {
             // this update should happen nearly instantaneously
-            assertTrue(latchHolder.get().await(TOLERABLE_QUERY_RUN_TIME, TimeUnit.MILLISECONDS));
+            assertTrue(latchHolder.get().await(TOLERABLE_QUERY_RUN_TIME_MS, TimeUnit.MILLISECONDS));
             assertEquals(1, resultsHolder.get().size());
 
             // adding this document will trigger the query but since it does not meet the query
@@ -291,12 +291,12 @@ public class LiveQueryTest extends BaseDbTest {
             // Wait for 2 full update intervals and a little bit more.
             latchHolder.set(new CountDownLatch(1));
             createDocNumbered(0);
-            assertFalse(latchHolder.get().await((2 * TOLERABLE_DATABASE_CHANGE_DELAY), TimeUnit.MILLISECONDS));
+            assertFalse(latchHolder.get().await((2 * TOLERABLE_DATABASE_CHANGE_DELAY_MS), TimeUnit.MILLISECONDS));
 
             // adding this document should cause a call to the listener in not much more than an update interval
             latchHolder.set(new CountDownLatch(1));
             createDocNumbered(11);
-            assertTrue(latchHolder.get().await(TOLERABLE_DATABASE_CHANGE_DELAY, TimeUnit.MILLISECONDS));
+            assertTrue(latchHolder.get().await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
             assertEquals(2, resultsHolder.get().size());
         }
         finally {
