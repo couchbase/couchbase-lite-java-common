@@ -198,7 +198,7 @@ abstract class AbstractQuery implements Query {
 
         final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
         exec.postDelayedOnExecutor(
-            10, // 10 ms delay. work around for CBL-2543. There won't be any delay after CBL-2543 is fixed
+            10, // !!! 10 ms delay. work around for CBL-2543. There won't be any delay after CBL-2543 is fixed
             executor != null ? executor : exec.getDefaultExecutor(),
             () -> queryObserver.setEnabled(true));
 
