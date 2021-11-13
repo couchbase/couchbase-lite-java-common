@@ -83,52 +83,38 @@ public class LiveQueryTest extends BaseDbTest {
         for (int i = 0; i < latch2.length; i++) { latch2[i] = new CountDownLatch(1); }
 
         final AtomicIntegerArray atmCount = new AtomicIntegerArray(2);
+
         ListenerToken token1 = query.addChangeListener(
             testSerialExecutor,
-            change -> {
-                latch1[atmCount.get(0)].countDown();
-                atmCount.set(0, atmCount.get(0) + 1);
-            });
+            change -> latch1[atmCount.getAndIncrement(0)].countDown());
 
-        // listener 1 gets notified after observer subscribed
-        // if test fails, remove the listener before stopping the test
+        ListenerToken token2 = null;
         try {
+            // listener 1 gets notified after observer subscribed
             assertTrue(latch1[0].await(TOLERABLE_QUERY_RUN_TIME_MS, TimeUnit.MILLISECONDS));
+            try {
+                token2 = query.addChangeListener(
+                    testSerialExecutor,
+                    change -> latch2[atmCount.getAndIncrement(1)].countDown());
+                // listener should get notify after query run time
+                assertTrue(latch2[0].await(TOLERABLE_QUERY_RUN_TIME_MS, TimeUnit.MILLISECONDS));
+
+                // creation of the second listener should not trigger first listener callback
+                assertFalse(latch1[1].await(TOLERABLE_QUERY_RUN_TIME_MS * 2, TimeUnit.MILLISECONDS));
+
+                createDocNumbered(11);
+
+                // introducing change in database should trigger both listener callbacks after the time it takes
+                // for core to wait and rerun query
+                assertTrue(latch1[1].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
+                assertTrue(latch2[1].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
+            }
+            finally { query.removeChangeListener(token2); }
         }
-        catch (AssertionError e) {
-            query.removeChangeListener(token1);
-            throw e;
-        }
-
-        ListenerToken token2 = query.addChangeListener(
-            testSerialExecutor,
-            change -> {
-                latch2[atmCount.get(1)].countDown();
-                atmCount.set(1, atmCount.get(1) + 1);
-            });
-
-        try {
-            // listener should get notify after query run time
-            assertTrue(latch2[0].await(TOLERABLE_QUERY_RUN_TIME_MS, TimeUnit.MILLISECONDS));
-
-            // creation of the second listener should not trigger first listener callback
-            assertFalse(latch1[1].await(TOLERABLE_QUERY_RUN_TIME_MS * 2, TimeUnit.MILLISECONDS));
-
-            createDocNumbered(11);
-
-            // introducing change in database should trigger both listener callbacks after the time it takes
-            // for core to wait and rerun query
-            assertTrue(latch1[1].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
-            assertTrue(latch2[1].await(TOLERABLE_DATABASE_CHANGE_DELAY_MS, TimeUnit.MILLISECONDS));
-        }
-        finally {
-            query.removeChangeListener(token1);
-            query.removeChangeListener(token2);
-        }
+        finally { query.removeChangeListener(token1); }
     }
 
     // When a result set is closed, we should still be able to introduce a change
-    @SuppressWarnings("unused")
     @Test
     public void testCloseResultsInLiveQueryListener() throws CouchbaseLiteException, InterruptedException {
         final Query query = QueryBuilder
@@ -142,11 +128,8 @@ public class LiveQueryTest extends BaseDbTest {
         ListenerToken token = query.addChangeListener(
             testSerialExecutor,
             change -> {
-                //this try-with resources will close the rs
-                try (ResultSet rs = change.getResults()) {
-                    latches[atmCount.get(0)].countDown();
-                    atmCount.set(0, atmCount.get(0) + 1);
-                }
+                change.getResults().close();
+                latches[atmCount.getAndIncrement(0)].countDown();
             });
         try {
             createDocNumbered(10);
@@ -237,8 +220,7 @@ public class LiveQueryTest extends BaseDbTest {
                     //  2. after param changes to 1, query gets a new rs that has doc 1 and 2, rs size is now 2
                     //  query should not be notified when doc 0 is added to the db
                     if (rs.allResults().size() == atmCount.get(0) + 1) {
-                        latch[atmCount.get(0)].countDown();
-                        atmCount.set(0,atmCount.get(0)+1);
+                        latch[atmCount.getAndIncrement(0)].countDown();
                     }
                 }
             });
@@ -303,7 +285,6 @@ public class LiveQueryTest extends BaseDbTest {
             query.removeChangeListener(token);
         }
     }
-
 
     // create test docs
     private void createDocNumbered(int i) throws CouchbaseLiteException {

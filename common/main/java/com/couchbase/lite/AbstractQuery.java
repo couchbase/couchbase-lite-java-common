@@ -202,7 +202,6 @@ abstract class AbstractQuery implements Query {
             executor != null ? executor : exec.getDefaultExecutor(),
             () -> queryObserver.setEnabled(true));
 
-
         return token;
     }
 
