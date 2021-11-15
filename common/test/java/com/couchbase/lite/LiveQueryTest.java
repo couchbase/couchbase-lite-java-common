@@ -70,12 +70,12 @@ public class LiveQueryTest extends BaseDbTest {
      */
     @Test
     public void testMultipleListeners() throws InterruptedException, CouchbaseLiteException {
+        ListenerToken token1 = null;
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.database(baseTestDb))
             .where(Expression.property(KEY).greaterThanOrEqualTo(Expression.intValue(0)))
             .orderBy(Ordering.property(KEY).ascending());
-
         final CountDownLatch[] latch1 = new CountDownLatch[2];
         final CountDownLatch[] latch2 = new CountDownLatch[2];
 
@@ -84,12 +84,12 @@ public class LiveQueryTest extends BaseDbTest {
 
         final AtomicIntegerArray atmCount = new AtomicIntegerArray(2);
 
-        ListenerToken token1 = query.addChangeListener(
-            testSerialExecutor,
-            change -> latch1[atmCount.getAndIncrement(0)].countDown());
-
-        ListenerToken token2 = null;
         try {
+            token1 = query.addChangeListener(
+                testSerialExecutor,
+                change -> latch1[atmCount.getAndIncrement(0)].countDown());
+
+            ListenerToken token2 = null;
             // listener 1 gets notified after observer subscribed
             assertTrue(latch1[0].await(TOLERABLE_QUERY_RUN_TIME_MS, TimeUnit.MILLISECONDS));
             try {
