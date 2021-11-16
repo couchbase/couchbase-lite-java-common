@@ -25,18 +25,19 @@ import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
 import com.couchbase.lite.internal.utils.Fn;
 
 
 public class CBLWebSocket extends AbstractCBLWebSocket {
     public CBLWebSocket(
-        long handle,
+        @NonNull CoreSocketDelegate delegate,
         @NonNull URI uri,
         @Nullable byte[] opts,
         @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException {
-        super(handle, uri, opts, cookieStore, serverCertsListener);
+        super(delegate, uri, opts, cookieStore, serverCertsListener);
     }
 
     @Override

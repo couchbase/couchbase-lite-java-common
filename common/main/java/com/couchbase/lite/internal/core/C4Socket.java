@@ -18,12 +18,15 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.SocketFactory;
+import com.couchbase.lite.internal.core.impl.NativeC4Socket;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
+import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
+import com.couchbase.lite.internal.sockets.CoreSocketListener;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -45,7 +48,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * </nl>
  */
 @SuppressWarnings({"LineLength", "PMD.TooManyMethods", "PMD.GodClass"})
-public abstract class C4Socket extends C4NativePeer {
+public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
@@ -56,9 +59,24 @@ public abstract class C4Socket extends C4NativePeer {
     public static final int NO_FRAMING = 1;                ///< No framing; use messages as-is
     public static final int WEB_SOCKET_SERVER_FRAMING = 2; ///< Frame as WebSocket server messages (not masked)
 
+    public interface NativeImpl {
+        long nFromNative(long token, String schema, String host, int port, String path, int framing);
+        void nOpened(long peer);
+        void nGotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece);
+        void nCompletedWrite(long peer, long byteCount);
+        void nReceived(long peer, byte[] data);
+        void nCloseRequested(long peer, int status, @Nullable String message);
+        void nClosed(long peer, int errorDomain, int errorCode, String message);
+    }
+
     //-------------------------------------------------------------------------
     // Static Variables
     //-------------------------------------------------------------------------
+
+    // Not final for testing
+    @NonNull
+    @VisibleForTesting
+    static NativeImpl nativeImpl = new NativeC4Socket();
 
     // Lookup table: maps a handle to a peer native socket to its Java companion
     private static final NativeRefPeerBinding<C4Socket> BOUND_SOCKETS = new NativeRefPeerBinding<>();
@@ -68,6 +86,7 @@ public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
+    // !!! What happens when an exception bubbles up to a Core thread?
     static void open(
         long peer,
         @Nullable Object factory,
@@ -75,28 +94,41 @@ public abstract class C4Socket extends C4NativePeer {
         @Nullable String hostname,
         int port,
         @Nullable String path,
-        @NonNull byte[] options) {
+        @Nullable byte[] options) {
         C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.open @%x: %s, %s", peer, socket, factory);
 
-        // !!! What happens when a C thread gets an exception???
-
-        // This socket will be bound in C4Socket.<init>
         if (socket == null) {
+            if (scheme == null) {
+                Log.d(LOG_DOMAIN, "C4Socket.open: scheme is null");
+                return;
+            }
+            if (hostname == null) {
+                Log.d(LOG_DOMAIN, "C4Socket.open: hostname is null");
+                return;
+            }
+            if (path == null) {
+                Log.d(LOG_DOMAIN, "C4Socket.open: path is null");
+                return;
+            }
+            if (options == null) {
+                Log.d(LOG_DOMAIN, "C4Socket.open: options are null");
+                return;
+            }
+
             if (!(factory instanceof SocketFactory)) {
                 throw new IllegalArgumentException("Context is not a socket factory: " + factory);
             }
 
-            socket = ((SocketFactory) factory).createSocket(
-                peer,
-                Preconditions.assertNotNull(scheme, "scheme"),
-                Preconditions.assertNotNull(hostname, "hostname"),
-                port,
-                Preconditions.assertNotNull(path, "path"),
-                options);
+            socket = createSocket(peer);
+
+            final CoreSocketListener listener
+                = ((SocketFactory) factory).createSocket(socket, scheme, hostname, port, path, options);
+
+            socket.init(listener);
         }
 
-        Preconditions.assertNotNull(socket, "socket").openSocket();
+        socket.openSocket();
     }
 
     // This method is called by reflection.  Don't change its signature.
@@ -109,12 +141,12 @@ public abstract class C4Socket extends C4NativePeer {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.write(%d) @%x: %s", allocatedData.length, peer, socket);
 
-        if (socket == null) {
-            Log.w(LogDomain.NETWORK, "No socket for peer @%x! Packet(%d) dropped!", peer, allocatedData.length);
+        if (socket != null) {
+            socket.send(allocatedData);
             return;
         }
 
-        socket.send(allocatedData);
+        Log.w(LogDomain.NETWORK, "No socket for peer @%x! Packet(%d) dropped!", peer, allocatedData.length);
     }
 
     // This method is called by reflection.  Don't change its signature.
@@ -122,12 +154,12 @@ public abstract class C4Socket extends C4NativePeer {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.completedReceive(%d) @%x: %s", byteCount, peer, socket);
 
-        if (socket == null) {
-            Log.w(LogDomain.NETWORK, "No socket for peer @%x! Receipt dropped!", peer);
+        if (socket != null) {
+            socket.completedReceive(byteCount);
             return;
         }
 
-        socket.completedReceive(byteCount);
+        Log.w(LogDomain.NETWORK, "No socket for peer @%x! Receipt dropped!", peer);
     }
 
     // This method is called by reflection.  Don't change its signature.
@@ -135,127 +167,152 @@ public abstract class C4Socket extends C4NativePeer {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "C4Socket.requestClose(%d) @%x: %s, '%s'", status, peer, socket, message);
 
-        if (socket == null) {
-            Log.w(LogDomain.NETWORK, "No socket for peer @%x! Close request dropped!", peer);
+        if (socket != null) {
+            socket.requestClose(status, message);
             return;
         }
 
-        socket.requestClose(status, message);
+        Log.w(LogDomain.NETWORK, "No socket for peer @%x! Close request dropped!", peer);
     }
 
     // This method is called by reflection.  Don't change its signature.
     // NOTE: close(long) method should not be called.
     static void close(long peer) {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.close @%x: %s", peer, socket);
+        Log.d(LOG_DOMAIN, "C4Socket.close @%x: %s (%s)", peer, socket);
 
-        if (socket == null) {
-            Log.w(LogDomain.NETWORK, "No socket for peer @%x! Close dropped!", peer);
+        if (socket != null) {
+            socket.closeSocket();
             return;
         }
 
-        socket.closeSocket();
+        Log.w(LogDomain.NETWORK, "No socket for peer @%x! Close dropped!", peer);
     }
 
     // This method is called by reflection.  Don't change its signature.
-    // NOTE: close(long) method should not be called.
     //
     // It is the second half of the asynchronous close process.
     // We are guaranteed this callback once we call `C4Socket.closed`
     // This is where we actually free the Java object.
     static void dispose(long peer) { BOUND_SOCKETS.unbind(peer); }
 
+    //-------------------------------------------------------------------------
+    // Factory Methods
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    public static C4Socket createSocketFromURL(@NonNull String path, int framing) {
+        return createSocket(nativeImpl.nFromNative(0L, "x-msg-conn", "", 0, path, framing));
+    }
+
+    @NonNull
+    private static C4Socket createSocket(long peer) { return new C4Socket(peer, nativeImpl); }
 
     //-------------------------------------------------------------------------
     // Fields
     //-------------------------------------------------------------------------
 
+    private final NativeImpl impl;
+
     @GuardedBy("getPeerLock()")
     private boolean closing;
+
+    @GuardedBy("getPeerLock()")
+    private volatile CoreSocketListener listener;
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
-    protected C4Socket(long peer) {
+    private C4Socket(long peer, @NonNull NativeImpl impl) {
         super(peer);
-        BOUND_SOCKETS.bind(peer, this);
-    }
-
-    protected C4Socket(@NonNull String schema, @NonNull String host, int port, @NonNull String path, int framing) {
-        this(fromNative(0L, schema, host, port, path, framing));
+        this.impl = impl;
     }
 
     //-------------------------------------------------------------------------
-    // Abstract methods (Core to Remote)
+    // Implementation of AutoCloseable
     //-------------------------------------------------------------------------
 
-    protected abstract void openSocket();
-
-    protected abstract void send(@NonNull byte[] allocatedData);
-
-    protected abstract void completedReceive(long byteCount);
-
-    protected abstract void requestClose(int status, @Nullable String message);
-
-    // NOTE!! The implementation of this method *MUST* call closed(int, int, String)
-    protected abstract void closeSocket();
+    @Override
+    public void close() { closeInternal(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.SUCCESS, null); }
 
     //-------------------------------------------------------------------------
-    // Protected methods (Remote to Core)
+    // Implementation of CoreSocketDelegate
     //-------------------------------------------------------------------------
 
-    protected final void opened() {
+    @Override
+    public void init(@NonNull CoreSocketListener listener) {
         final long peer;
         synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
-            if (peer != 0) { opened(peer); }
+            this.listener = listener;
+            BOUND_SOCKETS.bind(peer, this);
+        }
+        Log.d(LOG_DOMAIN, "C4Socket.init @%x: %s, %s", peer, this, listener);
+    }
+
+
+    @Override
+    public void opened() {
+        final long peer;
+        synchronized (getPeerLock()) {
+            peer = getPeerUnchecked();
+            if (peer != 0) { impl.nOpened(peer); }
         }
         Log.d(LOG_DOMAIN, "C4Socket.opened @%x: %s", peer, this);
     }
 
-    protected final void gotHTTPResponse(int httpStatus, @Nullable byte[] responseHeadersFleece) {
+    @Override
+    public void gotHTTPResponse(int httpStatus, @Nullable byte[] responseHeadersFleece) {
         final long peer;
         synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
-            if (peer != 0) { gotHTTPResponse(peer, httpStatus, responseHeadersFleece); }
+            if (peer != 0) { impl.nGotHTTPResponse(peer, httpStatus, responseHeadersFleece); }
         }
         Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse(%d) @%x: %s", httpStatus, peer, this);
     }
 
-    protected final void completedWrite(long byteCount) {
+    @Override
+    public void completedWrite(long byteCount) {
         final long peer;
         synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
-            if (peer != 0) { completedWrite(peer, byteCount); }
+            if (peer != 0) { impl.nCompletedWrite(peer, byteCount); }
         }
         Log.d(LOG_DOMAIN, "C4Socket.completedWrite(%d) @%x: %s", byteCount, peer, this);
     }
 
-    protected final void received(@NonNull byte[] data) {
+    @Override
+    public void received(@NonNull byte[] data) {
         final long peer;
         synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
-            if (peer != 0) { received(peer, data); }
+            if (peer != 0) { impl.nReceived(peer, data); }
         }
         Log.d(LOG_DOMAIN, "C4Socket.received(%d) @%x: %s", data.length, peer, this);
     }
 
-    protected final void closeRequested(int status, String message) {
+    @Override
+    public void closeRequested(int status, @Nullable String message) {
         final long peer;
         synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
-            if (peer != 0) { closeRequested(peer, status, message); }
+            if (peer != 0) { impl.nCloseRequested(peer, status, message); }
         }
         Log.d(LOG_DOMAIN, "C4Socket.closeRequested(%d) @%x: %s, '%s'", status, peer, this, message);
     }
 
-    protected final void closed(int errorDomain, int errorCode, String message) {
+    @Override
+    public void closed(int errorDomain, int errorCode, @Nullable String message) {
         closeInternal(errorDomain, errorCode, message);
     }
 
+    @NonNull
+    @Override
+    public Object getLock() { return getPeerLock(); }
+
     @GuardedBy("getPeerLock()")
-    protected final boolean isC4SocketClosing() { return closing || (getPeerUnchecked() == 0L); }
+    public boolean isClosing() { return closing || (getPeerUnchecked() == 0L); }
 
     // there's really no point in having a finalizer...
     // there's a hard reference to this object in HANDLES_TO_SOCKETS
@@ -265,7 +322,23 @@ public abstract class C4Socket extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // !!! Wildly unsafe...
-    final long getPeerHandle() { return getPeer(); }
+    long getPeerHandle() { return getPeer(); }
+
+    //-------------------------------------------------------------------------
+    // Implementation of CoreSocketDelegate (Core to Remote)
+    //-------------------------------------------------------------------------
+
+    // Apparently PMD isn't smart enough to figure out that this *is* being called.
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private void openSocket() { listener.onCoreRequestOpen(); }
+
+    private void send(@NonNull byte[] data) { listener.onCoreSend(data); }
+
+    private void completedReceive(long nBytes) { listener.onCoreCompletedReceive(nBytes); }
+
+    private void requestClose(int status, @Nullable String message) { listener.onCoreRequestClose(status, message); }
+
+    private void closeSocket() { listener.onCoreClosed(); }
 
     //-------------------------------------------------------------------------
     // private methods
@@ -275,34 +348,9 @@ public abstract class C4Socket extends C4NativePeer {
         final long peer;
         synchronized (getPeerLock()) {
             peer = getPeerUnchecked();
-            if (!closing && (peer != 0)) { closed(peer, domain, code, msg); }
+            if (!closing && (peer != 0)) { impl.nClosed(peer, domain, code, msg); }
             closing = true;
         }
         Log.d(LOG_DOMAIN, "C4Socket.closed(%d,%d) @%x: %s, '%s'", domain, code, peer, this, msg);
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    // wrap an existing Java C4Socket in a C-native C4Socket
-    private static native long fromNative(
-        long token,
-        String schema,
-        String host,
-        int port,
-        String path,
-        int framing);
-
-    private static native void opened(long peer);
-
-    private static native void gotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece);
-
-    private static native void completedWrite(long peer, long byteCount);
-
-    private static native void received(long peer, byte[] data);
-
-    private static native void closeRequested(long peer, int status, String message);
-
-    private static native void closed(long peer, int errorDomain, int errorCode, String message);
 }

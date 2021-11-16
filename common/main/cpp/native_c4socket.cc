@@ -19,7 +19,7 @@
 #include <c4.h>
 #include <c4Base.h>
 #include <c4Socket.h>
-#include "com_couchbase_lite_internal_core_C4Socket.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Socket.h"
 #include "socket_factory.h"
 #include "native_glue.hh"
 
@@ -264,7 +264,7 @@ extern "C" {
  * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Socket_gotHTTPResponse(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_gotHTTPResponse(
         JNIEnv *env,
         jclass ignore,
         jlong socket,
@@ -279,7 +279,7 @@ Java_com_couchbase_lite_internal_core_C4Socket_gotHTTPResponse(
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Socket_opened(JNIEnv *env, jclass ignore, jlong jsocket) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_opened(JNIEnv *env, jclass ignore, jlong jsocket) {
     auto *socket = (C4Socket *) jsocket;
     c4socket_opened(socket);
 }
@@ -290,7 +290,7 @@ Java_com_couchbase_lite_internal_core_C4Socket_opened(JNIEnv *env, jclass ignore
  * Signature: (JIILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Socket_closed(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed(
         JNIEnv *env,
         jclass ignore,
         jlong jSocket,
@@ -309,7 +309,7 @@ Java_com_couchbase_lite_internal_core_C4Socket_closed(
  * Signature: (JILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Socket_closeRequested(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closeRequested(
         JNIEnv *env,
         jclass ignore,
         jlong jSocket,
@@ -326,7 +326,7 @@ Java_com_couchbase_lite_internal_core_C4Socket_closeRequested(
  * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Socket_completedWrite(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_completedWrite(
         JNIEnv *env,
         jclass ignore,
         jlong jSocket,
@@ -342,7 +342,11 @@ Java_com_couchbase_lite_internal_core_C4Socket_completedWrite(
  * Signature: (J[B)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Socket_received(JNIEnv *env, jclass ignore, jlong jSocket, jbyteArray jdata) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_received(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jSocket,
+        jbyteArray jdata) {
     auto socket = (C4Socket *) jSocket;
     jbyteArraySlice data(env, jdata, false);
     c4socket_received(socket, data);
@@ -354,7 +358,7 @@ Java_com_couchbase_lite_internal_core_C4Socket_received(JNIEnv *env, jclass igno
  * Signature: (JLjava/lang/String;ILjava/lang/String;I)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Socket_fromNative(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_fromNative(
         JNIEnv *env,
         jclass ignore,
         jlong jcontext,

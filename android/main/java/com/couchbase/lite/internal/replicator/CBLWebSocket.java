@@ -30,6 +30,7 @@ import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
 import com.couchbase.lite.internal.utils.Fn;
 
 
@@ -37,20 +38,20 @@ public class CBLWebSocket extends AbstractCBLWebSocket {
 
     // Framing is always MESSAGE_STREAM
     public CBLWebSocket(
-        long peer,
+        @NonNull CoreSocketDelegate delegate,
         @NonNull URI uri,
         @Nullable byte[] opts,
         @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
         throws GeneralSecurityException {
-        super(peer, uri, opts, cookieStore, serverCertsListener);
+        super(delegate, uri, opts, cookieStore, serverCertsListener);
     }
 
     @Override
     protected boolean handleClose(@NonNull Throwable error) {
         for (Throwable cause = error; cause != null; cause = cause.getCause()) {
             if ((cause instanceof ErrnoException)) {
-                closed(C4Constants.ErrorDomain.POSIX, ((ErrnoException) cause).errno, error.toString());
+                delegate.closed(C4Constants.ErrorDomain.POSIX, ((ErrnoException) cause).errno, error.toString());
                 return true;
             }
         }

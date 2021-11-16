@@ -30,9 +30,10 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.URLEndpoint;
 import com.couchbase.lite.internal.core.C4Replicator;
-import com.couchbase.lite.internal.core.C4Socket;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
 import com.couchbase.lite.internal.replicator.CBLWebSocket;
+import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
+import com.couchbase.lite.internal.sockets.CoreSocketListener;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -53,7 +54,7 @@ public abstract class AbstractSocketFactory {
     // Test instrumentation
     @GuardedBy("endpoint")
     @Nullable
-    private Fn.Consumer<C4Socket> listener;
+    private Fn.Consumer<CoreSocketListener> testListener;
 
     public AbstractSocketFactory(
         @NonNull ReplicatorConfiguration config,
@@ -65,41 +66,41 @@ public abstract class AbstractSocketFactory {
     }
 
     @NonNull
-    public final C4Socket createSocket(
-        long peer,
+    public final CoreSocketListener createSocket(
+        @NonNull CoreSocketDelegate delegate,
         @NonNull String scheme,
         @NonNull String host,
         int port,
         @NonNull String path,
         @NonNull byte[] opts) {
-        final C4Socket socket = (endpoint instanceof URLEndpoint)
-            ? createCBLWebSocket(peer, scheme, host, port, path, opts)
-            : createPlatformSocket(peer);
+        final CoreSocketListener listener = (endpoint instanceof URLEndpoint)
+            ? createCBLWebSocket(delegate, scheme, host, port, path, opts)
+            : createPlatformSocket(delegate);
 
-        if (socket == null) { throw new IllegalStateException("Can't create endpoint: " + endpoint); }
+        if (listener == null) { throw new IllegalStateException("Can't create endpoint: " + endpoint); }
 
         // Test instrumentation
-        final Fn.Consumer<C4Socket> listener = getListener();
-        if (listener != null) { listener.accept(socket); }
+        final Fn.Consumer<CoreSocketListener> testListener = getTestListener();
+        if (testListener != null) { testListener.accept(listener); }
 
-        return socket;
+        return listener;
     }
 
     @NonNull
     @Override
-    public String toString() { return "SocketFactory{" + "endpoint=" + endpoint + '}'; }
+    public String toString() { return "SocketFactory{@" + endpoint + '}'; }
 
     @VisibleForTesting
-    public final void setListener(@Nullable Fn.Consumer<C4Socket> listener) {
-        synchronized (endpoint) { this.listener = listener; }
+    public final void setListener(@Nullable Fn.Consumer<CoreSocketListener> testListener) {
+        synchronized (endpoint) { this.testListener = testListener; }
     }
 
     @Nullable
-    protected abstract C4Socket createPlatformSocket(long peer);
+    protected abstract CoreSocketListener createPlatformSocket(@NonNull CoreSocketDelegate delegate);
 
     @Nullable
-    private C4Socket createCBLWebSocket(
-        long peer,
+    private CoreSocketListener createCBLWebSocket(
+        @NonNull CoreSocketDelegate delegate,
         @NonNull String scheme,
         @NonNull String host,
         int port,
@@ -112,7 +113,7 @@ public abstract class AbstractSocketFactory {
             return null;
         }
 
-        try { return new CBLWebSocket(peer, uri, opts, cookieStore, serverCertsListener); }
+        try { return new CBLWebSocket(delegate, uri, opts, cookieStore, serverCertsListener); }
         catch (Exception e) { Log.w(LogDomain.NETWORK, "Failed to instantiate CBLWebSocket", e); }
 
         return null;
@@ -133,8 +134,8 @@ public abstract class AbstractSocketFactory {
     }
 
     @Nullable
-    private Fn.Consumer<C4Socket> getListener() {
-        synchronized (endpoint) { return listener; }
+    private Fn.Consumer<CoreSocketListener> getTestListener() {
+        synchronized (endpoint) { return testListener; }
     }
 }
 
