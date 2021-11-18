@@ -19,7 +19,15 @@ extern "C" {
  * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;I)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_fromNative
-  (JNIEnv *, jclass, jlong, jstring, jstring, jint, jstring, jint);
+        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jstring, jint);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Socket
+ * Method:    retain
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_retain
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
@@ -27,7 +35,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socke
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_opened
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
@@ -35,7 +43,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket
  * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_gotHTTPResponse
-  (JNIEnv *, jclass, jlong, jint, jbyteArray);
+        (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
@@ -43,7 +51,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket
  * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_completedWrite
-  (JNIEnv *, jclass, jlong, jlong);
+        (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
@@ -51,7 +59,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket
  * Signature: (J[B)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_received
-  (JNIEnv *, jclass, jlong, jbyteArray);
+        (JNIEnv *, jclass, jlong, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
@@ -59,7 +67,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket
  * Signature: (JILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closeRequested
-  (JNIEnv *, jclass, jlong, jint, jstring);
+        (JNIEnv *, jclass, jlong, jint, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
@@ -67,7 +75,15 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket
  * Signature: (JIILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed
-  (JNIEnv *, jclass, jlong, jint, jint, jstring);
+        (JNIEnv *, jclass, jlong, jint, jint, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Socket
+ * Method:    release
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_release
+        (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }

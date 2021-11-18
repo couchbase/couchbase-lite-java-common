@@ -15,12 +15,12 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Socket;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
@@ -47,7 +47,6 @@ import com.couchbase.lite.internal.support.Log;
  * <li>Client: the client code can close the connection.  It expects never to hear from it again</li>
  * </nl>
  */
-@SuppressWarnings({"LineLength", "PMD.TooManyMethods", "PMD.GodClass"})
 public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
     //-------------------------------------------------------------------------
     // Constants
@@ -60,6 +59,7 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
     public static final int WEB_SOCKET_SERVER_FRAMING = 2; ///< Frame as WebSocket server messages (not masked)
 
     public interface NativeImpl {
+        void nRetain(long peer);
         long nFromNative(long token, String schema, String host, int port, String path, int framing);
         void nOpened(long peer);
         void nGotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece);
@@ -67,6 +67,7 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
         void nReceived(long peer, byte[] data);
         void nCloseRequested(long peer, int status, @Nullable String message);
         void nClosed(long peer, int errorDomain, int errorCode, String message);
+        void nRelease(long peer);
     }
 
     //-------------------------------------------------------------------------
@@ -86,7 +87,6 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    // !!! What happens when an exception bubbles up to a Core thread?
     static void open(
         long peer,
         @Nullable Object factory,
@@ -96,28 +96,29 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
         @Nullable String path,
         @Nullable byte[] options) {
         C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.open @%x: %s, %s", peer, socket, factory);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "@%x#%s.open: %s", peer, socket, factory); }
 
         if (socket == null) {
+            if (!(factory instanceof SocketFactory)) {
+                Log.w(LOG_DOMAIN, "C4Socket.open: factory is not a SocketFactory: %s", factory);
+                return;
+            }
+
             if (scheme == null) {
-                Log.d(LOG_DOMAIN, "C4Socket.open: scheme is null");
+                Log.w(LOG_DOMAIN, "C4Socket.open: scheme is null");
                 return;
             }
             if (hostname == null) {
-                Log.d(LOG_DOMAIN, "C4Socket.open: hostname is null");
+                Log.w(LOG_DOMAIN, "C4Socket.open: hostname is null");
                 return;
             }
             if (path == null) {
-                Log.d(LOG_DOMAIN, "C4Socket.open: path is null");
+                Log.w(LOG_DOMAIN, "C4Socket.open: path is null");
                 return;
             }
             if (options == null) {
-                Log.d(LOG_DOMAIN, "C4Socket.open: options are null");
+                Log.w(LOG_DOMAIN, "C4Socket.open: options are null");
                 return;
-            }
-
-            if (!(factory instanceof SocketFactory)) {
-                throw new IllegalArgumentException("Context is not a socket factory: " + factory);
             }
 
             socket = createSocket(peer);
@@ -128,65 +129,69 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
             socket.init(listener);
         }
 
-        socket.openSocket();
+        socket.listener.onCoreRequestOpen();
     }
 
     // This method is called by reflection.  Don't change its signature.
-    static void write(long peer, @Nullable byte[] allocatedData) {
-        if (allocatedData == null) {
-            Log.d(LOG_DOMAIN, "C4Socket.write: allocatedData is null");
-            return;
-        }
-
+    static void write(long peer, @Nullable byte[] data) {
+        final int nBytes = (data == null) ? 0 : data.length;
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.write(%d) @%x: %s", allocatedData.length, peer, socket);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "@%x#%s.write(%d)", peer, socket, nBytes); }
 
-        if (socket != null) {
-            socket.send(allocatedData);
+        if (socket == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.write(%d) @%x: No socket for peer", nBytes, peer);
             return;
         }
 
-        Log.w(LogDomain.NETWORK, "No socket for peer @%x! Packet(%d) dropped!", peer, allocatedData.length);
+        if (nBytes <= 0) {
+            Log.i(LOG_DOMAIN, "C4Socket.write: empty data");
+            return;
+        }
+
+        socket.listener.onCoreSend(data);
     }
 
     // This method is called by reflection.  Don't change its signature.
-    static void completedReceive(long peer, long byteCount) {
+    static void completedReceive(long peer, long nBytes) {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.completedReceive(%d) @%x: %s", byteCount, peer, socket);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "@%x#%s.completedReceive(%d)", peer, socket, nBytes);
+        }
 
-        if (socket != null) {
-            socket.completedReceive(byteCount);
+        if (socket == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.completedReceive(%d) @%x: No socket for peer", nBytes, peer);
             return;
         }
 
-        Log.w(LogDomain.NETWORK, "No socket for peer @%x! Receipt dropped!", peer);
+        socket.listener.onCoreCompletedReceive(nBytes);
     }
 
     // This method is called by reflection.  Don't change its signature.
     static void requestClose(long peer, int status, @Nullable String message) {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.requestClose(%d) @%x: %s, '%s'", status, peer, socket, message);
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "@%x#%s.completedReceive(%d): '%s'", peer, socket, status, message);
+        }
 
-        if (socket != null) {
-            socket.requestClose(status, message);
+        if (socket == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.requestClose @%x: No socket for peer: (%d) '%s'", peer, status, message);
             return;
         }
 
-        Log.w(LogDomain.NETWORK, "No socket for peer @%x! Close request dropped!", peer);
+        socket.listener.onCoreRequestClose(status, message);
     }
 
     // This method is called by reflection.  Don't change its signature.
-    // NOTE: close(long) method should not be called.
     static void close(long peer) {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        Log.d(LOG_DOMAIN, "C4Socket.close @%x: %s (%s)", peer, socket);
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "@%x#%s.close", peer, socket); }
 
-        if (socket != null) {
-            socket.closeSocket();
+        if (socket == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.close @%x: No socket for peer", peer);
             return;
         }
 
-        Log.w(LogDomain.NETWORK, "No socket for peer @%x! Close dropped!", peer);
+        socket.listener.onCoreClosed();
     }
 
     // This method is called by reflection.  Don't change its signature.
@@ -194,7 +199,11 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
     // It is the second half of the asynchronous close process.
     // We are guaranteed this callback once we call `C4Socket.closed`
     // This is where we actually free the Java object.
-    static void dispose(long peer) { BOUND_SOCKETS.unbind(peer); }
+    static void dispose(long peer) {
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "@%x.dispose", peer); }
+        final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
+        if (socket != null) { socket.close(); }
+    }
 
     //-------------------------------------------------------------------------
     // Factory Methods
@@ -214,10 +223,6 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
 
     private final NativeImpl impl;
 
-    @GuardedBy("getPeerLock()")
-    private boolean closing;
-
-    @GuardedBy("getPeerLock()")
     private volatile CoreSocketListener listener;
 
     //-------------------------------------------------------------------------
@@ -227,6 +232,8 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
     private C4Socket(long peer, @NonNull NativeImpl impl) {
         super(peer);
         this.impl = impl;
+        impl.nRetain(peer);
+        BOUND_SOCKETS.bind(peer, this);
     }
 
     //-------------------------------------------------------------------------
@@ -234,88 +241,79 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
     //-------------------------------------------------------------------------
 
     @Override
-    public void close() { closeInternal(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.SUCCESS, null); }
+    public void close() { closePeer(LOG_DOMAIN); }
+
+    @NonNull
+    public String toString() { return "C4Socket" + super.toString(); }
 
     //-------------------------------------------------------------------------
-    // Implementation of CoreSocketDelegate
+    // Implementation of CoreSocketDelegate (Remote to Core)
     //-------------------------------------------------------------------------
-
-    @Override
-    public void init(@NonNull CoreSocketListener listener) {
-        final long peer;
-        synchronized (getPeerLock()) {
-            peer = getPeerUnchecked();
-            this.listener = listener;
-            BOUND_SOCKETS.bind(peer, this);
-        }
-        Log.d(LOG_DOMAIN, "C4Socket.init @%x: %s, %s", peer, this, listener);
-    }
-
-
-    @Override
-    public void opened() {
-        final long peer;
-        synchronized (getPeerLock()) {
-            peer = getPeerUnchecked();
-            if (peer != 0) { impl.nOpened(peer); }
-        }
-        Log.d(LOG_DOMAIN, "C4Socket.opened @%x: %s", peer, this);
-    }
-
-    @Override
-    public void gotHTTPResponse(int httpStatus, @Nullable byte[] responseHeadersFleece) {
-        final long peer;
-        synchronized (getPeerLock()) {
-            peer = getPeerUnchecked();
-            if (peer != 0) { impl.nGotHTTPResponse(peer, httpStatus, responseHeadersFleece); }
-        }
-        Log.d(LOG_DOMAIN, "C4Socket.gotHTTPResponse(%d) @%x: %s", httpStatus, peer, this);
-    }
-
-    @Override
-    public void completedWrite(long byteCount) {
-        final long peer;
-        synchronized (getPeerLock()) {
-            peer = getPeerUnchecked();
-            if (peer != 0) { impl.nCompletedWrite(peer, byteCount); }
-        }
-        Log.d(LOG_DOMAIN, "C4Socket.completedWrite(%d) @%x: %s", byteCount, peer, this);
-    }
-
-    @Override
-    public void received(@NonNull byte[] data) {
-        final long peer;
-        synchronized (getPeerLock()) {
-            peer = getPeerUnchecked();
-            if (peer != 0) { impl.nReceived(peer, data); }
-        }
-        Log.d(LOG_DOMAIN, "C4Socket.received(%d) @%x: %s", data.length, peer, this);
-    }
-
-    @Override
-    public void closeRequested(int status, @Nullable String message) {
-        final long peer;
-        synchronized (getPeerLock()) {
-            peer = getPeerUnchecked();
-            if (peer != 0) { impl.nCloseRequested(peer, status, message); }
-        }
-        Log.d(LOG_DOMAIN, "C4Socket.closeRequested(%d) @%x: %s, '%s'", status, peer, this, message);
-    }
-
-    @Override
-    public void closed(int errorDomain, int errorCode, @Nullable String message) {
-        closeInternal(errorDomain, errorCode, message);
-    }
 
     @NonNull
     @Override
     public Object getLock() { return getPeerLock(); }
 
-    @GuardedBy("getPeerLock()")
-    public boolean isClosing() { return closing || (getPeerUnchecked() == 0L); }
+    @Override
+    public void init(@NonNull CoreSocketListener listener) {
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.init: %s", this, listener); }
+        withPeer(peer -> this.listener = listener);
+    }
 
-    // there's really no point in having a finalizer...
-    // there's a hard reference to this object in HANDLES_TO_SOCKETS
+    @Override
+    public void opened() {
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.opened", this); }
+        withPeer(impl::nOpened);
+    }
+
+    @Override
+    public void gotHTTPResponse(int httpStatus, @Nullable byte[] fleeceResponseHeaders) {
+        Log.d(LOG_DOMAIN, "%s.gotHTTPResponse(%d)", this, httpStatus);
+        withPeer(peer -> impl.nGotHTTPResponse(peer, httpStatus, fleeceResponseHeaders));
+    }
+
+    @Override
+    public void completedWrite(long byteCount) {
+        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.completedWrite(%d)", this, byteCount); }
+        withPeer(peer -> impl.nCompletedWrite(peer, byteCount));
+    }
+
+    @Override
+    public void received(@NonNull byte[] data) {
+        Log.d(LOG_DOMAIN, "%s.received(%d)", this, (data == null) ? -1 : data.length);
+        withPeer(peer -> impl.nReceived(peer, data));
+    }
+
+    @Override
+    public void closeRequested(int status, @Nullable String message) {
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "%s.closeRequested(%d): '%s'", this, status, message);
+        }
+        withPeer(peer -> impl.nCloseRequested(peer, status, message));
+    }
+
+    // Closing the socket is a two step process
+    // Calling impl.nClosed actually frees the peer
+    // Core calls back to C4Socket.dispose, a goodbye kiss
+    // that we use to remove this object from BOUND_SOCKETS
+    @Override
+    public void closed(int domain, int code, @Nullable String message) {
+        if (CouchbaseLiteInternal.debugging()) {
+            Log.d(LOG_DOMAIN, "%s.closed(%d, %d): '%s'", this, domain, code, message);
+        }
+        withPeer(peer -> impl.nClosed(peer, domain, code, message));
+    }
+
+    //-------------------------------------------------------------------------
+    // protected methods
+    //-------------------------------------------------------------------------
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        try { closePeer(null); }
+        finally { super.finalize(); }
+    }
 
     //-------------------------------------------------------------------------
     // package protected methods
@@ -325,32 +323,15 @@ public final class C4Socket extends C4NativePeer implements CoreSocketDelegate {
     long getPeerHandle() { return getPeer(); }
 
     //-------------------------------------------------------------------------
-    // Implementation of CoreSocketDelegate (Core to Remote)
-    //-------------------------------------------------------------------------
-
-    // Apparently PMD isn't smart enough to figure out that this *is* being called.
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private void openSocket() { listener.onCoreRequestOpen(); }
-
-    private void send(@NonNull byte[] data) { listener.onCoreSend(data); }
-
-    private void completedReceive(long nBytes) { listener.onCoreCompletedReceive(nBytes); }
-
-    private void requestClose(int status, @Nullable String message) { listener.onCoreRequestClose(status, message); }
-
-    private void closeSocket() { listener.onCoreClosed(); }
-
-    //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
 
-    private void closeInternal(int domain, int code, String msg) {
-        final long peer;
-        synchronized (getPeerLock()) {
-            peer = getPeerUnchecked();
-            if (!closing && (peer != 0)) { impl.nClosed(peer, domain, code, msg); }
-            closing = true;
-        }
-        Log.d(LOG_DOMAIN, "C4Socket.closed(%d,%d) @%x: %s, '%s'", domain, code, peer, this, msg);
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            peer -> {
+                BOUND_SOCKETS.unbind(peer);
+                impl.nRelease(peer);
+            });
     }
 }

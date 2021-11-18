@@ -26,7 +26,6 @@ import java.net.PortUnreachableException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -38,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.annotation.concurrent.ThreadSafe;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -56,9 +54,6 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.WebSocket;
-import okhttp3.WebSocketListener;
-import okio.ByteString;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -69,7 +64,10 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
 import com.couchbase.lite.internal.sockets.CoreSocketListener;
+import com.couchbase.lite.internal.sockets.RemoteSocketDelegate;
+import com.couchbase.lite.internal.sockets.RemoteSocketListener;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.StateMachine;
 import com.couchbase.lite.internal.utils.StringUtils;
@@ -116,7 +114,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * way the message is going.  This invites deadlock.
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.ExcessiveImports"})
-public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCloseable {
+public abstract class AbstractCBLWebSocket implements CoreSocketListener, RemoteSocketListener, AutoCloseable {
     private static final LogDomain TAG = LogDomain.NETWORK;
 
     private static final int MAX_AUTH_RETRIES = 3;
@@ -131,60 +129,12 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
     // Internal types
     //-------------------------------------------------------------------------
 
-    @ThreadSafe
-    final class OkHttpRemote extends WebSocketListener {
-
-        // OkHTTP callback, proxied to C4Socket
-        // We have an open connection to the remote
-        @Override
-        public void onOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
-            onRemoteOpen(webSocket, response);
-        }
-
-        // OkHTTP callback, proxied to C4Socket
-        // Remote sent data
-        @Override
-        public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
-            onRemoteMessage(text.getBytes(StandardCharsets.UTF_8));
-        }
-
-        // OkHTTP callback, proxied to C4Socket
-        // Remote sent data
-        @Override
-        public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
-            onRemoteMessage(bytes.toByteArray());
-        }
-
-        // OkHTTP callback, proxied to C4Socket
-        // Remote wants to close the connection
-        @Override
-        public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            onRemoteClosing(code, reason);
-        }
-
-        // OkHTTP callback, proxied to C4Socket
-        // Remote connection has been closed
-        @Override
-        public void onClosed(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
-            onRemoteClosed(code, reason);
-        }
-
-        // OkHTTP callback, proxied to C4Socket
-        // Remote connection failed
-        // Invoked when a web socket has been closed due to an error reading from or writing to the network.
-        // Outgoing and incoming messages may have been lost. OkHTTP will not make any more calls to this listener
-        @Override
-        public void onFailure(@NonNull WebSocket webSocket, @NonNull Throwable err, @Nullable Response response) {
-            onRemoteFailure(err, response);
-        }
-    }
-
     // Using the C4NativePeer lock to protect cookieStore may seem like overkill.  We have to use it anyway,
     // for the (very necessary) call to assertState.  Might as well use it everywhere...
     private class WebSocketCookieJar implements CookieJar {
         @Override
         public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
-            synchronized (delegate.getLock()) {
+            synchronized (coreDelegate.getLock()) {
                 for (Cookie cookie: cookies) { cookieStore.setCookie(httpUrl.uri(), cookie.toString()); }
             }
         }
@@ -193,7 +143,7 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
         @Override
         public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
             final List<Cookie> cookies = new ArrayList<>();
-            synchronized (delegate.getLock()) {
+            synchronized (coreDelegate.getLock()) {
                 if (!state.assertState(State.INIT, State.CONNECTING)) { return cookies; }
 
                 // Cookies from config
@@ -226,20 +176,6 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
         .addTransition(State.CLOSE_REQUESTED, State.CLOSING, State.CLOSED)
         .addTransition(State.CLOSING, State.CLOSED);
 
-    @NonNull
-    private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
-        // timeouts: Core manages this: set no timeout, here.
-        .connectTimeout(0, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.SECONDS)
-        .writeTimeout(0, TimeUnit.SECONDS)
-
-        // redirection
-        .followRedirects(true)
-        .followSslRedirects(true)
-
-        // ??? .retryOnConnectionFailure(false)
-        .build();
-
     //-------------------------------------------------------------------------
     // Static methods
     //-------------------------------------------------------------------------
@@ -258,10 +194,6 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
     // assert these are thread-safe
     @NonNull
     private final URI uri;
-    @NonNull
-    private final OkHttpRemote okHttpRemote;
-    @NonNull
-    private final OkHttpClient okHttpSocketFactory;
     @Nullable
     private final Map<String, Object> options;
     @NonNull
@@ -273,43 +205,45 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
     @GuardedBy("getPeerLock()")
     @NonNull
     private final CBLCookieStore cookieStore;
-    @NonNull
-    protected final CoreSocketDelegate delegate;
 
-    @GuardedBy("getPeerLock()")
-    private WebSocket webSocket;
+    @NonNull
+    private final RemoteSocketDelegate remoteDelegate;
+    @NonNull
+    protected final CoreSocketDelegate coreDelegate;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
     protected AbstractCBLWebSocket(
-        @NonNull CoreSocketDelegate delegate,
+        @NonNull RemoteSocketDelegate remoteDelegate,
+        @NonNull CoreSocketDelegate coreDelegate,
         @NonNull URI uri,
         @Nullable byte[] opts,
         @NonNull CBLCookieStore cookieStore,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
-        throws GeneralSecurityException {
-        this.delegate = delegate;
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
+        this.coreDelegate = coreDelegate;
+        this.remoteDelegate = remoteDelegate;
         this.uri = uri;
         this.options = (opts == null) ? null : Collections.unmodifiableMap(FLValue.fromData(opts).asDict());
         this.cookieStore = cookieStore;
         this.serverCertsListener = serverCertsListener;
-        this.okHttpSocketFactory = setupOkHttpFactory();
-        this.okHttpRemote = new OkHttpRemote();
     }
 
     @Override
     @NonNull
-    public String toString() { return "CBLWebSocket{@" + super.toString() + ": " + uri + "}"; }
+    public String toString() {
+        return "CBLWebSocket@" + ClassUtils.objId(this) + "{"
+            + coreDelegate + " <=> " + remoteDelegate + "(" + uri + ")}";
+    }
 
     // Implementation of AutoClosable.close()
     @Override
     public void close() {
         Log.d(TAG, "%s#External told to close: %s", this, uri);
-        synchronized (delegate.getLock()) {
+        synchronized (coreDelegate.getLock()) {
             if (state.setState(State.CLOSE_REQUESTED)) {
-                delegate.closeRequested(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
+                coreDelegate.closeRequested(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
                 return;
             }
             if (state.setState(State.CLOSING)) {
@@ -319,10 +253,6 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
             state.setState(State.CLOSED);
         }
     }
-
-    @NonNull
-    @VisibleForTesting
-    public final OkHttpClient getOkHttpSocketFactory() { return okHttpSocketFactory; }
 
     @Nullable
     @VisibleForTesting
@@ -337,11 +267,8 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
 
     protected abstract int handleCloseCause(Throwable error);
 
-
     //-------------------------------------------------------------------------
     // Implementation of CoreSocketListener (Core to Remote)
-    //
-    // This is the synchronization that is going to get us into trouble
     //-------------------------------------------------------------------------
 
     // Core callback, proxied to OkHTTP
@@ -349,9 +276,9 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
     @Override
     public final void onCoreRequestOpen() {
         Log.d(TAG, "%s#Core connect: %s", this, uri);
-        synchronized (delegate.getLock()) {
+        synchronized (coreDelegate.getLock()) {
             if (!state.setState(State.CONNECTING)) { return; }
-            okHttpSocketFactory.newWebSocket(newRequest(), okHttpRemote);
+            remoteDelegate.open(newRequest());
         }
     }
 
@@ -361,15 +288,15 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
     public final void onCoreSend(@NonNull byte[] data) {
         final int dLen = data.length;
         Log.d(TAG, "%s#Core send: %d", this, dLen);
-        synchronized (delegate.getLock()) {
+        synchronized (coreDelegate.getLock()) {
             if (!state.assertState(State.OPEN)) { return; }
 
-            if (!webSocket.send(ByteString.of(data, 0, dLen))) {
+            if (!remoteDelegate.send(data)) {
                 Log.i(TAG, "CBLWebSocket failed to send data of length = " + dLen);
                 return;
             }
 
-            delegate.completedWrite(data.length);
+            coreDelegate.completedWrite(data.length);
         }
     }
 
@@ -383,7 +310,7 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
     @Override
     public final void onCoreRequestClose(int code, String message) {
         Log.d(TAG, "%s#Core request close: %d", this, code);
-        synchronized (delegate.getLock()) {
+        synchronized (coreDelegate.getLock()) {
             if (!state.setState(State.CLOSE_REQUESTED)) { return; }
             closeWebSocket(code, message);
         }
@@ -397,57 +324,80 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
 
     //-------------------------------------------------------------------------
     // Implementation of CoreSocketListener (Remote to Core)
-    //
-    // This is the synchronization that is going to get us into trouble
     //-------------------------------------------------------------------------
 
-    private void onRemoteFailure(@NonNull Throwable err, @Nullable Response response) {
-        Log.d(TAG, "%s#OkHTTP failed: %s, %s", this, err, response);
-        synchronized (delegate.getLock()) {
-            state.setState(State.FAILED);
+    @Override
+    public void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) throws GeneralSecurityException {
+        // Heartbeat
+        if (options != null) {
+            final Object heartbeat = options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
+            builder.pingInterval(
+                (heartbeat instanceof Number) ? ((long) heartbeat) : DEFAULT_HEARTBEAT_SEC,
+                TimeUnit.SECONDS);
+        }
 
-            if (response == null) {
-                closeWithError(err);
-                return;
-            }
+        // Authenticator
+        final Authenticator authenticator = getBasicAuthenticator();
+        if (authenticator != null) { builder.authenticator(authenticator); }
 
-            closeWithCode(response.code(), response.message());
+        // Cookies
+        builder.cookieJar(new AbstractCBLWebSocket.WebSocketCookieJar());
+
+        // Setup SSLFactory and trusted certificate (pinned certificate)
+        setupSSLSocketFactory(builder);
+    }
+
+    @Override
+    public void onRemoteOpen(@NonNull Response resp) {
+        Log.d(TAG, "%s#OkHTTP open: %s", this, resp);
+        synchronized (coreDelegate.getLock()) {
+            if (!state.setState(State.OPEN)) { return; }
+            receivedHTTPResponse(resp);
+            coreDelegate.opened();
+        }
+        Log.i(TAG, "WebSocket OPEN");
+    }
+
+    @Override
+    public void onRemoteMessage(@NonNull byte[] data) {
+        Log.d(TAG, "%s#OkHTTP text data: %d", this, data.length);
+        synchronized (coreDelegate.getLock()) {
+            if (!state.assertState(State.OPEN)) { return; }
+            coreDelegate.received(data);
         }
     }
 
-    private void onRemoteClosed(int code, @NonNull String reason) {
+    @Override
+    public void onRemoteRequestClose(int code, @NonNull String reason) {
+        Log.d(TAG, "%s#OkHTTP closing: %s", this, reason);
+        synchronized (coreDelegate.getLock()) {
+            if (!state.setState(State.CLOSE_REQUESTED)) { return; }
+            coreDelegate.closeRequested(code, reason);
+        }
+    }
+
+    @Override
+    public void onRemoteClosed(int code, @NonNull String reason) {
         Log.d(TAG, "%s#OkHTTP closed: (%d) %s", this, code, reason);
-        synchronized (delegate.getLock()) {
+        synchronized (coreDelegate.getLock()) {
             if (!state.setState(State.CLOSED)) { return; }
             closeWithCode(code, reason);
         }
     }
 
-    private void onRemoteClosing(int code, @NonNull String reason) {
-        Log.d(TAG, "%s#OkHTTP closing: %s", this, reason);
-        synchronized (delegate.getLock()) {
-            if (!state.setState(State.CLOSE_REQUESTED)) { return; }
-            delegate.closeRequested(code, reason);
-        }
-    }
+    @Override
+    public void onRemoteFailure(@NonNull Throwable err, @Nullable Response resp) {
+        Log.d(TAG, "%s#OkHTTP failed: %s, %s", this, err, resp);
+        synchronized (coreDelegate.getLock()) {
+            state.setState(State.FAILED);
 
-    private void onRemoteMessage(@NonNull byte[] data) {
-        Log.d(TAG, "%s#OkHTTP text data: %d", this, data.length);
-        synchronized (delegate.getLock()) {
-            if (!state.assertState(State.OPEN)) { return; }
-            delegate.received(data);
-        }
-    }
+            if (resp == null) {
+                closeWithError(err);
+                return;
+            }
 
-    private void onRemoteOpen(@NonNull WebSocket webSocket, @NonNull Response response) {
-        Log.d(TAG, "%s#OkHTTP open: %s", this, response);
-        synchronized (delegate.getLock()) {
-            if (!state.setState(State.OPEN)) { return; }
-            this.webSocket = webSocket;
-            receivedHTTPResponse(response);
-            delegate.opened();
+            closeWithCode(resp.code(), resp.message());
         }
-        Log.i(TAG, "WebSocket OPEN");
     }
 
     //-------------------------------------------------------------------------
@@ -455,11 +405,11 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
     //-------------------------------------------------------------------------
 
     @GuardedBy("getPeerLock()")
-    private void receivedHTTPResponse(@NonNull Response response) {
-        Log.d(TAG, "CBLWebSocket received HTTP response %s", response);
+    private void receivedHTTPResponse(@NonNull Response resp) {
+        Log.d(TAG, "CBLWebSocket received HTTP response %s", resp);
 
         // Post the response headers to LiteCore:
-        final Headers hs = response.headers();
+        final Headers hs = resp.headers();
         if ((hs == null) || (hs.size() <= 0)) { return; }
 
         byte[] headersFleece = null;
@@ -475,14 +425,14 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
             Log.d(TAG, StringUtils.toString(headers));
         }
 
-        delegate.gotHTTPResponse(response.code(), headersFleece);
+        coreDelegate.gotHTTPResponse(resp.code(), headersFleece);
     }
 
     // Close the OkHTTP connection to the remote
     @GuardedBy("getPeerLock()")
     private void closeWebSocket(int code, String message) {
         // never got opened...
-        if (webSocket == null) { return; }
+        if (!remoteDelegate.isOpen()) { return; }
 
         // We've told Core to leave the connection to us, so it might pass us the HTTP status
         // If it does, we need to convert it to a WS status for the other side.
@@ -490,7 +440,7 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
             code = C4Constants.WebSocketError.POLICY_ERROR;
         }
 
-        if (!webSocket.close(code, message)) {
+        if (!remoteDelegate.close(code, message)) {
             Log.i(TAG, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
         }
     }
@@ -501,11 +451,11 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
 
         // success
         if (code == C4Constants.WebSocketError.NORMAL) {
-            delegate.closed(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.SUCCESS, null);
+            coreDelegate.closed(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.SUCCESS, null);
             return;
         }
 
-        delegate.closed(C4Constants.ErrorDomain.WEB_SOCKET, code, reason);
+        coreDelegate.closed(C4Constants.ErrorDomain.WEB_SOCKET, code, reason);
     }
 
     @GuardedBy("getPeerLock()")
@@ -514,7 +464,7 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
 
         // this probably doesn't happen
         if (error == null) {
-            delegate.closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
+            coreDelegate.closed(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
             return;
         }
 
@@ -563,7 +513,7 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
             code = C4Constants.WebSocketError.POLICY_ERROR;
         }
 
-        delegate.closed(domain, code, error.toString());
+        coreDelegate.closed(domain, code, error.toString());
     }
 
     private int getCodeForCause(Throwable error) {
@@ -582,31 +532,6 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
         }
 
         return 0;
-    }
-
-    @NonNull
-    private OkHttpClient setupOkHttpFactory() throws GeneralSecurityException {
-        final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
-
-        // Heartbeat
-        if (options != null) {
-            final Object heartbeat = options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
-            builder.pingInterval(
-                (heartbeat instanceof Number) ? ((long) heartbeat) : DEFAULT_HEARTBEAT_SEC,
-                TimeUnit.SECONDS);
-        }
-
-        // Authenticator
-        final Authenticator authenticator = getBasicAuthenticator();
-        if (authenticator != null) { builder.authenticator(authenticator); }
-
-        // Cookies
-        builder.cookieJar(new WebSocketCookieJar());
-
-        // Setup SSLFactory and trusted certificate (pinned certificate)
-        setupSSLSocketFactory(builder);
-
-        return builder.build();
     }
 
     @NonNull
@@ -655,7 +580,7 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
         final Object password = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
         if (!(password instanceof String)) { return null; }
 
-        return (route, response) -> authenticate(response, (String) username, (String) password);
+        return (route, resp) -> authenticate(resp, (String) username, (String) password);
     }
 
     private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) throws GeneralSecurityException {
@@ -734,9 +659,9 @@ public abstract class AbstractCBLWebSocket implements CoreSocketListener, AutoCl
         return null;
     }
 
-    private int responseCount(Response response) {
+    private int responseCount(Response resp) {
         int result = 1;
-        while ((response = response.priorResponse()) != null) { result++; }
+        while ((resp = resp.priorResponse()) != null) { result++; }
         return result;
     }
 }

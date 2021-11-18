@@ -50,7 +50,19 @@ public abstract class C4NativePeer implements AutoCloseable {
 
     @NonNull
     @Override
-    public String toString() { return Long.toHexString(peer); }
+    public String toString() { return "@x" + Long.toHexString(peer); }
+
+    protected final void withPeer(@NonNull Fn.Consumer<Long> fn) {
+        synchronized (getPeerLock()) {
+            final long peer = get();
+            if (peer != 0L) {
+                fn.accept(peer);
+                return;
+            }
+        }
+
+        logBadCall();
+    }
 
     @NonNull
     protected final <T, E extends Exception> T withPeer(
@@ -117,6 +129,8 @@ public abstract class C4NativePeer implements AutoCloseable {
             if (peer != 0L) { fn.accept(peer); }
         }
 
+        if (!CouchbaseLiteInternal.debugging()) { return; }
+
         if (domain == null) {
             // here if we don't expect the peer to have been closed
             if (peer == 0L) { logBadCall(); }
@@ -124,24 +138,24 @@ public abstract class C4NativePeer implements AutoCloseable {
         }
 
         // here if we expected the peer to have been closed
-        if (peer != 0L) { Log.d(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName()); }
+        if (peer != 0L) {
+            Log.d(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName());
+        }
     }
 
+    // ??? questionable design
     // The next three methods should go away.
     // They invite race conditions and are accidents waiting to happen.
     // Ideally, this class should never expose the peer handle
 
-    // ??? questionable design
     protected final void setPeer(long peer) { setPeerInternal(peer); }
 
-    // ??? questionable design
     protected final long getPeerUnchecked() {
         final long peer = get();
         if (peer == 0L) { Log.v(LogDomain.DATABASE, "Unchecked peer is 0", new Exception("peer is 0")); }
         return peer;
     }
 
-    // ??? questionable design
     protected final long getPeer() {
         final long peer = get();
         if (peer != 0L) { return peer; }
@@ -185,7 +199,9 @@ public abstract class C4NativePeer implements AutoCloseable {
     }
 
     private void logBadCall() {
-        Log.e(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
+        if (CouchbaseLiteInternal.debugging()) { return; }
+
+        Log.i(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
         final Exception closedLoc = closedAt;
         if (closedLoc != null) { Log.e(LogDomain.DATABASE, "Closed at", closedLoc); }
     }

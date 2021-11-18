@@ -19,25 +19,25 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.net.URI;
-import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
+import com.couchbase.lite.internal.sockets.RemoteSocketDelegate;
 import com.couchbase.lite.internal.utils.Fn;
 
 
 public class CBLWebSocket extends AbstractCBLWebSocket {
     public CBLWebSocket(
-        @NonNull CoreSocketDelegate delegate,
+        @NonNull RemoteSocketDelegate remoteDelegate,
+        @NonNull CoreSocketDelegate coreDelegate,
         @NonNull URI uri,
         @Nullable byte[] opts,
         @NonNull CBLCookieStore cookieStore,
-        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener)
-        throws GeneralSecurityException {
-        super(delegate, uri, opts, cookieStore, serverCertsListener);
+        @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
+        super(remoteDelegate, coreDelegate, uri, opts, cookieStore, serverCertsListener);
     }
 
     @Override

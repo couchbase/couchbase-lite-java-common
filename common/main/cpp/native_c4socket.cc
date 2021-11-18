@@ -260,19 +260,51 @@ extern "C" {
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    gotHTTPResponse
- * Signature: (JI[B)V
+ * Method:    fromNative
+ * Signature: (JLjava/lang/String;ILjava/lang/String;I)J
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_gotHTTPResponse(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_fromNative(
         JNIEnv *env,
         jclass ignore,
-        jlong socket,
-        jint httpStatus,
-        jbyteArray jresponseHeadersFleece) {
-    jbyteArraySlice responseHeadersFleece(env, jresponseHeadersFleece, false);
-    c4socket_gotHTTPResponse((C4Socket *) socket, httpStatus, responseHeadersFleece);
+        jlong jcontext,
+        jstring jscheme,
+        jstring jhost,
+        jint jport,
+        jstring jpath,
+        jint jframing) {
+    void *context = (void *) jcontext;
+
+    jstringSlice scheme(env, jscheme);
+    jstringSlice host(env, jhost);
+    jstringSlice path(env, jpath);
+
+    C4Address c4Address = {};
+    c4Address.scheme = scheme;
+    c4Address.hostname = host;
+    c4Address.port = jport;
+    c4Address.path = path;
+
+    C4SocketFactory socketFactory = socket_factory();
+    socketFactory.framing = (C4SocketFraming) jframing;
+    socketFactory.context = context;
+
+    C4Socket *c4socket = c4socket_fromNative(socketFactory, context, &c4Address);
+
+    return (jlong) c4socket;
 }
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Socket
+ * Method:    retain
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_retain(JNIEnv *env, jclass ignore, jlong jSocket) {
+    auto socket = (C4Socket *) jSocket;
+    c4socket_retain(socket);
+}
+
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
  * Method:    opened
@@ -286,38 +318,18 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_opened(JNIEnv *env, jc
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    closed
- * Signature: (JIILjava/lang/String;)V
+ * Method:    gotHTTPResponse
+ * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_gotHTTPResponse(
         JNIEnv *env,
         jclass ignore,
-        jlong jSocket,
-        jint domain,
-        jint code,
-        jstring message) {
-    auto socket = (C4Socket *) jSocket;
-    jstringSlice sliceMessage(env, message);
-    C4Error error = c4error_make((C4ErrorDomain) domain, code, sliceMessage);
-    c4socket_closed(socket, error);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    closeRequested
- * Signature: (JILjava/lang/String;)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closeRequested(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jSocket,
-        jint status,
-        jstring jmessage) {
-    auto socket = (C4Socket *) jSocket;
-    jstringSlice message(env, jmessage);
-    c4socket_closeRequested(socket, (int) status, message);
+        jlong socket,
+        jint httpStatus,
+        jbyteArray jresponseHeadersFleece) {
+    jbyteArraySlice responseHeadersFleece(env, jresponseHeadersFleece, false);
+    c4socket_gotHTTPResponse((C4Socket *) socket, httpStatus, responseHeadersFleece);
 }
 
 /*
@@ -354,37 +366,48 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_received(
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    fromNative
- * Signature: (JLjava/lang/String;ILjava/lang/String;I)J
+ * Method:    closeRequested
+ * Signature: (JILjava/lang/String;)V
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_fromNative(
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closeRequested(
         JNIEnv *env,
         jclass ignore,
-        jlong jcontext,
-        jstring jscheme,
-        jstring jhost,
-        jint jport,
-        jstring jpath,
-        jint jframing) {
-    void *context = (void *) jcontext;
+        jlong jSocket,
+        jint status,
+        jstring jmessage) {
+    auto socket = (C4Socket *) jSocket;
+    jstringSlice message(env, jmessage);
+    c4socket_closeRequested(socket, (int) status, message);
+}
 
-    jstringSlice scheme(env, jscheme);
-    jstringSlice host(env, jhost);
-    jstringSlice path(env, jpath);
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Socket
+ * Method:    closed
+ * Signature: (JIILjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jSocket,
+        jint domain,
+        jint code,
+        jstring message) {
+    auto socket = (C4Socket *) jSocket;
+    jstringSlice sliceMessage(env, message);
+    C4Error error = c4error_make((C4ErrorDomain) domain, code, sliceMessage);
+    c4socket_closed(socket, error);
+}
 
-    C4Address c4Address = {};
-    c4Address.scheme = scheme;
-    c4Address.hostname = host;
-    c4Address.port = jport;
-    c4Address.path = path;
-
-    C4SocketFactory socketFactory = socket_factory();
-    socketFactory.framing = (C4SocketFraming) jframing;
-    socketFactory.context = context;
-
-    C4Socket *c4socket = c4socket_fromNative(socketFactory, context, &c4Address);
-
-    return (jlong) c4socket;
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Socket
+ * Method:    release
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_release(JNIEnv *env, jclass ignore, jlong jSocket) {
+    auto socket = (C4Socket *) jSocket;
+    c4socket_release(socket);
 }
 }

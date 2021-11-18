@@ -150,7 +150,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         final Replicator repl = testReplicator(config);
 
         Map<String, Object> options = new HashMap<>();
-        repl.getSocketFactory().setListener(c4Socket -> {
+        repl.getSocketFactory().setTestListener(c4Socket -> {
             if (c4Socket == null) { return; }
             synchronized (options) {
                 Map<String, Object> opts = ((AbstractCBLWebSocket) c4Socket).getOptions();
@@ -182,8 +182,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         final Replicator repl = testReplicator(config);
 
         Map<String, Object> options = new HashMap<>();
-        repl.getSocketFactory().setListener(delegate -> {
-            if (delegate == null) { return; }
+        repl.getSocketFactory().setTestListener(delegate -> {
+            if (!(delegate instanceof AbstractCBLWebSocket)) { return; }
             synchronized (options) {
                 Map<String, Object> opts = ((AbstractCBLWebSocket) delegate).getOptions();
                 if (opts != null) { options.putAll(opts); }
