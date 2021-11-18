@@ -193,6 +193,7 @@ abstract class AbstractQuery implements Query {
     @Nullable
     protected abstract AbstractDatabase getDatabase();
 
+    @SuppressWarnings("PMD.LinguisticNaming")
     void getC4Query() throws CouchbaseLiteException {
         synchronized (lock) { getC4QueryLocked(); }
     }
