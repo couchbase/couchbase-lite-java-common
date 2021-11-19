@@ -104,7 +104,7 @@ case $LIB in
    # works on centos6 and several version of OSX
    mbedcrypto)
       cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
-      make -j $JOBS mbedx509 mbedcrypto mbedtls
+      make -j $JOBS mbedcrypto
       cp -f $MBEDTLS_LIB $OUTPUT_DIR
       ;;
 

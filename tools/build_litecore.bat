@@ -50,7 +50,7 @@ if "%lib%" == "LiteCore" (
 	   copy /y %liteCoreBuildDir%\windows\RelWithDebInfo\LiteCore.lib %outputDir%
  
     "C:\Program Files\CMake\bin\cmake.exe" --build . --config RelWithDebInfo --target mbedcrypto || goto :error
-	   copy /y %liteCoreBuildDir%\windows\crypto\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
+	   copy /y %liteCoreBuildDir%\windows\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
 )
 
 rem Works
@@ -58,7 +58,7 @@ if "%lib%" == "mbedcrypto" (
     "C:\Program Files\CMake\bin\cmake.exe" -G %VS_GEN% -DCMAKE_BUILD_TYPE=RelWithDebInfo ..\..\vendor\mbedtls || goto :error
  
     "C:\Program Files\CMake\bin\cmake.exe" --build . --config RelWithDebInfo --target mbedcrypto || goto :error
-	   copy /y %liteCoreBuildDir%\windows\crypto\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
+	   copy /y %liteCoreBuildDir%\windows\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
 )
 
 popd
