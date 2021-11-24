@@ -55,7 +55,7 @@ if "%lib%" == "LiteCore" (
 
 rem Works
 if "%lib%" == "mbedcrypto" (
-    "C:\Program Files\CMake\bin\cmake.exe" -G %VS_GEN% -DCMAKE_BUILD_TYPE=RelWithDebInfo ..\..\vendor\mbedtls || goto :error
+    "C:\Program Files\CMake\bin\cmake.exe" -G %VS_GEN% -DENABLE_TESTING=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo ..\..\vendor\mbedtls || goto :error
  
     "C:\Program Files\CMake\bin\cmake.exe" --build . --config RelWithDebInfo --target mbedcrypto || goto :error
 	   copy /y %liteCoreBuildDir%\windows\crypto\library\RelWithDebInfo\mbedcrypto.lib %outputDir%
