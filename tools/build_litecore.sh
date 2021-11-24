@@ -103,7 +103,7 @@ pushd $OS > /dev/null
 case $LIB in
    # works on centos6 and several version of OSX
    mbedcrypto)
-      cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
+      cmake -DENABLE_TESTING=OFF -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_POSITION_INDEPENDENT_CODE=1 ../../$MBEDTLS_DIR
       make -j $JOBS mbedx509 mbedcrypto mbedtls
       cp -f $MBEDTLS_LIB $OUTPUT_DIR
       ;;
@@ -124,7 +124,7 @@ case $LIB in
          # works on several OSX versions
          macos)
             echo "OSX: -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE"
-            cmake -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
+            cmake -DENABLE_TESTING=OFF -DBUILD_ENTERPRISE=$ENT -DCMAKE_BUILD_TYPE=$BUILD_TYPE ../..
 
             make -j $JOBS LiteCore
             strip -x libLiteCore.dylib
