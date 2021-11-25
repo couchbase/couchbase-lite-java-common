@@ -36,7 +36,6 @@ static jmethodID m_C4Socket_write;            // callback method for C4Socket.wr
 static jmethodID m_C4Socket_completedReceive; // callback method for C4Socket.completedReceive(...)
 static jmethodID m_C4Socket_requestClose;     // callback method for C4Socket.requestClose(...)
 static jmethodID m_C4Socket_close;            // callback method for C4Socket.close(...)
-static jmethodID m_C4Socket_dispose;          // callback method for C4Socket.dispose(...)
 
 bool litecore::jni::initC4Socket(JNIEnv *env) {
     // Find C4Socket class and static methods for callback
@@ -70,10 +69,6 @@ bool litecore::jni::initC4Socket(JNIEnv *env) {
 
         m_C4Socket_requestClose = env->GetStaticMethodID(cls_C4Socket, "requestClose", "(JILjava/lang/String;)V");
         if (!m_C4Socket_requestClose)
-            return false;
-
-        m_C4Socket_dispose = env->GetStaticMethodID(cls_C4Socket, "dispose", "(J)V");
-        if (!m_C4Socket_dispose)
             return false;
     }
 
@@ -217,28 +212,6 @@ static void socket_close(C4Socket *socket) {
     }
 }
 
-static void socket_dispose(C4Socket *socket) {
-    JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4Socket, m_C4Socket_dispose, (jlong) socket);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4Socket, m_C4Socket_dispose, (jlong) socket);
-        } else {
-            C4Warn("socket_dispose(): Failed to attaches the current thread to a Java VM");
-        }
-    } else {
-        C4Warn("socket_dispose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
-    }
-
-    if (getEnvStat == JNI_EDETACHED) {
-        if (gJVM->DetachCurrentThread() != 0) {
-            C4Warn("socket_dispose(): Failed to detach the current thread from a Java VM");
-        }
-    }
-}
-
 static const C4SocketFactory kSocketFactory{
         kC4NoFraming,               // framing
         nullptr,                    // context
@@ -247,7 +220,7 @@ static const C4SocketFactory kSocketFactory{
         &socket_completedReceive,   // completedReceive
         &socket_close,              // close
         &socket_requestClose,       // requestClose
-        &socket_dispose,            // dispose
+        nullptr,                    // dispose
 };
 
 const C4SocketFactory socket_factory() { return kSocketFactory; }

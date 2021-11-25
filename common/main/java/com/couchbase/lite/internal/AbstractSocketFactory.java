@@ -32,10 +32,10 @@ import com.couchbase.lite.URLEndpoint;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
 import com.couchbase.lite.internal.replicator.CBLWebSocket;
-import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
-import com.couchbase.lite.internal.sockets.CoreSocketListener;
-import com.couchbase.lite.internal.sockets.OkHttpRemoteDelegate;
-import com.couchbase.lite.internal.sockets.RemoteSocketDelegate;
+import com.couchbase.lite.internal.sockets.OkHttpSocket;
+import com.couchbase.lite.internal.sockets.SocketFromCore;
+import com.couchbase.lite.internal.sockets.SocketToCore;
+import com.couchbase.lite.internal.sockets.SocketToRemote;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -56,7 +56,7 @@ public abstract class AbstractSocketFactory {
     // Test instrumentation
     @GuardedBy("endpoint")
     @Nullable
-    private Fn.Consumer<CoreSocketListener> testListener;
+    private Fn.Consumer<SocketFromCore> testListener;
 
     public AbstractSocketFactory(
         @NonNull ReplicatorConfiguration config,
@@ -68,24 +68,24 @@ public abstract class AbstractSocketFactory {
     }
 
     @NonNull
-    public final CoreSocketListener createSocket(
-        @NonNull CoreSocketDelegate coreDelegate,
+    public final SocketFromCore createSocket(
+        @NonNull SocketToCore toCore,
         @NonNull String scheme,
         @NonNull String host,
         int port,
         @NonNull String path,
         @NonNull byte[] opts) {
-        final CoreSocketListener listener = (endpoint instanceof URLEndpoint)
-            ? createCBLWebSocket(coreDelegate, scheme, host, port, path, opts)
-            : createPlatformSocket(coreDelegate);
+        final SocketFromCore fromCore = (endpoint instanceof URLEndpoint)
+            ? createCBLWebSocket(toCore, scheme, host, port, path, opts)
+            : createPlatformSocket(toCore);
 
-        if (listener == null) { throw new IllegalStateException("Can't create endpoint: " + endpoint); }
+        if (fromCore == null) { throw new IllegalStateException("Can't create endpoint: " + endpoint); }
 
         // Test instrumentation
-        final Fn.Consumer<CoreSocketListener> testListener = getTestListener();
-        if (testListener != null) { testListener.accept(listener); }
+        final Fn.Consumer<SocketFromCore> testListener = getTestListener();
+        if (testListener != null) { testListener.accept(fromCore); }
 
-        return listener;
+        return fromCore;
     }
 
     @NonNull
@@ -93,16 +93,16 @@ public abstract class AbstractSocketFactory {
     public String toString() { return "SocketFactory{@" + endpoint + '}'; }
 
     @VisibleForTesting
-    public final void setTestListener(@Nullable Fn.Consumer<CoreSocketListener> testListener) {
+    public final void setTestListener(@Nullable Fn.Consumer<SocketFromCore> testListener) {
         synchronized (endpoint) { this.testListener = testListener; }
     }
 
     @Nullable
-    protected abstract CoreSocketListener createPlatformSocket(@NonNull CoreSocketDelegate delegate);
+    protected abstract SocketFromCore createPlatformSocket(@NonNull SocketToCore toCore);
 
     @Nullable
-    private CoreSocketListener createCBLWebSocket(
-        @NonNull CoreSocketDelegate coreDelegate,
+    private SocketFromCore createCBLWebSocket(
+        @NonNull SocketToCore toCore,
         @NonNull String scheme,
         @NonNull String host,
         int port,
@@ -116,10 +116,9 @@ public abstract class AbstractSocketFactory {
         }
 
         try {
-            final RemoteSocketDelegate remoteDelegate = new OkHttpRemoteDelegate();
-            final CBLWebSocket socket
-                = new CBLWebSocket(remoteDelegate, coreDelegate, uri, opts, cookieStore, serverCertsListener);
-            remoteDelegate.init(socket);
+            final SocketToRemote toRemote = new OkHttpSocket();
+            final CBLWebSocket socket = new CBLWebSocket(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
+            toRemote.init(socket);
             return socket;
         }
         catch (Exception e) { Log.w(LogDomain.NETWORK, "Failed to instantiate CBLWebSocket", e); }
@@ -142,7 +141,7 @@ public abstract class AbstractSocketFactory {
     }
 
     @Nullable
-    private Fn.Consumer<CoreSocketListener> getTestListener() {
+    private Fn.Consumer<SocketFromCore> getTestListener() {
         synchronized (endpoint) { return testListener; }
     }
 }

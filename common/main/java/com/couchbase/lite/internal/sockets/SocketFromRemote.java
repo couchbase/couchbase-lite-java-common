@@ -22,25 +22,28 @@ import okhttp3.OkHttpClient;
 import okhttp3.Response;
 
 
-public interface RemoteSocketListener {
+public interface SocketFromRemote {
+    @NonNull
+    Object getLock();
+
     // Set up the remote socket factory
     @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) throws Exception;
 
     // Remote connections is open
-    void onRemoteOpen(@NonNull Response resp);
+    void remoteOpened(@NonNull Response resp);
 
     // Remote sent data
-    void onRemoteMessage(@NonNull byte[] data);
+    void remoteWrites(@NonNull byte[] data);
 
     // Remote wants to close the connection
-    void onRemoteRequestClose(int code, @NonNull String reason);
+    void remoteRequestedClose(int code, @NonNull String reason);
 
     // Remote connection has been closed
-    void onRemoteClosed(int code, @NonNull String reason);
+    void remoteClosed(int code, @NonNull String reason);
 
     // Remote connection failed
     // Invoked when a web socket has been closed due to an error reading from or writing to the network.
     // Outgoing and incoming messages may have been lost. OkHTTP will not make any more calls to this listener
-    void onRemoteFailure(@NonNull Throwable err, @Nullable Response resp);
+    void remoteFailed(@NonNull Throwable err, @Nullable Response resp);
 }

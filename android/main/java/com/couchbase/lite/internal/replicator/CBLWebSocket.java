@@ -29,28 +29,28 @@ import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4Constants;
-import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
-import com.couchbase.lite.internal.sockets.RemoteSocketDelegate;
+import com.couchbase.lite.internal.sockets.SocketToCore;
+import com.couchbase.lite.internal.sockets.SocketToRemote;
 import com.couchbase.lite.internal.utils.Fn;
 
 
-public class CBLWebSocket extends AbstractCBLWebSocket {
+public final class CBLWebSocket extends AbstractCBLWebSocket {
     // Framing is always MESSAGE_STREAM
     public CBLWebSocket(
-        @NonNull RemoteSocketDelegate remoteDelegate,
-        @NonNull CoreSocketDelegate coreDelegate,
+        @NonNull SocketToRemote toRemote,
+        @NonNull SocketToCore toCore,
         @NonNull URI uri,
         @Nullable byte[] opts,
         @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
-        super(remoteDelegate, coreDelegate, uri, opts, cookieStore, serverCertsListener);
+        super(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
     }
 
     @Override
     protected boolean handleClose(@NonNull Throwable error) {
         for (Throwable cause = error; cause != null; cause = cause.getCause()) {
             if ((cause instanceof ErrnoException)) {
-                coreDelegate.closed(C4Constants.ErrorDomain.POSIX, ((ErrnoException) cause).errno, error.toString());
+                toCore.closeCore(C4Constants.ErrorDomain.POSIX, ((ErrnoException) cause).errno, error.toString());
                 return true;
             }
         }

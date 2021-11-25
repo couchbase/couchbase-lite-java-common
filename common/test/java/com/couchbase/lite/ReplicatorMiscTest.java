@@ -158,8 +158,9 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             }
         });
 
+        // the replicator will fail because the endpoint is bogus
         try { run(repl); }
-        catch (CouchbaseLiteException ignore) { }
+        catch (CouchbaseLiteException ign) { }
 
         synchronized (options) {
             assertNull(options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));

@@ -49,11 +49,11 @@ import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.C4ReplicatorMode;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
-import com.couchbase.lite.internal.core.C4Socket;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
+import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
@@ -418,7 +418,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             c4ReplPushFilter,
             c4ReplPullFilter,
             socketFactory,
-            C4Socket.NO_FRAMING);
+            MessageFraming.NO_FRAMING);
     }
 
     /**
@@ -447,13 +447,13 @@ public abstract class AbstractReplicator extends BaseReplicator {
      * Create and return a c4Replicator.
      * The socket factory is responsible for setting up the target
      *
-     * @param framing the framing mode (C4Socket.XXX_FRAMING)
+     * @param framing the message framing
      * @return the c4Replicator
      * @throws LiteCoreException on failure to create the replicator
      */
     @GuardedBy("getDbLock()")
     @NonNull
-    protected final C4Replicator getMessageC4Replicator(int framing) throws LiteCoreException {
+    protected final C4Replicator getMessageC4Replicator(@NonNull MessageFraming framing) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
         return getDatabase().createRemoteReplicator(
             (Replicator) this,

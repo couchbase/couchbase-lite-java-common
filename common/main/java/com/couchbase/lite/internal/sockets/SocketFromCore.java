@@ -16,18 +16,13 @@
 package com.couchbase.lite.internal.sockets;
 
 import androidx.annotation.NonNull;
-
-import javax.annotation.Nullable;
-
-import okhttp3.Request;
+import androidx.annotation.Nullable;
 
 
-public interface RemoteSocketDelegate {
-    @SuppressWarnings("PMD.SignatureDeclareThrowsException")
-    void init(@NonNull RemoteSocketListener listener) throws Exception;
-    void open(@NonNull Request request);
-    boolean send(@NonNull byte[] data);
-    boolean isOpen();
-    boolean close(int code, @Nullable String reason);
-    void cancel();
+public interface SocketFromCore {
+    void coreRequestedOpen();
+    void coreWrites(@NonNull byte[] allocatedData);
+    void coreAckReceive(long byteCount);
+    void coreRequestedClose(int status, @Nullable String message);
+    void coreClosed();
 }

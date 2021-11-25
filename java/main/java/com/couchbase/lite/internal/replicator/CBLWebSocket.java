@@ -24,20 +24,20 @@ import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4Constants;
-import com.couchbase.lite.internal.sockets.CoreSocketDelegate;
-import com.couchbase.lite.internal.sockets.RemoteSocketDelegate;
+import com.couchbase.lite.internal.sockets.SocketToCore;
+import com.couchbase.lite.internal.sockets.SocketToRemote;
 import com.couchbase.lite.internal.utils.Fn;
 
 
-public class CBLWebSocket extends AbstractCBLWebSocket {
+public final class CBLWebSocket extends AbstractCBLWebSocket {
     public CBLWebSocket(
-        @NonNull RemoteSocketDelegate remoteDelegate,
-        @NonNull CoreSocketDelegate coreDelegate,
+        @NonNull SocketToRemote toRemote,
+        @NonNull SocketToCore toCore,
         @NonNull URI uri,
         @Nullable byte[] opts,
         @NonNull CBLCookieStore cookieStore,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
-        super(remoteDelegate, coreDelegate, uri, opts, cookieStore, serverCertsListener);
+        super(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
     }
 
     @Override

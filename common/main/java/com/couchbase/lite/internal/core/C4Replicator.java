@@ -36,6 +36,7 @@ import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.exec.ClientTask;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -232,7 +233,7 @@ public class C4Replicator extends C4NativePeer {
         @Nullable C4ReplicationFilter pullFilter,
         @NonNull AbstractReplicator replicatorContext,
         @Nullable SocketFactory socketFactoryContext,
-        int framing)
+        @NonNull MessageFraming framing)
         throws LiteCoreException {
         final C4Replicator replicator;
         synchronized (CLASS_LOCK) {
@@ -251,7 +252,7 @@ public class C4Replicator extends C4NativePeer {
                 pullFilter,
                 replicatorContext,
                 socketFactoryContext,
-                framing);
+                MessageFraming.getC4Framing(framing));
             bind(replicator);
         }
 
@@ -293,7 +294,7 @@ public class C4Replicator extends C4NativePeer {
     @NonNull
     static C4Replicator createTargetReplicator(
         long db,
-        @NonNull C4Socket openSocket,
+        @NonNull C4Socket c4Socket,
         int push,
         int pull,
         @Nullable byte[] options,
@@ -304,7 +305,7 @@ public class C4Replicator extends C4NativePeer {
         synchronized (CLASS_LOCK) {
             replicator = new C4Replicator(
                 db,
-                openSocket.getPeerHandle(),
+                c4Socket.getPeerHandle(),
                 push,
                 pull,
                 options,
@@ -418,7 +419,7 @@ public class C4Replicator extends C4NativePeer {
             targetDb,
             push,
             pull,
-            C4Socket.NO_FRAMING,
+            MessageFraming.C4_NO_FRAMING,
             replicatorContext,
             pushFilter,
             pullFilter,

@@ -51,7 +51,7 @@ public final class C4Key {
     }
 
     @NonNull
-    private static native byte[] pbkdf2(@NonNull String password, @NonNull byte[] salt, int rounds, int keysize);
+    private static native byte[] pbkdf2(@NonNull String password, @NonNull byte[] salt, int rounds, int keySize);
 
     @NonNull
     private static native byte[] deriveKeyFromPassword(@NonNull String password, int alg);

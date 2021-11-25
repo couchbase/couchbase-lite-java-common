@@ -19,10 +19,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 
-public interface CoreSocketListener {
-    void onCoreRequestOpen();
-    void onCoreSend(@NonNull byte[] allocatedData);
-    void onCoreCompletedReceive(long byteCount);
-    void onCoreRequestClose(int status, @Nullable String message);
-    void onCoreClosed();
+public interface SocketToCore extends AutoCloseable {
+    @NonNull
+    Object getLock();
+    void init(@NonNull SocketFromCore listener);
+    void ackOpenToCore();
+    void ackHttpToCore(int httpStatus, @Nullable byte[] responseHeadersFleece);
+    void ackWriteToCore(long byteCount);
+    void sendToCore(@NonNull byte[] data);
+    void requestCoreClose(int status, @Nullable String message);
+    void closeCore(int errorDomain, int errorCode, @Nullable String message);
 }

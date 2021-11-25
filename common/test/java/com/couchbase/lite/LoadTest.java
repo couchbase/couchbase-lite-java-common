@@ -59,8 +59,9 @@ public class LoadTest extends BaseDbTest {
         addRevisions(revs, true);
     }
 
-    @Test
+    @SlowTest
     @LoadIntegrationTest
+    @Test
     public void testUpdate() throws CouchbaseLiteException {
         long start = System.currentTimeMillis();
 
@@ -167,8 +168,9 @@ public class LoadTest extends BaseDbTest {
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1610
-    @Test
+    @SlowTest
     @LoadIntegrationTest
+    @Test
     public void testUpdate2() throws CouchbaseLiteException {
         MutableDocument mDoc = new MutableDocument("doc1");
         Map<String, Object> map = new HashMap<>();

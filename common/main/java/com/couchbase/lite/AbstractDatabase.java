@@ -60,6 +60,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.listener.ChangeNotifier;
+import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.FileUtils;
@@ -72,7 +73,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.TooManyMethods", "PMD.ExcessiveImports"})
 abstract class AbstractDatabase extends BaseDatabase {
 
     /**
@@ -843,7 +844,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
         @Nullable SocketFactory socketFactoryContext,
-        int framing)
+        @NonNull MessageFraming framing)
         throws LiteCoreException {
         final C4Replicator c4Repl;
         synchronized (getDbLock()) {
