@@ -702,12 +702,24 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
+    /**
+     * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
+     * If you are developing a native app, you must use the {@link Blob} API.
+     *
+     * @param blob
+     */
     @Internal("This method is not part of the public API: it is for internal use only")
     public void saveBlob(@NonNull Blob blob) {
         synchronized (getDbLock()) { mustBeOpen(); }
         blob.installInDatabase((Database) this);
     }
 
+    /**
+     * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
+     * If you are developing a native app, you must use the {@link Blob} API.
+     *
+     * @return Blob
+     */
     @Internal("This method is not part of the public API: it is for internal use only")
     @Nullable
     public Blob getBlob(@NonNull Map<String, Object> props) {
