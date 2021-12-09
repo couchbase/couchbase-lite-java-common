@@ -32,21 +32,9 @@ class C4QueryObserverTest : C4BaseTest() {
         val impl = C4QueryObserver.nativeImpl
         try {
             C4QueryObserver.nativeImpl = mockQueryObserver
-            val ctxtSize = C4QueryObserver.QUERY_OBSERVER_CONTEXT.size()
-
             C4Query(c4Database.handle, AbstractIndex.QueryLanguage.JSON, query).use { c4Query ->
-                C4QueryObserver.create(c4Query, { _, _ -> }).use { obs1 ->
-                    assertNotNull(obs1)
-                    assertEquals(ctxtSize + 1, C4QueryObserver.QUERY_OBSERVER_CONTEXT.size())
-
-                    // create a second observer should increase size
-                    C4QueryObserver.create(c4Query, { _, _ -> }).use { obs2 ->
-                        assertNotNull(obs2)
-                        assertEquals(ctxtSize + 2, C4QueryObserver.QUERY_OBSERVER_CONTEXT.size())
-                    }
-                }
+                C4QueryObserver.create(c4Query, { _, _ -> }).use { obs1 -> assertNotNull(obs1) }
             }
-            assertEquals(ctxtSize, C4QueryObserver.QUERY_OBSERVER_CONTEXT.size())
         } finally {
             C4QueryObserver.nativeImpl = impl
         }
