@@ -2,7 +2,6 @@ package com.couchbase.lite.internal.core
 
 
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding
-import com.couchbase.lite.internal.utils.MathUtils
 import org.junit.Assert
 import org.junit.Test
 import java.lang.IllegalStateException
@@ -24,25 +23,29 @@ class PeerBindingTest {
             binding.bind(key, mockObject)
             Assert.assertEquals(1, binding.size())
             Assert.assertEquals(mockObject, binding.getBinding(key))
+
+            // it should be fine to bind the same object and key again
+            binding.bind(key, mockObject)
+            Assert.assertEquals(1, binding.size())
+            Assert.assertEquals(mockObject, binding.getBinding(key))
         }
         finally { binding.clear() }
     }
 
-    // Trying to bind an object to a nonexistent key leads to exception
-    @Test
+    // Trying to bind an object to a key that's not reserved leads to exception
+    @Test(expected = IllegalStateException::class)
     fun testBindWithoutKey() {
         val binding = TaggedWeakPeerBinding<Any>()
-        val randomKey = MathUtils.RANDOM.get().nextInt(Int.MAX_VALUE).toLong();
+        val keyNotReserved: Long = 1
         try {
-            Assert.assertThrows(IllegalStateException::class.java) { binding.bind(randomKey, object {}) }
+            binding.bind(keyNotReserved, object {})
         }
         finally { binding.clear() }
     }
 
-    //  Rebinding with a different object does not replace the current object
-    //  Rebinding with the same object results in exception
-    @Test
-    fun testRebindPeer() {
+    // Rebinding an existing mapping with a different object results in exception
+    @Test(expected = IllegalStateException::class)
+    fun testRebindPeerWithDifferentObject() {
         val binding = TaggedWeakPeerBinding<Any>()
         try {
             val keyReserve = binding.reserveKey()
@@ -51,10 +54,6 @@ class PeerBindingTest {
 
             binding.bind(keyReserve, object1)
             binding.bind(keyReserve, object2)
-
-            Assert.assertEquals(1, binding.size())
-            Assert.assertEquals(object1, binding.getBinding(keyReserve))
-            Assert.assertThrows(IllegalStateException::class.java) { binding.bind(keyReserve, object1) }
         }
         finally { binding.clear() }
     }
@@ -64,8 +63,8 @@ class PeerBindingTest {
     fun testGetNonExistingBinding() {
         val binding = TaggedWeakPeerBinding<Any>()
         try {
-            val randomKey = MathUtils.RANDOM.get().nextInt(Int.MAX_VALUE).toLong();
-            Assert.assertEquals(null, binding.getBinding(randomKey))
+            val randomNum: Long = 2
+            Assert.assertEquals(null, binding.getBinding(randomNum))
         }
         finally { binding.clear() }
     }
