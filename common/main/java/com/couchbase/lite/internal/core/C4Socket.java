@@ -19,14 +19,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Socket;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
+import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketToCore;
@@ -209,7 +209,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // Fields
     //-------------------------------------------------------------------------
 
-    private final ExecutorService queue = Executors.newSingleThreadExecutor();
+    private final Executor queue = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
     private final NativeImpl impl;
     private volatile SocketFromCore fromCore;
