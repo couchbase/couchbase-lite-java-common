@@ -64,7 +64,7 @@ class PeerBindingTest {
     @Test
     fun testGetNonExistingBinding() {
         val binding = TaggedWeakPeerBinding<Any>()
-        try { Assert.assertEquals(null, binding.getBinding(234)) }
+        try { Assert.assertNull(binding.getBinding(234)) }
         finally { binding.clear() }
     }
 
@@ -96,7 +96,7 @@ class PeerBindingTest {
             Assert.assertEquals(3, binding.size())
             binding.unbind(key1)
             Assert.assertEquals(2, binding.size())
-            Assert.assertEquals(null, binding.getBinding(key1))
+            Assert.assertNull(binding.getBinding(key1))
         }
         finally { binding.clear() }
     }
