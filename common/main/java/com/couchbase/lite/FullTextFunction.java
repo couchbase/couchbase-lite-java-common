@@ -24,7 +24,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * Full-text function.
+ * Full-text functions.
  */
 public final class FullTextFunction {
     //---------------------------------------------

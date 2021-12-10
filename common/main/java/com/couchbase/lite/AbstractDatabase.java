@@ -651,6 +651,12 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     // Queries:
 
+    /**
+     * Create a SQL++ query.
+     *
+     * @param query a valid SQL++ query
+     * @return the Query object
+     */
     @NonNull
     public Query createQuery(@NonNull String query) {
         synchronized (getDbLock()) {
@@ -659,6 +665,12 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
+    /**
+     * Get a list of the names of database indicies.
+     *
+     * @return the list of index names
+     * @throws CouchbaseLiteException on failure
+     */
     @NonNull
     public List<String> getIndexes() throws CouchbaseLiteException {
         final FLValue flIndexInfo;
@@ -681,14 +693,32 @@ abstract class AbstractDatabase extends BaseDatabase {
         return indexNames;
     }
 
+    /**
+     * Add an index to the database
+     * @param name index name
+     * @param index index description
+     * @throws CouchbaseLiteException on failure
+     */
     public void createIndex(@NonNull String name, @NonNull Index index) throws CouchbaseLiteException {
         createIndexInternal(name, index);
     }
 
+    /**
+     * Add an index to the database
+     * @param name index name
+     * @param config index configuration
+     * @throws CouchbaseLiteException on failure
+     */
     public void createIndex(@NonNull String name, @NonNull IndexConfiguration config) throws CouchbaseLiteException {
         createIndexInternal(name, config);
     }
 
+    /**
+     * Delete the named index.
+     *
+     * @param name name of the index to delete
+     * @throws CouchbaseLiteException on failure
+     */
     public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
         synchronized (getDbLock()) {
             try { getOpenC4DbLocked().deleteIndex(name); }
@@ -703,12 +733,24 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
+    /**
+     * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
+     * If you are developing a native app, you must use the {@link Blob} API.
+     *
+     * @param blob a blob
+     */
     @Internal("This method is not part of the public API: it is for internal use only")
     public void saveBlob(@NonNull Blob blob) {
         synchronized (getDbLock()) { mustBeOpen(); }
         blob.installInDatabase((Database) this);
     }
 
+    /**
+     * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
+     * If you are developing a native app, you must use the {@link Blob} API.
+     *
+     * @param props blob properties
+     */
     @Internal("This method is not part of the public API: it is for internal use only")
     @Nullable
     public Blob getBlob(@NonNull Map<String, Object> props) {

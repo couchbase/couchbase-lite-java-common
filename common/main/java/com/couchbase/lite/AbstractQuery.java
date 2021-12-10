@@ -69,16 +69,15 @@ abstract class AbstractQuery implements Query {
     private Parameters parameters;
 
     /**
-     * Returns a copies of the current parameters.
+     * Returns a copy of the current parameters.
      */
     @Nullable
     @Override
     public Parameters getParameters() { return parameters; }
 
     /**
-     * Set parameters should copy the given parameters. Set a new parameter will
-     * also re-execute the query if there is at least one listener listening for
-     * changes.
+     * Set query parameters.
+     * Setting new parametera will re-execute a query if there is at least one listener listening for changes.
      *
      * @throws IllegalStateException    on failure to create the query (e.g., database closed)
      * @throws IllegalArgumentException on failure to encode the parameters (e.g., parameter value not supported)
@@ -99,8 +98,8 @@ abstract class AbstractQuery implements Query {
     }
 
     /**
-     * Executes the query. The returning a result set that enumerates result rows one at a time.
-     * You can run the query any number of times, and you can even have multiple ResultSet active at
+     * Executes the query returning a result set that enumerates result rows one at a time.
+     * You can run the query any number of times and you can even have multiple ResultSet active at
      * once.
      * <p>
      * The results come from a snapshot of the database taken at the moment the run() method
@@ -138,8 +137,10 @@ abstract class AbstractQuery implements Query {
      * This is intended to be read by a developer for purposes of optimizing the query, especially
      * to add database indexes. It's not machine-readable and its format may change.
      * As currently implemented, the result is two or more lines separated by newline characters:
-     * * The first line is the SQLite SELECT statement.
-     * * The subsequent lines are the output of SQLite's "EXPLAIN QUERY PLAN" command applied to that
+     * <ul>
+     * <li> The first line is the SQLite SELECT statement.
+     * <li> The subsequent lines are the output of SQLite's "EXPLAIN QUERY PLAN" command applied to that
+     * </ul>
      * statement; for help interpreting this, see https://www.sqlite.org/eqp.html . The most
      * important thing to know is that if you see "SCAN TABLE", it means that SQLite is doing a
      * slow linear scan of the documents instead of using an index.

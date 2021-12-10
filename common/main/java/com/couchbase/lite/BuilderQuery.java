@@ -67,6 +67,11 @@ abstract class BuilderQuery extends AbstractQuery {
     // Protected access
     //---------------------------------------------
 
+    /**
+     * Get the database to which this query will be applied.
+     *
+     * @return the query database.
+     */
     @NonNull
     @Override
     protected final AbstractDatabase getDatabase() { return (AbstractDatabase) from.getSource(); }

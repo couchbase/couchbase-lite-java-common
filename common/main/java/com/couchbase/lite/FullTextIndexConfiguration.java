@@ -24,6 +24,9 @@ import java.util.List;
 import java.util.Locale;
 
 
+/**
+ * Full Text Index Configuration
+ */
 public class FullTextIndexConfiguration extends IndexConfiguration {
     private String textLanguage = Locale.getDefault().getLanguage();
     private boolean ignoreDiacritics;

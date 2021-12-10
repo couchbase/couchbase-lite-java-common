@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.core.C4Log;
 
 
 /**
- * A class for sending log messages to standard output stream.
+ * A class for sending log messages to the console.
  */
 public class ConsoleLogger extends AbstractConsoleLogger {
     private static final String LOG_TAG = "/CouchbaseLite/";

@@ -24,9 +24,9 @@ import androidx.annotation.NonNull;
 @FunctionalInterface
 public interface DatabaseChangeListener extends ChangeListener<DatabaseChange> {
     /**
-     * Callback function from Database when database has change
+     * Callback from the Database when it changes
      *
-     * @param change the database change information
+     * @param change change information
      */
     @Override
     void changed(@NonNull DatabaseChange change);

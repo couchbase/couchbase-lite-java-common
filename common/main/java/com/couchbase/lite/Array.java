@@ -112,7 +112,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     /**
      * Gets value at the given index as an object. The object types are Blob,
      * Array, Dictionary, Number, or String based on the underlying
-     * data type; or nil if the value is nil.
+     * data type; or null if the value is nil.
      *
      * @param index the index. This value must not exceed the bounds of the array.
      * @return the Object or null.
@@ -245,7 +245,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     public Date getDate(int index) { return JSONUtils.toDate(getString(index)); }
 
     /**
-     * Gets a Array at the given index. Return null if the value is not an array.
+     * Gets value at the given index as an Array.
+     * Returns null if the value doesn't exist, or its value is not an Array.
      *
      * @param index the index. This value must not exceed the bounds of the array.
      * @return the Array object.

@@ -22,10 +22,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.internal.utils.Internal;
+
 
 /**
- * Note: DictionaryInterface is an internal interface. This should not be public.
+ * This is an internal interface and not part of the public API.
  */
+@Internal("This interface is not part of the public API")
 public interface DictionaryInterface {
     int count();
 

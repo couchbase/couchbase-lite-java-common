@@ -31,8 +31,9 @@ import com.couchbase.lite.internal.support.Log;
  * that log messages can persist durably after the application has
  * stopped or encountered a problem.  Each log level is written to
  * a separate file.
+ * <p>
  * Threading policy: This class is certain to be used from multiple
- * threads.  As long as it is thread safe, the various race conditions
+ * threads.  As long as it, itself, is thread safe, the various race conditions
  * are unlikely and the penalties very small.  "Volatile" ensures
  * the thread safety and the several races are tolerable.
  */
@@ -84,7 +85,7 @@ public final class FileLogger implements Logger {
     /**
      * Gets the configuration currently in use by the file logger.
      * Note that once a configuration has been installed in a logger,
-     * the configuration is read-only and can no longer be modified.
+     * it is read-only and can no longer be modified.
      * An attempt to modify the configuration returned by this method will cause an exception.
      *
      * @return The configuration currently in use

@@ -359,7 +359,7 @@ public abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
 
     /**
-     * Return the Authenticator to authenticate with a remote target.
+     * Return the Authenticator used to authenticate the remote.
      */
     @Nullable
     public final Authenticator getAuthenticator() { return authenticator; }
@@ -391,7 +391,7 @@ public abstract class AbstractReplicatorConfiguration {
     public final Database getDatabase() { return database; }
 
     /**
-     * A set of document IDs to filter by: if not nil, only documents with these IDs will be pushed
+     * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
      * and/or pulled.
      */
     @Nullable
@@ -410,14 +410,14 @@ public abstract class AbstractReplicatorConfiguration {
     public final byte[] getPinnedServerCertificate() { return copyCert(pinnedServerCertificate); }
 
     /**
-     * Gets a filter object for validating whether the documents can be pulled
+     * Gets the filter used to determine whether a document will be pulled
      * from the remote endpoint.
      */
     @Nullable
     public final ReplicationFilter getPullFilter() { return pullFilter; }
 
     /**
-     * Gets a filter object for validating whether the documents can be pushed
+     * Gets a filter used to determine whether a document will be pushed
      * to the remote endpoint.
      */
     @Nullable

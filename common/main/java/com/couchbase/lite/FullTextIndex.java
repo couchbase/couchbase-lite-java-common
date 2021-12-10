@@ -41,8 +41,8 @@ public class FullTextIndex extends Index {
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.
      * Setting the language code affects how word breaks and word stems are parsed.
-     * Without setting the value, the current locale's language will be used. Setting
-     * a nil or "" value to disable the language features.
+     * Without setting the value, the current locale's language will be used.
+     * A null or empty ("") value will disable the language features.
      */
     @NonNull
     public FullTextIndex setLanguage(@NonNull String language) {
@@ -51,7 +51,7 @@ public class FullTextIndex extends Index {
     }
 
     /**
-     * Set the true value to ignore accents/diacritical marks. The default value is false.
+     * Set true to ignore accents/diacritical marks. The default is false.
      */
     @NonNull
     public FullTextIndex ignoreAccents(boolean ignoreAccents) {

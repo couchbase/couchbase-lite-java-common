@@ -320,7 +320,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     }
 
     /**
-     * Get a property's value as a Array, which is a mapping object of an array value.
+     * Get a property's value as a Array.
      * Returns null if the property doesn't exists, or its value is not an array.
      *
      * @param key the key.
@@ -331,7 +331,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     public MutableArray getArray(@NonNull String key) { return getMutableContent().getArray(key); }
 
     /**
-     * Get a property's value as a Dictionary, which is a mapping object of an dictionary value.
+     * Get a property's value as a Dictionary.
      * Returns null if the property doesn't exists, or its value is not an dictionary.
      *
      * @param key the key.
@@ -341,6 +341,12 @@ public final class MutableDocument extends Document implements MutableDictionary
     @Override
     public MutableDictionary getDictionary(@NonNull String key) { return getMutableContent().getDictionary(key); }
 
+    /**
+     * Unimplemented: Mutable objects may not be encoded as JSON
+     *
+     * @return never
+     * @throws IllegalStateException always
+     */
     @NonNull
     @Override
     public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }

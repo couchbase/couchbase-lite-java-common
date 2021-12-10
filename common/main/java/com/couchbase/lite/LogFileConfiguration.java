@@ -10,9 +10,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * A class that describes the file configuration for the {@link FileLogger} class.
- * These options must be set atomically so they won't take effect unless a new
- * configuration object is set on the logger.  Attempting to modify an in-use
- * configuration object will result in an exception being thrown.
+ * Once a configuration has been assigned to a Logger, it becomes read-only:
+ * an attempt to mutate it will cause an exception.
+ * To change the configuration of a logger, copy its configuration, mutate the
+ * copy and then use it to replace the loggers current configuration.
  */
 public final class LogFileConfiguration {
     //---------------------------------------------

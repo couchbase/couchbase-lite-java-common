@@ -32,9 +32,9 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 
 
 /**
- * MutableArray provides access to array data.
- * This class and its constructor are referenced by name, from native code.
+ * Mutable access to array data.
  */
+ // This class and its constructor are referenced by name, from native code.
 @SuppressWarnings("PMD.TooManyMethods")
 public final class MutableArray extends Array implements MutableArrayInterface {
     //---------------------------------------------

@@ -19,8 +19,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 
+/**
+ * Internal error in native code.
+ */
 // This class is referenced by name, from native code.
 public class LiteCoreException extends Exception {
+
     // This method is referenced by name, from native code.
     public static void throwException(int domain, int code, @Nullable String msg) throws LiteCoreException {
         throw new LiteCoreException(domain, code, msg);

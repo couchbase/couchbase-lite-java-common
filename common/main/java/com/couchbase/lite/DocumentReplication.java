@@ -22,7 +22,7 @@ import java.util.List;
 
 
 /**
- * Document replicated update of a replicator.
+ * The representation of the replication of a document.
  */
 public final class DocumentReplication {
     //---------------------------------------------
@@ -48,18 +48,18 @@ public final class DocumentReplication {
     //---------------------------------------------
 
     /**
-     * Return the source replicator object.
+     * Return the source replicator.
      */
     @NonNull
     public Replicator getReplicator() { return replicator; }
 
     /**
-     * The current document replication direction flag.
+     * The direction of replication for the affected documents.
      */
     public boolean isPush() { return pushing; }
 
     /**
-     * The list if affected documents.
+     * The list of affected documents.
      */
     @NonNull
     public List<ReplicatedDocument> getDocuments() { return documents; }

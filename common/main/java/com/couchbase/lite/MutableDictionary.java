@@ -32,7 +32,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * Dictionary provides access to dictionary data.
+ * Mutable access to dictionary data.
  */
 public final class MutableDictionary extends Dictionary implements MutableDictionaryInterface {
     //---------------------------------------------
@@ -279,7 +279,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     }
 
     /**
-     * Get a property's value as a Array, which is a mapping object of an array value.
+     * Get a property's value as a Array.
      * Returns null if the property doesn't exists, or its value is not an array.
      *
      * @param key the key.
@@ -290,7 +290,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     public MutableArray getArray(@NonNull String key) { return (MutableArray) super.getArray(key); }
 
     /**
-     * Get a property's value as a Dictionary, which is a mapping object of an dictionary value.
+     * Get a property's value as a Dictionary.
      * Returns null if the property doesn't exists, or its value is not an dictionary.
      *
      * @param key the key.

@@ -29,7 +29,7 @@ import com.couchbase.lite.internal.support.Log;
 
 
 /**
- * A CouchbaseLiteException gets raised whenever a Couchbase Lite faces errors.
+ * Misfortune: The little fox gets its tail wet.
  */
 public final class CouchbaseLiteException extends Exception {
 

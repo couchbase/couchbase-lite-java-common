@@ -16,6 +16,6 @@
 package com.couchbase.lite;
 
 /**
- * The listener token interface
+ * Opaque interface representing a subscription to a listener.
  */
 public interface ListenerToken { }

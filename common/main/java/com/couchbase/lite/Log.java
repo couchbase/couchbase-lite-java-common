@@ -24,9 +24,7 @@ import com.couchbase.lite.internal.core.C4Log;
 
 
 /**
- * Gets the log controller for Couchbase Lite, which stores the
- * three available logging methods:  console (logcat), file, and
- * custom.
+ * Holder for the three Couchbase Lite loggers:  console, file, and custom.
  */
 public final class Log {
     // Singleton instance.

@@ -28,11 +28,11 @@ public final class Meta {
 
     //---------------------------------------------
     // API - public static variables
+    // Can't change these to CAPITAL_SNAKE case, cuz they are part of the API.
     //---------------------------------------------
 
     /**
      * A metadata expression referring to the ID of the document.
-     * Can't change these to CAPITAL_SNAKE case, cuz they are part of the API.
      */
     @NonNull
     public static final MetaExpression id = new MetaExpression("_id");

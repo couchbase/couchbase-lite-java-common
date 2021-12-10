@@ -18,6 +18,9 @@ package com.couchbase.lite;
 import androidx.annotation.Nullable;
 
 
+/**
+ * The representation of conflicting changes in the remote and local instances of a document.
+ */
 public class Conflict {
     @Nullable
     private final Document localDoc;
@@ -29,14 +32,29 @@ public class Conflict {
         this.remoteDoc = remoteDoc;
     }
 
+    /**
+     * The id of the conflicted document
+     *
+     * @return the document id.
+     */
     @Nullable
     public String getDocumentId() {
         return (localDoc != null) ? localDoc.getId() : ((remoteDoc != null) ? remoteDoc.getId() : null);
     }
 
+    /**
+     * The local instance of the document.
+     *
+     * @return the local version of the document
+     */
     @Nullable
     public Document getLocalDocument() { return localDoc; }
 
+    /**
+     * The remote instance of the document.
+     *
+     * @return the remote version of the document
+     */
     @Nullable
     public Document getRemoteDocument() { return remoteDoc; }
 }

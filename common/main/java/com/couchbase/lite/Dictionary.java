@@ -80,7 +80,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     //////// Implementation of ReadOnlyDictionaryInterface
 
     /**
-     * Gets a number of the entries in the dictionary.
+     * Gets the number of the entries in the dictionary.
      *
      * @return the size of the dictionary
      */
@@ -243,7 +243,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     }
 
     /**
-     * Get a property's value as a Array, which is a mapping object of an array value.
+     * Get a property's value as an Array.
      * Returns null if the property doesn't exists, or its value is not an array.
      *
      * @param key the key.
@@ -260,7 +260,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     }
 
     /**
-     * Get a property's value as a Dictionary, which is a mapping object of an dictionary value.
+     * Get a property's value as a Dictionary.
      * Returns null if the property doesn't exists, or its value is not an dictionary.
      *
      * @param key the key.

@@ -50,7 +50,7 @@ abstract class AbstractConsoleLogger implements Logger {
     public LogLevel getLevel() { return logLevel; }
 
     /**
-     * Sets the overall logging level that will be written to the console log.
+     * Sets the lowest level that will be logged to the console.
      *
      * @param level The lowest (most verbose) level to include in the logs
      */
@@ -64,7 +64,7 @@ abstract class AbstractConsoleLogger implements Logger {
     }
 
     /**
-     * Gets the domains that will be considered for writing to the console log.
+     * Get the set of domains currently being logged to the console.
      *
      * @return The currently active domains
      */

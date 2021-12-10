@@ -22,8 +22,7 @@ import java.util.concurrent.Executor;
 
 
 /**
- * A database query used for querying data from the database. The query statement of the Query
- * object can be fluently constructed by calling the static select methods.
+ * A database query built using the fluent interface in {@link QueryBuilder}.
  */
 public interface Query {
 

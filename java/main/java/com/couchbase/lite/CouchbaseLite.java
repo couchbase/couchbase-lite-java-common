@@ -23,6 +23,9 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.FileUtils;
 
 
+/**
+ * CouchbaseLite Utility
+ */
 public final class CouchbaseLite {
     // Utility class
     private CouchbaseLite() { }
@@ -54,8 +57,11 @@ public final class CouchbaseLite {
     }
 
     /**
-     * Initialize CouchbaseLite library.
-     * This method allows specifying a root directory for CBL files.
+     * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     * <p>
+     * This method allows specifying a default root directory for database files,
+     * and the scratch directory used for temporary files (the native library, etc).
+     * Both directories must be writable by this process.
      *
      * @param debug      true if debugging
      * @param rootDir    default directory for databases

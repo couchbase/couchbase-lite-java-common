@@ -20,8 +20,7 @@ import androidx.annotation.Nullable;
 
 
 /**
- * QueryChange contains the information about the query result changes reported
- * by a query object.
+ * Information about changes in a query result changes, reported by a live query.
  */
 public final class QueryChange {
     //---------------------------------------------

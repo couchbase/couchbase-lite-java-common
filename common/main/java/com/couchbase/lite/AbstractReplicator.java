@@ -190,7 +190,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
     /**
      * Stop a running replicator.
      * This method does not wait for the replicator to stop.
-     * When it does actually stop it will a new state, STOPPED, to change listeners.
+     * When the replicator actually stops, it will a broadcast a new state, STOPPED,
+     * to change listeners.
      */
     public void stop() {
         final C4Replicator c4repl = getC4Replicator();
@@ -208,7 +209,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     public ReplicatorConfiguration getConfig() { return new ReplicatorConfiguration(config); }
 
     /**
-     * The replicator's current status: its activity level and progress. Observable.
+     * The replicator's current status: its activity level and progress.
      *
      * @return this replicator's status
      */
@@ -281,7 +282,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
      * Adds a change listener for the changes in the replication status and progress.
      * <p>
      * The changes will be delivered on the UI thread for the Android platform
-     * On other Java platforms, the callback will occur on an arbitrary thread.
+     * On other Java platforms, the callback will occur on the single threaded default executor.
      * <p>
      * When developing a Java Desktop application using Swing or JavaFX that needs to update the UI after
      * receiving the changes, make sure to schedule the UI update on the UI thread by using
@@ -298,7 +299,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     /**
      * Adds a change listener for the changes in the replication status and progress with an executor on which
      * the changes will be posted to the listener. If the executor is not specified, the changes will be delivered
-     * on the UI thread on Android platform and on an arbitrary thread on other Java platform.
+     * on the UI thread on Android platform and on the single threaded default executor on other Java platforms
      *
      * @param executor executor on which events will be delivered
      * @param listener callback
@@ -315,8 +316,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
     }
 
     /**
-     * Adds a listener for receiving the replication status of the specified document. The status will be
-     * delivered on the UI thread for the Android platform and on an arbitrary thread for the Java platform.
+     * Adds a listener for receiving the replication status of the specified document.
+     * The status will be delivered on the UI thread for the Android platform
+     * and on the single threaded default executor on other platforms.
+     *
      * When developing a Java Desktop application using Swing or JavaFX that needs to update the UI after
      * receiving the status, make sure to schedule the UI update on the UI thread by using
      * SwingUtilities.invokeLater(Runnable) or Platform.runLater(Runnable) respectively.

@@ -21,10 +21,13 @@ import androidx.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
+import com.couchbase.lite.internal.utils.Internal;
+
 
 /**
- * Note: MutableArrayInterface is an internal interface: it must not be public.
+ * This is an internal interface and not part of the public API.
  */
+@Internal("This interface is not part of the public API")
 interface MutableArrayInterface extends ArrayInterface {
 
     @Nullable

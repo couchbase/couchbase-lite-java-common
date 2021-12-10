@@ -32,8 +32,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * A result set representing the query result. The result set is an iterator of
- * the {@code Result} objects.
+ * The representation of a query result. The result set is an iterator over
+ * {@code Result} objects.
  */
 public class ResultSet implements Iterable<Result>, AutoCloseable {
     //---------------------------------------------
@@ -86,10 +86,10 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Move the cursor forward one row from its current row position.
-     * Caution: next() method and iterator() method share same data structure.
-     * Please don't use them together.
-     * Caution: In case ResultSet is obtained from QueryChangeListener, and QueryChangeListener is
-     * already removed from Query, ResultSet is already freed. And this next() method returns null.
+     * <p>Caution: {@link this.next()} method and {@link this.iterator()}method share same data structure.
+     * They cannot be used together.</p>
+     * <p>Caution: When a ResultSet is obtained from a QueryChangeListener and the QueryChangeListener has
+     * already been removed from Query, the ResultSet will have been freed and this method will return null.</p>
      *
      * @return the Result after moving the cursor forward. Returns {@code null} value
      * if there are no more rows, or ResultSet is freed already.
@@ -122,10 +122,8 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     }
 
     /**
-     * Return List of Results. List is unmodifiable and only supports
-     * int get(int index), int size(), boolean isEmpty() and Iterator&lt;Result&gt; iterator() methods.
-     * Once called allResults(), next() method return null. Don't call next() and allResults()
-     * together.
+     * Return a List of all Results.
+     * Don't use next() and allResults() together.  Once allResults() has been called next() will return null.
      *
      * @return List of Results
      */

@@ -39,8 +39,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * Readonly version of the Document.
- * Probably should be closeable.
  */
+// Should probably should be closeable or autoclosable.
 @SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity"})
 public class Document implements DictionaryInterface, Iterable<String> {
     // !!! This code is from v1.x. Replace with c4rev_getGeneration().
@@ -180,7 +180,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * Return the sequence number of the document in the database.
      * The sequence number indicates how recently the document has been changed.  Every time a document
      * is updated, the database assigns it the next sequential sequence number.  Thus, when a document's
-     * sequence number changes it means that the document been update (on-disk).  If one document's sequence
+     * sequence number changes it means that the document been updated (on-disk).  If one document's sequence
      * is different than another's, the document with the larger sequence number was changed more recently.
      * Sequence numbers are not available for documents obtained from a replication filter.  This method
      * will always return 0 for such documents.
@@ -207,9 +207,9 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     /**
-     * Gets a number of the entries in the dictionary.
+     * Gets the number of the entries in the document.
      *
-     * @return the number of entries in the dictionary.
+     * @return the number of entries in the document.
      */
     @Override
     public int count() { return getContent().count(); }
@@ -342,7 +342,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public Date getDate(@NonNull String key) { return getContent().getDate(key); }
 
     /**
-     * Get a property's value as a Array, which is a mapping object of an array value.
+     * Get a property's value as a Array.
      * Returns null if the property doesn't exists, or its value is not an Array.
      *
      * @param key the key
@@ -353,8 +353,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public Array getArray(@NonNull String key) { return getContent().getArray(key); }
 
     /**
-     * Get a property's value as a Dictionary, which is a mapping object of
-     * a Dictionary value.
+     * Get a property's value as a Dictionary.
      * Returns null if the property doesn't exists, or its value is not a Dictionary.
      *
      * @param key the key

@@ -22,7 +22,9 @@ import com.couchbase.lite.internal.core.C4Constants;
 public final class CBLError {
     private CBLError() {}
 
-    // Error Domain
+    /**
+     * The error type: roughly, where it originated.
+     */
     public static final class Domain {
         private Domain() {}
 
@@ -53,8 +55,8 @@ public final class CBLError {
         public static final int UNSUPPORTED_ENCRYPTION = C4Constants.LiteCoreError.UNSUPPORTED_ENCRYPTION;
 
         /**
-         * An invalid revision ID was attempted to be used to insert a document
-         * (usually because of an invalid revision ID written directly into Sync Gateway via the REST API)
+         * An was made to insert a document with an invalid revision ID
+         * This is frequently caused by an invalid revision ID written directly into Sync Gateway via the REST API
          */
         public static final int BAD_REVISION_ID = C4Constants.LiteCoreError.BAD_REVISION_ID;
 
@@ -301,7 +303,7 @@ public final class CBLError {
 
         // --- Web socket status codes start here
         /**
-         * Not an actual error, but serves as the lower bound for WebSocket related errors
+         * Not an error: This is the lower bound for WebSocket related errors
          */
         public static final int WEB_SOCKET_NORMAL_CLOSE = HTTP_BASE + C4Constants.WebSocketError.NORMAL;
 

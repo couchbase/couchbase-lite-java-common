@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.support.Log;
 
 
 /**
- * Combined activity level and progress of a replicator.
+ * The activity level and progress of a replicator.
  */
 public final class ReplicatorStatus {
     @NonNull

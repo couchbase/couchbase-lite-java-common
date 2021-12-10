@@ -96,7 +96,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as a String
+     * The result at the given index converted to a String
      *
      * @param index the index of the required value.
      * @return a String value.
@@ -110,7 +110,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result  at the given index as a Number
+     * The result at the given index interpreted as a Number.
+     * Returns null if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return a Number value.
@@ -123,7 +124,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as an int
+     * The result at the given index interpreted as and an int.
+     * Returns 0 if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return an int value.
@@ -136,7 +138,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as a long
+     * The result at the given index interpreted as a long.
+     * Returns 0 if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return a long value.
@@ -149,7 +152,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as a float
+     * The result at the given index interpreted as a float.
+     * Returns 0.0F if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return a float value.
@@ -162,7 +166,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as a double
+     * The result at the given index interpreted as a double.
+     * Returns 0.0 if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return a double value.
@@ -175,7 +180,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as a boolean
+     * The result at the given index interpreted as a boolean.
+     * Returns false if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return a boolean value.
@@ -188,7 +194,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as a Blob
+     * The result at the given index interpreted as a Blob.
+     * Returns null if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return a Blob.
@@ -202,7 +209,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as a Date
+     * The result at the given index interpreted as a Date.
+     * Returns null if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return a Date.
@@ -215,7 +223,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as an Array
+     * The result at the given index interpreted as an Array.
+     * Returns null if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return an Array.
@@ -229,7 +238,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result at the given index as a Dictionary
+     * The result at the given index interpreted as a Dictionary.
+     * Returns null if the value cannot be so interpreted.
      *
      * @param index the index of the required value.
      * @return a Dictionary.
@@ -243,7 +253,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * Gets all values as a List. The types of the values contained in the returned List
+     * Gets all the values as a List. The types of the values contained in the returned List
      * are Array, Blob, Dictionary, Number types, String, and null.
      *
      * @return a List containing all values.
@@ -269,7 +279,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     public List<String> getKeys() { return rs.getColumnNames(); }
 
     /**
-     * The result value for the given key as a Object
+     * The result value for the given key as an Object
      * Returns null if the key doesn't exist.
      *
      * @param key The select result key.
@@ -283,7 +293,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The result value for the given key as a String object
+     * The result value for the given key as a String
      * Returns null if the key doesn't exist.
      *
      * @param key The select result key.
@@ -297,8 +307,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key  as a Number object
-     * Returns null if the key doesn't exist.
+     * The result value for the given key as a Number
+     * Returns null if the key doesn't exist or if the value is not a Number
      *
      * @param key The select result key.
      * @return The Number object.
@@ -311,8 +321,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key  as a integer value
-     * Returns 0 if the key doesn't exist.
+     * The result value for the given key as an int
+     * Returns 0 if the key doesn't exist or if the value is not a int
      *
      * @param key The select result key.
      * @return The integer value.
@@ -324,8 +334,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key  as a long value
-     * Returns 0L if the key doesn't exist.
+     * The result value for the given key as a long
+     * Returns 0L if the key doesn't exist or if the value is not a long
      *
      * @param key The select result key.
      * @return The long value.
@@ -337,8 +347,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key  as a float value.
-     * Returns 0.0f if the key doesn't exist.
+     * The result value for the given key as a float
+     * Returns 0.0F if the key doesn't exist or if the value is not a float
      *
      * @param key The select result key.
      * @return The float value.
@@ -350,8 +360,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key as a double value.
-     * Returns 0.0 if the key doesn't exist.
+     * The result value for the given key as a double
+     * Returns 0.0 if the key doesn't exist or if the value is not a double
      *
      * @param key The select result key.
      * @return The double value.
@@ -363,8 +373,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key  as a boolean value.
-     * Returns false if the key doesn't exist.
+     * The result value for the given key as a boolean
+     * Returns null if the key doesn't exist or if the value is not a boolean
      *
      * @param key The select result key.
      * @return The boolean value.
@@ -376,8 +386,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key  as a Blob object.
-     * Returns null if the key doesn't exist.
+     * The result value for the given key as a Blob
+     * Returns null if the key doesn't exist or if the value is not a Blob
      *
      * @param key The select result key.
      * @return The Blob object.
@@ -390,8 +400,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key as a Date object.
-     * Returns null if the key doesn't exist.
+     * The result value for the given key as a Date
+     * Returns null if the key doesn't exist or if the value is not a Date
      *
      * @param key The select result key.
      * @return The Date object.
@@ -404,8 +414,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key as a readonly Array object.
-     * Returns null if the key doesn't exist.
+     * The result value for the given key as a Array
+     * Returns null if the key doesn't exist or if the value is not an Array
      *
      * @param key The select result key.
      * @return The Array object.
@@ -418,8 +428,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * The projecting result value for the given key as a readonly Dictionary object.
-     * Returns null if the key doesn't exist.
+     * The result value for the given key as a Dictionary
+     * Returns null if the key doesn't exist or if the value is not a Dictionary
      *
      * @param key The select result key.
      * @return The Dictionary object.
@@ -432,9 +442,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * Gets all values as a Dictionary. The value types of the values contained
-     * in the returned Dictionary object are Array, Blob, Dictionary,
-     * Number types, String, and null.
+     * Gets all values as a Map. The keys in the returned map are the names of columns that have
+     * values.  The types of the values are Array, Blob, Dictionary, Number types, String, and null.
      *
      * @return The Map representing all values.
      */
@@ -476,7 +485,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     }
 
     /**
-     * Tests whether a projecting result key exists or not.
+     * Tests whether key exists or not.
      *
      * @param key The select result key.
      * @return True if exists, otherwise false.
@@ -491,7 +500,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     //---------------------------------------------
 
     /**
-     * Gets  an iterator over the projecting result keys.
+     * Gets  an iterator over the result's keys.
      *
      * @return The Iterator object of all result keys.
      */

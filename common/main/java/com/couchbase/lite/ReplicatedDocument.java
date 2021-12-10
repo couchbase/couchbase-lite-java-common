@@ -24,6 +24,9 @@ import java.util.EnumSet;
 import com.couchbase.lite.internal.core.C4Constants;
 
 
+/**
+ * Information about a Document updated by replication.
+ */
 public final class ReplicatedDocument {
     //---------------------------------------------
     // member variables
@@ -39,9 +42,6 @@ public final class ReplicatedDocument {
     // Constructors
     //---------------------------------------------
 
-    /**
-     * Document replicated update of a replicator.
-     */
     ReplicatedDocument(@NonNull String id, int flags, @Nullable CouchbaseLiteException error, boolean ignore) {
         this.id = id;
         this.error = error;

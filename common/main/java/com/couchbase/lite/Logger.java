@@ -19,14 +19,13 @@ import androidx.annotation.NonNull;
 
 
 /**
- * The logging interface for Couchbase Lite.  If an application wants
- * to receive log messages to an arbitrary endpoint, then it can by
- * implementing this interface.
- *
- * !!! There is, currently, no way to tell when the log level changes
- * for a custom logger.  Setting a more verbose log level will not
- * have any effect until the logger is polled for its level.
+ * The logging interface for Couchbase Lite.  An application that wishes
+ * to route log messages to an arbitrary endpoint can do so by
+ * installing an implemention of this interface with {@link Log#setCustom(Logger)}.
  */
+// !!! There is, currently, no way to tell when the log level changes
+// for a custom logger.  Setting a more verbose log level will not
+// have any effect until the logger is polled for its level.
 public interface Logger {
     /**
      * Gets the level that will be logged via this logger.

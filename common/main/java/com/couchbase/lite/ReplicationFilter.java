@@ -21,9 +21,9 @@ import java.util.EnumSet;
 
 
 /**
- * Interface delegate that takes Document input parameter and bool output parameter
- * Document push and pull will be allowed if output is true, otherwise, Document
- * push and pull will not be allowed.
+ * Delegate that takes Document input parameter and bool output parameter
+ * Document push and pull will be allowed if the predicate returns true.
+ * Document will be not be replicated, push or pull, otherwise.
  **/
 @FunctionalInterface
 public interface ReplicationFilter {

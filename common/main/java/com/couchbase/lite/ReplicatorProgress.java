@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 /**
  * Progress of a replicator. If `total` is zero, the progress is indeterminate; otherwise,
  * dividing the two will produce a fraction that can be used to draw a progress bar.
+ * The quotient is highly volatile and may be slightly inaccurate by the time it is returned.
  */
 public final class ReplicatorProgress {
     //---------------------------------------------
