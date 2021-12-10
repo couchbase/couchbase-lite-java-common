@@ -23,9 +23,6 @@ import androidx.annotation.VisibleForTesting;
 
 import java.util.Set;
 
-import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
-
 
 abstract class PeerBinding<T> {
     /**
@@ -37,14 +34,12 @@ abstract class PeerBinding<T> {
     @CallSuper
     public synchronized void bind(long key, @NonNull T obj) {
         final T currentBinding = get(key);
-        if (currentBinding != null) {
-             if (currentBinding != obj) { return; }
-            final IllegalStateException e
-                = new IllegalStateException("Attempt to rebind peer @x" + Long.toHexString(key));
-            Log.e(LogDomain.DATABASE, "Attempt to rebind key", e);
-            throw e;
+        if (currentBinding == obj) { return; }
+        if (currentBinding == null) {
+            set(key, obj);
+            return;
         }
-        set(key, obj);
+        throw new IllegalStateException("Attempt to rebind peer @x" + Long.toHexString(key));
     }
 
     /**
