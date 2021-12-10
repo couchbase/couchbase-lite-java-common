@@ -1,12 +1,17 @@
 package com.couchbase.lite.internal.core
 
 
+import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding
 import org.junit.Assert
 import org.junit.Test
+import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 
 class PeerBindingTest {
+    /**
+     * Tests for TaggedWeakPeerBinding
+     */
 
     // Binding valid key value pair should create a binding in map
     @Test
@@ -36,10 +41,7 @@ class PeerBindingTest {
     @Test(expected = IllegalStateException::class)
     fun testBindWithoutKey() {
         val binding = TaggedWeakPeerBinding<Any>()
-        val keyNotReserved: Long = 1
-        try {
-            binding.bind(keyNotReserved, object {})
-        }
+        try { binding.bind(4345, object {}) }
         finally { binding.clear() }
     }
 
@@ -62,10 +64,15 @@ class PeerBindingTest {
     @Test
     fun testGetNonExistingBinding() {
         val binding = TaggedWeakPeerBinding<Any>()
-        try {
-            val randomNum: Long = 2
-            Assert.assertEquals(null, binding.getBinding(randomNum))
-        }
+        try { Assert.assertEquals(null, binding.getBinding(234)) }
+        finally { binding.clear() }
+    }
+
+    // Getting an out of bound key for lookup should throw an exception right away
+    @Test(expected = IllegalArgumentException::class)
+    fun testGetOutOfBoundKey() {
+        val binding = TaggedWeakPeerBinding<Any>()
+        try { binding.getBinding(-1) }
         finally { binding.clear() }
     }
 
@@ -92,6 +99,39 @@ class PeerBindingTest {
             Assert.assertEquals(null, binding.getBinding(key1))
         }
         finally { binding.clear() }
+    }
+
+    /**
+     * Tests for NativeRefPeerBinding.
+     * Overall, NativeRefPeerBinding behaves the same way as TaggedWeakPeerBinding with a few distinctions
+     */
+
+    // NativeRefPeerBinding binds object to its native peer address directly, thus there should be no need to reserve a key
+    @Test
+    fun testNativeRefPeerBinding() {
+        val nativeBinding = NativeRefPeerBinding<Any>()
+        val bindObject = object {}
+        val key: Long = 12341
+        try {
+            nativeBinding.bind(key, bindObject)
+            Assert.assertEquals(1, nativeBinding.size())
+            Assert.assertEquals(bindObject, nativeBinding.getBinding(key))
+        }
+        finally { nativeBinding.clear() }
+    }
+
+    // Native address has no int bound
+    @Test
+    fun testGetNativeAddress() {
+        val nativeBinding = NativeRefPeerBinding<Any>()
+        val key: Long = -213415
+        val bindObject = object {}
+        try {
+            nativeBinding.bind(key, bindObject)
+            Assert.assertEquals(1, nativeBinding.size())
+            Assert.assertEquals(bindObject, nativeBinding.getBinding(key))
+        }
+        finally { nativeBinding.clear() }
     }
 }
 
