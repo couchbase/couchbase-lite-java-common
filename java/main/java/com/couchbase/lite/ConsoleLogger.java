@@ -48,8 +48,8 @@ public class ConsoleLogger extends AbstractConsoleLogger {
         final String tf = THREAD_FIELD_PAD + Thread.currentThread().getId();
         return TS_FORMAT.get().format(LocalDateTime.now())
             + tf.substring(tf.length() - THREAD_FIELD_LEN)
-            + " " + level + LOG_TAG + domain
-            + ": " + message;
+            + " " + level + LOG_TAG + domain + ": "
+            + message;
     }
 
     ConsoleLogger(@NonNull C4Log c4Log) { super(c4Log); }

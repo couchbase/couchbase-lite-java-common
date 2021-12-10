@@ -29,9 +29,9 @@ import com.couchbase.lite.LogLevel;
  * Platform console logging utility for tests
  */
 public final class Report {
-    private Report() {}
+    private Report() { }
 
-    private static final String DOMAIN = "TEST: ";
+    private static final String DOMAIN = "TEST";
 
     public static void log(@NonNull String message) {
         Report.log(LogLevel.INFO, message, (Throwable) null);
