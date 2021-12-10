@@ -314,7 +314,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     public final void coreRequestedClose(int code, String message) {
         Log.d(LOG_DOMAIN, "%s.coreRequestedClose(%d)", this, code);
         synchronized (getLock()) {
-            if (!state.setState(State.CLOSE_REQUESTED)) { return; }
+            if (!state.setState(State.CLOSING)) { return; }
             closeWebSocket(code, message);
         }
     }

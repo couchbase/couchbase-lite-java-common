@@ -86,7 +86,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Move the cursor forward one row from its current row position.
-     * <p>Caution: {@link this.next()} method and {@link this.iterator()}method share same data structure.
+     * <p>Caution: {@link ResultSet#next} method and {@link ResultSet#iterator}method share same data structure.
      * They cannot be used together.</p>
      * <p>Caution: When a ResultSet is obtained from a QueryChangeListener and the QueryChangeListener has
      * already been removed from Query, the ResultSet will have been freed and this method will return null.</p>

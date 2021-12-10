@@ -26,7 +26,6 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Socket;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
-import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketToCore;
