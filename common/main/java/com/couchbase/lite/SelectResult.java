@@ -25,7 +25,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * SelectResult represents a single return value of the query statement.
+ * SelectResult represents the result of a query.
  */
 public class SelectResult {
 
@@ -36,7 +36,7 @@ public class SelectResult {
         private From(@NonNull Expression expression) { super(expression); }
 
         /**
-         * Specifies the data source alias name for the SelectResult object.
+         * Specifies the data source alias for the SelectResult object.
          *
          * @param alias The data source alias name.
          * @return The SelectResult object with the data source alias name specified.
@@ -50,9 +50,8 @@ public class SelectResult {
     }
 
     /**
-     * SelectResult.As is a SelectResult with an alias. The alias name can be used as the key
-     * for accessing the result value from the query Result
-     * object.
+     * SelectResult.As is a SelectResult with an alias.
+     * The alias can be used as the key for accessing the result value from the query Result.
      */
     public static final class As extends SelectResult {
         @Nullable
@@ -61,7 +60,7 @@ public class SelectResult {
         private As(@NonNull Expression expression) { super(expression); }
 
         /**
-         * Specifies the alias name to the SelectResult object.
+         * Specifies the alias for the SelectResult object.
          *
          * @param alias The alias name.
          * @return The SelectResult object with the alias name specified.
@@ -87,10 +86,10 @@ public class SelectResult {
     }
 
     /**
-     * Creates a SelectResult object with the given property name.
+     * Creates a SelectResult with the given property name.
      *
      * @param property The property name.
-     * @return The SelectResult.As object that you can give the alias name to the returned value.
+     * @return a SelectResult.From that can be used to alias the property.
      */
     @NonNull
     public static SelectResult.As property(@NonNull String property) {
@@ -102,7 +101,7 @@ public class SelectResult {
      * Creates a SelectResult object with the given expression.
      *
      * @param expression The expression.
-     * @return The SelectResult.As object that you can give the alias name to the returned value.
+     * @return a SelectResult.From that can be used to alias the property.
      */
     @NonNull
     public static SelectResult.As expression(@NonNull Expression expression) {
@@ -111,10 +110,10 @@ public class SelectResult {
     }
 
     /**
-     * Creates a SelectResult object that returns all properties data. The query returned result
-     * will be grouped into a single CBLMutableDictionary object under the key of the data source name.
+     * Creates a SelectResult that contains values for all properties matching the query.
+     * The result is a single CBLMutableDictionary whose key is the name of the data source.
      *
-     * @return The SelectResult.From object that you can specify the data source alias name.
+     * @return a SelectResult.From that can be used to alias the property.
      */
     @NonNull
     public static SelectResult.From all() { return new SelectResult.From(PropertyExpression.allFrom(null)); }

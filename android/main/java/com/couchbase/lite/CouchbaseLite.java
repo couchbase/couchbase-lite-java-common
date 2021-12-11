@@ -71,8 +71,9 @@ public final class CouchbaseLite {
 
     /**
      * Initialize CouchbaseLite library.
-     * This method allows specifying a root directory for CBL files.
-     * Use this version with great caution.
+     * This method allows specifying a default root directory for database files,
+     * and the scratch directory used for SQLite temporary files.
+     * Use it with great caution.
      *
      * @param ctxt       Application context
      * @param debug      to enable debugging

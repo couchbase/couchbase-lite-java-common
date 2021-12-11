@@ -23,7 +23,7 @@ import com.couchbase.lite.internal.core.C4Log;
 
 
 /**
- * A class that sends log messages to Android's system log, available via 'logcat'.
+ * A class that sends log messages to Android's system log, available via 'adb logcat'.
  */
 public final class ConsoleLogger extends AbstractConsoleLogger {
     ConsoleLogger(@NonNull C4Log c4Log) { super(c4Log); }

@@ -86,10 +86,10 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Move the cursor forward one row from its current row position.
-     * <p>Caution: {@link ResultSet#next} method and {@link ResultSet#iterator}method share same data structure.
-     * They cannot be used together.</p>
-     * <p>Caution: When a ResultSet is obtained from a QueryChangeListener and the QueryChangeListener has
-     * already been removed from Query, the ResultSet will have been freed and this method will return null.</p>
+     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#iterator} and {@link ResultSet#iterator}
+     * method share same data structure. They cannot be used together.</p>
+     * <p>Caution: When a ResultSet is obtained from a QueryChangeListener and the QueryChangeListener is
+     * removed from Query, the ResultSet will be freed and this method will return null.</p>
      *
      * @return the Result after moving the cursor forward. Returns {@code null} value
      * if there are no more rows, or ResultSet is freed already.
@@ -123,7 +123,8 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Return a List of all Results.
-     * Don't use next() and allResults() together.  Once allResults() has been called next() will return null.
+     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#iterator} and {@link ResultSet#iterator}
+     * method share same data structure. They cannot be used together.</p>
      *
      * @return List of Results
      */
@@ -141,8 +142,8 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Return Iterator of Results.
-     * Once called iterator(), next() method return null. Don't call next() and iterator()
-     * together.
+     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#iterator} and {@link ResultSet#iterator}
+     * method share same data structure. They cannot be used together.</p>
      *
      * @return an iterator over the elements in this list in proper sequence
      */

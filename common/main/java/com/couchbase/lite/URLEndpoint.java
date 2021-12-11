@@ -44,8 +44,11 @@ public final class URLEndpoint implements Endpoint {
     //---------------------------------------------
 
     /**
-     * Constructor with the url. The supported URL schemes
-     * are ws and wss for transferring data over a secure channel.
+     * Constructor with the url. The supported URL schemes are
+     * <ul>
+     *     <li>wss -- data transfer over a secure channel</li>
+     *     <li>ws  -- data transfer over an insecure channel</li>
+     * </ul>
      *
      * @param url The url.
      */

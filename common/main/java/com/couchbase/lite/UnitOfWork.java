@@ -15,6 +15,11 @@
 //
 package com.couchbase.lite;
 
+
+/**
+ * A task to be performed within a single database transaction.
+ *
+ * @param <E> The type of the exception, that the task may throw.
+ */
 @FunctionalInterface
 public interface UnitOfWork<E extends Exception> { void run() throws E; }
-

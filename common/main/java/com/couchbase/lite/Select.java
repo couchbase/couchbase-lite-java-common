@@ -26,8 +26,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * Select represents the SELECT clause of the query for specifying the returning properties in each
- * query result row.
+ * Select represents the SELECT clause of the query for specifying
+ * the properties in each query result row.
  */
 public final class Select extends BuilderQuery implements FromRouter {
     //---------------------------------------------
@@ -52,7 +52,7 @@ public final class Select extends BuilderQuery implements FromRouter {
     //---------------------------------------------
 
     /**
-     * Create and chain a FROM component for specifying the data source of the query.
+     * Create and chain a FROM component for specifying the query's data source.
      *
      * @param dataSource the data source.
      * @return the From component.

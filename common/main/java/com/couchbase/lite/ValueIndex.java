@@ -23,7 +23,7 @@ import java.util.List;
 
 
 /**
- * Value (standard query) index
+ * A Standard query index.
  */
 public class ValueIndex extends Index {
     @NonNull

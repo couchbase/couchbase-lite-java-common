@@ -21,6 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 
 
+/**
+ * Configuration for a standard database index.
+ */
 public class ValueIndexConfiguration extends IndexConfiguration {
     public ValueIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 

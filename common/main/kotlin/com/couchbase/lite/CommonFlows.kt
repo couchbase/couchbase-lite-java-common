@@ -36,7 +36,7 @@ fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow<Datab
 /**
  * A Flow of document changes.
  *
- * @param executor Optional executor on which to run the change listener: default is the main executor
+ * @param executor Optional executor on which to run the change listener: default is the main thread
  *
  * @see com.couchbase.lite.Database.addDocumentChangeListener
  */
@@ -50,7 +50,7 @@ fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) 
 /**
  * A Flow of replicator state changes.
  *
- * @param executor Optional executor on which to run the change listener: default is the main executor
+ * @param executor Optional executor on which to run the change listener: default is the main thread
  *
  * @see com.couchbase.lite.Replicator.addChangeListener
  */
@@ -63,7 +63,7 @@ fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow 
 /**
  * A Flow of document replications.
  *
- * @param executor Optional executor on which to run the change listener: default is the main executor
+ * @param executor Optional executor on which to run the change listener: default is the main thread
  *
  * @see com.couchbase.lite.Replicator.addDocumentReplicationListener
  */
@@ -77,7 +77,7 @@ fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlo
 /**
  * A Flow of query changes.
  *
- * @param executor Optional executor on which to run the change listener: default is the main executor
+ * @param executor Optional executor on which to run the change listener: default is the main thread
  *
  * @see com.couchbase.lite.Query.addChangeListener
  */

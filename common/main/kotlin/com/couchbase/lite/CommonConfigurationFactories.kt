@@ -18,8 +18,10 @@ package com.couchbase.lite
 
 /**
  * Configuration factory for new FullTextIndexConfigurations
+ *
  * Usage:
- *     val fullTextIndexConfig = FullTextIndexConfigurationFactory.create(...)
+ *
+ *      val fullTextIndexConfig = FullTextIndexConfigurationFactory.create(...)
  */
 val FullTextIndexConfigurationFactory: FullTextIndexConfiguration? = null
 
@@ -40,8 +42,10 @@ fun FullTextIndexConfiguration?.create(
 
 /**
  * Configuration factory for new ValueIndexConfigurations
+ *
  * Usage:
- *    val valIndexConfig = ValueIndexConfigurationFactory.create(...)
+ *
+ *     val valIndexConfig = ValueIndexConfigurationFactory.create(...)
  */
 val ValueIndexConfigurationFactory: ValueIndexConfiguration? = null
 
@@ -62,8 +66,10 @@ fun ValueIndexConfiguration?.create(
 
 /**
  * Configuration factory for new LogFileConfigurations
+ *
  * Usage:
- *     val logFileConfig = LogFileConfigurationFactory.create(...)
+ *
+ *      val logFileConfig = LogFileConfigurationFactory.create(...)
  */
 val LogFileConfigurationFactory: LogFileConfiguration? = null
 
