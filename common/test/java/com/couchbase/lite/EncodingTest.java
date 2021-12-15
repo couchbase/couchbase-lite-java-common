@@ -24,6 +24,7 @@ import org.junit.Test;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.utils.Report;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -57,19 +58,19 @@ public class EncodingTest extends BaseTest {
         testRoundTrip("Goodbye cruel \uD83D world", ""); // cheshire cat: half missing.
         testRoundTrip("Goodbye cruel \uD83D\uC03A world", ""); // a bad cat
 
-        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-            // Weird: windows is parsing in this case, third byte is illegal without the preceding 4byte char
-            testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world"); // a cat and a half
-        }
-        else {
-            testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world", ""); // a cat and a half
-        }
+//        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+//            // Weird: windows is parsing in this case, third byte is illegal without the preceding 4byte char
+//            testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world"); // a cat and a half
+//        }
+//        else {
+        testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world", ""); // a cat and a half
+//        }
     }
 
     // These tests are built on the following fleece encoding.  Start at the end.
-    // 0000: 44                                [4: this is a string; 4 bytes long]
-    // 0001:     f0 9f 98 BA 00: "😺"          [1-5: cat; 0: pad to align on even byte]
-    // 0006: 80 03            : &"😺" (@0000)  [80: this is a pointer; 03 3 2-byte units ago]
+    // 0000: 44                                [byte 0: 44: high order 4: this is a string; low order 4: 4 bytes long]
+    // 0001:     f0 9f 98 BA 00: "😺"          [bytes 1-4, cat; byte 5, 0: pad to align on even byte]
+    // 0006: 80 03             : &"😺" (@0000) [byte 0, 80: this is a pointer; byte 1, 03: 3 2-byte units ago]
     @Test
     public void testUTF8Slices() {
         // https://github.com/couchbase/couchbase-lite-android/issues/1742
@@ -146,6 +147,7 @@ public class EncodingTest extends BaseTest {
                 assertNotNull(flValue);
 
                 Object obj = FLValue.toObject(flValue);
+                Report.log("ROUND TRIP SLICE: '" + obj + "'; FROM: '" + item + "'; EXPECTING: '" + expected + "'");
                 assertEquals(expected, obj);
             }
         }
@@ -154,6 +156,7 @@ public class EncodingTest extends BaseTest {
     private void testSlice(byte[] utf8Slice, String expected) {
         FLValue flValue = FLValue.fromData(utf8Slice);
         Object obj = FLValue.toObject(flValue);
+        Report.log("DECODE SLICE: '" + obj + "'; EXPECTED: '" + expected + "'");
         assertEquals(expected, obj);
     }
 }
