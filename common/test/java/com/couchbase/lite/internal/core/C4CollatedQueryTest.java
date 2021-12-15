@@ -41,7 +41,7 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQueryCollated() throws LiteCoreException {
         String json = "{WHAT: [ ['.Name'] ], "
-            + "WHERE: ['COLLATE', {'unicode': true, 'case': false, 'diacritic': false}, ['=', ['.Artist'], 'Benoît  Pioulard']], "
+            + "WHERE: ['COLLATE', {'unicode': true, 'case': false, 'diacritic': false}, ['=', ['.Artist'], 'Benoît Pioulard']], "
             + "ORDER_BY: [ ['COLLATE', {'unicode': true, 'case': false, 'diacritic': false}, ['.Name']] ]}";
         Report.log("COLLATED QUERY: " + json);
         compileSelect(json5(json));

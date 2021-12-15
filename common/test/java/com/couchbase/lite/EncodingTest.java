@@ -53,18 +53,22 @@ public class EncodingTest extends BaseTest {
         testRoundTrip("Goodbye cruel world"); // one byte utf-8 chars
         testRoundTrip("Goodbye cruel £ world"); // a two byte utf-8 chars
         testRoundTrip("Goodbye cruel ᘺ world"); // a three byte utf-8 char
-
         testRoundTrip("Hello \uD83D\uDE3A World"); // a four byte utf-8 char: 😺
         testRoundTrip("Goodbye cruel \uD83D world", ""); // cheshire cat: half missing.
         testRoundTrip("Goodbye cruel \uD83D\uC03A world", ""); // a bad cat
+    }
 
-//        if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-//            // Weird: windows is parsing in this case, third byte is illegal without the preceding 4byte char
-//            testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world"); // a cat and a half
-//        }
-//        else {
+    @Test
+    public void testFLEncodeBadUTF8() throws Exception {
+        skipTestWhen("WINDOWS");
         testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world", ""); // a cat and a half
-//        }
+    }
+
+    // Oddly windows seems to parse this differently...
+    @Test
+    public void testFLEncodeUTF8Win() throws Exception {
+        skipTestWhen("NOT WINDOWS");
+        testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world"); // a cat and a half
     }
 
     // These tests are built on the following fleece encoding.  Start at the end.

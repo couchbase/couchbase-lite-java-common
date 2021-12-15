@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite;
 
+import androidx.annotation.NonNull;
+
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -1323,14 +1325,11 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(100, numRows);
     }
 
+    // With no locale, characters with diacritics should be
+    // treated as the original letters A, E, I, O, U,
     @Test
     public void testUnicodeCollationWithLocaleNone() throws CouchbaseLiteException {
-        String[] letters = {"B", "A", "Z", "Å"};
-        for (String letter: letters) {
-            MutableDocument doc = new MutableDocument();
-            doc.setValue("string", letter);
-            saveDocInBaseTestDb(doc);
-        }
+        createAlphaDocs();
 
         Collation noLocale = Collation.unicode()
             .setLocale(null)
@@ -1346,14 +1345,11 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(expected.length, numRows);
     }
 
+    // In the Spanish alphabet, the six characters with diacritics Á, É, Í, Ó, Ú, Ü
+    // are treated as the original letters A, E, I, O, U,
     @Test
     public void testUnicodeCollationWithLocaleSpanish() throws CouchbaseLiteException {
-        String[] letters = {"B", "A", "Z", "Å"};
-        for (String letter: letters) {
-            MutableDocument doc = new MutableDocument();
-            doc.setValue("string", letter);
-            saveDocInBaseTestDb(doc);
-        }
+        createAlphaDocs();
 
         Collation localeEspanol = Collation.unicode()
             .setLocale("es")
@@ -1369,116 +1365,126 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(expected.length, numRows);
     }
 
-    @FlakyTest(log = {"Android: 21/11/04", "Android: 21/11/07"})
+    // In the Swedish alphabet, there are three extra vowels
+    // placed at its end (..., X, Y, Z, Å, Ä, Ö),
+    // Early versions of Android do not support the Swedish Locale
     @Test
     public void testUnicodeCollationWithLocaleSwedish() throws CouchbaseLiteException {
-        // ??? May need to skip on some platforms:
-        skipTestWhen("UNICODE");
+        skipTestWhen("SWEDISH UNSUPPORTED");
 
-        String[] letters = {"B", "A", "Z", "Å"};
-        for (String letter: letters) {
-            MutableDocument doc = new MutableDocument();
-            doc.setValue("string", letter);
-            saveDocInBaseTestDb(doc);
-        }
-
-        Collation localeSvenska = Collation.unicode()
-            .setLocale("se")
-            .setIgnoreCase(false)
-            .setIgnoreAccents(false);
+        createAlphaDocs();
 
         Query query = QueryBuilder.select(SelectResult.property("string"))
             .from(DataSource.database(baseTestDb))
-            .orderBy(Ordering.expression(Expression.property("string").collate(localeSvenska)));
+            .orderBy(Ordering.expression(Expression.property("string")
+                .collate(Collation.unicode()
+                    .setLocale("se")
+                    .setIgnoreCase(false)
+                    .setIgnoreAccents(false))));
 
-        final String[] expected = {"A", "B", "Z", "Å"};
+        String[] expected = {"A", "B", "Z", "Å"};
         int numRows = verifyQuery(query, (n, result) -> assertEquals(expected[n - 1], result.getString(0)));
         assertEquals(expected.length, numRows);
     }
 
     @Test
     public void testCompareWithUnicodeCollation() throws CouchbaseLiteException {
+        class CollationTest {
+            private final String val;
+            private final String test;
+            private final boolean mode;
+            private final Collation collation;
+
+            public CollationTest(String val, String test, boolean mode, Collation collation) {
+                this.val = val;
+                this.test = test;
+                this.mode = mode;
+                this.collation = collation;
+            }
+
+            @Override
+            @NonNull
+            public String toString() { return "test '" + val + "' " + ((mode) ? "=" : "<") + " '" + test + "'"; }
+        }
+
         Collation bothSensitive = Collation.unicode().setLocale(null).setIgnoreCase(false).setIgnoreAccents(false);
         Collation accentSensitive = Collation.unicode().setLocale(null).setIgnoreCase(true).setIgnoreAccents(false);
         Collation caseSensitive = Collation.unicode().setLocale(null).setIgnoreCase(false).setIgnoreAccents(true);
         Collation noSensitive = Collation.unicode().setLocale(null).setIgnoreCase(true).setIgnoreAccents(true);
 
-        List<List<Object>> testData = new ArrayList<>(
-            Arrays.asList(
-                // Edge cases: empty and 1-char strings:
-                Arrays.asList("", "", true, bothSensitive),
-                Arrays.asList("", "a", false, bothSensitive),
-                Arrays.asList("a", "a", true, bothSensitive),
+        List<CollationTest> testData = Arrays.asList(
+            // Edge cases: empty and 1-char strings:
+            new CollationTest("", "", true, bothSensitive),
+            new CollationTest("", "a", false, bothSensitive),
+            new CollationTest("a", "a", true, bothSensitive),
 
-                // Case sensitive: lowercase come first by unicode rules:
-                Arrays.asList("a", "A", false, bothSensitive),
-                Arrays.asList("abc", "abc", true, bothSensitive),
-                Arrays.asList("Aaa", "abc", false, bothSensitive),
-                Arrays.asList("abc", "abC", false, bothSensitive),
-                Arrays.asList("AB", "abc", false, bothSensitive),
+            // Case sensitive: lowercase come first by unicode rules:
+            new CollationTest("a", "A", false, bothSensitive),
+            new CollationTest("abc", "abc", true, bothSensitive),
+            new CollationTest("Aaa", "abc", false, bothSensitive),
+            new CollationTest("abc", "abC", false, bothSensitive),
+            new CollationTest("AB", "abc", false, bothSensitive),
 
-                // Case insensitive:
-                Arrays.asList("ABCDEF", "ZYXWVU", false, accentSensitive),
-                Arrays.asList("ABCDEF", "Z", false, accentSensitive),
+            // Case insensitive:
+            new CollationTest("ABCDEF", "ZYXWVU", false, accentSensitive),
+            new CollationTest("ABCDEF", "Z", false, accentSensitive),
 
-                Arrays.asList("a", "A", true, accentSensitive),
-                Arrays.asList("abc", "ABC", true, accentSensitive),
-                Arrays.asList("ABA", "abc", false, accentSensitive),
+            new CollationTest("a", "A", true, accentSensitive),
+            new CollationTest("abc", "ABC", true, accentSensitive),
+            new CollationTest("ABA", "abc", false, accentSensitive),
 
-                Arrays.asList("commonprefix1", "commonprefix2", false, accentSensitive),
-                Arrays.asList("commonPrefix1", "commonprefix2", false, accentSensitive),
+            new CollationTest("commonprefix1", "commonprefix2", false, accentSensitive),
+            new CollationTest("commonPrefix1", "commonprefix2", false, accentSensitive),
 
-                Arrays.asList("abcdef", "abcdefghijklm", false, accentSensitive),
-                Arrays.asList("abcdeF", "abcdefghijklm", false, accentSensitive),
+            new CollationTest("abcdef", "abcdefghijklm", false, accentSensitive),
+            new CollationTest("abcdeF", "abcdefghijklm", false, accentSensitive),
 
-                // Now bring in non-ASCII characters:
-                Arrays.asList("a", "á", false, accentSensitive),
-                Arrays.asList("", "á", false, accentSensitive),
-                Arrays.asList("á", "á", true, accentSensitive),
-                Arrays.asList("•a", "•A", true, accentSensitive),
+            // Now bring in non-ASCII characters:
+            new CollationTest("a", "á", false, accentSensitive),
+            new CollationTest("", "á", false, accentSensitive),
+            new CollationTest("á", "á", true, accentSensitive),
+            new CollationTest("•a", "•A", true, accentSensitive),
 
-                Arrays.asList("test a", "test á", false, accentSensitive),
-                Arrays.asList("test á", "test b", false, accentSensitive),
-                Arrays.asList("test á", "test Á", true, accentSensitive),
-                Arrays.asList("test á1", "test Á2", false, accentSensitive),
+            new CollationTest("test a", "test á", false, accentSensitive),
+            new CollationTest("test á", "test b", false, accentSensitive),
+            new CollationTest("test á", "test Á", true, accentSensitive),
+            new CollationTest("test á1", "test Á2", false, accentSensitive),
 
-                // Case sensitive, diacritic sensitive:
-                Arrays.asList("ABCDEF", "ZYXWVU", false, bothSensitive),
-                Arrays.asList("ABCDEF", "Z", false, bothSensitive),
-                Arrays.asList("a", "A", false, bothSensitive),
-                Arrays.asList("abc", "ABC", false, bothSensitive),
-                Arrays.asList("•a", "•A", false, bothSensitive),
-                Arrays.asList("test a", "test á", false, bothSensitive),
-                Arrays.asList("Ähnlichkeit", "apple", false, bothSensitive), // Because 'h'-vs-'p' beats 'Ä'-vs-'a'
-                Arrays.asList("ax", "Äz", false, bothSensitive),
-                Arrays.asList("test a", "test Á", false, bothSensitive),
-                Arrays.asList("test Á", "test e", false, bothSensitive),
-                Arrays.asList("test á", "test Á", false, bothSensitive),
-                Arrays.asList("test á", "test b", false, bothSensitive),
-                Arrays.asList("test u", "test Ü", false, bothSensitive),
+            // Case sensitive, diacritic sensitive:
+            new CollationTest("ABCDEF", "ZYXWVU", false, bothSensitive),
+            new CollationTest("ABCDEF", "Z", false, bothSensitive),
+            new CollationTest("a", "A", false, bothSensitive),
+            new CollationTest("abc", "ABC", false, bothSensitive),
+            new CollationTest("•a", "•A", false, bothSensitive),
+            new CollationTest("test a", "test á", false, bothSensitive),
+            new CollationTest("Ähnlichkeit", "apple", false, bothSensitive), // Because 'h'-vs-'p' beats 'Ä'-vs-'a'
+            new CollationTest("ax", "Äz", false, bothSensitive),
+            new CollationTest("test a", "test Á", false, bothSensitive),
+            new CollationTest("test Á", "test e", false, bothSensitive),
+            new CollationTest("test á", "test Á", false, bothSensitive),
+            new CollationTest("test á", "test b", false, bothSensitive),
+            new CollationTest("test u", "test Ü", false, bothSensitive),
 
-                // Case sensitive, diacritic insensitive
-                Arrays.asList("abc", "ABC", false, caseSensitive),
-                Arrays.asList("test á", "test a", true, caseSensitive),
-                Arrays.asList("test a", "test á", true, caseSensitive),
-                Arrays.asList("test á", "test A", false, caseSensitive),
-                Arrays.asList("test á", "test b", false, caseSensitive),
-                Arrays.asList("test á", "test Á", false, caseSensitive),
+            // Case sensitive, diacritic insensitive
+            new CollationTest("abc", "ABC", false, caseSensitive),
+            new CollationTest("test á", "test a", true, caseSensitive),
+            new CollationTest("test a", "test á", true, caseSensitive),
+            new CollationTest("test á", "test A", false, caseSensitive),
+            new CollationTest("test á", "test b", false, caseSensitive),
+            new CollationTest("test á", "test Á", false, caseSensitive),
 
-                // Case and diacritic insensitive
-                Arrays.asList("test á", "test Á", true, noSensitive)
-            )
+            // Case and diacritic insensitive
+            new CollationTest("test á", "test Á", true, noSensitive)
         );
 
-        for (List<Object> data: testData) {
+        for (CollationTest data: testData) {
             MutableDocument mDoc = new MutableDocument();
-            mDoc.setValue("value", data.get(0));
+            mDoc.setValue("value", data.val);
             Document doc = saveDocInBaseTestDb(mDoc);
 
-            Expression VALUE = Expression.property("value");
-            Expression comparison = (Boolean) data.get(2) ?
-                VALUE.collate((Collation) data.get(3)).equalTo(Expression.value(data.get(1))) :
-                VALUE.collate((Collation) data.get(3)).lessThan(Expression.value(data.get(1)));
+            Expression test = Expression.value(data.test);
+            Expression comparison = Expression.property("value").collate(data.collation);
+            comparison = data.mode ? comparison.equalTo(test) : comparison.lessThan(test);
 
             Query query = QueryBuilder.select().from(DataSource.database(baseTestDb)).where(comparison);
 
@@ -3148,6 +3154,15 @@ public class QueryTest extends BaseQueryTest {
                 });
             assertEquals(0, docIdList.size());
             assertEquals(testCase.docIds.size(), numRows);
+        }
+    }
+
+    private void createAlphaDocs() throws CouchbaseLiteException {
+        String[] letters = {"B", "Z", "Å", "A"};
+        for (String letter: letters) {
+            MutableDocument doc = new MutableDocument();
+            doc.setValue("string", letter);
+            saveDocInBaseTestDb(doc);
         }
     }
 

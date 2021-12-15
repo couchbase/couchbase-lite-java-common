@@ -19,6 +19,9 @@ import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -43,16 +46,34 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
 
+    private static final Map<String, Exclusion> PLATFORM_DEPENDENT_TESTS;
+    static {
+        final Map<String, Exclusion> m = new HashMap<>();
+        m.put(
+            "NOT WINDOWS",
+            new Exclusion(
+                "Supported only on Windows",
+                () -> !System.getProperty("os.name").toLowerCase().contains("windows")));
+        m.put(
+            "WINDOWS",
+            new Exclusion(
+                "Not supported on Windows",
+                () -> System.getProperty("os.name").toLowerCase().contains("windows")));
+        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
+    }
+
     private static LogFileConfiguration logConfig;
     static { CouchbaseLite.init(true); }
+
+
     // set up the file logger...
     @Override
     public final void setupPlatform() {
         if (logConfig == null) {
             final String logDirPath;
             try {
-                logDirPath = FileUtils.verifyDir(new File(new File("").getCanonicalFile(), LOG_DIR))
-                    .getCanonicalPath();
+                logDirPath
+                    = FileUtils.verifyDir(new File(new File("").getCanonicalFile(), LOG_DIR)).getCanonicalPath();
             }
             catch (IOException e) { throw new IllegalStateException("Could not find log directory", e); }
 
@@ -81,7 +102,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public final void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
 
     @Override
-    public final Exclusion getExclusions(@NonNull String tag) { return null; }
+    public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
 
     @Override
     public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {

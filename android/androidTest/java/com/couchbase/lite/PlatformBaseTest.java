@@ -23,8 +23,10 @@ import androidx.test.core.app.ApplicationProvider;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -49,6 +51,13 @@ public abstract class PlatformBaseTest implements PlatformTest {
     static {
         final Map<String, Exclusion> m = new HashMap<>();
         m.put("android<21", new Exclusion("Not supported on Android API < 21", () -> Build.VERSION.SDK_INT < 21));
+        m.put("WINDOWS", new Exclusion("Not supported on Windows", () -> false));
+        m.put("NOT WINDOWS", new Exclusion("Supported only on Windows", () -> true));
+        m.put(
+            "SWEDISH UNSUPPORTED",
+            new Exclusion(
+                "Swedish locale not supported",
+                () -> !Arrays.asList(Locale.getISOCountries()).contains("SE")));
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
@@ -61,6 +70,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         }
     }
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
+
     @Override
     public final void setupPlatform() {
         final ConsoleLogger console = Database.log.getConsole();
