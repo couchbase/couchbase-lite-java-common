@@ -1370,6 +1370,8 @@ public class QueryTest extends BaseQueryTest {
     // Early versions of Android do not support the Swedish Locale
     @Test
     public void testUnicodeCollationWithLocaleSwedish() throws CouchbaseLiteException {
+        Report.log("SUPPORTED LOCALES: " + Arrays.toString(Locale.getISOCountries()));
+
         skipTestWhen("SWEDISH UNSUPPORTED");
 
         createAlphaDocs();
