@@ -53,11 +53,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         m.put("android<21", new Exclusion("Not supported on Android API < 21", () -> Build.VERSION.SDK_INT < 21));
         m.put("WINDOWS", new Exclusion("Not supported on Windows", () -> false));
         m.put("NOT WINDOWS", new Exclusion("Supported only on Windows", () -> true));
-        m.put(
-            "SWEDISH UNSUPPORTED",
-            new Exclusion(
-                "Swedish locale not supported",
-                () -> !Arrays.asList(Locale.getISOCountries()).contains("SE")));
+        m.put("SWEDISH UNSUPPORTED", new Exclusion("Swedish locale not supported by Android LiteCore", () -> true));
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
