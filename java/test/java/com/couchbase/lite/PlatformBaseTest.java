@@ -19,8 +19,10 @@ import androidx.annotation.NonNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -59,6 +61,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
             new Exclusion(
                 "Not supported on Windows",
                 () -> System.getProperty("os.name").toLowerCase().contains("windows")));
+        m.put(
+            "SWEDISH UNSUPPORTED",
+            new Exclusion(
+                "Swedish locale not supported",
+                () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
