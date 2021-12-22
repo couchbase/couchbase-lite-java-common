@@ -623,7 +623,6 @@ public final class Blob implements FLEncodable {
         installInDatabase((Database) dbArg);
     }
 
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     @Nullable
     private byte[] getContentFromDatabase() {
         Preconditions.assertNotNull(database, "database");

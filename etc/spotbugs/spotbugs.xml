@@ -15,7 +15,17 @@
         <Class name="~.*\.Manifest\$.*"/>
     </Match>
 
+    <!-- These two are real problems, but our API embeds them -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP" />
+    </Match>
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2" />
+    </Match>
+
+    <!-- I don't believe this... -->
     <Match>
         <Bug pattern="SF_SWITCH_NO_DEFAULT" />
     </Match>
+
 </FindBugsFilter>

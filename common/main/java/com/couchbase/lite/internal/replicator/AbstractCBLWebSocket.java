@@ -44,6 +44,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.TrustManager;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import okhttp3.Authenticator;
 import okhttp3.Challenge;
 import okhttp3.Cookie;
@@ -640,6 +641,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     }
 
     // http://www.ietf.org/rfc/rfc2617.txt
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @Nullable
     private Request authenticate(@NonNull Response resp, @NonNull String user, @NonNull String pwd) {
         Log.d(LOG_DOMAIN, "%s.authenticate: %s", this, resp);

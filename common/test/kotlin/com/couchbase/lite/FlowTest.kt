@@ -251,7 +251,7 @@ class FlowTest : BaseReplicatorTest() {
             }
 
             launch(Dispatchers.Default) {
-                // Hate this: wait until the collector starts
+                // Hate this: wait 20ms for the collector to start
                 delay(20L)
 
                 baseTestDb.save(mDoc)
