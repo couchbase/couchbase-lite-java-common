@@ -33,9 +33,11 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("ConstantConditions")
 public class LiveQueryTest extends BaseDbTest {
 
-    // maximum delay in core is 500ms, happening when there's a rapid change within 250ms of previous query run
+    // Maximum delay for db change debounce from core is 500ms, happening when there's a rapid change within 250ms of
+    // previous query run. Query run time and other delay factors cannot be accurately approximated. Thus, an acceptable
+    // approximate for the time platform should wait if we expect to NOT get a callback is 500 * 2.
     // more details on core delay can be found in c4Observer.h
-    private static final long MAX_CORE_DELAY_MS = 500;
+    private static final long APPROXIMATE_CORE_DELAY_MS = 500 * 2;
 
     private static final String KEY = "number";
 
@@ -93,9 +95,7 @@ public class LiveQueryTest extends BaseDbTest {
                 assertTrue(latch2[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
                 // creation of the second listener should not trigger first listener callback
-                // waiting for max core delay * 2 assures we don't miss any core callback, at the same time doesn't drag
-                // the test out for too long
-                assertFalse(latch1[1].await(2 * MAX_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
+                assertFalse(latch1[1].await(APPROXIMATE_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
 
                 createDocNumbered(11);
 
@@ -234,9 +234,7 @@ public class LiveQueryTest extends BaseDbTest {
 
             // This doc does not meet the condition of the query, thus query should not get notified
             createDocNumbered(0);
-            // waiting for max core delay * 2 assures we don't miss any core callback, at the same time doesn't drag
-            // the test out for too long
-            assertFalse(latch[2].await(2 * MAX_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
+            assertFalse(latch[2].await(APPROXIMATE_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
         }
         finally { query.removeChangeListener(token); }
     }
@@ -273,7 +271,7 @@ public class LiveQueryTest extends BaseDbTest {
             // Wait for 2 full update intervals and a little bit more.
             latchHolder.set(new CountDownLatch(1));
             createDocNumbered(0);
-            assertFalse(latchHolder.get().await((2 * MAX_CORE_DELAY_MS), TimeUnit.MILLISECONDS));
+            assertFalse(latchHolder.get().await((APPROXIMATE_CORE_DELAY_MS), TimeUnit.MILLISECONDS));
 
             // adding this document should cause a call to the listener in not much more than an update interval
             latchHolder.set(new CountDownLatch(1));
