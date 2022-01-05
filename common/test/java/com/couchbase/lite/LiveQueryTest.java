@@ -110,7 +110,6 @@ public class LiveQueryTest extends BaseDbTest {
 
 
     // When a result set is closed, we should still be able to introduce a change
-    @Ignore("CBL-2689: Test hanging with core")
     @Test
     public void testCloseResultsInLiveQueryListener() throws CouchbaseLiteException, InterruptedException {
         final Query query = QueryBuilder
@@ -142,7 +141,6 @@ public class LiveQueryTest extends BaseDbTest {
      * When two observers try to iterate through the result set,
      * values in that rs should not be skipped because of the other observer
      */
-    @Ignore("CBL-2689: Test hanging with core issue")
     @Test
     public void testIterateRSWith2Listeners() throws InterruptedException, CouchbaseLiteException {
         final Query query = QueryBuilder
