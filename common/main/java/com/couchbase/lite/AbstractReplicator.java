@@ -109,7 +109,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     private final Set<DocumentReplicationListenerToken> docEndedListeners = new HashSet<>();
 
     @NonNull
-    private final Set<Fn.Consumer<CouchbaseLiteException>> pendingResolutions = new HashSet<>();
+    private final Set<Fn.NullableConsumer<CouchbaseLiteException>> pendingResolutions = new HashSet<>();
     @NonNull
     private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
     @NonNull
@@ -545,7 +545,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     // callback from queueConflictResolution
     void onConflictResolved(
-        Fn.Consumer<CouchbaseLiteException> task,
+        Fn.NullableConsumer<CouchbaseLiteException> task,
         String docId,
         int flags,
         CouchbaseLiteException err) {
@@ -645,7 +645,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
         final Database db = getDatabase();
         final ConflictResolver resolver = config.getConflictResolver();
-        final Fn.Consumer<CouchbaseLiteException> task = new Fn.Consumer<CouchbaseLiteException>() {
+        final Fn.NullableConsumer<CouchbaseLiteException> task = new Fn.NullableConsumer<CouchbaseLiteException>() {
             public void accept(CouchbaseLiteException err) { onConflictResolved(this, docId, flags, err); }
         };
 

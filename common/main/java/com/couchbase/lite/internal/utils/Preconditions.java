@@ -94,7 +94,7 @@ public final class Preconditions {
     }
 
     @Nullable
-    public static <T> T assertThat(@Nullable T obj, @NonNull String msg, @NonNull Fn.Predicate<T> predicate) {
+    public static <T> T assertThat(@Nullable T obj, @NonNull String msg, @NonNull Fn.NullablePredicate<T> predicate) {
         if (!predicate.test(obj)) { throw new IllegalArgumentException(msg); }
         return obj;
     }

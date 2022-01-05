@@ -17,7 +17,9 @@ package com.couchbase.lite.internal.core.impl;
 
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4Socket;
+import com.couchbase.lite.internal.support.Log;
 
 
 /**
@@ -54,11 +56,15 @@ public class NativeC4Socket implements C4Socket.NativeImpl {
 
     @Override
     public void nClosed(long peer, int errorDomain, int errorCode, String message) {
+        Log.d(LogDomain.NETWORK, "DEBUG!!! CLOSE C4SOCKET PEER: @0x%x", peer);
         closed(peer, errorDomain, errorCode, message);
     }
 
     @Override
-    public void nRelease(long peer) { release(peer); }
+    public void nRelease(long peer) {
+        Log.d(LogDomain.NETWORK, "DEBUG!!! RELEASE C4SOCKET PEER: @0x%x", peer);
+        release(peer);
+    }
 
     //-------------------------------------------------------------------------
     // native methods

@@ -959,7 +959,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     void resolveReplicationConflict(
         @Nullable ConflictResolver resolver,
         @NonNull String docId,
-        @NonNull Fn.Consumer<CouchbaseLiteException> callback) {
+        @NonNull Fn.NullableConsumer<CouchbaseLiteException> callback) {
         int n = 0;
         CouchbaseLiteException err = null;
         try {
