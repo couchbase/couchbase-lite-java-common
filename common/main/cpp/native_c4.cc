@@ -16,9 +16,7 @@
 // limitations under the License.
 //
 #if defined(__ANDROID__)
-
 #include <android/log.h>
-
 #elif defined(__linux__) || defined(__APPLE__)
 #include <sys/time.h>
 #endif

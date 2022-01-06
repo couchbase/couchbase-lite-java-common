@@ -33,7 +33,10 @@ public class NativeC4Socket implements C4Socket.NativeImpl {
     }
 
     @Override
-    public void nRetain(long peer) { retain(peer); }
+    public void nRetain(long peer) {
+        Log.d(LogDomain.NETWORK, "DEBUG!!! RETAIN C4SOCKET PEER: @0x%x", new Exception(), peer);
+        retain(peer);
+    }
 
     @Override
     public void nOpened(long peer) { opened(peer); }
