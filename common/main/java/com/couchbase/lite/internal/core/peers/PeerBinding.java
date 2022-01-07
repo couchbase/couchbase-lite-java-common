@@ -23,9 +23,6 @@ import androidx.annotation.VisibleForTesting;
 
 import java.util.Set;
 
-import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
-
 
 abstract class PeerBinding<T> {
     /**
@@ -63,10 +60,7 @@ abstract class PeerBinding<T> {
      * @param key the key to be unbound.
      */
     @CallSuper
-    public synchronized void unbind(long key) {
-        Log.d(LogDomain.NETWORK, "DEBUG!!! UNBIND: @0x%x", key);
-        remove(key);
-    }
+    public synchronized void unbind(long key) { remove(key); }
 
     @VisibleForTesting
     public abstract int size();

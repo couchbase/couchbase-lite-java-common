@@ -217,6 +217,9 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // Constructors
     //-------------------------------------------------------------------------
 
+    // Unlike most ref-counted objects, the C C4Socket is not
+    // retained when it is created.  We have to retain it immediately
+    // whether we created it or were handed it.
     private C4Socket(long peer, @NonNull NativeImpl impl) {
         super(peer);
         this.impl = impl;

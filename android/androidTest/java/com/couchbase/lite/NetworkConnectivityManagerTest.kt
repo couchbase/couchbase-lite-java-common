@@ -37,7 +37,7 @@ class NetworkConnectivityManagerTest : BaseTest() {
 
     class TestManager : NetworkConnectivityManager {
         val observers = mutableSetOf<NetworkConnectivityManager.Observer>()
-        var conCalls = 0
+        private var conCalls = 0
         override fun registerObserver(observer: NetworkConnectivityManager.Observer) {
             observers.add(observer)
         }
@@ -53,24 +53,24 @@ class NetworkConnectivityManagerTest : BaseTest() {
     }
 
     @Test
-    fun testStartStopPre21() = testStartStop(AndroidConnectivityManager(19) { r -> r?.run() })
+    fun testStartStopPre21() = testStartStop(AndroidConnectivityManager(19) { r -> r.run() })
 
     @Test
     fun testStartStop21to23() {
         Assume.assumeTrue("StartStop 21-23 can't be tested on SDK " + Build.VERSION.SDK_INT, Build.VERSION.SDK_INT > 20)
-        testStartStop(AndroidConnectivityManager(22) { r -> r?.run() })
+        testStartStop(AndroidConnectivityManager(22) { r -> r.run() })
     }
 
     @Test
     fun testStartStop24to28() {
         Assume.assumeTrue("StartStop 24-28 can't be tested on SDK " + Build.VERSION.SDK_INT, Build.VERSION.SDK_INT > 23)
-        testStartStop(AndroidConnectivityManager(26) { r -> r?.run() })
+        testStartStop(AndroidConnectivityManager(26) { r -> r.run() })
     }
 
     @Test
     fun testStartStopPost29() {
         Assume.assumeTrue("StartStop >29 can't be tested on SDK " + Build.VERSION.SDK_INT, Build.VERSION.SDK_INT > 29)
-        testStartStop(AndroidConnectivityManager(29) { r -> r?.run() })
+        testStartStop(AndroidConnectivityManager(29) { r -> r.run() })
     }
 
     @Test
@@ -110,7 +110,7 @@ class NetworkConnectivityManagerTest : BaseTest() {
         Assert.assertEquals(1, replFactory.calls)
     }
 
-    fun testStartStop(mgr: AndroidConnectivityManager) {
+    private fun testStartStop(mgr: AndroidConnectivityManager) {
         val observer = TestObserver()
 
         mgr.registerObserver(observer)

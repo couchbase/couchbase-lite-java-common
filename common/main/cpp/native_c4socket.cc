@@ -78,8 +78,7 @@ bool litecore::jni::initC4Socket(JNIEnv *env) {
 // ----------------------------------------------------------------------------
 // C4SocketFactory implementation
 // ----------------------------------------------------------------------------
-static void
-socket_open(C4Socket *socket, const C4Address *addr, C4Slice options, void *socketFactoryContext) {
+static void socket_open(C4Socket *socket, const C4Address *addr, C4Slice options, void *socketFactoryContext) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
