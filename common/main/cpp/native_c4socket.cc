@@ -370,9 +370,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed(
     auto socket = (C4Socket *) jSocket;
     jstringSlice sliceMessage(env, message);
     C4Error error = c4error_make((C4ErrorDomain) domain, code, sliceMessage);
-    logError("DEBUG!!! >c4socket_closed: 0x0%x", socket);
     c4socket_closed(socket, error);
-    logError("DEBUG!!! <c4socket_closed: 0x0%x", socket);
 }
 
 /*

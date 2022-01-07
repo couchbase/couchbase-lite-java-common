@@ -239,7 +239,9 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // should not have any affect, because the peer should already have been released.
     // Called from the finalizer: be sure that there is a live ref to impl.
     @Override
-    public void close() { release(null); }
+    public void close() {
+        release(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.UNEXPECTED_ERROR, "Closed by client");
+    }
 
     //-------------------------------------------------------------------------
     // Implementation of ToCore (Remote to Core)
@@ -301,7 +303,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             Log.d(LOG_DOMAIN, "v%s.closeCore(%d, %d): '%s'", this, domain, code, msg);
         }
 
-        release(null, domain, code, msg);
+        release(domain, code, msg);
     }
 
     //-------------------------------------------------------------------------
@@ -311,7 +313,19 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { release(LOG_DOMAIN); }
+        try {
+            releasePeer(
+                LOG_DOMAIN,
+                peer -> {
+                    BOUND_SOCKETS.unbind(peer);
+                    impl.nClosed(
+                        peer,
+                        C4Constants.ErrorDomain.LITE_CORE,
+                        C4Constants.LiteCoreError.UNEXPECTED_ERROR,
+                        "Closed by client");
+                    impl.nRelease(peer);
+                });
+        }
         finally { super.finalize(); }
     }
 
@@ -328,23 +342,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     private void continueWith(Fn.Consumer<SocketFromCore> task) { queue.execute(() -> task.accept(fromCore)); }
 
-    private void release(@Nullable LogDomain logDomain) {
-        release(
-            logDomain,
-            C4Constants.ErrorDomain.LITE_CORE,
-            C4Constants.LiteCoreError.UNEXPECTED_ERROR,
-            "Closed by client");
-    }
-
-    private void release(@Nullable LogDomain logDomain, int domain, int code, @Nullable String msg) {
+    private void release(int domain, int code, @Nullable String msg) {
         releasePeer(
-            logDomain,
+            null,
             peer -> {
-                final long ph = peer;
-                BOUND_SOCKETS.unbind(ph);
-                impl.nClosed(ph, domain, code, msg);
-                impl.nRelease(ph);
-                Log.d(LogDomain.NETWORK, "DEBUG!!! FREED C4SOCKET PEER: @0x%x (@0x%x)", ph, peer);
+                BOUND_SOCKETS.unbind(peer);
+                impl.nClosed(peer, domain, code, msg);
+                impl.nRelease(peer);
             });
     }
 }
