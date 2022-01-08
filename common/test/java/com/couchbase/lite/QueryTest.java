@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONException;
 import org.junit.Test;
 
-import com.couchbase.lite.internal.utils.FlakyTest;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.SlowTest;
 
@@ -2869,7 +2868,6 @@ public class QueryTest extends BaseQueryTest {
         assertThrows(IllegalArgumentException.class, () -> Function.upper(null));
     }
 
-    @FlakyTest(log = {"Linux: 21/06/11", "Linux: 21/06/18", "Linux: 21/07/30", "Linux: 21/08/24"})
     @Test
     public void testStringToMillis() throws CouchbaseLiteException {
         createDateDocs();
@@ -2933,7 +2931,6 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
-    @FlakyTest(log = {"Linux: 21/06/11", "Linux: 21/06/18", "Linux: 21/07/06", "Linux: 21/07/30"})
     @Test
     public void testStringToUTC() throws CouchbaseLiteException, ParseException {
         createDateDocs();
@@ -2992,7 +2989,6 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
-    @FlakyTest(log = {"Linux: 21/07/06"})
     @Test
     public void testMillisConversion() throws CouchbaseLiteException {
         final Number[] millis = new Number[] {

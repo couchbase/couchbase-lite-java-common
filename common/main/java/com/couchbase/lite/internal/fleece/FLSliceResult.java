@@ -99,7 +99,7 @@ public abstract class FLSliceResult extends C4NativePeer {
     // !!!  Exposes the peer handle
     public long getHandle() { return getPeer(); }
 
-    @NonNull
+    @Nullable
     public byte[] getBuf() { return getBuf(getPeer()); }
 
     public long getSize() { return getSize(getPeer()); }
@@ -112,7 +112,7 @@ public abstract class FLSliceResult extends C4NativePeer {
 
     private static native long init();
 
-    @NonNull
+    @Nullable
     private static native byte[] getBuf(long slice);
 
     private static native long getSize(long slice);
