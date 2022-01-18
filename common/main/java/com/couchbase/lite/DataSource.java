@@ -74,7 +74,7 @@ public class DataSource {
     //---------------------------------------------
 
     @NonNull
-    private final Object source;
+    private final Database source;
     @Nullable
     protected String alias;
 
@@ -82,7 +82,7 @@ public class DataSource {
     // Constructors
     //---------------------------------------------
 
-    private DataSource(@NonNull Object source) { this.source = source; }
+    private DataSource(@NonNull Database source) { this.source = source; }
 
     //---------------------------------------------
     // Package level access
@@ -94,7 +94,7 @@ public class DataSource {
     @NonNull
     Map<String, Object> asJSON() {
         final Map<String, Object> json = new HashMap<>();
-        if (alias != null) { json.put("AS", alias); }
+        json.put("AS", (alias != null) ? alias : source.getName());
         return json;
     }
 }

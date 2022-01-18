@@ -738,7 +738,7 @@ public class DatabaseTest extends BaseDbTest {
         final String dbDirPath = getScratchDirectoryPath(getUniqueName("static-delete-dir"));
 
         // create db in a custom directory
-        final Database db = createDb("static-del-db", new DatabaseConfiguration().setDirectory(dbDirPath));
+        final Database db = createDb("static_del_db", new DatabaseConfiguration().setDirectory(dbDirPath));
         try {
             final String dbName = db.getName();
 
@@ -920,7 +920,7 @@ public class DatabaseTest extends BaseDbTest {
 
         final DatabaseConfiguration config = baseTestDb.getConfig();
 
-        String dbName = getUniqueName("test-copy-db");
+        String dbName = getUniqueName("test_copy_db");
 
         // Copy:
         Database.copy(new File(baseTestDb.getPath()), dbName, config);
@@ -1090,14 +1090,13 @@ public class DatabaseTest extends BaseDbTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1416
     @Test
     public void testDeleteAndOpenDB() throws CouchbaseLiteException {
-        //final String dbName = getUniqueName();
         final DatabaseConfiguration config = new DatabaseConfiguration();
 
         Database database1 = null;
         Database database2 = null;
         try {
             // open a database
-            database1 = createDb("del-open-db", config);
+            database1 = createDb("del_open_db", config);
             final String dbName = database1.getName();
 
             // delete it
@@ -1270,7 +1269,7 @@ public class DatabaseTest extends BaseDbTest {
 
     @Test
     public void testReOpenExistingDb() throws CouchbaseLiteException {
-        final String dbName = getUniqueName("test-db");
+        final String dbName = getUniqueName("test_db");
 
         // verify that the db directory is no longer in the misguided 2.8.0 subdirectory
         final String dbDirectory = CouchbaseLiteInternal.getDefaultDbDir().getAbsolutePath();
@@ -1300,7 +1299,7 @@ public class DatabaseTest extends BaseDbTest {
 
     @Test
     public void testReOpenExisting2Dot8DotOhDb() throws CouchbaseLiteException, IOException {
-        final String dbName = getUniqueName("test-db");
+        final String dbName = getUniqueName("test_db");
         final String twoDot8DotOhDirPath
             = new File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").getCanonicalPath();
 
@@ -1334,7 +1333,7 @@ public class DatabaseTest extends BaseDbTest {
 
     @Test
     public void testReOpenExisting2Dot8DotOhDbCopyFails() throws CouchbaseLiteException, IOException {
-        final String dbName = getUniqueName("test-db");
+        final String dbName = getUniqueName("test_db");
         final String twoDot8DotOhDirPath
             = new File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").getCanonicalPath();
 
@@ -1377,7 +1376,7 @@ public class DatabaseTest extends BaseDbTest {
 
     @Test
     public void testReOpenExistingLegacyAnd2Dot8DotOhDb() throws CouchbaseLiteException, IOException {
-        final String dbName = getUniqueName("test-db");
+        final String dbName = getUniqueName("test_db");
         final String twoDot8DotOhDirPath
             = new File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").getCanonicalPath();
 
@@ -1417,7 +1416,7 @@ public class DatabaseTest extends BaseDbTest {
         }
     }
 
-    private Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb("test-db")); }
+    private Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb("test_db")); }
 
     private Database duplicateBaseTestDb() throws CouchbaseLiteException {
         return verifyDb(duplicateDb(baseTestDb));

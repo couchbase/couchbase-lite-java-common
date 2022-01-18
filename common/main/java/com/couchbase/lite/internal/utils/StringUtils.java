@@ -30,7 +30,7 @@ public final class StringUtils {
     private static final char[] CHARS = ALPHANUMERIC.toCharArray();
 
     @NonNull
-    public static String getUniqueName(@NonNull String prefix, int len) { return prefix + '-' + randomString(len); }
+    public static String getUniqueName(@NonNull String prefix, int len) { return prefix + '_' + randomString(len); }
 
     @NonNull
     public static String randomString(int len) {

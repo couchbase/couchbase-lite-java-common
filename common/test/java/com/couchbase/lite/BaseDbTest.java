@@ -57,7 +57,7 @@ public abstract class BaseDbTest extends BaseTest {
 
     @Before
     public final void setUpBaseDbTest() throws CouchbaseLiteException {
-        baseTestDb = createDb("base-db");
+        baseTestDb = createDb("base_db");
         Report.log(LogLevel.INFO, "Created base test DB: " + baseTestDb);
         assertNotNull(baseTestDb);
         synchronized (baseTestDb.getDbLock()) { assertTrue(baseTestDb.isOpen()); }

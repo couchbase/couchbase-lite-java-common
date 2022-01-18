@@ -260,7 +260,7 @@ public class C4BlobStoreTest extends C4BaseTest {
         List<Integer> kSizes = Arrays.asList(0, 1, 15, 16, 17, 4095, 4096, 4097,
             4096 + 15, 4096 + 16, 4096 + 17, 8191, 8192, 8193);
         for (int size: kSizes) {
-            Report.log(LogLevel.INFO, "Testing " + size + "-byte blob");
+            Report.log(LogLevel.INFO, "Testing blob: %s bytes", size);
             // Write the blob:
             try (C4BlobWriteStream stream = blobStore.openWriteStream()) {
                 assertNotNull(stream);

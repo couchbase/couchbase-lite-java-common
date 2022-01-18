@@ -50,15 +50,13 @@ public class SimpleDatabaseTest extends BaseTest {
         final DatabaseConfiguration config
             = new DatabaseConfiguration().setDirectory(getScratchDirectoryPath(getUniqueName("get-set-config-dir")));
 
-        final Database db = createDb("get-set-config-db", config);
+        final Database db = createDb("get_set_config_db", config);
         try {
             final DatabaseConfiguration newConfig = db.getConfig();
             assertNotNull(newConfig);
             assertEquals(config.getDirectory(), newConfig.getDirectory());
         }
-        finally {
-            deleteDb(db);
-        }
+        finally { deleteDb(db); }
     }
 
     @Test
@@ -66,7 +64,7 @@ public class SimpleDatabaseTest extends BaseTest {
         final DatabaseConfiguration config
             = new DatabaseConfiguration().setDirectory(getScratchDirectoryPath(getUniqueName("copy-config-dir")));
 
-        final Database db = createDb("config-copied-db", config);
+        final Database db = createDb("config_copied_db", config);
         try {
             assertNotNull(db.getConfig());
             assertNotSame(db.getConfig(), config);
@@ -81,21 +79,19 @@ public class SimpleDatabaseTest extends BaseTest {
         final DatabaseConfiguration config = new DatabaseConfiguration();
         assertEquals(config.getDirectory(), expectedPath);
 
-        Database db = createDb("default-dir-db", config);
+        Database db = createDb("default_dir_db", config);
         try { assertTrue(new File(db.getPath()).getCanonicalPath().contains(expectedPath)); }
         finally { db.delete(); }
     }
 
     @Test
     public void testCreateWithDefaultConfiguration() throws CouchbaseLiteException {
-        Database db = createDb("default-config-db");
+        Database db = createDb("default_config_db");
         try {
             assertNotNull(db);
             assertEquals(0, db.getCount());
         }
-        finally {
-            deleteDb(db);
-        }
+        finally { deleteDb(db); }
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -112,7 +108,7 @@ public class SimpleDatabaseTest extends BaseTest {
     public void testCreateWithCustomDirectory() throws CouchbaseLiteException, IOException {
         final File dir = new File(getScratchDirectoryPath(getUniqueName("create-custom-dir")));
 
-        final String dbName = getUniqueName("create-custom-db");
+        final String dbName = getUniqueName("create_custom_db");
 
         // create db with custom directory
         DatabaseConfiguration config = new DatabaseConfiguration().setDirectory(dir.getCanonicalPath());

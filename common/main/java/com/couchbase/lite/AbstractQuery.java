@@ -20,11 +20,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -41,20 +38,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 abstract class AbstractQuery implements Query {
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
-    private static final Set<String> RESERVED_NAMES;
-    static {
-        final Set<String> s = new HashSet<>();
-        s.add(PropertyExpression.PROPS_ALL);
-        s.add("*");
-        s.add("_doc");
-        s.add("_default");
-        RESERVED_NAMES = Collections.unmodifiableSet(s);
-    }
+
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
-
 
     private final Map<ChangeListenerToken<QueryChange>, C4QueryObserver> listeners = new HashMap<>();
 
@@ -244,9 +232,7 @@ abstract class AbstractQuery implements Query {
         final int nCols = c4Q.getColumnCount();
         final Map<String, Integer> colNames = new HashMap<>();
         for (int i = 0; i < nCols; i++) {
-            String colName = c4Q.getColumnNameForIndex(i);
-
-            if (RESERVED_NAMES.contains(colName)) { colName = db.getName(); }
+            final String colName = c4Q.getColumnNameForIndex(i);
             if (colName == null) { continue; }
 
             if (colNames.containsKey(colName)) {
