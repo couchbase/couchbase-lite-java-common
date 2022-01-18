@@ -101,7 +101,7 @@ public class DataSource {
     @NonNull
     Map<String, Object> asJSON() {
         final Map<String, Object> json = new HashMap<>();
-        if (alias != null) { json.put("AS", alias); }
+        json.put("AS", getColumnName());
         return json;
     }
 }
