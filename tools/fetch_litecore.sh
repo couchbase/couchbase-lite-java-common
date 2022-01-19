@@ -105,6 +105,7 @@ case "${OS}" in
       unzip "${LIB}.zip"
 
       LIBLITECORE_DIR=macos/x86_64
+      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>& 1
       mkdir -p "${LIBLITECORE_DIR}"
       mv -f lib/libLiteCore.dylib "${LIBLITECORE_DIR}"
 
@@ -116,6 +117,7 @@ case "${OS}" in
       unzip -j "${LIB}.zip" -d lib
 
       LIBLITECORE_DIR=windows/x86_64
+      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>& 1
       mkdir -p "${LIBLITECORE_DIR}"
       mv -f lib/LiteCore.* "${LIBLITECORE_DIR}"
 
@@ -126,10 +128,12 @@ case "${OS}" in
       tar xf "${LIB}.tar.gz"
 
       LIBLITECORE_DIR=linux/x86_64
+      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>& 1
       mkdir -p "${LIBLITECORE_DIR}"
       mv -f lib/libLiteCore.so "${LIBLITECORE_DIR}"
 
       SUPPORT_DIR=support/linux/x86_64
+      rm -rf "${SUPPORT_DIR}" > /dev/null 2>& 1
       mkdir -p "${SUPPORT_DIR}" 
 
       mkdir "${SUPPORT_DIR}/libc++" 
@@ -150,6 +154,6 @@ esac
 rm -rf lib
 
 echo "=== Fetch complete"
-find .
+find *
 popd > /dev/null
 

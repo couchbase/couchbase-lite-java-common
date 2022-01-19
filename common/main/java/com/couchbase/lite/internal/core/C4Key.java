@@ -17,8 +17,6 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 
-import java.nio.charset.StandardCharsets;
-
 import com.couchbase.lite.CBLError;
 import com.couchbase.lite.CouchbaseLiteException;
 
@@ -26,17 +24,9 @@ import com.couchbase.lite.CouchbaseLiteException;
 public final class C4Key {
     private C4Key() { }
 
-    private static final String DEFAULT_PBKDF2_KEY_SALT = "Salty McNaCl";
-    private static final int DEFAULT_PBKDF2_KEY_ROUNDS = 64000; // Same as what SQLCipher uses
-
-
     @NonNull
     public static byte[] getPbkdf2Key(@NonNull String password) throws CouchbaseLiteException {
-        final byte[] key = C4Key.pbkdf2(
-            password,
-            DEFAULT_PBKDF2_KEY_SALT.getBytes(StandardCharsets.UTF_8),
-            DEFAULT_PBKDF2_KEY_ROUNDS,
-            C4Constants.EncryptionKeySize.AES256);
+        final byte[] key = C4Key.pbkdf2(password);
         if (key != null) { return key; }
 
         throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
@@ -44,15 +34,15 @@ public final class C4Key {
 
     @NonNull
     public static byte[] getCoreKey(@NonNull String password) throws CouchbaseLiteException {
-        final byte[] key = C4Key.deriveKeyFromPassword(password, C4Constants.EncryptionAlgorithm.AES256);
+        final byte[] key = C4Key.deriveKeyFromPassword(password);
         if (key != null) { return key; }
 
         throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
     }
 
     @NonNull
-    private static native byte[] pbkdf2(@NonNull String password, @NonNull byte[] salt, int rounds, int keySize);
+    private static native byte[] pbkdf2(@NonNull String password);
 
     @NonNull
-    private static native byte[] deriveKeyFromPassword(@NonNull String password, int alg);
+    private static native byte[] deriveKeyFromPassword(@NonNull String password);
 }

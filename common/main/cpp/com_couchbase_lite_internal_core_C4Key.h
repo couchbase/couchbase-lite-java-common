@@ -12,18 +12,18 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_C4Key
  * Method:    pbkdf2
- * Signature: (Ljava/lang/String;[BII)[B
+ * Signature: (Ljava/lang/String;)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Key_pbkdf2
-  (JNIEnv *, jclass, jstring, jbyteArray, jint, jint);
+  (JNIEnv *, jclass, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Key
  * Method:    deriveKeyFromPassword
- * Signature: (Ljava/lang/String;I)[B
+ * Signature: (Ljava/lang/String;)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword
-  (JNIEnv *, jclass, jstring, jint);
+  (JNIEnv *, jclass, jstring);
 
 #ifdef __cplusplus
 }

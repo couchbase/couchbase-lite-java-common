@@ -1580,10 +1580,13 @@ abstract class AbstractDatabase extends BaseDatabase {
         throws CouchbaseLiteException {
         final C4Database c4Db;
         synchronized (getDbLock()) {
-            if ((!failIfClosed) && (!isOpen())) { return; }
+            final boolean open = isOpen();
+            Log.d(DOMAIN, "Shutdown (%b, %b)", failIfClosed, open);
+            if (!(failIfClosed || open)) { return; }
 
             c4Db = getOpenC4DbLocked();
             setC4DatabaseLocked(null);
+            // mustBeOpen will now fail, which should prevent any new processes from being registered.
 
             freeC4DbObserver();
             docChangeNotifiers.clear();

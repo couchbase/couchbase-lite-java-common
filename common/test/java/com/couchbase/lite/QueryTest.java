@@ -165,10 +165,10 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testQueryDocumentIsDeleted() throws CouchbaseLiteException {
-        MutableDocument doc1a = new MutableDocument("doc1");
-        doc1a.setInt("answer", 42);
-        doc1a.setString("a", "string");
-        saveDocInBaseTestDb(doc1a);
+        MutableDocument doc = new MutableDocument("doc1");
+        doc.setInt("answer", 42);
+        doc.setString("a", "string");
+        saveDocInBaseTestDb(doc);
 
         baseTestDb.delete(baseTestDb.getDocument("doc1"));
 
@@ -177,8 +177,7 @@ public class QueryTest extends BaseQueryTest {
             .where(Meta.deleted.equalTo(Expression.booleanValue(true))
                 .and(Meta.id.equalTo(Expression.string("doc1"))));
 
-        int numRows = verifyQuery(query, false, (n, result) -> { });
-        assertEquals(1, numRows);
+        assertEquals(1, verifyQuery(query, false, (n, result) -> { }));
     }
 
     @Test

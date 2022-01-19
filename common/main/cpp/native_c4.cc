@@ -24,7 +24,6 @@
 #include "com_couchbase_lite_internal_core_C4.h"
 #include "com_couchbase_lite_internal_core_C4Log.h"
 #include "com_couchbase_lite_internal_core_C4Key.h"
-#include "mbedtls/pkcs5.h"
 #include "native_glue.hh"
 
 using namespace litecore;
@@ -333,79 +332,17 @@ Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env, jclass
  * Signature: (Ljava/lang/String;[BII)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(
-        JNIEnv *env,
-        jclass ignore,
-        jstring jpassword,
-        jbyteArray jsalt,
-        jint jiteration,
-        jint jkeyLen) {
+Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass ignore, jstring password) {
+    jstringSlice pwd(env, password);
 
-    // PBKDF2 (Password-Based Key Derivation Function 2)
-    // https://en.wikipedia.org/wiki/PBKDF2
-    // https://www.ietf.org/rfc/rfc2898.txt
-    //
-    // algorithm: PBKDF2
-    // hash: SHA1
-    // iteration: ? (64000)
-    // key length: ? (16)
-
-    if (jpassword == nullptr || jsalt == nullptr)
+    C4EncryptionKey key;
+    if (!c4key_setPasswordSHA1(&key, pwd, kC4EncryptionAES256))
         return nullptr;
 
-    // Password:
-    const char *password = env->GetStringUTFChars(jpassword, nullptr);
-    int passwordSize = (int) env->GetStringLength(jpassword);
-
-    // Salt:
-    int saltSize = env->GetArrayLength(jsalt);
-    auto salt = new unsigned char[saltSize];
-    env->GetByteArrayRegion(jsalt, 0, saltSize, reinterpret_cast<jbyte *>(salt));
-
-    // Rounds
-    const int iteration = (const int) jiteration;
-
-    // PKCS5 PBKDF2 HMAC SHA256
-    const int keyLen = (const int) jkeyLen;
-    auto key = new unsigned char[keyLen];
-
-    mbedtls_md_context_t ctx;
-    mbedtls_md_init(&ctx);
-
-    const mbedtls_md_info_t *info = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
-    if (info == nullptr) {
-        // error
-        mbedtls_md_free(&ctx);
-        env->ReleaseStringUTFChars(jpassword, password);
-        delete[] salt;
-        return nullptr;
-    }
-
-    int status;
-    if ((status = mbedtls_md_setup(&ctx, info, 1)) == 0)
-        status = mbedtls_pkcs5_pbkdf2_hmac(
-                &ctx,
-                (const unsigned char *) password,
-                (size_t) passwordSize,
-                salt,
-                (size_t) saltSize,
-                (unsigned) iteration,
-                (uint32_t) keyLen,
-                key);
-
-    mbedtls_md_free(&ctx);
-
-    // Release memory:
-    env->ReleaseStringUTFChars(jpassword, password);
-    delete[] salt;
-
-    // Return null if not success:
-    if (status != 0)
-        return nullptr;
-
-    // Return result:
+    int keyLen = sizeof(key.bytes);
     jbyteArray result = env->NewByteArray(keyLen);
-    env->SetByteArrayRegion(result, 0, keyLen, (jbyte *) key);
+    env->SetByteArrayRegion(result, 0, keyLen, (jbyte *) &key.bytes);
+
     return result;
 }
 
@@ -415,15 +352,11 @@ Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(
  * Signature: (Ljava/lang/String;I)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(
-        JNIEnv *env,
-        jclass ignore,
-        jstring password,
-        jint algorithm) {
+Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(JNIEnv *env, jclass ignore, jstring password) {
     jstringSlice pwd(env, password);
 
     C4EncryptionKey key;
-    if (!c4key_setPassword(&key, pwd, (C4EncryptionAlgorithm) algorithm))
+    if (!c4key_setPassword(&key, pwd, kC4EncryptionAES256))
         return nullptr;
 
     int keyLen = sizeof(key.bytes);
