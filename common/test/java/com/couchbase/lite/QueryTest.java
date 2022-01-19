@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONException;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Report;
@@ -161,6 +162,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(1, rows);
     }
 
+    @Ignore("CBL-2734")
     @Test
     public void testQueryDocumentIsDeleted() throws CouchbaseLiteException {
         MutableDocument doc1a = new MutableDocument("doc1");
@@ -650,6 +652,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(101, numRows);
     }
 
+    @Ignore("CBL-2734")
     @Test
     public void testCrossJoin() throws CouchbaseLiteException {
         loadNumberedDocs(10);
@@ -867,6 +870,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(1, numRows);
     }
 
+    @Ignore("CBL-2734")
     @Test
     public void testRevisionIdInDelete() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument();
