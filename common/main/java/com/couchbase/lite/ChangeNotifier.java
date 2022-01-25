@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -53,10 +54,16 @@ class ChangeNotifier<T> {
     }
 
     void postChange(T change) {
-        if (change == null) { throw new IllegalArgumentException("change is null"); }
-
+        Preconditions.assertNotNull(change, "change");
         synchronized (lock) {
-            for (ChangeListenerToken<T> token : listenerTokens) { token.postChange(change); }
+            for (ChangeListenerToken<T> token: listenerTokens) { token.postChange(change); }
+        }
+    }
+
+    void postChange(Fn.Provider<T> changeFactory) {
+        Preconditions.assertNotNull(changeFactory, "changeFactory");
+        synchronized (lock) {
+            for (ChangeListenerToken<T> token: listenerTokens) { token.postChange(changeFactory.get()); }
         }
     }
 }

@@ -208,7 +208,7 @@ abstract class AbstractQuery implements Query {
         final int nCols = c4Q.getColumnCount();
         final Map<String, Integer> colNames = new HashMap<>();
         for (int i = 0; i < nCols; i++) {
-            String colName = c4Q.getColumnNameForIndex(i);
+            final String colName = c4Q.getColumnNameForIndex(i);
 
             if (colName == null) { continue; }
 

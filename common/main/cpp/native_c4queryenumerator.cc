@@ -118,11 +118,24 @@ Java_com_couchbase_lite_internal_core_C4QueryEnumerator_close__J(JNIEnv *env, jc
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
- * Method:    free
+ * Method:    retain
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4QueryEnumerator_free(JNIEnv *env, jclass ignore, jlong handle) {
+Java_com_couchbase_lite_internal_core_C4QueryEnumerator_retain(JNIEnv *env, jclass ignore, jlong handle) {
+    auto e = (C4QueryEnumerator *) handle;
+    if (e == nullptr)
+        return;
+    c4queryenum_retain(e);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
+ * Method:    release
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4QueryEnumerator_release(JNIEnv *env, jclass ignore, jlong handle) {
     auto e = (C4QueryEnumerator *) handle;
     if (e == nullptr)
         return;

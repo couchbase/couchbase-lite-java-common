@@ -46,21 +46,21 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     //---------------------------------------------
 
     @NonNull
+    private final Object lock = new Object();
+
+    @NonNull
     private final AbstractQuery query;
     @NonNull
     private final Map<String, Integer> columnNames;
     @NonNull
     private final DbContext context;
 
-    @GuardedBy("getDbLock()")
+    @GuardedBy("lock")
     @Nullable
     private C4QueryEnumerator c4enum;
 
-    @GuardedBy("getDbLock()")
+    @GuardedBy("lock")
     private boolean isAllEnumerated;
-
-    @GuardedBy("getDbLock()")
-    private boolean uncloseable;
 
     //---------------------------------------------
     // constructors
@@ -74,6 +74,16 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         this.columnNames = cols;
         this.context = new DbContext(query.getDatabase());
         this.c4enum = c4enum;
+    }
+
+    private ResultSet(@NonNull ResultSet other) {
+        this.query = other.query;
+        this.columnNames = other.columnNames;
+        this.context = other.context;
+        synchronized (other.lock) {
+            this.c4enum = (other.c4enum == null) ? null : other.c4enum.copy(); // a new ref to the c4enum
+            this.isAllEnumerated = other.isAllEnumerated;
+        }
     }
 
     //---------------------------------------------
@@ -94,27 +104,27 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     public Result next() {
         Preconditions.assertNotNull(query, "query");
 
-        synchronized (getDbLock()) {
+        String msg;
+        LiteCoreException err = null;
+        synchronized (lock) {
             try {
                 if (c4enum == null) { return null; }
-                else if (isAllEnumerated) {
-                    Log.w(DOMAIN, "ResultSetAlreadyEnumerated");
-                    return null;
-                }
+                else if (isAllEnumerated) { msg = "ResultSetAlreadyEnumerated"; }
                 else if (!c4enum.next()) {
-                    Log.d(DOMAIN, "End of query enumeration");
                     isAllEnumerated = true;
-                    return null;
+                    msg = "End of query enumeration";
                 }
-                else {
-                    return new Result(this, c4enum, context);
-                }
+                else { return new Result(this, c4enum, context); }
             }
             catch (LiteCoreException e) {
-                Log.w(DOMAIN, "Error enumerating query", e);
-                return null;
+                msg = "Error enumerating query";
+                err = e;
             }
         }
+
+        // Log outside the the synchronized block
+        Log.w(DOMAIN, msg, err);
+        return null;
     }
 
     /**
@@ -150,14 +160,13 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     @Override
     public void close() {
-        synchronized (getDbLock()) {
-            if (!uncloseable) {
-                forceClose();
-                return;
-            }
+        final C4QueryEnumerator qEnum;
+        synchronized (lock) {
+            if (c4enum == null) { return; }
+            qEnum = c4enum;
+            c4enum = null;
         }
-        // Make a guess about why this is retained...
-        Log.i(LogDomain.QUERY, "Attempt to close a retained ResultSet.  Do not close the Results from a LiveQuery");
+        synchronized (getDbLock()) { qEnum.close(); }
     }
 
     //---------------------------------------------
@@ -177,18 +186,8 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     // Package level access
     //---------------------------------------------
 
-    // An ugly little hack for LiveQueries
-    void retain() {
-        synchronized (getDbLock()) { uncloseable = true; }
-    }
-
-    void forceClose() {
-        synchronized (getDbLock()) {
-            if (c4enum == null) { return; }
-            c4enum.close();
-            c4enum = null;
-        }
-    }
+    @NonNull
+    ResultSet copy() { return new ResultSet(this); }
 
     @NonNull
     AbstractQuery getQuery() { return query; }
@@ -206,18 +205,18 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @Nullable
     ResultSet refresh() throws CouchbaseLiteException {
         Preconditions.assertNotNull(query, "query");
-
+        final C4QueryEnumerator newEnum;
         synchronized (getDbLock()) {
-            if (c4enum == null) { return null; }
-            try {
-                final C4QueryEnumerator newEnum = c4enum.refresh();
-                return (newEnum == null) ? null : new ResultSet(query, newEnum, columnNames);
-            }
-            catch (LiteCoreException e) {
-                throw CouchbaseLiteException.convertException(e);
+            synchronized (lock) {
+                if (c4enum == null) { return null; }
+                try { newEnum = c4enum.refresh(); }
+                catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
             }
         }
+
+        return (newEnum == null) ? null : new ResultSet(query, newEnum, columnNames);
     }
+
 
     //---------------------------------------------
     // Private level access

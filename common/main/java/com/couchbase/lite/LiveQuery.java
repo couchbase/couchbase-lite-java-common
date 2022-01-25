@@ -31,10 +31,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * A Query subclass that automatically refreshes the result rows every time the database changes.
  * <p>
- * Be careful with the state machine here:
- * A query that has been STOPPED can be STARTED again!
- * In particular, a query that is stopping when it receives a request to restart
- * should suspend the restart request, finish stopping, and then restart.
+ * Users are cautioned against multiple observers on the same LiveQuery (or even Querys that are .equals)
+ * All observers for a single live query will be notified of an update with <b>exactly the same
+ * result set</b>.  That means that if one client calls <code>.next()</code>, other clients will skip
+ * a result.
  */
 final class LiveQuery implements DatabaseChangeListener {
     //---------------------------------------------
@@ -45,6 +45,10 @@ final class LiveQuery implements DatabaseChangeListener {
     @VisibleForTesting
     static final long LIVE_QUERY_UPDATE_INTERVAL_MS = 200; // 0.2sec (200ms)
 
+    // Be careful with the state machine:
+    // A query that has been STOPPED can be STARTED again!
+    // In particular, a query that is stopping when it receives a request to restart
+    // should suspend the restart request, finish stopping, and then restart.
     @VisibleForTesting
     enum State {STOPPED, STARTED, SCHEDULED}
 
@@ -192,38 +196,34 @@ final class LiveQuery implements DatabaseChangeListener {
                 prevResults = previousResults;
             }
 
-            final ResultSet newResults;
-            if (prevResults == null) { newResults = query.execute(); }
-            else { newResults = prevResults.refresh(); }
-            Log.i(DOMAIN, "LiveQuery refresh: %s > %s", prevResults, newResults);
+            // both of these methods seize the db lock
+            final ResultSet newResults = (prevResults == null) ? query.execute() : prevResults.refresh();
+            Log.i(DOMAIN, "LiveQuery refresh: %s -> %s", prevResults, newResults);
 
             if (newResults == null) { return; }
 
-            // ??? This could close a result set to which
-            // client code still has a reference.
-            if (prevResults != null) { prevResults.forceClose(); }
+            if (prevResults != null) { prevResults.close(); }
 
             boolean update = false;
             synchronized (lock) {
                 if (state.get() != State.STOPPED) {
-                    newResults.retain();
                     previousResults = newResults;
                     update = true;
                 }
             }
 
             // Listeners may be notified even after the LiveQuery has been stopped.
-            if (update) { changeNotifier.postChange(new QueryChange(query, newResults, null)); }
+            if (update) { changeNotifier.postChange(() -> new QueryChange(query, newResults.copy(), null)); }
         }
-        catch (CouchbaseLiteException err) {
-            changeNotifier.postChange(new QueryChange(query, null, err));
-        }
+        catch (CouchbaseLiteException err) { changeNotifier.postChange(new QueryChange(query, null, err)); }
     }
 
+    // !! Callers *MUST* seize both the database and the local lock,
+    // in that order, before calling this method.
     @GuardedBy("lock")
     private void closePrevResults() {
         if (previousResults == null) { return; }
-        previousResults.forceClose();
+        previousResults.close();
         previousResults = null;
     }
 }
