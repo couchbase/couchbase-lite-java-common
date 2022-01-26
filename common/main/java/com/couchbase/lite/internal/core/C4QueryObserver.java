@@ -113,14 +113,14 @@ public class C4QueryObserver extends C4NativePeer {
     void queryChanged() {
         C4QueryEnumerator results = null;
         LiteCoreException err = null;
-        try { results = getEnumerator(false); }
+        try { results = getEnumerator(); }
         catch (LiteCoreException e) { err = e; }
         if ((results != null) || (err != null)) { callback.onQueryChanged(results, err); }
     }
 
     @Nullable
-    private C4QueryEnumerator getEnumerator(boolean forget) throws LiteCoreException {
-        return withPeerOrNull(h -> c4QueryEnumeratorFactory.apply(impl.nGetEnumerator(h, forget)));
+    private C4QueryEnumerator getEnumerator() throws LiteCoreException {
+        return withPeerOrNull(h -> c4QueryEnumeratorFactory.apply(impl.nGetEnumerator(h, false)));
     }
 
     private void closePeer(LogDomain domain) { releasePeer(domain, impl::nFree); }

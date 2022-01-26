@@ -46,24 +46,21 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     //---------------------------------------------
 
     @NonNull
+    private final Object lock = new Object();
+
+    @NonNull
     private final AbstractQuery query;
     @NonNull
     private final Map<String, Integer> columnNames;
     @NonNull
     private final DbContext context;
 
-    @GuardedBy("getDbLock()")
+    @GuardedBy("lock")
     @Nullable
     private C4QueryEnumerator c4enum;
 
-    @GuardedBy("getDbLock()")
+    @GuardedBy("lock")
     private boolean isAllEnumerated;
-
-    // ??? Nasty hack for LiveQuery
-    @GuardedBy("getDbLock()")
-    private boolean retained;
-    @GuardedBy("getDbLock()")
-    private boolean closed;
 
     //---------------------------------------------
     // constructors
@@ -98,27 +95,27 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     public Result next() {
         Preconditions.assertNotNull(query, "query");
 
-        synchronized (getDbLock()) {
+        String msg;
+        LiteCoreException err = null;
+        synchronized (lock) {
             try {
                 if (c4enum == null) { return null; }
-                else if (isAllEnumerated) {
-                    Log.w(DOMAIN, "ResultSetAlreadyEnumerated");
-                    return null;
-                }
+                else if (isAllEnumerated) { msg = "ResultSetAlreadyEnumerated"; }
                 else if (!c4enum.next()) {
-                    Log.d(DOMAIN, "End of query enumeration");
                     isAllEnumerated = true;
-                    return null;
+                    msg = "End of query enumeration";
                 }
-                else {
-                    return new Result(this, c4enum, context);
-                }
+                else { return new Result(this, c4enum, context); }
             }
             catch (LiteCoreException e) {
-                Log.w(DOMAIN, "Error enumerating query", e);
-                return null;
+                msg = "Error enumerating query";
+                err = e;
             }
         }
+
+        // Log outside the the synchronized block
+        Log.w(DOMAIN, msg, err);
+        return null;
     }
 
     /**
@@ -153,16 +150,13 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     @Override
     public void close() {
-        synchronized (getDbLock()) {
-            closed = true;
-            if (!retained) {
-                forceClose();
-                return;
-            }
+        final C4QueryEnumerator qEnum;
+        synchronized (lock) {
+            if (c4enum == null) { return; }
+            qEnum = c4enum;
+            c4enum = null;
         }
-
-        // Make a guess about why this is retained...
-        Log.i(LogDomain.QUERY, "Attempt to close the ResultSet from a LiveQuery");
+        synchronized (getDbLock()) { qEnum.close(); }
     }
 
     //---------------------------------------------
@@ -181,26 +175,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
-    // An ugly little hack for LiveQueries
-    void retain() {
-        synchronized (getDbLock()) { retained = true; }
-    }
-
-    void release() {
-        synchronized (getDbLock()) {
-            retained = false;
-            if (closed) { forceClose(); }
-        }
-    }
-
-    void forceClose() {
-        synchronized (getDbLock()) {
-            if (c4enum == null) { return; }
-            c4enum.close();
-            c4enum = null;
-        }
-    }
 
     @NonNull
     AbstractQuery getQuery() { return query; }
