@@ -76,11 +76,13 @@ public class LiveQueryTest extends BaseDbTest {
                 }
             });
 
-        createDocNumbered(10);
-        assertTrue(latches[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+        try {
+            createDocNumbered(10);
+            assertTrue(latches[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
-        createDocNumbered(11);
-        try { assertTrue(latches[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+            createDocNumbered(11);
+            assertTrue(latches[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
         finally { query.removeChangeListener(token); }
     }
 
@@ -97,10 +99,10 @@ public class LiveQueryTest extends BaseDbTest {
 
         ListenerToken token1 = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
         ListenerToken token2 = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
-
-        createDocNumbered(11);
-
-        try { assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+        try {
+            createDocNumbered(11);
+            assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
         finally {
             query.removeChangeListener(token1);
             query.removeChangeListener(token2);
@@ -239,13 +241,14 @@ public class LiveQueryTest extends BaseDbTest {
             // Wait for 2 full update intervals and a little bit more.
             latchHolder.set(new CountDownLatch(1));
             createDocNumbered(0);
-            assertFalse(latchHolder.get()
-                .await((2 * LiveQuery.LIVE_QUERY_UPDATE_INTERVAL_MS) + slopMs, TimeUnit.MILLISECONDS));
+            assertFalse(
+                latchHolder.get().await((2 * LiveQuery.LIVE_QUERY_UPDATE_INTERVAL_MS) + slopMs, TimeUnit.MILLISECONDS));
 
             // adding this document should cause a call to the listener in not much more than an update interval
             latchHolder.set(new CountDownLatch(1));
             createDocNumbered(11);
-            assertTrue(latchHolder.get().await(LiveQuery.LIVE_QUERY_UPDATE_INTERVAL_MS + slopMs, TimeUnit.MILLISECONDS));
+            assertTrue(
+                latchHolder.get().await(LiveQuery.LIVE_QUERY_UPDATE_INTERVAL_MS + slopMs, TimeUnit.MILLISECONDS));
             assertEquals(2, resultsHolder.get().size());
         }
         finally {

@@ -49,10 +49,18 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4QueryEnumerator_c
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
- * Method:    free
+ * Method:    retain
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4QueryEnumerator_free
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4QueryEnumerator_retain
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4QueryEnumerator
+ * Method:    release
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4QueryEnumerator_release
   (JNIEnv *, jclass, jlong);
 
 /*

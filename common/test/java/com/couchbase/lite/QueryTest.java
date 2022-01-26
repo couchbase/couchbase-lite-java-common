@@ -3120,7 +3120,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testN1QLSelectStar() throws CouchbaseLiteException {
+    public void testN1QLSelectStarFromDefault() throws CouchbaseLiteException {
         loadNumberedDocs(100);
         final String dbName = baseTestDb.getName();
 
@@ -3129,7 +3129,56 @@ public class QueryTest extends BaseQueryTest {
             (n, result) -> {
                 assertEquals(1, result.count());
                 Dictionary a1 = result.getDictionary(0);
-                Dictionary a2 = result.getDictionary(dbName);
+                Dictionary a2 = result.getDictionary("_default");
+                assertEquals(n, a1.getInt("number1"));
+                assertEquals(100 - n, a1.getInt("number2"));
+                assertEquals(n, a2.getInt("number1"));
+                assertEquals(100 - n, a2.getInt("number2"));
+            });
+
+        assertEquals(100, numRows);
+    }
+
+    @Test
+    public void testN1QLSelectStarFromDatabase() throws CouchbaseLiteException {
+        // the default database name contains the character "-",
+        // which is not legal in a N1QL dataset name
+        Database db = new Database("testdb");
+        try {
+            for (int i = 1; i <= 100; i++) {
+                MutableDocument doc = new MutableDocument("doc" + i);
+                doc.setValue("number1", i);
+                doc.setValue("number2", 100 - i);
+                db.save(doc);
+            }
+
+            int numRows = verifyQuery(
+                db.createQuery("SELECT * FROM " + "testdb"),
+                (n, result) -> {
+                    assertEquals(1, result.count());
+                    Dictionary a1 = result.getDictionary(0);
+                    Dictionary a2 = result.getDictionary("testdb");
+                    assertEquals(n, a1.getInt("number1"));
+                    assertEquals(100 - n, a1.getInt("number2"));
+                    assertEquals(n, a2.getInt("number1"));
+                    assertEquals(100 - n, a2.getInt("number2"));
+                });
+
+            assertEquals(100, numRows);
+        }
+        finally { db.delete(); }
+    }
+
+    @Test
+    public void testN1QLSelectStarFromUnderscore() throws CouchbaseLiteException {
+        loadNumberedDocs(100);
+        final String dbName = baseTestDb.getName();
+        int numRows = verifyQuery(
+            baseTestDb.createQuery("SELECT * FROM _"),
+            (n, result) -> {
+                assertEquals(1, result.count());
+                Dictionary a1 = result.getDictionary(0);
+                Dictionary a2 = result.getDictionary("_");
                 assertEquals(n, a1.getInt("number1"));
                 assertEquals(100 - n, a1.getInt("number2"));
                 assertEquals(n, a2.getInt("number1"));

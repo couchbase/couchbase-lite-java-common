@@ -20,6 +20,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
@@ -69,6 +71,21 @@ public class C4QueryEnumerator extends C4NativePeer {
      */
     public long getMissingColumns() { return getMissingColumns(getPeer()); }
 
+    /**
+     * Returns a new Java instance referring to the same underlying C object.
+     *
+     * @return the Java-level copy
+     */
+    @SuppressWarnings("ConstantConditions")
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    @NonNull
+    public C4QueryEnumerator copy() {
+        return withPeerOrNull((p) -> {
+            retain(p);
+            return new C4QueryEnumerator(p);
+        });
+    }
+
     @CallSuper
     @Override
     public void close() { closePeer(null); }
@@ -106,7 +123,7 @@ public class C4QueryEnumerator extends C4NativePeer {
     // Private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4QueryEnumerator::free); }
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4QueryEnumerator::release); }
 
     //-------------------------------------------------------------------------
     // native methods
@@ -123,7 +140,9 @@ public class C4QueryEnumerator extends C4NativePeer {
     @SuppressWarnings("PMD.UnusedPrivateMethod")
     private static native void close(long peer);
 
-    private static native void free(long peer);
+    private static native void retain(long peer);
+
+    private static native void release(long peer);
 
     private static native long getColumns(long peer);
 
