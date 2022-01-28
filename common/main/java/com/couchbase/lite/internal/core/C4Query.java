@@ -38,7 +38,7 @@ public class C4Query extends C4NativePeer {
         @Nullable String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        Log.d(LogDomain.QUERY, "creating index: " + queryExpression);
+        Log.d(LogDomain.QUERY, "creating index: %s", queryExpression);
         createIndex(
             db.getPeer(),
             name,

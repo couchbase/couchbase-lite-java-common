@@ -31,7 +31,6 @@ import okhttp3.WebSocketListener;
 import okio.ByteString;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -84,7 +83,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Initialize this object: it needs a proxy to handle activity
     @Override
     public void init(@NonNull SocketFromRemote fromRemote) throws Exception {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.init: %s", this, fromRemote); }
+        Log.d(LOG_DOMAIN, "%s.init: %s", this, fromRemote);
 
         synchronized (this) {
             final SocketFromRemote oldFromRemote = this.fromRemote;
@@ -105,7 +104,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Request a remote connections
     @Override
     public void openRemote(@NonNull Request request) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.open: %s", this, request); }
+        Log.d(LOG_DOMAIN, "%s.open: %s", this, request);
         final OkHttpClient remoteSocketFactory = socketFactory;
         if (remoteSocketFactory == null) {
             throw new IllegalStateException("Attempt to open a connection with null socket factory");
@@ -117,7 +116,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public boolean sendToRemote(@NonNull byte[] data) {
         final int nBytes = (data == null) ? -1 : data.length;
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.send(%d)", this, nBytes); }
+        Log.d(LOG_DOMAIN, "%s.send(%d)", this, nBytes);
 
         if (nBytes <= 0) { return true; }
 
@@ -132,14 +131,14 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Close the remote connection
     @Override
     public boolean closeRemote(int code, @Nullable String message) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.close(%d): '%s'", this, code, message); }
+        Log.d(LOG_DOMAIN, "%s.close(%d): '%s'", this, code, message);
         return withWebSocket(socket -> socket.close(code, message));
     }
 
     // Cancel the remote connection with prejudice
     @Override
     public void cancelRemote() {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.cancel", this); }
+        Log.d(LOG_DOMAIN, "%s.cancel", this);
         withWebSocket(socket -> {
             socket.cancel();
             return true;
@@ -153,7 +152,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // We have an open connection to the remote
     @Override
     public void onOpen(@NonNull WebSocket socket, @NonNull Response resp) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.onOpen: %s", this, resp); }
+        Log.d(LOG_DOMAIN, "%s.onOpen: %s", this, resp);
         setWebSocket(null, socket, l -> l.remoteOpened(resp));
     }
 
@@ -161,7 +160,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void onMessage(@NonNull WebSocket socket, @NonNull String text) {
         final int nBytes = (text == null) ? -1 : text.length();
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.onText(%d)", this, nBytes); }
+        Log.d(LOG_DOMAIN, "%s.onText(%d)", this, nBytes);
         if (nBytes <= 0) { return; }
         delegateSafely(socket, l -> l.remoteWrites(text.getBytes(StandardCharsets.UTF_8)));
     }
@@ -170,7 +169,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void onMessage(@NonNull WebSocket socket, @NonNull ByteString bytes) {
         final int nBytes = (bytes == null) ? -1 : bytes.size();
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.onBytes(%d)", this, nBytes); }
+        Log.d(LOG_DOMAIN, "%s.onBytes(%d)", this, nBytes);
         if (nBytes <= 0) { return; }
         delegateSafely(socket, l -> l.remoteWrites(bytes.toByteArray()));
     }
@@ -178,14 +177,14 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Remote wants to close the connection
     @Override
     public void onClosing(@NonNull WebSocket socket, int code, @NonNull String message) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.onClosing(%d): '%s'", this, code, message); }
+        Log.d(LOG_DOMAIN, "%s.onClosing(%d): '%s'", this, code, message);
         delegateSafely(socket, l -> l.remoteRequestedClose(code, message));
     }
 
     // Remote connection has been closed
     @Override
     public void onClosed(@NonNull WebSocket socket, int code, @NonNull String message) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.onClosing(%d): '%s'", this, code, message); }
+        Log.d(LOG_DOMAIN, "%s.onClosing(%d): '%s'", this, code, message);
         setWebSocket(socket, null, l -> l.remoteClosed(code, message));
     }
 
@@ -194,7 +193,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Outgoing and incoming messages may have been lost. OkHTTP will not make any more calls to this listener
     @Override
     public void onFailure(@NonNull WebSocket socket, @NonNull Throwable err, @Nullable Response resp) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.onFailure: %s", err, this, resp); }
+        Log.d(LOG_DOMAIN, "%s.onFailure: %s", err, this, resp);
         setWebSocket(socket, null, l -> l.remoteFailed(err, resp));
     }
 
