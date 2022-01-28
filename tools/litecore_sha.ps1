@@ -1,6 +1,10 @@
 param(
-    [string]$Edition,
+    [Parameter(Mandatory=$true)]
+    [ValidateSet('CE','EE')]
+    [string]$Edition
+
     [string]$OutPath,
+
     [switch]$Verbose
 )
 

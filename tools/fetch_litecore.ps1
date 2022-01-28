@@ -1,6 +1,10 @@
 param(
     [Parameter(Mandatory=$true)][string]$NexusRepo,
-    [Parameter(Mandatory=$true)][string]$Edition,
+
+    [Parameter(Mandatory=$true)]
+    [ValidateSet('CE','EE')]
+    [string]$Edition
+
     [switch]$DebugLib
 )
 
