@@ -450,7 +450,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     @GuardedBy("getPeerLock()")
     private void closeWithCode(int code, String reason) {
-        Log.v(LOG_DOMAIN, "WebSocket CLOSED with code: " + code + "(" + reason + ")");
+        Log.v(LOG_DOMAIN, "WebSocket CLOSED with code: %d(%s)", code, reason);
 
         // success
         if (code == C4Constants.WebSocketError.NORMAL) {

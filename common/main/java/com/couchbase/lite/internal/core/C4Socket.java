@@ -123,7 +123,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         @Nullable String path,
         @Nullable byte[] options) {
         C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "^C4Socket.open@%x: %s", peer, socket, factory); }
+        Log.d(LOG_DOMAIN, "^C4Socket.open@%x: %s", peer, socket, factory);
 
         if (socket == null) {
             if (!(factory instanceof SocketFactory)) {
@@ -162,7 +162,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // This method is called by reflection.  Don't change its signature.
     static void write(long peer, @Nullable byte[] data) {
         final int nBytes = (data == null) ? 0 : data.length;
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "^C4Socket.write@%x(%d)", peer, nBytes); }
+        Log.d(LOG_DOMAIN, "^C4Socket.write@%x(%d)", peer, nBytes);
         if (nBytes <= 0) {
             Log.i(LOG_DOMAIN, "C4Socket.write: empty data");
             return;
@@ -172,21 +172,20 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     // This method is called by reflection.  Don't change its signature.
     static void completedReceive(long peer, long nBytes) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "^C4Socket.completedReceive@%x(%d)", peer, nBytes); }
+        Log.d(LOG_DOMAIN, "^C4Socket.completedReceive@%x(%d)", peer, nBytes);
         withSocket(peer, "completedReceive", l -> l.coreAckReceive(nBytes));
     }
 
     // This method is called by reflection.  Don't change its signature.
     static void requestClose(long peer, int status, @Nullable String message) {
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(LOG_DOMAIN, "C4Socket.requestClose@%x(%d): '%s'", peer, status, message);
-        }
+        Log.d(LOG_DOMAIN, "C4Socket.requestClose@%x(%d): '%s'", peer, status, message);
+
         withSocket(peer, "requestClose", l -> l.coreRequestedClose(status, message));
     }
 
     // This method is called by reflection.  Don't change its signature.
     static void close(long peer) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "^C4Socket.close@%x", peer); }
+        Log.d(LOG_DOMAIN, "^C4Socket.close@%x", peer);
         withSocket(peer, "close", SocketFromCore::coreClosed);
     }
 
@@ -256,7 +255,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     @Override
     public void init(@NonNull SocketFromCore fromCore) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "%s.init: %s", this, fromCore); }
+        Log.d(LOG_DOMAIN, "%s.init: %s", this, fromCore);
         Preconditions.assertNotNull(fromCore, "fromCore");
         synchronized (getPeerLock()) {
             final SocketFromCore oldFromCore = this.fromCore;
@@ -278,13 +277,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     @Override
     public void ackOpenToCore() {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "v%s.ackOpenToCore", this); }
+        Log.d(LOG_DOMAIN, "v%s.ackOpenToCore", this);
         withPeer(impl::nOpened);
     }
 
     @Override
     public void ackWriteToCore(long byteCount) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "v%s.ackWriteToCore(%d)", this, byteCount); }
+        Log.d(LOG_DOMAIN, "v%s.ackWriteToCore(%d)", this, byteCount);
         withPeer(peer -> impl.nCompletedWrite(peer, byteCount));
     }
 
@@ -296,16 +295,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     @Override
     public void requestCoreClose(int code, @Nullable String msg) {
-        if (CouchbaseLiteInternal.debugging()) { Log.d(LOG_DOMAIN, "v%s.requestCoreClose(%d): '%s'", this, code, msg); }
+        Log.d(LOG_DOMAIN, "v%s.requestCoreClose(%d): '%s'", this, code, msg);
         withPeer(peer -> impl.nCloseRequested(peer, code, msg));
     }
 
     @Override
     public void closeCore(int domain, int code, @Nullable String msg) {
-        if (CouchbaseLiteInternal.debugging()) {
-            Log.d(LOG_DOMAIN, "v%s.closeCore(%d, %d): '%s'", this, domain, code, msg);
-        }
-
+        Log.d(LOG_DOMAIN, "v%s.closeCore(%d, %d): '%s'", this, domain, code, msg);
         release(domain, code, msg);
     }
 
