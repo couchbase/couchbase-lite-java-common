@@ -3,7 +3,7 @@ param(
 
     [Parameter(Mandatory=$true)]
     [ValidateSet('CE','EE')]
-    [string]$Edition
+    [string]$Edition,
 
     [switch]$DebugLib
 )

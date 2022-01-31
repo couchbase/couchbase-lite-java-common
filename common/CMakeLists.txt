@@ -35,6 +35,7 @@ endif()
 message( STATUS "ABI: "                   ${ANDROID_ABI} )
 message( STATUS "SOURCE DIR: "            "${PROJECT_SOURCE_DIR}" )
 message( STATUS "OUTPUT DIR: "            ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
+message( STATUS "FLAG: "                  ${WHOLE_LIBRARY_FLAG} )
 
 set(LITE_CORE_SRC ${PROJECT_SOURCE_DIR}/../../core)
 set(JNI_SRC main/cpp)
@@ -49,6 +50,11 @@ set(CMAKE_C_STANDARD 11)
 if(BUILD_ENTERPRISE)
     add_definitions(-DCOUCHBASE_ENTERPRISE)
 endif()
+
+add_library( LiteCore SHARED IMPORTED )
+set_property( TARGET LiteCore PROPERTY
+    IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/libLiteCore.so"
+)
 
 add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4.cc
@@ -79,8 +85,7 @@ target_include_directories( LiteCoreJNI PUBLIC
 
 target_link_libraries( LiteCoreJNI
     ${WHOLE_LIBRARY_FLAG}
-    "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/libLiteCore.so"
-    ${LITE_CORE_LIB}
+    LiteCore
     ${NO_WHOLE_LIBRARY_FLAG}
     "log")
 
