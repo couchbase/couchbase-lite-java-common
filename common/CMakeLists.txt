@@ -20,19 +20,26 @@ cmake_minimum_required(VERSION 3.11)
 
 project (LiteCoreJNI)
 
-set(LITE_CORE_LIB ${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/libLiteCore.so)
-set(LITE_CORE_SRC ${PROJECT_SOURCE_DIR}/../../core)
-set(JNI_DIR main/cpp)
-
 # This script is only for Android
 if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Android")
     MESSAGE( FATAL_ERROR "!!!UNEXPECTED SYSTEM (expecting 'Android'): "     ${CMAKE_SYSTEM_NAME} )
 endif()
 
-MESSAGE( STATUS "ABI: "                   ${ANDROID_ABI} )
-MESSAGE( STATUS "OUTPUT DIR: "            ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
+# Handy debugging code
+#get_cmake_property(_variableNames VARIABLES)
+#list (SORT _variableNames)
+#foreach (_variableName ${_variableNames})
+#    message(STATUS "${_variableName}=${${_variableName}}")
+#endforeach()
 
-set(COMPILE_FLAGS   "${COMPILE_FLAGS}   -Wall -Werror")
+message( STATUS "ABI: "                   ${ANDROID_ABI} )
+message( STATUS "SOURCE DIR: "            "${PROJECT_SOURCE_DIR}" )
+message( STATUS "OUTPUT DIR: "            ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
+
+set(LITE_CORE_SRC ${PROJECT_SOURCE_DIR}/../../core)
+set(JNI_SRC main/cpp)
+
+set(COMPILE_FLAGS   "${COMPILE_FLAGS} -Wall -Werror")
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
@@ -44,34 +51,35 @@ if(BUILD_ENTERPRISE)
 endif()
 
 add_library( LiteCoreJNI SHARED
-    ${JNI_DIR}/native_c4.cc
-    ${JNI_DIR}/native_c4base.cc
-    ${JNI_DIR}/native_c4blobstore.cc
-    ${JNI_DIR}/native_c4database.cc
-    ${JNI_DIR}/native_c4docenumerator.cc
-    ${JNI_DIR}/native_c4document.cc
-    ${JNI_DIR}/native_c4fulltextmatch.cc
-    ${JNI_DIR}/native_c4listener.cc
-    ${JNI_DIR}/native_c4observer.cc
-    ${JNI_DIR}/native_c4prediction.cc
-    ${JNI_DIR}/native_c4query.cc
-    ${JNI_DIR}/native_c4queryenumerator.cc
-    ${JNI_DIR}/native_c4rawdocument.cc
-    ${JNI_DIR}/native_c4replicator.cc
-    ${JNI_DIR}/native_c4socket.cc
-    ${JNI_DIR}/native_fleece.cc
-    ${JNI_DIR}/native_flencoder.cc
-    ${JNI_DIR}/native_glue.cc
+    ${JNI_SRC}/native_c4.cc
+    ${JNI_SRC}/native_c4base.cc
+    ${JNI_SRC}/native_c4blobstore.cc
+    ${JNI_SRC}/native_c4database.cc
+    ${JNI_SRC}/native_c4docenumerator.cc
+    ${JNI_SRC}/native_c4document.cc
+    ${JNI_SRC}/native_c4fulltextmatch.cc
+    ${JNI_SRC}/native_c4listener.cc
+    ${JNI_SRC}/native_c4observer.cc
+    ${JNI_SRC}/native_c4prediction.cc
+    ${JNI_SRC}/native_c4query.cc
+    ${JNI_SRC}/native_c4queryenumerator.cc
+    ${JNI_SRC}/native_c4rawdocument.cc
+    ${JNI_SRC}/native_c4replicator.cc
+    ${JNI_SRC}/native_c4socket.cc
+    ${JNI_SRC}/native_fleece.cc
+    ${JNI_SRC}/native_flencoder.cc
+    ${JNI_SRC}/native_glue.cc
 )
 
 target_include_directories( LiteCoreJNI PUBLIC
-    ${JNI_DIR}/
+    ${JNI_SRC}/
     ${LITE_CORE_SRC}/C/                   # include c4Private.h for debugging
     ${LITE_CORE_SRC}/C/include/
     ${LITE_CORE_SRC}/vendor/fleece/API/)
 
 target_link_libraries( LiteCoreJNI
     ${WHOLE_LIBRARY_FLAG}
+    "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/libLiteCore.so"
     ${LITE_CORE_LIB}
     ${NO_WHOLE_LIBRARY_FLAG}
     "log")
