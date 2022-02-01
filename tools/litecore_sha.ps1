@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory=$true)]
     [ValidateSet('CE','EE')]
-    [string]$Edition
+    [string]$Edition,
 
     [string]$OutPath,
 

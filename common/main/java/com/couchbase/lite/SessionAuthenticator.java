@@ -51,9 +51,7 @@ public final class SessionAuthenticator extends Authenticator {
      *
      * @param sessionID Sync Gateway session ID
      */
-    public SessionAuthenticator(@NonNull String sessionID) {
-        this(sessionID, DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME);
-    }
+    public SessionAuthenticator(@NonNull String sessionID) { this(sessionID, DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME); }
 
     /**
      * Initializes with the session ID and the cookie name. If the given cookieName
@@ -63,9 +61,8 @@ public final class SessionAuthenticator extends Authenticator {
      * @param cookieName The cookie name
      */
     public SessionAuthenticator(@NonNull String sessionID, @Nullable String cookieName) {
-        Preconditions.assertNotNull(sessionID, "sessionID");
-        this.sessionID = sessionID;
-        this.cookieName = cookieName != null ? cookieName : DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME;
+        this.sessionID = Preconditions.assertNotNull(sessionID, "sessionID");
+        this.cookieName = (cookieName != null) ? cookieName : DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME;
     }
 
     //---------------------------------------------
@@ -76,18 +73,14 @@ public final class SessionAuthenticator extends Authenticator {
      * Return session ID of the session created by a Sync Gateway.
      */
     @NonNull
-    public String getSessionID() {
-        return sessionID;
-    }
+    public String getSessionID() { return sessionID; }
 
     /**
      * Return session cookie name that the session ID value will be set to when communicating
      * the Sync Gateway.
      */
-    @Nullable
-    public String getCookieName() {
-        return cookieName;
-    }
+    @NonNull
+    public String getCookieName() { return cookieName; }
 
     //---------------------------------------------
     // Authenticator abstract method implementation
@@ -96,7 +89,7 @@ public final class SessionAuthenticator extends Authenticator {
     @Override
     void authenticate(@NonNull Map<String, Object> options) {
         final String current = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-        final StringBuffer cookieStr = current != null ? new StringBuffer(current) : new StringBuffer();
+        final StringBuffer cookieStr = (current == null) ? new StringBuffer() : new StringBuffer(current);
 
         if (cookieStr.length() > 0) { cookieStr.append("; "); }
         cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, sessionID));
