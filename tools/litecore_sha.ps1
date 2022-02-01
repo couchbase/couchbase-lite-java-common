@@ -3,9 +3,7 @@ param(
     [ValidateSet('CE','EE')]
     [string]$Edition,
 
-    [string]$OutPath,
-
-    [switch]$Verbose
+    [string]$OutPath
 )
 
 if($Edition -eq "") {
@@ -17,17 +15,13 @@ Write-Host "LiteCore Edition : $Edition"
 if($Edition -eq "EE") {
     Push-Location $PSScriptRoot\..\..\couchbase-lite-core-EE
     $EeSha = (& git rev-parse HEAD).Substring(0, 40)
-    if($Verbose) {
-        Write-Host "EE SHA is: '$EeSha'"
-    }
+    Write-Verbose "EE SHA is: '$EeSha'"
     Pop-Location
 }
 
 Push-Location $PSScriptRoot\..\..\core
 $CeSha = (& git rev-parse HEAD).Substring(0, 40)
-if($Verbose) {
-    Write-Host "Base SHA is: '$CeSha'"
-}
+Write-Verbose "Base SHA is: '$CeSha'"
 Pop-Location
 
 if($Edition -eq "EE") {

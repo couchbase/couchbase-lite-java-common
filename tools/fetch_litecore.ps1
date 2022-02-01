@@ -1,5 +1,6 @@
 param(
-    [Parameter(Mandatory=$true)][string]$NexusRepo,
+    [Parameter(Mandatory=$true)]
+    [string]$NexusRepo,
 
     [Parameter(Mandatory=$true)]
     [ValidateSet('CE','EE')]
