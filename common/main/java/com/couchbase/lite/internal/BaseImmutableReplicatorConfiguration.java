@@ -20,7 +20,6 @@ import androidx.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -183,23 +182,18 @@ public class BaseImmutableReplicatorConfiguration {
         // User-Agent:
         httpHeaders.put("User-Agent", CBLVersion.getUserAgent());
 
-        // Cookies:
-        final String cookieName = "Cookies";
-        if ((headers != null) && (!headers.isEmpty()) && headers.containsKey(cookieName)) {
-            //get current cookies value from option to add a new cookie
-            final String current = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-            final StringBuffer cookieStr = (current == null) ? new StringBuffer() : new StringBuffer(current);
-
-            if (cookieStr.length() > 0) { cookieStr.append("; "); }
-            cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, headers.get(cookieName)));
-            options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, cookieStr.toString());
-
-            //remove this cookie out of headers, so that we don't put it into options again
-            headers.remove(cookieName);
-        }
-
-        // headers
-        if ((headers != null) && (!headers.isEmpty())) {
+        //headers
+        // If there are cookies, we add them in options as
+        // REPLICATOR_OPTION_COOKIES instead of REPLICATOR_OPTION_EXTRA_HEADERS
+        if (headers != null) {
+            final String customCookies = headers.remove("Cookies");
+            if (customCookies != null) {
+                final Object currentCookies = options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+                final String newCookies = (!(currentCookies instanceof String))
+                    ? customCookies
+                    : new StringBuilder((String) currentCookies).append("; ").append(customCookies).toString();
+                options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, newCookies);
+            }
             for (Map.Entry<String, String> entry: headers.entrySet()) {
                 httpHeaders.put(entry.getKey(), entry.getValue());
             }
