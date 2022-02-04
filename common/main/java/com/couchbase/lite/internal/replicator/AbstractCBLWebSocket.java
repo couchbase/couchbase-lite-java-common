@@ -127,6 +127,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     private static final String CHALLENGE_BASIC = "Basic";
     private static final String HEADER_AUTH = "Authorization";
+    public static final String HEADER_COOKIES = "Cookies"; // client customized cookies
 
     private enum State {INIT, CONNECTING, OPEN, CLOSE_REQUESTED, CLOSING, CLOSED, FAILED}
 

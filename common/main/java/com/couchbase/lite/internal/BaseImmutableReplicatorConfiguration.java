@@ -33,6 +33,7 @@ import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
+import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
 
 /**
@@ -186,7 +187,7 @@ public class BaseImmutableReplicatorConfiguration {
         // If there are cookies, we add them in options as
         // REPLICATOR_OPTION_COOKIES instead of REPLICATOR_OPTION_EXTRA_HEADERS
         if (headers != null) {
-            final String customCookies = headers.remove("Cookies");
+            final String customCookies = headers.remove(AbstractCBLWebSocket.HEADER_COOKIES);
             if (customCookies != null) {
                 final Object currentCookies = options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
                 final String newCookies = (!(currentCookies instanceof String))
