@@ -33,6 +33,7 @@ import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
+import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
 
 /**
@@ -181,8 +182,19 @@ public class BaseImmutableReplicatorConfiguration {
         final Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:
         httpHeaders.put("User-Agent", CBLVersion.getUserAgent());
-        // headers
-        if ((headers != null) && (!headers.isEmpty())) {
+
+        //headers
+        // If there are cookies, we add them in options as
+        // REPLICATOR_OPTION_COOKIES instead of REPLICATOR_OPTION_EXTRA_HEADERS
+        if (headers != null) {
+            final String customCookies = headers.remove(AbstractCBLWebSocket.HEADER_COOKIES);
+            if (customCookies != null) {
+                final Object currentCookies = options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+                final String newCookies = (!(currentCookies instanceof String))
+                    ? customCookies
+                    : new StringBuilder((String) currentCookies).append("; ").append(customCookies).toString();
+                options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, newCookies);
+            }
             for (Map.Entry<String, String> entry: headers.entrySet()) {
                 httpHeaders.put(entry.getKey(), entry.getValue());
             }
