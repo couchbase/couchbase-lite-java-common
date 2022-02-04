@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -181,6 +182,22 @@ public class BaseImmutableReplicatorConfiguration {
         final Map<String, Object> httpHeaders = new HashMap<>();
         // User-Agent:
         httpHeaders.put("User-Agent", CBLVersion.getUserAgent());
+
+        // Cookies:
+        final String cookieName = "Cookies";
+        if ((headers != null) && (!headers.isEmpty()) && headers.containsKey(cookieName)) {
+            //get current cookies value from option to add a new cookie
+            final String current = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+            final StringBuffer cookieStr = (current == null) ? new StringBuffer() : new StringBuffer(current);
+
+            if (cookieStr.length() > 0) { cookieStr.append("; "); }
+            cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, headers.get(cookieName)));
+            options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, cookieStr.toString());
+
+            //remove this cookie out of headers, so that we don't put it into options again
+            headers.remove(cookieName);
+        }
+
         // headers
         if ((headers != null) && (!headers.isEmpty())) {
             for (Map.Entry<String, String> entry: headers.entrySet()) {
