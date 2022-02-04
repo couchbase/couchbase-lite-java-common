@@ -81,12 +81,11 @@ target_include_directories( LiteCoreJNI PUBLIC
     ${JNI_SRC}/
     ${LITE_CORE_SRC}/C/                   # include c4Private.h for debugging
     ${LITE_CORE_SRC}/C/include/
-    ${LITE_CORE_SRC}/vendor/fleece/API/)
+    ${LITE_CORE_SRC}/vendor/fleece/API/
+)
 
 target_link_libraries( LiteCoreJNI
-    ${WHOLE_LIBRARY_FLAG}
     LiteCore
-    ${NO_WHOLE_LIBRARY_FLAG}
-    "log")
-
+    "log"
+)
 

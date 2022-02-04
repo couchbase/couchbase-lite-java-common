@@ -260,9 +260,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         synchronized (getPeerLock()) {
             final SocketFromCore oldFromCore = this.fromCore;
             if (oldFromCore != null) {
-                if (!oldFromCore.equals(fromCore)) {
-                    Log.w(LOG_DOMAIN, "Attempt to re-initialize C4Socket");
-                }
+                if (!oldFromCore.equals(fromCore)) { Log.w(LOG_DOMAIN, "Attempt to re-initialize C4Socket"); }
                 return;
             }
             this.fromCore = fromCore;
