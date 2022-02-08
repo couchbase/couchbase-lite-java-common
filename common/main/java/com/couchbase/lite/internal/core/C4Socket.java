@@ -35,22 +35,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * The process for closing one of these is complicated.  No matter what happens, though, it always ends like this:
- * Java calls C4Socket.closed (in the JNI, this turns into a call to c4socket_closed, which actually frees
- * the native object). Presuming that the C has a non-null C4SocketFactory reference and that it contains a
- * non-null socket_dispose reference, the C invokes it, producing the call to C4Socket.dispose
- * <p>
- * I think that this entire class should be re-architected to use a single-threaded executor.
- * Incoming messages should be enqueued as tasks on the executor. That would allow the removal
- * of all of the synchronization and assure that tasks were processed in order.
- * <p>
- * Note that state transitions come from 3 places.  Neither of the two subclasses, MessageSocket nor
- * AbstractCBLWebSocket, allow inbound connections.  For both, though shutdown is multiphase.
- * <nl>
- * <li>Core: core request open and can request close</li>
- * <li>Remote: this is a connection to a remote service.  It can request shutdown</li>
- * <li>Client: the client code can close the connection.  It expects never to hear from it again</li>
- * </nl>
+ * In the logs:
+ * <ul></ul>
+ * <li>^ prefix is a call outbound from core
+ * <li>v prefix is a call inbound from the remote
+ * </li>
  */
 public final class C4Socket extends C4NativePeer implements SocketToCore {
     //-------------------------------------------------------------------------
@@ -88,25 +77,20 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     static volatile NativeImpl nativeImpl = new NativeC4Socket();
 
     //-------------------------------------------------------------------------
-    // Factory Methods
+    // Public Methods
     //-------------------------------------------------------------------------
 
     @NonNull
     public static C4Socket createSocket(int id, @NonNull MessageFraming framing) {
-        return createSocket(nativeImpl.nFromNative(
-            0L,
-            "x-msg-conn",
-            "",
-            0,
-            "/" + Integer.toHexString(id),
-            MessageFraming.getC4Framing(framing)));
-    }
-
-    @NonNull
-    private static C4Socket createSocket(long peer) {
-        final C4Socket socket = new C4Socket(peer, nativeImpl);
-        BOUND_SOCKETS.bind(peer, socket);
-        return socket;
+        return createSocket(
+            nativeImpl,
+            nativeImpl.nFromNative(
+                0L,
+                "x-msg-conn",
+                "",
+                0,
+                "/" + Integer.toHexString(id),
+                MessageFraming.getC4Framing(framing)));
     }
 
     //-------------------------------------------------------------------------
@@ -148,7 +132,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
                 return;
             }
 
-            socket = createSocket(peer);
+            socket = createSocket(nativeImpl, peer);
 
             final SocketFromCore fromCore
                 = ((SocketFactory) factory).createSocket(socket, scheme, hostname, port, path, options);
@@ -178,7 +162,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     // This method is called by reflection.  Don't change its signature.
     static void requestClose(long peer, int status, @Nullable String message) {
-        Log.d(LOG_DOMAIN, "C4Socket.requestClose@%x(%d): '%s'", peer, status, message);
+        Log.d(LOG_DOMAIN, "^C4Socket.requestClose@%x(%d): '%s'", peer, status, message);
 
         withSocket(peer, "requestClose", l -> l.coreRequestedClose(status, message));
     }
@@ -192,6 +176,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     //-------------------------------------------------------------------------
     // Private static methods
     //-------------------------------------------------------------------------
+
+    @NonNull
+    private static C4Socket createSocket(@NonNull NativeImpl impl, long peer) {
+        final C4Socket socket = new C4Socket(peer, impl);
+        BOUND_SOCKETS.bind(peer, socket);
+        return socket;
+    }
 
     private static void withSocket(long peer, @Nullable String op, @NonNull Fn.Consumer<SocketFromCore> task) {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
@@ -287,7 +278,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     @Override
     public void sendToCore(@NonNull byte[] data) {
-        Log.d(LOG_DOMAIN, "v%s.sendToCore(%d)", this, (data == null) ? -1 : data.length);
+        Log.d(LOG_DOMAIN, "v%s.sendToCore(%d)", this, data.length);
         withPeer(peer -> impl.nReceived(peer, data));
     }
 

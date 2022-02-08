@@ -159,7 +159,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Receive data from the remote
     @Override
     public void onMessage(@NonNull WebSocket socket, @NonNull String text) {
-        final int nBytes = (text == null) ? -1 : text.length();
+        final int nBytes = (text == null) ? 0 : text.length();
         Log.d(LOG_DOMAIN, "%s.onText(%d)", this, nBytes);
         if (nBytes <= 0) { return; }
         delegateSafely(socket, l -> l.remoteWrites(text.getBytes(StandardCharsets.UTF_8)));
@@ -168,7 +168,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Receive data from the remote
     @Override
     public void onMessage(@NonNull WebSocket socket, @NonNull ByteString bytes) {
-        final int nBytes = (bytes == null) ? -1 : bytes.size();
+        final int nBytes = (bytes == null) ? 0 : bytes.size();
         Log.d(LOG_DOMAIN, "%s.onBytes(%d)", this, nBytes);
         if (nBytes <= 0) { return; }
         delegateSafely(socket, l -> l.remoteWrites(bytes.toByteArray()));

@@ -319,8 +319,31 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY + 1));
     }
 
+    // Verify that deprecated and new ReplicatorTypes are interchangeable
+    @Test
+    public void testDeprecatedReplicatorType() throws URISyntaxException {
+        ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint());
+        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, config.getReplicatorType());
+        assertEquals(ReplicatorType.PUSH_AND_PULL, config.getType());
+
+        config.setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PUSH);
+        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH, config.getReplicatorType());
+        assertEquals(ReplicatorType.PUSH, config.getType());
+
+        config.setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PULL);
+        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
+        assertEquals(ReplicatorType.PULL, config.getType());
+
+        config.setType(ReplicatorType.PUSH);
+        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH, config.getReplicatorType());
+        assertEquals(ReplicatorType.PUSH, config.getType());
+
+        config.setType(ReplicatorType.PULL);
+        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
+        assertEquals(ReplicatorType.PULL, config.getType());
+    }
+
     private ReplicatorActivityLevel getActivityLevelFor(int activityLevel) {
-        return new ReplicatorStatus(new C4ReplicatorStatus(activityLevel, 0, 0, 0, 0, 0, 0))
-            .getActivityLevel();
+        return new ReplicatorStatus(new C4ReplicatorStatus(activityLevel, 0, 0, 0, 0, 0, 0)).getActivityLevel();
     }
 }
