@@ -373,7 +373,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @Override
     public String toString() {
         if (desc == null) { desc = description(); }
-        return desc;
+        return getC4Replicator() + "$" + desc;
     }
 
     //---------------------------------------------
