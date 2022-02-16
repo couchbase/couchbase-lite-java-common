@@ -72,7 +72,7 @@ public class C4BaseTest extends BaseTest {
             if (!parentDir.mkdirs()) { throw new IOException("Can't create test db directory: " + parentDir); }
             dbParentDirPath = parentDir.getCanonicalPath();
 
-            dbName = getUniqueName("c4-test-db");
+            dbName = getUniqueName("c4_test_db");
 
             c4Database = C4Database.getDatabase(
                 dbParentDirPath,

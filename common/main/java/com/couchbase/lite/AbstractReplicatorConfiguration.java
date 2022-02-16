@@ -50,7 +50,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @deprecated Use com.couchbase.lite.ReplicatorType
      */
     // Maybe if we keep this around for another 3 years
-    // we can pretend it wasn't a dubm idea.
+    // we can pretend it wasn't a dumb idea.
     @Deprecated
     public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
 
@@ -104,8 +104,8 @@ public abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
         this.database = database;
-        this.type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
         this.target = target;
+        this.type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
     }
 
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {

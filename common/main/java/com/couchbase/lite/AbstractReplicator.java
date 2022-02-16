@@ -137,7 +137,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     private volatile String desc;
 
     //---------------------------------------------
-    // Constructors
+    // Constructor
     //---------------------------------------------
 
     /**
@@ -148,10 +148,16 @@ public abstract class AbstractReplicator extends BaseReplicator {
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
         this.config = new ImmutableReplicatorConfiguration(config);
-        this.socketFactory
-            = new SocketFactory(config, new ReplicatorCookieStore(getDatabase()), this::setServerCertificates);
+        this.socketFactory = new SocketFactory(
+            config,
+            new ReplicatorCookieStore(getDatabase()),
+            this::setServerCertificates);
         this.c4ReplListener = new ReplicatorListener(dispatcher);
     }
+
+    //---------------------------------------------
+    // Public Methods
+    //---------------------------------------------
 
     /**
      * Start the replicator.

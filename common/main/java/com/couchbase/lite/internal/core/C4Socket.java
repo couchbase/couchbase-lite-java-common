@@ -41,6 +41,13 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * <li>^ prefix is a call outbound from core
  * <li>v prefix is a call inbound from the remote
  * </ul>
+ * <p>
+ * The use of "fromCore" in this method may be confusing.
+ * *This* class is the thing that is closely attached to core.
+ * An implementation of SocketFromCore is this class' delegate for
+ * events outbound, from core to some client.
+ * Somewhere out there, an implementation of SocketToCore will hold
+ * a reference to this object, and use it for sending events to core.
  */
 public final class C4Socket extends C4NativePeer implements SocketToCore {
     //-------------------------------------------------------------------------
@@ -66,27 +73,26 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     }
 
     //-------------------------------------------------------------------------
-    // Static Fields
+    // Static fields
     //-------------------------------------------------------------------------
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Socket();
 
     // Lookup table: maps a handle to a peer native socket to its Java companion
     @NonNull
     @VisibleForTesting
     static final NativeRefPeerBinding<C4Socket> BOUND_SOCKETS = new NativeRefPeerBinding<>();
 
-    // Not final for testing
-    @NonNull
-    @VisibleForTesting
-    static volatile NativeImpl nativeImpl = new NativeC4Socket();
 
     //-------------------------------------------------------------------------
-    // Public Methods
+    // Public static Methods
     //-------------------------------------------------------------------------
 
     @NonNull
     public static C4Socket createPassiveSocket(int id, @NonNull MessageFraming framing) {
         return createSocket(
-            nativeImpl.nFromNative(
+            NATIVE_IMPL,
+            NATIVE_IMPL.nFromNative(
                 0L,
                 "x-msg-conn",
                 "",
@@ -108,38 +114,10 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         int port,
         @Nullable String path,
         @Nullable byte[] options) {
-        C4Socket socket = BOUND_SOCKETS.getBinding(peer);
+        final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "^C4Socket.open@%x: %s", peer, socket, factory);
 
-        if (socket == null) {
-            if (!(factory instanceof SocketFactory)) {
-                Log.w(LOG_DOMAIN, "C4Socket.open: factory is not a SocketFactory: %s", factory);
-                return;
-            }
-            if (scheme == null) {
-                Log.w(LOG_DOMAIN, "C4Socket.open: scheme is null");
-                return;
-            }
-            if (hostname == null) {
-                Log.w(LOG_DOMAIN, "C4Socket.open: hostname is null");
-                return;
-            }
-            if (path == null) {
-                Log.w(LOG_DOMAIN, "C4Socket.open: path is null");
-                return;
-            }
-            if (options == null) {
-                Log.w(LOG_DOMAIN, "C4Socket.open: options are null");
-                return;
-            }
-
-            socket = createSocket(peer);
-
-            final SocketFromCore fromCore
-                = ((SocketFactory) factory).createSocket(socket, scheme, hostname, port, path, options);
-
-            socket.init(fromCore);
-        }
+        if ((socket == null) && (!openSocket(peer, factory, scheme, hostname, port, path, options))) { return; }
 
         withSocket(peer, "open", SocketFromCore::coreRequestedOpen);
     }
@@ -174,19 +152,18 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     }
 
     //-------------------------------------------------------------------------
-    // Private static methods
+    // Internal static methods
     //-------------------------------------------------------------------------
 
     @VisibleForTesting
     @NonNull
-    static C4Socket createSocket(long peer) {
-        final C4Socket socket = new C4Socket(nativeImpl, peer);
+    static C4Socket createSocket(@NonNull NativeImpl impl, long peer) {
+        final C4Socket socket = new C4Socket(impl, peer);
         BOUND_SOCKETS.bind(peer, socket);
         return socket;
     }
 
-    @VisibleForTesting
-    static void withSocket(long peer, @Nullable String op, @NonNull Fn.Consumer<SocketFromCore> task) {
+    private static void withSocket(long peer, @Nullable String op, @NonNull Fn.Consumer<SocketFromCore> task) {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         if (socket == null) {
             Log.w(LOG_DOMAIN, "C4Socket.%s@%x: No socket for peer", op, peer);
@@ -195,6 +172,40 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         socket.continueWith(task);
     }
 
+    private static boolean openSocket(
+        long peer,
+        @Nullable Object factory,
+        @Nullable String scheme,
+        @Nullable String hostname,
+        int port,
+        @Nullable String path,
+        @Nullable byte[] options) {
+        if (!(factory instanceof SocketFactory)) {
+            Log.w(LOG_DOMAIN, "C4Socket.open: factory is not a SocketFactory: %s", factory);
+            return false;
+        }
+        if (scheme == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.open: scheme is null");
+            return false;
+        }
+        if (hostname == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.open: hostname is null");
+            return false;
+        }
+        if (path == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.open: path is null");
+            return false;
+        }
+        if (options == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.open: options are null");
+            return false;
+        }
+
+        final C4Socket socket = createSocket(NATIVE_IMPL, peer);
+        socket.init(((SocketFactory) factory).createSocket(socket, scheme, hostname, port, path, options));
+
+        return true;
+    }
 
     //-------------------------------------------------------------------------
     // Fields
@@ -218,7 +229,8 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // whether we created it or were handed it.
     // Don't bind the socket to the peer, in the constructor, because that would
     // publish an incompletely constructed object.
-    private C4Socket(@NonNull NativeImpl impl, long peer) {
+    @VisibleForTesting
+    C4Socket(@NonNull NativeImpl impl, long peer) {
         super(peer);
         this.impl = impl;
         impl.nRetain(peer);
@@ -305,6 +317,10 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     // ??? Is there any way to eliminate this?
     long getPeerHandle() { return getPeer(); }
+
+    @VisibleForTesting
+    @Nullable
+    SocketFromCore getFromCore() { return fromCore.get(); }
 
     //-------------------------------------------------------------------------
     // Private methods
