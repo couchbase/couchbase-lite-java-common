@@ -61,16 +61,18 @@ public final class Log {
     private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
     static {
         final Map<String, LogDomain> m = new HashMap<>();
-        m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.SQL, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.ZIP, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.WEB_SOCKET, LogDomain.NETWORK);
         m.put(C4Constants.LogDomain.BLIP, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.TLS, LogDomain.NETWORK);
+        m.put(C4Constants.LogDomain.BLIP_MESSAGES, LogDomain.NETWORK);
+        m.put(C4Constants.LogDomain.CHANGES, LogDomain.REPLICATOR);
+        m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
+        m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
+        m.put(C4Constants.LogDomain.QUERY, LogDomain.QUERY);
+        m.put(C4Constants.LogDomain.SQL, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.SYNC, LogDomain.REPLICATOR);
         m.put(C4Constants.LogDomain.SYNC_BUSY, LogDomain.REPLICATOR);
-        m.put(C4Constants.LogDomain.QUERY, LogDomain.QUERY);
-        m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
+        m.put(C4Constants.LogDomain.TLS, LogDomain.NETWORK);
+        m.put(C4Constants.LogDomain.WEB_SOCKET, LogDomain.NETWORK);
+        m.put(C4Constants.LogDomain.ZIP, LogDomain.DATABASE);
         LOGGING_DOMAINS_FROM_C4 = Collections.unmodifiableMap(m);
     }
 
@@ -399,33 +401,43 @@ public final class Log {
                 + "Log files required for product support are not being generated.");
     }
 
+    // This, apparently, should be the inverse of LOGGING_DOMAINS_FROM_C4
     private static void setC4LogLevel(@NonNull EnumSet<LogDomain> domains, @NonNull LogLevel level) {
         final int c4Level = getC4LevelForLogLevel(level);
         final C4Log c4Log = C4Log.get();
         for (LogDomain domain: domains) {
             switch (domain) {
                 case DATABASE:
-                    c4Log.setLevels(c4Level, C4Constants.LogDomain.DATABASE);
+                    c4Log.setLevels(
+                        c4Level,
+                        C4Constants.LogDomain.DATABASE,
+                        C4Constants.LogDomain.SQL,
+                        C4Constants.LogDomain.ZIP);
                     break;
 
                 case LISTENER:
                     c4Log.setLevels(c4Level, C4Constants.LogDomain.LISTENER);
                     break;
 
-                case QUERY:
-                    c4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY, C4Constants.LogDomain.SQL);
-                    break;
-
-                case REPLICATOR:
-                    c4Log.setLevels(c4Level, C4Constants.LogDomain.SYNC, C4Constants.LogDomain.SYNC_BUSY);
-                    break;
-
                 case NETWORK:
                     c4Log.setLevels(
                         c4Level,
                         C4Constants.LogDomain.BLIP,
-                        C4Constants.LogDomain.WEB_SOCKET,
-                        C4Constants.LogDomain.TLS);
+                        C4Constants.LogDomain.BLIP_MESSAGES,
+                        C4Constants.LogDomain.TLS,
+                        C4Constants.LogDomain.WEB_SOCKET);
+                    break;
+
+                case QUERY:
+                    c4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY);
+                    break;
+
+                case REPLICATOR:
+                    c4Log.setLevels(
+                        c4Level,
+                        C4Constants.LogDomain.CHANGES,
+                        C4Constants.LogDomain.SYNC,
+                        C4Constants.LogDomain.SYNC_BUSY);
                     break;
 
                 default:

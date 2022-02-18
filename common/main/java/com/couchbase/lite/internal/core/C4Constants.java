@@ -41,16 +41,18 @@ public final class C4Constants {
     public static final class LogDomain {
         private LogDomain() {}
 
-        public static final String DATABASE = "DB";
-        public static final String SQL = "SQL";
-        public static final String ZIP = "Zip";
-        public static final String QUERY = "Query";
-        public static final String WEB_SOCKET = "WS";
         public static final String BLIP = "BLIP";
-        public static final String TLS = "TLS";
+        public static final String BLIP_MESSAGES = "BLIPMessages";
+        public static final String CHANGES = "Changes";
+        public static final String DATABASE = "DB";
+        public static final String LISTENER = "Listener";
+        public static final String QUERY = "Query";
+        public static final String SQL = "SQL";
         public static final String SYNC = "Sync";
         public static final String SYNC_BUSY = "SyncBusy";
-        public static final String LISTENER = "Listener";
+        public static final String TLS = "TLS";
+        public static final String WEB_SOCKET = "WS";
+        public static final String ZIP = "Zip";
     }
 
 
