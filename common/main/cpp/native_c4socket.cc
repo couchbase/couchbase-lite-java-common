@@ -370,16 +370,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed(
     jstringSlice sliceMessage(env, message);
     C4Error error = c4error_make((C4ErrorDomain) domain, code, sliceMessage);
     c4socket_closed(socket, error);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    release
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_release(JNIEnv *env, jclass ignore, jlong jSocket) {
-    auto socket = (C4Socket *) jSocket;
     c4socket_release(socket);
 }
 }

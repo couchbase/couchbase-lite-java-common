@@ -34,13 +34,13 @@ import com.couchbase.lite.internal.support.Log;
  * @param <T> states.
  */
 public final class StateMachine<T extends Enum<T>> {
-    private static final LogDomain TAG = LogDomain.DATABASE;
-
     public static class Builder<S extends Enum<S>> {
+        @NonNull
+        private final LogDomain domain;
         @NonNull
         private final S initialState;
         @Nullable
-        private final S errorState;
+        private final S failureState;
         @NonNull
         private final EnumMap<S, EnumSet<S>> transitions;
 
@@ -49,14 +49,15 @@ public final class StateMachine<T extends Enum<T>> {
          * The error state is treated specially: it is always legal to transition into the error state
          * and never legal to transfer out of it.
          *
-         * @param klass        The class of the enum of states.
-         * @param initialState The start state for the machine.
-         * @param errorState   The machine error state.
+         * @param klass     The class of the enum of states.
+         * @param initState The start state for the machine.
+         * @param failState The machine failure state.
          */
-        public Builder(@NonNull Class<S> klass, @NonNull S initialState, @Nullable S errorState) {
+        public Builder(@NonNull Class<S> klass, @NonNull LogDomain log, @NonNull S initState, @Nullable S failState) {
             this.transitions = new EnumMap<>(klass);
-            this.initialState = initialState;
-            this.errorState = errorState;
+            this.domain = log;
+            this.initialState = initState;
+            this.failureState = failState;
         }
 
         /**
@@ -70,8 +71,8 @@ public final class StateMachine<T extends Enum<T>> {
         @NonNull
         @SafeVarargs
         public final Builder<S> addTransition(@NonNull S source, @NonNull S target1, @NonNull S... targets) {
-            if (source == errorState) {
-                throw new IllegalArgumentException("transitions from the error state are illegal");
+            if (source == failureState) {
+                throw new IllegalArgumentException("transitions from the failure state are illegal");
             }
 
             transitions.put(source, EnumSet.of(target1, targets));
@@ -85,20 +86,26 @@ public final class StateMachine<T extends Enum<T>> {
          * @return a new state machine instance.
          */
         @NonNull
-        public StateMachine<S> build() { return new StateMachine<>(initialState, errorState, transitions); }
+        public StateMachine<S> build() { return new StateMachine<>(domain, initialState, failureState, transitions); }
     }
 
-
+    @NonNull
+    private final LogDomain domain;
     @Nullable
-    private final T errorState;
+    private final T failureState;
     @NonNull
     private final EnumMap<T, EnumSet<T>> transitions;
     @NonNull
     private T state;
 
-    private StateMachine(@NonNull T initialState, @Nullable T errorState, @NonNull EnumMap<T, EnumSet<T>> transitions) {
-        state = initialState;
-        this.errorState = errorState;
+    private StateMachine(
+        @NonNull LogDomain domain,
+        @NonNull T initialState,
+        @Nullable T failureState,
+        @NonNull EnumMap<T, EnumSet<T>> transitions) {
+        this.domain = domain;
+        this.state = initialState;
+        this.failureState = failureState;
         this.transitions = transitions;
     }
 
@@ -120,14 +127,8 @@ public final class StateMachine<T extends Enum<T>> {
             if (s == state) { return true; }
         }
 
-        if (state != errorState) {
-            Log.d(
-                TAG,
-                "StateMachine%s: unexpected state %s %s",
-                new Exception(),
-                this,
-                state,
-                Arrays.toString(expected));
+        if (state != failureState) {
+            Log.d(domain, "StateMachine%s: unexpected state %s %s", new Exception(), this, state, Arrays.toString(expected));
         }
 
         return false;
@@ -143,21 +144,14 @@ public final class StateMachine<T extends Enum<T>> {
      */
     public boolean setState(@NonNull T nextState) {
         final EnumSet<T> legalStates = transitions.get(state);
-        if ((nextState == errorState) || ((legalStates != null) && (legalStates.contains(nextState)))) {
-            Log.d(TAG, "StateMachine%s: transition %s => %s", this, state, nextState);
+        if ((nextState == failureState) || ((legalStates != null) && (legalStates.contains(nextState)))) {
+            Log.d(domain, "StateMachine%s: transition %s => %s", this, state, nextState);
             state = nextState;
             return true;
         }
 
-        if (state != errorState) {
-            Log.d(
-                TAG,
-                "StateMachine%s: no transition: %s => %s %s",
-                new Exception(),
-                this,
-                state,
-                nextState,
-                legalStates);
+        if (state != failureState) {
+            Log.d(domain, "StateMachine%s: no transition: %s => %s %s", this, state, nextState, legalStates);
         }
 
         return false;

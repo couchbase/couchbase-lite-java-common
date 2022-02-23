@@ -24,6 +24,7 @@ import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.sockets.CloseStatus;
 import com.couchbase.lite.internal.sockets.SocketToCore;
 import com.couchbase.lite.internal.sockets.SocketToRemote;
 import com.couchbase.lite.internal.utils.Fn;
@@ -40,8 +41,9 @@ public final class CBLWebSocket extends AbstractCBLWebSocket {
         super(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
     }
 
+    @Nullable
     @Override
-    protected boolean handleClose(@NonNull Throwable err) { return false; }
+    protected CloseStatus handleClose(@NonNull Throwable err) { return null; }
 
     @Override
     protected int handleCloseCause(@NonNull Throwable cause) {

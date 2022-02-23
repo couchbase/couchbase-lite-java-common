@@ -19,16 +19,22 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 
+/**
+ * +------+                                                                      +--------+
+ * |      | ==> SocketFromCore ==> AbstractCBLWebSocket ==>   SocketToCore   ==> |        |
+ * | core |                                                                      | remote |
+ * |      | <==  SocketToCore  <== AbstractCBLWebSocket <== SocketFromRemote <== |        |
+ * +------+                                                                      +--------+
+ */
 public interface SocketToCore extends AutoCloseable {
 
-
+    // use a single lock to avoid deadlocks
     @NonNull
     Object getLock();
     void init(@NonNull SocketFromCore listener);
-    void ackOpenToCore();
-    void ackHttpToCore(int httpStatus, @Nullable byte[] responseHeadersFleece);
+    void ackOpenToCore(int httpStatus, @Nullable byte[] responseHeadersFleece);
     void ackWriteToCore(long byteCount);
-    void sendToCore(@NonNull byte[] data);
-    void requestCoreClose(int status, @Nullable String message);
-    void closeCore(int errorDomain, int errorCode, @Nullable String message);
+    void writeToCore(@NonNull byte[] data);
+    void requestCoreClose(@NonNull CloseStatus status);
+    void closeCore(@NonNull CloseStatus status);
 }

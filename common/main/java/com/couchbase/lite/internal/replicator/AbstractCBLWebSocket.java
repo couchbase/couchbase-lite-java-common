@@ -35,7 +35,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -53,7 +52,6 @@ import okhttp3.Challenge;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.Credentials;
-import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -66,8 +64,10 @@ import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.sockets.CloseStatus;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketFromRemote;
+import com.couchbase.lite.internal.sockets.SocketState;
 import com.couchbase.lite.internal.sockets.SocketToCore;
 import com.couchbase.lite.internal.sockets.SocketToRemote;
 import com.couchbase.lite.internal.support.Log;
@@ -78,44 +78,39 @@ import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
- * First of all, you need to know about ProtocolTypes.
- * Core knows all about the WebSockets protocol.  It would be glad to be pretty much completely responsible
- * for a WS connection, if we could just send the bytes across some raw byte stream.  For better or worse, though
- * we hired OkHTTP for this job. It is also very smart and *it* wants to handle the WS connection.  The solution,
- * dating back to the dawn of time, is that we *always* use what Core, quite oddly, calls MESSAGE_STREAM protocol.
- * In this mode Core hands us only minimal state transition information and the basic payload data that
- * must be transferred.
- * The comments in c4Socket.h are incredibly valuable.
+ * This class is just a switch that routes things between OkHttp and Core.  Core sends to the remote using
+ * the SocketFromCore methods implemented here.  OkHttp sends to Core using the SocketToCore methods
+ * which are proxied directly to C4Socket.<br/>
+ * +------+                                                                      +--------+<br/>
+ * |      | ==> SocketFromCore ==> AbstractCBLWebSocket ==>   SocketToCore   ==> |        |<br/>
+ * | core |                                                                      | remote |<br/>
+ * |      | <==  SocketToCore  <== AbstractCBLWebSocket <== SocketFromRemote <== |        |<br/>
+ * +------+                                                                      +--------+<br/>
  * <p>
- * So, some assumptions.  If you are here:
+ * To understanding what goes on here, you need to know about MessageFraming (and its API relative, ProtocolTypes).
+ * Core knows all about the WebSockets protocol.  It would be glad to be pretty much completely responsible for a
+ * WS connection, if we could just send the bytes across some raw byte stream.  Most of the platforms use this mode,
+ * called CLIENT_FRAMING (ProtocolType.BYTE_STREAM). For better or worse, though we hired OkHTTP to do this job.
+ * It is also very smart and *it* wants to handle the WS connection.  The solution, dating back to the dawn of time,
+ * is that we *always* use the connection mode NO_FRAMING (ProtocolType.MESSAGE_STREAM). In this mode Core calls
+ * us for state transitions, but provides on the basic payload data that must be transferred.  Java code is
+ * responsible for framing the data as necessary for the remote.  We leave that to OkHttp.
+ * <p>
+ * <p>
+ * This document: https://docs.google.com/document/d/1DH1heyHw_pIJdKx8K1vD1GBvwp5RVlX_IUN2DohkSg0/edit,
+ * and the comments in c4Socket.h are quite valuable.
+ * <p>
+ * <p>
+ * Some assumptions.  If you are here:
  * <ul>
- * <li> you are talking MESSAGE_STREAM.
- * <li> there are no inbound connections
+ * <li> the remote never initiates a connection.
+ * <li> you are talking MessageFraming.NO_FRAMING.
  * </ul>
- * This class is just a switch that routes things between OkHttp and Core.  Core does its callbacks via the
- * abstract methods defined in C4Socket and implemented here.  OkHttp does its callbacks to the CBLWebSocketListener
- * which proxies them directly to Core, via C4Socket.
- * The peculiar factory method returns an instance of the concrete subclass, CBLWebSocket.  There are different
- * sources for that class, one for each of the (CE/EE x platform) variants of the product.
  * <p>
- * State transition:
- * Things kick off when Core calls openSocket.  We are now in the state CONNECTING.  In response, we ask OkHttp
- * to open a connection to the remote. In the happy case, OkHttp successfully makes the connection to the remote.
- * That causes a callback to CBLWebSocketListener.onOpen.  We proxy that call to Core.  The connection is now OPEN.
- * After that, the two sides chat.  If Core has something to say, we get a call to send().  We proxy that call to
- * OkHttp, and, when the data has been sent, call back to Core with completedWrite().  If the remote has something
- * to say, we get a call to one of the two CBLWebSocketListener.onMessage() methods and proxy the content to
- * Core by calling received()
- * Eventually, someone decides to close the connection.  If it is the remote, we get a call to
- * CBLWebSocketListener.onClosing().  We proxy that to Core, which, surprisingly, turns right around and proxies
- * it back to us, by calling close().
- * If it is Core that decides to close the connection, we get a call to requestClose().  That should result in a
- * call to CBLWebSocketListener.onClosed().
- * <p>
- * This class is going to cause deadlocks.  While C4Socket does not synchronise outbound messages (Core to remote)
- * this class does.  Messages headed in either direction (to or from core) seize the object lock (from C4NativePeer).
- * If message processing seizes any other locks, the two lock may be seized in the opposite order depending on which
- * way the message is going.  This invites deadlock.
+ * This class operates under the assumption that its correspondents are fairly state tolerant:
+ * they can cope with events that are only appropriate to states that they are no longer in.
+ * While the state machine makes a best effort at preventing out-of-state events, there are several
+ * races would allow rogues.
  */
 @SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.ExcessiveImports"})
 public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFromRemote, AutoCloseable {
@@ -131,8 +126,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     private static final String CHALLENGE_BASIC = "Basic";
     private static final String HEADER_AUTH = "Authorization";
     public static final String HEADER_COOKIES = "Cookies"; // client customized cookies
-
-    private enum State {INIT, CONNECTING, OPEN, CLOSE_REQUESTED, CLOSING, CLOSED, FAILED}
 
     //-------------------------------------------------------------------------
     // Types
@@ -186,8 +179,9 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         @Override
         public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
             final List<Cookie> cookies = new ArrayList<>();
+
             synchronized (getLock()) {
-                if (!state.assertState(State.INIT, State.CONNECTING)) { return cookies; }
+                if (!state.assertState(SocketState.UNOPENED, SocketState.OPENING)) { return cookies; }
 
                 // Cookies from config
                 if (options != null) {
@@ -211,14 +205,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     @NonNull
     private static final TaggedWeakPeerBinding<KeyManager> KEY_MANAGERS = new TaggedWeakPeerBinding<>();
 
-    private static final StateMachine.Builder<State> WS_STATE_BUILDER
-        = new StateMachine.Builder<>(State.class, State.INIT, State.FAILED)
-        .addTransition(State.INIT, State.CONNECTING)
-        .addTransition(State.CONNECTING, State.OPEN, State.CLOSE_REQUESTED, State.CLOSING, State.CLOSED)
-        .addTransition(State.OPEN, State.CLOSE_REQUESTED, State.CLOSING, State.CLOSED)
-        .addTransition(State.CLOSE_REQUESTED, State.CLOSING, State.CLOSED)
-        .addTransition(State.CLOSING, State.CLOSED);
-
     //-------------------------------------------------------------------------
     // Static methods
     //-------------------------------------------------------------------------
@@ -236,7 +222,12 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     // assert these are thread-safe
     @NonNull
+    private final SocketToCore toCore;
+    @NonNull
+    private final SocketToRemote toRemote;
+    @NonNull
     private final URI uri;
+    // effectively final: (Collections.unmodifiable)
     @Nullable
     private final Map<String, Object> options;
     @NonNull
@@ -244,15 +235,10 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     @GuardedBy("getPeerLock()")
     @NonNull
-    private final StateMachine<State> state = WS_STATE_BUILDER.build();
+    private final CBLCookieStore cookieStore;
     @GuardedBy("getPeerLock()")
     @NonNull
-    private final CBLCookieStore cookieStore;
-
-    @NonNull
-    private final SocketToRemote toRemote;
-    @NonNull
-    protected final SocketToCore toCore;
+    private final StateMachine<SocketState> state = SocketState.getSocketStateMachine();
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -276,8 +262,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     @Override
     @NonNull
     public String toString() {
-        return "CBLWebSocket@" + ClassUtils.objId(this)
-            + "{" + toCore + " <=> " + toRemote + "(" + uri + ")}";
+        return "CBLWebSocket@" + ClassUtils.objId(this) + "{" + toCore + " <=> " + toRemote + "(" + uri + ")}";
     }
 
     @Nullable
@@ -289,9 +274,10 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     //-------------------------------------------------------------------------
 
     // Allow subclass to handle errors.
-    protected abstract boolean handleClose(Throwable error);
+    @Nullable
+    protected abstract CloseStatus handleClose(@NonNull Throwable error);
 
-    protected abstract int handleCloseCause(Throwable error);
+    protected abstract int handleCloseCause(@NonNull Throwable error);
 
     //-------------------------------------------------------------------------
     // Implementation of AutoClosable
@@ -300,77 +286,77 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     @Override
     public void close() {
         Log.d(LOG_DOMAIN, "%s.close: %s", this, uri);
-        synchronized (getLock()) {
-            if (state.setState(State.CLOSE_REQUESTED)) {
-                toCore.requestCoreClose(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
-                return;
-            }
-            if (state.setState(State.CLOSING)) {
-                closeWebSocket(C4Constants.WebSocketError.GOING_AWAY, "Closed by client");
-                return;
-            }
-            state.setState(State.CLOSED);
-        }
+        toCore.requestCoreClose((new CloseStatus(C4Constants.WebSocketError.GOING_AWAY, "Closed by client")));
     }
 
     //-------------------------------------------------------------------------
-    // Implementation of CoreSocketListener (Core to Remote)
+    // Implementation of SocketFromCore (Core to Remote)
     //-------------------------------------------------------------------------
 
     // Core needs a connection to the remote
     @Override
-    public final void coreRequestedOpen() {
+    public final void coreRequestsOpen() {
         Log.d(LOG_DOMAIN, "%s.coreRequestedOpen", this);
-        synchronized (getLock()) {
-            if (!state.setState(State.CONNECTING)) { return; }
-            toRemote.openRemote(newRequest());
-        }
+        if (!changeState(SocketState.OPENING)) { return; }
+        toRemote.openRemote(uri, options);
+        // remote will call remoteOpened or remoteClosed now.
     }
 
-    // Core wants to transfer data to the remote
+    // Core wants to send data to the remote
+    // There is a race here: the socket could be closed between the write and the ack.  :shrug:
+    // Note that, if the write fails, we depend on the remote closing the connection.
     @Override
     public final void coreWrites(@NonNull byte[] data) {
-        final int dLen = data.length;
-        Log.d(LOG_DOMAIN, "%s.coreWrites(%d)", this, dLen);
-        synchronized (getLock()) {
-            if (!state.assertState(State.OPEN)) { return; }
-
-            if (!toRemote.sendToRemote(data)) {
-                Log.i(LOG_DOMAIN, "CBLWebSocket failed to send data of length = " + dLen);
-                return;
-            }
-
-            toCore.ackWriteToCore(data.length);
+        final int len = data.length;
+        Log.d(LOG_DOMAIN, "%s.coreWrites(%d)", this, len);
+        if (!assertState(SocketState.OPEN, SocketState.CLOSING)) { return; }
+        if (toRemote.writeToRemote(data)) {
+            toCore.ackWriteToCore(len);
+            return;
         }
+        Log.i(LOG_DOMAIN, "CBLWebSocket failed to send data of length: " + len);
     }
 
-    // Core confirms the reception of n bytes: ignored
+    // Core confirms the reception of n bytes.  The remote doesn't care...
     @Override
-    public void coreAckReceive(long n) { Log.d(LOG_DOMAIN, "%s.coreAckReceive: %d", this, n); }
+    public void coreAcksWrite(long n) { Log.d(LOG_DOMAIN, "%s.coreAckReceive: %d", this, n); }
 
     // Core wants to break the connection
     @Override
-    public final void coreRequestedClose(int code, String message) {
-        Log.d(LOG_DOMAIN, "%s.coreRequestedClose(%d)", this, code);
-        synchronized (getLock()) {
-            if (!state.setState(State.CLOSING)) { return; }
-            closeWebSocket(code, message);
+    public final void coreRequestsClose(@NonNull CloseStatus status) {
+        Log.d(LOG_DOMAIN, "%s.coreRequestsClose%s", this, status);
+
+        if (!assertState(SocketState.OPEN, SocketState.CLOSING)) { return; }
+
+        // We've told Core to leave the connection to us, so it might pass us the HTTP status
+        // If it does, we need to convert it to a WS status for the other side.
+        if ((status.code > C4Constants.HttpError.STATUS_MIN) && (status.code < C4Constants.HttpError.STATUS_MAX)) {
+            status = new CloseStatus(
+                C4Constants.ErrorDomain.WEB_SOCKET,
+                C4Constants.WebSocketError.POLICY_ERROR,
+                status.message);
         }
+
+        // remote will call remoteClosed if this succeeds.
+        if (toRemote.closeRemote(status)) { return; }
+
+        Log.d(LOG_DOMAIN, "%s.coreRequestsClose: Could not close remote", this);
     }
 
-    // Used in byte stream mode: irrelevant here
+    // since mode is always NO_FRAMING, this should never be called.
     @Override
-    public final void coreClosed() { Log.d(LOG_DOMAIN, "%s.coreClosed", this); }
+    public final void coreClosed() { Log.w(LOG_DOMAIN, "%s.coreClosed: ignoring unexpected call", this); }
 
 
     //-------------------------------------------------------------------------
-    // Implementation of RemoteSocketListener (Remote to Core)
+    // Implementation of SocketFromRemote (Remote to Core)
     //-------------------------------------------------------------------------
 
     @NonNull
     @Override
     public Object getLock() { return toCore.getLock(); }
 
+    // Set up the remote socket factory
     @Override
     public void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) throws GeneralSecurityException {
         // Heartbeat
@@ -393,129 +379,91 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     }
 
     @Override
-    public void remoteOpened(@NonNull Response resp) {
-        Log.d(LOG_DOMAIN, "%s.remoteOpened: %s", this, resp);
-        synchronized (getLock()) {
-            if (!state.setState(State.OPEN)) { return; }
-            receivedHTTPResponse(resp);
-            toCore.ackOpenToCore();
-        }
+    public void remoteOpened(int code, @Nullable Map<String, Object> headers) {
+        Log.d(LOG_DOMAIN, "%s.remoteOpened: %s", this, headers);
+        if (!changeState(SocketState.OPEN)) { return; }
+        toCore.ackOpenToCore(code, encodHeaders(headers));
     }
 
     @Override
     public void remoteWrites(@NonNull byte[] data) {
         Log.d(LOG_DOMAIN, "%s.remoteWrites(%d)", this, data.length);
-        synchronized (getLock()) {
-            if (!state.assertState(State.OPEN)) { return; }
-            toCore.sendToCore(data);
-        }
+        if (!assertState(SocketState.OPEN, SocketState.CLOSING)) { return; }
+        toCore.writeToCore(data);
     }
 
     @Override
-    public void remoteRequestedClose(int code, @NonNull String reason) {
-        Log.d(LOG_DOMAIN, "%s.remoteRequestedClose: %s", this, reason);
-        synchronized (getLock()) {
-            if (!state.setState(State.CLOSE_REQUESTED)) { return; }
-            toCore.requestCoreClose(code, reason);
-        }
+    public void remoteRequestsClose(@NonNull CloseStatus status) {
+        Log.d(LOG_DOMAIN, "%s.remoteRequestsClose: %s", this, status);
+        if (!changeState(SocketState.CLOSING)) { return; }
+        toCore.requestCoreClose(status);
     }
 
     @Override
-    public void remoteClosed(int code, @NonNull String reason) {
-        Log.d(LOG_DOMAIN, "%s.remoteClosed(%d): %s", this, code, reason);
-        synchronized (getLock()) {
-            if (!state.setState(State.CLOSED)) { return; }
-            closeWithCode(code, reason);
+    public void remoteClosed(@NonNull CloseStatus status) {
+        Log.d(LOG_DOMAIN, "%s.remoteClosed(%d): %s", this, status);
+        if (!changeState(SocketState.CLOSED)) { return; }
+        if (status.code == C4Constants.WebSocketError.NORMAL) {
+            status = new CloseStatus(
+                C4Constants.ErrorDomain.LITE_CORE,
+                C4Constants.LiteCoreError.SUCCESS,
+                status.message);
         }
+        toCore.closeCore(status);
     }
 
     @Override
-    public void remoteFailed(@NonNull Throwable err, @Nullable Response resp) {
-        Log.d(LOG_DOMAIN, "%s.remoteFailed: %s", err, this, resp);
-        synchronized (getLock()) {
-            state.setState(State.FAILED);
-
-            if (resp == null) {
-                closeWithError(err);
-                return;
-            }
-
-            closeWithCode(resp.code(), resp.message());
-        }
+    public void remoteFailed(@NonNull Throwable err) {
+        Log.d(LOG_DOMAIN, "%s.remoteFailed: %s", err, this);
+        if (!changeState(SocketState.CLOSED)) { return; }
+        toCore.closeCore(getStatusForError(err));
     }
 
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
 
-    @GuardedBy("getPeerLock()")
-    private void receivedHTTPResponse(@NonNull Response resp) {
-        Log.d(LOG_DOMAIN, "CBLWebSocket received HTTP response %s", resp);
+    // change state.
+    private boolean changeState(@NonNull SocketState newState) {
+        synchronized (getLock()) { return state.setState(newState); }
+    }
 
-        // Post the response headers to LiteCore:
-        final Headers hs = resp.headers();
-        if ((hs == null) || (hs.size() <= 0)) { return; }
+    // change state.
+    private boolean assertState(@NonNull SocketState... expectedStates) {
+        synchronized (getLock()) { return state.assertState(expectedStates); }
+    }
 
-        byte[] headersFleece = null;
-        final Map<String, Object> headers = new HashMap<>();
-        for (int i = 0; i < hs.size(); i++) { headers.put(hs.name(i), hs.value(i)); }
-
+    @Nullable
+    private byte[] encodHeaders(@Nullable Map<String, Object> headers) {
         try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.write(headers);
-            headersFleece = enc.finish();
+            return enc.finish();
         }
         catch (LiteCoreException e) {
             Log.w(LOG_DOMAIN, "CBLWebSocket failed to encode response headers", e);
             Log.d(LOG_DOMAIN, StringUtils.toString(headers));
         }
 
-        toCore.ackHttpToCore(resp.code(), headersFleece);
+        return null;
     }
 
-    // Close the connection to the remote
-    @GuardedBy("getPeerLock()")
-    private void closeWebSocket(int code, String message) {
-        // We've told Core to leave the connection to us, so it might pass us the HTTP status
-        // If it does, we need to convert it to a WS status for the other side.
-        if ((code > C4Constants.HttpError.STATUS_MIN) && (code < C4Constants.HttpError.STATUS_MAX)) {
-            code = C4Constants.WebSocketError.POLICY_ERROR;
-        }
-
-        if (!toRemote.closeRemote(code, message)) {
-            Log.i(LOG_DOMAIN, "CBLWebSocket failed to initiate a graceful shutdown of this web socket.");
-        }
-    }
-
-    @GuardedBy("getPeerLock()")
-    private void closeWithCode(int code, String reason) {
-        Log.v(LOG_DOMAIN, "WebSocket CLOSED with code: %d(%s)", code, reason);
-
-        // success
-        if (code == C4Constants.WebSocketError.NORMAL) {
-            toCore.closeCore(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.SUCCESS, null);
-            return;
-        }
-
-        toCore.closeCore(C4Constants.ErrorDomain.WEB_SOCKET, code, reason);
-    }
-
-    @GuardedBy("getPeerLock()")
-    private void closeWithError(@Nullable Throwable error) {
+    @NonNull
+    private CloseStatus getStatusForError(@Nullable Throwable error) {
         Log.i(LOG_DOMAIN, "WebSocket CLOSED with error", error);
 
         // this probably doesn't happen
         if (error == null) {
-            toCore.closeCore(C4Constants.ErrorDomain.WEB_SOCKET, 0, null);
-            return;
+            return new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, C4Constants.LiteCoreError.SUCCESS, null);
         }
 
-        if (handleClose(error)) { return; }
+        final CloseStatus platformStatus = handleClose(error);
+        if (platformStatus != null) { return platformStatus; }
 
         // ??? this is a kludge to get this test to handle Android versioning,
         //  and still fit into this if-then-else chain.
         // ... which, in itself is a kludge: this implementation is incredibly fragile,
         // being all order dependent and ad-hoc
-        final int causeCode = getCodeForCause(error);
+        final int causeCode = getCodeForError(error);
 
         int domain = C4Constants.ErrorDomain.NETWORK;
         final int code;
@@ -554,10 +502,10 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             code = C4Constants.WebSocketError.POLICY_ERROR;
         }
 
-        toCore.closeCore(domain, code, error.toString());
+        return new CloseStatus(domain, code, error.toString());
     }
 
-    private int getCodeForCause(Throwable error) {
+    private int getCodeForError(Throwable error) {
         final Throwable cause = error.getCause();
         if (cause == null) { return -1; }
 
@@ -573,36 +521,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         }
 
         return 0;
-    }
-
-    @NonNull
-    private Request newRequest() {
-        final Request.Builder builder = new Request.Builder();
-
-        // Sets the URL target of this request.
-        builder.url(uri.toString());
-
-        // Set/update the "Host" header:
-        String host = uri.getHost();
-        if (uri.getPort() >= 0) { host = host + ":" + uri.getPort(); }
-        builder.header("Host", host);
-
-        // Add any additional headers
-        if (options != null) {
-            final Object extraHeaders = options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
-            if (extraHeaders instanceof Map<?, ?>) {
-                for (Map.Entry<?, ?> header: ((Map<?, ?>) extraHeaders).entrySet()) {
-                    builder.header(header.getKey().toString(), header.getValue().toString());
-                }
-            }
-
-            // Configure WebSocket related headers:
-            final Object protocols = options.get(C4Replicator.SOCKET_OPTION_WS_PROTOCOLS);
-            if (protocols instanceof String) { builder.header("Sec-WebSocket-Protocol", (String) protocols); }
-        }
-
-        // Construct the HTTP request
-        return builder.build();
     }
 
     @Nullable

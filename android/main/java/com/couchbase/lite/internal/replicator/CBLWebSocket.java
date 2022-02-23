@@ -29,6 +29,7 @@ import java.security.cert.CertificateRevokedException;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4Constants;
+import com.couchbase.lite.internal.sockets.CloseStatus;
 import com.couchbase.lite.internal.sockets.SocketToCore;
 import com.couchbase.lite.internal.sockets.SocketToRemote;
 import com.couchbase.lite.internal.utils.Fn;
@@ -46,16 +47,19 @@ public final class CBLWebSocket extends AbstractCBLWebSocket {
         super(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
     }
 
+    @Nullable
     @Override
-    protected boolean handleClose(@NonNull Throwable error) {
+    protected CloseStatus handleClose(@NonNull Throwable error) {
         for (Throwable cause = error; cause != null; cause = cause.getCause()) {
-            if ((cause instanceof ErrnoException)) {
-                toCore.closeCore(C4Constants.ErrorDomain.POSIX, ((ErrnoException) cause).errno, error.toString());
-                return true;
+            if (cause instanceof ErrnoException) {
+                return new CloseStatus(
+                    C4Constants.ErrorDomain.POSIX,
+                    ((ErrnoException) cause).errno,
+                    error.toString());
             }
         }
 
-        return false;
+        return null;
     }
 
     @SuppressLint("NewApi")

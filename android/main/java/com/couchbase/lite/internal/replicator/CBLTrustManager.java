@@ -59,7 +59,6 @@ public final class CBLTrustManager extends AbstractCBLTrustManager {
         }
 
         Log.d(LogDomain.NETWORK, "Extended trust check: %d, %s, %s", serverCerts.size(), authType, host);
-
         return new X509TrustManagerExtensions(getDefaultTrustManager()).checkServerTrusted(chain, authType, host);
     }
 }

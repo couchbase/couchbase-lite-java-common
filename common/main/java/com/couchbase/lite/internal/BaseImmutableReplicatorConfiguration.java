@@ -189,25 +189,22 @@ public class BaseImmutableReplicatorConfiguration {
         if (!enableAutoPurge) { options.put(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE, Boolean.FALSE); }
 
         final Map<String, Object> httpHeaders = new HashMap<>();
-        // User-Agent:
         httpHeaders.put("User-Agent", CBLVersion.getUserAgent());
 
-        //headers
-        // If there are cookies, we add them in options as
-        // REPLICATOR_OPTION_COOKIES instead of REPLICATOR_OPTION_EXTRA_HEADERS
         if (headers != null) {
-            final String customCookies = headers.remove(AbstractCBLWebSocket.HEADER_COOKIES);
-            if (customCookies != null) {
-                final Object currentCookies = options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-                final String newCookies = (!(currentCookies instanceof String))
-                    ? customCookies
-                    : new StringBuilder((String) currentCookies).append("; ").append(customCookies).toString();
-                options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, newCookies);
+            // If client code specified a cookies header, remove it and add it to the separate cookies option
+            String cookies = headers.remove(AbstractCBLWebSocket.HEADER_COOKIES);
+            if (cookies != null) {
+                final Object curCookies = options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+                if (curCookies instanceof String) { cookies += "; " + curCookies; }
+                options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, cookies);
             }
+
             for (Map.Entry<String, String> entry: headers.entrySet()) {
                 httpHeaders.put(entry.getKey(), entry.getValue());
             }
         }
+
         options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
 
         return options;

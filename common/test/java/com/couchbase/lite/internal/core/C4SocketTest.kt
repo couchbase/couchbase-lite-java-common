@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.BaseTest
+import com.couchbase.lite.internal.sockets.CloseStatus
 import com.couchbase.lite.internal.sockets.SocketFromCore
 import org.junit.After
 import org.junit.Assert.*
@@ -28,10 +29,10 @@ private const val MOCK_PEER = 500005L
 private open class MockSocketFromCore : SocketFromCore {
     val latch = CountDownLatch(1)
     var threadId: Long? = null
-    override fun coreRequestedOpen() = Unit
+    override fun coreRequestsOpen() = Unit
     override fun coreWrites(data: ByteArray) = Unit
-    override fun coreAckReceive(nBytes: Long) = Unit
-    override fun coreRequestedClose(status: Int, message: String?) = Unit
+    override fun coreAcksWrite(nBytes: Long) = Unit
+    override fun coreRequestsClose(status: CloseStatus) = Unit
     override fun coreClosed() = Unit
     fun called() {
         threadId = Thread.currentThread().id
@@ -67,8 +68,7 @@ private open class MockImpl : C4Socket.NativeImpl {
     override fun nCompletedWrite(peer: Long, nBytes: Long) = verifyPeer(peer)
     override fun nReceived(peer: Long, data: ByteArray?) = verifyPeer(peer)
     override fun nCloseRequested(peer: Long, status: Int, message: String?) = verifyPeer(peer)
-    override fun nClosed(peer: Long, domain: Int, code: Int, message: String?) = verifyPeer(peer)
-    override fun nRelease(peer: Long) {
+    override fun nClosed(peer: Long, domain: Int, code: Int, message: String?) {
         verifyPeer(peer)
         this.peer = -1L
     }
@@ -104,7 +104,7 @@ class C4SocketTest : BaseTest() {
         assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
 
         val fromCore = object : MockSocketFromCore() {
-            override fun coreRequestedOpen() = called()
+            override fun coreRequestsOpen() = called()
         }
 
         createSocket(fromCore)
@@ -138,7 +138,7 @@ class C4SocketTest : BaseTest() {
     fun testCompletedReceive() {
         val fromCore = object : MockSocketFromCore() {
             var realNBytes: Long? = null
-            override fun coreAckReceive(nBytes: Long) {
+            override fun coreAcksWrite(nBytes: Long) {
                 realNBytes = nBytes
                 called()
             }
@@ -156,8 +156,8 @@ class C4SocketTest : BaseTest() {
     fun testRequestClose() {
         val fromCore = object : MockSocketFromCore() {
             var realMessage: String? = null
-            override fun coreRequestedClose(status: Int, message: String?) {
-                realMessage = message
+            override fun coreRequestsClose(status: CloseStatus) {
+                realMessage = status.message
                 called()
             }
         }
@@ -198,49 +198,29 @@ class C4SocketTest : BaseTest() {
     }
 
     @Test
-    fun testSocketClose() {
-        val impl = MockImpl()
-        val socket = createSocket(impl)
-        socket.close()
-        assertEquals(3, impl.totalCalls)
-        assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
-    }
-
-    @Test
-    fun testSocketAckHttpToCore() {
+    fun testSocketAckOpenToCore() {
         val impl = object : MockImpl() {
             var peer: Long? = null
             var status: Int? = null
             var headers: ByteArray? = null
-            override fun nGotHTTPResponse(peer: Long, status: Int, headers: ByteArray?) {
-                super.nGotHTTPResponse(peer, status, headers)
-                this.peer = peer
-                this.status = status
-                this.headers = headers
-            }
-        }
-        val socket = createSocket(impl)
-        val headers = ByteArray(4)
-        socket.ackHttpToCore(302, headers)
-        assertEquals(MOCK_PEER, impl.peer)
-        assertEquals(302, impl.status)
-        assertEquals(headers, impl.headers)
-        assertEquals(2, impl.totalCalls)
-    }
-
-    @Test
-    fun testSocketAckOpenToCore() {
-        val impl = object : MockImpl() {
-            var peer: Long? = null
             override fun nOpened(peer: Long) {
                 super.nOpened(peer)
                 this.peer = peer
             }
+            override fun nGotHTTPResponse(peer: Long, httpStatus: Int, responseHeaders: ByteArray?) {
+                super.nGotHTTPResponse(peer, httpStatus, responseHeaders)
+                this.peer = peer
+                this.status = httpStatus
+                this.headers = responseHeaders
+            }
         }
         val socket = createSocket(impl)
-        socket.ackOpenToCore()
+        val headers = ByteArray(4)
+        socket.ackOpenToCore(302, headers)
         assertEquals(MOCK_PEER, impl.peer)
-        assertEquals(2, impl.totalCalls)
+        assertEquals(302, impl.status)
+        assertEquals(headers, impl.headers)
+        assertEquals(3, impl.totalCalls)
     }
 
     @Test
@@ -262,7 +242,7 @@ class C4SocketTest : BaseTest() {
     }
 
     @Test
-    fun testSocketSendToCore() {
+    fun testSocketWriteToCore() {
         val impl = object : MockImpl() {
             var peer: Long? = null
             var data: ByteArray? = null
@@ -274,7 +254,7 @@ class C4SocketTest : BaseTest() {
         }
         val socket = createSocket(impl)
         val data = byteArrayOf(0x2E, 0x38)
-        socket.sendToCore(data)
+        socket.writeToCore(data)
         assertEquals(MOCK_PEER, impl.peer)
         assertEquals(data, impl.data)
         assertEquals(2, impl.totalCalls)
@@ -286,21 +266,29 @@ class C4SocketTest : BaseTest() {
             var peer: Long? = null
             var code: Int? = null
             var msg: String? = null
-            override fun nCloseRequested(peer: Long, code: Int, msg: String?) {
-                super.nCloseRequested(peer, code, msg)
+            override fun nCloseRequested(peer: Long, status: Int, message: String?) {
+                super.nCloseRequested(peer, status, message)
                 this.peer = peer
-                this.code = code
-                this.msg = msg
+                this.code = status
+                this.msg = message
             }
         }
         val socket = createSocket(impl)
-        socket.requestCoreClose(47, "truly...")
+        socket.requestCoreClose(CloseStatus(47, "truly..."))
         assertEquals(MOCK_PEER, impl.peer)
         assertEquals(47, impl.code)
         assertEquals("truly...", impl.msg)
         assertEquals(2, impl.totalCalls)
     }
 
+    @Test
+    fun testSocketClose() {
+        val impl = MockImpl()
+        val socket = createSocket(impl)
+        socket.close()
+        assertEquals(2, impl.totalCalls)
+        assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
+    }
 
     ////////////////  U T I L I T I E S   ////////////////
 

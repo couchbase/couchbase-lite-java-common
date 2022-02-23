@@ -18,32 +18,42 @@ package com.couchbase.lite.internal.sockets;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Map;
+
 import okhttp3.OkHttpClient;
-import okhttp3.Response;
 
 
+/**
+ * +------+                                                                      +--------+
+ * |      | ==> SocketFromCore ==> AbstractCBLWebSocket ==>   SocketToCore   ==> |        |
+ * | core |                                                                      | remote |
+ * |      | <==  SocketToCore  <== AbstractCBLWebSocket <== SocketFromRemote <== |        |
+ * +------+                                                                      +--------+
+ */
 public interface SocketFromRemote {
     @NonNull
     Object getLock();
 
     // Set up the remote socket factory
+    // This is a small concession to separation of concerns: it drags in a dependency on okhttp.
+    // It probably just isn't worth the trouble of wrapping the OkHttp.Builder in something more abstract.
     @SuppressWarnings("PMD.SignatureDeclareThrowsException")
     void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) throws Exception;
 
     // Remote connections is open
-    void remoteOpened(@NonNull Response resp);
+    void remoteOpened(int code, @Nullable Map<String, Object> headers);
 
     // Remote sent data
     void remoteWrites(@NonNull byte[] data);
 
     // Remote wants to close the connection
-    void remoteRequestedClose(int code, @NonNull String reason);
+    void remoteRequestsClose(@NonNull CloseStatus status);
 
     // Remote connection has been closed
-    void remoteClosed(int code, @NonNull String reason);
+    void remoteClosed(@NonNull CloseStatus status);
 
     // Remote connection failed
     // Invoked when a web socket has been closed due to an error reading from or writing to the network.
     // Outgoing and incoming messages may have been lost. OkHTTP will not make any more calls to this listener
-    void remoteFailed(@NonNull Throwable err, @Nullable Response resp);
+    void remoteFailed(@NonNull Throwable err);
 }

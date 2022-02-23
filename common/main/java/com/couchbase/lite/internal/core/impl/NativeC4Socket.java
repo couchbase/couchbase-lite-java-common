@@ -57,9 +57,6 @@ public class NativeC4Socket implements C4Socket.NativeImpl {
         closed(peer, errorDomain, errorCode, message);
     }
 
-    @Override
-    public void nRelease(long peer) { release(peer); }
-
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
@@ -86,6 +83,4 @@ public class NativeC4Socket implements C4Socket.NativeImpl {
     private static native void closeRequested(long peer, int status, @Nullable String message);
 
     private static native void closed(long peer, int errorDomain, int errorCode, String message);
-
-    private static native void release(long peer);
 }

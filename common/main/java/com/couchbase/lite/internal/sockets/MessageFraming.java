@@ -24,6 +24,13 @@ import java.util.Map;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
+/**
+ * My little footprint:  The names of the ProtocolTypes make absolutely no sense to me,
+ * at all.  I have no idea where they came from: LiteCore doesn't use them.
+ * They can't be changed, because they are part of the API.  The API, though,
+ * is the only place from which they are visible, now.  Everything else
+ * uses this class.
+ */
 public enum MessageFraming {
     CLIENT_FRAMING, NO_FRAMING, SERVER_FRAMING;
 

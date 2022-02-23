@@ -29,6 +29,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Socket;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
+import com.couchbase.lite.internal.sockets.CloseStatus;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketToCore;
@@ -71,7 +72,6 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         void nReceived(long peer, byte[] data);
         void nCloseRequested(long peer, int status, @Nullable String message);
         void nClosed(long peer, int errorDomain, int errorCode, String message);
-        void nRelease(long peer);
     }
 
     //-------------------------------------------------------------------------
@@ -121,7 +121,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
         if ((socket == null) && (!openSocket(peer, factory, scheme, hostname, port, path, options))) { return; }
 
-        withSocket(peer, "open", SocketFromCore::coreRequestedOpen);
+        withSocket(peer, "open", SocketFromCore::coreRequestsOpen);
     }
 
     // Apparently SpotBugs can't tel that `data` *is* null-checked
@@ -140,16 +140,21 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // This method is called by reflection.  Don't change its signature.
     static void completedReceive(long peer, long nBytes) {
         Log.d(LOG_DOMAIN, "^C4Socket.completedReceive@%x(%d)", peer, nBytes);
-        withSocket(peer, "completedReceive", l -> l.coreAckReceive(nBytes));
+        withSocket(peer, "completedReceive", l -> l.coreAcksWrite(nBytes));
     }
 
     // This method is called by reflection.  Don't change its signature.
+    // Called only in NO_FRAMING mode
     static void requestClose(long peer, int status, @Nullable String message) {
         Log.d(LOG_DOMAIN, "^C4Socket.requestClose@%x(%d): '%s'", peer, status, message);
-        withSocket(peer, "requestClose", l -> l.coreRequestedClose(status, message));
+        withSocket(
+            peer,
+            "requestClose",
+            l -> l.coreRequestsClose(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, status, message)));
     }
 
     // This method is called by reflection.  Don't change its signature.
+    // Called only when not in NO_FRAMING mode
     static void close(long peer) {
         Log.d(LOG_DOMAIN, "^C4Socket.close@%x", peer);
         withSocket(peer, "close", SocketFromCore::coreClosed);
@@ -165,15 +170,6 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         final C4Socket socket = new C4Socket(impl, peer);
         BOUND_SOCKETS.bind(peer, socket);
         return socket;
-    }
-
-    private static void withSocket(long peer, @Nullable String op, @NonNull Fn.Consumer<SocketFromCore> task) {
-        final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        if (socket == null) {
-            Log.w(LOG_DOMAIN, "C4Socket.%s@%x: No socket for peer", op, peer);
-            return;
-        }
-        socket.continueWith(task);
     }
 
     private static boolean openSocket(
@@ -211,6 +207,20 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         return true;
     }
 
+    private static void withSocket(long peer, @Nullable String op, @NonNull Fn.Consumer<SocketFromCore> task) {
+        final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
+        if (socket != null) {
+            socket.continueWith(task);
+            return;
+        }
+
+        Log.w(LOG_DOMAIN, "C4Socket.%s@%x: No socket for peer", op, peer);
+    }
+
+    private static void releaseSocket(@NonNull NativeImpl impl, long peer, int domain, int code, @Nullable String msg) {
+        impl.nClosed(peer, domain, code, msg);
+    }
+
     //-------------------------------------------------------------------------
     // Fields
     //-------------------------------------------------------------------------
@@ -242,7 +252,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     @Override
     @NonNull
-    public String toString() { return "C4Socket" + super.toString(); }
+    public String toString() { return "vC4Socket" + super.toString(); }
 
     @SuppressWarnings("NoFinalizer")
     @Override
@@ -280,39 +290,36 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     }
 
     @Override
-    public void ackHttpToCore(int httpStatus, @Nullable byte[] fleeceResponseHeaders) {
-        Log.d(LOG_DOMAIN, "v%s.ackHttpToCore(%d)", this, httpStatus);
-        withPeer(peer -> impl.nGotHTTPResponse(peer, httpStatus, fleeceResponseHeaders));
-    }
-
-    @Override
-    public void ackOpenToCore() {
-        Log.d(LOG_DOMAIN, "v%s.ackOpenToCore", this);
-        withPeer(impl::nOpened);
+    public void ackOpenToCore(int httpStatus, @Nullable byte[] fleeceResponseHeaders) {
+        Log.d(LOG_DOMAIN, "%s.ackOpenToCore", this);
+        withPeer(peer -> {
+            impl.nGotHTTPResponse(peer, httpStatus, fleeceResponseHeaders);
+            impl.nOpened(peer);
+        });
     }
 
     @Override
     public void ackWriteToCore(long byteCount) {
-        Log.d(LOG_DOMAIN, "v%s.ackWriteToCore(%d)", this, byteCount);
+        Log.d(LOG_DOMAIN, "%s.ackWriteToCore(%d)", this, byteCount);
         withPeer(peer -> impl.nCompletedWrite(peer, byteCount));
     }
 
     @Override
-    public void sendToCore(@NonNull byte[] data) {
-        Log.d(LOG_DOMAIN, "v%s.sendToCore(%d)", this, data.length);
+    public void writeToCore(@NonNull byte[] data) {
+        Log.d(LOG_DOMAIN, "%s.sendToCore(%d)", this, data.length);
         withPeer(peer -> impl.nReceived(peer, data));
     }
 
     @Override
-    public void requestCoreClose(int code, @Nullable String msg) {
-        Log.d(LOG_DOMAIN, "v%s.requestCoreClose(%d): '%s'", this, code, msg);
-        withPeer(peer -> impl.nCloseRequested(peer, code, msg));
+    public void requestCoreClose(@NonNull CloseStatus status) {
+        Log.d(LOG_DOMAIN, "%s.requestCoreClose(%d): '%s'", this, status.code, status.message);
+        withPeer(peer -> impl.nCloseRequested(peer, status.code, status.message));
     }
 
     @Override
-    public void closeCore(int domain, int code, @Nullable String msg) {
-        Log.d(LOG_DOMAIN, "v%s.closeCore(%d, %d): '%s'", this, domain, code, msg);
-        release(null, domain, code, msg);
+    public void closeCore(@NonNull CloseStatus status) {
+        Log.d(LOG_DOMAIN, "%s.closeCore(%d, %d): '%s'", this, status.domain, status.code, status.message);
+        release(null, status.domain, status.code, status.message);
     }
 
     //-------------------------------------------------------------------------
@@ -330,6 +337,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // Private methods
     //-------------------------------------------------------------------------
 
+    // proxy this call to the fromCore delegate.
     private void continueWith(Fn.Consumer<SocketFromCore> task) { queue.execute(() -> task.accept(fromCore.get())); }
 
     private void release(LogDomain logDomain, @Nullable String msg) {
@@ -341,8 +349,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             logDomain,
             peer -> {
                 BOUND_SOCKETS.unbind(peer);
-                impl.nClosed(peer, domain, code, msg);
-                impl.nRelease(peer);
+                releaseSocket(impl, peer, domain, code, msg);
             });
     }
 }

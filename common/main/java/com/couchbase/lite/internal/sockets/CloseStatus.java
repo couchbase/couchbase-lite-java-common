@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2022 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,33 +13,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.core;
+package com.couchbase.lite.internal.sockets;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 
-public class C4Error {
-    private final int domain;        // C4Error.domain
-    private final int code;          // C4Error.code
-    private final int info;  // C4Error.internal_info
+public class CloseStatus {
+    public final int domain;
+    public final int code;
+    @Nullable
+    public final String message;
 
-    public C4Error() { this(0, 0, 0); }
+    public CloseStatus(int code, @Nullable String message) { this(0, code, message); }
 
-    public C4Error(int domain, int code, int info) {
+    public CloseStatus(int domain, int code, @Nullable String message) {
         this.domain = domain;
         this.code = code;
-        this.info = info;
+        this.message = message;
     }
-
-    public int getDomain() { return domain; }
-
-    public int getCode() { return code; }
-
-    public int getInternalInfo() { return info; }
 
     @NonNull
     @Override
-    public String toString() {
-        return "C4Error{domain=" + domain + ", code=" + code + ", internalInfo=" + info + '}';
-    }
+    public String toString() { return "CloseStatus{" + domain + ":" + code + ", " + message + "}"; }
 }

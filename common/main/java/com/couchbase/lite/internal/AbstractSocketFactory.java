@@ -115,16 +115,12 @@ public abstract class AbstractSocketFactory {
             return null;
         }
 
-        try {
+
             final SocketToRemote toRemote = new OkHttpSocket();
             final CBLWebSocket socket = new CBLWebSocket(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
             toRemote.init(socket);
             return socket;
-        }
-        catch (Exception e) { Log.w(LogDomain.NETWORK, "Failed to instantiate CBLWebSocket", e); }
-
-        return null;
-    }
+     }
 
     // OkHttp doesn't understand blip or blips
     @NonNull

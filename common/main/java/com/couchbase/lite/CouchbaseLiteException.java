@@ -99,6 +99,7 @@ public final class CouchbaseLiteException extends Exception {
 
         return new CouchbaseLiteException(msg, e, domain, code, null);
     }
+
     static boolean isConflict(@Nullable CouchbaseLiteException err) {
         return (err != null)
             && CBLError.Domain.CBLITE.equals(err.getDomain())

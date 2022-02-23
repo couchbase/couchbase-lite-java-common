@@ -110,6 +110,11 @@
         <exclude name="LawOfDemeter" />
         <exclude name="AvoidCatchingGenericException" />
     </rule>
+    <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
+        <properties>
+            <property name="problemDepth" value="4" />
+        </properties>
+    </rule>
     <rule ref="category/java/design.xml/CyclomaticComplexity">
         <properties>
             <property name="methodReportLevel" value="20" />

@@ -16,18 +16,26 @@
 package com.couchbase.lite.internal.sockets;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-import javax.annotation.Nullable;
+import java.net.URI;
+import java.util.Map;
 
-import okhttp3.Request;
 
-
+/**
+ * +------+                                                                      +--------+
+ * |      | ==> SocketFromCore ==> AbstractCBLWebSocket ==>   SocketToCore   ==> |        |
+ * | core |                                                                      | remote |
+ * |      | <==  SocketToCore  <== AbstractCBLWebSocket <== SocketFromRemote <== |        |
+ * +------+                                                                      +--------+
+ * <p>
+ * These methods are assumed to be instantaneous.  They
+ */
 public interface SocketToRemote extends AutoCloseable {
     @SuppressWarnings("PMD.SignatureDeclareThrowsException")
-    void init(@NonNull SocketFromRemote listener) throws Exception;
-    void openRemote(@NonNull Request request);
-    boolean sendToRemote(@NonNull byte[] data);
-    boolean isRemoteOpen();
-    boolean closeRemote(int code, @Nullable String reason);
+    void init(@NonNull SocketFromRemote listener);
+    boolean openRemote(@NonNull URI uri, @Nullable Map<String, Object> options);
+    boolean writeToRemote(@NonNull byte[] data);
+    boolean closeRemote(@NonNull CloseStatus status);
     void cancelRemote();
 }

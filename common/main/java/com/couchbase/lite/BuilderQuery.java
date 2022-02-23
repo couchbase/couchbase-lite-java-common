@@ -131,7 +131,7 @@ abstract class BuilderQuery extends AbstractQuery {
         return null;
     }
 
-    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.NPathComplexity", "PMD.AvoidDeeplyNestedIfStmts"})
+    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.NPathComplexity"})
     @NonNull
     private String marshalAsJSON() throws JSONException {
         final Map<String, Object> json = new HashMap<>();

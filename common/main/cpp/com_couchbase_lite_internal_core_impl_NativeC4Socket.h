@@ -77,14 +77,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed
         (JNIEnv *, jclass, jlong, jint, jint, jstring);
 
-/*
- * Class:     com_couchbase_lite_internal_core_C4Socket
- * Method:    release
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_release
-        (JNIEnv *, jclass, jlong);
-
 #ifdef __cplusplus
 }
 #endif

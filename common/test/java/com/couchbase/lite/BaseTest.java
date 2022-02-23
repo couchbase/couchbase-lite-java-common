@@ -22,8 +22,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assume;
@@ -34,7 +37,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
@@ -85,7 +87,25 @@ public abstract class BaseTest extends PlatformBaseTest {
 
         setupPlatform();
 
-        testSerialExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
+        testSerialExecutor = new ExecutionService.CloseableExecutor() {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+
+            @Override
+            public void execute(@NotNull Runnable task) {
+                Report.log("task enqueued: " + task);
+                executor.execute(() -> {
+                    Report.log("task started: " + task);
+                    task.run();
+                    Report.log("task finished: " + task);
+                });
+            }
+
+            @Override
+            public boolean stop(long timeout, @NonNull @NotNull TimeUnit unit) {
+                executor.shutdownNow();
+                return true;
+            }
+        };
 
         startTime = System.currentTimeMillis();
     }

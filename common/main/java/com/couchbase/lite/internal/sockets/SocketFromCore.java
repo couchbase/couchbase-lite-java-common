@@ -16,13 +16,23 @@
 package com.couchbase.lite.internal.sockets;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 
+/**
+ * +------+                                                                      +--------+
+ * |      | ==> SocketFromCore ==> AbstractCBLWebSocket ==>   SocketToCore   ==> |        |
+ * | core |                                                                      | remote |
+ * |      | <==  SocketToCore  <== AbstractCBLWebSocket <== SocketFromRemote <== |        |
+ * +------+                                                                      +--------+
+ *
+ * This is, actually two different types depending on Framing.
+ */
 public interface SocketFromCore {
-    void coreRequestedOpen();
+    void coreRequestsOpen();
     void coreWrites(@NonNull byte[] allocatedData);
-    void coreAckReceive(long byteCount);
-    void coreRequestedClose(int status, @Nullable String message);
+    void coreAcksWrite(long byteCount);
+    // called only when NO_FRAMING
+    void coreRequestsClose(@NonNull CloseStatus status);
+    // called only when CLIENT_FRAMING
     void coreClosed();
 }
