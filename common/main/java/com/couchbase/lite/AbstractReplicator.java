@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -325,7 +324,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
      * Adds a listener for receiving the replication status of the specified document.
      * The status will be delivered on the UI thread for the Android platform
      * and on the single threaded default executor on other platforms.
-     *
+     * <p>
      * When developing a Java Desktop application using Swing or JavaFX that needs to update the UI after
      * receiving the status, make sure to schedule the UI update on the UI thread by using
      * SwingUtilities.invokeLater(Runnable) or Platform.runLater(Runnable) respectively.
@@ -663,12 +662,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     @Nullable
     private byte[] getFleeceOptions() {
-        final Map<String, Object> options = new HashMap<>();
-
-        final Authenticator authenticator = config.getAuthenticator();
-        if (authenticator != null) { authenticator.authenticate(options); }
-
-        config.addConnectionOptions(options);
+        final Map<String, Object> options = config.getConnectionOptions();
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {

@@ -37,7 +37,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  */
 public abstract class AbstractCBLTrustManager implements X509TrustManager {
     @Nullable
-    private final byte[] pinnedServerCertificate;
+    private final X509Certificate pinnedServerCertificate;
 
     private final boolean acceptOnlySelfSignedServerCertificate;
 
@@ -48,10 +48,10 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
     private final AtomicReference<X509TrustManager> defaultTrustManager = new AtomicReference<>();
 
     public AbstractCBLTrustManager(
-        @Nullable byte[] pinnedServerCert,
+        @Nullable X509Certificate pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
-        this.pinnedServerCertificate = (pinnedServerCert == null) ? null : pinnedServerCert.clone();
+        this.pinnedServerCertificate = pinnedServerCert;
         this.acceptOnlySelfSignedServerCertificate = acceptOnlySelfSignedServerCertificate;
         this.serverCertsListener = serverCertsListener;
     }
@@ -106,7 +106,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
         // pinnedServerCertificate takes precedence over acceptOnlySelfSignedServerCertificate
         if (pinnedServerCertificate != null) {
             // Compare pinnedServerCertificate and the received cert:
-            if (!Arrays.equals(pinnedServerCertificate, cert.getEncoded())) {
+            if (!pinnedServerCertificate.equals(cert)) {
                 throw new CertificateException("Server certificate does not match pinned certificate");
             }
             return;

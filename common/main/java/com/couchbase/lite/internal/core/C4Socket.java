@@ -259,7 +259,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     public void close() { release(null, "Closed by client"); }
 
     //-------------------------------------------------------------------------
-    // Implementation of ToCore (Remote to Core)
+    // Implementation of SocketToCore (Remote to Core)
     //-------------------------------------------------------------------------
 
     @NonNull

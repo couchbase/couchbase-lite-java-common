@@ -18,6 +18,13 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -59,14 +66,6 @@ public abstract class AbstractReplicatorConfiguration {
         return heartbeat;
     }
 
-    @Nullable
-    protected static byte[] copyCert(@Nullable byte[] cert) {
-        if (cert == null) { return null; }
-        final byte[] newCert = new byte[cert.length];
-        System.arraycopy(cert, 0, newCert, 0, newCert.length);
-        return newCert;
-    }
-
 
     //---------------------------------------------
     // Data Members
@@ -81,7 +80,7 @@ public abstract class AbstractReplicatorConfiguration {
     @Nullable
     private Map<String, String> headers;
     @Nullable
-    private byte[] pinnedServerCertificate;
+    private X509Certificate pinnedServerCertificate;
     @Nullable
     private List<String> channels;
     @Nullable
@@ -155,7 +154,7 @@ public abstract class AbstractReplicatorConfiguration {
         boolean continuous,
         @Nullable Authenticator authenticator,
         @Nullable Map<String, String> headers,
-        @Nullable byte[] pinnedServerCertificate,
+        @Nullable X509Certificate pinnedServerCertificate,
         @Nullable List<String> channels,
         @Nullable List<String> documentIDs,
         @Nullable ReplicationFilter pushFilter,
@@ -274,10 +273,28 @@ public abstract class AbstractReplicatorConfiguration {
      *
      * @param pinnedCert the SSL certificate.
      * @return this.
+     * @deprecated Please use setPinnedServerCertificate(Certificate)
      */
+    @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
-        pinnedServerCertificate = copyCert(pinnedCert);
+        if (pinnedCert == null) { pinnedServerCertificate = null; }
+        else {
+            try (InputStream is = new ByteArrayInputStream(pinnedCert)) {
+                pinnedServerCertificate
+                    = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
+            }
+            catch (IOException | CertificateException e) {
+                throw new IllegalArgumentException("Argument could not be parsed as an X509 Certificate", e);
+            }
+        }
+
+        return getReplicatorConfiguration();
+    }
+
+    @NonNull
+    public final ReplicatorConfiguration setPinnedServerX509Certificate(@Nullable X509Certificate pinnedCert) {
+        pinnedServerCertificate = pinnedCert;
         return getReplicatorConfiguration();
     }
 
@@ -447,9 +464,24 @@ public abstract class AbstractReplicatorConfiguration {
 
     /**
      * Return the remote target's SSL certificate.
+     *
+     * @deprecated Use getPinnedServerX509Certificate
+     */
+    @SuppressWarnings("PMD.MethodReturnsInternalArray")
+    @Deprecated
+    @Nullable
+    public final byte[] getPinnedServerCertificate() {
+        try { return (pinnedServerCertificate == null) ? null : pinnedServerCertificate.getEncoded(); }
+        catch (CertificateEncodingException e) {
+            throw new IllegalStateException("Unrecognized certificate encoding", e);
+        }
+    }
+
+    /**
+     * Return the remote target's SSL certificate.
      */
     @Nullable
-    public final byte[] getPinnedServerCertificate() { return copyCert(pinnedServerCertificate); }
+    public final X509Certificate getPinnedServerX509Certificate() { return pinnedServerCertificate; }
 
     /**
      * Gets the filter used to determine whether a document will be pulled

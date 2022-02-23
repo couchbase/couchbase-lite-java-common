@@ -18,18 +18,19 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Locale;
 import java.util.Map;
 
+import com.couchbase.lite.internal.BaseAuthenticator;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
  * SessionAuthenticator class is an authenticator that will authenticate by using the session ID of
  * the session created by a Sync Gateway
  */
-public final class SessionAuthenticator extends Authenticator {
+public final class SessionAuthenticator extends BaseAuthenticator {
 
     private static final String DEFAULT_SYNC_GATEWAY_SESSION_ID_NAME = "SyncGatewaySession";
 
@@ -87,13 +88,12 @@ public final class SessionAuthenticator extends Authenticator {
     //---------------------------------------------
 
     @Override
-    void authenticate(@NonNull Map<String, Object> options) {
-        final String current = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-        final StringBuffer cookieStr = (current == null) ? new StringBuffer() : new StringBuffer(current);
+    protected void authenticate(@NonNull Map<String, Object> options) {
+        final StringBuilder cookies = new StringBuilder(cookieName).append('=').append(sessionID);
 
-        if (cookieStr.length() > 0) { cookieStr.append("; "); }
-        cookieStr.append(String.format(Locale.ENGLISH, "%s=%s", cookieName, sessionID));
+        final String curCookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+        if (!StringUtils.isEmpty(curCookies)) { cookies.append("; ").append(curCookies); }
 
-        options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, cookieStr.toString());
+        options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, cookies.toString());
     }
 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2022 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,9 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal;
 
-/**
- * Authenticator is an opaque interface.
- */
-public interface Authenticator { }
+import java.util.Map;
+
+import com.couchbase.lite.Authenticator;
+
+
+public abstract class BaseAuthenticator implements Authenticator {
+    protected abstract void authenticate(Map<String, Object> options);
+}

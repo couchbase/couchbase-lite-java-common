@@ -20,6 +20,8 @@ import androidx.annotation.Nullable;
 
 
 public interface SocketToCore extends AutoCloseable {
+
+
     @NonNull
     Object getLock();
     void init(@NonNull SocketFromCore listener);

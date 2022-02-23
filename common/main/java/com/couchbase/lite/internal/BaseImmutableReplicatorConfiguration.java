@@ -18,22 +18,24 @@ package com.couchbase.lite.internal;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.Authenticator;
 import com.couchbase.lite.ConflictResolver;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Endpoint;
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
+import com.couchbase.lite.internal.support.Log;
 
 
 /**
@@ -57,7 +59,7 @@ public class BaseImmutableReplicatorConfiguration {
     @Nullable
     private final Map<String, String> headers;
     @Nullable
-    private final byte[] pinnedServerCertificate;
+    private final X509Certificate pinnedServerCertificate;
     @Nullable
     private final List<String> channels;
     @Nullable
@@ -84,7 +86,7 @@ public class BaseImmutableReplicatorConfiguration {
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
         this.headers = config.getHeaders();
-        this.pinnedServerCertificate = config.getPinnedServerCertificate();
+        this.pinnedServerCertificate = config.getPinnedServerX509Certificate();
         this.channels = config.getChannels();
         this.documentIDs = config.getDocumentIDs();
         this.pushFilter = config.getPushFilter();
@@ -124,11 +126,8 @@ public class BaseImmutableReplicatorConfiguration {
     @Nullable
     public final Map<String, String> getHeaders() { return headers; }
 
-    // DO NOT MESS WITH THIS RETURN VALUE!!!
-    @SuppressWarnings("PMD.MethodReturnsInternalArray")
-    @SuppressFBWarnings("EI_EXPOSE_REP")
     @Nullable
-    public final byte[] getPinnedServerCertificate() { return pinnedServerCertificate; }
+    public final X509Certificate getPinnedServerCertificate() { return pinnedServerCertificate; }
 
     @Nullable
     public final List<String> getChannels() { return channels; }
@@ -157,10 +156,20 @@ public class BaseImmutableReplicatorConfiguration {
     public final Endpoint getTarget() { return target; }
 
     @SuppressWarnings("PMD.NPathComplexity")
-    public void addConnectionOptions(@NonNull Map<String, Object> options) {
+    @NonNull
+    public Map<String, Object> getConnectionOptions() {
+        final Map<String, Object> options = new HashMap<>();
+
+        if (authenticator != null) { ((BaseAuthenticator) authenticator).authenticate(options); }
+
         // Add the pinned certificate if any:
         if (pinnedServerCertificate != null) {
-            options.put(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT, pinnedServerCertificate);
+            try {
+                options.put(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT, pinnedServerCertificate.getEncoded());
+            }
+            catch (CertificateEncodingException e) {
+                Log.w(LogDomain.NETWORK, "Unable to encode pinned certificate.  Ignoring", e);
+            }
         }
 
         if ((documentIDs != null) && (!documentIDs.isEmpty())) {
@@ -200,5 +209,7 @@ public class BaseImmutableReplicatorConfiguration {
             }
         }
         options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
+
+        return options;
     }
 }
