@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
@@ -341,6 +342,78 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         config.setType(ReplicatorType.PULL);
         assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
         assertEquals(ReplicatorType.PULL, config.getType());
+    }
+
+    /**
+     * The 4 tests below test replicator cookies option when specifying replicator configuration
+     **/
+
+    @Test
+    public void testReplicatorWithBothAuthenticationAndHeaderCookies() throws URISyntaxException {
+        Authenticator authenticator = new SessionAuthenticator("mysessionid");
+        HashMap<String, String> header = new HashMap<>();
+        header.put(AbstractCBLWebSocket.HEADER_COOKIES, "region=nw; city=sf");
+        ReplicatorConfiguration configuration = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
+            .setAuthenticator(authenticator)
+            .setHeaders(header);
+
+        ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
+        HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
+
+        assertEquals(
+            "SyncGatewaySession=mysessionid; region=nw; city=sf",
+            options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
+
+        // user specified cookie should be removed from extra header
+        HashMap<String, Object> httpHeaders = (HashMap<String, Object>) options
+            .get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+        assert httpHeaders != null; //httpHeaders must at least include a mapping for User-Agent
+        assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
+    }
+
+    @Test
+    public void testReplicatorWithNoCookie() throws URISyntaxException {
+        ImmutableReplicatorConfiguration immutableConfiguration =
+            new ImmutableReplicatorConfiguration(new ReplicatorConfiguration(
+                baseTestDb,
+                getRemoteTargetEndpoint()));
+        HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
+        assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_COOKIES));
+    }
+
+    @Test
+    public void testReplicatorWithOnlyAuthenticationCookie() throws URISyntaxException {
+        Authenticator authenticator = new SessionAuthenticator("mysessionid");
+        ReplicatorConfiguration configuration = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
+            .setAuthenticator(authenticator);
+
+        ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
+        HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
+
+        assertEquals(
+            "SyncGatewaySession=mysessionid",
+            options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
+    }
+
+    @Test
+    public void testReplicatorWithOnlyHeaderCookie() throws URISyntaxException {
+        HashMap<String, String> header = new HashMap<>();
+        header.put(AbstractCBLWebSocket.HEADER_COOKIES, "region=nw; city=sf");
+        ReplicatorConfiguration configuration = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
+            .setHeaders(header);
+
+        ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
+        HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
+
+        assertEquals(
+            "region=nw; city=sf",
+            options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
+
+        HashMap<String, Object> httpHeaders = (HashMap<String, Object>) options
+            .get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+
+        assert httpHeaders != null; // httpHeaders must at least include a mapping for User-Agent
+        assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
     private ReplicatorActivityLevel getActivityLevelFor(int activityLevel) {

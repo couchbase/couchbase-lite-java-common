@@ -148,6 +148,40 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             }
         }
 
+        /**
+         * This function sends all 3 types of cookies: Sync Gateway authentication cookie, client-specified cookies
+         * and set cookies to remote OkHttp. These cookies are saved in 2 places in CBL JAK, replicator config option
+         * and CookieStore.
+         * <p>
+         * 1. Replicator config options:
+         * - Replicator options is a key-value pairs map with many replicator options, including cookies option.
+         * Cookies option has the key “cookies,” and the value is a string representation of all the cookies provided
+         * by Sync Gateway authentication and included in client-specified headers.
+         * Users create and save these two types of cookies by creating a ReplicatorConfiguration,
+         * setting the SessionAuthenticator and headers map and then running the replicator with this config.
+         * After all existing cookies from SessionAuthenticator and headers are added into cookies option,
+         * FLEncoder encodes them into Fleece and CBL gives this Fleece options to LiteCore until needed.
+         * - Whenever there's a request, LiteCore calls back to CBL, CBL decodes Fleece options back to a map, from
+         * which loadForRequest gets all Sync Gateway and client-specified cookies.
+         * <p>
+         * 2. Database Cookie Store
+         * - After receiving an HTTP request, a server can send one or more Set-Cookie headers with the response.
+         * OkHttp saves the cookies from the response in the CookieJar. The ReplicatorCookieStore then passes these
+         * cookies to C4Database, which then sends them to LiteCore. LiteCore saves these cookies in the database's
+         * cookie store until needed.
+         * - Whenever there's a request, we load these cookies from the CookieJar by calling cookieStore.getCookies.
+         * The actual implementation of this method is LiteCore function c4db_getCookie, which gets all the cookies in
+         * the database’s cookie store.
+         * <p>
+         * This function combines the cookies stored in the options map and Set cookies stored in CookieStore into a
+         * list and gives it to remote OkHttp to create a "Cookie" header.
+         * <p>
+         * Full documentation for CBL JAK Cookie Architecture can be found on the mobile wiki page:
+         * https://hub.internal.couchbase.com/confluence/display/cbeng/Mobile+Team
+         *
+         * @param url
+         * @return a list of all available cookies
+         */
         @NonNull
         @Override
         public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
