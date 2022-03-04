@@ -10,7 +10,7 @@ function usage() {
    echo "  -n|--nexus-repo   The URL of the nexus repo containing LiteCore"
    echo "  -d|--debug        Fetch a debug version"
    echo "  -o|--output       Download target directory. Default is <root>/common/lite-core"
-   echo "  -p|--platform     Core platform: darwin, windows, centos6, centos7 or linux. Default inferred from current OS" 
+   echo "  -p|--platform     Core platform: darwin, windows, centos7 or linux. Default inferred from current OS" 
    echo
 }
 
@@ -72,10 +72,6 @@ case "${PLATFORM}" in
       OS=windows-win64
       hash unzip 2>/dev/null || { echo >&2 "Unable to locate unzip. Aborting..."; exit 1; }
       ;;
-   centos6)
-      OS="centos6"
-      hash tar 2>/dev/null || { echo >&2 "Unable to locate tar. Aborting..."; exit 1; }
-      ;;
    centos7|linux*)
       OS="linux"
       hash tar 2>/dev/null || { echo >&2 "Unable to locate tar. Aborting..."; exit 1; }
@@ -123,7 +119,7 @@ case "${OS}" in
 
       rm -f "${LIB}.zip"
       ;;
-   centos6|linux)
+   linux)
       curl -Lf "${CORE_URL}.tar.gz" -o "${LIB}.tar.gz"
       tar xf "${LIB}.tar.gz"
 
