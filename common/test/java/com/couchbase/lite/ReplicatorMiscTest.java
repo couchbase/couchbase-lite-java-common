@@ -35,6 +35,7 @@ import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -360,14 +361,16 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
         HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
 
-        assertEquals(
-            "SyncGatewaySession=mysessionid; region=nw; city=sf",
-            options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
+        // cookie option contains both sgw cookie and user specified cookie
+        String cookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+        assertNotNull(cookies);
+        assertTrue(cookies.contains("SyncGatewaySession=mysessionid"));
+        assertTrue(cookies.contains("region=nw; city=sf"));
 
         // user specified cookie should be removed from extra header
         HashMap<String, Object> httpHeaders = (HashMap<String, Object>) options
             .get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
-        assert httpHeaders != null; //httpHeaders must at least include a mapping for User-Agent
+        assertNotNull(httpHeaders); //httpHeaders must at least include a mapping for User-Agent
         assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
@@ -412,7 +415,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         HashMap<String, Object> httpHeaders = (HashMap<String, Object>) options
             .get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
 
-        assert httpHeaders != null; // httpHeaders must at least include a mapping for User-Agent
+        assertNotNull(httpHeaders);  // httpHeaders must at least include a mapping for User-Agent
         assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
