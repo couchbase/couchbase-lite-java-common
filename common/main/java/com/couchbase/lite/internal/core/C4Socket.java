@@ -22,6 +22,8 @@ import androidx.annotation.VisibleForTesting;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.SocketFactory;
@@ -122,6 +124,8 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         withSocket(peer, "open", SocketFromCore::coreRequestedOpen);
     }
 
+    // Apparently SpotBugs can't tel that `data` *is* null-checked
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     // This method is called by reflection.  Don't change its signature.
     static void write(long peer, @Nullable byte[] data) {
         final int nBytes = (data == null) ? 0 : data.length;

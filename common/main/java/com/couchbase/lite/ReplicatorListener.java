@@ -20,6 +20,8 @@ import androidx.annotation.Nullable;
 
 import java.util.concurrent.Executor;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.internal.core.C4DocumentEnded;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorListener;
@@ -34,6 +36,8 @@ final class ReplicatorListener implements C4ReplicatorListener {
 
     ReplicatorListener(@NonNull Executor dispatcher) { this.dispatcher = dispatcher; }
 
+    // Apparently SpotBugs can't tel that `status` *is* null-checked
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     @Override
     public void statusChanged(
         @Nullable C4Replicator c4Repl,
@@ -51,7 +55,8 @@ final class ReplicatorListener implements C4ReplicatorListener {
 
         dispatcher.execute(() -> replicator.c4StatusChanged(status));
     }
-
+    // Apparently SpotBugs can't tel that `documents` *is* null-checked
+    @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
     @Override
     public void documentEnded(
         @NonNull C4Replicator c4Repl,
