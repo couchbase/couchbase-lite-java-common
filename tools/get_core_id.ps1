@@ -6,11 +6,10 @@ param(
     [string]$OutPath
 )
 
-$Sha = (& Select-String -Path $PSScriptRoot\..\..\core_version.txt -Pattern $Edition).Substring(4, 40)
-$Sha = $Sha.ToLowerInvariant().Replace("-", "")
-if($OutPath) {
-    Write-Output $Sha | Out-File -FilePath $OutPath -Force -NoNewline -Encoding ASCII
+ $Sha = (Select-String -Path $PSScriptRoot\..\..\core_version.txt -Pattern "^${Edition}: ").Line.Substring(4,40)
+if ([string]::IsNullOrEmpty($OutPath)) {
+   Write-Output $Sha
 } else {
-   -Output $Sha
+    Write-Output $Sha | Out-File -FilePath $OutPath -Force -NoNewline -Encoding ASCII
 }
 
