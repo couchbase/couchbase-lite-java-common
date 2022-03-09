@@ -43,8 +43,7 @@ curl -f -L "${DIST_URL}/${DIST_FILE}" -o "${DIST_FILE}" || exit 1
 unzip "${DIST_FILE}"
 rm -rf "${DIST_FILE}"
 
-jar -xf `find . -name 'couchbase-lite-java*.jar' -print` libs
-
+jar -xf `find */lib -name 'couchbase-lite-java*.jar' -print` libs
 cp -R libs/* "${CORE_DIR}"
 
 popd > /dev/null
