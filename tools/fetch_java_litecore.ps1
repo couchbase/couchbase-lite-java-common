@@ -14,9 +14,7 @@ if($DebugLib) {
     $suffix = "-debug"
 }
 
-Push-Location $PSScriptRoot
-$Sha = & "./litecore_sha.ps1" $Edition
-Pop-Location
+$Sha = (& "$PSScriptRoot/litecore_sha.ps1" $Edition)
 
 $OutputDir="$PSScriptRoot/../lite-core/windows/x86_64"
 New-Item -Type directory -ErrorAction Ignore $OutputDir

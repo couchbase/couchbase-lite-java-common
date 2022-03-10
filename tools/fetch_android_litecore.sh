@@ -11,6 +11,7 @@ function usage() {
    echo "  -d|--debug        Fetch a debug version"
    echo "  -o|--output       Download target directory. Default is <root>/common/lite-core"
    echo
+   exit 1
 }
 
 shopt -s nocasematch
@@ -39,21 +40,18 @@ while [[ $# -gt 0 ]]; do
       *)
          echo >&2 "Unrecognized option $key, aborting..."
          usage
-         exit 1
          ;;
    esac
 done
 
-if [ -z "${EDITION}" ]; then
-   echo >&2 "Missing --edition option, aborting..."
+if [ "${EDITION}" != "CE" -a "${EDITION}" != "EE" ]; then
+   echo >&2 "Unrecognized edition option '${EDITION}'. Aborting..."
    usage
-   exit 1
 fi
 
 if [ -z "${NEXUS_REPO}" ]; then
-   echo >&2 "Missing --nexus-repo option, aborting..."
+   echo >&2 "Missing nexus-repo url. Aborting..."
    usage
-   exit 1
 fi
 
 hash curl 2>/dev/null || { echo >&2 "Unable to locate curl, aborting..."; exit 1; }
@@ -61,16 +59,14 @@ hash curl 2>/dev/null || { echo >&2 "Unable to locate curl, aborting..."; exit 1
 mkdir -p "${OUTPUT_DIR}"
 pushd "${OUTPUT_DIR}" > /dev/null
 
-"${SCRIPT_DIR}/litecore_sha.sh" -v -e ${EDITION} -o .core-sha
-SHA=`cat .core-sha`
-rm -f .core-sha
+ARTIFACT_ID=`"${SCRIPT_DIR}/litecore_sha.sh" -e ${EDITION}`
 
 for ABI in arm64-v8a armeabi-v7a x86 x86_64; do
-    CORE_URL="${NEXUS_REPO}/couchbase-litecore-android-${ABI}/${SHA}/couchbase-litecore-android-${ABI}-${SHA}${DEBUG_SUFFIX}"
+    ARTIFACT_URL="${NEXUS_REPO}/couchbase-litecore-android-${ABI}/${ARTIFACT_ID}/couchbase-litecore-android-${ABI}-${ARTIFACT_ID}${DEBUG_SUFFIX}"
     echo "=== Fetching Android LiteCore-${EDITION} for ${ABI}"
-    echo "  from: ${CORE_URL}"
+    echo "  from: ${ARTIFACT_URL}"
 
-    curl -Lf "${CORE_URL}.zip" -o litecore.zip
+    curl -Lf "${ARTIFACT_URL}.zip" -o litecore.zip
     unzip litecore.zip
 
     LIBLITECORE_DIR="android/${ABI}"

@@ -6,33 +6,22 @@ param(
     [string]$OutPath
 )
 
-if($Edition -eq "") {
-    $Edition = "CE"
-}
-
-Write-Host "LiteCore Edition : $Edition"
+Push-Location $PSScriptRoot\..\..\core
+$ArtifactId = (& git rev-parse HEAD).Substring(0, 40)
+Pop-Location
 
 if($Edition -eq "EE") {
     Push-Location $PSScriptRoot\..\..\couchbase-lite-core-EE
     $EeSha = (& git rev-parse HEAD).Substring(0, 40)
-    Write-Verbose "EE SHA is: '$EeSha'"
     Pop-Location
+    $Sha1 = New-Object System.Security.Cryptography.SHA1CryptoServiceProvider
+    $ArtifactId = [System.BitConverter]::ToString($Sha1.ComputeHash([System.Text.Encoding]::ASCII.GetBytes($ArtifactId + $EeSha)))
+    $ArtifactId = $ArtifactId.ToLowerInvariant().Replace("-", "")
 }
 
-Push-Location $PSScriptRoot\..\..\core
-$CeSha = (& git rev-parse HEAD).Substring(0, 40)
-Write-Verbose "Base SHA is: '$CeSha'"
-Pop-Location
-
-if($Edition -eq "EE") {
-    $sha1 = New-Object System.Security.Cryptography.SHA1CryptoServiceProvider
-    $amalgamation = $CeSha + $EeSha
-    $finalSha = [System.BitConverter]::ToString($sha1.ComputeHash([System.Text.Encoding]::ASCII.GetBytes($amalgamation)))
+if ([string]::IsNullOrEmpty($OutPath)) {
+   Write-Output $ArtifactId
 } else {
-    $finalSha = $CeSha
+    Write-Output $ArtifactId | Out-File -FilePath $OutPath -Force -NoNewline -Encoding ASCII
 }
 
-Write-Output $finalSha.ToLowerInvariant().Replace("-", "")
-if($OutPath) {
-    Write-Output $finalSha.ToLowerInvariant().Replace("-", "") | Out-File -FilePath $OutPath -Force -NoNewline -Encoding ASCII
-}

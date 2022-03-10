@@ -12,6 +12,7 @@ function usage() {
    echo "  -o|--output       Download target directory. Default is <root>/common/lite-core"
    echo "  -p|--platform     Core platform: darwin, windows, centos7 or linux. Default inferred from current OS" 
    echo
+   exit 1
 }
 
 shopt -s nocasematch
@@ -50,16 +51,14 @@ while [[ $# -gt 0 ]]; do
    esac
 done
 
-if [ -z "${EDITION}" ]; then
-   echo >&2 "Missing --edition option, aborting..."
+if [ "${EDITION}" != "CE" -a "${EDITION}" != "EE" ]; then
+   echo >&2 "Unrecognized edition option '${EDITION}'. Aborting..."
    usage
-   exit 1
 fi
 
 if [ -z "${NEXUS_REPO}" ]; then
-   echo >&2 "Missing --nexus-repo option, aborting..."
+   echo >&2 "Missing nexus url. Aborting..."
    usage
-   exit 1
 fi
 
 if [ -z "${PLATFORM}" ]; then PLATFORM="${OSTYPE}"; fi
@@ -86,18 +85,16 @@ hash curl 2>/dev/null || { echo >&2 "Unable to locate curl, aborting..."; exit 1
 mkdir -p "${OUTPUT_DIR}"
 pushd "${OUTPUT_DIR}" > /dev/null
 
-"${SCRIPT_DIR}/litecore_sha.sh" -v -e ${EDITION} -o .core-sha
-SHA=`cat .core-sha`
-rm -f .core-sha
+ARTIFACT_ID=`"${SCRIPT_DIR}/litecore_sha.sh" -e ${EDITION}`
 
-LIB="litecore-${OS}-${SHA}${DEBUG_SUFFIX}"
-CORE_URL="${NEXUS_REPO}/couchbase-litecore-${OS}/${SHA}/couchbase-${LIB}"
-echo "=== Fetching LiteCore-${EDITION}"
-echo "  from: ${CORE_URL}"
+LIB="litecore-${OS}-${ARTIFACT_ID}${DEBUG_SUFFIX}"
+ARTIFACT_URL="${NEXUS_REPO}/couchbase-litecore-${OS}/${ARTIFACT_ID}/couchbase-${LIB}"
+echo "=== Fetching ${OS} LiteCore-${EDITION}"
+echo "  from: ${ARTIFACT_URL}"
 
 case "${OS}" in
    macosx)
-      curl -Lf "${CORE_URL}.zip" -o "${LIB}.zip"
+      curl -Lf "${ARTIFACT_URL}.zip" -o "${LIB}.zip"
       unzip "${LIB}.zip"
 
       LIBLITECORE_DIR=macos/x86_64
@@ -108,7 +105,7 @@ case "${OS}" in
       rm -f "${LIB}.zip"
       ;;
    windows-win64)
-      curl -Lf "${CORE_URL}.zip" -o "${LIB}.zip"
+      curl -Lf "${ARTIFACT_URL}.zip" -o "${LIB}.zip"
       mkdir lib
       unzip -j "${LIB}.zip" -d lib
 
@@ -120,7 +117,7 @@ case "${OS}" in
       rm -f "${LIB}.zip"
       ;;
    linux)
-      curl -Lf "${CORE_URL}.tar.gz" -o "${LIB}.tar.gz"
+      curl -Lf "${ARTIFACT_URL}.tar.gz" -o "${LIB}.tar.gz"
       tar xf "${LIB}.tar.gz"
 
       LIBLITECORE_DIR=linux/x86_64
