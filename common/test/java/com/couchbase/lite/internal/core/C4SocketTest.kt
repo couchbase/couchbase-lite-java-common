@@ -207,7 +207,12 @@ class C4SocketTest : BaseTest() {
                 super.nOpened(peer)
                 this.peer = peer
             }
-            override fun nGotHTTPResponse(peer: Long, httpStatus: Int, responseHeaders: ByteArray?) {
+
+            override fun nGotHTTPResponse(
+                peer: Long,
+                httpStatus: Int,
+                responseHeaders: ByteArray?
+            ) {
                 super.nGotHTTPResponse(peer, httpStatus, responseHeaders)
                 this.peer = peer
                 this.status = httpStatus

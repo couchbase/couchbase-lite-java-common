@@ -128,7 +128,13 @@ public final class StateMachine<T extends Enum<T>> {
         }
 
         if (state != failureState) {
-            Log.d(domain, "StateMachine%s: unexpected state %s %s", new Exception(), this, state, Arrays.toString(expected));
+            Log.d(
+                domain,
+                "StateMachine%s: unexpected state %s %s",
+                new Exception(),
+                this,
+                state,
+                Arrays.toString(expected));
         }
 
         return false;

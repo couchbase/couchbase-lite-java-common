@@ -17,6 +17,7 @@ package com.couchbase.lite.internal.sockets;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import okhttp3.Headers;
@@ -65,17 +67,19 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Instance members
     //-------------------------------------------------------------------------
 
-    // From CBLWebSocket's point of view, this is the inbound pipe, from the remote
-    // From our point of view, it is the connection to core.
-    // This value changes from null to non-null in init and never changes again.
-    private final AtomicReference<SocketFromRemote> toCore = new AtomicReference<>();
-
-    // This is the connection to the remote.
-    // Its value has lifecycle null -> non-null -> null and never changes again.
+    // This is the OkHttp connection outbound to the remote.
+    // Its value has lifecycle null -> valid -> null and never changes again.
     // It would be final, if the initialization process happened in the other order...
     // Whenever this value is non-null, we assume that referenced OkHttp WebSocket
     // will do something reasonable with calls.
     private final AtomicReference<WebSocket> toRemote = new AtomicReference<>();
+
+    // From CBLWebSocket's point of view, this is the inbound pipe, from the remote
+    // From our point of view, it is the outbound connection to core.
+    // Its value has lifecycle null -> valid -> null .
+    private final AtomicReference<SocketFromRemote> toCore = new AtomicReference<>();
+
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     //-------------------------------------------------------------------------
     // Public methods
@@ -97,7 +101,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
             C4Constants.WebSocketError.GOING_AWAY,
             "Closed by client");
         closeRemote(status);
-        closeWebSocket(toRemote.get(), l -> l.remoteClosed(status));
+        closeSocket(toRemote.get(), l -> l.remoteClosed(status));
     }
 
     //-------------------------------------------------------------------------
@@ -108,8 +112,9 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void init(@NonNull SocketFromRemote core) {
         Log.d(LOG_DOMAIN, "%s.init: %s", this, core);
+        if (closed.get()) { throw new IllegalStateException("Attempt to re-open socket"); }
         if ((!toCore.compareAndSet(null, core)) && (!toCore.get().equals(core))) {
-            Log.w(LOG_DOMAIN, "Ignoring attempt to re-initialize OkHttpSocket");
+            throw new IllegalStateException("Attempt to re-initialize socket");
         }
     }
 
@@ -117,8 +122,9 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public boolean openRemote(@NonNull URI uri, @Nullable Map<String, Object> options) {
         Log.d(LOG_DOMAIN, "%s.open: %s, %s", this, uri, options);
+        if (closed.get()) { throw new IllegalStateException("Attempt to re-open socket"); }
 
-        final SocketFromRemote core = assertInitialized();
+        final SocketFromRemote core = safeGetCore();
 
         // This bleeds a bit of the the OkHttp API into the CBLWebsocket.
         // It's just a builder, though: probably ok.
@@ -169,7 +175,8 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void onOpen(@NonNull WebSocket ws, @NonNull Response resp) {
         Log.d(LOG_DOMAIN, "%s.onOpen: %s", this, resp);
-        final SocketFromRemote core = assertInitialized();
+        if (closed.get()) { throw new IllegalStateException("Attempt to re-open socket"); }
+        final SocketFromRemote core = safeGetCore();
         if (!toRemote.compareAndSet(null, ws)) {
             Log.w(LOG_DOMAIN, "Attempt to reopen socket: %s, %s, %s", toRemote.get(), ws);
             return;
@@ -181,7 +188,6 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
             headers = new HashMap<>();
             for (int i = 0; i < httpHeaders.size(); i++) { headers.put(httpHeaders.name(i), httpHeaders.value(i)); }
         }
-
         core.remoteOpened(resp.code(), headers);
     }
 
@@ -215,7 +221,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void onClosed(@NonNull WebSocket ws, int code, @NonNull String message) {
         Log.d(LOG_DOMAIN, "%s.onClosed(%d): '%s'", this, code, message);
-        closeWebSocket(ws, l -> l.remoteClosed(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, code, message)));
+        closeSocket(ws, l -> l.remoteClosed(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, code, message)));
     }
 
     // Remote connection has failed
@@ -224,13 +230,25 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void onFailure(@NonNull WebSocket ws, @NonNull Throwable err, @Nullable Response resp) {
         Log.d(LOG_DOMAIN, "%s.onFailure: %s", err, this, resp);
-        if (resp == null) { closeWebSocket(ws, l -> l.remoteFailed(err)); }
+        if (resp == null) { closeSocket(ws, l -> l.remoteFailed(err)); }
         else {
-            closeWebSocket(
+            closeSocket(
                 ws,
                 l -> l.remoteClosed(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, resp.code(), resp.message())));
         }
     }
+
+    //-------------------------------------------------------------------------
+    // Package protected methods
+    //-------------------------------------------------------------------------
+
+    @VisibleForTesting
+    @Nullable
+    SocketFromRemote getCore() { return toCore.get(); }
+
+    @VisibleForTesting
+    @Nullable
+    WebSocket getRemote() { return toRemote.get(); }
 
     //-------------------------------------------------------------------------
     // Private methods
@@ -267,7 +285,6 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     }
 
     private boolean withRemote(@NonNull Fn.Function<WebSocket, Boolean> op) {
-        assertInitialized();
         final WebSocket remote = toRemote.get();
         if (remote == null) { return false; }
         final Boolean val = op.apply(remote);
@@ -275,7 +292,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     }
 
     private void withCore(@Nullable WebSocket ws, @NonNull Fn.Consumer<SocketFromRemote> op) {
-        final SocketFromRemote core = assertInitialized();
+        final SocketFromRemote core = safeGetCore();
         final WebSocket remote = toRemote.get();
         if (Objects.equals(ws, remote)) {
             op.accept(core);
@@ -284,7 +301,8 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         Log.w(LOG_DOMAIN, "Attempt to execute request on wrong socket: %s, %s", remote, ws);
     }
 
-    private void closeWebSocket(@Nullable WebSocket ws, @NonNull Fn.Consumer<SocketFromRemote> delegate) {
+    private void closeSocket(@Nullable WebSocket ws, @NonNull Fn.Consumer<SocketFromRemote> delegate) {
+        closed.set(true);
         if (!toRemote.compareAndSet(ws, null)) {
             final WebSocket remote = toRemote.get();
             if (remote != null) {
@@ -292,11 +310,12 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
                 return;
             }
         }
-        delegate.accept(assertInitialized());
+        final SocketFromRemote core = toCore.getAndSet(null);
+        if (core != null) { delegate.accept(core); }
     }
 
     @NonNull
-    private SocketFromRemote assertInitialized() {
+    private SocketFromRemote safeGetCore() {
         final SocketFromRemote core = toCore.get();
         if (core == null) { throw new IllegalStateException("Attempt to use socket before initialization"); }
         return core;

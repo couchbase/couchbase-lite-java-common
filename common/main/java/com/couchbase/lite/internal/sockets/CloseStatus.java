@@ -18,6 +18,8 @@ package com.couchbase.lite.internal.sockets;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.internal.utils.ClassUtils;
+
 
 public class CloseStatus {
     public final int domain;
@@ -36,4 +38,15 @@ public class CloseStatus {
     @NonNull
     @Override
     public String toString() { return "CloseStatus{" + domain + ":" + code + ", " + message + "}"; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof CloseStatus)) { return false; }
+        final CloseStatus that = (CloseStatus) o;
+        return (domain == that.domain) && (code == that.code) && ClassUtils.isEqual(message, that.message);
+    }
+
+    @Override
+    public int hashCode() { return ClassUtils.hash(domain, code, message); }
 }

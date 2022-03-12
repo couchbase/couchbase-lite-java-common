@@ -32,4 +32,17 @@ public final class ClassUtils {
     public static String objId(@NonNull Object obj) {
         return "@0x" + Integer.toHexString(System.identityHashCode(obj));
     }
+
+    public static boolean isEqual(Object o1, Object o2) {
+        return (o1 == null) ? o2 == null : o1.equals(o2);
+    }
+
+    public static int hash(Object... objs) {
+        if (objs == null) { return 0; }
+
+        int result = 1;
+        for (Object o : objs) { result = 31 * result + (o == null ? 0 : o.hashCode()); }
+
+        return result;
+    }
 }
