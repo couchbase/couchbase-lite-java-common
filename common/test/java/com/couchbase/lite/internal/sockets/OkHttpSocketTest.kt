@@ -99,11 +99,11 @@ class OkHttpSocketTest : BaseTest() {
         val ok = OkHttpSocket()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
         val mockCore = MockCore()
         ok.init(mockCore)
         assertEquals(mockCore, ok.core)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
     }
 
     // Can't set up a core connection after close
@@ -112,7 +112,7 @@ class OkHttpSocketTest : BaseTest() {
         val ok = OkHttpSocket()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
         ok.close()
         ok.init(MockCore())
     }
@@ -123,12 +123,12 @@ class OkHttpSocketTest : BaseTest() {
         val ok = OkHttpSocket()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.init(MockCore())
         assertNotNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.init(MockCore())
     }
@@ -143,12 +143,12 @@ class OkHttpSocketTest : BaseTest() {
         val ok = OkHttpSocket()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.close()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertTrue(ok.closed)
+        assertTrue(ok.isClosed)
 
         ok.onOpen(MockWS(), Response.Builder().build())
     }
@@ -159,12 +159,12 @@ class OkHttpSocketTest : BaseTest() {
         val ok = OkHttpSocket()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.onOpen(MockWS(), Response.Builder().build())
         assertNull(ok.core)
         assertNotNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.onOpen(MockWS(), Response.Builder().build())
     }
@@ -179,12 +179,12 @@ class OkHttpSocketTest : BaseTest() {
         val ok = OkHttpSocket()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.close()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertTrue(ok.closed)
+        assertTrue(ok.isClosed)
 
         ok.openRemote(URI("https://foo.com"), null)
     }
@@ -195,12 +195,12 @@ class OkHttpSocketTest : BaseTest() {
         val ok = OkHttpSocket()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.openRemote(URI("https://foo.com"), null)
         assertNull(ok.core)
         assertNotNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.openRemote(URI("https://foo.com"), null)
     }
@@ -211,12 +211,12 @@ class OkHttpSocketTest : BaseTest() {
         val ok = OkHttpSocket()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.close()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertTrue(ok.closed)
+        assertTrue(ok.isClosed)
     }
 
     // Close with only the core connection
@@ -232,12 +232,12 @@ class OkHttpSocketTest : BaseTest() {
         })
         assertNotNull(ok.core)
         assertNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.close()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertTrue(ok.closed)
+        assertTrue(ok.isClosed)
         assertEquals(
             CloseStatus(
                 C4Constants.ErrorDomain.WEB_SOCKET,
@@ -277,12 +277,12 @@ class OkHttpSocketTest : BaseTest() {
         )
         assertNotNull(ok.core)
         assertNotNull(ok.remote)
-        assertFalse(ok.closed)
+        assertFalse(ok.isClosed)
 
         ok.close()
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertTrue(ok.closed)
+        assertTrue(ok.isClosed)
         assertEquals(C4Constants.WebSocketError.GOING_AWAY, closeCode)
         assertEquals("Closed by client", closeReason)
         assertEquals(

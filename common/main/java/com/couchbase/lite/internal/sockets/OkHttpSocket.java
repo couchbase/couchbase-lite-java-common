@@ -250,7 +250,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     WebSocket getRemote() { return toRemote.get(); }
 
     @VisibleForTesting
-    boolean getClosed() { return closed.get(); }
+    boolean isClosed() { return closed.get(); }
 
     //-------------------------------------------------------------------------
     // Private methods
