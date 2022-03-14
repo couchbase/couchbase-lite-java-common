@@ -24,6 +24,8 @@
 #include <vector>
 #include <c4.h>
 #include "fleece/Fleece.h"
+#include "fleece/FLExpert.h"
+#include "fleece/FLValue.h"
 
 namespace litecore {
     namespace jni {
