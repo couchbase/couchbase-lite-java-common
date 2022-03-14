@@ -1,8 +1,5 @@
 param(
     [Parameter(Mandatory=$true)]
-    [string]$NexusRepo,
-
-    [Parameter(Mandatory=$true)]
     [ValidateSet('CE','EE')]
     [string]$Edition,
 
@@ -14,34 +11,32 @@ if($DebugLib) {
     $suffix = "-debug"
 }
 
-$Sha = (& "$PSScriptRoot/litecore_sha.ps1" $Edition)
-
 $OutputDir="$PSScriptRoot/../lite-core/windows/x86_64"
 New-Item -Type directory -ErrorAction Ignore $OutputDir
 Push-Location $OutputDir 
 
-$platform = "windows-win64"
-$ZipUrl = "$NexusRepo/couchbase-litecore-$platform/$Sha/couchbase-litecore-$platform-$Sha$suffix.zip"
-$ZipFile = "litecore-$platform$suffix.zip"
-Write-Host "Fetching for $Sha..."
+$ArtifactId = (& "$PSScriptRoot/litecore_sha.ps1" $Edition)
+$ArtifactUrl = "http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-core/sha/$($Sha.Substring(0,2))/$Sha/couchbase-lite-core-windows-win64$suffix.zip"
+Write-Host "=== Fetching Win64 LiteCore-${EDITION}"
+Write-Host "   From $ArtifactUrl"
+
 try {      
-  Write-Host $ZipUrl
-  Invoke-WebRequest $ZipUrl -OutFile $ZipFile
+  Invoke-WebRequest $ArtifactUrl -OutFile litecore.zip
 } catch [System.Net.WebException] {
     Pop-Location
     if($_.Exception.Status -eq [System.Net.WebExceptionStatus]::ProtocolError) {
         $res = $_.Exception.Response.StatusCode
         if($res -eq 404) {
-            Write-Host "No LiteCore available for $Sha!"
+            Write-Host "No LiteCore available for $ArtifactId"
             exit 1
         }
     }
     throw
 }
 
-if(Test-Path "$ZipFile") {
-  & 7z e -y $ZipFile
-  rm $ZipFile
+if(Test-Path litecore.zip) {
+  & 7z e -y litecore.zip
+  rm litecore.zip
 }
 
 Pop-Location

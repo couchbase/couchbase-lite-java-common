@@ -1,16 +1,17 @@
 #!/bin/bash
 
+LATESTBUILDS_CORE="http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-core/sha"
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 OUTPUT_DIR="${SCRIPT_DIR}/../lite-core"
 DEBUG_SUFFIX=""
 
 function usage() {
-   echo "usage: $0 -e EE|CE -n <url> [-d] [-o <dir>] [-p <platform>]"
+   echo "usage: $0 -e EE|CE [-d] [-o <dir>] [-p <platform>]"
+   echo "  -p|--platform     Core platform: darwin, windows, centos7 or linux. Default inferred from current OS" 
    echo "  -e|--edition      LiteCore edition: CE or EE."
-   echo "  -n|--nexus-repo   The URL of the nexus repo containing LiteCore"
    echo "  -d|--debug        Fetch a debug version"
    echo "  -o|--output       Download target directory. Default is <root>/common/lite-core"
-   echo "  -p|--platform     Core platform: darwin, windows, centos7 or linux. Default inferred from current OS" 
    echo
    exit 1
 }
@@ -19,13 +20,13 @@ shopt -s nocasematch
 while [[ $# -gt 0 ]]; do
    key="$1"
    case $key in 
-      -e|--edition)
-         EDITION="$2"
+      -p|--platform)
+         PLATFORM="$2"
          shift
          shift
          ;;
-      -n|--nexus-repo)
-         NEXUS_REPO="$2"
+      -e|--edition)
+         EDITION="$2"
          shift
          shift
          ;;
@@ -38,26 +39,15 @@ while [[ $# -gt 0 ]]; do
          shift
          shift
          ;;
-      -p|--platform)
-         PLATFORM="$2"
-         shift
-         shift
-         ;;
       *)
          echo >&2 "Unrecognized option $key, aborting..."
          usage
-         exit 1
          ;;
    esac
 done
 
 if [ "${EDITION}" != "CE" -a "${EDITION}" != "EE" ]; then
    echo >&2 "Unrecognized edition option '${EDITION}'. Aborting..."
-   usage
-fi
-
-if [ -z "${NEXUS_REPO}" ]; then
-   echo >&2 "Missing nexus url. Aborting..."
    usage
 fi
 
@@ -86,47 +76,50 @@ mkdir -p "${OUTPUT_DIR}"
 pushd "${OUTPUT_DIR}" > /dev/null
 
 ARTIFACT_ID=`"${SCRIPT_DIR}/litecore_sha.sh" -e ${EDITION}`
+ARTIFACT_URL="${LATESTBUILDS_CORE}/${ARTIFACT_ID:0:2}/${ARTIFACT_ID}/couchbase-lite-core-${OS}${DEBUG_SUFFIX}"
 
-LIB="litecore-${OS}-${ARTIFACT_ID}${DEBUG_SUFFIX}"
-ARTIFACT_URL="${NEXUS_REPO}/couchbase-litecore-${OS}/${ARTIFACT_ID}/couchbase-${LIB}"
 echo "=== Fetching ${OS} LiteCore-${EDITION}"
 echo "  from: ${ARTIFACT_URL}"
 
 case "${OS}" in
    macosx)
-      curl -Lf "${ARTIFACT_URL}.zip" -o "${LIB}.zip"
-      unzip "${LIB}.zip"
+      rm -f lib
+      rm -f litecore.zip
+
+      curl -Lf "${ARTIFACT_URL}.zip" -o litecore.zip
+      unzip litecore.zip
 
       LIBLITECORE_DIR=macos/x86_64
-      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>& 1
+      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
       mkdir -p "${LIBLITECORE_DIR}"
       mv -f lib/libLiteCore.dylib "${LIBLITECORE_DIR}"
-
-      rm -f "${LIB}.zip"
       ;;
    windows-win64)
-      curl -Lf "${ARTIFACT_URL}.zip" -o "${LIB}.zip"
-      mkdir lib
-      unzip -j "${LIB}.zip" -d lib
+      rm -f lib
+      rm -f litecore.zip
+
+      curl -Lf "${ARTIFACT_URL}.zip" -o litecore.zip
+      unzip -j litecore.zip -d lib
 
       LIBLITECORE_DIR=windows/x86_64
-      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>& 1
+      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
       mkdir -p "${LIBLITECORE_DIR}"
       mv -f lib/LiteCore.* "${LIBLITECORE_DIR}"
-
-      rm -f "${LIB}.zip"
       ;;
    linux)
-      curl -Lf "${ARTIFACT_URL}.tar.gz" -o "${LIB}.tar.gz"
-      tar xf "${LIB}.tar.gz"
+      rm -f lib
+      rm -f litecore.tgz
+
+      curl -Lf "${ARTIFACT_URL}.tar.gz" -o litecore.tgz
+      tar xf litecore.tgz
 
       LIBLITECORE_DIR=linux/x86_64
-      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>& 1
+      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
       mkdir -p "${LIBLITECORE_DIR}"
       mv -f lib/libLiteCore.so "${LIBLITECORE_DIR}"
 
       SUPPORT_DIR=support/linux/x86_64
-      rm -rf "${SUPPORT_DIR}" > /dev/null 2>& 1
+      rm -rf "${SUPPORT_DIR}" > /dev/null 2>&1
       mkdir -p "${SUPPORT_DIR}" 
 
       mkdir "${SUPPORT_DIR}/libc++" 
@@ -139,12 +132,12 @@ case "${OS}" in
 
       mkdir "${SUPPORT_DIR}/libz" 
       mv -f lib/libz*.so* "${SUPPORT_DIR}/libz"
-
-      rm -f "${LIB}.tar.gz"
       ;;
 esac
 
-rm -rf lib
+rm -f lib > /dev/null 2>&1
+rm -f litecore.zip > /dev/null 2>&1
+rm -f litecore.tgz > /dev/null 2>&1
 
 echo "=== Fetch complete"
 find *
