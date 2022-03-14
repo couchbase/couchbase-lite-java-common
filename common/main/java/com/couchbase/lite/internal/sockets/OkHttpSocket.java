@@ -122,7 +122,6 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public boolean openRemote(@NonNull URI uri, @Nullable Map<String, Object> options) {
         Log.d(LOG_DOMAIN, "%s.open: %s, %s", this, uri, options);
-        if (closed.get()) { throw new IllegalStateException("Attempt to re-open socket"); }
 
         final SocketFromRemote core = safeGetCore();
 
@@ -249,6 +248,9 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @VisibleForTesting
     @Nullable
     WebSocket getRemote() { return toRemote.get(); }
+
+    @VisibleForTesting
+    boolean getClosed() { return closed.get(); }
 
     //-------------------------------------------------------------------------
     // Private methods

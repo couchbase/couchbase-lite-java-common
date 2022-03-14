@@ -17,12 +17,10 @@ package com.couchbase.lite.internal.sockets
 
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.core.C4Constants
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.WebSocket
+import okhttp3.*
+import okhttp3.MediaType.parse
 import okio.ByteString
-import org.junit.Assert.assertEquals
+import org.junit.Assert.*
 import org.junit.Test
 import java.net.URI
 
@@ -86,11 +84,143 @@ open class MockCore : SocketFromRemote {
     }
 }
 
+val mockResponse = Response.Builder()
+    .request(Request.Builder().url("http://url.com").build())
+    .protocol(Protocol.HTTP_1_1)
+    .code(200)
+    .message("")
+    .body(ResponseBody.create(parse("application/json"), "{\"key\": \"val\"}"))
+    .build()
+
 class OkHttpSocketTest : BaseTest() {
-
+    // Can set up a core connection
     @Test
-    fun testCloseBeforeInit() = OkHttpSocket().close()
+    fun testInit() {
+        val ok = OkHttpSocket()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+        val mockCore = MockCore()
+        ok.init(mockCore)
+        assertEquals(mockCore, ok.core)
+        assertFalse(ok.closed)
+    }
 
+    // Can't set up a core connection after close
+    @Test(expected = IllegalStateException::class)
+    fun testRepopenWithInit() {
+        val ok = OkHttpSocket()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+        ok.close()
+        ok.init(MockCore())
+    }
+
+    // Can't set up a core connection twice
+    @Test(expected = IllegalStateException::class)
+    fun testRepopenWithInitWhileOpen() {
+        val ok = OkHttpSocket()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.init(MockCore())
+        assertNotNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.init(MockCore())
+    }
+
+    // Remote can't open the connection until there is a core connection
+    @Test(expected = IllegalStateException::class)
+    fun testOnOpenBeforeInit() = OkHttpSocket().onOpen(MockWS(), Response.Builder().build()).unit()
+
+    // Remote can't open the connection after it has been closed
+    @Test(expected = IllegalStateException::class)
+    fun testRepopenWithOnOpen() {
+        val ok = OkHttpSocket()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.close()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertTrue(ok.closed)
+
+        ok.onOpen(MockWS(), Response.Builder().build())
+    }
+
+    // Remote can't open the connection twice
+    @Test(expected = IllegalStateException::class)
+    fun testRepopenWithOnOpenWhileOpen() {
+        val ok = OkHttpSocket()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.onOpen(MockWS(), Response.Builder().build())
+        assertNull(ok.core)
+        assertNotNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.onOpen(MockWS(), Response.Builder().build())
+    }
+
+    // Core can't open the connection without a core connection
+    @Test(expected = IllegalStateException::class)
+    fun testOpenRemoteBeforeInit() = OkHttpSocket().openRemote(URI("https://foo.com"), null).unit()
+
+    // Core can't reopen the remote connection after close
+    @Test(expected = IllegalStateException::class)
+    fun testReopenWithOpenRemote() {
+        val ok = OkHttpSocket()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.close()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertTrue(ok.closed)
+
+        ok.openRemote(URI("https://foo.com"), null)
+    }
+
+    // Core can't reopen the remote connection after close
+    @Test(expected = IllegalStateException::class)
+    fun testReopenWithOpenRemoteWhileOpen() {
+        val ok = OkHttpSocket()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.openRemote(URI("https://foo.com"), null)
+        assertNull(ok.core)
+        assertNotNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.openRemote(URI("https://foo.com"), null)
+    }
+
+    // Close before open is fine
+    @Test
+    fun testCloseBeforeInit() {
+        val ok = OkHttpSocket()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+
+        ok.close()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertTrue(ok.closed)
+    }
+
+    // Close with only the core connection
+    // closes the core connection
     @Test
     fun testCloseWithCore() {
         var closeStatus: CloseStatus? = null
@@ -100,7 +230,14 @@ class OkHttpSocketTest : BaseTest() {
                 closeStatus = status
             }
         })
+        assertNotNull(ok.core)
+        assertNull(ok.remote)
+        assertFalse(ok.closed)
+
         ok.close()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertTrue(ok.closed)
         assertEquals(
             CloseStatus(
                 C4Constants.ErrorDomain.WEB_SOCKET,
@@ -111,18 +248,43 @@ class OkHttpSocketTest : BaseTest() {
         )
     }
 
+    // Close with both core and remote connections
+    // closes both
+    //
     @Test
     fun testCloseWithCoreAndRemote() {
         var closeStatus: CloseStatus? = null
+        var closeCode: Int? = null
+        var closeReason: String? = null
+
         val ok = OkHttpSocket()
         ok.init(object : MockCore() {
             override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) = Unit
+            override fun remoteOpened(code: Int, headers: MutableMap<String, Any>?) = Unit
             override fun remoteClosed(status: CloseStatus) {
                 closeStatus = status
             }
         })
-        ok.openRemote(URI("https://foo.com"), null)
+        ok.onOpen(
+            object : MockWS() {
+                override fun close(code: Int, reason: String?): Boolean {
+                    closeCode = code
+                    closeReason = reason
+                    return true
+                }
+            },
+            mockResponse
+        )
+        assertNotNull(ok.core)
+        assertNotNull(ok.remote)
+        assertFalse(ok.closed)
+
         ok.close()
+        assertNull(ok.core)
+        assertNull(ok.remote)
+        assertTrue(ok.closed)
+        assertEquals(C4Constants.WebSocketError.GOING_AWAY, closeCode)
+        assertEquals("Closed by client", closeReason)
         assertEquals(
             CloseStatus(
                 C4Constants.ErrorDomain.WEB_SOCKET,
@@ -132,53 +294,6 @@ class OkHttpSocketTest : BaseTest() {
             closeStatus
         )
     }
-
-    @Test
-    fun testInit() {
-        val ok = OkHttpSocket()
-        val mockCore = MockCore()
-        ok.init(mockCore)
-        assertEquals(mockCore, ok.core)
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testRepopenWithInit() {
-        val ok = OkHttpSocket()
-        ok.close()
-        ok.init(MockCore())
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testRepopenWhileOpen() {
-        val ok = OkHttpSocket()
-        ok.init(MockCore())
-        ok.init(MockCore())
-    }
-
-
-    @Test(expected = IllegalStateException::class)
-    fun testOpenRemoteBeforeInit() = OkHttpSocket().openRemote(URI("https://foo.com"), null).unit()
-
-    @Test(expected = IllegalStateException::class)
-    fun testReopenWithOpenRemote() {
-        val ok = OkHttpSocket()
-        ok.close()
-        ok.openRemote(URI("https://foo.com"), null)
-    }
-
-
-    @Test(expected = IllegalStateException::class)
-    fun testOnOpenBeforeInit() = OkHttpSocket().onOpen(MockWS(), Response.Builder().build()).unit()
-
-    @Test(expected = IllegalStateException::class)
-    fun testRepopenWithOnOpen() {
-        val ok = OkHttpSocket()
-        ok.close()
-        ok.onOpen(MockWS(), Response.Builder().build())
-    }
-
-
-
 
 
 //    @Test(expected = IllegalStateException::class)
