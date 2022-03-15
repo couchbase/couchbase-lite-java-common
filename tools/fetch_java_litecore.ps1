@@ -16,7 +16,7 @@ New-Item -Type directory -ErrorAction Ignore $OutputDir
 Push-Location $OutputDir 
 
 $ArtifactId = (& "$PSScriptRoot/litecore_sha.ps1" $Edition)
-$ArtifactUrl = "http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-core/sha/$($Sha.Substring(0,2))/$Sha/couchbase-lite-core-windows-win64$suffix.zip"
+$ArtifactUrl = "http://latestbuilds.service.couchbase.com/builds/latestbuilds/couchbase-lite-core/sha/$($ArtifactId.Substring(0,2))/$ArtifactId/couchbase-lite-core-windows-win64$suffix.zip"
 Write-Host "=== Fetching Win64 LiteCore-${EDITION}"
 Write-Host "   From $ArtifactUrl"
 
