@@ -57,7 +57,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * WARNING!
  * This class and its members are referenced by name, from native code.
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal", "LineLength"})
+@SuppressWarnings({"PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal", "LineLength"})
 public class C4Replicator extends C4NativePeer {
 
     //-------------------------------------------------------------------------

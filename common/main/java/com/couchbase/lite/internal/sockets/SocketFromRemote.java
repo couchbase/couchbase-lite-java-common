@@ -31,6 +31,31 @@ import okhttp3.OkHttpClient;
  * +------+                                                                      +--------+
  */
 public interface SocketFromRemote {
+    SocketFromRemote NULL = new SocketFromRemote() {
+        @NonNull
+        @Override
+        public Object getLock() { throw new UnsupportedOperationException(); }
+
+        @Override
+        public void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) { }
+
+        @Override
+        public void remoteOpened(int code, @Nullable Map<String, Object> headers) { }
+
+        @Override
+        public void remoteWrites(@NonNull byte[] data) { }
+
+        @Override
+        public void remoteRequestsClose(@NonNull CloseStatus status) { }
+
+        @Override
+        public void remoteClosed(@NonNull CloseStatus status) { }
+
+        @Override
+        public void remoteFailed(@NonNull Throwable err) { }
+    };
+
+
     @NonNull
     Object getLock();
 

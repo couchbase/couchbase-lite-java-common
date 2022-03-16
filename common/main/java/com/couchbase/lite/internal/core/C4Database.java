@@ -43,9 +43,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 @SuppressWarnings({
-    "PMD.GodClass",
-    "PMD.ExcessivePublicCount",
     "PMD.TooManyMethods",
+    "PMD.ExcessivePublicCount",
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {

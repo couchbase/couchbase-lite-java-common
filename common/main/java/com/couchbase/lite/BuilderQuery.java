@@ -32,7 +32,6 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JSONUtils;
 
 
-@SuppressWarnings("PMD.GodClass")
 abstract class BuilderQuery extends AbstractQuery {
 
     // NOTE:

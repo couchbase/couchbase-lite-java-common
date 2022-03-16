@@ -73,7 +73,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity", "PMD.TooManyMethods", "PMD.ExcessiveImports"})
+@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.TooManyMethods", "PMD.ExcessiveImports"})
 abstract class AbstractDatabase extends BaseDatabase {
 
     /**

@@ -26,7 +26,7 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
+@SuppressWarnings("PMD.TooManyMethods")
 public class FLValue {
 
     //-------------------------------------------------------------------------

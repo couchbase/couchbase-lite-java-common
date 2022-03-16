@@ -66,7 +66,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * or continuous. The replicator runs asynchronously, so observe the status to
  * be notified of progress.
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.CyclomaticComplexity"})
 public abstract class AbstractReplicator extends BaseReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 

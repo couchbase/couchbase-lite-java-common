@@ -54,7 +54,7 @@ import com.couchbase.lite.internal.utils.Volatile;
  **/
 // This class should be re-implemented as a wrapper that delegates to one of three internal implementations:
 // content in memory, content in stream, content in DB.
-@SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity"})
+@SuppressWarnings("PMD.CyclomaticComplexity")
 public final class Blob implements FLEncodable {
 
     //---------------------------------------------

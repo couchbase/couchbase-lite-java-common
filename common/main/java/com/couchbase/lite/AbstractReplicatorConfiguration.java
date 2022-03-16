@@ -40,7 +40,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Replicator configuration.
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyFields", "PMD.UnnecessaryFullyQualifiedName"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.UnnecessaryFullyQualifiedName"})
 public abstract class AbstractReplicatorConfiguration {
     /**
      * This is a long time: just under 25 days.

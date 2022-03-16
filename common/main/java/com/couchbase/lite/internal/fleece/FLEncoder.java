@@ -34,7 +34,7 @@ import com.couchbase.lite.internal.utils.ClassUtils;
  * and must call the close() method to release it. The "unmanaged" version's peer belongs to Core:
  * it will be release by the native code.
  */
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.GodClass"})
+@SuppressWarnings("PMD.TooManyMethods")
 public abstract class FLEncoder extends C4NativePeer {
 
     // unmanaged: the native code will free it

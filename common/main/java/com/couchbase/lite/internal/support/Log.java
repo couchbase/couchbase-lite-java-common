@@ -51,7 +51,7 @@ import com.couchbase.lite.internal.core.CBLVersion;
  * v: used by core: please do not use in platform coded.
  * d: low-level debugging information
  */
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
+@SuppressWarnings("PMD.TooManyMethods")
 public final class Log {
     private Log() { } // Utility class
 

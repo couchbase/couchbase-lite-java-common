@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
-@SuppressWarnings({"PMD.GodClass", "PMD.TooManyMethods"})
+@SuppressWarnings("PMD.TooManyMethods")
 public class C4Document extends C4NativePeer {
     public static boolean dictContainsBlobs(@NonNull FLSliceResult dict, @NonNull FLSharedKeys sk) {
         return dictContainsBlobs(dict.getHandle(), sk.getHandle());

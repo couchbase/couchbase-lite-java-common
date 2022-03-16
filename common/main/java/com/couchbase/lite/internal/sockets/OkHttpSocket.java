@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import okhttp3.Headers;
@@ -44,8 +43,14 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
 
 
+
 public final class OkHttpSocket extends WebSocketListener implements SocketToRemote {
     private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
+
+    private interface SocketFactory {
+        @NonNull
+        WebSocket create(@NonNull OkHttpClient client, @NonNull Request req, @NonNull WebSocketListener listener);
+    }
 
     @NonNull
     private static final OkHttpClient BASE_HTTP_CLIENT = new OkHttpClient.Builder()
@@ -62,13 +67,38 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
 
         .build();
 
+    // A singleton WebSocket
+    @NonNull
+    private static final WebSocket NULL_WS = new WebSocket() {
+        @NonNull
+        @Override
+        public Request request() { throw new UnsupportedOperationException(); }
+
+        @Override
+        public long queueSize() { throw new UnsupportedOperationException(); }
+
+        @Override
+        public boolean send(@NonNull String text) { throw new UnsupportedOperationException(); }
+
+        @Override
+        public boolean send(@NonNull ByteString bytes) { throw new UnsupportedOperationException(); }
+
+        @Override
+        public boolean close(int code, @Nullable String reason) { throw new UnsupportedOperationException(); }
+
+        @Override
+        public void cancel() { throw new UnsupportedOperationException(); }
+    };
+
 
     //-------------------------------------------------------------------------
     // Instance members
     //-------------------------------------------------------------------------
 
+    private final SocketFactory socketFactory;
+
     // This is the OkHttp connection outbound to the remote.
-    // Its value has lifecycle null -> valid -> null and never changes again.
+    // Its value has lifecycle SocketFromRemote.NULL -> valid -> null and never changes again.
     // It would be final, if the initialization process happened in the other order...
     // Whenever this value is non-null, we assume that referenced OkHttp WebSocket
     // will do something reasonable with calls.
@@ -77,9 +107,16 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // From CBLWebSocket's point of view, this is the inbound pipe, from the remote
     // From our point of view, it is the outbound connection to core.
     // Its value has lifecycle null -> valid -> null .
-    private final AtomicReference<SocketFromRemote> toCore = new AtomicReference<>();
+    private final AtomicReference<SocketFromRemote> toCore = new AtomicReference<>(SocketFromRemote.NULL);
 
-    private final AtomicBoolean closed = new AtomicBoolean(false);
+    //-------------------------------------------------------------------------
+    // Constructors
+    //-------------------------------------------------------------------------
+
+    public OkHttpSocket() { this(OkHttpClient::newWebSocket); }
+
+    @VisibleForTesting
+    OkHttpSocket(@NonNull SocketFactory socketFactory) { this.socketFactory = socketFactory; }
 
     //-------------------------------------------------------------------------
     // Public methods
@@ -93,15 +130,16 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Implementation of AutoCloseable
     //-------------------------------------------------------------------------
 
-    // ??? This needs some testing.  ... or at least some confidence building.
     @Override
     public void close() {
         final CloseStatus status = new CloseStatus(
             C4Constants.ErrorDomain.WEB_SOCKET,
             C4Constants.WebSocketError.GOING_AWAY,
             "Closed by client");
-        closeRemote(status);
-        closeSocket(toRemote.get(), l -> l.remoteClosed(status));
+        final SocketFromRemote core = toCore.getAndSet(null);
+        final WebSocket remote = toRemote.getAndSet(null);
+        if (remote != null) { remote.close(status.code, status.message); }
+        if ((core != null) && (!SocketFromRemote.NULL.equals(core))) { core.remoteClosed(status); }
     }
 
     //-------------------------------------------------------------------------
@@ -112,29 +150,44 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void init(@NonNull SocketFromRemote core) {
         Log.d(LOG_DOMAIN, "%s.init: %s", this, core);
-        if (closed.get()) { throw new IllegalStateException("Attempt to re-open socket"); }
-        if ((!toCore.compareAndSet(null, core)) && (!toCore.get().equals(core))) {
-            throw new IllegalStateException("Attempt to re-initialize socket");
+        if (toCore.compareAndSet(SocketFromRemote.NULL, core)) { return; }
+
+        final SocketFromRemote prevCore = toCore.get();
+        if (prevCore == null) {
+            Log.w(LOG_DOMAIN, "Ignoring attempt to initialize a closed socket socket: %s", this);
+            return;
         }
+        if (core.equals(prevCore)) {
+            Log.w(LOG_DOMAIN, "Ignoring socket re-initialization: %s", this);
+            return;
+        }
+        throw new IllegalStateException("Attempt to re-initialize socket(" + prevCore + "): " + core);
     }
 
     // Request a remote connections
     @Override
     public boolean openRemote(@NonNull URI uri, @Nullable Map<String, Object> options) {
         Log.d(LOG_DOMAIN, "%s.open: %s, %s", this, uri, options);
+        final SocketFromRemote core = getOpenCore();
+        if (core == null) { return false; }
 
-        final SocketFromRemote core = safeGetCore();
+        if (!toRemote.compareAndSet(null, NULL_WS)) {
+            Log.d(LOG_DOMAIN, "Attempt to re-open open socket: %s", this);
+            return false;
+        }
 
         // This bleeds a bit of the the OkHttp API into the CBLWebsocket.
         // It's just a builder, though: probably ok.
         final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
         try { core.setupRemoteSocketFactory(builder); }
         catch (Exception e) {
-            Log.w(LOG_DOMAIN, "Failed constructing socket factory", e);
+            Log.w(LOG_DOMAIN, "Failed creating socket factory", e);
             return false;
         }
 
-        builder.build().newWebSocket(newRequest(uri, options), this);
+        if (!toRemote.compareAndSet(NULL_WS, socketFactory.create(builder.build(), newRequest(uri, options), this))) {
+            throw new IllegalStateException("Failed setting remote web socket: this can't happen!!");
+        }
 
         return true;
     }
@@ -145,6 +198,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         final int nBytes = (data == null) ? -1 : data.length;
         Log.d(LOG_DOMAIN, "%s.write(%d)", this, nBytes);
         if (nBytes <= 0) { return true; }
+        getOpenCore();
         return withRemote(remote -> remote.send(ByteString.of(data, 0, data.length)));
     }
 
@@ -152,6 +206,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public boolean closeRemote(@NonNull CloseStatus status) {
         Log.d(LOG_DOMAIN, "%s.close: %s", this, status);
+        getOpenCore();
         return withRemote(remote -> remote.close(status.code, status.message));
     }
 
@@ -159,10 +214,10 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void cancelRemote() {
         Log.d(LOG_DOMAIN, "%s.cancel", this);
-        withRemote(remote -> {
-            remote.cancel();
-            return true;
-        });
+        final WebSocket remote = toRemote.get();
+        closeSocket(
+            remote,
+            core -> { if (remote != null) { remote.cancel(); }});
     }
 
     //-------------------------------------------------------------------------
@@ -174,12 +229,8 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void onOpen(@NonNull WebSocket ws, @NonNull Response resp) {
         Log.d(LOG_DOMAIN, "%s.onOpen: %s", this, resp);
-        if (closed.get()) { throw new IllegalStateException("Attempt to re-open socket"); }
-        final SocketFromRemote core = safeGetCore();
-        if (!toRemote.compareAndSet(null, ws)) {
-            Log.w(LOG_DOMAIN, "Attempt to reopen socket: %s, %s, %s", toRemote.get(), ws);
-            return;
-        }
+        final SocketFromRemote core = getOpenCore();
+        if ((core == null) || (!verifyRemote(ws))) { return; }
 
         Map<String, Object> headers = null;
         final Headers httpHeaders = resp.headers();
@@ -202,9 +253,9 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Receive data from the remote
     @Override
     public void onMessage(@NonNull WebSocket ws, @NonNull ByteString bytes) {
-        final int nBytes = (bytes == null) ? -1 : bytes.size();
-        Log.d(LOG_DOMAIN, "%s.onBytes(%d)", this, nBytes);
-        if (nBytes <= 0) { return; }
+        final int len = (bytes == null) ? -1 : bytes.size();
+        Log.d(LOG_DOMAIN, "%s.onBytes(%d)", this, len);
+        if (len <= 0) { return; }
         withCore(ws, core -> core.remoteWrites(bytes.toByteArray()));
     }
 
@@ -220,7 +271,10 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void onClosed(@NonNull WebSocket ws, int code, @NonNull String message) {
         Log.d(LOG_DOMAIN, "%s.onClosed(%d): '%s'", this, code, message);
-        closeSocket(ws, l -> l.remoteClosed(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, code, message)));
+        getOpenCore();
+        closeSocket(
+            ws,
+            core -> core.remoteClosed(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, code, message)));
     }
 
     // Remote connection has failed
@@ -229,12 +283,19 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void onFailure(@NonNull WebSocket ws, @NonNull Throwable err, @Nullable Response resp) {
         Log.d(LOG_DOMAIN, "%s.onFailure: %s", err, this, resp);
-        if (resp == null) { closeSocket(ws, l -> l.remoteFailed(err)); }
-        else {
-            closeSocket(
-                ws,
-                l -> l.remoteClosed(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, resp.code(), resp.message())));
+        getOpenCore();
+
+        if (resp == null) {
+            closeSocket(ws, core -> core.remoteFailed(err));
+            return;
         }
+
+        closeSocket(
+            ws,
+            core -> core.remoteClosed(new CloseStatus(
+                C4Constants.ErrorDomain.WEB_SOCKET,
+                resp.code(),
+                resp.message())));
     }
 
     //-------------------------------------------------------------------------
@@ -248,9 +309,6 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @VisibleForTesting
     @Nullable
     WebSocket getRemote() { return toRemote.get(); }
-
-    @VisibleForTesting
-    boolean isClosed() { return closed.get(); }
 
     //-------------------------------------------------------------------------
     // Private methods
@@ -294,17 +352,11 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     }
 
     private void withCore(@Nullable WebSocket ws, @NonNull Fn.Consumer<SocketFromRemote> op) {
-        final SocketFromRemote core = safeGetCore();
-        final WebSocket remote = toRemote.get();
-        if (Objects.equals(ws, remote)) {
-            op.accept(core);
-            return;
-        }
-        Log.w(LOG_DOMAIN, "Attempt to execute request on wrong socket: %s, %s", remote, ws);
+        final SocketFromRemote core = getOpenCore();
+        if ((core != null) && (verifyRemote(ws))) { op.accept(core); }
     }
 
     private void closeSocket(@Nullable WebSocket ws, @NonNull Fn.Consumer<SocketFromRemote> delegate) {
-        closed.set(true);
         if (!toRemote.compareAndSet(ws, null)) {
             final WebSocket remote = toRemote.get();
             if (remote != null) {
@@ -313,13 +365,28 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
             }
         }
         final SocketFromRemote core = toCore.getAndSet(null);
-        if (core != null) { delegate.accept(core); }
+        if ((core != null) && (!SocketFromRemote.NULL.equals(core))) { delegate.accept(core); }
     }
 
-    @NonNull
-    private SocketFromRemote safeGetCore() {
+    @Nullable
+    private SocketFromRemote getOpenCore() {
         final SocketFromRemote core = toCore.get();
-        if (core == null) { throw new IllegalStateException("Attempt to use socket before initialization"); }
+        if (SocketFromRemote.NULL.equals(core)) {
+            throw new IllegalStateException("Attempt to use socket before initialization");
+        }
         return core;
+    }
+
+    private boolean verifyRemote(@Nullable WebSocket ws) {
+        final WebSocket remote = toRemote.get();
+        if (Objects.equals(ws, remote)) { return true; }
+
+        if (remote == null) {
+            Log.d(LOG_DOMAIN, "Ignoring operation on closed socket: %s", ws);
+            return false;
+        }
+
+        Log.w(LOG_DOMAIN, "Ignoring operation on the wrong socket(%s): %s", remote, ws);
+        return false;
     }
 }

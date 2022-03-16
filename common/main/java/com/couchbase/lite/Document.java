@@ -41,7 +41,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Readonly version of the Document.
  */
 // Should probably should be closeable or autoclosable.
-@SuppressWarnings({"PMD.GodClass", "PMD.CyclomaticComplexity"})
+@SuppressWarnings("PMD.CyclomaticComplexity")
 public class Document implements DictionaryInterface, Iterable<String> {
     // !!! This code is from v1.x. Replace with c4rev_getGeneration().
     private static long generationFromRevID(String revID) {

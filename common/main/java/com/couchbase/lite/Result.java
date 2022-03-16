@@ -39,7 +39,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Result represents a row of result set returned by a Query.
  */
-@SuppressWarnings("PMD.GodClass")
 public final class Result implements ArrayInterface, DictionaryInterface, Iterable<String> {
 
     //---------------------------------------------
