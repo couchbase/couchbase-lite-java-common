@@ -24,7 +24,7 @@ import androidx.annotation.NonNull;
  * | core |                                                                      | remote |
  * |      | <==  SocketToCore  <== AbstractCBLWebSocket <== SocketFromRemote <== |        |
  * +------+                                                                      +--------+
- *
+ * <p>
  * This is, actually two different types depending on Framing.
  */
 public interface SocketFromCore {

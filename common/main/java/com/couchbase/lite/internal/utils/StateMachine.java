@@ -17,6 +17,7 @@ package com.couchbase.lite.internal.utils;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -157,9 +158,25 @@ public final class StateMachine<T extends Enum<T>> {
         }
 
         if (state != failureState) {
-            Log.d(domain, "StateMachine%s: no transition: %s => %s %s", this, state, nextState, legalStates);
+            Log.d(
+                domain,
+                "StateMachine%s: no transition: %s => %s %s",
+                this,
+                new Exception(),
+                state,
+                nextState,
+                legalStates);
         }
 
         return false;
     }
+
+    /**
+     * For testing use only
+     *
+     * @return the current machine state
+     */
+    @VisibleForTesting
+    @NonNull
+    public T getCurrentState() { return state; }
 }

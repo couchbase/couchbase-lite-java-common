@@ -43,7 +43,6 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
 
 
-
 public final class OkHttpSocket extends WebSocketListener implements SocketToRemote {
     private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
 
@@ -107,7 +106,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // From CBLWebSocket's point of view, this is the inbound pipe, from the remote
     // From our point of view, it is the outbound connection to core.
     // Its value has lifecycle null -> valid -> null .
-    private final AtomicReference<SocketFromRemote> toCore = new AtomicReference<>(SocketFromRemote.NULL);
+    private final AtomicReference<SocketFromRemote> toCore = new AtomicReference<>(SocketFromRemote.Constants.NULL);
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -139,7 +138,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         final SocketFromRemote core = toCore.getAndSet(null);
         final WebSocket remote = toRemote.getAndSet(null);
         if (remote != null) { remote.close(status.code, status.message); }
-        if ((core != null) && (!SocketFromRemote.NULL.equals(core))) { core.remoteClosed(status); }
+        if ((core != null) && (!SocketFromRemote.Constants.NULL.equals(core))) { core.remoteClosed(status); }
     }
 
     //-------------------------------------------------------------------------
@@ -150,7 +149,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     @Override
     public void init(@NonNull SocketFromRemote core) {
         Log.d(LOG_DOMAIN, "%s.init: %s", this, core);
-        if (toCore.compareAndSet(SocketFromRemote.NULL, core)) { return; }
+        if (toCore.compareAndSet(SocketFromRemote.Constants.NULL, core)) { return; }
 
         final SocketFromRemote prevCore = toCore.get();
         if (prevCore == null) {
@@ -365,13 +364,13 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
             }
         }
         final SocketFromRemote core = toCore.getAndSet(null);
-        if ((core != null) && (!SocketFromRemote.NULL.equals(core))) { delegate.accept(core); }
+        if ((core != null) && (!SocketFromRemote.Constants.NULL.equals(core))) { delegate.accept(core); }
     }
 
     @Nullable
     private SocketFromRemote getOpenCore() {
         final SocketFromRemote core = toCore.get();
-        if (SocketFromRemote.NULL.equals(core)) {
+        if (SocketFromRemote.Constants.NULL.equals(core)) {
             throw new IllegalStateException("Attempt to use socket before initialization");
         }
         return core;

@@ -28,60 +28,27 @@ import java.net.URI
 fun Any?.unit() = Unit
 
 
-open class MockWS : WebSocket {
-    override fun request(): Request {
-        TODO("Not yet implemented")
-    }
-
-    override fun queueSize(): Long {
-        TODO("Not yet implemented")
-    }
-
-    override fun send(text: String): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun send(bytes: ByteString): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun close(code: Int, reason: String?): Boolean {
-        TODO("Not yet implemented")
-    }
-
-    override fun cancel() {
-        TODO("Not yet implemented")
-    }
+private open class MockWS : WebSocket {
+    override fun request(): Request = TODO("Not yet implemented")
+    override fun queueSize(): Long = TODO("Not yet implemented")
+    override fun send(text: String): Boolean = TODO("Not yet implemented")
+    override fun send(bytes: ByteString): Boolean = TODO("Not yet implemented")
+    override fun close(code: Int, reason: String?): Boolean = TODO("Not yet implemented")
+    override fun cancel(): Unit = TODO("Not yet implemented")
 }
 
-open class MockCore : SocketFromRemote {
-    override fun getLock(): Any {
+private open class MockCore : SocketFromRemote {
+    override fun getLock(): Any = TODO("Not yet implemented")
+    override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder): Unit =
         TODO("Not yet implemented")
-    }
 
-    override fun setupRemoteSocketFactory(builder: OkHttpClient.Builder) {
+    override fun remoteOpened(code: Int, headers: MutableMap<String, Any>?): Unit =
         TODO("Not yet implemented")
-    }
 
-    override fun remoteOpened(code: Int, headers: MutableMap<String, Any>?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun remoteWrites(data: ByteArray) {
-        TODO("Not yet implemented")
-    }
-
-    override fun remoteRequestsClose(status: CloseStatus) {
-        TODO("Not yet implemented")
-    }
-
-    override fun remoteClosed(status: CloseStatus) {
-        TODO("Not yet implemented")
-    }
-
-    override fun remoteFailed(err: Throwable) {
-        TODO("Not yet implemented")
-    }
+    override fun remoteWrites(data: ByteArray): Unit = TODO("Not yet implemented")
+    override fun remoteRequestsClose(status: CloseStatus): Unit = TODO("Not yet implemented")
+    override fun remoteClosed(status: CloseStatus): Unit = TODO("Not yet implemented")
+    override fun remoteFailed(err: Throwable): Unit = TODO("Not yet implemented")
 }
 
 val mockResponse: Response = Response.Builder()
@@ -98,7 +65,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testInit() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val mockCore = MockCore()
@@ -110,7 +77,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testInitAfterClose() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         ok.close()
@@ -124,7 +91,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testReinitSameCore() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = MockCore()
@@ -141,7 +108,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test(expected = IllegalStateException::class)
     fun testReinitDifferentCore() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = MockCore()
@@ -161,7 +128,7 @@ class OkHttpSocketTest : BaseTest() {
     fun testOpenRemoteBeforeOpen() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -183,7 +150,7 @@ class OkHttpSocketTest : BaseTest() {
 
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -212,7 +179,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testOpenRemoteWhileClosed() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -240,7 +207,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testWriteToRemoteBeforeOpen() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = MockCore()
@@ -262,7 +229,7 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -291,7 +258,7 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -317,11 +284,11 @@ class OkHttpSocketTest : BaseTest() {
     // Core request to write to a closed socket is ignored
     @Test
     fun testWriteToRemoteAfterClosed() {
-        val ws = object: MockWS() {
+        val ws = object : MockWS() {
             override fun close(code: Int, reason: String?) = true
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -352,7 +319,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testCloseRemoteBeforeOpen() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = MockCore()
@@ -379,7 +346,7 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -414,7 +381,7 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -455,7 +422,7 @@ class OkHttpSocketTest : BaseTest() {
             }
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -487,7 +454,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testCancelRemoteBeforeInit() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
         ok.cancelRemote()
         assertNull(ok.core)
@@ -498,7 +465,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testCancelRemoteBeforeOpen() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = MockCore()
@@ -518,7 +485,7 @@ class OkHttpSocketTest : BaseTest() {
             override fun cancel() = Unit
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -544,7 +511,7 @@ class OkHttpSocketTest : BaseTest() {
             override fun cancel() = Unit
         }
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -573,7 +540,7 @@ class OkHttpSocketTest : BaseTest() {
     fun testCancelRemoteWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -600,7 +567,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testOnOpenBeforeOpen() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = MockCore()
@@ -619,7 +586,7 @@ class OkHttpSocketTest : BaseTest() {
         var respCode = 0
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -648,7 +615,7 @@ class OkHttpSocketTest : BaseTest() {
         var respCode: Int? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -682,7 +649,7 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnOpenWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -710,7 +677,7 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnMessageBeforeOpen() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = MockCore()
@@ -729,7 +696,7 @@ class OkHttpSocketTest : BaseTest() {
         var sentBytes: Int? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -759,7 +726,7 @@ class OkHttpSocketTest : BaseTest() {
         var sentBytes: Int? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -792,7 +759,7 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnMessageWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -817,7 +784,7 @@ class OkHttpSocketTest : BaseTest() {
         var sentBytes: Int? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -854,7 +821,7 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnClosingBeforeOpen() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = MockCore()
@@ -873,7 +840,7 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -903,7 +870,7 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -936,7 +903,7 @@ class OkHttpSocketTest : BaseTest() {
     fun testOnClosingWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -965,7 +932,7 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -989,7 +956,7 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -1018,7 +985,7 @@ class OkHttpSocketTest : BaseTest() {
         var closeStatus: CloseStatus? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -1049,15 +1016,16 @@ class OkHttpSocketTest : BaseTest() {
     // Remote confirmation of close on an closed socket is ignored
     @Test
     fun testOnClosedWhileClosed() {
-        var callPermitted = true;
+        var callPermitted = true
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) {
-                if (callPermitted) { return; }
+                if (callPermitted) {
+                    return; }
                 fail()
             }
         }
@@ -1085,7 +1053,7 @@ class OkHttpSocketTest : BaseTest() {
         var failureErr: Throwable? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -1097,7 +1065,7 @@ class OkHttpSocketTest : BaseTest() {
         assertEquals(core, ok.core)
         assertNull(ok.remote)
 
-        val failure = Exception();
+        val failure = Exception()
         ok.onFailure(ws, failure, null)
         assertNull(ok.core)
         assertNull(ok.remote)
@@ -1110,7 +1078,7 @@ class OkHttpSocketTest : BaseTest() {
         var failureErr: Throwable? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -1127,7 +1095,7 @@ class OkHttpSocketTest : BaseTest() {
         assertEquals(core, ok.core)
         assertEquals(ws, ok.remote)
 
-        val failure = Exception();
+        val failure = Exception()
         ok.onFailure(ws, failure, null)
         assertNull(ok.core)
         assertNull(ok.remote)
@@ -1140,7 +1108,7 @@ class OkHttpSocketTest : BaseTest() {
         var failureErr: Throwable? = null
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {
@@ -1162,21 +1130,22 @@ class OkHttpSocketTest : BaseTest() {
         assertEquals(core, ok.core)
         assertEquals(ws, ok.remote)
 
-        val failure = Exception();
+        val failure = Exception()
         ok.onFailure(ws, failure, null)
         assertNull(ok.core)
         assertNull(ok.remote)
-        assertEquals(failure, failureErr)    }
+        assertEquals(failure, failureErr)
+    }
 
     // Remote failure on a closed socket is ignored
     @Test
     fun testOnFailureWhileClosed() {
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
-        val core = object: MockCore() {
+        val core = object : MockCore() {
             override fun remoteClosed(status: CloseStatus) = Unit
         }
         ok.init(core)
@@ -1196,7 +1165,7 @@ class OkHttpSocketTest : BaseTest() {
     @Test
     fun testCloseBeforeInit() {
         val ok = OkHttpSocket()
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         ok.close()
@@ -1334,7 +1303,7 @@ class OkHttpSocketTest : BaseTest() {
 
         val ws = MockWS()
         val ok = OkHttpSocket { _, _, _ -> ws }
-        assertEquals(SocketFromRemote.NULL, ok.core)
+        assertEquals(SocketFromRemote.Constants.NULL, ok.core)
         assertNull(ok.remote)
 
         val core = object : MockCore() {

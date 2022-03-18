@@ -31,7 +31,9 @@ import okhttp3.OkHttpClient;
  * +------+                                                                      +--------+
  */
 public interface SocketFromRemote {
-    SocketFromRemote NULL = new SocketFromRemote() {
+    enum Constants implements SocketFromRemote {
+        NULL;
+
         @NonNull
         @Override
         public Object getLock() { throw new UnsupportedOperationException(); }
@@ -53,7 +55,7 @@ public interface SocketFromRemote {
 
         @Override
         public void remoteFailed(@NonNull Throwable err) { }
-    };
+    }
 
 
     @NonNull
