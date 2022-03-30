@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.LoadIntegrationTest;
@@ -35,28 +36,111 @@ import static org.junit.Assert.assertTrue;
 public class LoadTest extends BaseDbTest {
     private static final int ITERATIONS = 2000;
 
-    interface VerifyBlock {
+    @FunctionalInterface
+    interface Verifier {
         void verify(int n, Result result);
     }
 
-    @Test
-    public void testCreate() throws Exception {
-        long start = System.currentTimeMillis();
-
-        final String tag = "Create";
-        createDocumentNSave(tag, ITERATIONS);
-        verifyByTagName(tag, ITERATIONS);
-        assertEquals(ITERATIONS, baseTestDb.getCount());
-
-        logPerformanceStats("testCreate()", (System.currentTimeMillis() - start));
-    }
-
     @SlowTest
+    @LoadIntegrationTest
     @Test
     public void testAddRevisions() throws CouchbaseLiteException {
         final int revs = 1000;
         addRevisions(revs, false);
         addRevisions(revs, true);
+    }
+
+    @LoadIntegrationTest
+    @Test
+    public void testCreate() throws CouchbaseLiteException {
+        long start = System.currentTimeMillis();
+
+        final String tag = "Create";
+        createAndSaveDocument(tag, ITERATIONS);
+        verifyByTag(tag, ITERATIONS);
+        assertEquals(ITERATIONS, baseTestDb.getCount());
+
+        logPerformanceStats("testCreate", start);
+    }
+
+    @Ignore
+    @LoadIntegrationTest
+    @Test
+    public void testCreateMany() throws CouchbaseLiteException {
+        for (int i = 0; i < 5; i++) {
+            long start = System.currentTimeMillis();
+            createAndSaveDocument("Create", ITERATIONS);
+            verifyByTag("Create", ITERATIONS);
+            assertEquals(ITERATIONS, baseTestDb.getCount());
+            logPerformanceStats("testCreateMany:" + i, start);
+        }
+    }
+
+    @SlowTest
+    @LoadIntegrationTest
+    @Test
+    public void testDelete() throws CouchbaseLiteException {
+        long start = System.currentTimeMillis();
+
+        final String tag = "Delete";
+
+        // create & delete doc n times
+        for (int i = 0; i < ITERATIONS; i++) {
+            String docID = String.format(Locale.ENGLISH, "doc-%010d", i);
+            createAndSaveDocument(docID, tag);
+            assertEquals(1, baseTestDb.getCount());
+            Document doc = baseTestDb.getDocument(docID);
+            assertNotNull(doc);
+            assertEquals(tag, doc.getString("tag"));
+            baseTestDb.delete(doc);
+            assertEquals(0, baseTestDb.getCount());
+        }
+
+        logPerformanceStats("testDelete", start);
+    }
+
+    @Test
+    @LoadIntegrationTest
+    public void testRead() throws CouchbaseLiteException {
+        long start = System.currentTimeMillis();
+
+        final String docID = "doc1";
+        final String tag = "Read";
+
+        // create 1 doc
+        createAndSaveDocument(docID, tag);
+
+        // read the doc n times
+        for (int i = 0; i < ITERATIONS; i++) {
+            Document doc = baseTestDb.getDocument(docID);
+            assertNotNull(doc);
+            assertEquals(docID, doc.getId());
+            assertEquals(tag, doc.getString("tag"));
+        }
+
+        logPerformanceStats("testRead", start);
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1447
+    @SlowTest
+    @LoadIntegrationTest
+    @Test
+    public void testSaveManyDocs() {
+        long start = System.currentTimeMillis();
+
+         final int m = 100; // num of fields
+
+        // Without Batch
+        for (int i = 0; i < ITERATIONS; i++) {
+            MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%05d", i));
+            for (int j = 0; j < m; j++) { doc.setInt(String.valueOf(j), j); }
+            try { baseTestDb.save(doc); }
+            catch (CouchbaseLiteException e) { Report.log(LogLevel.ERROR, "Failed to save", e); }
+        }
+
+        assertEquals(ITERATIONS, baseTestDb.getCount());
+
+        logPerformanceStats("testSaveManyDocs", start);
     }
 
     @SlowTest
@@ -69,7 +153,7 @@ public class LoadTest extends BaseDbTest {
         String tag = "Create";
 
         // create doc
-        createDocumentNSave(docID, tag);
+        createAndSaveDocument(docID, tag);
 
         Document doc = baseTestDb.getDocument(docID);
         assertNotNull(doc);
@@ -92,79 +176,7 @@ public class LoadTest extends BaseDbTest {
         assertEquals(street, doc.getDictionary("address").getString("street"));
         assertEquals(phone, doc.getArray("phones").getString(0));
 
-        logPerformanceStats("testUpdate()", (System.currentTimeMillis() - start));
-    }
-
-    @Test
-    @LoadIntegrationTest
-    public void testRead() throws CouchbaseLiteException {
-        long start = System.currentTimeMillis();
-
-        final String docID = "doc1";
-        final String tag = "Read";
-
-        // create 1 doc
-        createDocumentNSave(docID, tag);
-
-        // read the doc n times
-        for (int i = 0; i < ITERATIONS; i++) {
-            Document doc = baseTestDb.getDocument(docID);
-            assertNotNull(doc);
-            assertEquals(docID, doc.getId());
-            assertEquals(tag, doc.getString("tag"));
-        }
-
-        logPerformanceStats("testRead()", (System.currentTimeMillis() - start));
-    }
-
-    @Test
-    @LoadIntegrationTest
-    public void testDelete() throws CouchbaseLiteException {
-        long start = System.currentTimeMillis();
-
-        final String tag = "Delete";
-
-        // create & delete doc n times
-        for (int i = 0; i < ITERATIONS; i++) {
-            String docID = String.format(Locale.ENGLISH, "doc-%010d", i);
-            createDocumentNSave(docID, tag);
-            assertEquals(1, baseTestDb.getCount());
-            Document doc = baseTestDb.getDocument(docID);
-            assertNotNull(doc);
-            assertEquals(tag, doc.getString("tag"));
-            baseTestDb.delete(doc);
-            assertEquals(0, baseTestDb.getCount());
-        }
-
-        logPerformanceStats("testDelete()", (System.currentTimeMillis() - start));
-    }
-
-    // https://github.com/couchbase/couchbase-lite-android/issues/1447
-    @Test
-    @LoadIntegrationTest
-    public void testGlobalReferenceExceeded() {
-        long start = System.currentTimeMillis();
-
-        // final int n = 20000; // num of docs;
-        final int m = 100; // num of fields
-
-        // Without Batch
-        for (int i = 0; i < ITERATIONS; i++) {
-            MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%05d", i));
-            for (int j = 0; j < m; j++) {
-                doc.setInt(String.valueOf(j), j);
-            }
-            try {
-                baseTestDb.save(doc);
-            }
-            catch (CouchbaseLiteException e) {
-                Report.log(LogLevel.ERROR, "Failed to save", e);
-            }
-        }
-
-        assertEquals(ITERATIONS, baseTestDb.getCount());
-
-        logPerformanceStats("testGlobalReferenceExceeded()", (System.currentTimeMillis() - start));
+        logPerformanceStats("testUpdate", start);
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1610
@@ -185,8 +197,11 @@ public class LoadTest extends BaseDbTest {
             assertTrue(updateMap(map, i, i));
         }
 
-        logPerformanceStats("testUpdate2()", (System.currentTimeMillis() - start));
+        logPerformanceStats("testUpdate2", start);
     }
+
+
+    /// Utility methods
 
     private boolean updateMap(Map<String, ?> map, int i, long l) {
         Document doc = baseTestDb.getDocument(map.get("ID").toString());
@@ -231,10 +246,6 @@ public class LoadTest extends BaseDbTest {
         }
     }
 
-    private void logPerformanceStats(String name, long time) {
-        Report.log(LogLevel.INFO, "PerformanceStats: " + name + " -> " + time + " ms");
-    }
-
     private MutableDocument createDocumentWithTag(String id, String tag) {
         MutableDocument doc;
         if (id == null) { doc = new MutableDocument(); }
@@ -266,15 +277,15 @@ public class LoadTest extends BaseDbTest {
         return doc;
     }
 
-    private void createDocumentNSave(String id, String tag) throws CouchbaseLiteException {
+    private void createAndSaveDocument(String id, String tag) throws CouchbaseLiteException {
         MutableDocument doc = createDocumentWithTag(id, tag);
         baseTestDb.save(doc);
     }
 
-    private void createDocumentNSave(String tag, int nDocs) throws CouchbaseLiteException {
+    private void createAndSaveDocument(String tag, int nDocs) throws CouchbaseLiteException {
         for (int i = 0; i < nDocs; i++) {
             String docID = String.format(Locale.ENGLISH, "doc-%010d", i);
-            createDocumentNSave(docID, tag);
+            createAndSaveDocument(docID, tag);
         }
     }
 
@@ -305,19 +316,23 @@ public class LoadTest extends BaseDbTest {
         }
     }
 
-    private void verifyByTagName(String tag, VerifyBlock block) throws CouchbaseLiteException {
+    private void verifyByTag(String tag, Verifier verifier) throws CouchbaseLiteException {
         int n = 0;
         try (ResultSet rs = QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.database(baseTestDb))
             .where(Expression.property("tag").equalTo(Expression.string(tag)))
             .execute()) {
-            for (Result row: rs) { block.verify(++n, row); }
+            for (Result row: rs) { verifier.verify(++n, row); }
         }
     }
 
-    private void verifyByTagName(String tag, int nRows) throws CouchbaseLiteException {
+    private void verifyByTag(String tag, int nRows) throws CouchbaseLiteException {
         final AtomicInteger count = new AtomicInteger(0);
-        verifyByTagName(tag, (n, result) -> count.incrementAndGet());
+        verifyByTag(tag, (n, result) -> count.incrementAndGet());
         assertEquals(nRows, count.intValue());
+    }
+
+    private void logPerformanceStats(String tag, long startTime) {
+        Report.log(LogLevel.INFO, "PerformanceStats @" + tag + ": " + (System.currentTimeMillis() - startTime));
     }
 }
