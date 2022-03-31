@@ -92,7 +92,7 @@ case "${OS}" in
       LIBLITECORE_DIR=macos/x86_64
       rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
       mkdir -p "${LIBLITECORE_DIR}"
-      mv -f lib/libLiteCore.dylib "${LIBLITECORE_DIR}"
+      mv -f lib "${LIBLITECORE_DIR}"
       ;;
    windows-win64)
       rm -f lib
@@ -104,7 +104,7 @@ case "${OS}" in
       LIBLITECORE_DIR=windows/x86_64
       rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
       mkdir -p "${LIBLITECORE_DIR}"
-      mv -f lib/LiteCore.* "${LIBLITECORE_DIR}"
+      mv -f lib "${LIBLITECORE_DIR}"
       ;;
    linux)
       rm -f lib
@@ -115,8 +115,8 @@ case "${OS}" in
 
       LIBLITECORE_DIR=linux/x86_64
       rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
-      mkdir -p "${LIBLITECORE_DIR}"
-      mv -f lib/libLiteCore.so "${LIBLITECORE_DIR}"
+      mkdir -p "${LIBLITECORE_DIR}/lib"
+      mv -f lib/libLiteCore.so "${LIBLITECORE_DIR}/lib"
 
       SUPPORT_DIR=support/linux/x86_64
       rm -rf "${SUPPORT_DIR}" > /dev/null 2>&1
@@ -135,7 +135,7 @@ case "${OS}" in
       ;;
 esac
 
-rm -f lib > /dev/null 2>&1
+rm -rf lib > /dev/null 2>&1
 rm -f litecore.zip > /dev/null 2>&1
 rm -f litecore.tgz > /dev/null 2>&1
 

@@ -11,7 +11,7 @@ if($DebugLib) {
     $suffix = "-debug"
 }
 
-$OutputDir="$PSScriptRoot/../lite-core/windows/x86_64"
+$OutputDir="$PSScriptRoot/../lite-core/windows/x86_64/lib"
 New-Item -Type directory -ErrorAction Ignore $OutputDir
 Push-Location $OutputDir 
 

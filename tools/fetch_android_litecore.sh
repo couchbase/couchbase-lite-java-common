@@ -61,12 +61,12 @@ for ABI in arm64-v8a armeabi-v7a x86 x86_64; do
     echo "  from: ${ARTIFACT_URL}"
 
     curl -Lf "${ARTIFACT_URL}" -o litecore.zip
-    unzip litecore.zip
+    unzip -o litecore.zip
 
     LIBLITECORE_DIR="android/${ABI}"
     rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
     mkdir -p "${LIBLITECORE_DIR}"
-    mv -f lib/libLiteCore.so "${LIBLITECORE_DIR}"
+    mv -f lib "${LIBLITECORE_DIR}"
 done
 
 rm -f litecore.zip
