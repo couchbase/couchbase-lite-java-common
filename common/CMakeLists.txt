@@ -53,7 +53,7 @@ endif()
 
 add_library( LiteCore SHARED IMPORTED )
 set_property( TARGET LiteCore PROPERTY
-    IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/libLiteCore.so"
+    IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/lib/libLiteCore.so"
 )
 
 add_library( LiteCoreJNI SHARED
