@@ -49,7 +49,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     // ??? questionable design
     protected C4NativePeer() { }
 
-    protected C4NativePeer(long peer) { setPeerInternal(peer); }
+    protected C4NativePeer(long peer) { this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME); }
 
     @NonNull
     @Override
@@ -124,7 +124,6 @@ public abstract class C4NativePeer implements AutoCloseable {
         @NonNull Fn.ConsumerThrows<Long, E> fn)
         throws E {
         final long peer;
-
         synchronized (getPeerLock()) {
             peer = releasePeerLocked();
             if (peer != 0L) { fn.accept(peer); }
@@ -149,7 +148,12 @@ public abstract class C4NativePeer implements AutoCloseable {
     // They invite race conditions and are accidents waiting to happen.
     // Ideally, this class should never expose the peer handle
 
-    protected final void setPeer(long peer) { setPeerInternal(peer); }
+    protected final void setPeer(long peer) {
+        synchronized (getPeerLock()) {
+            Preconditions.assertZero(this.peer, HANDLE_NAME);
+            this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME);
+        }
+    }
 
     protected final long getPeerUnchecked() {
         final long peer = get();
@@ -181,14 +185,6 @@ public abstract class C4NativePeer implements AutoCloseable {
 
     private long get() {
         synchronized (getPeerLock()) { return peer; }
-    }
-
-    private void setPeerInternal(long peer) {
-        Preconditions.assertNotZero(peer, HANDLE_NAME);
-        synchronized (getPeerLock()) {
-            Preconditions.assertZero(this.peer, HANDLE_NAME);
-            this.peer = peer;
-        }
     }
 
     @GuardedBy("lock")
