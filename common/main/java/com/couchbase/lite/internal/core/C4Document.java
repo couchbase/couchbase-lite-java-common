@@ -28,19 +28,34 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
 @SuppressWarnings("PMD.TooManyMethods")
-public class C4Document extends C4NativePeer {
+public final class C4Document extends C4NativePeer {
+
+    //-------------------------------------------------------------------------
+    // Static Factory Methods
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    static C4Document create(long db, @NonNull String docID, boolean mustExist) throws LiteCoreException {
+        return new C4Document(get(db, docID, mustExist));
+    }
+
+    @NonNull
+    static C4Document create(long db, long sequence) throws LiteCoreException {
+        return new C4Document(getBySequence(db, sequence));
+    }
+
+    //-------------------------------------------------------------------------
+    // Static Utility Methods
+    //-------------------------------------------------------------------------
+
     public static boolean dictContainsBlobs(@NonNull FLSliceResult dict, @NonNull FLSharedKeys sk) {
         return dictContainsBlobs(dict.getHandle(), sk.getHandle());
     }
 
+
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
-    C4Document(long db, @NonNull String docID, boolean mustExist) throws LiteCoreException {
-        this(get(db, docID, mustExist));
-    }
-
-    C4Document(long db, long sequence) throws LiteCoreException { this(getBySequence(db, sequence)); }
 
     C4Document(long peer) { super(peer); }
 
@@ -129,6 +144,10 @@ public class C4Document extends C4NativePeer {
     @CallSuper
     @Override
     public void close() { closePeer(null); }
+
+    @NonNull
+    @Override
+    public String toString() { return "C4Document@" + super.toString(); }
 
     //-------------------------------------------------------------------------
     // protected methods

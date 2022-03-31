@@ -80,7 +80,6 @@ public abstract class C4Database extends C4NativePeer {
     // These enum values must match the ones in DataFile::MaintenanceType
     @NonNull
     private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
-
     static {
         final Map<MaintenanceType, Integer> m = new HashMap<>();
         m.put(MaintenanceType.COMPACT, 0);
@@ -90,6 +89,7 @@ public abstract class C4Database extends C4NativePeer {
         m.put(MaintenanceType.FULL_OPTIMIZE, 4);
         MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
     }
+
     public static void copyDb(
         @NonNull String sourcePath,
         @NonNull String parentDir,
@@ -178,6 +178,10 @@ public abstract class C4Database extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
+    @NonNull
+    @Override
+    public String toString() { return "C4Database" + super.toString(); }
+
     // The meaning of "close" changes at this level.
     // C4Database is AutoCloseable: this call frees it.
     // Database is not AutoCloseable.  In it, "close" means close the database.
@@ -265,7 +269,7 @@ public abstract class C4Database extends C4NativePeer {
 
     @NonNull
     public C4Document get(@NonNull String docID) throws LiteCoreException {
-        return new C4Document(getPeer(), docID, true);
+        return C4Document.create(getPeer(), docID, true);
     }
 
     // - Purging and Expiration
@@ -444,7 +448,7 @@ public abstract class C4Database extends C4NativePeer {
     @VisibleForTesting
     @NonNull
     public C4Document get(@NonNull String docID, boolean mustExist) throws LiteCoreException {
-        return new C4Document(getPeer(), docID, mustExist);
+        return C4Document.create(getPeer(), docID, mustExist);
     }
 
     //-------------------------------------------------------------------------
@@ -481,7 +485,7 @@ public abstract class C4Database extends C4NativePeer {
 
     @VisibleForTesting
     @NonNull
-    C4Document getBySequence(long sequence) throws LiteCoreException { return new C4Document(getPeer(), sequence); }
+    C4Document getBySequence(long sequence) throws LiteCoreException { return C4Document.create(getPeer(), sequence); }
 
     @VisibleForTesting
     @NonNull
