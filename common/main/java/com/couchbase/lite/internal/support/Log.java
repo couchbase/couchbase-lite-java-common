@@ -22,9 +22,7 @@ import androidx.annotation.VisibleForTesting;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.FormatterClosedException;
-import java.util.HashMap;
 import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
@@ -36,7 +34,6 @@ import com.couchbase.lite.FileLogger;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.Logger;
-import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 
@@ -56,61 +53,6 @@ public final class Log {
     private Log() { } // Utility class
 
     public static final String LOG_HEADER = "[JAVA] ";
-
-    @NonNull
-    private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
-    static {
-        final Map<String, LogDomain> m = new HashMap<>();
-        m.put(C4Constants.LogDomain.BLIP, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.BLIP_MESSAGES, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.CHANGES, LogDomain.REPLICATOR);
-        m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
-        m.put(C4Constants.LogDomain.QUERY, LogDomain.QUERY);
-        m.put(C4Constants.LogDomain.SQL, LogDomain.DATABASE);
-        m.put(C4Constants.LogDomain.SYNC, LogDomain.REPLICATOR);
-        m.put(C4Constants.LogDomain.SYNC_BUSY, LogDomain.REPLICATOR);
-        m.put(C4Constants.LogDomain.TLS, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.WEB_SOCKET, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.ZIP, LogDomain.DATABASE);
-        LOGGING_DOMAINS_FROM_C4 = Collections.unmodifiableMap(m);
-    }
-
-    @NonNull
-    private static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
-    static {
-        final Map<LogDomain, String> m = new HashMap<>();
-        m.put(LogDomain.DATABASE, C4Constants.LogDomain.DATABASE);
-        m.put(LogDomain.NETWORK, C4Constants.LogDomain.WEB_SOCKET);
-        m.put(LogDomain.REPLICATOR, C4Constants.LogDomain.SYNC);
-        m.put(LogDomain.QUERY, C4Constants.LogDomain.QUERY);
-        m.put(LogDomain.LISTENER, C4Constants.LogDomain.LISTENER);
-        LOGGING_DOMAINS_TO_C4 = Collections.unmodifiableMap(m);
-    }
-
-    @NonNull
-    private static final Map<Integer, LogLevel> LOG_LEVEL_FROM_C4;
-    static {
-        final Map<Integer, LogLevel> m = new HashMap<>();
-        m.put(C4Constants.LogLevel.DEBUG, LogLevel.DEBUG);
-        m.put(C4Constants.LogLevel.VERBOSE, LogLevel.VERBOSE);
-        m.put(C4Constants.LogLevel.INFO, LogLevel.INFO);
-        m.put(C4Constants.LogLevel.WARNING, LogLevel.WARNING);
-        m.put(C4Constants.LogLevel.ERROR, LogLevel.ERROR);
-        LOG_LEVEL_FROM_C4 = Collections.unmodifiableMap(m);
-    }
-
-    @NonNull
-    private static final Map<LogLevel, Integer> LOG_LEVEL_TO_C4;
-    static {
-        final Map<LogLevel, Integer> m = new HashMap<>();
-        m.put(LogLevel.DEBUG, C4Constants.LogLevel.DEBUG);
-        m.put(LogLevel.VERBOSE, C4Constants.LogLevel.VERBOSE);
-        m.put(LogLevel.INFO, C4Constants.LogLevel.INFO);
-        m.put(LogLevel.WARNING, C4Constants.LogLevel.WARNING);
-        m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
-        LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
-    }
 
     private static final AtomicBoolean WARNED = new AtomicBoolean(false);
 
@@ -134,8 +76,9 @@ public final class Log {
 
     @VisibleForTesting
     public static void initLogging() {
-        C4Log.get().forceCallbackLevel(Database.log.getConsole().getLevel());
-        setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
+        final C4Log c4Log = C4Log.get();
+        c4Log.forceCallbackLevel(Database.log.getConsole().getLevel());
+        c4Log.setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
     }
 
     /**
@@ -370,81 +313,12 @@ public final class Log {
         return String.format(Locale.ENGLISH, lookupStandardMessage(msg), args);
     }
 
-    @NonNull
-    public static LogLevel getLogLevelForC4Level(int c4Level) {
-        final LogLevel level = LOG_LEVEL_FROM_C4.get(c4Level);
-        return (level != null) ? level : LogLevel.INFO;
-    }
-
-    public static int getC4LevelForLogLevel(@NonNull LogLevel logLevel) {
-        final Integer c4level = LOG_LEVEL_TO_C4.get(logLevel);
-        return (c4level != null) ? c4level : C4Constants.LogLevel.INFO;
-    }
-
-    @NonNull
-    public static String getC4DomainForLoggingDomain(@NonNull LogDomain domain) {
-        final String c4Domain = LOGGING_DOMAINS_TO_C4.get(domain);
-        return (c4Domain != null) ? c4Domain : C4Constants.LogDomain.DATABASE;
-    }
-
-    @NonNull
-    public static LogDomain getLoggingDomainForC4Domain(@NonNull String c4Domain) {
-        final LogDomain domain = LOGGING_DOMAINS_FROM_C4.get(c4Domain);
-        return (domain != null) ? domain : LogDomain.DATABASE;
-    }
-
     public static void warn() {
         if (WARNED.getAndSet(true) || Database.log.getFile().getConfig() != null) { return; }
         Log.w(
             LogDomain.DATABASE,
             "Database.log.getFile().getConfig() is now null: logging is disabled.  "
                 + "Log files required for product support are not being generated.");
-    }
-
-    // This, apparently, should be the inverse of LOGGING_DOMAINS_FROM_C4
-    private static void setC4LogLevel(@NonNull EnumSet<LogDomain> domains, @NonNull LogLevel level) {
-        final int c4Level = getC4LevelForLogLevel(level);
-        final C4Log c4Log = C4Log.get();
-        for (LogDomain domain: domains) {
-            switch (domain) {
-                case DATABASE:
-                    c4Log.setLevels(
-                        c4Level,
-                        C4Constants.LogDomain.DATABASE,
-                        C4Constants.LogDomain.SQL,
-                        C4Constants.LogDomain.ZIP);
-                    break;
-
-                case LISTENER:
-                    c4Log.setLevels(c4Level, C4Constants.LogDomain.LISTENER);
-                    break;
-
-                case NETWORK:
-                    c4Log.setLevels(
-                        c4Level,
-                        C4Constants.LogDomain.BLIP,
-                        C4Constants.LogDomain.BLIP_MESSAGES,
-                        C4Constants.LogDomain.TLS,
-                        C4Constants.LogDomain.WEB_SOCKET);
-                    break;
-
-                case QUERY:
-                    c4Log.setLevels(c4Level, C4Constants.LogDomain.QUERY);
-                    break;
-
-                case REPLICATOR:
-                    c4Log.setLevels(
-                        c4Level,
-                        C4Constants.LogDomain.CHANGES,
-                        C4Constants.LogDomain.SYNC,
-                        C4Constants.LogDomain.SYNC_BUSY);
-                    break;
-
-                default:
-                    Log.i(LogDomain.DATABASE, "Unexpected log domain: " + domain);
-                    break;
-            }
-        }
     }
 
     private static void log(
