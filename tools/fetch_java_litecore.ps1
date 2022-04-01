@@ -11,7 +11,7 @@ if($DebugLib) {
     $suffix = "-debug"
 }
 
-$OutputDir="$PSScriptRoot/../lite-core/windows/x86_64/lib"
+$OutputDir="$PSScriptRoot/../lite-core/windows/x86_64"
 New-Item -Type directory -ErrorAction Ignore $OutputDir
 Push-Location $OutputDir 
 
@@ -35,7 +35,7 @@ try {
 }
 
 if(Test-Path litecore.zip) {
-  & 7z e -y litecore.zip
+  & 7z e -y -olib litecore.zip
   rm litecore.zip
 }
 

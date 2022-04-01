@@ -47,20 +47,20 @@ final class NativeLibrary {
     private static final String LIB_DIR_LINUX = "linux";
     private static final String LIB_DIR_WINDOWS = "windows";
 
+    private static final String LIB_DIR = "lib";
+
     private static final String DIGEST_MD5 = "MD5";
 
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
 
     @NonNull
     private static final List<String> LIBRARIES;
-
     static {
         final List<String> l = new ArrayList<>();
         l.add("LiteCore");
         l.add("LiteCoreJNI");
         LIBRARIES = Collections.unmodifiableList(l);
     }
-
     /**
      * Extracts and loads native libraries.
      */
@@ -77,7 +77,8 @@ final class NativeLibrary {
         // get the resource path
         final String resDirPath = JAVA_PATH_SEPARATOR + RESOURCE_BASE_DIR
             + JAVA_PATH_SEPARATOR + osDir
-            + JAVA_PATH_SEPARATOR + ARCH_X86;
+            + JAVA_PATH_SEPARATOR + ARCH_X86
+            + JAVA_PATH_SEPARATOR + LIB_DIR;
 
         // get OS-appropriate names for the libraries
         final List<String> libs = new ArrayList<>(LIBRARIES.size());

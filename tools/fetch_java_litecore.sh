@@ -72,8 +72,9 @@ esac
 
 hash curl 2>/dev/null || { echo >&2 "Unable to locate curl, aborting..."; exit 1; }
 
-mkdir -p "${OUTPUT_DIR}"
-pushd "${OUTPUT_DIR}" > /dev/null
+rm -rf "${OUTPUT_DIR}/tmp"  > /dev/null 2>&1
+mkdir -p "${OUTPUT_DIR}/tmp"
+pushd "${OUTPUT_DIR}/tmp" > /dev/null
 
 ARTIFACT_ID=`"${SCRIPT_DIR}/litecore_sha.sh" -e ${EDITION}`
 ARTIFACT_URL="${LATESTBUILDS_CORE}/${ARTIFACT_ID:0:2}/${ARTIFACT_ID}/couchbase-lite-core-${OS}${DEBUG_SUFFIX}"
@@ -83,42 +84,25 @@ echo "  from: ${ARTIFACT_URL}"
 
 case "${OS}" in
    macosx)
-      rm -f lib
-      rm -f litecore.zip
-
       curl -Lf "${ARTIFACT_URL}.zip" -o litecore.zip
       unzip litecore.zip
+      rm -rf litecore.zip
 
-      LIBLITECORE_DIR=macos/x86_64
-      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
-      mkdir -p "${LIBLITECORE_DIR}"
-      mv -f lib "${LIBLITECORE_DIR}"
+      LIBLITECORE_DIR="${OUTPUT_DIR}/macos/x86_64"
       ;;
    windows-win64)
-      rm -f lib
-      rm -f litecore.zip
-
       curl -Lf "${ARTIFACT_URL}.zip" -o litecore.zip
       unzip -j litecore.zip -d lib
+      rm -rf litecore.zip
 
-      LIBLITECORE_DIR=windows/x86_64
-      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
-      mkdir -p "${LIBLITECORE_DIR}"
-      mv -f lib "${LIBLITECORE_DIR}"
+      LIBLITECORE_DIR="${OUTPUT_DIR}/windows/x86_64"
       ;;
    linux)
-      rm -f lib
-      rm -f litecore.tgz
-
       curl -Lf "${ARTIFACT_URL}.tar.gz" -o litecore.tgz
       tar xf litecore.tgz
+      rm -rf litecore.tgz
 
-      LIBLITECORE_DIR=linux/x86_64
-      rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
-      mkdir -p "${LIBLITECORE_DIR}/lib"
-      mv -f lib/libLiteCore.so "${LIBLITECORE_DIR}/lib"
-
-      SUPPORT_DIR=support/linux/x86_64
+      SUPPORT_DIR="${OUTPUT_DIR}/support/linux/x86_64"
       rm -rf "${SUPPORT_DIR}" > /dev/null 2>&1
       mkdir -p "${SUPPORT_DIR}" 
 
@@ -132,13 +116,17 @@ case "${OS}" in
 
       mkdir "${SUPPORT_DIR}/libz" 
       mv -f lib/libz*.so* "${SUPPORT_DIR}/libz"
+
+      LIBLITECORE_DIR="${OUTPUT_DIR}/linux/x86_64"
       ;;
 esac
 
-rm -rf lib > /dev/null 2>&1
-rm -f litecore.zip > /dev/null 2>&1
-rm -f litecore.tgz > /dev/null 2>&1
+rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
+mkdir -p "${LIBLITECORE_DIR}" 
+mv -f * "${LIBLITECORE_DIR}"
 
+cd ..
+rm -rf tmp
 echo "=== Fetch complete"
 find *
 popd > /dev/null

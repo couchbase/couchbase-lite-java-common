@@ -57,7 +57,7 @@ class LoadTest : BaseDbTest() {
     // This test reliably drove a bug that caused C4NativePeer
     // to finalize what appears to have been an incompletely initialize
     // instance of C4Document.  It is, otherwise, not relevant.
-    //@Ignore("Same test as testCreate")
+    @Ignore("Same test as testCreate")
     @LoadIntegrationTest
     @Test
     fun testCreateMany() {
