@@ -103,20 +103,22 @@ public class C4Log {
         m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
         LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
-    public final void logToCore(String domain, int level, String message) { log(domain, level, message); }
+    public final void logToCore(LogDomain domain, LogLevel level, String message) {
+        log(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
+    }
 
     public final int getFileLogLevel() { return getBinaryFileLevel(); }
 
-    public final void setFileFileLevel(int level) { setBinaryFileLevel(level); }
+    public final void setFileFileLevel(LogLevel level) { setBinaryFileLevel(getC4LevelForLogLevel(level)); }
 
     public final void initFileLogger(
         String path,
-        int level,
+        LogLevel level,
         int maxRotate,
         long maxSize,
         boolean plainText,
         String header) {
-        writeToBinaryFile(path, level, maxRotate, maxSize, plainText, header);
+        writeToBinaryFile(path, getC4LevelForLogLevel(level), maxRotate, maxSize, plainText, header);
     }
 
     public final void setLevels(int level, @Nullable String... domains) {
@@ -191,29 +193,6 @@ public class C4Log {
         }
     }
 
-    @NonNull
-    public LogLevel getLogLevelForC4Level(int c4Level) {
-        final LogLevel level = LOG_LEVEL_FROM_C4.get(c4Level);
-        return (level != null) ? level : LogLevel.INFO;
-    }
-
-    @NonNull
-    public static LogDomain getLoggingDomainForC4Domain(@NonNull String c4Domain) {
-        final LogDomain domain = LOGGING_DOMAINS_FROM_C4.get(c4Domain);
-        return (domain != null) ? domain : LogDomain.DATABASE;
-    }
-
-    @NonNull
-    public String getC4DomainForLoggingDomain(@NonNull LogDomain domain) {
-        final String c4Domain = LOGGING_DOMAINS_TO_C4.get(domain);
-        return (c4Domain != null) ? c4Domain : C4Constants.LogDomain.DATABASE;
-    }
-
-    public int getC4LevelForLogLevel(@NonNull LogLevel logLevel) {
-        final Integer c4level = LOG_LEVEL_TO_C4.get(logLevel);
-        return (c4level != null) ? c4level : C4Constants.LogLevel.INFO;
-    }
-
     @VisibleForTesting
     protected void logInternal(@NonNull String c4Domain, int c4Level, @NonNull String message) {
         final LogLevel level = getLogLevelForC4Level(c4Level);
@@ -236,6 +215,29 @@ public class C4Log {
         // This cannot be done synchronously because it will deadlock
         // on the same mutex that is being held for this callback
         CouchbaseLiteInternal.getExecutionService().getDefaultExecutor().execute(this::setCoreCallbackLevel);
+    }
+
+    @NonNull
+    private LogLevel getLogLevelForC4Level(int c4Level) {
+        final LogLevel level = LOG_LEVEL_FROM_C4.get(c4Level);
+        return (level != null) ? level : LogLevel.INFO;
+    }
+
+    @NonNull
+    private LogDomain getLoggingDomainForC4Domain(@NonNull String c4Domain) {
+        final LogDomain domain = LOGGING_DOMAINS_FROM_C4.get(c4Domain);
+        return (domain != null) ? domain : LogDomain.DATABASE;
+    }
+
+    @NonNull
+    private String getC4DomainForLoggingDomain(@NonNull LogDomain domain) {
+        final String c4Domain = LOGGING_DOMAINS_TO_C4.get(domain);
+        return (c4Domain != null) ? c4Domain : C4Constants.LogDomain.DATABASE;
+    }
+
+    private int getC4LevelForLogLevel(@NonNull LogLevel logLevel) {
+        final Integer c4level = LOG_LEVEL_TO_C4.get(logLevel);
+        return (c4level != null) ? c4level : C4Constants.LogLevel.INFO;
     }
 
     private void setCoreCallbackLevel() {

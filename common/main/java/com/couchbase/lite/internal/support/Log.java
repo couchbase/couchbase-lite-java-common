@@ -76,8 +76,9 @@ public final class Log {
 
     @VisibleForTesting
     public static void initLogging() {
-        C4Log.get().forceCallbackLevel(Database.log.getConsole().getLevel());
-        C4Log.get().setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
+        final C4Log c4Log = C4Log.get();
+        c4Log.forceCallbackLevel(Database.log.getConsole().getLevel());
+        c4Log.setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
     }
 
     /**
