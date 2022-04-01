@@ -144,7 +144,6 @@ public class C4Log {
         setCoreCallbackLevel();
     }
 
-    @VisibleForTesting
     // This, apparently, should be the inverse of LOGGING_DOMAINS_FROM_C4
     public final void setC4LogLevel(@NonNull EnumSet<LogDomain> domains, @NonNull LogLevel level) {
         final int c4Level = getC4LevelForLogLevel(level);

@@ -57,7 +57,6 @@ public final class FileLogger implements Logger {
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         if ((config == null) || (level.compareTo(logLevel) < 0)) { return; }
-        //c4Log.logToCore(c4Log.getC4DomainForLoggingDomain(domain), c4Log.getC4LevelForLogLevel(level), message);
         c4Log.logToCore(domain, level, message);
     }
 
