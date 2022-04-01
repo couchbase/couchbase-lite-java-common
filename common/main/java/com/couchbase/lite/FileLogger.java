@@ -57,7 +57,7 @@ public final class FileLogger implements Logger {
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         if ((config == null) || (level.compareTo(logLevel) < 0)) { return; }
-        c4Log.logToCore(Log.getC4DomainForLoggingDomain(domain), Log.getC4LevelForLogLevel(level), message);
+        c4Log.logToCore(c4Log.getC4DomainForLoggingDomain(domain), c4Log.getC4LevelForLogLevel(level), message);
     }
 
     @NonNull
@@ -77,7 +77,7 @@ public final class FileLogger implements Logger {
         if (logLevel == level) { return; }
         logLevel = level;
 
-        if (!initLog()) { c4Log.setFileFileLevel(Log.getC4LevelForLogLevel(level)); }
+        if (!initLog()) { c4Log.setFileFileLevel(c4Log.getC4LevelForLogLevel(level)); }
 
         if (level == LogLevel.NONE) { Log.warn(); }
     }
@@ -146,7 +146,7 @@ public final class FileLogger implements Logger {
 
         c4Log.initFileLogger(
             logDirPath,
-            Log.getC4LevelForLogLevel(level),
+            c4Log.getC4LevelForLogLevel(level),
             cfg.getMaxRotateCount(),
             cfg.getMaxSize(),
             cfg.usesPlaintext(),
