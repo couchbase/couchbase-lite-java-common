@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.replicator
 
 import com.couchbase.lite.BaseTest
+import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.sockets.*
 import com.couchbase.lite.internal.utils.Fn
 import org.junit.Assert
@@ -61,5 +62,38 @@ class CBLWebSocketTest : BaseTest() {
         ws.coreRequestsOpen()
         Assert.assertEquals(200, coreStatus)
         Assert.assertEquals(SocketState.OPEN, ws.socketState)
+    }
+
+    @Test
+    fun testCoreRequestsOpenFails() {
+        var coreStatus: CloseStatus? = null
+        lateinit var ws: AbstractCBLWebSocket
+        ws = TestCBLWebSocket(
+            object : MockRemote() {
+                override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean {
+                    ws.remoteClosed(CloseStatus(
+                        C4Constants.ErrorDomain.WEB_SOCKET,
+                        C4Constants.WebSocketError.USER_PERMANENT,
+                        "fail"
+                    ))
+                    return false
+                }
+            },
+            object : MockCore() {
+                override fun closeCore(status: CloseStatus) {
+                    coreStatus = status
+                }
+            },
+            URI("https://foo"),
+            null,
+            MockCookieStore(),
+            { _ -> }
+        )
+
+        ws.coreRequestsOpen()
+        Assert.assertEquals(C4Constants.ErrorDomain.WEB_SOCKET, coreStatus?.domain)
+        Assert.assertEquals(C4Constants.WebSocketError.USER_PERMANENT, coreStatus?.code)
+        Assert.assertEquals("fail", coreStatus?.message)
+        Assert.assertEquals(SocketState.CLOSED, ws.socketState)
     }
 }

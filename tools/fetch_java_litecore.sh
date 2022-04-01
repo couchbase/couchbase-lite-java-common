@@ -16,6 +16,12 @@ function usage() {
    exit 1
 }
 
+function fail() {
+   echo "Artifact does not exist"
+   popd > /dev/null
+   exit 5
+}
+
 shopt -s nocasematch
 while [[ $# -gt 0 ]]; do
    key="$1"
@@ -54,16 +60,19 @@ fi
 if [ -z "${PLATFORM}" ]; then PLATFORM="${OSTYPE}"; fi
 case "${PLATFORM}" in
    darwin*)
-      OS=macosx
       hash unzip 2>/dev/null || { echo >&2 "Unable to locate unzip. Aborting..."; exit 1; }
+      OS=macosx
+      LIBLITECORE_DIR="${OUTPUT_DIR}/macos/x86_64"
       ;;
    win*)
-      OS=windows-win64
       hash unzip 2>/dev/null || { echo >&2 "Unable to locate unzip. Aborting..."; exit 1; }
+      OS=windows-win64
+      LIBLITECORE_DIR="${OUTPUT_DIR}/windows/x86_64"
       ;;
    centos7|linux*)
-      OS="linux"
       hash tar 2>/dev/null || { echo >&2 "Unable to locate tar. Aborting..."; exit 1; }
+      OS="linux"
+      LIBLITECORE_DIR="${OUTPUT_DIR}/linux/x86_64"
       ;;
    *)
       echo "Unsupported platform: ${PLATFORM}. Aborting..."
@@ -72,62 +81,48 @@ esac
 
 hash curl 2>/dev/null || { echo >&2 "Unable to locate curl, aborting..."; exit 1; }
 
-rm -rf "${OUTPUT_DIR}/tmp"  > /dev/null 2>&1
-mkdir -p "${OUTPUT_DIR}/tmp"
-pushd "${OUTPUT_DIR}/tmp" > /dev/null
-
 ARTIFACT_ID=`"${SCRIPT_DIR}/litecore_sha.sh" -e ${EDITION}`
 ARTIFACT_URL="${LATESTBUILDS_CORE}/${ARTIFACT_ID:0:2}/${ARTIFACT_ID}/couchbase-lite-core-${OS}${DEBUG_SUFFIX}"
+
+rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
+mkdir -p "${LIBLITECORE_DIR}" 
+pushd "${LIBLITECORE_DIR}" > /dev/null
 
 echo "=== Fetching ${OS} LiteCore-${EDITION}"
 echo "  from: ${ARTIFACT_URL}"
 
 case "${OS}" in
    macosx)
-      curl -Lf "${ARTIFACT_URL}.zip" -o litecore.zip
-      unzip litecore.zip
+      curl -Lfs "${ARTIFACT_URL}.zip" -o litecore.zip || fail
+      unzip -qq litecore.zip
       rm -rf litecore.zip
-
-      LIBLITECORE_DIR="${OUTPUT_DIR}/macos/x86_64"
       ;;
    windows-win64)
-      curl -Lf "${ARTIFACT_URL}.zip" -o litecore.zip
-      unzip -j litecore.zip -d lib
+      curl -Lfs "${ARTIFACT_URL}.zip" -o litecore.zip || fail
+      unzip -qq litecore.zip -d lib
       rm -rf litecore.zip
-
-      LIBLITECORE_DIR="${OUTPUT_DIR}/windows/x86_64"
       ;;
    linux)
-      curl -Lf "${ARTIFACT_URL}.tar.gz" -o litecore.tgz
+      curl -Lfs "${ARTIFACT_URL}.tar.gz" -o litecore.tgz || fail
       tar xf litecore.tgz
       rm -rf litecore.tgz
 
+      # We have to know exactly what is in the support directory
+      # This is pretty fragile but it doesn't change very often.
       SUPPORT_DIR="${OUTPUT_DIR}/support/linux/x86_64"
       rm -rf "${SUPPORT_DIR}" > /dev/null 2>&1
       mkdir -p "${SUPPORT_DIR}" 
 
-      mkdir "${SUPPORT_DIR}/libc++" 
+      mkdir "${SUPPORT_DIR}/libc++" > /dev/null 2>&1
       mv -f lib/libgcc* "${SUPPORT_DIR}/libc++"
       mv -f lib/libstdc* "${SUPPORT_DIR}/libc++"
 
-      mkdir "${SUPPORT_DIR}/libicu" 
+      mkdir "${SUPPORT_DIR}/libicu"  > /dev/null 2>&1
       mv -f lib/libicu* "${SUPPORT_DIR}/libicu"
       rm -f "${SUPPORT_DIR}/libicu/"libicutest*
-
-      mkdir "${SUPPORT_DIR}/libz" 
-      mv -f lib/libz*.so* "${SUPPORT_DIR}/libz"
-
-      LIBLITECORE_DIR="${OUTPUT_DIR}/linux/x86_64"
       ;;
 esac
 
-rm -rf "${LIBLITECORE_DIR}" > /dev/null 2>&1
-mkdir -p "${LIBLITECORE_DIR}" 
-mv -f * "${LIBLITECORE_DIR}"
-
-cd ..
-rm -rf tmp
-echo "=== Fetch complete"
-find *
 popd > /dev/null
+echo "=== Fetch complete"
 
