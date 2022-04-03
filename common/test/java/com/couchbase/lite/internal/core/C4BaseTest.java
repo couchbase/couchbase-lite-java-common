@@ -188,13 +188,13 @@ public class C4BaseTest extends BaseTest {
         boolean commit = false;
         db.beginTransaction();
         try {
-            C4Document curDoc = db.get(docID, false);
+            C4Document curDoc = db.getDocument(docID, false);
             assertNotNull(curDoc);
             List<String> revIDs = new ArrayList<>();
             revIDs.add(revID);
             if (curDoc.getRevID() != null) { revIDs.add(curDoc.getRevID()); }
             String[] history = revIDs.toArray(new String[0]);
-            C4Document doc = db.put(body, docID, flags, true, false, history, true, 0, 0);
+            C4Document doc = db.putDocument(body, docID, flags, true, false, history, true, 0, 0);
             assertNotNull(doc);
             doc.close();
             curDoc.close();
@@ -219,7 +219,7 @@ public class C4BaseTest extends BaseTest {
             while ((l = br.readLine()) != null) {
                 try (FLSliceResult body = c4Database.encodeJSON(l)) {
                     String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
-                    try (C4Document doc = c4Database.put(body, docID, 0, false, false, new String[0], true, 0, 0)) {
+                    try (C4Document doc = c4Database.putDocument(body, docID, 0, false, false, new String[0], true, 0, 0)) {
                         assertNotNull(doc);
                     }
                 }

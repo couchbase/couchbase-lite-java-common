@@ -89,7 +89,6 @@ public abstract class C4Database extends C4NativePeer {
         m.put(MaintenanceType.FULL_OPTIMIZE, 4);
         MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
     }
-
     public static void copyDb(
         @NonNull String sourcePath,
         @NonNull String parentDir,
@@ -268,23 +267,24 @@ public abstract class C4Database extends C4NativePeer {
     ////////////////////////////////
 
     @NonNull
-    public C4Document get(@NonNull String docID) throws LiteCoreException {
-        return C4Document.create(getPeer(), docID, true);
+    public C4Document createDocument(@NonNull String docID, @Nullable FLSliceResult body, int flags)
+        throws LiteCoreException {
+        return C4Document.create(this, docID, body, flags);
+    }
+
+    @NonNull
+    public C4Document getDocument(@NonNull String docID) throws LiteCoreException {
+        return C4Document.create(this, docID, true);
     }
 
     // - Purging and Expiration
 
-    public void setExpiration(@NonNull String docID, long timestamp) throws LiteCoreException {
-        C4Document.setExpiration(getPeer(), docID, timestamp);
+    public void setDocumentExpiration(@NonNull String docID, long timestamp) throws LiteCoreException {
+        setDocumentExpiration(getPeer(), docID, timestamp);
     }
 
-    public long getExpiration(@NonNull String docID) throws LiteCoreException {
-        return C4Document.getExpiration(getPeer(), docID);
-    }
-
-    @NonNull
-    public C4Document create(@NonNull String docID, @Nullable FLSliceResult body, int flags) throws LiteCoreException {
-        return new C4Document(C4Document.create2(getPeer(), docID, body != null ? body.getHandle() : 0, flags));
+    public long getDocumentExpiration(@NonNull String docID) throws LiteCoreException {
+        return getDocumentExpiration(getPeer(), docID);
     }
 
     ////////////////////////////////////////////////////////////////
@@ -447,8 +447,8 @@ public abstract class C4Database extends C4NativePeer {
 
     @VisibleForTesting
     @NonNull
-    public C4Document get(@NonNull String docID, boolean mustExist) throws LiteCoreException {
-        return C4Document.create(getPeer(), docID, mustExist);
+    public C4Document getDocument(@NonNull String docID, boolean mustExist) throws LiteCoreException {
+        return C4Document.create(this, docID, mustExist);
     }
 
     //-------------------------------------------------------------------------
@@ -463,8 +463,8 @@ public abstract class C4Database extends C4NativePeer {
 
     @VisibleForTesting
     @NonNull
-    C4Document create(@NonNull String docID, @NonNull byte[] body, int revisionFlags) throws LiteCoreException {
-        return new C4Document(C4Document.create(getPeer(), docID, body, revisionFlags));
+    C4Document createDocument(@NonNull String docID, @NonNull byte[] body, int flags) throws LiteCoreException {
+        return C4Document.create(this, docID, body, flags);
     }
 
     @VisibleForTesting
@@ -485,11 +485,13 @@ public abstract class C4Database extends C4NativePeer {
 
     @VisibleForTesting
     @NonNull
-    C4Document getBySequence(long sequence) throws LiteCoreException { return C4Document.create(getPeer(), sequence); }
+    C4Document getDocumentBySequence(long sequence) throws LiteCoreException {
+        return C4Document.create(this, sequence);
+    }
 
     @VisibleForTesting
     @NonNull
-    public C4Document put(
+    public C4Document putDocument(
         @NonNull byte[] body,
         @NonNull String docID,
         int revFlags,
@@ -500,8 +502,8 @@ public abstract class C4Database extends C4NativePeer {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return new C4Document(C4Document.put(
-            getPeer(),
+        return C4Document.create(
+            this,
             body,
             docID,
             revFlags,
@@ -510,12 +512,12 @@ public abstract class C4Database extends C4NativePeer {
             history,
             save,
             maxRevTreeDepth,
-            remoteDBID));
+            remoteDBID);
     }
 
     @NonNull
     @VisibleForTesting
-    C4Document put(
+    C4Document putDocument(
         @NonNull FLSliceResult body, // C4Slice*
         @NonNull String docID,
         int revFlags,
@@ -526,9 +528,9 @@ public abstract class C4Database extends C4NativePeer {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return new C4Document(C4Document.put2(
-            getPeer(),
-            body.getHandle(),
+        return C4Document.create(
+            this,
+            body,
             docID,
             revFlags,
             existingRevision,
@@ -536,7 +538,7 @@ public abstract class C4Database extends C4NativePeer {
             history,
             save,
             maxRevTreeDepth,
-            remoteDBID));
+            remoteDBID);
     }
 
     @VisibleForTesting
@@ -645,9 +647,11 @@ public abstract class C4Database extends C4NativePeer {
     @NonNull
     private static native String getCookies(long db, @NonNull String url) throws LiteCoreException;
 
-    ////////////////////////////////
-    // c4Document+Fleece.h
-    ////////////////////////////////
+    // - Purging and Expiration
+
+    private static native void setDocumentExpiration(long db, String docID, long timestamp) throws LiteCoreException;
+
+    private static native long getDocumentExpiration(long db, String docID) throws LiteCoreException;
 
     // - Fleece-related
 

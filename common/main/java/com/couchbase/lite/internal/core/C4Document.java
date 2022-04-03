@@ -35,13 +35,80 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    static C4Document create(long db, @NonNull String docID, boolean mustExist) throws LiteCoreException {
-        return new C4Document(get(db, docID, mustExist));
+    static C4Document create(@NonNull C4Database db, @NonNull String docID, boolean mustExist)
+        throws LiteCoreException {
+        return new C4Document(get(db.getPeer(), docID, mustExist));
     }
 
     @NonNull
-    static C4Document create(long db, long sequence) throws LiteCoreException {
-        return new C4Document(getBySequence(db, sequence));
+    static C4Document create(@NonNull C4Database db, long sequence) throws LiteCoreException {
+        return new C4Document(getBySequence(db.getPeer(), sequence));
+    }
+
+    @NonNull
+    static C4Document create(@NonNull C4Database db, @NonNull String docID, @NonNull byte[] body, int flags)
+        throws LiteCoreException {
+        return new C4Document(create(db.getPeer(), docID, body, flags));
+    }
+
+    @NonNull
+    static C4Document create(@NonNull C4Database db, @NonNull String docID, @Nullable FLSliceResult body, int flags)
+        throws LiteCoreException {
+        return new C4Document(create2(db.getPeer(), docID, (body == null) ? 0 : body.getHandle(), flags));
+    }
+
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
+    static C4Document create(
+        @NonNull C4Database db,
+        @NonNull byte[] body,
+        @NonNull String docID,
+        int revFlags,
+        boolean existingRevision,
+        boolean allowConflict,
+        @NonNull String[] history,
+        boolean save,
+        int maxRevTreeDepth,
+        int remoteDBID)
+        throws LiteCoreException {
+        return new C4Document(put(
+            db.getPeer(),
+            body,
+            docID,
+            revFlags,
+            existingRevision,
+            allowConflict,
+            history,
+            save,
+            maxRevTreeDepth,
+            remoteDBID));
+    }
+
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
+    static C4Document create(
+        @NonNull C4Database db,
+        @NonNull FLSliceResult body, // C4Slice*
+        @NonNull String docID,
+        int revFlags,
+        boolean existingRevision,
+        boolean allowConflict,
+        @NonNull String[] history,
+        boolean save,
+        int maxRevTreeDepth,
+        int remoteDBID)
+        throws LiteCoreException {
+        return new C4Document(put2(
+            db.getPeer(),
+            body.getHandle(),
+            docID,
+            revFlags,
+            existingRevision,
+            allowConflict,
+            history,
+            save,
+            maxRevTreeDepth,
+            remoteDBID));
     }
 
     //-------------------------------------------------------------------------
@@ -208,20 +275,14 @@ public final class C4Document extends C4NativePeer {
     // native methods
     //-------------------------------------------------------------------------
 
-    // - Purging and Expiration
-
-    static native void setExpiration(long db, String docID, long timestamp) throws LiteCoreException;
-
-    static native long getExpiration(long db, String docID) throws LiteCoreException;
-
     // - Creating and Updating Documents
 
-    static native long create(long db, String docID, byte[] body, int flags) throws LiteCoreException;
+    private static native long create(long db, String docID, byte[] body, int flags) throws LiteCoreException;
 
-    static native long create2(long db, String docID, long body, int flags) throws LiteCoreException;
+    private static native long create2(long db, String docID, long body, int flags) throws LiteCoreException;
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
-    static native long put(
+    private static native long put(
         long db,
         byte[] body,
         String docID,
@@ -235,7 +296,7 @@ public final class C4Document extends C4NativePeer {
         throws LiteCoreException;
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
-    static native long put2(
+    private static native long put2(
         long db,
         long body, // C4Slice*
         String docID,

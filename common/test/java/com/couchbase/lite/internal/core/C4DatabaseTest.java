@@ -345,27 +345,27 @@ public class C4DatabaseTest extends C4BaseTest {
 
         String docID = "expire_me";
         createRev(docID, REV_ID_1, fleeceBody);
-        assertEquals(0, c4Database.getExpiration(docID));
+        assertEquals(0, c4Database.getDocumentExpiration(docID));
 
-        c4Database.setExpiration(docID, longExpire);
-        assertEquals(longExpire, c4Database.getExpiration(docID));
+        c4Database.setDocumentExpiration(docID, longExpire);
+        assertEquals(longExpire, c4Database.getDocumentExpiration(docID));
 
-        c4Database.setExpiration(docID, shortExpire);
-        assertEquals(shortExpire, c4Database.getExpiration(docID));
+        c4Database.setDocumentExpiration(docID, shortExpire);
+        assertEquals(shortExpire, c4Database.getDocumentExpiration(docID));
 
         docID = "expire_me_too";
         createRev(docID, REV_ID_1, fleeceBody);
-        c4Database.setExpiration(docID, shortExpire);
-        assertEquals(shortExpire, c4Database.getExpiration(docID));
+        c4Database.setDocumentExpiration(docID, shortExpire);
+        assertEquals(shortExpire, c4Database.getDocumentExpiration(docID));
 
         docID = "expire_me_later";
         createRev(docID, REV_ID_1, fleeceBody);
-        c4Database.setExpiration(docID, longExpire);
-        assertEquals(longExpire, c4Database.getExpiration(docID));
+        c4Database.setDocumentExpiration(docID, longExpire);
+        assertEquals(longExpire, c4Database.getDocumentExpiration(docID));
 
         docID = "dont_expire_me_at_all";
         createRev(docID, REV_ID_1, fleeceBody);
-        assertEquals(0, c4Database.getExpiration(docID));
+        assertEquals(0, c4Database.getDocumentExpiration(docID));
 
         assertEquals(4, c4Database.getDocumentCount());
 
@@ -386,13 +386,13 @@ public class C4DatabaseTest extends C4BaseTest {
 
         assertEquals(2, c4Database.getDocumentCount());
 
-        c4Database.setExpiration(docID1, expire);
-        c4Database.setExpiration(docID2, expire);
-        c4Database.setExpiration(docID2, 0);
+        c4Database.setDocumentExpiration(docID1, expire);
+        c4Database.setDocumentExpiration(docID2, expire);
+        c4Database.setDocumentExpiration(docID2, 0);
 
         waitUntil(STD_TIMEOUT_MS, () -> 1 == c4Database.getDocumentCount());
 
-        assertNotNull(c4Database.get(docID2, true));
+        assertNotNull(c4Database.getDocument(docID2, true));
     }
 
     @Test
@@ -403,7 +403,7 @@ public class C4DatabaseTest extends C4BaseTest {
         try { c4Database.purgeDoc(docID); }
         catch (Exception ignore) { }
 
-        try { c4Database.get(docID, true); }
+        try { c4Database.getDocument(docID, true); }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
             assertEquals(C4Constants.LiteCoreError.NOT_FOUND, e.code);
@@ -660,7 +660,7 @@ public class C4DatabaseTest extends C4BaseTest {
         final C4Document doc;
         try (FLSliceResult body = c4Database.encodeJSON(jsonStr)) {
             // Save document:
-            doc = c4Database.put(
+            doc = c4Database.putDocument(
                 body,
                 docID,
                 C4Constants.RevisionFlags.HAS_ATTACHMENTS,

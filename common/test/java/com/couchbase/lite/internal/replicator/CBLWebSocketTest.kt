@@ -17,7 +17,10 @@ package com.couchbase.lite.internal.replicator
 
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.core.C4Constants
-import com.couchbase.lite.internal.sockets.*
+import com.couchbase.lite.internal.sockets.CloseStatus
+import com.couchbase.lite.internal.sockets.SocketState
+import com.couchbase.lite.internal.sockets.SocketToCore
+import com.couchbase.lite.internal.sockets.SocketToRemote
 import com.couchbase.lite.internal.utils.Fn
 import org.junit.Assert
 import org.junit.Test
@@ -71,11 +74,13 @@ class CBLWebSocketTest : BaseTest() {
         ws = TestCBLWebSocket(
             object : MockRemote() {
                 override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean {
-                    ws.remoteClosed(CloseStatus(
-                        C4Constants.ErrorDomain.WEB_SOCKET,
-                        C4Constants.WebSocketError.USER_PERMANENT,
-                        "fail"
-                    ))
+                    ws.remoteClosed(
+                        CloseStatus(
+                            C4Constants.ErrorDomain.WEB_SOCKET,
+                            C4Constants.WebSocketError.USER_PERMANENT,
+                            "fail"
+                        )
+                    )
                     return false
                 }
             },

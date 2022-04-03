@@ -336,45 +336,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Document_resolveC
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    setExpiration
- * Signature: (JLjava/lang/String;J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_setExpiration(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdb,
-        jstring jdocID,
-        jlong jtimestamp) {
-    jstringSlice docID(env, jdocID);
-    C4Error error;
-    if (!c4doc_setExpiration((C4Database *) jdb, docID, jtimestamp, &error))
-        throwError(env, error);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    getExpiration
- * Signature: (JLjava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getExpiration(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdb,
-        jstring jdocID) {
-    jstringSlice docID(env, jdocID);
-    C4Error error;
-    jlong exp = c4doc_getExpiration((C4Database *) jdb, docID, &error);
-    if (exp < 0) {
-        throwError(env, error);
-        return 0;
-    }
-    return exp;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    put
  * Signature: (J[BLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
  */
@@ -516,7 +477,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2(
  * Signature: (JLjava/lang/String;[BI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_create(
+Java_com_couchbase_lite_internal_core_C4Document_create__JLjava_lang_String_2_3BI(
         JNIEnv *env,
         jclass ignore,
         jlong jdb,

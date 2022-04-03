@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (Ljava/lang/String;Ljava/lang/String;II[B)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_open
-  (JNIEnv *, jclass, jstring, jstring, jint, jint, jbyteArray);
+        (JNIEnv *, jclass, jstring, jstring, jint, jint, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -21,7 +21,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_open
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_free
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -29,7 +29,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_free
  * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawGet
-  (JNIEnv *, jclass, jlong, jstring, jstring);
+        (JNIEnv *, jclass, jlong, jstring, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -37,7 +37,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawGet
  * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawPut
-  (JNIEnv *, jclass, jlong, jstring, jstring, jstring, jbyteArray);
+        (JNIEnv *, jclass, jlong, jstring, jstring, jstring, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -45,7 +45,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawPut
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II[B)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_copy
-  (JNIEnv *, jclass, jstring, jstring, jstring, jint, jint, jbyteArray);
+        (JNIEnv *, jclass, jstring, jstring, jstring, jint, jint, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -53,7 +53,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_copy
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_close
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -61,7 +61,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_close
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_delete
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -69,7 +69,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_delete
  * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_deleteNamed
-  (JNIEnv *, jclass, jstring, jstring);
+        (JNIEnv *, jclass, jstring, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -77,7 +77,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_deleteNa
  * Signature: (JI[B)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rekey
-  (JNIEnv *, jclass, jlong, jint, jbyteArray);
+        (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -85,7 +85,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rekey
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4Database_getPath
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -93,7 +93,7 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4Database_getPa
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getDocumentCount
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -101,7 +101,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getDocu
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getLastSequence
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -109,7 +109,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getLast
  * Signature: (JLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_purgeDoc
-  (JNIEnv *, jclass, jlong, jstring);
+        (JNIEnv *, jclass, jlong, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -117,7 +117,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_purgeDoc
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Database_getPublicUUID
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -125,7 +125,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Database_ge
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Database_getPrivateUUID
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -133,7 +133,7 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Database_ge
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_beginTransaction
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -141,7 +141,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_beginTra
  * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_endTransaction
-  (JNIEnv *, jclass, jlong, jboolean);
+        (JNIEnv *, jclass, jlong, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -149,7 +149,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_endTrans
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawFree
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -157,7 +157,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawFree
  * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_setCookie
-  (JNIEnv *, jclass, jlong, jstring, jstring);
+        (JNIEnv *, jclass, jlong, jstring, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -165,7 +165,22 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_setCooki
  * Signature: (JLjava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4Database_getCookies
-  (JNIEnv *, jclass, jlong, jstring);
+        (JNIEnv *, jclass, jlong, jstring);
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    setDocumentExpiration
+ * Signature: (JLjava/lang/String;J)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_setDocumentExpiration
+        (JNIEnv *, jclass, jlong, jstring, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    getDocumentExpiration
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getDocumentExpiration
+        (JNIEnv *, jclass, jlong, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -173,7 +188,7 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4Database_getCo
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getSharedFleeceEncoder
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -181,7 +196,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getShar
  * Signature: (J[B)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_encodeJSON
-  (JNIEnv *, jclass, jlong, jbyteArray);
+        (JNIEnv *, jclass, jlong, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -189,7 +204,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_encodeJ
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getFLSharedKeys
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
@@ -197,7 +212,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getFLSh
  * Signature: (JI)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Database_maintenance
-  (JNIEnv *, jclass, jlong, jint);
+        (JNIEnv *, jclass, jlong, jint);
 
 #ifdef __cplusplus
 }

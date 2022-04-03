@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -63,7 +62,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                     List<String> list = new ArrayList<>();
                     list.add("1-deadbeefcafebabe80081e50");
                     String[] history = list.toArray(new String[0]);
-                    C4Document doc = c4Database.put(json2fleece(json), docID, 0, true, false, history, true, 0, 0);
+                    C4Document doc = c4Database.putDocument(json2fleece(json), docID, 0, true, false, history, true, 0, 0);
                     assertNotNull(doc);
                     doc.close();
                 }

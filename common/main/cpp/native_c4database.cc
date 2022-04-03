@@ -358,6 +358,45 @@ Java_com_couchbase_lite_internal_core_C4Database_getCookies(JNIEnv *env, jclass 
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    setDocumentExpiration
+ * Signature: (JLjava/lang/String;J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_setDocumentExpiration(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdb,
+        jstring jdocID,
+        jlong jtimestamp) {
+    jstringSlice docID(env, jdocID);
+    C4Error error;
+    if (!c4doc_setExpiration((C4Database *) jdb, docID, jtimestamp, &error))
+        throwError(env, error);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    getDocumentExpiration
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_getDocumentExpiration(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdb,
+        jstring jdocID) {
+    jstringSlice docID(env, jdocID);
+    C4Error error;
+    jlong exp = c4doc_getExpiration((C4Database *) jdb, docID, &error);
+    if (exp < 0) {
+        throwError(env, error);
+        return 0;
+    }
+    return exp;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    rawPut
  * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V
  */

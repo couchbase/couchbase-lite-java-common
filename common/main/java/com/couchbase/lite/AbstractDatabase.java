@@ -481,7 +481,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     public void setDocumentExpiration(@NonNull String id, @Nullable Date expiration) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
         synchronized (getDbLock()) {
-            try { getOpenC4DbLocked().setExpiration(id, (expiration == null) ? 0 : expiration.getTime()); }
+            try { getOpenC4DbLocked().setDocumentExpiration(id, (expiration == null) ? 0 : expiration.getTime()); }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }
@@ -500,7 +500,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
         synchronized (getDbLock()) {
             try {
-                final long timestamp = getOpenC4DbLocked().getExpiration(id);
+                final long timestamp = getOpenC4DbLocked().getDocumentExpiration(id);
                 return (timestamp == 0) ? null : new Date(timestamp);
             }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
@@ -695,7 +695,8 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     /**
      * Add an index to the database
-     * @param name index name
+     *
+     * @param name  index name
      * @param index index description
      * @throws CouchbaseLiteException on failure
      */
@@ -705,7 +706,8 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     /**
      * Add an index to the database
-     * @param name index name
+     *
+     * @param name   index name
      * @param config index configuration
      * @throws CouchbaseLiteException on failure
      */
@@ -852,7 +854,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     @NonNull
     C4Document getC4Document(@NonNull String id) throws LiteCoreException {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().get(id); }
+        synchronized (getDbLock()) { return getOpenC4DbLocked().getDocument(id); }
     }
 
     @NonNull
@@ -1525,7 +1527,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
             c4Doc = (c4Doc != null)
                 ? c4Doc.update(body, revFlags)
-                : getOpenC4DbLocked().create(document.getId(), body, revFlags);
+                : getOpenC4DbLocked().createDocument(document.getId(), body, revFlags);
 
             document.replaceC4Document(c4Doc);
         }
