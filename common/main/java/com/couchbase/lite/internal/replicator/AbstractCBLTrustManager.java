@@ -24,7 +24,6 @@ import javax.net.ssl.X509TrustManager;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
@@ -32,10 +31,12 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * 1. Supports pinned server certificate.
  * 2. Supports acceptOnlySelfSignedServerCertificate mode.
  * 3. Supports default trust manager for validating certs when the pinned server
- *      certificate and acceptOnlySelfSignedServerCertificate are not used.
+ * certificate and acceptOnlySelfSignedServerCertificate are not used.
  * 4. Allows to listen for the server certificates.
  */
 public abstract class AbstractCBLTrustManager implements X509TrustManager {
+    private static final String AUTH_TYPE_RSA = "ECDHE_RSA";
+
     @Nullable
     private final X509Certificate pinnedServerCertificate;
 
@@ -88,34 +89,36 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
 
     // Check chain and authType precondition and throws IllegalArgumentException according to
     // https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/X509TrustManager.html:
+    @SuppressWarnings("PMD.NPathComplexity")
     protected final void cBLServerTrustCheck(@Nullable List<X509Certificate> certs, @Nullable String authType)
         throws CertificateException {
         Log.d(LogDomain.NETWORK, "CBL trust check: %d, %s", (certs == null) ? 0 : certs.size(), authType);
 
-        if ((certs == null) || certs.isEmpty()) {
-            throw new IllegalArgumentException("No server certificates");
-        }
-        if (StringUtils.isEmpty(authType)) {
-            throw new IllegalArgumentException("Invalid auth type: " + authType);
+        if ((certs == null) || certs.isEmpty()) { throw new IllegalArgumentException("No server certificates"); }
+        if (!AUTH_TYPE_RSA.equalsIgnoreCase(authType)) {
+            throw new IllegalArgumentException("Unexpected authentication type: " + authType);
         }
 
-        // Validate certificate:
-        final X509Certificate cert = certs.get(0);
+        X509Certificate cert = certs.get(0);
         cert.checkValidity();
 
-        // pinnedServerCertificate takes precedence over acceptOnlySelfSignedServerCertificate
-        if (pinnedServerCertificate != null) {
-            // Compare pinnedServerCertificate and the received cert:
-            if (!pinnedServerCertificate.equals(cert)) {
-                throw new CertificateException("Server certificate does not match pinned certificate");
-            }
-            return;
+        // pinnedServerCertificate takes precedence: only accept self-signed if no cert is pinned.
+        if (pinnedServerCertificate == null) {
+            // Accept chain length == 1 containing any self-signed certificate
+            if ((certs.size() == 1) && isSelfSignedCertificate(cert)) { return; }
+            throw new CertificateException("Server did not present the expected single, self-signed certificate");
         }
 
-        // Accept only self-signed certificate:
-        if (certs.size() > 1 || !isSelfSignedCertificate(cert)) {
-            throw new CertificateException("Server certificate is not self-signed");
+        // Compare the pinnedServerCertificate to each cert in the server chain
+        int i = 0;
+        while (true) {
+            if (pinnedServerCertificate.equals(cert)) { return; }
+            if (++i >= certs.size()) { break; }
+            cert = certs.get(i);
+            cert.checkValidity();
         }
+
+        throw new CertificateException("The pinned certificate did not match any certificate in the server chain");
     }
 
     protected final void notifyListener(@NonNull List<X509Certificate> certs) {
