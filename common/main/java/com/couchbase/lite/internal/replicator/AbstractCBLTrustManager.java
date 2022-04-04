@@ -35,7 +35,7 @@ import com.couchbase.lite.internal.utils.Fn;
  * 4. Allows to listen for the server certificates.
  */
 public abstract class AbstractCBLTrustManager implements X509TrustManager {
-    private static final String AUTH_TYPE_RSA = "ECDHE_RSA";
+    private static final String AUTH_TYPE_RSA = "RSA";
 
     @Nullable
     private final X509Certificate pinnedServerCertificate;
@@ -95,7 +95,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
         Log.d(LogDomain.NETWORK, "CBL trust check: %d, %s", (certs == null) ? 0 : certs.size(), authType);
 
         if ((certs == null) || certs.isEmpty()) { throw new IllegalArgumentException("No server certificates"); }
-        if (!AUTH_TYPE_RSA.equalsIgnoreCase(authType)) {
+        if (!authType.contains(AUTH_TYPE_RSA)) {
             throw new IllegalArgumentException("Unexpected authentication type: " + authType);
         }
 
