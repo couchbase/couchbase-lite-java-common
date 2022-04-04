@@ -87,7 +87,7 @@ class CBLTrustManagerTest : BaseTest() {
     @Test(expected = IllegalArgumentException::class)
     fun testBadAuthType() {
         object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { _ -> }) {}
-            .cBLServerTrustCheck(listOf(makeCert(testServerCert1)), "foo")
+            .cBLServerTrustCheck(listOf(makeCert(testServerCert1)), "")
     }
 
     @Test
@@ -118,7 +118,7 @@ class CBLTrustManagerTest : BaseTest() {
     fun testPinnedCertMatches() {
         val certs = listOf(makeCert(testServerCert1))
         object : AbstractCBLTrustManager(certs[0], false, { _ -> }) {}
-            .cBLServerTrustCheck(certs, "ECDHE_RSA")
+            .cBLServerTrustCheck(certs, "ECDHE_ECDSA")
     }
 
     @Test
@@ -132,7 +132,7 @@ class CBLTrustManagerTest : BaseTest() {
     fun testPinnedCertTakesPrecedence() {
         val certs = listOf(makeCert(testServerCert1), makeCert(testServerCert2))
         object : AbstractCBLTrustManager(certs[1], true, { _ -> }) {}
-            .cBLServerTrustCheck(certs, "ECDHE_RSA")
+            .cBLServerTrustCheck(certs, "ECDHE_ECDSA")
     }
 
     private fun makeCert(cert: String): X509Certificate =
