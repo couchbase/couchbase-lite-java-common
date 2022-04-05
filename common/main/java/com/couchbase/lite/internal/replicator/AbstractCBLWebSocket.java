@@ -25,6 +25,7 @@ import java.io.EOFException;
 import java.net.NoRouteToHostException;
 import java.net.PortUnreachableException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
@@ -476,7 +477,9 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         int domain = C4Constants.ErrorDomain.NETWORK;
         final int code;
 
-        if ((error instanceof NoRouteToHostException) || (error instanceof PortUnreachableException)) {
+        if ((error instanceof NoRouteToHostException)
+            || (error instanceof PortUnreachableException)
+            || (error instanceof SocketTimeoutException)) {
             code = C4Constants.NetworkError.HOST_UNREACHABLE;
         }
 

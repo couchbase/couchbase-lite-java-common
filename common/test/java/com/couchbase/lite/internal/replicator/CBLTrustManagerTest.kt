@@ -24,7 +24,7 @@ import java.security.cert.X509Certificate
 
 
 class CBLTrustManagerTest : BaseTest() {
-    val testServerCert1 = """        -----BEGIN CERTIFICATE-----
+    private val testServerCert1 = """        -----BEGIN CERTIFICATE-----
         MIICxTCCAi4CCQCVDKAyMSYtyjANBgkqhkiG9w0BAQUFADCBpjELMAkGA1UEBhMC
         VVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAcMC1NhbnRhIENsYXJhMRgw
         FgYDVQQKDA9Db3VjaGJhc2UsIEluYy4xDzANBgNVBAsMBk1vYmlsZTEcMBoGA1UE
@@ -80,25 +80,25 @@ class CBLTrustManagerTest : BaseTest() {
 
     @Test(expected = IllegalArgumentException::class)
     fun testEmptyServerCerts() {
-        object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { _ -> }) {}
+        object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
             .cBLServerTrustCheck(emptyList<X509Certificate>(), "ECDHE_RSA")
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun testBadAuthType() {
-        object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { _ -> }) {}
+        object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
             .cBLServerTrustCheck(listOf(makeCert(testServerCert1)), "")
     }
 
     @Test
     fun testSelfSignedCert() {
-        object : AbstractCBLTrustManager(null, true, { _ -> }) {}
+        object : AbstractCBLTrustManager(null, true, { }) {}
             .cBLServerTrustCheck(listOf(makeCert(testServerCert1)), "ECDHE_RSA")
     }
 
     @Test(expected = CertificateException::class)
     fun testTooManySelfSignedCerts() {
-        object : AbstractCBLTrustManager(null, true, { _ -> }) {}
+        object : AbstractCBLTrustManager(null, true, { }) {}
             .cBLServerTrustCheck(
                 listOf(makeCert(testServerCert1), makeCert(testServerCert2)),
                 "ECDHE_RSA"
@@ -110,28 +110,28 @@ class CBLTrustManagerTest : BaseTest() {
     @Test(expected = CertificateException::class)
     fun testPinnedCertDoesntMatch() {
         val certs = listOf(makeCert(testServerCert1))
-        object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { _ -> }) {}
+        object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
             .cBLServerTrustCheck(certs, "ECDHE_RSA")
     }
 
     @Test
     fun testPinnedCertMatches() {
         val certs = listOf(makeCert(testServerCert1))
-        object : AbstractCBLTrustManager(certs[0], false, { _ -> }) {}
+        object : AbstractCBLTrustManager(certs[0], false, { }) {}
             .cBLServerTrustCheck(certs, "ECDHE_ECDSA")
     }
 
     @Test
     fun testPinnedCertInChain() {
         val certs = listOf(makeCert(testServerCert1), makeCert(testServerCert2))
-        object : AbstractCBLTrustManager(certs[1], false, { _ -> }) {}
+        object : AbstractCBLTrustManager(certs[1], false, { }) {}
             .cBLServerTrustCheck(certs, "ECDHE_RSA")
     }
 
     @Test
     fun testPinnedCertTakesPrecedence() {
         val certs = listOf(makeCert(testServerCert1), makeCert(testServerCert2))
-        object : AbstractCBLTrustManager(certs[1], true, { _ -> }) {}
+        object : AbstractCBLTrustManager(certs[1], true, { }) {}
             .cBLServerTrustCheck(certs, "ECDHE_ECDSA")
     }
 
