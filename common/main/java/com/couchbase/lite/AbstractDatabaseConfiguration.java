@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2018 Couchbase, Inc.  All rights reserved.
+// Copyright (c) 2020 Couchbase, Inc.
 //
 // Licensed under the Couchbase License Agreement (the "License");
 // you may not use this file except in compliance with the License.
