@@ -21,6 +21,9 @@ cbdep install -d "${BIN_DIR}" cmake ${CMAKE_VERSION}
 CMAKE_DIR=`echo "${BIN_DIR}"/cmake-*`
 export PATH="${CMAKE_DIR}/bin:${PATH}"
 
+# Workaround for a dumb bug in the AGP
+ln -s "${NINJA_DIR}/bin/ninja" "${CMAKE_DIR}/bin/ninja"
+
 yes | ${SDK_MGR} --licenses > /dev/null 2>&1
 ${SDK_MGR} --install "build-tools;${BUILD_TOOLS_VERSION}"
 
