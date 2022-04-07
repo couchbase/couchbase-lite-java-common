@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
 
+import java.io.ByteArrayInputStream;
 import java.io.EOFException;
 import java.net.NoRouteToHostException;
 import java.net.PortUnreachableException;
@@ -31,6 +32,8 @@ import java.security.GeneralSecurityException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -123,6 +126,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     private static final String CHALLENGE_BASIC = "Basic";
     private static final String HEADER_AUTH = "Authorization";
+    public static final String HEADER_COOKIES = "Cookies"; // client customized cookies
 
     private enum State {INIT, CONNECTING, OPEN, CLOSE_REQUESTED, CLOSING, CLOSED, FAILED}
 
@@ -660,13 +664,21 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     }
 
     private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) throws GeneralSecurityException {
-        byte[] pinnedServerCert = null;
+        X509Certificate pinnedServerCert = null;
         boolean acceptOnlySelfSignedServerCert = false;
         KeyManager[] keyManagers = null;
         if (options != null) {
             // Pinned Certificate:
             Object opt = options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
-            if (opt instanceof byte[]) { pinnedServerCert = (byte[]) opt; }
+            if (opt instanceof byte[]) {
+                try {
+                    pinnedServerCert = (X509Certificate) CertificateFactory.getInstance("X.509")
+                        .generateCertificate(new ByteArrayInputStream((byte[]) opt));
+                }
+                catch (CertificateException e) {
+                    Log.w(TAG, "Can't parse pinned certificate.  Ignored", e);
+                }
+            }
 
             // Accept only self-signed server cert mode:
             opt = options.get(C4Replicator.REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT);

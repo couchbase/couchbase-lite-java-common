@@ -20,6 +20,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.List;
 
 import com.couchbase.lite.internal.utils.Fn;
@@ -27,7 +28,7 @@ import com.couchbase.lite.internal.utils.Fn;
 /** Just delegate everything to the base class */
 public class CBLTrustManager extends AbstractCBLTrustManager {
     public CBLTrustManager(
-        @Nullable byte[] pinnedServerCert,
+        @Nullable X509Certificate pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
         super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, serverCertsListener);

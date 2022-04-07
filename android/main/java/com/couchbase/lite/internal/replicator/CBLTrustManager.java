@@ -31,7 +31,7 @@ import com.couchbase.lite.internal.utils.Fn;
 
 public final class CBLTrustManager extends AbstractCBLTrustManager {
     public CBLTrustManager(
-        @Nullable byte[] pinnedServerCert,
+        @Nullable X509Certificate pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
         super(pinnedServerCert, acceptOnlySelfSignedServerCertificate, serverCertsListener);
