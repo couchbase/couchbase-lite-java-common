@@ -1185,6 +1185,8 @@ abstract class AbstractDatabase extends BaseDatabase {
         );
     }
 
+    // ??? Refactor this to get rid of the warning
+    @SuppressWarnings("PMD.NPathComplexity")
     private void postDatabaseChanged() {
         synchronized (getDbLock()) {
             if (!isOpen() || (c4DbObserver == null)) { return; }
@@ -1196,15 +1198,27 @@ abstract class AbstractDatabase extends BaseDatabase {
                 // Read changes in batches of MAX_CHANGES
                 final C4DatabaseChange[] c4DbChanges = c4DbObserver.getChanges(MAX_CHANGES);
 
+                int i = 0;
                 nChanges = (c4DbChanges == null) ? 0 : c4DbChanges.length;
-                final boolean newExternal = (nChanges > 0) && c4DbChanges[0].isExternal();
+                if (nChanges > 0) {
+                    while (c4DbChanges[i] == null) {
+                        i++;
+                        nChanges--;
+                    }
+                }
+                final boolean newExternal = (nChanges > 0) && c4DbChanges[i].isExternal();
+
                 if ((!docIDs.isEmpty()) && ((nChanges <= 0) || (external != newExternal) || (docIDs.size() > 1000))) {
                     dbChangeNotifier.postChange(new DatabaseChange((Database) this, docIDs));
                     docIDs = new ArrayList<>();
                 }
 
                 external = newExternal;
-                for (int i = 0; i < nChanges; i++) { docIDs.add(c4DbChanges[i].getDocID()); }
+
+                for (int j = i; j < nChanges; j++) {
+                    final C4DatabaseChange change = c4DbChanges[j];
+                    if (change != null) { docIDs.add(change.getDocID()); }
+                }
             }
             while (nChanges > 0);
         }
