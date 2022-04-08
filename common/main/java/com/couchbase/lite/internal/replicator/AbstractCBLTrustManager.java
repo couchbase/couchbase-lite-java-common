@@ -42,7 +42,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * 1. Supports pinned server certificate.
  * 2. Supports acceptOnlySelfSignedServerCertificate mode.
  * 3. Supports default trust manager for validating certs when the pinned server
- * certificate and acceptOnlySelfSignedServerCertificate are not used.
+ *    certificate and acceptOnlySelfSignedServerCertificate are not used.
  * 4. Allows to listen for the server certificates.
  */
 public abstract class AbstractCBLTrustManager implements X509TrustManager {
