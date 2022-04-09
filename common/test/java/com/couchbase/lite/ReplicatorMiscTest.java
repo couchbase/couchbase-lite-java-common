@@ -162,7 +162,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         // the replicator will fail because the endpoint is bogus
         try { run(repl); }
-        catch (CouchbaseLiteException ign) { }
+        catch (CouchbaseLiteException ignore) { }
 
         synchronized (options) {
             assertNull(options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
@@ -368,8 +368,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertTrue(cookies.contains("region=nw; city=sf"));
 
         // user specified cookie should be removed from extra header
-        HashMap<String, Object> httpHeaders = (HashMap<String, Object>) options
-            .get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+        HashMap<String, Object> httpHeaders
+            = (HashMap<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
         assertNotNull(httpHeaders); //httpHeaders must at least include a mapping for User-Agent
         assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
@@ -412,8 +412,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             "region=nw; city=sf",
             options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
 
-        HashMap<String, Object> httpHeaders = (HashMap<String, Object>) options
-            .get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+        HashMap<String, Object> httpHeaders
+            = (HashMap<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
 
         assertNotNull(httpHeaders);  // httpHeaders must at least include a mapping for User-Agent
         assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
