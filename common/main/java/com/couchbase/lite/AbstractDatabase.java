@@ -666,7 +666,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     }
 
     /**
-     * Get a list of the names of database indicies.
+     * Get a list of the names of database indices.
      *
      * @return the list of index names
      * @throws CouchbaseLiteException on failure

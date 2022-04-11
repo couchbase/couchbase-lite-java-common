@@ -33,8 +33,8 @@ import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -161,8 +161,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        try { run(repl); }
-        catch (CouchbaseLiteException ignore) { }
+        run(repl, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST, CBLError.Domain.CBLITE);
 
         synchronized (options) {
             assertNull(options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
@@ -193,8 +192,9 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             }
         });
 
-        try { run(repl); }
-        catch (CouchbaseLiteException ignore) { }
+        // the replicator will fail because the endpoint is bogus
+        run(repl, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST, CBLError.Domain.CBLITE);
+
 
         synchronized (options) {
             assertEquals(Boolean.FALSE, options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));

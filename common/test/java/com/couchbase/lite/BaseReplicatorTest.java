@@ -27,13 +27,13 @@ import org.junit.Before;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 
 public abstract class BaseReplicatorTest extends BaseDbTest {
     protected Replicator baseTestReplicator;
-
     protected Database otherDB;
 
     @Before
@@ -121,17 +121,15 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
             .setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
     }
 
-    protected final Replicator run(ReplicatorConfiguration config) throws CouchbaseLiteException {
+    protected final Replicator run(ReplicatorConfiguration config) {
         return run(config, null);
     }
 
-    protected final Replicator run(ReplicatorConfiguration config, Fn.Consumer<Replicator> onReady)
-        throws CouchbaseLiteException {
+    protected final Replicator run(ReplicatorConfiguration config, Fn.Consumer<Replicator> onReady) {
         return run(config, 0, null, false, onReady);
     }
 
-    protected final Replicator run(ReplicatorConfiguration config, boolean reset, Fn.Consumer<Replicator> onReady)
-        throws CouchbaseLiteException {
+    protected final Replicator run(ReplicatorConfiguration config, boolean reset, Fn.Consumer<Replicator> onReady) {
         return run(config, 0, null, reset, onReady);
     }
 
@@ -140,8 +138,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         int expectedErrorCode,
         String expectedErrorDomain,
         boolean reset,
-        Fn.Consumer<Replicator> onReady)
-        throws CouchbaseLiteException {
+        Fn.Consumer<Replicator> onReady) {
         return run(
             testReplicator(config),
             expectedErrorCode,
@@ -150,8 +147,10 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
             onReady);
     }
 
-    protected final Replicator run(Replicator repl) throws CouchbaseLiteException {
-        return run(repl, 0, null, false, null);
+    protected final Replicator run(Replicator repl) { return run(repl, 0, null, false, null); }
+
+    protected final Replicator run(Replicator repl, int expectedErrorCode, String expectedErrorDomain) {
+        return run(repl, expectedErrorCode, expectedErrorDomain, false, null);
     }
 
     private Replicator run(
@@ -159,12 +158,10 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         int expectedErrorCode,
         String expectedErrorDomain,
         boolean reset,
-        Fn.Consumer<Replicator> onReady)
-        throws CouchbaseLiteException {
+        Fn.Consumer<Replicator> onReady) {
         baseTestReplicator = repl;
 
-        TestReplicatorChangeListener listener
-            = new TestReplicatorChangeListener(repl.getConfig().isContinuous(), expectedErrorDomain, expectedErrorCode);
+        TestReplicatorChangeListener listener = new TestReplicatorChangeListener();
 
         if (onReady != null) { onReady.accept(repl); }
 
@@ -180,14 +177,19 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
             repl.removeChangeListener(token);
         }
 
-        // see if the replication succeeded
-        Throwable err = listener.getFailureReason();
-        Report.log(err, "Test replicator stopped: " + success);
+        Throwable err = listener.getError();
+        Report.log(err, "Test replicator finished: " + success);
 
-        if (err instanceof CouchbaseLiteException) { throw (CouchbaseLiteException) err; }
-        if (err != null) { throw new RuntimeException(err); }
-
-        assertTrue(success);
+        if ((expectedErrorCode == 0) && (expectedErrorDomain == null)) {
+            if (err != null) { throw new RuntimeException(err); }
+        }
+        else {
+            assertNotNull(err);
+            if (!(err instanceof CouchbaseLiteException)) { throw new RuntimeException(err); }
+            final CouchbaseLiteException cblErr = (CouchbaseLiteException) err;
+            if (expectedErrorCode != 0) { assertEquals(expectedErrorCode, cblErr.getCode()); }
+            if (expectedErrorDomain != null) { assertEquals(expectedErrorDomain, cblErr.getDomain()); }
+        }
 
         return repl;
     }
