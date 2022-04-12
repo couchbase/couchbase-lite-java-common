@@ -24,6 +24,7 @@ import java.io.EOFException;
 import java.net.NoRouteToHostException;
 import java.net.PortUnreachableException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -157,7 +158,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onMessage(@NonNull WebSocket webSocket, @NonNull String text) {
             Log.d(TAG, "%s#OkHTTP text data: %d", AbstractCBLWebSocket.this, text.length());
             synchronized (getPeerLock()) {
-                if (!state.assertState(State.OPEN))  {
+                if (!state.assertState(State.OPEN)) {
                     if (state.assertState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
                     return;
                 }
@@ -172,7 +173,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onMessage(@NonNull WebSocket webSocket, @NonNull ByteString bytes) {
             Log.d(TAG, "%s#OkHTTP byte data: %d", AbstractCBLWebSocket.this, bytes.size());
             synchronized (getPeerLock()) {
-                if (!state.assertState(State.OPEN))  {
+                if (!state.assertState(State.OPEN)) {
                     if (state.assertState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
                     return;
                 }
@@ -187,7 +188,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         public void onClosing(@NonNull WebSocket webSocket, int code, @NonNull String reason) {
             Log.d(TAG, "%s#OkHTTP closing: %s", AbstractCBLWebSocket.this, reason);
             synchronized (getPeerLock()) {
-                if (!state.setState(State.CLOSE_REQUESTED))  {
+                if (!state.setState(State.CLOSE_REQUESTED)) {
                     if (state.assertState(State.CLOSED, State.FAILED)) { webSocket.cancel(); }
                     return;
                 }
@@ -530,7 +531,9 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         int domain = C4Constants.ErrorDomain.NETWORK;
         final int code;
 
-        if ((error instanceof NoRouteToHostException) || (error instanceof PortUnreachableException)) {
+        if ((error instanceof NoRouteToHostException)
+            || (error instanceof PortUnreachableException)
+            || (error instanceof SocketTimeoutException)) {
             code = C4Constants.NetworkError.HOST_UNREACHABLE;
         }
 
