@@ -37,7 +37,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  */
 public abstract class AbstractCBLTrustManager implements X509TrustManager {
     @Nullable
-    private final byte[] pinnedServerCertificate;
+    private final X509Certificate pinnedServerCertificate;
 
     private final boolean acceptOnlySelfSignedServerCertificate;
 
@@ -48,10 +48,10 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
     private final AtomicReference<X509TrustManager> defaultTrustManager = new AtomicReference<>();
 
     public AbstractCBLTrustManager(
-        @Nullable byte[] pinnedServerCert,
+        @Nullable X509Certificate pinnedServerCert,
         boolean acceptOnlySelfSignedServerCertificate,
         @NonNull Fn.Consumer<List<Certificate>> serverCertsListener) {
-        this.pinnedServerCertificate = (pinnedServerCert == null) ? null : pinnedServerCert.clone();
+        this.pinnedServerCertificate = pinnedServerCert;
         this.acceptOnlySelfSignedServerCertificate = acceptOnlySelfSignedServerCertificate;
         this.serverCertsListener = serverCertsListener;
     }
@@ -88,6 +88,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
 
     // Check chain and authType precondition and throws IllegalArgumentException according to
     // https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/X509TrustManager.html:
+    @SuppressWarnings("PMD.NPathComplexity")
     protected final void cBLServerTrustCheck(@Nullable List<X509Certificate> certs, @Nullable String authType)
         throws CertificateException {
         Log.d(LogDomain.NETWORK, "CBL trust check: %d, %s", (certs == null) ? 0 : certs.size(), authType);
@@ -100,22 +101,26 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
         }
 
         // Validate certificate:
-        final X509Certificate cert = certs.get(0);
+        X509Certificate cert = certs.get(0);
         cert.checkValidity();
 
         // pinnedServerCertificate takes precedence over acceptOnlySelfSignedServerCertificate
-        if (pinnedServerCertificate != null) {
-            // Compare pinnedServerCertificate and the received cert:
-            if (!Arrays.equals(pinnedServerCertificate, cert.getEncoded())) {
-                throw new CertificateException("Server certificate does not match pinned certificate");
-            }
-            return;
-        }
-
-        // Accept only self-signed certificate:
-        if (certs.size() > 1 || !isSelfSignedCertificate(cert)) {
+        if (pinnedServerCertificate == null) {
+            // Accept chain length == 1 containing any self-signed certificate
+            if ((certs.size() == 1) && isSelfSignedCertificate(cert)) { return; }
             throw new CertificateException("Server certificate is not self-signed");
         }
+
+        // Compare the pinnedServerCertificate to each cert in the server chain
+        int i = 0;
+        while (true) {
+            if (pinnedServerCertificate.equals(cert)) { return; }
+            if (++i >= certs.size()) { break; }
+            cert = certs.get(i);
+            cert.checkValidity();
+        }
+
+        throw new CertificateException("The pinned certificate did not match any certificate in the server chain");
     }
 
     protected final void notifyListener(@NonNull List<X509Certificate> certs) {
