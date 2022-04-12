@@ -37,7 +37,6 @@ message( STATUS "SOURCE DIR: "            "${PROJECT_SOURCE_DIR}" )
 message( STATUS "OUTPUT DIR: "            ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
 message( STATUS "FLAG: "                  ${WHOLE_LIBRARY_FLAG} )
 
-set(LITE_CORE_SRC ${PROJECT_SOURCE_DIR}/../../core)
 set(JNI_SRC main/cpp)
 
 set(COMPILE_FLAGS   "${COMPILE_FLAGS} -Wall -Werror")
@@ -79,9 +78,7 @@ add_library( LiteCoreJNI SHARED
 
 target_include_directories( LiteCoreJNI PUBLIC
     ${JNI_SRC}/
-    ${LITE_CORE_SRC}/C/                   # include c4Private.h for debugging
-    ${LITE_CORE_SRC}/C/include/
-    ${LITE_CORE_SRC}/vendor/fleece/API/
+    "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/include"
 )
 
 target_link_libraries( LiteCoreJNI
