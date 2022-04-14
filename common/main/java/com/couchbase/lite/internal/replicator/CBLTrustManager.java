@@ -115,21 +115,26 @@ public final class CBLTrustManager implements X509TrustManager {
         }
 
         // Validate certificate:
-        final X509Certificate cert = chain[0];
+        X509Certificate cert = chain[0];
         cert.checkValidity();
 
-        // pinnedServerCertificate takes precedence over acceptOnlySelfSignedServerCertificate
-        if (pinnedServerCertificate != null) {
-            // Compare pinnedServerCertificate and the received cert:
-            if (!Arrays.equals(pinnedServerCertificate, cert.getEncoded())) {
-                throw new CertificateException("Server certificate does not match pinned certificate");
-            }
-        } else {
-            // Accept only self-signed certificate:
-            if (chain.length > 1 || !isSelfSignedCertificate(cert)) {
-                throw new CertificateException("Server certificate is not self-signed");
-            }
+            // pinnedServerCertificate takes precedence: only accept self-signed if no cert is pinned.
+        if (pinnedServerCertificate == null) {
+            // Accept chain length == 1 containing any self-signed certificate
+            if ((chain.length == 1) && isSelfSignedCertificate(cert)) { return; }
+            throw new CertificateException("Server did not present the expected single, self-signed certificate");
         }
+
+        // Compare the pinnedServerCertificate to each cert in the server chain
+        int i = 0;
+        while (true) {
+            if (Arrays.equals(pinnedServerCertificate, cert.getEncoded())) { return; }
+            if (++i >= chain.length) { break; }
+            cert = chain[i];
+            cert.checkValidity();
+        }
+
+        throw new CertificateException("The pinned certificate did not match any certificate in the server chain");
     }
 
     @Override
