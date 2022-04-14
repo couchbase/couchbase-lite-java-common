@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.couchbase.lite.internal.BaseAuthenticator;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -30,7 +31,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * auth with the given username and password. This should only be used over an SSL/TLS connection,
  * as otherwise it's very easy for anyone sniffing network traffic to read the password.
  */
-public final class BasicAuthenticator extends Authenticator {
+public final class BasicAuthenticator extends BaseAuthenticator {
 
     //---------------------------------------------
     // member variables
@@ -96,7 +97,7 @@ public final class BasicAuthenticator extends Authenticator {
     //---------------------------------------------
 
     @Override
-    void authenticate(@NonNull Map<String, Object> options) {
+    protected void authenticate(@NonNull Map<String, Object> options) {
         final Map<String, Object> auth = new HashMap<>();
         auth.put(C4Replicator.REPLICATOR_AUTH_TYPE, C4Replicator.AUTH_TYPE_BASIC);
         auth.put(C4Replicator.REPLICATOR_AUTH_USER_NAME, username);

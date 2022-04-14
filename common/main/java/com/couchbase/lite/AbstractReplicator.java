@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -654,12 +653,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     @Nullable
     private byte[] getFleeceOptions() {
-        final Map<String, Object> options = new HashMap<>();
-
-        final Authenticator authenticator = config.getAuthenticator();
-        if (authenticator != null) { authenticator.authenticate(options); }
-
-        config.addConnectionOptions(options);
+        final Map<String, Object> options = config.getConnectionOptions();
 
         byte[] optionsFleece = null;
         if (!options.isEmpty()) {
