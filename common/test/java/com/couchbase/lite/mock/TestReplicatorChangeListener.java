@@ -8,7 +8,7 @@
 // either express or implied. See the License for the specific language governing permissions
 // and limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.mock;
 
 import androidx.annotation.NonNull;
 
@@ -16,6 +16,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.ReplicatorActivityLevel;
+import com.couchbase.lite.ReplicatorChange;
+import com.couchbase.lite.ReplicatorChangeListener;
+import com.couchbase.lite.ReplicatorStatus;
 import com.couchbase.lite.internal.utils.Report;
 
 

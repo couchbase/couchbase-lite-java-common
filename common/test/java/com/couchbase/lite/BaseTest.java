@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assume;
@@ -88,10 +87,10 @@ public abstract class BaseTest extends PlatformBaseTest {
         setupPlatform();
 
         testSerialExecutor = new ExecutionService.CloseableExecutor() {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
+            final ExecutorService executor = Executors.newSingleThreadExecutor();
 
             @Override
-            public void execute(@NotNull Runnable task) {
+            public void execute(@NonNull Runnable task) {
                 Report.log("task enqueued: " + task);
                 executor.execute(() -> {
                     Report.log("task started: " + task);
@@ -101,7 +100,7 @@ public abstract class BaseTest extends PlatformBaseTest {
             }
 
             @Override
-            public boolean stop(long timeout, @NonNull @NotNull TimeUnit unit) {
+            public boolean stop(long timeout, @NonNull TimeUnit unit) {
                 executor.shutdownNow();
                 return true;
             }

@@ -26,6 +26,7 @@ import org.junit.Before;
 
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.mock.TestReplicatorChangeListener;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;

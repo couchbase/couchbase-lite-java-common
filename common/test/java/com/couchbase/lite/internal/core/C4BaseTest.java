@@ -60,8 +60,6 @@ public class C4BaseTest extends BaseTest {
 
     protected byte[] fleeceBody;
 
-    private String testName;
-
     @Before
     public final void setUpC4BaseTest() throws CouchbaseLiteException {
         final String testDirName = getUniqueName("c4_test");
