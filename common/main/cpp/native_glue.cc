@@ -120,6 +120,7 @@ JNI_OnLoad(JavaVM *jvm, void *reserved) {
         && initC4Replicator(env)
         #ifdef COUCHBASE_ENTERPRISE
         && initC4Listener(env)
+        && initC4Prediction(env)
         #endif
         && initC4Socket(env)) {
 

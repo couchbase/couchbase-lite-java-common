@@ -17,75 +17,97 @@
 //
 
 #include "native_glue.hh"
-#include "com_couchbase_lite_internal_core_C4Prediction.h"
+#include "com_couchbase_lite_internal_core_NativeC4Prediction.h"
 
 using namespace litecore;
 using namespace litecore::jni;
 
 
-#ifdef COUCHBASE_ENTERPRISE
-
 #include <c4PredictiveQuery.h>
 
-static jclass cls_C4PrediciveModel;
-static jmethodID m_prediction;
+static jclass cls_C4Prediction;
+static jmethodID m_C4Prediction_prediction;
 
-static C4SliceResult prediction(void *context, FLDict input, C4Database *c4db, C4Error *error) {
+#ifdef COUCHBASE_ENTERPRISE
+
+bool litecore::jni::initC4Prediction(JNIEnv *env) {
+    jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Prediction");
+    if (!localClass)
+        return false;
+
+    cls_C4Prediction = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+    if (!cls_C4Prediction)
+        return false;
+
+    m_C4Prediction_prediction = env->GetStaticMethodID(cls_C4Prediction, "prediction", "(JJJ)J");
+    if (!m_C4Prediction_prediction)
+        return false;
+
+    return true;
+}
+
+static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4Error *error) {
+    jlong result = 0;
+
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_EDETACHED)
         attachCurrentThread(&env);
 
-    auto model = (jobject) context;
-    jlong result = env->CallLongMethod(model, m_prediction, (jlong) input, (jlong) c4db);
-
-    auto resultSlice = *(C4SliceResult *) result;
-    ::free(reinterpret_cast<void *>(result));
+    // this call returns 0L when there is no prediction.
+    result = env->CallStaticLongMethod(
+            cls_C4Prediction,
+            m_C4Prediction_prediction,
+            (jlong) token,
+            (jlong) input,
+            (jlong) c4db);
 
     if (getEnvStat == JNI_EDETACHED)
         gJVM->DetachCurrentThread();
 
-    return resultSlice;
-}
+    // if the call returned a nullptr, just give the caller an empty result.
+    if (!result)
+        return {nullptr, 0};
 
-static void unregistered(void *context) {
-    deleteGlobalRef((jobject) context);
+    // copy the heap result onto the stack and free the heap version
+    C4SliceResult resultSlice = *(C4SliceResult *) result;
+    ::free(reinterpret_cast<void *>(result));
+
+    return resultSlice;
 }
 
 #endif
 
+
 extern "C" {
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Prediction_registerModel(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Prediction_registerModel(
         JNIEnv *env,
         jclass ignore,
         jstring jname,
-        jobject jmodel) {
+        jlong token) {
 #ifdef COUCHBASE_ENTERPRISE
     jstringSlice name(env, jname);
 
-    jobject gModel = env->NewGlobalRef(jmodel);
-    if (cls_C4PrediciveModel == nullptr) {
-        cls_C4PrediciveModel = env->GetObjectClass(gModel);
-        m_prediction = env->GetMethodID(cls_C4PrediciveModel, "predict", "(JJ)J");
-    }
-
     C4PredictiveModel predModel = {
-            gModel,           // .context
+            (void *) token,   // .context
             &prediction,      // .prediction
-            &unregistered};   // .unregistered
+            nullptr};         // .unregistered
 
     c4pred_registerModel(name.c_str(), predModel);
 #endif
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Prediction
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Prediction
  * Method:    unregisterModel
  * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Prediction_unregisterModel(JNIEnv *env, jclass ignore, jstring jname) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Prediction_unregisterModel(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jname) {
 #ifdef COUCHBASE_ENTERPRISE
     jstringSlice name(env, jname);
     c4pred_unregisterModel(name.c_str());

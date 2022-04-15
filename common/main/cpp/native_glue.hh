@@ -47,6 +47,7 @@ namespace litecore {
         bool initC4Socket(JNIEnv *);     // Implemented in native_c4socket.cc
 
 #ifdef COUCHBASE_ENTERPRISE
+        bool initC4Prediction(JNIEnv *); // Implemented in native_c4prediction.cc
         bool initC4Listener(JNIEnv *);   // Implemented in native_c4listener.cc
 #endif
 

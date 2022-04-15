@@ -33,8 +33,6 @@ public abstract class FLSliceResult extends C4NativePeer {
 
     // unmanaged: the native code will free it
     static final class UnmanagedFLSliceResult extends FLSliceResult {
-        UnmanagedFLSliceResult() { }
-
         UnmanagedFLSliceResult(long peer) { super(peer); }
 
         @Override
@@ -63,9 +61,6 @@ public abstract class FLSliceResult extends C4NativePeer {
     //-------------------------------------------------------------------------
     // Factory Methods
     //-------------------------------------------------------------------------
-
-    @NonNull
-    public static FLSliceResult getUnmanagedSliceResult() { return new UnmanagedFLSliceResult(); }
 
     @NonNull
     public static FLSliceResult getUnmanagedSliceResult(long peer) { return new UnmanagedFLSliceResult(peer); }
