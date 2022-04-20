@@ -21,7 +21,10 @@ import android.support.annotation.VisibleForTesting;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.NoRouteToHostException;
+import java.net.PortUnreachableException;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
@@ -600,6 +603,13 @@ public class AbstractCBLWebSocket extends C4Socket {
         }
 
         if (handleClose(error)) { return; }
+
+        if ((error instanceof NoRouteToHostException)
+            || (error instanceof PortUnreachableException)
+            || (error instanceof SocketTimeoutException)) {
+            closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.HOST_UNREACHABLE, null);
+            return;
+        }
 
         // TLS Certificate error
         if (error.getCause() instanceof java.security.cert.CertificateException) {

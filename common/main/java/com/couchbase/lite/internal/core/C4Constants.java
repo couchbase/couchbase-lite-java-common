@@ -222,5 +222,6 @@ public final class C4Constants {
         public static final int TLS_CLIENT_CERT_REJECTED = 10;  // 10
         public static final int TLS_CERT_UNKNOWN_ROOT = 11;     // Self-signed cert, or unknown anchor cert
         public static final int INVALID_REDIRECT = 12;          // Attempted redirect to invalid replication endpoint
+        public static final int HOST_UNREACHABLE = 24;          // There is no network path to the host [EHOSTUNREACH, retryable]
     }
 }
