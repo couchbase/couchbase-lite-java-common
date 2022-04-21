@@ -604,10 +604,13 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         if (handleClose(error)) { return; }
 
-        if ((error instanceof NoRouteToHostException)
-            || (error instanceof PortUnreachableException)
-            || (error instanceof SocketTimeoutException)) {
-            closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.HOST_UNREACHABLE, null);
+        if (error instanceof SocketTimeoutException) {
+            closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.TIMEOUT, "Socket timeout");
+            return;
+        }
+
+        if ((error instanceof NoRouteToHostException) || (error instanceof PortUnreachableException)) {
+            closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.UNKNOWN_HOST, "Host unreachable");
             return;
         }
 
