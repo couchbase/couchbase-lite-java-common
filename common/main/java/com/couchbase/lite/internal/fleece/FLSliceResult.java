@@ -24,10 +24,18 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 
 
 /**
- * Represent the block of native heap memory whose ref is passed as a parameter
- * or returned returned by the Core "init" call. The caller takes ownership of the "managed" version's peer
- * and must call the close() method to release it. The "unmanaged" version's peer belongs to Core:
- * it will be release by the native code.
+ * This is an interesting object.  In the C code it is a struct.  It is a little bit
+ * clumsy to pass structs back adn forth across the JNI boundary, so, instead,
+ * the JNI creates a C4SliceResult on the heap, copies the struct into it and the hands
+ * the reference to it, to Java.  Similarly, when it comes time to pass the C4SliceResult
+ * to C code, the JNI must copy the contents out of the heap into a struct.  It must also
+ * <b>free the memory!</b>  The heap artifact is nothing that LiteCore knows anything about.
+ *
+ * If LiteCore handed the C4SliceResult to the JNI (and the JNI allocated heap space for it)
+ * then the Java code must free it.  That's a <code>ManageFLSliceResult</code>.  If, on the
+ * other hand, this is a C4SliceResult that the Java is handing to core, then the JNI will
+ * free it after it copies the contents: as Jim Borden says: "The bus has reached its last stop"
+ * That is an <code>UnmanagedFLSliceResult</code>
  */
 public abstract class FLSliceResult extends C4NativePeer {
 
