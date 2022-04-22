@@ -173,7 +173,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
          * Full documentation for CBL JAK Cookie Architecture can be found on the mobile wiki page:
          * https://hub.internal.couchbase.com/confluence/display/cbeng/Mobile+Team
          *
-         * @param url
+         * @param url the url for which we need cookies
          * @return a list of all available cookies
          */
         @NonNull
@@ -477,9 +477,12 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         int domain = C4Constants.ErrorDomain.NETWORK;
         final int code;
 
-        if ((error instanceof NoRouteToHostException)
-            || (error instanceof PortUnreachableException)
-            || (error instanceof SocketTimeoutException)) {
+        if (error instanceof SocketTimeoutException) {
+            code = C4Constants.NetworkError.TIMEOUT;
+        }
+
+        else if ((error instanceof NoRouteToHostException)
+            || (error instanceof PortUnreachableException)) {
             code = C4Constants.NetworkError.HOST_UNREACHABLE;
         }
 
