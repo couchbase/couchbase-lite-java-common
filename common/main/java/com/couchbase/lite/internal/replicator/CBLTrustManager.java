@@ -1,6 +1,5 @@
 package com.couchbase.lite.internal.replicator;
 
-import android.net.http.X509TrustManagerExtensions;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -61,50 +60,23 @@ public final class CBLTrustManager implements X509TrustManager {
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        try {
-            // Use default trust manager if the pinned server certificate
-            // and acceptOnlySelfSignedServerCertificate are not used:
-            if (useDefaultTrustManager()) {
-                getDefaultTrustManager().checkServerTrusted(chain, authType);
-                return;
-            }
-
-            doCheckServerTrusted(chain, authType);
-        }
+        try { doCheckServerTrusted(chain, authType); }
         finally {
-            serverCertslistener.accept(asList(chain));
+            serverCertslistener.accept((chain == null)
+                ? Collections.emptyList()
+                : Collections.unmodifiableList(Arrays.asList(chain)));
         }
     }
 
-    /**
-     * Hostname aware version of {@link #checkServerTrusted(X509Certificate[], String)}.
-     * This method is called using introspection by conscrypt and android.net.http.X509TrustManagerExtensions
-     */
-    @SuppressWarnings("unused")
-    public List<X509Certificate> checkServerTrusted(
-        @Nullable X509Certificate[] chain,
-        @Nullable String authType,
-        @Nullable String host)
-        throws CertificateException {
-        try {
-            // Use default trust manager if the pinned server certificate
-            // and acceptOnlySelfSignedServerCertificate are not used:
-            if (useDefaultTrustManager()) {
-                // ANDROID ONLY: THIS WILL NOT BUILD AGAINST THE PURE JAVA RTE
-                return new X509TrustManagerExtensions(getDefaultTrustManager())
-                    .checkServerTrusted(chain, authType, host);
-            }
-
-            doCheckServerTrusted(chain, authType);
-
-            return Arrays.asList(chain);
-        }
-        finally {
-            serverCertslistener.accept(asList(chain));
-        }
-    }
-
+    @SuppressWarnings("PMD.NPathComplexity")
     private void doCheckServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+        // Use default trust manager if the pinned server certificate
+        // and acceptOnlySelfSignedServerCertificate are not used:
+        if (useDefaultTrustManager()) {
+            getDefaultTrustManager().checkServerTrusted(chain, authType);
+            return;
+        }
+
         // Check chain and authType precondition and throws IllegalArgumentException according to
         // https://docs.oracle.com/javase/8/docs/api/javax/net/ssl/X509TrustManager.html:
         if (chain == null || chain.length == 0) {
@@ -118,7 +90,7 @@ public final class CBLTrustManager implements X509TrustManager {
         X509Certificate cert = chain[0];
         cert.checkValidity();
 
-            // pinnedServerCertificate takes precedence: only accept self-signed if no cert is pinned.
+        // pinnedServerCertificate takes precedence: only accept self-signed if no cert is pinned.
         if (pinnedServerCertificate == null) {
             // Accept chain length == 1 containing any self-signed certificate
             if ((chain.length == 1) && isSelfSignedCertificate(cert)) { return; }
@@ -187,15 +159,10 @@ public final class CBLTrustManager implements X509TrustManager {
         try {
             cert.verify(cert.getPublicKey());
             return true;
-        } catch (CertificateException | NoSuchAlgorithmException |
-                 InvalidKeyException | NoSuchProviderException |
-                 SignatureException e) {
+        }
+        catch (CertificateException | NoSuchAlgorithmException | InvalidKeyException
+            | NoSuchProviderException | SignatureException e) {
             return false;
         }
-    }
-
-    @NonNull
-    private List<Certificate> asList(@Nullable X509Certificate[] certs) {
-        return (certs == null) ? Collections.emptyList() : Collections.unmodifiableList(Arrays.asList(certs));
     }
 }
