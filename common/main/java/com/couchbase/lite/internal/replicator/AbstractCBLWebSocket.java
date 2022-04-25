@@ -594,6 +594,7 @@ public class AbstractCBLWebSocket extends C4Socket {
         closed(C4Constants.ErrorDomain.WEB_SOCKET, code, reason);
     }
 
+    @SuppressWarnings("PMD.NPathComplexity")
     private void didClose(Throwable error) {
         Log.i(TAG, "WebSocket CLOSED", error);
 
