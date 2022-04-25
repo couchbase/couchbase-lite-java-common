@@ -141,7 +141,7 @@ class CBLWebSocketTest : BaseTest() {
         Assert.assertEquals(
             CloseStatus(
                 C4Constants.ErrorDomain.NETWORK,
-                C4Constants.NetworkError.HOST_UNREACHABLE,
+                C4Constants.NetworkError.TIMEOUT,
                 fail.toString()
             ),
             closeStatus
