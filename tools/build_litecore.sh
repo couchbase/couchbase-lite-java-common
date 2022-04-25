@@ -1,7 +1,7 @@
 #!/bin/bash
 
 MBEDTLS_DIR=vendor/mbedtls
-MBEDTLS_LIB=crypto/library/libmbedcrypto.a
+MBEDTLS_LIB=library/libmbedcrypto.a
 
 BUILD_TYPE="RelWithDebInfo"
 
