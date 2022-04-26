@@ -22,7 +22,7 @@ if [ -z "${ZIP_URL}" ]; then
 fi
 
 ZIP_FILE="$2"
-ARTIFACT_NAME="${ZIP_FILE%.*}"
+ARTIFACT_NAME="${ZIP_FILE%-*}"
 
 if [ -z "${ZIP_FILE}" ]; then
     usage
