@@ -44,7 +44,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Base class for socket factories.
  */
-public abstract class AbstractSocketFactory {
+public abstract class AbstractSocketFactory implements BaseSocketFactory {
     @NonNull
     private final CBLCookieStore cookieStore;
     @NonNull
@@ -67,6 +67,7 @@ public abstract class AbstractSocketFactory {
         this.serverCertsListener = serverCertsListener;
     }
 
+    @Override
     @NonNull
     public final SocketFromCore createSocket(
         @NonNull SocketToCore toCore,
@@ -115,12 +116,11 @@ public abstract class AbstractSocketFactory {
             return null;
         }
 
-
-            final SocketToRemote toRemote = new OkHttpSocket();
-            final CBLWebSocket socket = new CBLWebSocket(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
-            toRemote.init(socket);
-            return socket;
-     }
+        final SocketToRemote toRemote = new OkHttpSocket();
+        final CBLWebSocket socket = new CBLWebSocket(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
+        toRemote.init(socket);
+        return socket;
+    }
 
     // OkHttp doesn't understand blip or blips
     @NonNull

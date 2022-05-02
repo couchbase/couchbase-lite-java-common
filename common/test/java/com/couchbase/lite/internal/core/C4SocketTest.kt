@@ -16,10 +16,16 @@
 package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.BaseTest
+import com.couchbase.lite.internal.BaseSocketFactory
 import com.couchbase.lite.internal.sockets.CloseStatus
 import com.couchbase.lite.internal.sockets.SocketFromCore
+import com.couchbase.lite.internal.sockets.SocketToCore
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -38,6 +44,17 @@ private open class MockSocketFromCore : SocketFromCore {
         threadId = Thread.currentThread().id
         latch.countDown()
     }
+}
+
+private open class MockSocketFactory : BaseSocketFactory {
+    override fun createSocket(
+        toCore: SocketToCore,
+        scheme: String,
+        host: String,
+        port: Int,
+        path: String,
+        opts: ByteArray
+    ) = throw IllegalStateException("BOOM!")
 }
 
 // https://youtrack.jetbrains.com/issue/KT-5870
@@ -111,6 +128,31 @@ class C4SocketTest : BaseTest() {
 
         C4Socket.open(MOCK_PEER, null, null, null, 0, null, null)
         awaitCall(fromCore)
+    }
+
+    @Test
+    fun testOpenThrows() {
+        assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
+
+        val mockImpl = object : MockImpl() {
+            var domain: Int? = null
+            var code: Int? = null
+            var message: String? = null
+            override fun nClosed(peer: Long, domain: Int, code: Int, message: String?) {
+                super.nClosed(peer, domain, code, message)
+                this.domain = domain
+                this.code = code
+                this.message = message
+            }
+        }
+        assertFalse(
+            C4Socket.openSocket(mockImpl, MOCK_PEER, MockSocketFactory(), "ws:", "Oprah", 86, "/fail", ByteArray(0)))
+
+        assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
+        assertEquals(2, mockImpl.totalCalls)
+        assertEquals(C4Constants.ErrorDomain.NETWORK, mockImpl.domain)
+        assertEquals(C4Constants.NetworkError.INVALID_URL, mockImpl.code)
+        assertEquals("BOOM!", mockImpl.message)
     }
 
     @Test
