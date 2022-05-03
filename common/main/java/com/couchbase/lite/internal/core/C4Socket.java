@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.BaseSocketFactory;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Socket;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
 import com.couchbase.lite.internal.sockets.CloseStatus;
@@ -119,7 +119,9 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         Log.d(LOG_DOMAIN, "^C4Socket.open@%x: %s", peer, socket, factory);
 
-        if ((socket == null) && (!openSocket(peer, factory, scheme, hostname, port, path, options))) { return; }
+        if ((socket == null) && (!openSocket(NATIVE_IMPL, peer, factory, scheme, hostname, port, path, options))) {
+            return;
+        }
 
         withSocket(peer, "open", SocketFromCore::coreRequestsOpen);
     }
@@ -172,7 +174,9 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         return socket;
     }
 
-    private static boolean openSocket(
+    @VisibleForTesting
+    static boolean openSocket(
+        @NonNull NativeImpl impl,
         long peer,
         @Nullable Object factory,
         @Nullable String scheme,
@@ -180,7 +184,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         int port,
         @Nullable String path,
         @Nullable byte[] options) {
-        if (!(factory instanceof SocketFactory)) {
+        if (!(factory instanceof BaseSocketFactory)) {
             Log.w(LOG_DOMAIN, "C4Socket.open: factory is not a SocketFactory: %s", factory);
             return false;
         }
@@ -201,8 +205,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             return false;
         }
 
-        final C4Socket socket = createSocket(NATIVE_IMPL, peer);
-        socket.init(((SocketFactory) factory).createSocket(socket, scheme, hostname, port, path, options));
+        final C4Socket socket = createSocket(impl, peer);
+        try { socket.init(((BaseSocketFactory) factory).createSocket(socket, scheme, hostname, port, path, options)); }
+        catch (RuntimeException e) {
+            // this is just a guess about what went wrong...
+            socket.release(null, C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.INVALID_URL, e.getMessage());
+            return false;
+        }
 
         return true;
     }
