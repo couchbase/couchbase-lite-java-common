@@ -47,7 +47,9 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLKeyException;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.TrustManager;
 
 import okhttp3.Authenticator;
@@ -556,13 +558,17 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
             code = C4Constants.NetworkError.TLS_HANDSHAKE_FAILED;
         }
 
-        else if (error instanceof SSLPeerUnverifiedException) {
+        else if ((error instanceof SSLKeyException) || (error instanceof SSLPeerUnverifiedException)) {
             code = C4Constants.NetworkError.TLS_CERT_UNTRUSTED;
         }
 
-        else if (error instanceof SSLException) {
+        else if (error instanceof SSLProtocolException) {
             domain = C4Constants.ErrorDomain.WEB_SOCKET;
-            code = C4Constants.WebSocketError.TLS_FAILURE;
+            code = C4Constants.WebSocketError.PROTOCOL_ERROR;
+        }
+
+        else if (error instanceof SSLException) {
+            code = C4Constants.NetworkError.NETWORK_RESET;
         }
 
         // default: no idea what happened.

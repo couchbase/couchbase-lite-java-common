@@ -22,8 +22,6 @@ if [ -z "${ZIP_URL}" ]; then
 fi
 
 ZIP_FILE="$2"
-ARTIFACT_NAME="${ZIP_FILE%-*}"
-
 if [ -z "${ZIP_FILE}" ]; then
     usage
 fi
@@ -47,8 +45,8 @@ curl -f -L "${ZIP_URL}/${ZIP_FILE}" -o "${ZIP_FILE}" || exit 1
 unzip "${ZIP_FILE}"
 rm -rf "${ZIP_FILE}"
 
+ARTIFACT_NAME="${ZIP_FILE%-*}"
 jar -xf "${ARTIFACT_NAME}/lib/${ARTIFACT_NAME}.jar" libs
-
 
 cp -R libs/* "${OUTPUT_DIR}"
 
