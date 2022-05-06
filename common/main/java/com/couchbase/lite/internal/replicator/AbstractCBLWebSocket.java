@@ -43,7 +43,10 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLKeyException;
+import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
@@ -621,8 +624,7 @@ public class AbstractCBLWebSocket extends C4Socket {
             return;
         }
 
-        // SSLPeerUnverifiedException
-        if (error instanceof javax.net.ssl.SSLPeerUnverifiedException) {
+        if ((error instanceof SSLKeyException) || (error instanceof javax.net.ssl.SSLPeerUnverifiedException)) {
             closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.TLS_CERT_UNTRUSTED, null);
             return;
         }
@@ -635,6 +637,16 @@ public class AbstractCBLWebSocket extends C4Socket {
 
         if (error instanceof SSLHandshakeException) {
             closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.TLS_HANDSHAKE_FAILED, null);
+            return;
+        }
+
+        else if (error instanceof SSLProtocolException) {
+            closed(C4Constants.ErrorDomain.WEB_SOCKET, C4Socket.WS_STATUS_CLOSE_PROTOCOL_ERROR, null);
+            return;
+        }
+
+        if (error instanceof SSLException) {
+            closed(C4Constants.ErrorDomain.WEB_SOCKET, C4Socket.WS_STATUS_CLOSE_USER_TRANSIENT, null);
             return;
         }
 
