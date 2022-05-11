@@ -310,7 +310,7 @@ static jboolean replicationFilter(
  * (Note: In the case of an incoming revision, no flags other than 'deletion' and
  * 'hasAttachments' will be set.)
  *
- * @param validationFunction
+ * @param collectionName
  * @param docID
  * @param revID
  * @param flags
@@ -332,7 +332,7 @@ static bool validationFunction(
  * (Note: In the case of an incoming revision, no flags other than 'deletion' and
  * 'hasAttachments' will be set.)
  *
- * @param validationFunction
+ * @param collectionName
  * @param docID
  * @param revID
  * @param flags

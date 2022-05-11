@@ -23,7 +23,7 @@ import com.couchbase.lite.internal.core.C4Socket;
 /**
  * The C4Listener companion object
  */
-public class NativeC4Socket implements C4Socket.NativeImpl {
+public final class NativeC4Socket implements C4Socket.NativeImpl {
 
     @Override
     public long nFromNative(long token, String schema, String host, int port, String path, int framing) {

@@ -19,7 +19,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 
 
-public class NativeC4QueryEnumerator implements C4QueryEnumerator.NativeImpl {
+public final class NativeC4QueryEnumerator implements C4QueryEnumerator.NativeImpl {
 
     @Override
     public boolean nNext(long peer) throws LiteCoreException { return next(peer); }

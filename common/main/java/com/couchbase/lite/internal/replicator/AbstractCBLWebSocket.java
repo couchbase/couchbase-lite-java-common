@@ -22,13 +22,19 @@ import androidx.annotation.VisibleForTesting;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.net.NoRouteToHostException;
 import java.net.PortUnreachableException;
+import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.UnknownHostException;
-import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateExpiredException;
@@ -47,6 +53,7 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLKeyException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -133,6 +140,71 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     //-------------------------------------------------------------------------
     // Types
     //-------------------------------------------------------------------------
+
+    private static final class ConstrainedAddressSocketFactory extends SSLSocketFactory {
+        @NonNull
+        private final InetAddress localAddress;
+        @NonNull
+        private final SSLSocketFactory delegate;
+
+        private ConstrainedAddressSocketFactory(@NonNull InetAddress localAddress, @NonNull SSLSocketFactory delegate) {
+            this.localAddress = localAddress;
+            this.delegate = delegate;
+        }
+
+        @NonNull
+        @Override
+        public String[] getDefaultCipherSuites() { return delegate.getDefaultCipherSuites(); }
+
+        @NonNull
+        @Override
+        public String[] getSupportedCipherSuites() { return delegate.getSupportedCipherSuites(); }
+
+        @NonNull
+        @Override
+        public Socket createSocket(
+            @NonNull Socket socket,
+            @NonNull String remoteHost,
+            int port,
+            boolean autoClose)
+            throws IOException {
+            return delegate.createSocket(socket, remoteHost, port, autoClose);
+        }
+
+        @NonNull
+        @Override
+        public Socket createSocket(@NonNull InetAddress remoteHost, int port) throws IOException {
+            return createSocket(remoteHost, port, localAddress, 0);
+        }
+
+        @NonNull
+        @Override
+        public Socket createSocket(
+            @NonNull InetAddress remoteHost,
+            int remotePort,
+            @NonNull InetAddress localAddress,
+            int localPort)
+            throws IOException {
+            return delegate.createSocket(remoteHost, remotePort, localAddress, localPort);
+        }
+
+        @NonNull
+        @Override
+        public Socket createSocket(@NonNull String remoteHost, int port) throws IOException, UnknownHostException {
+            return delegate.createSocket(remoteHost, port, localAddress, 0);
+        }
+
+        @NonNull
+        @Override
+        public Socket createSocket(
+            @NonNull String remoteHost,
+            int remotePort,
+            @NonNull InetAddress localAddress,
+            int localPort)
+            throws IOException, UnknownHostException {
+            return delegate.createSocket(remoteHost, remotePort, localAddress, localPort);
+        }
+    }
 
     // Using the C4NativePeer lock to protect cookieStore may seem like overkill.  We have to use it anyway,
     // for the (very necessary) call to assertState.  Might as well use it everywhere...
@@ -297,6 +369,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     //-------------------------------------------------------------------------
 
     // Core needs a connection to the remote
+    // !!! openRemote returns a boolean that this method doesn't check.  Why?
     @Override
     public final void coreRequestsOpen() {
         Log.d(LOG_DOMAIN, "%s.coreRequestedOpen", this);
@@ -361,7 +434,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     // Set up the remote socket factory
     @Override
-    public void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) throws GeneralSecurityException {
+    public void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) {
         // Heartbeat
         if (options != null) {
             final Object heartbeat = options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
@@ -562,10 +635,12 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         return (route, resp) -> authenticate(resp, (String) username, (String) password);
     }
 
-    private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) throws GeneralSecurityException {
+    @SuppressWarnings("PMD.NPathComplexity")
+    private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) {
         X509Certificate pinnedServerCert = null;
         boolean acceptOnlySelfSignedServerCert = false;
         KeyManager[] keyManagers = null;
+        InetAddress iFace = null;
         if (options != null) {
             // Pinned Certificate:
             Object opt = options.get(C4Replicator.REPLICATOR_OPTION_PINNED_SERVER_CERT);
@@ -574,9 +649,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
                     pinnedServerCert = (X509Certificate) CertificateFactory.getInstance("X.509")
                         .generateCertificate(new ByteArrayInputStream((byte[]) opt));
                 }
-                catch (CertificateException e) {
-                    Log.w(LOG_DOMAIN, "Can't parse pinned certificate.  Ignored", e);
-                }
+                catch (CertificateException e) { Log.w(LOG_DOMAIN, "Can't parse pinned certificate.  Ignored", e); }
             }
 
             // Accept only self-signed server cert mode:
@@ -586,15 +659,29 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             // KeyManager for client cert authentication:
             final KeyManager clientCertAuthKeyManager = getAuthenticator();
             if (clientCertAuthKeyManager != null) { keyManagers = new KeyManager[] {clientCertAuthKeyManager}; }
+
+            opt = options.get(C4Replicator.SOCKET_OPTIONS_NETWORK_INTERFACE);
+            if (opt instanceof String) { iFace = getSelectedInterface((String) opt); }
         }
 
         // TrustManager for server cert verification:
         final CBLTrustManager trustManager
             = new CBLTrustManager(pinnedServerCert, acceptOnlySelfSignedServerCert, serverCertsListener);
 
-        final SSLContext sslContext = SSLContext.getInstance("TLS");
-        sslContext.init(keyManagers, new TrustManager[] {trustManager}, null);
-        builder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);
+        final SSLContext sslContext;
+        try {
+            sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(keyManagers, new TrustManager[] {trustManager}, null);
+        }
+        catch (NoSuchAlgorithmException | KeyManagementException e) {
+            throw new IllegalStateException("Failed getting SSL context", e);
+        }
+
+
+        final SSLSocketFactory socketFactory = sslContext.getSocketFactory();
+        builder.sslSocketFactory(
+            (iFace == null) ? socketFactory : new ConstrainedAddressSocketFactory(iFace, socketFactory),
+            trustManager);
 
         // HostnameVerifier:
         if (pinnedServerCert != null || acceptOnlySelfSignedServerCert) {
@@ -647,6 +734,29 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         }
 
         return null;
+    }
+
+    @NonNull
+    private InetAddress getSelectedInterface(@NonNull String iFace) {
+        try {
+            for (NetworkInterface netIf: Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                if (iFace.equals(netIf.getName())) {
+                    final List<InterfaceAddress> ifAddys = netIf.getInterfaceAddresses();
+                    if ((ifAddys != null) && (!ifAddys.isEmpty())) { return ifAddys.get(0).getAddress(); }
+                }
+            }
+        }
+        catch (SocketException e) { throw new IllegalStateException("Could not get device interfaces", e); }
+
+
+        // if iFace is not the name of an interface, perhaps it is an IP address...
+        // Or, perhaps, something else.  This cakk may well try to do a DNS lookup.
+        // ... and, if that succeeds the return value may be an address somewhere out
+        // there in the i'Net. :shrug:
+        try { return InetAddress.getByName(iFace); }
+        catch (UnknownHostException e) {
+            throw new IllegalStateException("Could not resolve specified interface: " + iFace, e);
+        }
     }
 
     private int responseCount(Response resp) {

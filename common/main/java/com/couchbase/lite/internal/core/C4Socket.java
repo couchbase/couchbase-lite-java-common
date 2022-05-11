@@ -34,7 +34,6 @@ import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketToCore;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -72,6 +71,11 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         void nReceived(long peer, byte[] data);
         void nCloseRequested(long peer, int status, @Nullable String message);
         void nClosed(long peer, int errorDomain, int errorCode, String message);
+    }
+
+    @FunctionalInterface
+    interface SocketTask {
+        void accept(C4Socket socket, SocketFromCore fromCore);
     }
 
     //-------------------------------------------------------------------------
@@ -123,7 +127,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             return;
         }
 
-        withSocket(peer, "open", SocketFromCore::coreRequestsOpen);
+        withSocket(
+            peer,
+            "open",
+            (s, l) -> {
+                try { l.coreRequestsOpen(); }
+                catch (RuntimeException e) { s.openFailed(e); }
+            });
     }
 
     // Apparently SpotBugs can't tel that `data` *is* null-checked
@@ -136,13 +146,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             Log.i(LOG_DOMAIN, "C4Socket.write: empty data");
             return;
         }
-        withSocket(peer, "write", l -> l.coreWrites(data));
+        withSocket(peer, "write", (s, l) -> l.coreWrites(data));
     }
 
     // This method is called by reflection.  Don't change its signature.
     static void completedReceive(long peer, long nBytes) {
         Log.d(LOG_DOMAIN, "^C4Socket.completedReceive@%x(%d)", peer, nBytes);
-        withSocket(peer, "completedReceive", l -> l.coreAcksWrite(nBytes));
+        withSocket(peer, "completedReceive", (s, l) -> l.coreAcksWrite(nBytes));
     }
 
     // This method is called by reflection.  Don't change its signature.
@@ -152,14 +162,14 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         withSocket(
             peer,
             "requestClose",
-            l -> l.coreRequestsClose(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, status, message)));
+            (s, l) -> l.coreRequestsClose(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, status, message)));
     }
 
     // This method is called by reflection.  Don't change its signature.
     // Called only when not in NO_FRAMING mode
     static void close(long peer) {
         Log.d(LOG_DOMAIN, "^C4Socket.close@%x", peer);
-        withSocket(peer, "close", SocketFromCore::coreClosed);
+        withSocket(peer, "close", (s, l) -> l.coreClosed());
     }
 
     //-------------------------------------------------------------------------
@@ -208,15 +218,14 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         final C4Socket socket = createSocket(impl, peer);
         try { socket.init(((BaseSocketFactory) factory).createSocket(socket, scheme, hostname, port, path, options)); }
         catch (RuntimeException e) {
-            // this is just a guess about what went wrong...
-            socket.release(null, C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.INVALID_URL, e.getMessage());
+            socket.openFailed(e);
             return false;
         }
 
         return true;
     }
 
-    private static void withSocket(long peer, @Nullable String op, @NonNull Fn.Consumer<SocketFromCore> task) {
+    private static void withSocket(long peer, @Nullable String op, @NonNull SocketTask task) {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
         if (socket != null) {
             socket.continueWith(task);
@@ -347,7 +356,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     //-------------------------------------------------------------------------
 
     // proxy this call to the fromCore delegate.
-    private void continueWith(Fn.Consumer<SocketFromCore> task) { queue.execute(() -> task.accept(fromCore.get())); }
+    private void continueWith(SocketTask task) { queue.execute(() -> task.accept(this, fromCore.get())); }
+
+    // make a guess about what went wrong...
+    private void openFailed(@NonNull Exception err) {
+        Log.w(LOG_DOMAIN, "Failed opening connection", err);
+        release(null, C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.INVALID_URL, err.getMessage());
+    }
 
     private void release(LogDomain logDomain, @Nullable String msg) {
         release(logDomain, C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.UNEXPECTED_ERROR, msg);

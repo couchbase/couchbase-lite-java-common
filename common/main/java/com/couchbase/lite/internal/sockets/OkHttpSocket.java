@@ -178,11 +178,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         // This bleeds a bit of the the OkHttp API into the CBLWebsocket.
         // It's just a builder, though: probably ok.
         final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
-        try { core.setupRemoteSocketFactory(builder); }
-        catch (Exception e) {
-            Log.w(LOG_DOMAIN, "Failed creating socket factory", e);
-            return false;
-        }
+        core.setupRemoteSocketFactory(builder);
 
         if (!toRemote.compareAndSet(NULL_WS, socketFactory.create(builder.build(), newRequest(uri, options), this))) {
             throw new IllegalStateException("Failed setting remote web socket: this can't happen!!");
@@ -216,7 +212,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         final WebSocket remote = toRemote.get();
         closeSocket(
             remote,
-            core -> { if (remote != null) { remote.cancel(); }});
+            core -> { if (remote != null) { remote.cancel(); } });
     }
 
     //-------------------------------------------------------------------------

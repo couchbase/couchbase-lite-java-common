@@ -65,7 +65,7 @@ public interface SocketFromRemote {
     // This is a small concession to separation of concerns: it drags in a dependency on okhttp.
     // It probably just isn't worth the trouble of wrapping the OkHttp.Builder in something more abstract.
     @SuppressWarnings("PMD.SignatureDeclareThrowsException")
-    void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) throws Exception;
+    void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder);
 
     // Remote connections is open
     void remoteOpened(int code, @Nullable Map<String, Object> headers);

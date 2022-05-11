@@ -14,7 +14,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4QueryObserver;
 
 
-public class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
+public final class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
 
     @Override
     public long nCreate(long token, long c4Query) { return create(token, c4Query); }
