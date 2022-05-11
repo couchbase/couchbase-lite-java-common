@@ -790,7 +790,7 @@ public abstract class Expression {
      * expression is null or missing.
      *
      * @return An IS NULL expression.
-     * @deprecated Use Expression.isValued
+     * @deprecated Use Expression.isNotValued
      */
     @Deprecated
     @SuppressWarnings("PMD.LinguisticNaming")
