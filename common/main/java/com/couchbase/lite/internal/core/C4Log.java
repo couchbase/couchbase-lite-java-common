@@ -50,15 +50,17 @@ public class C4Log {
             boolean usePlaintext,
             String header);
     }
+    @NonNull
+    public static C4Log create() { return new C4Log(nativeImpl); }
+
+    @VisibleForTesting
+    @NonNull
+    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(create());
 
     @NonNull
     @VisibleForTesting
     static volatile C4Log.NativeImpl nativeImpl = new NativeC4Log();
 
-    @VisibleForTesting
-    @NonNull
-    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(new C4Log(nativeImpl, get().domain,
-        get().level, get().message, get().path, get().maxRotateCount, get().maxSize, get().usePlainText, get().header));
     @NonNull
     private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
 
@@ -72,7 +74,6 @@ public class C4Log {
 
     @NonNull
     private static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
-
     static {
         final Map<LogDomain, String> m = new HashMap<>();
         m.put(LogDomain.DATABASE, C4Constants.LogDomain.DATABASE);
@@ -125,39 +126,10 @@ public class C4Log {
         m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
         LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
-
     @NonNull
     private final C4Log.NativeImpl impl;
-    private final String domain;
-    private final int level;
-    private final String message;
-    private final String path;
-    private final int maxRotateCount;
-    private final long maxSize;
-    private final boolean usePlainText;
-    private final String header;
 
-    @VisibleForTesting
-    C4Log(
-        @NonNull NativeImpl impl,
-        @NonNull String domain,
-        int level,
-        @NonNull String message,
-        @NonNull String path,
-        int maxRotateCount,
-        long maxSize,
-        boolean usePlainText,
-        @NonNull String header) {
-        this.impl = impl;
-        this.domain = domain;
-        this.level = level;
-        this.message = message;
-        this.path = path;
-        this.maxRotateCount = maxRotateCount;
-        this.maxSize = maxSize;
-        this.usePlainText = usePlainText;
-        this.header = header;
-    }
+    public C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
 
     public final void logToCore(LogDomain domain, LogLevel level, String message) {
         impl.nLog(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
