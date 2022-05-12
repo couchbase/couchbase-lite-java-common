@@ -31,12 +31,35 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.Logger;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.core.impl.NativeC4Log;
 
 
 public class C4Log {
+    public interface NativeImpl {
+        void nLog(String domain, int level, String message);
+        int nGetLevel(String domain);
+        void nSetLevel(String domain, int level);
+        void nSetCallbackLevel(int level);
+        int nGetBinaryFileLevel();
+        void nSetBinaryFileLevel(int level);
+        void nWriteToBinaryFile(
+            String path,
+            int level,
+            int maxRotateCount,
+            long maxSize,
+            boolean usePlaintext,
+            String header);
+    }
+    @NonNull
+    public static C4Log create() { return new C4Log(nativeImpl); }
+
     @VisibleForTesting
     @NonNull
-    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(new C4Log());
+    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(create());
+
+    @NonNull
+    @VisibleForTesting
+    static volatile C4Log.NativeImpl nativeImpl = new NativeC4Log();
 
     @NonNull
     private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
@@ -103,13 +126,18 @@ public class C4Log {
         m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
         LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
+    @NonNull
+    private final C4Log.NativeImpl impl;
+
+    public C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
+
     public final void logToCore(LogDomain domain, LogLevel level, String message) {
-        log(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
+        impl.nLog(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
     }
 
-    public final int getFileLogLevel() { return getBinaryFileLevel(); }
+    public final int getFileLogLevel() { return impl.nGetBinaryFileLevel(); }
 
-    public final void setFileFileLevel(LogLevel level) { setBinaryFileLevel(getC4LevelForLogLevel(level)); }
+    public final void setFileFileLevel(LogLevel level) { impl.nSetBinaryFileLevel(getC4LevelForLogLevel(level)); }
 
     public final void initFileLogger(
         String path,
@@ -118,12 +146,12 @@ public class C4Log {
         long maxSize,
         boolean plainText,
         String header) {
-        writeToBinaryFile(path, getC4LevelForLogLevel(level), maxRotate, maxSize, plainText, header);
+        impl.nWriteToBinaryFile(path, getC4LevelForLogLevel(level), maxRotate, maxSize, plainText, header);
     }
 
     public final void setLevels(int level, @Nullable String... domains) {
         if ((domains == null) || (domains.length <= 0)) { return; }
-        for (String domain: domains) { setLevel(domain, level); }
+        for (String domain: domains) { impl.nSetLevel(domain, level); }
     }
 
     public final void setCallbackLevel(@NonNull LogLevel consoleLevel) {
@@ -136,7 +164,7 @@ public class C4Log {
     public final LogLevel getCallbackLevel() { return CALLBACK_LEVEL.get(); }
 
     @VisibleForTesting
-    public final int getLogLevel(String domain) { return getLevel(domain); }
+    public final int getLogLevel(String domain) { return impl.nGetLevel(domain); }
 
     @VisibleForTesting
     public final void forceCallbackLevel(@NonNull LogLevel logLevel) {
@@ -241,7 +269,7 @@ public class C4Log {
 
     private void setCoreCallbackLevel() {
         final LogLevel logLevel = CALLBACK_LEVEL.get();
-        setCallbackLevel(getC4LevelForLogLevel(logLevel));
+        impl.nSetCallbackLevel(getC4LevelForLogLevel(logLevel));
     }
 
     @NonNull
@@ -251,29 +279,4 @@ public class C4Log {
         final LogLevel customLogLevel = customLogger.getLevel();
         return (customLogLevel.compareTo(consoleLevel) > 0) ? consoleLevel : customLogLevel;
     }
-
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    private static native void log(String domain, int level, String message);
-
-    private static native int getLevel(String domain);
-
-    private static native void setLevel(String domain, int level);
-
-    private static native void setCallbackLevel(int level);
-
-    private static native int getBinaryFileLevel();
-
-    private static native void setBinaryFileLevel(int level);
-
-    private static native void writeToBinaryFile(
-        String path,
-        int level,
-        int maxRotateCount,
-        long maxSize,
-        boolean usePlaintext,
-        String header);
 }

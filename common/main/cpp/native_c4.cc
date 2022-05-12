@@ -22,7 +22,7 @@
 #endif
 
 #include "com_couchbase_lite_internal_core_C4.h"
-#include "com_couchbase_lite_internal_core_C4Log.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Log.h"
 #include "com_couchbase_lite_internal_core_C4Key.h"
 #include "native_glue.hh"
 
@@ -209,19 +209,19 @@ Java_com_couchbase_lite_internal_core_C4_getVersion(JNIEnv *env, jclass ignore) 
 // com_couchbase_lite_internal_core_C4Log
 // ----------------------------------------------------------------------------
 /*
- * Class:     com_couchbase_lite_internal_core_C4Log
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
  * Method:    getLevel
  * Signature: (Ljava/lang/String;I)V
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_getLevel(JNIEnv *env, jclass ignore, jstring jdomain) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_getLevel(JNIEnv *env, jclass ignore, jstring jdomain) {
     jstringSlice domain(env, jdomain);
     C4LogDomain logDomain = c4log_getDomain(domain.c_str(), false);
     return (!logDomain) ? -1 : (jint) c4log_getLevel(logDomain);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Log
+ * Class:     com_couchbase_lite_internal_core_impl_C4Log
  * Method:    setLevel
  * Signature: (Ljava/lang/String;I)V
  *
@@ -232,7 +232,7 @@ Java_com_couchbase_lite_internal_core_C4Log_getLevel(JNIEnv *env, jclass ignore,
  * that domain at any time, including before Core creates it.
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_setLevel(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setLevel(
         JNIEnv *env,
         jclass ignore,
         jstring jdomain,
@@ -243,12 +243,12 @@ Java_com_couchbase_lite_internal_core_C4Log_setLevel(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Log
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log_log
  * Method:    log
  * Signature: (Ljava/lang/String;I;Ljava/lang/String)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_log(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_log(
         JNIEnv *env,
         jclass ignore,
         jstring jdomain,
@@ -262,32 +262,32 @@ Java_com_couchbase_lite_internal_core_C4Log_log(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Log
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
  * Method:    getBinaryFileLevel
  * Signature: (V)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_getBinaryFileLevel(JNIEnv *env, jclass ignore) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_getBinaryFileLevel(JNIEnv *env, jclass ignore) {
     return c4log_binaryFileLevel();
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Log
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
  * Method:    setBinaryFileLevel
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_setBinaryFileLevel(JNIEnv *env, jclass ignore, jint level) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setBinaryFileLevel(JNIEnv *env, jclass ignore, jint level) {
     c4log_setBinaryFileLevel((C4LogLevel) level);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Log
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
  * Method:    writeToBinaryFile
  * Signature: (Ljava/lang/String;IIJZLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_writeToBinaryFile(
         JNIEnv *env,
         jclass ignore,
         jstring jpath,
@@ -313,12 +313,12 @@ Java_com_couchbase_lite_internal_core_C4Log_writeToBinaryFile(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Log
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
  * Method:    setCallbackLevel
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Log_setCallbackLevel(JNIEnv *env, jclass clazz, jint jlevel) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setCallbackLevel(JNIEnv *env, jclass clazz, jint jlevel) {
     c4log_setCallbackLevel((C4LogLevel) jlevel);
 }
 

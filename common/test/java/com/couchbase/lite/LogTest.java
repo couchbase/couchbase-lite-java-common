@@ -33,6 +33,7 @@ import org.junit.Test;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
+import com.couchbase.lite.internal.core.impl.NativeC4Log;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 
@@ -114,9 +115,9 @@ public class LogTest extends BaseDbTest {
         private int minLevel;
 
         public TestLogger(String domainFilter) {
+            super(new NativeC4Log());
             this.domainFilter = domainFilter;
         }
-
         @Override
         public void logInternal(@NonNull String c4Domain, int c4Level, @NonNull String message) {
             if (!domainFilter.equals(c4Domain)) { return; }
