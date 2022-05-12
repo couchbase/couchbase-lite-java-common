@@ -50,27 +50,6 @@ public class C4Log {
             boolean usePlaintext,
             String header);
     }
-    @NonNull
-    public static C4Log create() { return new C4Log(nativeImpl); }
-
-    @VisibleForTesting
-    @NonNull
-    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(create());
-
-    @NonNull
-    @VisibleForTesting
-    static volatile C4Log.NativeImpl nativeImpl = new NativeC4Log();
-
-    @NonNull
-    private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
-
-    @NonNull
-    public static C4Log get() { return LOGGER.get(); }
-
-    // This class and this method are referenced by name, from native code.
-    public static void logCallback(@NonNull String c4Domain, int c4Level, @NonNull String message) {
-        get().logInternal(c4Domain, c4Level, message);
-    }
 
     @NonNull
     private static final Map<LogDomain, String> LOGGING_DOMAINS_TO_C4;
@@ -126,6 +105,31 @@ public class C4Log {
         m.put(LogLevel.ERROR, C4Constants.LogLevel.ERROR);
         LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
+
+    // Must initialize this before initializing LOGGER
+    @NonNull
+    @VisibleForTesting
+    static volatile C4Log.NativeImpl nativeImpl = new NativeC4Log();
+
+    @VisibleForTesting
+    @NonNull
+    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(create());
+
+    @NonNull
+    private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
+
+    // This class and this method are referenced by name, from native code.
+    public static void logCallback(@NonNull String c4Domain, int c4Level, @NonNull String message) {
+        get().logInternal(c4Domain, c4Level, message);
+    }
+
+    @NonNull
+    public static C4Log create() { return new C4Log(nativeImpl); }
+
+    @NonNull
+    public static C4Log get() { return LOGGER.get(); }
+
+
     @NonNull
     private final C4Log.NativeImpl impl;
 

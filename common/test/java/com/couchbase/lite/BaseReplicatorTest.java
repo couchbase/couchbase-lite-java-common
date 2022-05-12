@@ -55,12 +55,6 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         return new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
     }
 
-    // helper method allows kotlin to call isDocumentPending(null)
-    // Kotlin type checking prevents this.
-    protected final boolean callIsDocumentPendingWithNullId(Replicator repl) throws CouchbaseLiteException {
-        return repl.isDocumentPending(null);
-    }
-
     // Don't let the NetworkConnectivityManager confuse tests
     protected final Replicator testReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
 
