@@ -105,7 +105,7 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Can't initialize a socket twice
-    @Test(expected = IllegalStateException::class)
+    @Test(expected = CBLSocketException::class)
     fun testReinitDifferentCore() {
         val ok = OkHttpSocket()
         assertEquals(SocketFromRemote.Constants.NULL, ok.core)

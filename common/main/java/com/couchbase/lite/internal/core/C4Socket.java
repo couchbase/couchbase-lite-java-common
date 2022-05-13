@@ -130,8 +130,8 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         withSocket(
             peer,
             "open",
-            (s, l) -> {
-                try { l.coreRequestsOpen(); }
+            (s, r) -> {
+                try { r.coreRequestsOpen(); }
                 catch (RuntimeException e) { s.openFailed(e); }
             });
     }
@@ -146,13 +146,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             Log.i(LOG_DOMAIN, "C4Socket.write: empty data");
             return;
         }
-        withSocket(peer, "write", (s, l) -> l.coreWrites(data));
+        withSocket(peer, "write", (s, r) -> r.coreWrites(data));
     }
 
     // This method is called by reflection.  Don't change its signature.
     static void completedReceive(long peer, long nBytes) {
         Log.d(LOG_DOMAIN, "^C4Socket.completedReceive@%x(%d)", peer, nBytes);
-        withSocket(peer, "completedReceive", (s, l) -> l.coreAcksWrite(nBytes));
+        withSocket(peer, "completedReceive", (s, r) -> r.coreAcksWrite(nBytes));
     }
 
     // This method is called by reflection.  Don't change its signature.
@@ -162,14 +162,14 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         withSocket(
             peer,
             "requestClose",
-            (s, l) -> l.coreRequestsClose(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, status, message)));
+            (s, r) -> r.coreRequestsClose(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, status, message)));
     }
 
     // This method is called by reflection.  Don't change its signature.
     // Called only when not in NO_FRAMING mode
     static void close(long peer) {
         Log.d(LOG_DOMAIN, "^C4Socket.close@%x", peer);
-        withSocket(peer, "close", (s, l) -> l.coreClosed());
+        withSocket(peer, "close", (s, r) -> r.coreClosed());
     }
 
     //-------------------------------------------------------------------------
@@ -184,6 +184,9 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         return socket;
     }
 
+    // Methods in the call chain beneath this method should fail fast.
+    // They should wrap any error in a CBLSocketException and throw it
+    // without trying to return.
     @VisibleForTesting
     static boolean openSocket(
         @NonNull NativeImpl impl,
@@ -275,7 +278,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { release(LOG_DOMAIN, "Finalized"); }
+        try {
+            release(
+                LOG_DOMAIN,
+                C4Constants.ErrorDomain.NETWORK,
+                C4Constants.NetworkError.CONNECTION_ABORTED,
+                "Finalized");
+        }
         finally { super.finalize(); }
     }
 
@@ -283,12 +292,10 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // Implementation of AutoCloseable
     //-------------------------------------------------------------------------
 
-    // Normally, the socket will be closed with a call to closed(domain, code, message).
-    // The call to this method from either client code or from the finalizer
-    // should not have any affect, because the peer should already have been released.
-    // Called from the finalizer: be sure that there is a live ref to impl.
     @Override
-    public void close() { release(null, "Closed by client"); }
+    public void close() {
+        release(null, C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.NETWORK_RESET, "Closed by client");
+    }
 
     //-------------------------------------------------------------------------
     // Implementation of SocketToCore (Remote to Core)
@@ -362,10 +369,6 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     private void openFailed(@NonNull Exception err) {
         Log.w(LOG_DOMAIN, "Failed opening connection", err);
         release(null, C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.INVALID_URL, err.getMessage());
-    }
-
-    private void release(LogDomain logDomain, @Nullable String msg) {
-        release(logDomain, C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.UNEXPECTED_ERROR, msg);
     }
 
     private void release(LogDomain logDomain, int domain, int code, @Nullable String msg) {

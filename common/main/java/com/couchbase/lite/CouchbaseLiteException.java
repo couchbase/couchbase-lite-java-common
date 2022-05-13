@@ -20,7 +20,6 @@ import androidx.annotation.Nullable;
 
 import java.util.Map;
 
-import com.couchbase.lite.internal.CBLInternalException;
 import com.couchbase.lite.internal.core.C4Base;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Error;
@@ -144,26 +143,6 @@ public final class CouchbaseLiteException extends Exception {
      */
     public CouchbaseLiteException(@NonNull String message, @NonNull Exception cause) {
         this(message, cause, null, 0, null);
-    }
-
-    /**
-     * Constructs a new exception from an internal exception
-     *
-     * @param cause the internal exception
-     * @deprecated Must supply an error message
-     */
-    @Deprecated
-    public CouchbaseLiteException(@NonNull CBLInternalException cause) {
-        this(null, cause, null, (cause == null) ? 0 : cause.getCode(), null);
-    }
-
-    /**
-     * Constructs a new exception from an internal exception
-     *
-     * @param cause the internal exception
-     */
-    public CouchbaseLiteException(@NonNull String message, @NonNull CBLInternalException cause) {
-        this(message, cause, null, (cause == null) ? 0 : cause.getCode(), null);
     }
 
     /**

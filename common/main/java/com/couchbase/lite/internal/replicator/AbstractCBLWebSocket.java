@@ -74,6 +74,7 @@ import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.sockets.CBLSocketException;
 import com.couchbase.lite.internal.sockets.CloseStatus;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketFromRemote;
@@ -674,7 +675,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             sslContext.init(keyManagers, new TrustManager[] {trustManager}, null);
         }
         catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new IllegalStateException("Failed getting SSL context", e);
+            throw new CBLSocketException("Failed getting SSL context", e);
         }
 
 
@@ -746,7 +747,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
                 }
             }
         }
-        catch (SocketException e) { throw new IllegalStateException("Could not get device interfaces", e); }
+        catch (SocketException e) { throw new CBLSocketException("Could not get device interfaces", e); }
 
 
         // if iFace is not the name of an interface, perhaps it is an IP address...
@@ -755,7 +756,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         // there in the i'Net. :shrug:
         try { return InetAddress.getByName(iFace); }
         catch (UnknownHostException e) {
-            throw new IllegalStateException("Could not resolve specified interface: " + iFace, e);
+            throw new CBLSocketException("Could not resolve specified interface: " + iFace, e);
         }
     }
 

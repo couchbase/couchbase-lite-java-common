@@ -25,19 +25,18 @@ import com.couchbase.lite.Replicator;
 public final class KotlinHelpers {
     private KotlinHelpers() { }
 
-
-    // helper method allows kotlin to call isDocumentPending(null)
-    // even when Kotlin type checking prevents it.
+    // Kotlin will not allow a the call isDocumentPending(null)
     public static boolean callIsDocumentPendingWithNullId(Replicator repl) throws CouchbaseLiteException {
         return repl.isDocumentPending(null);
     }
 
+    // Kotlin will not allow a the call LogFileConfiguration.<init>((String) null)
     public static LogFileConfiguration createLogFileConfigWithNullDir() {
         return new LogFileConfiguration((String) null);
     }
 
+    // Kotlin will not allow a the call LogFileConfiguration.<init>((LogFileConfiguration) null)
     public static LogFileConfiguration createLogFileConfigWithNullConfig() {
         return new LogFileConfiguration((LogFileConfiguration) null);
     }
-
 }

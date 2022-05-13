@@ -160,7 +160,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
             Log.w(LOG_DOMAIN, "Ignoring socket re-initialization: %s", this);
             return;
         }
-        throw new IllegalStateException("Attempt to re-initialize socket(" + prevCore + "): " + core);
+        throw new CBLSocketException("Attempt to re-initialize socket(" + prevCore + "): " + core);
     }
 
     // Request a remote connections
@@ -181,7 +181,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         core.setupRemoteSocketFactory(builder);
 
         if (!toRemote.compareAndSet(NULL_WS, socketFactory.create(builder.build(), newRequest(uri, options), this))) {
-            throw new IllegalStateException("Failed setting remote web socket: this can't happen!!");
+            throw new CBLSocketException("Failed setting remote web socket: this can't happen!!");
         }
 
         return true;

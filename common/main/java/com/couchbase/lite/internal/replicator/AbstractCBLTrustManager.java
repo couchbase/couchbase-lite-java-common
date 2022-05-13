@@ -13,12 +13,10 @@ package com.couchbase.lite.internal.replicator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.security.InvalidKeyException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -42,7 +40,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * 1. Supports pinned server certificate.
  * 2. Supports acceptOnlySelfSignedServerCertificate mode.
  * 3. Supports default trust manager for validating certs when the pinned server
- *    certificate and acceptOnlySelfSignedServerCertificate are not used.
+ * certificate and acceptOnlySelfSignedServerCertificate are not used.
  * 4. Allows to listen for the server certificates.
  */
 public abstract class AbstractCBLTrustManager implements X509TrustManager {
@@ -162,7 +160,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
             trustManagers = trustManagerFactory.getTrustManagers();
         }
         catch (NoSuchAlgorithmException | KeyStoreException e) {
-            throw new IllegalStateException("Cannot find the default trust manager", e);
+            throw new UnsupportedOperationException("Cannot find the default trust manager", e);
         }
 
         for (TrustManager mgr: trustManagers) {
@@ -171,7 +169,7 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
                 break;
             }
         }
-        if (trustManager == null) { throw new IllegalStateException("Cannot find an X509TrustManager"); }
+        if (trustManager == null) { throw new UnsupportedOperationException("Cannot find an X509TrustManager"); }
 
         defaultTrustManager.compareAndSet(null, trustManager);
 
@@ -182,15 +180,8 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
      * Check if the certificate is a self-signed certificate.
      */
     private boolean isSelfSignedCertificate(@NonNull X509Certificate cert) {
-        if (!cert.getSubjectDN().equals(cert.getIssuerDN())) { return false; }
-
-        try {
-            cert.verify(cert.getPublicKey());
-            return true;
-        }
-        catch (CertificateException | NoSuchAlgorithmException | InvalidKeyException
-            | NoSuchProviderException | SignatureException e) {
-            return false;
-        }
+        try { cert.verify(cert.getPublicKey()); }
+        catch (GeneralSecurityException ignore) { return false; }
+        return cert.getSubjectDN().equals(cert.getIssuerDN());
     }
 }

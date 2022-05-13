@@ -26,17 +26,16 @@ import java.security.cert.Certificate;
 import java.util.List;
 
 import com.couchbase.lite.Endpoint;
-import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.URLEndpoint;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
 import com.couchbase.lite.internal.replicator.CBLWebSocket;
+import com.couchbase.lite.internal.sockets.CBLSocketException;
 import com.couchbase.lite.internal.sockets.OkHttpSocket;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketToCore;
 import com.couchbase.lite.internal.sockets.SocketToRemote;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -80,7 +79,7 @@ public abstract class AbstractSocketFactory implements BaseSocketFactory {
             ? createCBLWebSocket(toCore, scheme, host, port, path, opts)
             : createPlatformSocket(toCore);
 
-        if (fromCore == null) { throw new IllegalStateException("Can't create endpoint: " + endpoint); }
+        if (fromCore == null) { throw new CBLSocketException("Can't create endpoint: " + endpoint); }
 
         // Test instrumentation
         final Fn.Consumer<SocketFromCore> testListener = getTestListener();
@@ -101,7 +100,7 @@ public abstract class AbstractSocketFactory implements BaseSocketFactory {
     @Nullable
     protected abstract SocketFromCore createPlatformSocket(@NonNull SocketToCore toCore);
 
-    @Nullable
+    @NonNull
     private SocketFromCore createCBLWebSocket(
         @NonNull SocketToCore toCore,
         @NonNull String scheme,
@@ -112,13 +111,14 @@ public abstract class AbstractSocketFactory implements BaseSocketFactory {
         final URI uri;
         try { uri = new URI(translateScheme(scheme), null, host, port, path, null, null); }
         catch (URISyntaxException e) {
-            Log.w(LogDomain.NETWORK, "Bad URI for socket: %s//%s:%d/%s", e, scheme, host, port, path);
-            return null;
+            throw new CBLSocketException(
+                String.format("Bad URI for socket: %s//%s:%d/%s", scheme, host, port, path), e);
         }
 
         final SocketToRemote toRemote = new OkHttpSocket();
         final CBLWebSocket socket = new CBLWebSocket(toRemote, toCore, uri, opts, cookieStore, serverCertsListener);
         toRemote.init(socket);
+
         return socket;
     }
 

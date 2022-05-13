@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import com.couchbase.lite.internal.CBLInternalException;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableDatabaseConfiguration;
 import com.couchbase.lite.internal.SocketFactory;
@@ -60,6 +59,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.listener.ChangeNotifier;
+import com.couchbase.lite.internal.replicator.ConflictResolutionException;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -985,16 +985,14 @@ abstract class AbstractDatabase extends BaseDatabase {
                         break;
                     }
                 }
-                catch (CBLInternalException e) {
+                catch (ConflictResolutionException e) {
                     // This error occurs when a resolver that starts after this one
                     // fixes the conflict before this one does.  When this one attempts
                     // to save, it gets a conflict error and retries.  During the retry,
                     // it cannot find a conflicting revision and throws this error.
                     // The other resolver did the right thing, so there is no reason
                     // to report an error.
-                    if (e.getCode() != CBLInternalException.FAILED_SELECTING_CONFLICTING_REVISION) {
-                        err = new CouchbaseLiteException("Conflict resolution failed", e);
-                    }
+                    Log.w(DOMAIN, e.getMessage());
                     break;
                 }
             }
@@ -1240,7 +1238,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     //////// RESOLVE REPLICATED CONFLICTS:
     private void resolveConflictOnce(@Nullable ConflictResolver resolver, @NonNull String docID)
-        throws CouchbaseLiteException, CBLInternalException {
+        throws CouchbaseLiteException, ConflictResolutionException {
         final Document localDoc;
         final Document remoteDoc;
         synchronized (getDbLock()) {
@@ -1273,13 +1271,12 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     @NonNull
     private Document getConflictingRevision(@NonNull String docID)
-        throws CouchbaseLiteException, CBLInternalException {
+        throws CouchbaseLiteException, ConflictResolutionException {
         final Document remoteDoc = Document.getDocument((Database) this, docID);
         try {
             if (!remoteDoc.selectConflictingRevision()) {
-                final String msg = "Unable to select conflicting revision for doc '" + docID + "'. Skipping.";
-                Log.w(DOMAIN, msg);
-                throw new CBLInternalException(CBLInternalException.FAILED_SELECTING_CONFLICTING_REVISION, msg);
+                throw new ConflictResolutionException(
+                    "Unable to select conflicting revision for doc '" + docID + "'. Skipping.");
             }
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
