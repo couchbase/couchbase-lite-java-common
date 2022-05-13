@@ -18,21 +18,32 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.core.impl.NativeC4Base;
 
 
 public final class C4Base {
     private C4Base() { }
 
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
+    public interface NativeImpl {
+        void nDebug(boolean debugging);
+        void nSetTempDir(@NonNull String tempDir) throws LiteCoreException;
+        @Nullable
+        String nGetMessage(int domain, int code, int internalInfo);
+    }
 
-    public static native void debug(boolean debugging);
+    @NonNull
+    @VisibleForTesting
+    static volatile C4Base.NativeImpl nativeImpl = new NativeC4Base();
 
-    public static native void setTempDir(@NonNull String tempDir) throws LiteCoreException;
+    public static void debug(boolean debugging) { nativeImpl.nDebug(debugging); }
+
+    public static void setTempDir(@NonNull String tempDir) throws LiteCoreException { nativeImpl.nSetTempDir(tempDir); }
 
     @Nullable
-    public static native String getMessage(int domain, int code, int internalInfo);
+    public static String getMessage(int domain, int code, int internalInfo) {
+        return nativeImpl.nGetMessage(domain, code, internalInfo);
+    }
 }

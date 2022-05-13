@@ -17,34 +17,34 @@
 //
 #include "native_glue.hh"
 
-#include "com_couchbase_lite_internal_core_C4Base.h"
+#include "com_couchbase_lite_internal_core_NativeC4Base.h"
 
 using namespace litecore;
 using namespace litecore::jni;
 
 extern "C" {
 // ----------------------------------------------------------------------------
-// Java_com_couchbase_lite_internal_core_C4Base
+// Java_com_couchbase_lite_internal_core_impl_NativeC4Base
 // ----------------------------------------------------------------------------
 /*
- * Class:     com_couchbase_lite_internal_core_C4Base
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Base
  * Method:    debug
  * Signature: ()V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Base_debug(JNIEnv *env, jclass ignore, jboolean debugging) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Base_debug(JNIEnv *env, jclass ignore, jboolean debugging) {
     c4log_enableFatalExceptionBacktrace();
     if (debugging)
         c4log_warnOnErrors(true);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Base
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Base
  * Method:    getMessage
  * Signature: (III)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Base_getMessage(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Base_getMessage(
         JNIEnv *env,
         jclass ignore,
         jint jdomain,
@@ -58,12 +58,12 @@ Java_com_couchbase_lite_internal_core_C4Base_getMessage(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Base
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Base
  * Method:    setTempDir
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Base_setTempDir(JNIEnv *env, jclass ignore, jstring jtempDir) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Base_setTempDir(JNIEnv *env, jclass ignore, jstring jtempDir) {
     jstringSlice tempDir(env, jtempDir);
     C4Error error = {};
     if (!c4_setTempDir(tempDir, &error))

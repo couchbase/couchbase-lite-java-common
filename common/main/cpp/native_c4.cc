@@ -23,7 +23,7 @@
 
 #include "com_couchbase_lite_internal_core_C4.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Log.h"
-#include "com_couchbase_lite_internal_core_C4Key.h"
+#include "com_couchbase_lite_internal_core_NativeC4Key.h"
 #include "native_glue.hh"
 
 using namespace litecore;
@@ -323,16 +323,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setCallbackLevel(JNIEnv *
 }
 
 // ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4Key
+// com_couchbase_lite_internal_core_impl_NativeC4Key
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Key
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Key
  * Method:    pbkdf2
  * Signature: (Ljava/lang/String;[BII)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass ignore, jstring password) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Key_pbkdf2(JNIEnv *env, jclass ignore, jstring password) {
     jstringSlice pwd(env, password);
 
     C4EncryptionKey key;
@@ -347,12 +347,12 @@ Java_com_couchbase_lite_internal_core_C4Key_pbkdf2(JNIEnv *env, jclass ignore, j
 }
 
 /*
- * Class:     Java_com_couchbase_lite_internal_core_C4Key
+ * Class:     Java_com_couchbase_lite_internal_core_impl_NativeC4Key
  * Method:    deriveKeyFromPassword
  * Signature: (Ljava/lang/String;I)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Key_deriveKeyFromPassword(JNIEnv *env, jclass ignore, jstring password) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Key_deriveKeyFromPassword(JNIEnv *env, jclass ignore, jstring password) {
     jstringSlice pwd(env, password);
 
     C4EncryptionKey key;

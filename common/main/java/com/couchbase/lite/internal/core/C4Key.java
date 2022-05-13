@@ -16,17 +16,30 @@
 package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.CBLError;
 import com.couchbase.lite.CouchbaseLiteException;
+import com.couchbase.lite.internal.core.impl.NativeC4Key;
 
 
 public final class C4Key {
     private C4Key() { }
 
+    public interface NativeImpl {
+        @NonNull
+        byte[] nPbkdf2(@NonNull String password);
+
+        @NonNull
+        byte[] nDeriveKeyFromPassword(@NonNull String password);
+    }
+
+    @NonNull
+    @VisibleForTesting
+    static volatile NativeImpl nativeImpl = new NativeC4Key();
     @NonNull
     public static byte[] getPbkdf2Key(@NonNull String password) throws CouchbaseLiteException {
-        final byte[] key = C4Key.pbkdf2(password);
+        final byte[] key = nativeImpl.nPbkdf2(password);
         if (key != null) { return key; }
 
         throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
@@ -34,15 +47,9 @@ public final class C4Key {
 
     @NonNull
     public static byte[] getCoreKey(@NonNull String password) throws CouchbaseLiteException {
-        final byte[] key = C4Key.deriveKeyFromPassword(password);
+        final byte[] key = nativeImpl.nDeriveKeyFromPassword(password);
         if (key != null) { return key; }
 
         throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
     }
-
-    @NonNull
-    private static native byte[] pbkdf2(@NonNull String password);
-
-    @NonNull
-    private static native byte[] deriveKeyFromPassword(@NonNull String password);
 }
