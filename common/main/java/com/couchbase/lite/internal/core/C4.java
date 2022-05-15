@@ -17,23 +17,38 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
+import com.couchbase.lite.internal.core.impl.NativeC4;
 
 
 public final class C4 {
     private C4() { }
 
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    public static native void setenv(@NonNull String name, @NonNull String value, int overwrite);
+    public interface NativeImpl {
+        void nSetenv(@NonNull String name, @NonNull String value, int overwrite);
+        @NonNull
+        String nGetenv(@NonNull String name);
+        @Nullable
+        String nGetBuildInfo();
+        @Nullable
+        String nGetVersion();
+    }
 
     @NonNull
-    public static native String getenv(@NonNull String name);
+    @VisibleForTesting
+    static volatile NativeImpl nativeImpl = new NativeC4();
+
+    public static void setenv(@NonNull String name, @NonNull String value, int overwrite) {
+        nativeImpl.nSetenv(name, value, overwrite);
+    }
+
+    @NonNull
+    public String getEnv(@NonNull String name){ return nativeImpl.nGetenv(name); }
 
     @Nullable
-    public static native String getBuildInfo();
+    public static String getBuildInfo(){ return nativeImpl.nGetBuildInfo(); }
 
     @Nullable
-    public static native String getVersion();
+    public static String getVersion() { return nativeImpl.nGetVersion(); }
 }

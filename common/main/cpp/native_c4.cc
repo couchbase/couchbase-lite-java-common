@@ -21,7 +21,7 @@
 #include <sys/time.h>
 #endif
 
-#include "com_couchbase_lite_internal_core_C4.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Log.h"
 #include "com_couchbase_lite_internal_core_NativeC4Key.h"
 #include "native_glue.hh"
@@ -144,15 +144,15 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
 extern "C" {
 // ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4
+// com_couchbase_lite_internal_core_impl_NativeC4
 // ----------------------------------------------------------------------------
 /*
- * Class:     com_couchbase_lite_internal_core_C4
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    setenv
  * Signature: (Ljava/lang/String;Ljava/lang/String;I)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4_setenv(
+Java_com_couchbase_lite_internal_core_impl_NativeC4_setenv(
         JNIEnv *env,
         jclass ignore,
         jstring jname,
@@ -169,23 +169,23 @@ Java_com_couchbase_lite_internal_core_C4_setenv(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    getenv
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4_getenv(JNIEnv *env, jclass ignore, jstring jname) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4_getenv(JNIEnv *env, jclass ignore, jstring jname) {
     jstringSlice name(env, jname);
     return env->NewStringUTF(getenv(name.c_str()));
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    getBuildInfo
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4_getBuildInfo(JNIEnv *env, jclass ignore) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4_getBuildInfo(JNIEnv *env, jclass ignore) {
     C4StringResult result = c4_getBuildInfo();
     jstring jstr = toJString(env, result);
     c4slice_free(result);
@@ -193,12 +193,12 @@ Java_com_couchbase_lite_internal_core_C4_getBuildInfo(JNIEnv *env, jclass ignore
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    getVersion
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4_getVersion(JNIEnv *env, jclass ignore) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4_getVersion(JNIEnv *env, jclass ignore) {
     C4StringResult result = c4_getVersion();
     jstring jstr = toJString(env, result);
     c4slice_free(result);
