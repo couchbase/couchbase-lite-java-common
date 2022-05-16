@@ -16,12 +16,45 @@
 package com.couchbase.lite.internal;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
+import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketToCore;
 
 
 public interface BaseSocketFactory {
+
+    //-------------------------------------------------------------------------
+    // Static Variables
+    //-------------------------------------------------------------------------
+
+    // Lookup table: maps a handle to a peer native socket to its Java companion
+    @NonNull
+    @VisibleForTesting
+    TaggedWeakPeerBinding<BaseSocketFactory> BOUND_SOCKET_FACTORIES = new TaggedWeakPeerBinding<>();
+
+    //-------------------------------------------------------------------------
+    // Public static Methods
+    //-------------------------------------------------------------------------
+
+    static long bindSocketFactory(@NonNull BaseSocketFactory socketFactory) {
+        final long token = BOUND_SOCKET_FACTORIES.reserveKey();
+        BOUND_SOCKET_FACTORIES.bind(token, socketFactory);
+        return token;
+    }
+
+    @Nullable
+    static BaseSocketFactory getBoundSocketFactory(long token) { return BOUND_SOCKET_FACTORIES.getBinding(token); }
+
+    static void unbindSocketFactory(long token) { BOUND_SOCKET_FACTORIES.unbind(token); }
+
+
+    //-------------------------------------------------------------------------
+    // Interface Methods
+    //-------------------------------------------------------------------------
+
     @NonNull
     SocketFromCore createSocket(
         @NonNull SocketToCore toCore,

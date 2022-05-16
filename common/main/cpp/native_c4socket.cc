@@ -51,7 +51,7 @@ bool litecore::jni::initC4Socket(JNIEnv *env) {
         m_C4Socket_open = env->GetStaticMethodID(
                 cls_C4Socket,
                 "open",
-                "(JLjava/lang/Object;Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;[B)V");
+                "(JJLjava/lang/String;Ljava/lang/String;ILjava/lang/String;[B)V");
         if (!m_C4Socket_open)
             return false;
 
@@ -78,14 +78,14 @@ bool litecore::jni::initC4Socket(JNIEnv *env) {
 // ----------------------------------------------------------------------------
 // C4SocketFactory implementation
 // ----------------------------------------------------------------------------
-static void socket_open(C4Socket *socket, const C4Address *addr, C4Slice options, void *socketFactoryContext) {
+static void socket_open(C4Socket *socket, const C4Address *addr, C4Slice options, void *token) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
         env->CallStaticVoidMethod(cls_C4Socket,
                                   m_C4Socket_open,
                                   (jlong) socket,
-                                  (jobject) socketFactoryContext,
+                                  (jlong) token,
                                   toJString(env, addr->scheme),
                                   toJString(env, addr->hostname),
                                   addr->port,
@@ -96,7 +96,7 @@ static void socket_open(C4Socket *socket, const C4Address *addr, C4Slice options
             env->CallStaticVoidMethod(cls_C4Socket,
                                       m_C4Socket_open,
                                       (jlong) socket,
-                                      (jobject) socketFactoryContext,
+                                      (jlong) token,
                                       toJString(env, addr->scheme),
                                       toJString(env, addr->hostname),
                                       addr->port,

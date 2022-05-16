@@ -89,7 +89,6 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     @VisibleForTesting
     static final NativeRefPeerBinding<C4Socket> BOUND_SOCKETS = new NativeRefPeerBinding<>();
 
-
     //-------------------------------------------------------------------------
     // Public static Methods
     //-------------------------------------------------------------------------
@@ -114,18 +113,16 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // This method is called by reflection.  Don't change its signature.
     static void open(
         long peer,
-        @Nullable Object factory,
+        long token,
         @Nullable String scheme,
-        @Nullable String hostname,
+        @Nullable String host,
         int port,
         @Nullable String path,
         @Nullable byte[] options) {
         final C4Socket socket = BOUND_SOCKETS.getBinding(peer);
-        Log.d(LOG_DOMAIN, "^C4Socket.open@%x: %s", peer, socket, factory);
+        Log.d(LOG_DOMAIN, "^C4Socket.open@%x: %s@%x", peer, socket, token);
 
-        if ((socket == null) && (!openSocket(NATIVE_IMPL, peer, factory, scheme, hostname, port, path, options))) {
-            return;
-        }
+        if ((socket == null) && (!openSocket(NATIVE_IMPL, peer, token, scheme, host, port, path, options))) { return; }
 
         withSocket(
             peer,
@@ -191,14 +188,15 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     static boolean openSocket(
         @NonNull NativeImpl impl,
         long peer,
-        @Nullable Object factory,
+        long sfToken,
         @Nullable String scheme,
         @Nullable String hostname,
         int port,
         @Nullable String path,
         @Nullable byte[] options) {
-        if (!(factory instanceof BaseSocketFactory)) {
-            Log.w(LOG_DOMAIN, "C4Socket.open: factory is not a SocketFactory: %s", factory);
+        final BaseSocketFactory socketFactory = BaseSocketFactory.getBoundSocketFactory(sfToken);
+        if (socketFactory == null) {
+            Log.w(LOG_DOMAIN, "C4Socket.open: no such socket factory: " + sfToken);
             return false;
         }
         if (scheme == null) {
@@ -219,7 +217,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         }
 
         final C4Socket socket = createSocket(impl, peer);
-        try { socket.init(((BaseSocketFactory) factory).createSocket(socket, scheme, hostname, port, path, options)); }
+        try { socket.init(socketFactory.createSocket(socket, scheme, hostname, port, path, options)); }
         catch (RuntimeException e) {
             socket.openFailed(e);
             return false;

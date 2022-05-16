@@ -126,7 +126,7 @@ class C4SocketTest : BaseTest() {
 
         createSocket(fromCore)
 
-        C4Socket.open(MOCK_PEER, null, null, null, 0, null, null)
+        C4Socket.open(MOCK_PEER, 0L, null, null, 0, null, null)
         awaitCall(fromCore)
     }
 
@@ -145,14 +145,18 @@ class C4SocketTest : BaseTest() {
                 this.message = message
             }
         }
-        assertFalse(
-            C4Socket.openSocket(mockImpl, MOCK_PEER, MockSocketFactory(), "ws:", "Oprah", 86, "/fail", ByteArray(0)))
 
-        assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
-        assertEquals(2, mockImpl.totalCalls)
-        assertEquals(C4Constants.ErrorDomain.NETWORK, mockImpl.domain)
-        assertEquals(C4Constants.NetworkError.INVALID_URL, mockImpl.code)
-        assertEquals("BOOM!", mockImpl.message)
+        val token = BaseSocketFactory.bindSocketFactory(MockSocketFactory())
+        try {
+            assertFalse(C4Socket.openSocket(mockImpl, MOCK_PEER, token, "ws:", "Oprah", 86, "/fail", ByteArray(0)))
+            assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
+            assertEquals(2, mockImpl.totalCalls)
+            assertEquals(C4Constants.ErrorDomain.NETWORK, mockImpl.domain)
+            assertEquals(C4Constants.NetworkError.INVALID_URL, mockImpl.code)
+            assertEquals("BOOM!", mockImpl.message)
+        } finally {
+            BaseSocketFactory.unbindSocketFactory(token)
+        }
     }
 
     @Test

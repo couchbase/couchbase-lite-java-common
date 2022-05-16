@@ -155,39 +155,6 @@ static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C
     return ds;
 }
 
-static std::vector<jobject> contexts;
-
-// This method accesses global state: not thread safe
-static jobject storeContext(JNIEnv *env, jobject jcontext) {
-    if (jcontext == nullptr)
-        return nullptr;
-
-    jobject gContext = env->NewGlobalRef(jcontext);
-    contexts.push_back(gContext);
-    return gContext;
-}
-
-// This method accesses global state: not thread safe
-static void releaseContext(JNIEnv *env, jobject jcontext) {
-    if (jcontext == nullptr)
-        return;
-
-    jobject storedContext = nullptr;
-    int i = 0;
-    for (; i < contexts.size(); i++) {
-        jobject c = contexts[i];
-        if (env->IsSameObject(c, jcontext)) {
-            storedContext = c;
-            break;
-        }
-    }
-
-    if (storedContext != nullptr) {
-        env->DeleteGlobalRef(storedContext);
-        contexts.erase(contexts.begin() + i);
-    }
-}
-
 /**
  * Callback a client can register, to get progress information.
  * This will be called on arbitrary background threads and should not block.
@@ -354,13 +321,11 @@ extern "C" {
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    create
  * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JIILjava/lang/Object;ILjava/lang/Object;Lcom/couchbase/lite/internal/core/C4ReplicationFilter;Lcom/couchbase/lite/internal/core/C4ReplicationFilter;[B)J
- *
- * This method accesses global state: not thread safe
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_create(
         JNIEnv *env,
-        jclass ignore,
+        jclass ignored,
         jlong jdb,
         jstring jscheme,
         jstring jhost,
@@ -369,7 +334,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_create(
         jstring jremoteDBName,
         jint jpush,
         jint jpull,
-        jobject jSocketFactoryContext,
+        jlong jSocketFactoryToken,
         jint jframing,
         jlong token,
         jboolean pushFilter,
@@ -388,7 +353,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_create(
     c4Address.path = path;
 
     C4SocketFactory socketFactory = socket_factory();
-    socketFactory.context = storeContext(env, jSocketFactoryContext);
+    socketFactory.context = (void *) jSocketFactoryToken;
     socketFactory.framing = (C4SocketFraming) jframing;
 
     C4ReplicatorParameters params = {};
@@ -420,18 +385,15 @@ Java_com_couchbase_lite_internal_core_C4Replicator_create(
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    create
  * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JIILjava/lang/Object;ILjava/lang/Object;Lcom/couchbase/lite/internal/core/C4ReplicationFilter;Lcom/couchbase/lite/internal/core/C4ReplicationFilter;[B)J
- *
- * This method accesses global state: not thread safe
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_createLocal(
         JNIEnv *env,
-        jclass ignore,
+        jclass ignored,
         jlong jdb,
         jlong jotherLocalDB,
         jint jpush,
         jint jpull,
-        jint jframing,
         jlong token,
         jboolean pushFilter,
         jboolean pullFilter,
@@ -467,13 +429,11 @@ Java_com_couchbase_lite_internal_core_C4Replicator_createLocal(
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    createWithSocket
  * Signature: (JJIILjava/lang/Object;[B)J
- *
- * This method accesses global state: not thread safe
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(
         JNIEnv *env,
-        jclass ignore,
+        jclass ignored,
         jlong jdb,
         jlong jopenSocket,
         jint jpush,
@@ -504,19 +464,13 @@ Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    free
- * Signature: (JLjava/lang/Object;Ljava/lang/Object;)V
- *
- * This method accesses global state: not thread safe
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_free(
         JNIEnv *env,
-        jclass ignore,
-        jlong repl,
-        jobject replicatorContext,
-        jobject socketFactoryContext) {
-    releaseContext(env, replicatorContext);
-    releaseContext(env, socketFactoryContext);
+        jclass ignored,
+        jlong repl) {
     c4repl_free((C4Replicator *) repl);
 }
 
@@ -526,7 +480,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_free(
  * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass ignore, jlong repl, jboolean restart) {
+Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass ignored, jlong repl, jboolean restart) {
     c4repl_start((C4Replicator *) repl, (bool) restart);
 }
 
@@ -536,7 +490,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass ign
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_stop(JNIEnv *env, jclass ignore, jlong repl) {
+Java_com_couchbase_lite_internal_core_C4Replicator_stop(JNIEnv *env, jclass ignored, jlong repl) {
     c4repl_stop((C4Replicator *) repl);
 }
 
@@ -556,7 +510,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_setOptions(
  * Signature: (J)Lcom/couchbase/lite/internal/core/C4ReplicatorStatus;
  */
 JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass ignore, jlong repl) {
+Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass ignored, jlong repl) {
     C4ReplicatorStatus status = c4repl_getStatus((C4Replicator *) repl);
     return toJavaReplStatus(env, status);
 }
@@ -567,7 +521,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds(JNIEnv *env, jclass ignore, jlong repl) {
+Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds(JNIEnv *env, jclass ignored, jlong repl) {
     C4Error c4Error = {};
 
     C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, &c4Error);
@@ -593,7 +547,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds(JNIEnv *env,
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending(
         JNIEnv *env,
-        jclass ignore,
+        jclass ignored,
         jlong repl,
         jstring jDocId) {
     jstringSlice docId(env, jDocId);
@@ -617,7 +571,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending(
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_setProgressLevel(
         JNIEnv *env,
-        jclass ignore,
+        jclass ignored,
         jlong repl,
         jint level) {
     C4Error c4Error = {};
@@ -633,7 +587,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_setProgressLevel(
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Replicator_setHostReachable(
         JNIEnv *env,
-        jclass ignore,
+        jclass ignored,
         jlong repl,
         jboolean reachable) {
     c4repl_setHostReachable((C4Replicator *) repl, (bool) reachable);

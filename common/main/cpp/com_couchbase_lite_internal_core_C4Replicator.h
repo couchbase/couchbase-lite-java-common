@@ -16,18 +16,18 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    create
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IILjava/lang/Object;IJZZ[B)J
+ * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IIJIJZZ[B)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_create
-  (JNIEnv *, jclass, jlong, jstring, jstring, jint, jstring, jstring, jint, jint, jobject, jint, jlong, jboolean, jboolean, jbyteArray);
+  (JNIEnv *, jclass, jlong, jstring, jstring, jint, jstring, jstring, jint, jint, jlong, jint, jlong, jboolean, jboolean, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    createLocal
- * Signature: (JJIIIJZZ[B)J
+ * Signature: (JJIIJZZ[B)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_createLocal
-  (JNIEnv *, jclass, jlong, jlong, jint, jint, jint, jlong, jboolean , jboolean , jbyteArray);
+  (JNIEnv *, jclass, jlong, jlong, jint, jint, jlong, jboolean , jboolean , jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
@@ -40,10 +40,10 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_creat
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
  * Method:    free
- * Signature: (JLjava/lang/Object;Ljava/lang/Object;)V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Replicator_free
-  (JNIEnv *, jclass, jlong, jobject, jobject);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Replicator
