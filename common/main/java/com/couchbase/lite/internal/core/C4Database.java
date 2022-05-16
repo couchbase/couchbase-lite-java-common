@@ -419,8 +419,7 @@ public abstract class C4Database extends C4NativePeer {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener,
-        @NonNull Object replicatorContext)
+        @Nullable C4ReplicatorListener listener)
         throws LiteCoreException {
         return C4Replicator.createTargetReplicator(
             getPeer(),
@@ -428,8 +427,7 @@ public abstract class C4Database extends C4NativePeer {
             push,
             pull,
             options,
-            listener,
-            replicatorContext);
+            listener);
     }
 
     ////////////////////////////////
