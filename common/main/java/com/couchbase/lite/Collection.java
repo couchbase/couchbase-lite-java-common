@@ -7,21 +7,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executor;
 
-import com.couchbase.lite.internal.utils.Preconditions;
-
 
 public class Collection implements Indexable, DatabaseChangeObservable {
-    private final String name;
-    private final int count;
-    private final Scope scope;
+    private static final String COLLECTION_NAME = "_default";
+    private final Scope scope = new Scope("_default");
     private final Database database;
 
-    public Collection(@NonNull String name, int count, @NonNull Scope scope, @NonNull Database database) {
-        this.name = name;
-        this.count = count;
-        this.scope = scope;
-        this.database = database;
-    }
+    public Collection(@NonNull Database database) { this.database = database; }
 
     /**
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
@@ -38,9 +30,7 @@ public class Collection implements Indexable, DatabaseChangeObservable {
      * the document and this collection instance must be the same, otherwise, the InvalidParameter
      * error will be thrown.
      */
-    public void save(@NonNull MutableDocument document) throws CouchbaseLiteException {
-        database.save(document, ConcurrencyControl.LAST_WRITE_WINS);
-    }
+    public void save(@NonNull MutableDocument document) throws CouchbaseLiteException { database.save(document); }
 
     /**
      * Save a document into the collection with a specified concurrency control. When specifying
@@ -51,7 +41,9 @@ public class Collection implements Indexable, DatabaseChangeObservable {
      * error will be thrown.
      */
     public boolean save(@NonNull MutableDocument document, @NonNull ConcurrencyControl concurrencyControl)
-        throws CouchbaseLiteException { return database.save(document, concurrencyControl); }
+        throws CouchbaseLiteException {
+        return database.save(document, concurrencyControl);
+    }
 
     /**
      * Save a document into the collection with a specified conflict handler. The specified conflict handler
@@ -64,7 +56,9 @@ public class Collection implements Indexable, DatabaseChangeObservable {
      * will be thrown.
      */
     public boolean save(@NonNull MutableDocument document, @NonNull ConflictHandler conflictHandler)
-        throws CouchbaseLiteException { return database.save(document, conflictHandler); }
+        throws CouchbaseLiteException {
+        return database.save(document, conflictHandler);
+    }
 
     /**
      * Delete a document from the collection. The default concurrency control, lastWriteWins, will be used
@@ -75,9 +69,7 @@ public class Collection implements Indexable, DatabaseChangeObservable {
      * the document and this collection instance must be the same, otherwise, the InvalidParameter error
      * will be thrown.
      */
-    public void delete(@NonNull Document document) throws CouchbaseLiteException {
-        database.delete(document, ConcurrencyControl.LAST_WRITE_WINS);
-    }
+    public void delete(@NonNull Document document) throws CouchbaseLiteException { database.delete(document); }
 
     /**
      * Delete a document from the collection with a specified concurrency control. When specifying
@@ -88,7 +80,9 @@ public class Collection implements Indexable, DatabaseChangeObservable {
      * must be the same, otherwise, the InvalidParameter error will be thrown.
      */
     public boolean delete(@NonNull Document document, @NonNull ConcurrencyControl concurrencyControl)
-        throws CouchbaseLiteException { return database.delete(document, concurrencyControl); }
+        throws CouchbaseLiteException {
+        return database.delete(document, concurrencyControl);
+    }
 
     /**
      * When purging a document, the collection instance of the document and this collection instance
@@ -124,7 +118,7 @@ public class Collection implements Indexable, DatabaseChangeObservable {
      */
     @NonNull
     public ListenerToken addDocumentChangeListener(@NonNull String id, @NonNull DocumentChangeListener listener) {
-        return database.addDocumentChangeListener(id, null, listener);
+        return database.addDocumentChangeListener(id, listener);
     }
 
     /**
@@ -137,8 +131,6 @@ public class Collection implements Indexable, DatabaseChangeObservable {
         @NonNull String id,
         @Nullable Executor executor,
         @NonNull DocumentChangeListener listener) {
-        Preconditions.assertNotNull(id, "id");
-        Preconditions.assertNotNull(listener, "listener");
         return database.addDocumentChangeListener(id, executor, listener);
     }
 
@@ -146,12 +138,12 @@ public class Collection implements Indexable, DatabaseChangeObservable {
      * Return the collection name
      */
     @NonNull
-    public String getName() { return name; }
+    public String getName() { return COLLECTION_NAME; }
 
     /**
      * The number of documents in the collection.
      */
-    public long getCount() { return count; }
+    public long getCount() { return database.getCount(); }
 
     /**
      * Get scope
@@ -161,9 +153,7 @@ public class Collection implements Indexable, DatabaseChangeObservable {
 
     @Override
     @NonNull
-    public List<String> indexes() throws CouchbaseLiteException {
-        return database.getIndexes();
-    }
+    public List<String> indexes() throws CouchbaseLiteException { return database.getIndexes(); }
 
     @Override
     public void createIndex(String name, IndexConfiguration config) throws CouchbaseLiteException {
@@ -171,9 +161,7 @@ public class Collection implements Indexable, DatabaseChangeObservable {
     }
 
     @Override
-    public void deleteIndex(String name) throws CouchbaseLiteException {
-        database.deleteIndex(name);
-    }
+    public void deleteIndex(String name) throws CouchbaseLiteException { database.deleteIndex(name); }
 
     @Override
     @NonNull
