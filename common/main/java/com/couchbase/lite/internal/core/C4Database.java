@@ -38,6 +38,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -364,7 +365,7 @@ public abstract class C4Database extends C4NativePeer {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener,
+        @Nullable ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
         @NonNull AbstractReplicator replicatorContext,
@@ -396,7 +397,7 @@ public abstract class C4Database extends C4NativePeer {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener,
+        @Nullable ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
         @NonNull AbstractReplicator replicatorContext)
@@ -419,7 +420,7 @@ public abstract class C4Database extends C4NativePeer {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener)
+        @Nullable ReplicatorListener listener)
         throws LiteCoreException {
         return C4Replicator.createTargetReplicator(
             getPeer(),

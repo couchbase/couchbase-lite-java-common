@@ -13,12 +13,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.core;
+package com.couchbase.lite.internal.replicator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 

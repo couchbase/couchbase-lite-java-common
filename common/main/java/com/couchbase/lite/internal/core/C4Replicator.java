@@ -34,6 +34,7 @@ import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
 import com.couchbase.lite.internal.exec.ClientTask;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -55,8 +56,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * WARNING!
  * This class and its members are referenced by name, from native code.
  */
-@SuppressWarnings({"PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal", "LineLength"})
-public class C4Replicator extends C4NativePeer {
+public final class C4Replicator extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Constants
@@ -64,6 +64,9 @@ public class C4Replicator extends C4NativePeer {
     // Most of these are defined in c4Replicator.h and must agree with those definitions.
     //
     //-------------------------------------------------------------------------
+    public static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
+
+
     public static final String WEBSOCKET_SCHEME = "ws";
     public static final String WEBSOCKET_SECURE_CONNECTION_SCHEME = "wss";
     public static final String MESSAGE_SCHEME = "x-msg-endpt";
@@ -175,25 +178,21 @@ public class C4Replicator extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void statusChangedCallback(long token, @Nullable C4ReplicatorStatus status) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
-        Log.d(
-            LogDomain.REPLICATOR,
-            "C4Replicator.statusChangedCallback %s@0x%x: %s", c4Repl, token, status);
+        Log.d(LOG_DOMAIN, "C4Replicator.statusChangedCallback(0x%x) %s: %s", token, c4Repl, status);
         if (c4Repl == null) { return; }
 
-        final C4ReplicatorListener listener = c4Repl.listener;
-        if (listener != null) { listener.statusChanged(c4Repl, status, c4Repl.replicator); }
+        final ReplicatorListener listener = c4Repl.listener;
+        if (listener != null) { listener.statusChanged(c4Repl, status); }
     }
 
     // This method is called by reflection.  Don't change its signature.
     static void documentEndedCallback(long token, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
-        Log.d(
-            LogDomain.REPLICATOR,
-            "C4Replicator.documentEndedCallback %s@0x%x: %s", c4Repl, token, pushing);
+        Log.d(LOG_DOMAIN, "C4Replicator.documentEndedCallback %s@0x%x: %s", c4Repl, token, pushing);
         if (c4Repl == null) { return; }
 
-        final C4ReplicatorListener listener = c4Repl.listener;
-        if (listener != null) { listener.documentEnded(c4Repl, pushing, documentsEnded, c4Repl.replicator); }
+        final ReplicatorListener listener = c4Repl.listener;
+        if (listener != null) { listener.documentEnded(c4Repl, pushing, documentsEnded); }
     }
 
     // This method is called by reflection.  Don't change its signature.
@@ -207,7 +206,7 @@ public class C4Replicator extends C4NativePeer {
         boolean isPush) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
         Log.d(
-            LogDomain.REPLICATOR,
+            LOG_DOMAIN,
             "Running %s filter for doc %s@%s, %s@%s",
             (isPush ? "push" : "pull"),
             docID,
@@ -229,7 +228,7 @@ public class C4Replicator extends C4NativePeer {
 
         final Exception err = task.getFailure();
         if (err != null) {
-            Log.w(LogDomain.REPLICATOR, "Replication filter failed", err);
+            Log.w(LOG_DOMAIN, "Replication filter failed", err);
             return false;
         }
 
@@ -253,7 +252,7 @@ public class C4Replicator extends C4NativePeer {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener,
+        @Nullable ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
         @NonNull AbstractReplicator replicator,
@@ -279,11 +278,8 @@ public class C4Replicator extends C4NativePeer {
             pullFilter != null,
             options);
 
-        final C4Replicator c4eplicator = new C4Replicator(
-            peer,
-            token,
-            replicator, listener, pushFilter, pullFilter, sfToken,
-            socketFactory);
+        final C4Replicator c4eplicator
+            = new C4Replicator(peer, token, replicator, listener, pushFilter, pullFilter, sfToken, socketFactory);
 
         BOUND_REPLICATORS.bind(token, c4eplicator);
 
@@ -298,7 +294,7 @@ public class C4Replicator extends C4NativePeer {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener,
+        @Nullable ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
         @NonNull AbstractReplicator replicator)
@@ -330,7 +326,7 @@ public class C4Replicator extends C4NativePeer {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener)
+        @Nullable ReplicatorListener listener)
         throws LiteCoreException {
         final long token = BOUND_REPLICATORS.reserveKey();
 
@@ -352,8 +348,10 @@ public class C4Replicator extends C4NativePeer {
 
     @Nullable
     private final AbstractReplicator replicator;
+
     @Nullable
-    private final C4ReplicatorListener listener;
+    private final ReplicatorListener listener;
+
     @Nullable
     private final C4ReplicationFilter pushFilter;
     @Nullable
@@ -367,12 +365,11 @@ public class C4Replicator extends C4NativePeer {
     // Constructors
     //-------------------------------------------------------------------------
 
-    @SuppressWarnings("PMD.ExcessiveParameterList")
     C4Replicator(
         long peer,
         long token,
         @Nullable AbstractReplicator replicator,
-        @Nullable C4ReplicatorListener listener,
+        @Nullable ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter) {
         this(peer, token, replicator, listener, pushFilter, pullFilter, 0L, null);
@@ -383,18 +380,22 @@ public class C4Replicator extends C4NativePeer {
         long peer,
         long token,
         @Nullable AbstractReplicator replicator,
-        @Nullable C4ReplicatorListener listener,
+        @Nullable ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
         long sfToken,
         @Nullable SocketFactory socketFactory) {
         super(peer);
+
         this.token = Preconditions.assertNotZero(token, "token");
-        this.sfToken = sfToken;
+
         this.replicator = replicator;
+
         this.listener = listener;
         this.pushFilter = pushFilter;
         this.pullFilter = pullFilter;
+
+        this.sfToken = sfToken;
         this.socketFactory = socketFactory;
     }
 
@@ -409,6 +410,9 @@ public class C4Replicator extends C4NativePeer {
     @CallSuper
     @Override
     public void close() { closePeer(null); }
+
+    @Nullable
+    public AbstractReplicator getReplicator() { return replicator; }
 
     public void setOptions(@Nullable byte[] options) { setOptions(getPeer(), options); }
 
@@ -436,7 +440,7 @@ public class C4Replicator extends C4NativePeer {
     public String toString() {
         return "C4Repl{" + ClassUtils.objId(this) + "/" + super.toString()
             // don't try to stringify the replicator: it stringifies this
-            + ": " + ((replicator == null) ? "null" : ClassUtils.objId(replicator))
+            + ": " + ((replicator == null) ? "null" : ClassUtils.objId(replicator)) + ", "
             + listener + ", " + pushFilter + ", " + pullFilter + ", " + socketFactory + "'}";
     }
 
@@ -444,7 +448,7 @@ public class C4Replicator extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { closePeer(LogDomain.REPLICATOR); }
+        try { closePeer(LOG_DOMAIN); }
         finally { super.finalize(); }
     }
 

@@ -15,4 +15,15 @@
 //
 package com.couchbase.lite.internal.core.peers;
 
+/**
+ * Email exchange, 2022/5/17
+ *
+ * Blake:
+ * Is the reference that the JNI gets when it creates [such an] object (which the Java code stores as
+ * a `long`) *always* the same reference that that object will pass as a parameter when it does a callback
+ * to the Java code e.g. kSocketFactory.write or C4ReplicatorParameters.C4ReplicatorDocumentsEndedCallback.
+ *
+ * Jim:
+ * Yes this is a safe assumption
+ */
 public class NativeRefPeerBinding<T> extends WeakPeerBinding<T> { }

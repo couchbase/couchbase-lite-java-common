@@ -50,7 +50,6 @@ import com.couchbase.lite.internal.core.C4DocumentObserverListener;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
-import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.SharedKeys;
 import com.couchbase.lite.internal.exec.ClientTask;
 import com.couchbase.lite.internal.exec.ExecutionService;
@@ -60,6 +59,7 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.replicator.ConflictResolutionException;
+import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -121,7 +121,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
         public boolean isActive() { return true; }
 
-        public void stop() {}
+        public void stop() { }
 
         @NonNull
         @Override
@@ -884,7 +884,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener,
+        @Nullable ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
         @Nullable SocketFactory socketFactoryContext,
@@ -919,7 +919,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable C4ReplicatorListener listener,
+        @Nullable ReplicatorListener listener,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter)
         throws LiteCoreException {

@@ -13,21 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.core;
+package com.couchbase.lite.internal.replicator;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.internal.core.C4DocumentEnded;
+import com.couchbase.lite.internal.core.C4Replicator;
+import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 
-public interface C4ReplicatorListener {
-    void statusChanged(
-        @Nullable C4Replicator replicator,
-        @Nullable C4ReplicatorStatus status,
-        @Nullable Object context);
 
-    void documentEnded(
-        @NonNull C4Replicator replicator,
-        boolean pushing,
-        @Nullable C4DocumentEnded[] documents,
-        @Nullable Object context);
+public interface ReplicatorListener {
+    void statusChanged(@Nullable C4Replicator replicator, @Nullable C4ReplicatorStatus status);
+    void documentEnded(@Nullable C4Replicator replicator, boolean pushing, @Nullable C4DocumentEnded[] documents);
 }

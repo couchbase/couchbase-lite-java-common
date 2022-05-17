@@ -39,19 +39,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
 import com.couchbase.lite.internal.SocketFactory;
-import com.couchbase.lite.internal.core.BaseReplicator;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4DocumentEnded;
 import com.couchbase.lite.internal.core.C4Error;
 import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
-import com.couchbase.lite.internal.core.C4ReplicatorListener;
 import com.couchbase.lite.internal.core.C4ReplicatorMode;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.replicator.BaseReplicator;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
+import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -112,7 +112,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @NonNull
     private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
     @NonNull
-    private final C4ReplicatorListener c4ReplListener;
+    private final ReplicatorListener c4ReplListener;
     @NonNull
     private final SocketFactory socketFactory;
 
@@ -151,7 +151,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             config,
             new ReplicatorCookieStore(getDatabase()),
             this::setServerCertificates);
-        this.c4ReplListener = new ReplicatorListener(dispatcher);
+        this.c4ReplListener = new ReplicatorReplicatorListener(dispatcher);
     }
 
     //---------------------------------------------
@@ -188,7 +188,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
             status = updateStatus(status);
 
-            c4ReplListener.statusChanged(repl, status, this);
+            c4ReplListener.statusChanged(repl, status);
         }
     }
 
