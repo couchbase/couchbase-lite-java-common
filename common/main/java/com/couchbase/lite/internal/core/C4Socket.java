@@ -84,22 +84,31 @@ public abstract class C4Socket extends C4NativePeer {
 
         // !!! What happens when a C thread gets an exception???
 
-        // This socket will be bound in C4Socket.<init>
-        if (socket == null) {
-            if (!(factory instanceof SocketFactory)) {
-                throw new IllegalArgumentException("Context is not a socket factory: " + factory);
+        try {
+            // This socket will be bound in C4Socket.<init>
+            if (socket == null) {
+                if (!(factory instanceof SocketFactory)) {
+                    throw new IllegalArgumentException("Context is not a socket factory: " + factory);
+                }
+
+                socket = ((SocketFactory) factory).createSocket(
+                    peer,
+                    Preconditions.assertNotNull(scheme, "scheme"),
+                    Preconditions.assertNotNull(hostname, "hostname"),
+                    port,
+                    Preconditions.assertNotNull(path, "path"),
+                    options);
             }
-
-            socket = ((SocketFactory) factory).createSocket(
-                peer,
-                Preconditions.assertNotNull(scheme, "scheme"),
-                Preconditions.assertNotNull(hostname, "hostname"),
-                port,
-                Preconditions.assertNotNull(path, "path"),
-                options);
+            Preconditions.assertNotNull(socket, "socket").openSocket();
         }
-
-        Preconditions.assertNotNull(socket, "socket").openSocket();
+        catch (RuntimeException e) {
+            if (socket == null) {
+                closed(peer, C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.INVALID_URL, e.getMessage());
+            }
+            else {
+                socket.closed(C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.INVALID_URL, e.getMessage());
+            }
+        }
     }
 
     // This method is called by reflection.  Don't change its signature.
