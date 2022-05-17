@@ -364,13 +364,13 @@ public abstract class C4Database extends C4NativePeer {
         @Nullable String remoteDatabaseName,
         int push,
         int pull,
+        @NonNull MessageFraming framing,
         @Nullable byte[] options,
-        @Nullable ReplicatorListener listener,
+        @NonNull ReplicatorListener listener,
+        @NonNull AbstractReplicator replicator,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
-        @NonNull AbstractReplicator replicatorContext,
-        @Nullable SocketFactory socketFactoryContext,
-        @NonNull MessageFraming framing)
+        @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
         return C4Replicator.createRemoteReplicator(
             getPeer(),
@@ -381,37 +381,38 @@ public abstract class C4Database extends C4NativePeer {
             remoteDatabaseName,
             push,
             pull,
-            options,
+            framing, options,
             listener,
+            replicator,
             pushFilter,
             pullFilter,
-            replicatorContext,
-            socketFactoryContext,
-            framing);
+            socketFactory
+        );
     }
 
     @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public C4Replicator createLocalReplicator(
-        @NonNull C4Database otherLocalDB,
+        @NonNull C4Database targetDb,
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable ReplicatorListener listener,
+        @NonNull ReplicatorListener listener,
+        @NonNull AbstractReplicator replicator,
         @Nullable C4ReplicationFilter pushFilter,
-        @Nullable C4ReplicationFilter pullFilter,
-        @NonNull AbstractReplicator replicatorContext)
+        @Nullable C4ReplicationFilter pullFilter)
         throws LiteCoreException {
         return C4Replicator.createLocalReplicator(
             getPeer(),
-            otherLocalDB,
+            targetDb,
             push,
             pull,
             options,
             listener,
+            replicator,
             pushFilter,
-            pullFilter,
-            replicatorContext);
+            pullFilter
+        );
     }
 
     @NonNull
@@ -420,9 +421,9 @@ public abstract class C4Database extends C4NativePeer {
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable ReplicatorListener listener)
+        @NonNull ReplicatorListener listener)
         throws LiteCoreException {
-        return C4Replicator.createTargetReplicator(
+        return C4Replicator.createMessageEndpointReplicator(
             getPeer(),
             c4Socket,
             push,

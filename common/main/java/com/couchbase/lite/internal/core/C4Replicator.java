@@ -30,6 +30,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.BaseSocketFactory;
 import com.couchbase.lite.internal.SocketFactory;
+import com.couchbase.lite.internal.core.impl.NativeC4Replicator;
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
 import com.couchbase.lite.internal.exec.ClientTask;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -45,27 +46,23 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * There are two things that need protection in the class:
  * <ol>
  * <li/> Messages sent to it from native code:  This object proxies those messages out to
- * various listeners.  Until a replicator object is removed from the REVERSE_LOOKUP_TABLE
+ * various listeners.  Until a replicator object is removed from BOUND_REPLICATORS
  * forwarding such a message must work.
  * <li/> Calls to the native object:  These should work as long as the peer handle is non-zero.
  * This object must be careful never to forward a call to a native object once that object has been freed.
  * </ol>
  * <p>
- * Instances of this class are created using static factory methods
- * <p>
- * WARNING!
  * This class and its members are referenced by name, from native code.
  */
-public final class C4Replicator extends C4NativePeer {
+public abstract class C4Replicator extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Constants
-    //
-    // Most of these are defined in c4Replicator.h and must agree with those definitions.
-    //
     //-------------------------------------------------------------------------
     public static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
 
+
+    //////// Most of these are defined in c4Replicator.h and must agree with those definitions.
 
     public static final String WEBSOCKET_SCHEME = "ws";
     public static final String WEBSOCKET_SECURE_CONNECTION_SCHEME = "wss";
@@ -163,8 +160,152 @@ public final class C4Replicator extends C4NativePeer {
     public static final int PROGRESS_PER_ATTACHMENT = 2;
 
     //-------------------------------------------------------------------------
-    // Static Variables
+    // Types
     //-------------------------------------------------------------------------
+
+    public interface NativeImpl {
+        @SuppressWarnings("PMD.ExcessiveParameterList")
+        long nCreate(
+            long db,
+            String scheme,
+            String host,
+            int port,
+            String path,
+            String remoteDbName,
+            int push,
+            int pull,
+            int framing,
+            byte[] options,
+            boolean hasPushFilter,
+            boolean hasPullFilter,
+            long replicatorToken,
+            long socketFactoryToken)
+            throws LiteCoreException;
+
+        long nCreateLocal(
+            long db,
+            long targetDb,
+            int push,
+            int pull,
+            byte[] options,
+            boolean hasPushFilter,
+            boolean hasPullFilter,
+            long replicatorToken)
+            throws LiteCoreException;
+
+        long nCreateWithSocket(
+            long db,
+            long openSocket,
+            int push,
+            int pull,
+            byte[] options,
+            long replicatorToken)
+            throws LiteCoreException;
+
+        @NonNull
+        C4ReplicatorStatus nGetStatus(long peer);
+
+        void nStart(long peer, boolean restart);
+        void nStop(long peer);
+        void nSetOptions(long peer, byte[] options);
+        long nGetPendingDocIds(long peer) throws LiteCoreException;
+        boolean nIsDocumentPending(long peer, String id) throws LiteCoreException;
+        void nSetProgressLevel(long peer, int progressLevel) throws LiteCoreException;
+        void nSetHostReachable(long peer, boolean reachable);
+        void nFree(long peer);
+    }
+
+    static final class C4MessageEndpointReplicator extends C4Replicator {
+        C4MessageEndpointReplicator(
+            @NonNull NativeImpl impl,
+            long peer,
+            long token,
+            @NonNull ReplicatorListener listener) {
+            super(impl, peer, token, listener);
+        }
+
+        @Override
+        @Nullable
+        public AbstractReplicator getReplicator() { return null; }
+
+        @Override
+        protected void releaseResources() { }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "C4MessageEndpointReplicator{" + ClassUtils.objId(this) + "/" + super.toString() + listener + "'}";
+        }
+    }
+
+    static final class C4ReplicatorReplicator extends C4Replicator {
+        @NonNull
+        private final AbstractReplicator replicator;
+
+        @Nullable
+        private final C4ReplicationFilter pushFilter;
+        @Nullable
+        private final C4ReplicationFilter pullFilter;
+
+        @Nullable
+        private final SocketFactory socketFactory;
+        private final long socketFactoryToken;
+
+        C4ReplicatorReplicator(
+            @NonNull NativeImpl impl,
+            long peer,
+            long token,
+            @NonNull ReplicatorListener listener,
+            @NonNull AbstractReplicator replicator,
+            @Nullable C4ReplicationFilter pushFilter,
+            @Nullable C4ReplicationFilter pullFilter) {
+            this(impl, peer, token, listener, replicator, pushFilter, pullFilter, null, 0L);
+        }
+
+        C4ReplicatorReplicator(
+            @NonNull NativeImpl impl,
+            long peer,
+            long token,
+            @NonNull ReplicatorListener listener,
+            @NonNull AbstractReplicator replicator,
+            @Nullable C4ReplicationFilter pushFilter,
+            @Nullable C4ReplicationFilter pullFilter,
+            @Nullable SocketFactory socketFactory,
+            long socketFactoryToken) {
+            super(impl, peer, token, listener);
+
+            this.replicator = Preconditions.assertNotNull(replicator, "replicator");
+
+            this.pushFilter = pushFilter;
+            this.pullFilter = pullFilter;
+
+            this.socketFactory = socketFactory;
+            this.socketFactoryToken = socketFactoryToken;
+        }
+
+        @Override
+        @NonNull
+        public AbstractReplicator getReplicator() { return replicator; }
+
+        @Override
+        protected void releaseResources() { BaseSocketFactory.unbindSocketFactory(socketFactoryToken); }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "C4Repl{" + ClassUtils.objId(this) + "/" + super.toString() + ": " + listener
+                // don't try to stringify the replicator: it stringifies this
+                + ", " + ClassUtils.objId(replicator) + ", "
+                + ", " + pushFilter + ", " + pullFilter + ", "
+                + socketFactory + "'}";
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // Static fields
+    //-------------------------------------------------------------------------
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Replicator();
 
     // Lookup table: maps a handle to a peer native socket to its Java companion
     @NonNull
@@ -180,9 +321,7 @@ public final class C4Replicator extends C4NativePeer {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
         Log.d(LOG_DOMAIN, "C4Replicator.statusChangedCallback(0x%x) %s: %s", token, c4Repl, status);
         if (c4Repl == null) { return; }
-
-        final ReplicatorListener listener = c4Repl.listener;
-        if (listener != null) { listener.statusChanged(c4Repl, status); }
+        c4Repl.listener.statusChanged(c4Repl, status);
     }
 
     // This method is called by reflection.  Don't change its signature.
@@ -190,40 +329,36 @@ public final class C4Replicator extends C4NativePeer {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
         Log.d(LOG_DOMAIN, "C4Replicator.documentEndedCallback %s@0x%x: %s", c4Repl, token, pushing);
         if (c4Repl == null) { return; }
-
-        final ReplicatorListener listener = c4Repl.listener;
-        if (listener != null) { listener.documentEnded(c4Repl, pushing, documentsEnded); }
+        c4Repl.listener.documentEnded(c4Repl, pushing, documentsEnded);
     }
 
     // This method is called by reflection.  Don't change its signature.
     // It is called from a native thread that Java has never even heard of...
     static boolean filterCallback(
-        long token,
+        long replicatorToken,
         @Nullable String docID,
         @Nullable String revID,
         int flags,
         long dict,
         boolean isPush) {
-        final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
+        final C4Replicator repl = BOUND_REPLICATORS.getBinding(replicatorToken);
         Log.d(
             LOG_DOMAIN,
             "Running %s filter for doc %s@%s, %s@%s",
             (isPush ? "push" : "pull"),
             docID,
             revID,
-            token,
-            c4Repl);
-        if (c4Repl == null) { return true; }
-
+            replicatorToken,
+            repl);
         // supported only for replicators
-        final AbstractReplicator repl = c4Repl.replicator;
-        if (repl == null) { return true; }
+        if (!(repl instanceof C4ReplicatorReplicator)) { return true; }
+        final C4ReplicatorReplicator c4Repl = (C4ReplicatorReplicator) repl;
 
         final C4ReplicationFilter filter = (isPush) ? c4Repl.pushFilter : c4Repl.pullFilter;
         if (filter == null) { return true; }
 
         final ClientTask<Boolean> task
-            = new ClientTask<>(() -> filter.validationFunction(docID, revID, flags, dict, isPush, repl));
+            = new ClientTask<>(() -> filter.validationFunction(docID, revID, flags, dict, isPush, c4Repl.replicator));
         task.execute();
 
         final Exception err = task.getFailure();
@@ -248,93 +383,117 @@ public final class C4Replicator extends C4NativePeer {
         @Nullable String host,
         int port,
         @Nullable String path,
-        @Nullable String remoteDatabaseName,
+        @Nullable String remoteDbName,
         int push,
         int pull,
+        @NonNull MessageFraming framing,
         @Nullable byte[] options,
-        @Nullable ReplicatorListener listener,
+        @NonNull ReplicatorListener listener,
+        @NonNull AbstractReplicator replicator,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
-        @NonNull AbstractReplicator replicator,
-        @Nullable SocketFactory socketFactory,
-        @NonNull MessageFraming framing)
+        @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
-        final long token = BOUND_REPLICATORS.reserveKey();
+        final long replicatorToken = BOUND_REPLICATORS.reserveKey();
         final long sfToken = (socketFactory == null) ? 0L : BaseSocketFactory.bindSocketFactory(socketFactory);
 
-        final long peer = create(
+        final long peer = NATIVE_IMPL.nCreate(
             db,
             scheme,
             host,
             port,
             path,
-            remoteDatabaseName,
+            remoteDbName,
             push,
             pull,
-            sfToken,
             MessageFraming.getC4Framing(framing),
-            token,
+            options,
             pushFilter != null,
             pullFilter != null,
-            options);
+            replicatorToken,
+            sfToken);
 
-        final C4Replicator c4eplicator
-            = new C4Replicator(peer, token, replicator, listener, pushFilter, pullFilter, sfToken, socketFactory);
+        final C4Replicator c4Replicator = new C4ReplicatorReplicator(
+            NATIVE_IMPL,
+            peer,
+            replicatorToken,
+            listener,
+            replicator,
+            pushFilter,
+            pullFilter,
+            socketFactory,
+            sfToken
+        );
 
-        BOUND_REPLICATORS.bind(token, c4eplicator);
-
-        return c4eplicator;
-    }
-
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    @NonNull
-    static C4Replicator createLocalReplicator(
-        long db,
-        @NonNull C4Database otherLocalDB,
-        int push,
-        int pull,
-        @Nullable byte[] options,
-        @Nullable ReplicatorListener listener,
-        @Nullable C4ReplicationFilter pushFilter,
-        @Nullable C4ReplicationFilter pullFilter,
-        @NonNull AbstractReplicator replicator)
-        throws LiteCoreException {
-        final long token = BOUND_REPLICATORS.reserveKey();
-
-        final long peer = createLocal(
-            db,
-            otherLocalDB.getHandle(),
-            push,
-            pull,
-            token,
-            pushFilter != null,
-            pullFilter != null,
-            options);
-
-        final C4Replicator c4Replicator = new C4Replicator(peer, token, replicator, listener, pushFilter, pullFilter);
-
-        BOUND_REPLICATORS.bind(token, c4Replicator);
+        BOUND_REPLICATORS.bind(replicatorToken, c4Replicator);
 
         return c4Replicator;
     }
 
-    @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
-    static C4Replicator createTargetReplicator(
+    static C4Replicator createLocalReplicator(
+        long db,
+        @NonNull C4Database targetDb,
+        int push,
+        int pull,
+        @Nullable byte[] options,
+        @NonNull ReplicatorListener listener,
+        @NonNull AbstractReplicator replicator,
+        @Nullable C4ReplicationFilter pushFilter,
+        @Nullable C4ReplicationFilter pullFilter)
+        throws LiteCoreException {
+        final long replicatorToken = BOUND_REPLICATORS.reserveKey();
+
+        final long peer = NATIVE_IMPL.nCreateLocal(
+            db,
+            targetDb.getHandle(),
+            push,
+            pull,
+            options,
+            pushFilter != null,
+            pullFilter != null,
+            replicatorToken);
+
+        final C4Replicator c4Replicator = new C4ReplicatorReplicator(
+            NATIVE_IMPL,
+            peer,
+            replicatorToken,
+            listener,
+            replicator,
+            pushFilter,
+            pullFilter);
+
+        BOUND_REPLICATORS.bind(replicatorToken, c4Replicator);
+
+        return c4Replicator;
+    }
+
+    @NonNull
+    static C4Replicator createMessageEndpointReplicator(
         long db,
         @NonNull C4Socket c4Socket,
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable ReplicatorListener listener)
+        @NonNull ReplicatorListener listener)
         throws LiteCoreException {
-        final long token = BOUND_REPLICATORS.reserveKey();
+        final long replicatorToken = BOUND_REPLICATORS.reserveKey();
 
-        final long peer = createWithSocket(db, c4Socket.getPeerHandle(), push, pull, token, options);
+        final long peer = NATIVE_IMPL.nCreateWithSocket(
+            db,
+            c4Socket.getPeerHandle(),
+            push,
+            pull,
+            options,
+            replicatorToken);
 
-        final C4Replicator c4Replicator = new C4Replicator(peer, token, null, listener, null, null);
+        final C4Replicator c4Replicator = new C4MessageEndpointReplicator(
+            NATIVE_IMPL,
+            peer,
+            replicatorToken,
+            listener);
 
-        BOUND_REPLICATORS.bind(token, c4Replicator);
+        BOUND_REPLICATORS.bind(replicatorToken, c4Replicator);
 
         return c4Replicator;
     }
@@ -344,105 +503,65 @@ public final class C4Replicator extends C4NativePeer {
     // Member Variables
     //-------------------------------------------------------------------------
 
+    @NonNull
+    private final NativeImpl impl;
+
     private final long token;
 
-    @Nullable
-    private final AbstractReplicator replicator;
-
-    @Nullable
-    private final ReplicatorListener listener;
-
-    @Nullable
-    private final C4ReplicationFilter pushFilter;
-    @Nullable
-    private final C4ReplicationFilter pullFilter;
-
-    private final long sfToken;
-    @Nullable
-    private final SocketFactory socketFactory;
+    @NonNull
+    protected final ReplicatorListener listener;
 
     //-------------------------------------------------------------------------
-    // Constructors
+    // Constructor
     //-------------------------------------------------------------------------
 
-    C4Replicator(
-        long peer,
-        long token,
-        @Nullable AbstractReplicator replicator,
-        @Nullable ReplicatorListener listener,
-        @Nullable C4ReplicationFilter pushFilter,
-        @Nullable C4ReplicationFilter pullFilter) {
-        this(peer, token, replicator, listener, pushFilter, pullFilter, 0L, null);
-    }
-
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    C4Replicator(
-        long peer,
-        long token,
-        @Nullable AbstractReplicator replicator,
-        @Nullable ReplicatorListener listener,
-        @Nullable C4ReplicationFilter pushFilter,
-        @Nullable C4ReplicationFilter pullFilter,
-        long sfToken,
-        @Nullable SocketFactory socketFactory) {
+    C4Replicator(@NonNull NativeImpl impl, long peer, long token, @NonNull ReplicatorListener listener) {
         super(peer);
+
+        this.impl = impl;
 
         this.token = Preconditions.assertNotZero(token, "token");
 
-        this.replicator = replicator;
-
-        this.listener = listener;
-        this.pushFilter = pushFilter;
-        this.pullFilter = pullFilter;
-
-        this.sfToken = sfToken;
-        this.socketFactory = socketFactory;
+        this.listener = Preconditions.assertNotNull(listener, "listener");
     }
 
     //-------------------------------------------------------------------------
     // Instance Methods
     //-------------------------------------------------------------------------
 
-    public void start(boolean restart) { start(getPeer(), restart); }
+    public void start(boolean restart) { impl.nStart(getPeer(), restart); }
 
-    public void stop() { stop(getPeer()); }
+    public void stop() { impl.nStop(getPeer()); }
 
     @CallSuper
     @Override
     public void close() { closePeer(null); }
 
     @Nullable
-    public AbstractReplicator getReplicator() { return replicator; }
+    public abstract AbstractReplicator getReplicator();
 
-    public void setOptions(@Nullable byte[] options) { setOptions(getPeer(), options); }
+    public void setOptions(@Nullable byte[] options) { impl.nSetOptions(getPeer(), options); }
 
     @Nullable
-    public C4ReplicatorStatus getStatus() { return getStatus(getPeer()); }
+    public C4ReplicatorStatus getStatus() { return impl.nGetStatus(getPeer()); }
 
     public boolean isDocumentPending(String docId) throws LiteCoreException {
-        return isDocumentPending(getPeer(), docId);
+        return impl.nIsDocumentPending(getPeer(), docId);
     }
 
     @NonNull
     public Set<String> getPendingDocIDs() throws LiteCoreException {
-        try (FLSliceResult result = FLSliceResult.getManagedSliceResult(getPendingDocIds(getPeer()))) {
+        try (FLSliceResult result = FLSliceResult.getManagedSliceResult(impl.nGetPendingDocIds(getPeer()))) {
             final FLValue slice = FLValue.fromData(result);
             return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray());
         }
     }
 
-    public void setProgressLevel(int level) throws LiteCoreException { setProgressLevel(getPeer(), level); }
+    public void setProgressLevel(int level) throws LiteCoreException { impl.nSetProgressLevel(getPeer(), level); }
 
-    public void setHostReachable(boolean reachable) { setHostReachable(getPeer(), reachable); }
+    public void setHostReachable(boolean reachable) { impl.nSetHostReachable(getPeer(), reachable); }
 
-    @NonNull
-    @Override
-    public String toString() {
-        return "C4Repl{" + ClassUtils.objId(this) + "/" + super.toString()
-            // don't try to stringify the replicator: it stringifies this
-            + ": " + ((replicator == null) ? "null" : ClassUtils.objId(replicator)) + ", "
-            + listener + ", " + pushFilter + ", " + pullFilter + ", " + socketFactory + "'}";
-    }
+    protected abstract void releaseResources();
 
     // Note: the reference in the REVERSE_LOOKUP_TABLE must already be gone, or we wouldn't be here...
     @SuppressWarnings("NoFinalizer")
@@ -460,118 +579,10 @@ public final class C4Replicator extends C4NativePeer {
         releasePeer(
             domain,
             peer -> {
-                BaseSocketFactory.unbindSocketFactory(sfToken);
+                releaseResources();
                 BOUND_REPLICATORS.unbind(token);
-                stop(peer);
-                free(peer);
+                impl.nStop(peer);
+                impl.nFree(peer);
             });
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Creates a new replicator.
-     */
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    private static native long create(
-        long db,
-        String schema,
-        String host,
-        int port,
-        String path,
-        String remoteDatabaseName,
-        int push,
-        int pull,
-        long sfToken,
-        int framing,
-        long token,
-        boolean pushFilter,
-        boolean pullFilter,
-        byte[] options)
-        throws LiteCoreException;
-
-    /**
-     * Creates a new local replicator.
-     */
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    private static native long createLocal(
-        long db,
-        long targetDb,
-        int push,
-        int pull,
-        long token,
-        boolean pushFilter,
-        boolean pullFilter,
-        byte[] options)
-        throws LiteCoreException;
-
-    /**
-     * Creates a new replicator from an already-open C4Socket. This is for use by listeners
-     * that accept incoming connections.  Wrap them by calling `c4socket_fromNative()`, then
-     * start a passive replication to service them.
-     *
-     * @param db         The local database.
-     * @param openSocket An already-created C4Socket.
-     * @param push       boolean: push replication
-     * @param pull       boolean: pull replication
-     * @param options    flags
-     * @return The pointer of the newly created replicator
-     */
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    private static native long createWithSocket(
-        long db,
-        long openSocket,
-        int push,
-        int pull,
-        long token,
-        byte[] options)
-        throws LiteCoreException;
-
-    /**
-     * Frees a replicator reference. If the replicator is running it will stop.
-     */
-    private static native void free(long replicator);
-
-    /**
-     * Tells a replicator to start.
-     */
-    private static native void start(long replicator, boolean restart);
-
-    /**
-     * Tells a replicator to stop.
-     */
-    private static native void stop(long replicator);
-
-    /**
-     * Set the replicator options.
-     */
-    private static native void setOptions(long replicator, byte[] options);
-
-    /**
-     * Returns the current state of a replicator.
-     */
-    @NonNull
-    private static native C4ReplicatorStatus getStatus(long replicator);
-
-    /**
-     * Returns a list of string ids for pending documents.
-     */
-    private static native long getPendingDocIds(long peer) throws LiteCoreException;
-
-    /**
-     * Returns true if there are documents that have not been resolved.
-     */
-    private static native boolean isDocumentPending(long peer, String id) throws LiteCoreException;
-
-    /**
-     * Set the core progress callback level.
-     */
-    private static native void setProgressLevel(long peer, int progressLevel) throws LiteCoreException;
-
-    /**
-     * Hint to core about the reachability of the target of this replicator.
-     */
-    private static native void setHostReachable(long peer, boolean reachable);
 }

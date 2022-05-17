@@ -256,8 +256,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
             throw CouchbaseLiteException.convertException(e, "Failed fetching pending documentIds");
         }
 
-        if (pending == null) { throw new IllegalStateException("Pending doc ids is unexpectedly null"); }
-
         return Collections.unmodifiableSet(pending);
     }
 
@@ -413,7 +411,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
         final boolean continuous = config.isContinuous();
 
         return getDatabase().createRemoteReplicator(
-            (Replicator) this,
             remoteUri.getScheme(),
             remoteUri.getHost(),
             port,
@@ -421,32 +418,34 @@ public abstract class AbstractReplicator extends BaseReplicator {
             dbName,
             makeMode(config.isPush(), continuous),
             makeMode(config.isPull(), continuous),
+            MessageFraming.NO_FRAMING,
             getFleeceOptions(),
             c4ReplListener,
+            (Replicator) this,
             c4ReplPushFilter,
             c4ReplPullFilter,
-            socketFactory,
-            MessageFraming.NO_FRAMING);
+            socketFactory
+        );
     }
 
     /**
      * Create and return a c4Replicator targeting the passed Database
      *
-     * @param otherDb a local database for the replication target
+     * @param targetDb a local database for the replication target
      * @return the c4Replicator
      * @throws LiteCoreException on failure to create the replicator
      */
     @GuardedBy("getDbLock()")
     @NonNull
-    protected final C4Replicator getLocalC4Replicator(@NonNull Database otherDb) throws LiteCoreException {
+    protected final C4Replicator getLocalC4Replicator(@NonNull Database targetDb) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
         return getDatabase().createLocalReplicator(
-            (Replicator) this,
-            otherDb,
+            targetDb,
             makeMode(config.isPush(), continuous),
             makeMode(config.isPull(), continuous),
             getFleeceOptions(),
             c4ReplListener,
+            (Replicator) this,
             c4ReplPushFilter,
             c4ReplPullFilter);
     }
@@ -464,7 +463,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
     protected final C4Replicator getMessageC4Replicator(@NonNull MessageFraming framing) throws LiteCoreException {
         final boolean continuous = config.isContinuous();
         return getDatabase().createRemoteReplicator(
-            (Replicator) this,
             C4Replicator.MESSAGE_SCHEME,
             null,
             0,
@@ -472,12 +470,14 @@ public abstract class AbstractReplicator extends BaseReplicator {
             null,
             makeMode(config.isPush(), continuous),
             makeMode(config.isPull(), continuous),
+            framing,
             getFleeceOptions(),
             c4ReplListener,
+            (Replicator) this,
             c4ReplPushFilter,
             c4ReplPullFilter,
-            socketFactory,
-            framing);
+            socketFactory
+        );
     }
 
     //---------------------------------------------

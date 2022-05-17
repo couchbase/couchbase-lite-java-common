@@ -875,7 +875,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
     C4Replicator createRemoteReplicator(
-        @NonNull Replicator replicator,
         @Nullable String scheme,
         @Nullable String host,
         int port,
@@ -883,12 +882,13 @@ abstract class AbstractDatabase extends BaseDatabase {
         @Nullable String remoteDatabaseName,
         int push,
         int pull,
+        @NonNull MessageFraming framing,
         @Nullable byte[] options,
-        @Nullable ReplicatorListener listener,
+        @NonNull ReplicatorListener listener,
+        @NonNull Replicator replicator,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter,
-        @Nullable SocketFactory socketFactoryContext,
-        @NonNull MessageFraming framing)
+        @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
         final C4Replicator c4Repl;
         synchronized (getDbLock()) {
@@ -900,13 +900,14 @@ abstract class AbstractDatabase extends BaseDatabase {
                 remoteDatabaseName,
                 push,
                 pull,
+                framing,
                 options,
                 listener,
+                replicator,
                 pushFilter,
                 pullFilter,
-                replicator,
-                socketFactoryContext,
-                framing);
+                socketFactory
+            );
         }
         return c4Repl;
     }
@@ -914,26 +915,27 @@ abstract class AbstractDatabase extends BaseDatabase {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
     C4Replicator createLocalReplicator(
-        @NonNull Replicator replicator,
-        @NonNull Database otherLocalDb,
+        @NonNull Database targetDb,
         int push,
         int pull,
         @Nullable byte[] options,
-        @Nullable ReplicatorListener listener,
+        @NonNull ReplicatorListener listener,
+        @NonNull Replicator replicator,
         @Nullable C4ReplicationFilter pushFilter,
         @Nullable C4ReplicationFilter pullFilter)
         throws LiteCoreException {
         final C4Replicator c4Repl;
         synchronized (getDbLock()) {
             c4Repl = getOpenC4DbLocked().createLocalReplicator(
-                otherLocalDb.getOpenC4DbLocked(),
+                targetDb.getOpenC4DbLocked(),
                 push,
                 pull,
                 options,
                 listener,
+                replicator,
                 pushFilter,
-                pullFilter,
-                replicator);
+                pullFilter
+            );
         }
         return c4Repl;
     }

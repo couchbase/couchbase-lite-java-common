@@ -20,14 +20,14 @@
 #include <c4Base.h>
 #include <c4Socket.h>
 #include "socket_factory.h"
-#include "com_couchbase_lite_internal_core_C4Replicator.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Replicator.h"
 #include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;
 
 // ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4Replicator
+// com_couchbase_lite_internal_core_impl_NativeC4Replicator
 // ----------------------------------------------------------------------------
 
 // C4Replicator
@@ -318,12 +318,12 @@ static bool pushFilterFunction(
 extern "C" {
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JIILjava/lang/Object;ILjava/lang/Object;Lcom/couchbase/lite/internal/core/C4ReplicationFilter;Lcom/couchbase/lite/internal/core/C4ReplicationFilter;[B)J
+ * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;III[BZZJJ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_create(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
         JNIEnv *env,
         jclass ignored,
         jlong jdb,
@@ -334,12 +334,12 @@ Java_com_couchbase_lite_internal_core_C4Replicator_create(
         jstring jremoteDBName,
         jint jpush,
         jint jpull,
-        jlong jSocketFactoryToken,
         jint jframing,
-        jlong token,
-        jboolean pushFilter,
-        jboolean pullFilter,
-        jbyteArray joptions) {
+        jbyteArray joptions,
+        jboolean hasPushFilter,
+        jboolean hasPullFilter,
+        jlong replicatorToken,
+        jlong socketFactoryToken) {
     jstringSlice scheme(env, jscheme);
     jstringSlice host(env, jhost);
     jstringSlice path(env, jpath);
@@ -353,7 +353,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_create(
     c4Address.path = path;
 
     C4SocketFactory socketFactory = socket_factory();
-    socketFactory.context = (void *) jSocketFactoryToken;
+    socketFactory.context = (void *) socketFactoryToken;
     socketFactory.framing = (C4SocketFraming) jframing;
 
     C4ReplicatorParameters params = {};
@@ -362,17 +362,13 @@ Java_com_couchbase_lite_internal_core_C4Replicator_create(
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.onDocumentsEnded = &documentEndedCallback;
-    if (pushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
-    if (pullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
-    params.callbackContext = (void *) token;
+    if (hasPushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
+    if (hasPullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
+    params.callbackContext = (void *) replicatorToken;
     params.socketFactory = &socketFactory;
 
     C4Error error;
-    C4Replicator *repl = c4repl_new((C4Database *) jdb,
-                                    c4Address,
-                                    remoteDBName,
-                                    params,
-                                    &error);
+    C4Replicator *repl = c4repl_new((C4Database *) jdb, c4Address, remoteDBName, params, &error);
     if (!repl) {
         throwError(env, error);
         return 0;
@@ -382,22 +378,22 @@ Java_com_couchbase_lite_internal_core_C4Replicator_create(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;JIILjava/lang/Object;ILjava/lang/Object;Lcom/couchbase/lite/internal/core/C4ReplicationFilter;Lcom/couchbase/lite/internal/core/C4ReplicationFilter;[B)J
+ * Signature: ((JJII[BZZJ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_createLocal(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
         JNIEnv *env,
         jclass ignored,
         jlong jdb,
-        jlong jotherLocalDB,
+        jlong targetDb,
         jint jpush,
         jint jpull,
-        jlong token,
-        jboolean pushFilter,
-        jboolean pullFilter,
-        jbyteArray joptions) {
+        jbyteArray joptions,
+        jboolean hasPushFilter,
+        jboolean hasPullFilter,
+        jlong replicatorToken) {
 #ifndef COUCHBASE_ENTERPRISE
     C4Error error = {LiteCoreDomain, kC4ErrorUnimplemented};
     throwError(env, error);
@@ -411,12 +407,12 @@ Java_com_couchbase_lite_internal_core_C4Replicator_createLocal(
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.onDocumentsEnded = &documentEndedCallback;
-    if (pushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
-    if (pullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
-    params.callbackContext = (void *) token;
+    if (hasPushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
+    if (hasPullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
+    params.callbackContext = (void *) replicatorToken;
 
     C4Error error;
-    C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) jotherLocalDB, params, &error);
+    C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) targetDb, params, &error);
     if (!repl) {
         throwError(env, error);
         return 0;
@@ -426,20 +422,20 @@ Java_com_couchbase_lite_internal_core_C4Replicator_createLocal(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    createWithSocket
- * Signature: (JJIILjava/lang/Object;[B)J
+ * Signature: (JJII[BJ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
         JNIEnv *env,
         jclass ignored,
         jlong jdb,
         jlong jopenSocket,
         jint jpush,
         jint jpull,
-        jlong token,
-        jbyteArray joptions) {
+        jbyteArray joptions,
+        jlong replicatorToken) {
     auto *db = (C4Database *) jdb;
     auto openSocket = (C4Socket *) jopenSocket;
     jbyteArraySlice options(env, joptions, false);
@@ -449,7 +445,7 @@ Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(
     params.pull = (C4ReplicatorMode) jpull;
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
-    params.callbackContext = (void *) token;
+    params.callbackContext = (void *) replicatorToken;
 
     C4Error error;
     C4Replicator *repl = c4repl_newWithSocket(db, openSocket, params, &error);
@@ -462,12 +458,12 @@ Java_com_couchbase_lite_internal_core_C4Replicator_createWithSocket(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    free
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_free(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_free(
         JNIEnv *env,
         jclass ignored,
         jlong repl) {
@@ -475,27 +471,27 @@ Java_com_couchbase_lite_internal_core_C4Replicator_free(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    start
  * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_start(JNIEnv *env, jclass ignored, jlong repl, jboolean restart) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_start(JNIEnv *env, jclass ignored, jlong repl, jboolean restart) {
     c4repl_start((C4Replicator *) repl, (bool) restart);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    stop
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_stop(JNIEnv *env, jclass ignored, jlong repl) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_stop(JNIEnv *env, jclass ignored, jlong repl) {
     c4repl_stop((C4Replicator *) repl);
 }
 
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_setOptions(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setOptions(
         JNIEnv *env,
         jclass clazz,
         jlong repl,
@@ -505,23 +501,23 @@ Java_com_couchbase_lite_internal_core_C4Replicator_setOptions(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    getStatus
  * Signature: (J)Lcom/couchbase/lite/internal/core/C4ReplicatorStatus;
  */
 JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_getStatus(JNIEnv *env, jclass ignored, jlong repl) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus(JNIEnv *env, jclass ignored, jlong repl) {
     C4ReplicatorStatus status = c4repl_getStatus((C4Replicator *) repl);
     return toJavaReplStatus(env, status);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    getPendingDocIDs
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds(JNIEnv *env, jclass ignored, jlong repl) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(JNIEnv *env, jclass ignored, jlong repl) {
     C4Error c4Error = {};
 
     C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, &c4Error);
@@ -540,12 +536,12 @@ Java_com_couchbase_lite_internal_core_C4Replicator_getPendingDocIds(JNIEnv *env,
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    isDocumentPending
  * Signature: (JLjava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_isDocumentPending(
         JNIEnv *env,
         jclass ignored,
         jlong repl,
@@ -564,12 +560,12 @@ Java_com_couchbase_lite_internal_core_C4Replicator_isDocumentPending(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    setProgressLevel
  * Signature: (JI)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_setProgressLevel(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setProgressLevel(
         JNIEnv *env,
         jclass ignored,
         jlong repl,
@@ -580,12 +576,12 @@ Java_com_couchbase_lite_internal_core_C4Replicator_setProgressLevel(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Replicator
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    setHostReachable
  * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Replicator_setHostReachable(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setHostReachable(
         JNIEnv *env,
         jclass ignored,
         jlong repl,
