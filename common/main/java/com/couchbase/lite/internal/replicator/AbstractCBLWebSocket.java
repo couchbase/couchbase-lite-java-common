@@ -202,7 +202,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             int remotePort,
             @NonNull InetAddress localAddress,
             int localPort)
-            throws IOException, UnknownHostException {
+            throws IOException {
             return delegate.createSocket(remoteHost, remotePort, localAddress, localPort);
         }
     }
@@ -751,7 +751,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
 
         // if iFace is not the name of an interface, perhaps it is an IP address...
-        // Or, perhaps, something else.  This cakk may well try to do a DNS lookup.
+        // Or, perhaps, something else.  This call may well try to do a DNS lookup.
         // ... and, if that succeeds the return value may be an address somewhere out
         // there in the i'Net. :shrug:
         try { return InetAddress.getByName(iFace); }

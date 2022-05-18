@@ -19,6 +19,8 @@ package com.couchbase.lite.internal.utils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Collection;
+
 
 public interface Fn {
     @FunctionalInterface
@@ -46,23 +48,57 @@ public interface Fn {
     }
 
     @FunctionalInterface
-    interface Predicate<T> { boolean test(@NonNull T x); }
+    interface Predicate<T> {
+        boolean test(@NonNull T x);
+    }
 
     @FunctionalInterface
-    interface NullablePredicate<T> { boolean test(@Nullable T x); }
+    interface NullablePredicate<T> {
+        boolean test(@Nullable T x);
+    }
 
     @FunctionalInterface
-    interface ConsumerThrows<T, E extends Exception> { void accept(@NonNull T x) throws E; }
+    interface ConsumerThrows<T, E extends Exception> {
+        void accept(@NonNull T x) throws E;
+    }
 
     @FunctionalInterface
-    interface Consumer<T> { void accept(@NonNull T x);  }
+    interface Consumer<T> {
+        void accept(@NonNull T x);
+    }
 
     @FunctionalInterface
-    interface NullableConsumer<T> { void accept(@Nullable T x);  }
+    interface NullableConsumer<T> {
+        void accept(@Nullable T x);
+    }
 
     @FunctionalInterface
-    interface TaskThrows<E extends Exception> { void run() throws E; }
+    interface TaskThrows<E extends Exception> {
+        void run() throws E;
+    }
 
     @FunctionalInterface
-    interface Runner { void run(@NonNull Runnable r); }
+    interface Runner {
+        void run(@NonNull Runnable r);
+    }
+
+    @NonNull
+    static <T, R, C extends Collection<? extends T>> Collection<R> map(@NonNull C c, @NonNull Function<T, R> fn) {
+        final Class<C> klass = (Class<C>) c.getClass();
+        final Collection<R> r;
+        try { r = (Collection<R>) klass.newInstance(); }
+        catch (IllegalAccessException | InstantiationException e) {
+            throw new UnsupportedOperationException("Cannot create instance of class: " + klass, e);
+        }
+        for (T e: c) { r.add(fn.apply(e)); }
+        return r;
+    }
+
+    @Nullable
+    static <T, C extends Collection<? extends T>> T filter(@NonNull C c, @NonNull Predicate<T> pred) {
+        for (T e: c) {
+            if (pred.test(e)) { return e; }
+        }
+        return null;
+    }
 }

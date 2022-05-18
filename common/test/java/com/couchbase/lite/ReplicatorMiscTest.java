@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -173,6 +174,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testCustomConnectionOptions() throws URISyntaxException {
+        Set<Collection> collections = baseTestDb.getCollections();
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
             .setType(ReplicatorType.PUSH)
             .setContinuous(false)
@@ -181,6 +183,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             .setMaxAttemptWaitTime(45)
             .setAutoPurgeEnabled(false);
 
+        collections = config.getCollections().keySet();
         final Replicator repl = testReplicator(config);
 
         Map<String, Object> options = new HashMap<>();

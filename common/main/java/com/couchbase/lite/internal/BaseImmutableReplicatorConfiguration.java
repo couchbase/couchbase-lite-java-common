@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.couchbase.lite.Authenticator;
+import com.couchbase.lite.Collection;
+import com.couchbase.lite.CollectionConfiguration;
 import com.couchbase.lite.ConflictResolver;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Endpoint;
@@ -39,8 +41,7 @@ import com.couchbase.lite.internal.support.Log;
 
 
 /**
- * A bit odd.  Why are these properties not simply properties on the AbstractReplicator object?
- * Because they are mandated by a spec:
+ * These properties are not simply properties on the AbstractReplicator object as is mandated by a spec:
  * https://docs.google.com/document/d/16XmIOw7aZ_NcFc6Dy6fc1jV7sc994r6iv5qm9_J7qKo/edit#heading=h.kt1n12mtpzx4
  */
 @SuppressWarnings("PMD.TooManyFields")
@@ -50,7 +51,7 @@ public class BaseImmutableReplicatorConfiguration {
     // Data Members
     //---------------------------------------------
     @NonNull
-    private final Database database;
+    private final Map<Collection, CollectionConfiguration> collections;
     @NonNull
     private final ReplicatorType type;
     private final boolean continuous;
@@ -81,7 +82,7 @@ public class BaseImmutableReplicatorConfiguration {
     // Constructors
     //-------------------------------------------------------------------------
     protected BaseImmutableReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        this.database = config.getDatabase();
+        this.collections = config.getCollections();
         this.type = config.getType();
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
@@ -102,8 +103,12 @@ public class BaseImmutableReplicatorConfiguration {
     //-------------------------------------------------------------------------
     // Properties
     //-------------------------------------------------------------------------
+
     @NonNull
-    public final Database getDatabase() { return database; }
+    public final Map<Collection, CollectionConfiguration> getCollections() { return collections; }
+
+    @NonNull
+    public final Database getDatabase() { return collections.keySet().iterator().next().getDatabase(); }
 
     @NonNull
     public final ReplicatorType getType() { return type; }
@@ -200,9 +205,7 @@ public class BaseImmutableReplicatorConfiguration {
                 options.put(C4Replicator.REPLICATOR_OPTION_COOKIES, cookies);
             }
 
-            for (Map.Entry<String, String> entry: headers.entrySet()) {
-                httpHeaders.put(entry.getKey(), entry.getValue());
-            }
+            httpHeaders.putAll(headers);
         }
 
         options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);

@@ -40,7 +40,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Replicator configuration.
  */
-@SuppressWarnings({"PMD.TooManyFields", "PMD.UnnecessaryFullyQualifiedName"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.UnnecessaryFullyQualifiedName", "PMD.CyclomaticComplexity"})
 public abstract class AbstractReplicatorConfiguration {
     /**
      * This is a long time: just under 25 days.
@@ -71,7 +71,9 @@ public abstract class AbstractReplicatorConfiguration {
     // Data Members
     //---------------------------------------------
     @NonNull
-    private final Database database;
+    private final Map<String, Collection> collections = new HashMap<>();
+    @NonNull
+    private final Map<Collection, CollectionConfiguration> collectionConfigurations;
     @NonNull
     private com.couchbase.lite.ReplicatorType type;
     private boolean continuous;
@@ -101,15 +103,25 @@ public abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+
+    @Deprecated
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        this.database = database;
-        this.target = target;
+        this(target);
+        final Collection collection = database.getDefaultCollection();
+        if (collection == null) { return; }
+        // !!! This needs to be fixed as described in the spec modification of 5/17
+        internalAddCollection(collection, new CollectionConfiguration());
+    }
+
+    protected AbstractReplicatorConfiguration(@NonNull Endpoint target) {
+        this.target = Preconditions.assertNotNull(target, "target endpoint");
         this.type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
+        this.collectionConfigurations = new HashMap<>();
     }
 
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
         this(
-            Preconditions.assertNotNull(config, "config").database,
+            config.collectionConfigurations,
             config.type,
             config.continuous,
             config.authenticator,
@@ -129,7 +141,7 @@ public abstract class AbstractReplicatorConfiguration {
 
     protected AbstractReplicatorConfiguration(@NonNull BaseImmutableReplicatorConfiguration config) {
         this(
-            Preconditions.assertNotNull(config, "config").getDatabase(),
+            config.getCollections(),
             config.getType(),
             config.isContinuous(),
             config.getAuthenticator(),
@@ -149,7 +161,7 @@ public abstract class AbstractReplicatorConfiguration {
 
     @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
     protected AbstractReplicatorConfiguration(
-        @NonNull Database database,
+        @Nullable Map<Collection, CollectionConfiguration> collections,
         @NonNull com.couchbase.lite.ReplicatorType type,
         boolean continuous,
         @Nullable Authenticator authenticator,
@@ -165,7 +177,7 @@ public abstract class AbstractReplicatorConfiguration {
         int heartbeat,
         boolean enableAutoPurge,
         @NonNull Endpoint target) {
-        this.database = database;
+        this.collectionConfigurations = (collections != null) ? collections : new HashMap<>();
         this.type = type;
         this.continuous = continuous;
         this.authenticator = authenticator;
@@ -181,11 +193,49 @@ public abstract class AbstractReplicatorConfiguration {
         this.heartbeat = heartbeat;
         this.enableAutoPurge = enableAutoPurge;
         this.target = target;
+
+        if (collections != null) {
+            for (Collection c: collections.keySet()) { this.collections.put(c.getName(), c); }
+        }
     }
 
     //---------------------------------------------
     // Setters
     //---------------------------------------------
+
+    /**
+     * Add a collection used for the replication with an optional collection configuration.
+     * If the collection has been added before, the previously added collection
+     * and its configuration if specified will be replaced.
+     *
+     * @param collection the collection
+     * @param config     its configuration
+     * @return this
+     */
+    @NonNull
+    public final ReplicatorConfiguration addCollection(
+        @NonNull Collection collection,
+        @Nullable CollectionConfiguration config) {
+        internalAddCollection(collection, config);
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * Add multiple collections used for the replication with an optional shared collection configuration.
+     * If any of the collections have been added before, the previously added collections and their
+     * configuration if specified will be replaced. Adding an empty collection array is a no-op.
+     *
+     * @param collections a collection of Collections
+     * @param config      the configuration to be applied to all of the collections
+     * @return this
+     */
+    @NonNull
+    public final ReplicatorConfiguration addCollections(
+        @NonNull java.util.Collection<Collection> collections,
+        @Nullable CollectionConfiguration config) {
+        for (Collection collection: collections) { addCollection(collection, config); }
+        return getReplicatorConfiguration();
+    }
 
     /**
      * Sets the authenticator to authenticate with a remote target server.
@@ -424,6 +474,19 @@ public abstract class AbstractReplicatorConfiguration {
     public final Authenticator getAuthenticator() { return authenticator; }
 
     /**
+     * The dictionary containing the collections and configurations used for replication. The dictionary
+     * contains the collections and the configurations added via the addCollection(_ collection:,config:) or
+     * addCollections(_ collections:,config:). Modifying the entries in the dictionary will reflect the collections
+     * and configured used for the replication.
+     *
+     * @return a map of collections to their configurations
+     */
+    @NonNull
+    public final Map<Collection, CollectionConfiguration> getCollections() {
+        return new HashMap<>(collectionConfigurations);
+    }
+
+    /**
      * A set of Sync Gateway channel names to pull from. Ignored for push replication.
      * The default value is null, meaning that all accessible channels will be pulled.
      * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
@@ -447,7 +510,7 @@ public abstract class AbstractReplicatorConfiguration {
      * Return the local database to replicate with the replication target.
      */
     @NonNull
-    public final Database getDatabase() { return database; }
+    public final Database getDatabase() { return collections.values().iterator().next().getDatabase(); }
 
     /**
      * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
@@ -581,13 +644,25 @@ public abstract class AbstractReplicatorConfiguration {
 
         if (conflictResolver != null) { buf.append('!'); }
 
-        return "ReplicatorConfig{" + database + buf + target + '}';
+        return "ReplicatorConfig{" + getDatabase() + buf + target + '}';
     }
 
     //---------------------------------------------
-    // Protected access
+    // Package access
     //---------------------------------------------
 
     @NonNull
     abstract ReplicatorConfiguration getReplicatorConfiguration();
+
+    //---------------------------------------------
+    // Private access
+    //---------------------------------------------
+
+
+    public final void internalAddCollection(
+        @NonNull Collection collection,
+        @Nullable CollectionConfiguration config) {
+        collections.put(collection.getName(), collection);
+        if (config != null) { collectionConfigurations.put(collection, config); }
+    }
 }

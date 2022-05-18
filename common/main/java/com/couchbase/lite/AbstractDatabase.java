@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -68,12 +67,17 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
  * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
-@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.TooManyMethods", "PMD.ExcessiveImports"})
+@SuppressWarnings({
+    "PMD.CyclomaticComplexity",
+    "PMD.TooManyMethods",
+    "PMD.ExcessiveImports",
+    "PMD.ExcessivePublicCount"})
 abstract class AbstractDatabase extends BaseDatabase {
 
     /**
@@ -216,6 +220,8 @@ abstract class AbstractDatabase extends BaseDatabase {
     @NonNull
     private final String name;
 
+    private final Map<String, Scope> scopes = new HashMap<>();
+
     // Executor for purge and posting Database/Document changes.
     private final ExecutionService.CloseableExecutor postExecutor;
     // Executor for LiveQuery.
@@ -261,6 +267,11 @@ abstract class AbstractDatabase extends BaseDatabase {
 
         // Copy configuration
         this.config = config;
+
+        // Scope
+        // !!! temporary hack...
+        final Scope scope = Scope.getDefault(this);
+        scopes.put(scope.getName(), scope);
 
         this.postExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
         this.queryExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
@@ -309,7 +320,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * The number of documents in the database.
      *
      * @return the number of documents in the database, 0 if database is closed.
+     * @deprecated Use getDefaultCollection().getCount()
      */
+    @Deprecated
     public long getCount() {
         synchronized (getDbLock()) { return (!isOpen()) ? 0L : getOpenC4DbLocked().getDocumentCount(); }
     }
@@ -328,7 +341,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      *
      * @param id the document ID
      * @return the Document object
+     * @deprecated Use getDefaultCollection().getCount()
      */
+    @Deprecated
     @Nullable
     public Document getDocument(@NonNull String id) {
         Preconditions.assertNotEmpty(id, "id");
@@ -349,7 +364,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      *
      * @param document The document.
      * @throws CouchbaseLiteException on error
+     * @deprecated Use getDefaultCollection().save
      */
+    @Deprecated
     public void save(@NonNull MutableDocument document) throws CouchbaseLiteException {
         save(document, ConcurrencyControl.LAST_WRITE_WINS);
     }
@@ -363,7 +380,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param concurrencyControl The concurrency control.
      * @return true if successful. false if the FAIL_ON_CONFLICT concurrency
      * @throws CouchbaseLiteException on error
+     * @deprecated Use getDefaultCollection().save()
      */
+    @Deprecated
     public boolean save(@NonNull MutableDocument document, @NonNull ConcurrencyControl concurrencyControl)
         throws CouchbaseLiteException {
         try {
@@ -383,7 +402,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param conflictHandler A conflict handler.
      * @return true if successful. false if the FAIL_ON_CONFLICT concurrency
      * @throws CouchbaseLiteException on error
+     * @deprecated Use getDefaultCollection().save
      */
+    @Deprecated
     public boolean save(@NonNull MutableDocument document, @NonNull ConflictHandler conflictHandler)
         throws CouchbaseLiteException {
         Preconditions.assertNotNull(document, "document");
@@ -400,7 +421,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      *
      * @param document The document.
      * @throws CouchbaseLiteException on error
+     * @deprecated Use getDefaultCollection().delete
      */
+    @Deprecated
     public void delete(@NonNull Document document) throws CouchbaseLiteException {
         delete(document, ConcurrencyControl.LAST_WRITE_WINS);
     }
@@ -414,7 +437,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param document           The document.
      * @param concurrencyControl The concurrency control.
      * @throws CouchbaseLiteException on error
+     * @deprecated Use getDefaultCollection().delete
      */
+    @Deprecated
     public boolean delete(@NonNull Document document, @NonNull ConcurrencyControl concurrencyControl)
         throws CouchbaseLiteException {
         // NOTE: synchronized in save(Document, boolean, ConcurrencyControl, ConflictHandler) method
@@ -435,7 +460,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * it removes all traces of the document. The purge will NOT be replicated to other databases.
      *
      * @param document the document to be purged.
+     * @deprecated Use getDefaultCollection().purge
      */
+    @Deprecated
     public void purge(@NonNull Document document) throws CouchbaseLiteException {
         Preconditions.assertNotNull(document, "document");
 
@@ -461,7 +488,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * it removes all traces of the document. The purge will NOT be replicated to other databases.
      *
      * @param id the document ID
+     * @deprecated Use getDefaultCollection().purge
      */
+    @Deprecated
     public void purge(@NonNull String id) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
         synchronized (getDbLock()) { purgeLocked(id); }
@@ -477,7 +506,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param expiration Nullable expiration timestamp as a Date, set timestamp to null
      *                   to remove expiration date time from doc.
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     * @deprecated Use getDefaultCollection().setDocumentExpiration
      */
+    @Deprecated
     public void setDocumentExpiration(@NonNull String id, @Nullable Date expiration) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
         synchronized (getDbLock()) {
@@ -493,7 +524,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param id The ID of the Document
      * @return Date a nullable expiration timestamp of the document or null if time not set.
      * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     * @deprecated Use getDefaultCollection().getDocumentExpiration
      */
+    @Deprecated
     @Nullable
     public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
@@ -549,7 +582,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * Platform.runLater(Runnable) respectively.
      *
      * @param listener callback
+     * @deprecated Use getDefaultCollection().addChangeListener
      */
+    @Deprecated
     @NonNull
     public ListenerToken addChangeListener(@NonNull DatabaseChangeListener listener) {
         return addChangeListener(null, listener);
@@ -563,7 +598,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * the Android platform and on an arbitrary thread for the Java platform.
      *
      * @param listener callback
+     * @deprecated Use getDefaultCollection().addChangeListener
      */
+    @Deprecated
     @NonNull
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
@@ -577,7 +614,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * Removes the change listener added to the database.
      *
      * @param token returned by a previous call to addChangeListener or addDocumentListener.
+     * @deprecated Use getDefaultCollection().removeChangeListener
      */
+    @Deprecated
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
 
@@ -601,7 +640,10 @@ abstract class AbstractDatabase extends BaseDatabase {
      * that needs to update the UI after receiving the changes, make sure to schedule the UI update
      * on the UI thread by using SwingUtilities.invokeLater(Runnable) or Platform.runLater(Runnable)
      * respectively.
+     *
+     * @deprecated Use getDefaultCollection().
      */
+    @Deprecated
     @NonNull
     public ListenerToken addDocumentChangeListener(@NonNull String id, @NonNull DocumentChangeListener listener) {
         return addDocumentChangeListener(id, null, listener);
@@ -611,7 +653,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * Adds a change listener for the changes that occur to the specified document with an executor on which
      * the changes will be posted to the listener.  If the executor is not specified, the changes will be
      * delivered on the UI thread for the Android platform and on an arbitrary thread for the Java platform.
+     * @deprecated Use getDefaultCollection().
      */
+    @Deprecated
     @NonNull
     public ListenerToken addDocumentChangeListener(
         @NonNull String id,
@@ -670,7 +714,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      *
      * @return the list of index names
      * @throws CouchbaseLiteException on failure
+     * @deprecated Use getDefaultCollection().getIndexes
      */
+    @Deprecated
     @NonNull
     public List<String> getIndexes() throws CouchbaseLiteException {
         final FLValue flIndexInfo;
@@ -699,7 +745,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param name  index name
      * @param index index description
      * @throws CouchbaseLiteException on failure
+     * @deprecated Use getDefaultCollection().createIndex
      */
+    @Deprecated
     public void createIndex(@NonNull String name, @NonNull Index index) throws CouchbaseLiteException {
         createIndexInternal(name, index);
     }
@@ -710,7 +758,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param name   index name
      * @param config index configuration
      * @throws CouchbaseLiteException on failure
+     * @deprecated Use getDefaultCollection().createIndex
      */
+    @Deprecated
     public void createIndex(@NonNull String name, @NonNull IndexConfiguration config) throws CouchbaseLiteException {
         createIndexInternal(name, config);
     }
@@ -720,7 +770,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      *
      * @param name name of the index to delete
      * @throws CouchbaseLiteException on failure
+     * @deprecated Use getDefaultCollection().deleteIndex
      */
+    @Deprecated
     public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
         synchronized (getDbLock()) {
             try { getOpenC4DbLocked().deleteIndex(name); }
@@ -768,6 +820,150 @@ abstract class AbstractDatabase extends BaseDatabase {
     @NonNull
     @Override
     public String toString() { return "Database{" + ClassUtils.objId(this) + ", name='" + name + "'}"; }
+
+
+    //---------------------------------------------
+    // Scopes
+    //---------------------------------------------
+
+    /**
+     * Get scope names that have at least one collection.
+     * Note: the default scope is exceptional as it will always be listed even though there are no collections
+     * under it.
+     */
+    @NonNull
+    public Set<Scope> getScopes() { return new HashSet<>(scopes.values()); }
+
+    /**
+     * Get a scope object by name. As the scope cannot exist by itself without having a collection, the nil
+     * value will be returned if there are no collections under the given scope’s name.
+     * Note: The default scope is exceptional, and it will always be returned.
+     */
+    @Nullable
+    public Scope getScope(@NonNull String name) { return scopes.get(name); }
+
+    /// Get the default scope.
+    @NonNull
+    public Scope getDefaultScope() { return scopes.get(Scope.DEFAULT_NAME); }
+
+    //---------------------------------------------
+    // Collections
+    //---------------------------------------------
+
+    /**
+     * Get all collections in the default scope.
+     */
+    @Nullable
+    public Set<Collection> getCollections() { return getCollections(null); }
+
+    /**
+     * Get all collections in the named scope.
+     *
+     * @param name the scope name
+     * @return the collections in the named scope
+     */
+    @Nullable
+    public Set<Collection> getCollections(@Nullable String name) {
+        final Scope scope = scopes.get(StringUtils.isEmpty(name) ? Scope.DEFAULT_NAME : name);
+        return (scope == null) ? null : scope.getCollections();
+    }
+
+    /**
+     * Create a named collection in the default scope.
+     * If the collection already exists, the existing collection will be returned.
+     *
+     * @param name the scope in which to create the collection
+     * @return the named collection in the default scope
+     * @throws CouchbaseLiteException on failure
+     */
+    @NonNull
+    public Collection createCollection(@NonNull String name) throws CouchbaseLiteException {
+        return createCollection(name, null);
+    }
+
+    /**
+     * Create a named collection in the specified scope.
+     * If the collection already exists, the existing collection will be returned.
+     *
+     * @param name      the name of the new collection
+     * @param scopeName the scope in which to create the collection
+     * @return the named collection in the default scope
+     * @throws CouchbaseLiteException on failure
+     */
+    @NonNull
+    public Collection createCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
+        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
+        Scope scope = scopes.get(scopeName);
+        if (scope == null) { scope = new Scope(scopeName, this); }
+
+        Collection collection = scope.getCollection(name);
+        if (collection != null) { return collection; }
+
+        collection = new Collection(scope, name);
+        scope.addCollection(collection);
+        return collection;
+    }
+
+    /**
+     * Get a collection in the default scope by name.
+     * If the collection doesn't exist, the function will return null.
+     *
+     * @param name the collection to find
+     * @return the named collection or null
+     */
+    @Nullable
+    public Collection getCollection(@NonNull String name) { return getCollection(name, Scope.DEFAULT_NAME); }
+
+    /**
+     * Get a collection in the specified scope by name.
+     * If the collection doesn't exist, the function will return null.
+     *
+     * @param name      the collection to find
+     * @param scopeName the scope in which to create the collection
+     * @return the named collection or null
+     */
+    @Nullable
+    public Collection getCollection(@NonNull String name, @Nullable String scopeName) {
+        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
+        final Scope scope = scopes.get(scopeName);
+        return (scope == null) ? null : scope.getCollection(name);
+    }
+
+    /**
+     * Delete a collection by name  in the default scope. If the collection doesn't exist, the operation
+     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
+     *
+     * @param name the collection to be deleted
+     * @throws CouchbaseLiteException on failure
+     */
+    public void deleteCollection(@NonNull String name) throws CouchbaseLiteException {
+        deleteCollection(name, Scope.DEFAULT_NAME);
+    }
+
+    /**
+     * Delete a collection by name  in the specified scope. If the collection doesn't exist, the operation
+     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
+     *
+     * @param name      the collection to be deleted
+     * @param scopeName the scope from which to delete the collection
+     * @throws CouchbaseLiteException on failure
+     */
+    public void deleteCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
+        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
+        final Scope scope = scopes.get(scopeName);
+        if (scope == null) { return; }
+        scope.deleteCollection(name);
+    }
+
+    /**
+     * Get the default collection. If the default collection is deleted, null will be returned.
+     *
+     * @return the default collection or null if it does not exist.
+     */
+    @Nullable
+    public Collection getDefaultCollection() {
+        return getDefaultScope().getCollection(Collection.DEFAULT_NAME);
+    }
 
     //---------------------------------------------
     // Protected level access
@@ -1651,7 +1847,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     // The call to 'stop' may cause a synchronous call to another method that modifies
     // the passed collection!  Since this thread already holds the lock, the call will
     // execute immediately causing a concurrent modification exception.
-    private void shutdownActiveProcesses(Collection<ActiveProcess<?>> processes) {
+    private void shutdownActiveProcesses(java.util.Collection<ActiveProcess<?>> processes) {
         if (processes == null) { return; }
         for (ActiveProcess<?> process: processes) { process.stop(); }
     }
