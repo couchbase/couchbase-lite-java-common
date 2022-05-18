@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 
-public class Collection implements Indexable, DatabaseChangeObservable {
-    private static final String COLLECTION_NAME = "_default";
-    private final Scope scope = new Scope("_default");
+public final class Collection implements Indexable, DatabaseChangeObservable {
+    public static final String DEFAULT_COLLECTION_NAME = "_default";
+    private final Scope scope = new Scope(Scope.DEFAULT_SCOPE_NAME);
     private final Database database;
+
+    private final String defaultCollectionName = DEFAULT_COLLECTION_NAME;
 
     public Collection(@NonNull Database database) { this.database = database; }
 
@@ -138,7 +140,7 @@ public class Collection implements Indexable, DatabaseChangeObservable {
      * Return the collection name
      */
     @NonNull
-    public String getName() { return COLLECTION_NAME; }
+    public String getName() { return defaultCollectionName; }
 
     /**
      * The number of documents in the collection.

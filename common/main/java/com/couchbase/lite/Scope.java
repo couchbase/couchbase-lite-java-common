@@ -4,6 +4,6 @@ import androidx.annotation.NonNull;
 
 
 public class Scope {
-    public Scope(@NonNull String name) {
-    }
+    public static final String DEFAULT_SCOPE_NAME = "_default";
+    public Scope(String name) { }
 }
