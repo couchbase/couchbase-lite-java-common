@@ -5,5 +5,10 @@ import androidx.annotation.NonNull;
 
 public class Scope {
     public static final String DEFAULT_SCOPE_NAME = "_default";
-    public Scope(String name) { }
+    private final String defaultScopeName;
+
+    public Scope(@NonNull String name) { defaultScopeName = DEFAULT_SCOPE_NAME; }
+
+    @NonNull
+    public String getDefaultScopeName() { return defaultScopeName; }
 }

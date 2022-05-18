@@ -10,12 +10,16 @@ import java.util.concurrent.Executor;
 
 public final class Collection implements Indexable, DatabaseChangeObservable {
     public static final String DEFAULT_COLLECTION_NAME = "_default";
-    private final Scope scope = new Scope(Scope.DEFAULT_SCOPE_NAME);
+    private final Scope scope;
     private final Database database;
 
-    private final String defaultCollectionName = DEFAULT_COLLECTION_NAME;
+    private final String defaultCollectionName;
 
-    public Collection(@NonNull Database database) { this.database = database; }
+    public Collection(@NonNull Database database) {
+        this.database = database;
+        defaultCollectionName = DEFAULT_COLLECTION_NAME;
+        scope = new Scope(Scope.DEFAULT_SCOPE_NAME);
+    }
 
     /**
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
