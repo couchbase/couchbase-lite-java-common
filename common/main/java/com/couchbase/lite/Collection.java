@@ -18,7 +18,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
     public Collection(@NonNull Database database) {
         this.database = database;
         defaultCollectionName = DEFAULT_COLLECTION_NAME;
-        scope = new Scope(Scope.DEFAULT_SCOPE_NAME);
+        scope = new Scope();
     }
 
     /**
