@@ -38,6 +38,7 @@ import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -82,7 +83,7 @@ public class BaseImmutableReplicatorConfiguration {
     // Constructors
     //-------------------------------------------------------------------------
     protected BaseImmutableReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        this.collections = config.getCollections();
+        this.collections = Preconditions.assertNotNull(config.getCollections(), "collections");
         this.type = config.getType();
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
@@ -107,8 +108,10 @@ public class BaseImmutableReplicatorConfiguration {
     @NonNull
     public final Map<Collection, CollectionConfiguration> getCollections() { return collections; }
 
-    @NonNull
-    public final Database getDatabase() { return collections.keySet().iterator().next().getDatabase(); }
+    @Nullable
+    public final Database getDatabase() {
+        return (collections.isEmpty()) ? null : collections.keySet().iterator().next().getDatabase();
+    }
 
     @NonNull
     public final ReplicatorType getType() { return type; }

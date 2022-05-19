@@ -19,7 +19,11 @@ package com.couchbase.lite.internal.utils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 
 public interface Fn {
@@ -33,6 +37,12 @@ public interface Fn {
     interface Function<T, R> {
         @Nullable
         R apply(@NonNull T x);
+    }
+
+    @FunctionalInterface
+    interface BiFunction<T1, T2, R> {
+        @Nullable
+        R apply(@NonNull T1 x, @NonNull T2 y);
     }
 
     @FunctionalInterface
@@ -83,22 +93,31 @@ public interface Fn {
     }
 
     @NonNull
-    static <T, R, C extends Collection<? extends T>> Collection<R> map(@NonNull C c, @NonNull Function<T, R> fn) {
-        final Class<C> klass = (Class<C>) c.getClass();
-        final Collection<R> r;
-        try { r = (Collection<R>) klass.newInstance(); }
-        catch (IllegalAccessException | InstantiationException e) {
-            throw new UnsupportedOperationException("Cannot create instance of class: " + klass, e);
-        }
-        for (T e: c) { r.add(fn.apply(e)); }
+    static <T, R> List<R> map(@NonNull List<? extends T> l, @NonNull Function<T, R> fn) {
+        final List<R> r = new ArrayList<>(l.size());
+        for (T e: l) { r.add(fn.apply(e)); }
+        return r;
+    }
+
+    @NonNull
+    static <T, R> Set<R> map(@NonNull Set<? extends T> s, @NonNull Function<T, R> fn) {
+        final Set<R> r = new HashSet<>(s.size());
+        for (T e: s) { r.add(fn.apply(e)); }
         return r;
     }
 
     @Nullable
-    static <T, C extends Collection<? extends T>> T filter(@NonNull C c, @NonNull Predicate<T> pred) {
+    static <T> T filter(@NonNull Collection<? extends T> c, @NonNull Predicate<T> pred) {
         for (T e: c) {
             if (pred.test(e)) { return e; }
         }
         return null;
+    }
+
+    @Nullable
+    static <T, R> R foldR(@NonNull Collection<? extends T> c, @NonNull R init, @NonNull BiFunction<R, T, R> fn) {
+        R r = init;
+        for (T e: c) { r = fn.apply(r, e); }
+        return r;
     }
 }

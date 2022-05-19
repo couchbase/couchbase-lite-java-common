@@ -71,8 +71,6 @@ public abstract class AbstractReplicatorConfiguration {
     // Data Members
     //---------------------------------------------
     @NonNull
-    private final Map<String, Collection> collections = new HashMap<>();
-    @NonNull
     private final Map<Collection, CollectionConfiguration> collectionConfigurations;
     @NonNull
     private com.couchbase.lite.ReplicatorType type;
@@ -109,8 +107,9 @@ public abstract class AbstractReplicatorConfiguration {
         this(target);
         final Collection collection = database.getDefaultCollection();
         if (collection == null) { return; }
+
         // !!! This needs to be fixed as described in the spec modification of 5/17
-        internalAddCollection(collection, new CollectionConfiguration());
+        internalAddCollection(collection, null);
     }
 
     protected AbstractReplicatorConfiguration(@NonNull Endpoint target) {
@@ -141,7 +140,7 @@ public abstract class AbstractReplicatorConfiguration {
 
     protected AbstractReplicatorConfiguration(@NonNull BaseImmutableReplicatorConfiguration config) {
         this(
-            config.getCollections(),
+            config.getCollections(), // !!! Must copy the collection objects here.
             config.getType(),
             config.isContinuous(),
             config.getAuthenticator(),
@@ -193,10 +192,6 @@ public abstract class AbstractReplicatorConfiguration {
         this.heartbeat = heartbeat;
         this.enableAutoPurge = enableAutoPurge;
         this.target = target;
-
-        if (collections != null) {
-            for (Collection c: collections.keySet()) { this.collections.put(c.getName(), c); }
-        }
     }
 
     //---------------------------------------------
@@ -233,7 +228,8 @@ public abstract class AbstractReplicatorConfiguration {
     public final ReplicatorConfiguration addCollections(
         @NonNull java.util.Collection<Collection> collections,
         @Nullable CollectionConfiguration config) {
-        for (Collection collection: collections) { addCollection(collection, config); }
+        if (config == null) { config = new CollectionConfiguration(); }
+        for (Collection collection: collections) { internalAddCollection(collection, config); }
         return getReplicatorConfiguration();
     }
 
@@ -509,8 +505,12 @@ public abstract class AbstractReplicatorConfiguration {
     /**
      * Return the local database to replicate with the replication target.
      */
-    @NonNull
-    public final Database getDatabase() { return collections.values().iterator().next().getDatabase(); }
+    @Nullable
+    public final Database getDatabase() {
+        return (collectionConfigurations.isEmpty())
+            ? null
+            : collectionConfigurations.keySet().iterator().next().getDatabase();
+    }
 
     /**
      * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
@@ -623,7 +623,14 @@ public abstract class AbstractReplicatorConfiguration {
     public String toString() {
         final StringBuilder buf = new StringBuilder();
 
+        for (Collection c: collectionConfigurations.keySet()) {
+            if (buf.length() > 0) { buf.append(", "); }
+            buf.append(c.getScope().getName()).append('.').append(c.getName());
+        }
+        buf.append(") ");
+
         if (pullFilter != null) { buf.append('|'); }
+
         if ((type == com.couchbase.lite.ReplicatorType.PULL)
             || (type == com.couchbase.lite.ReplicatorType.PUSH_AND_PULL)) {
             buf.append('<');
@@ -644,7 +651,9 @@ public abstract class AbstractReplicatorConfiguration {
 
         if (conflictResolver != null) { buf.append('!'); }
 
-        return "ReplicatorConfig{" + getDatabase() + buf + target + '}';
+        buf.append(' ');
+
+        return "ReplicatorConfig{(" + buf + target + '}';
     }
 
     //---------------------------------------------
@@ -655,14 +664,10 @@ public abstract class AbstractReplicatorConfiguration {
     abstract ReplicatorConfiguration getReplicatorConfiguration();
 
     //---------------------------------------------
-    // Private access
+    // Private methods
     //---------------------------------------------
 
-
-    public final void internalAddCollection(
-        @NonNull Collection collection,
-        @Nullable CollectionConfiguration config) {
-        collections.put(collection.getName(), collection);
-        if (config != null) { collectionConfigurations.put(collection, config); }
+    private void internalAddCollection(@NonNull Collection collection, @Nullable CollectionConfiguration config) {
+        collectionConfigurations.put(collection, (config != null) ? config : new CollectionConfiguration());
     }
 }

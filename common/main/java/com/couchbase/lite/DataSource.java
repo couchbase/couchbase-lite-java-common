@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -36,7 +38,7 @@ public class DataSource {
         //---------------------------------------------
         // Constructors
         //---------------------------------------------
-        As(@NonNull Database source) { super(source); }
+        As(@NonNull Collection source) { super(source); }
 
         //---------------------------------------------
         // API - public methods
@@ -61,20 +63,34 @@ public class DataSource {
      *
      * @param database the database used as a source of data for query.
      * @return {@code DataSource.Database} object.
+     * @deprecated use DataSource.collection(Collection)
      */
+    @Deprecated
     @NonNull
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public static As database(@NonNull Database database) {
         Preconditions.assertNotNull(database, "database");
-        return new As(database);
+        return new As(database.getDefaultCollection());
     }
 
+    /**
+     * Create a collection as a data source.
+     *
+     * @param collection the collection used as a source of data for query.
+     * @return {@code DataSource.Database} object.
+     */
+    @NonNull
+    public static As collection(@NonNull Collection collection) {
+        Preconditions.assertNotNull(collection, "collection");
+        return new As(collection);
+    }
 
     //---------------------------------------------
     // Data members
     //---------------------------------------------
 
     @NonNull
-    private final Database source;
+    private final Collection source;
     @Nullable
     protected String alias;
 
@@ -82,19 +98,22 @@ public class DataSource {
     // Constructors
     //---------------------------------------------
 
-    private DataSource(@NonNull Database source) { this.source = source; }
+    private DataSource(@NonNull Collection source) { this.source = source; }
 
     //---------------------------------------------
     // Package level access
     //---------------------------------------------
-
     @NonNull
-    Object getSource() { return this.source; }
+    Object getSource() { return getDatabase(); }
 
     @NonNull
     Map<String, Object> asJSON() {
         final Map<String, Object> json = new HashMap<>();
-        json.put("AS", (alias != null) ? alias : source.getName());
+        json.put("AS", (alias != null) ? alias : getDatabase().getName());
         return json;
     }
+
+    // !!! Fix this after collection queries get plumbed through to LiteCore
+    @NonNull
+    private AbstractDatabase getDatabase() { return source.getDatabase(); }
 }

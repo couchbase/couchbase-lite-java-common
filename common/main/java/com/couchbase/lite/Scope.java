@@ -101,4 +101,7 @@ public class Scope {
         if (collection == null) { return; }
         deleteCollection(collection);
     }
+
+    @Nullable
+    Collection getDefaultCollection() { return getCollection(Collection.DEFAULT_NAME); }
 }

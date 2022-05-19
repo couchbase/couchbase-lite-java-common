@@ -27,7 +27,6 @@ import java.util.concurrent.Executor
  *
  * @see com.couchbase.lite.Database.addChangeListener
  */
-@ExperimentalCoroutinesApi
 fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow<DatabaseChange> {
     val token = this@databaseChangeFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { this@databaseChangeFlow.removeChangeListener(token) }
@@ -40,7 +39,6 @@ fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow<Datab
  *
  * @see com.couchbase.lite.Database.addDocumentChangeListener
  */
-@ExperimentalCoroutinesApi
 fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) = callbackFlow {
     val token =
         this@documentChangeFlow.addDocumentChangeListener(documentId, executor) { trySend(it) }
@@ -54,7 +52,6 @@ fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) 
  *
  * @see com.couchbase.lite.Replicator.addChangeListener
  */
-@ExperimentalCoroutinesApi
 fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow {
     val token = this@replicatorChangesFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { this@replicatorChangesFlow.removeChangeListener(token) }
@@ -67,7 +64,6 @@ fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow 
  *
  * @see com.couchbase.lite.Replicator.addDocumentReplicationListener
  */
-@ExperimentalCoroutinesApi
 fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlow {
     val token =
         this@documentReplicationFlow.addDocumentReplicationListener(executor) { trySend(it) }
@@ -81,7 +77,7 @@ fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlo
  *
  * @see com.couchbase.lite.Query.addChangeListener
  */
-@ExperimentalCoroutinesApi
+
 fun Query.queryChangeFlow(executor: Executor? = null) = callbackFlow {
     val token = this@queryChangeFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { this@queryChangeFlow.removeChangeListener(token) }

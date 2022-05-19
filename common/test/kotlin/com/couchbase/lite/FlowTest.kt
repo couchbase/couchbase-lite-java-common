@@ -30,7 +30,6 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class FlowTest : BaseReplicatorTest() {
-    @ExperimentalCoroutinesApi
     @Test
     fun testDatabaseChangeFlow() {
         val docIds = mutableListOf<String>()
@@ -80,7 +79,6 @@ class FlowTest : BaseReplicatorTest() {
         }
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun testDocumentChangeFlowOnSave() {
         val changes = mutableListOf<DocumentChange>()
@@ -123,7 +121,6 @@ class FlowTest : BaseReplicatorTest() {
         Assert.assertEquals("change on wrong doc", docA.id, changes[0].documentID)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun testDocumentChangeFlowOnUpdate() {
         val changes = mutableListOf<DocumentChange>()
@@ -173,7 +170,6 @@ class FlowTest : BaseReplicatorTest() {
         Assert.assertEquals("change on wrong doc", docA.id, changes[0].documentID)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun testDocumentChangeFlowOnDelete() {
         val changes = mutableListOf<DocumentChange>()
@@ -218,7 +214,6 @@ class FlowTest : BaseReplicatorTest() {
         Assert.assertEquals("change on wrong doc", mDocA.id, changes[0].documentID)
     }
 
-    @ExperimentalCoroutinesApi
     @Test
     fun testQueryChangeFlow() {
         val allResults = mutableListOf<Any>()

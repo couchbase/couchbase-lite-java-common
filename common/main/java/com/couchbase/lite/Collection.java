@@ -49,7 +49,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      * exist in the collection, the value returned will be null.
      */
     @Nullable
-    public Document getDocument(@NonNull String id) { return scope.getDatabase().getDocument(id); }
+    public Document getDocument(@NonNull String id) { return getDatabase().getDocument(id); }
 
     /**
      * Save a document into the collection. The default concurrency control, lastWriteWins,

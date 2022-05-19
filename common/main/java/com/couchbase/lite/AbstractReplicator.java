@@ -146,6 +146,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
      */
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
+        Preconditions.assertNotNull(config.getDatabase(), "Configuration must include at least one collection");
         this.config = new ImmutableReplicatorConfiguration(config);
         this.socketFactory = new SocketFactory(
             config,
@@ -542,7 +543,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
                 error = CouchbaseLiteException.convertC4Error(c4Error);
             }
 
-            unconflictedDocs.add(new ReplicatedDocument(docId, docEnd.getFlags(), error, docEnd.errorIsTransient()));
+            unconflictedDocs.add(new ReplicatedDocument(collectionHack(), docId, docEnd.getFlags(), error));
         }
 
         if (!unconflictedDocs.isEmpty()) { notifyDocumentEnded(pushing, unconflictedDocs); }
@@ -565,7 +566,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             }
         }
 
-        notifyDocumentEnded(false, Arrays.asList(new ReplicatedDocument(docId, flags, err, false)));
+        notifyDocumentEnded(false, Arrays.asList(new ReplicatedDocument(collectionHack(), docId, flags, err)));
 
         if ((pendingNotifications != null) && (!pendingNotifications.isEmpty())) {
             for (C4ReplicatorStatus status: pendingNotifications) { dispatcher.execute(() -> c4StatusChanged(status)); }
@@ -596,7 +597,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @NonNull
     private C4Replicator getOrCreateC4Replicator() {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
-        synchronized (config.getDatabase().getDbLock()) {
+        synchronized (getDatabase().getDbLock()) {
             C4Replicator c4Repl = getC4Replicator();
 
             if (c4Repl != null) {
@@ -736,7 +737,11 @@ public abstract class AbstractReplicator extends BaseReplicator {
     }
 
     @NonNull
-    private Database getDatabase() { return config.getDatabase(); }
+    private Database getDatabase() {
+        final Database db = config.getDatabase();
+        if (db == null) { throw new IllegalStateException("No database in Replicator"); }
+        return db;
+    }
 
     // Consumer callback to set the server certificates received during the TLS Handshake
     private void setServerCertificates(List<Certificate> certificates) { serverCertificates.set(certificates); }
@@ -765,5 +770,13 @@ public abstract class AbstractReplicator extends BaseReplicator {
             if (element.length() > 0) { path.addLast(element); }
         }
         return path;
+    }
+
+    // !!! Temporary hack until Collections are wired up from LiteCore
+    @NonNull
+    private Collection collectionHack() {
+        final Collection collection = Scope.getDefault(getDatabase()).getCollection(Collection.DEFAULT_NAME);
+        if (collection != null) { return collection; }
+        throw new IllegalStateException("Cannot find collection for replicator");
     }
 }

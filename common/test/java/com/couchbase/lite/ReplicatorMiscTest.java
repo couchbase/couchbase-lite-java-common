@@ -182,8 +182,6 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             .setMaxAttempts(78)
             .setMaxAttemptWaitTime(45)
             .setAutoPurgeEnabled(false);
-
-        collections = config.getCollections().keySet();
         final Replicator repl = testReplicator(config);
 
         Map<String, Object> options = new HashMap<>();
@@ -232,18 +230,22 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testReplicatedDocument() {
+        Collection collection = Scope.getDefault(baseTestDb).getCollection(Collection.DEFAULT_NAME);
         String docID = "someDocumentID";
         int flags = C4Constants.DocumentFlags.DELETED;
         CouchbaseLiteException error = new CouchbaseLiteException(
             "Replicator busy",
             CBLError.Domain.CBLITE,
             CBLError.Code.BUSY);
-        ReplicatedDocument doc = new ReplicatedDocument(docID, flags, error, true);
+
+        ReplicatedDocument doc = new ReplicatedDocument(collection, docID, flags, error);
 
         assertEquals(doc.getID(), docID);
         assertTrue(doc.getFlags().contains(DocumentFlag.DELETED));
-        assertEquals(doc.getError().getDomain(), CBLError.Domain.CBLITE);
-        assertEquals(doc.getError().getCode(), CBLError.Code.BUSY);
+        CouchbaseLiteException err = doc.getError();
+        assertEquals(CBLError.Domain.CBLITE, err.getDomain());
+        assertEquals(CBLError.Code.BUSY, err.getCode());
+        assertEquals(Collection.DEFAULT_NAME, doc.getCollection().getName());
     }
 
     // CBL-1218

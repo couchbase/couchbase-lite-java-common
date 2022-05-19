@@ -34,6 +34,8 @@ public final class ReplicatedDocument {
     @NonNull
     private final String id;
     @NonNull
+    private final Collection collection;
+    @NonNull
     private final EnumSet<DocumentFlag> flags;
     @Nullable
     private final CouchbaseLiteException error;
@@ -42,8 +44,14 @@ public final class ReplicatedDocument {
     // Constructors
     //---------------------------------------------
 
-    ReplicatedDocument(@NonNull String id, int flags, @Nullable CouchbaseLiteException error, boolean ignore) {
+    ReplicatedDocument(
+        @NonNull Collection collection,
+        @NonNull String id,
+        int flags,
+        @Nullable CouchbaseLiteException error) {
+        this.collection = collection;
         this.id = id;
+
         this.error = error;
 
         this.flags = EnumSet.noneOf(DocumentFlag.class);
@@ -61,7 +69,13 @@ public final class ReplicatedDocument {
     //---------------------------------------------
 
     /**
-     * The current document id.
+     * The collection to which the changed document belongs.
+     */
+    @NonNull
+    public Collection getCollection() { return collection; }
+
+    /**
+     * The id document of the changed document.
      */
     @NonNull
     public String getID() { return id; }
