@@ -28,7 +28,6 @@ public class BaseCollectionTest extends BaseDbTest {
     @After
     public final void tearDownBaseCollectionTest() {
         testScope.deleteCollection(testCollection);
-        testScope = null;
         Report.log(LogLevel.INFO, "Deleted testCollection: " + testCollection);
     }
 

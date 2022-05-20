@@ -25,7 +25,6 @@ import org.junit.Test;
 import com.couchbase.lite.internal.utils.TestUtils;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -51,24 +50,14 @@ public class CollectionTest extends BaseCollectionTest {
     //  Save Document
     //---------------------------------------------
 
-    // base test method
-    private void testSaveNewDocInCollectionWithID(String docID) throws CouchbaseLiteException {
-        // store doc
-        createSingleDocInCollectionWithId(docID);
-        assertEquals(1, testCollection.getCount());
-
-        // validate document by getDocument
-        verifyGetDocumentInCollection(docID);
-    }
-
     @Test
-    public void testSaveNewDocInCollectionWithID() throws CouchbaseLiteException {
-        testSaveNewDocInCollectionWithID("doc1");
+    public void saveNewDocInCollectionWithIDTest() throws CouchbaseLiteException {
+        saveNewDocInCollectionWithIDTest("doc1");
     }
 
     @Test
     public void testSaveNewDocInCollectionWithSpecialCharactersDocID() throws CouchbaseLiteException {
-        testSaveNewDocInCollectionWithID("`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'");
+        saveNewDocInCollectionWithIDTest("`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'");
     }
 
     @Test
@@ -248,6 +237,14 @@ public class CollectionTest extends BaseCollectionTest {
         testCollection.deleteIndex("index1");
     }
 
+    private void saveNewDocInCollectionWithIDTest(String docID) throws CouchbaseLiteException {
+        // store doc
+        createSingleDocInCollectionWithId(docID);
+        assertEquals(1, testCollection.getCount());
+
+        // validate document by getDocument
+        verifyGetDocumentInCollection(docID);
+    }
 
     // helper method to verify n number of docs
     private void verifyDocuments(int n) {
