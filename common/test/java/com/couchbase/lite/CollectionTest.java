@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.TestUtils;
@@ -134,34 +133,6 @@ public class CollectionTest extends BaseCollectionTest {
         assertEquals(3, savedDoc.getSequence());
     }
 
-    @Test
-    @Ignore
-    public void testSaveDocWithConflict() throws CouchbaseLiteException {
-        testSaveDocInCollectionWithConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS);
-        testSaveDocInCollectionWithConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT);
-    }
-
-    @Test
-    @Ignore
-    public void testDeleteDocWithConflict() throws CouchbaseLiteException {
-        testDeleteDocInCollectionWithConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS);
-        testDeleteDocInCollectionWithConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT);
-    }
-
-    @Test
-    @Ignore
-    public void testSaveDocWithNoParentConflict() throws CouchbaseLiteException {
-        testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS);
-        testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT);
-    }
-
-    @Test
-    @Ignore
-    public void testSaveDocWithDeletedConflict() throws CouchbaseLiteException {
-        testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS);
-        testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT);
-    }
-
     //---------------------------------------------
     //  Delete Document
     //---------------------------------------------
@@ -237,20 +208,6 @@ public class CollectionTest extends BaseCollectionTest {
         assertEquals(0, testCollection.getCount());
     }
 
-    // What's the expected outcome if a deleted collection try to purge a document?
-    @Test(expected = IllegalStateException.class)
-    @Ignore
-    public void testPurgeDocOnDeletedCollection() throws CouchbaseLiteException {
-        // Store doc:
-        Document doc = createSingleDocInCollectionWithId("doc1");
-
-        // Delete Collection
-        testScope.deleteCollection(testCollection);
-
-        // Purge doc:
-        testCollection.purge(doc);
-    }
-
     //---------------------------------------------
     //  Index functionalities
     //---------------------------------------------
@@ -321,142 +278,6 @@ public class CollectionTest extends BaseCollectionTest {
         String docID = doc.getId();
         testCollection.purge(doc);
         assertNull(testCollection.getDocument(docID));
-    }
-
-    private void testSaveDocInCollectionWithConflictUsingConcurrencyControl(ConcurrencyControl cc)
-        throws CouchbaseLiteException {
-        MutableDocument doc = new MutableDocument("doc1");
-        doc.setString("firstName", "Daniel");
-        doc.setString("lastName", "Tiger");
-        testCollection.save(doc);
-
-        // Get two doc1 document objects (doc1a and doc1b):
-        MutableDocument doc1a = testCollection.getDocument("doc1").toMutable();
-        MutableDocument doc1b = testCollection.getDocument("doc1").toMutable();
-
-        // Modify doc1a:
-        doc1a.setString("firstName", "Scott");
-        testCollection.save(doc1a);
-        doc1a.setString("nickName", "Scotty");
-        testCollection.save(doc1a);
-
-        Map<String, Object> expected = new HashMap<>();
-        expected.put("firstName", "Scott");
-        expected.put("lastName", "Tiger");
-        expected.put("nickName", "Scotty");
-        assertEquals(expected, doc1a.toMap());
-        assertEquals(3, doc1a.getSequence());
-
-        // Modify doc1b, result to conflict when save:
-        doc1b.setString("lastName", "Lion");
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(testCollection.save(doc1b, cc));
-            Document savedDoc = testCollection.getDocument(doc.getId());
-            assertEquals(doc1b.toMap(), savedDoc.toMap());
-            assertEquals(4, savedDoc.getSequence());
-        }
-        else {
-            assertFalse(testCollection.save(doc1b, cc));
-            Document savedDoc = testCollection.getDocument(doc.getId());
-            assertEquals(expected, savedDoc.toMap());
-            assertEquals(3, savedDoc.getSequence());
-        }
-    }
-
-    private void testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl cc)
-        throws CouchbaseLiteException {
-        MutableDocument doc = new MutableDocument("doc1");
-        doc.setString("firstName", "Daniel");
-        doc.setString("lastName", "Tiger");
-        testCollection.save(doc);
-
-        // Get two doc1 document objects (doc1a and doc1b):
-        Document doc1a = testCollection.getDocument("doc1");
-        MutableDocument doc1b = testCollection.getDocument("doc1").toMutable();
-
-        // Delete doc1a:
-        testCollection.delete(doc1a);
-        assertEquals(2, doc1a.getSequence());
-        assertNull(testCollection.getDocument(doc.getId()));
-
-        // Modify doc1b, result to conflict when save:
-        doc1b.setString("lastName", "Lion");
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(testCollection.save(doc1b, cc));
-            Document savedDoc = testCollection.getDocument(doc.getId());
-            assertEquals(doc1b.toMap(), savedDoc.toMap());
-            assertEquals(3, savedDoc.getSequence());
-        }
-        else {
-            assertFalse(testCollection.save(doc1b, cc));
-            assertNull(testCollection.getDocument(doc.getId()));
-        }
-        //recreate a new collection
-        testCollection = recreateCollection(testCollection);
-    }
-
-    private void testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl cc)
-        throws CouchbaseLiteException {
-        MutableDocument doc1a = new MutableDocument("doc1");
-        doc1a.setString("firstName", "Daniel");
-        doc1a.setString("lastName", "Tiger");
-        testCollection.save(doc1a);
-
-        Document savedDoc = testCollection.getDocument(doc1a.getId());
-        assertEquals(doc1a.toMap(), savedDoc.toMap());
-        assertEquals(1, savedDoc.getSequence());
-
-        MutableDocument doc1b = new MutableDocument("doc1");
-        doc1b.setString("firstName", "Scott");
-        doc1b.setString("lastName", "Tiger");
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(testCollection.save(doc1b, cc));
-            savedDoc = testCollection.getDocument(doc1b.getId());
-            assertEquals(doc1b.toMap(), savedDoc.toMap());
-            assertEquals(2, savedDoc.getSequence());
-        }
-        else {
-            assertFalse(testCollection.save(doc1b, cc));
-            savedDoc = testCollection.getDocument(doc1b.getId());
-            assertEquals(doc1a.toMap(), savedDoc.toMap());
-            assertEquals(1, savedDoc.getSequence());
-        }
-    }
-
-    private void testDeleteDocInCollectionWithConflictUsingConcurrencyControl(ConcurrencyControl cc)
-        throws CouchbaseLiteException {
-        MutableDocument doc = new MutableDocument("doc1");
-        doc.setString("firstName", "Daniel");
-        doc.setString("lastName", "Tiger");
-        testCollection.save(doc);
-
-        // Get two doc1 document objects (doc1a and doc1b):
-        MutableDocument doc1a = testCollection.getDocument("doc1").toMutable();
-        MutableDocument doc1b = testCollection.getDocument("doc1").toMutable();
-
-        // Modify doc1a:
-        doc1a.setString("firstName", "Scott");
-        testCollection.save(doc1a);
-
-        Map<String, Object> expected = new HashMap<>();
-        expected.put("firstName", "Scott");
-        expected.put("lastName", "Tiger");
-        assertEquals(expected, doc1a.toMap());
-        assertEquals(2, doc1a.getSequence());
-
-        // Modify doc1b and delete, result to conflict when delete:
-        doc1b.setString("lastName", "Lion");
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(testCollection.delete(doc1b, cc));
-            assertEquals(3, doc1b.getSequence());
-            assertNull(testCollection.getDocument(doc1b.getId()));
-        }
-        else {
-            assertFalse(testCollection.delete(doc1b, cc));
-            Document savedDoc = testCollection.getDocument(doc.getId());
-            assertEquals(expected, savedDoc.toMap());
-            assertEquals(2, savedDoc.getSequence());
-        }
     }
 }
 

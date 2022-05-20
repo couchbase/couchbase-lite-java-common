@@ -20,7 +20,7 @@ public class BaseCollectionTest extends BaseDbTest {
     @Before
     public final void setUpBaseCollectionTest(){
         testScope = Scope.getDefault(baseTestDb);
-        testCollection = Collection.getDefault(testScope);
+        testCollection = testScope.getDefaultCollection();
         Report.log(LogLevel.INFO, "Created base test Collection: " + testCollection);
         assertNotNull(testCollection);
     }
@@ -62,11 +62,6 @@ public class BaseCollectionTest extends BaseDbTest {
             saveDocInBaseCollectionTest(doc);
         }
         assertEquals(n, testCollection.getCount());
-    }
-
-    protected final Collection recreateCollection(Collection testCollection) {
-        testScope.deleteCollection(testCollection);
-        return Collection.getDefault(testScope);
     }
 }
 
