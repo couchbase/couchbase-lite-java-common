@@ -21,16 +21,21 @@ import androidx.annotation.Nullable;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-final class ReplicatorChangeListenerToken implements ListenerToken {
+final class ReplicatorChangeListenerToken extends ListenerToken {
     @NonNull
     private final ReplicatorChangeListener listener;
     @Nullable
     private final Executor executor;
 
-    ReplicatorChangeListenerToken(@Nullable Executor executor, @NonNull ReplicatorChangeListener listener) {
+    ReplicatorChangeListenerToken(
+        @Nullable Executor executor,
+        @NonNull ReplicatorChangeListener listener,
+        @NonNull Fn.Consumer<ListenerToken> onRemove) {
+        super(onRemove);
         this.executor = executor;
         this.listener = Preconditions.assertNotNull(listener, "listener");
     }

@@ -66,7 +66,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * or continuous. The replicator runs asynchronously, so observe the status to
  * be notified of progress.
  */
-@SuppressWarnings({"PMD.TooManyFields", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({"PMD.TooManyFields", "PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public abstract class AbstractReplicator extends BaseReplicator {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
@@ -312,7 +312,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull ReplicatorChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (getReplicatorLock()) {
-            final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
+            final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(
+                executor,
+                listener,
+                this::removeReplicationListener);
             changeListeners.add(token);
             setProgressLevel();
             return token;
@@ -351,7 +354,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
         @NonNull DocumentReplicationListener listener) {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (getReplicatorLock()) {
-            final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(executor, listener);
+            final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(
+                executor,
+                listener,
+                this::removeDocumentReplicationListener);
             docEndedListeners.add(token);
             setProgressLevel();
             return token;
@@ -362,14 +368,15 @@ public abstract class AbstractReplicator extends BaseReplicator {
      * Remove the given ReplicatorChangeListener or DocumentReplicationListener from the this replicator.
      *
      * @param token returned by a previous call to addChangeListener or addDocumentListener.
+     * @deprecated use ListenerToken.remove
      */
+    @Deprecated
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
         synchronized (getReplicatorLock()) {
-            if (token instanceof ReplicatorChangeListenerToken) { changeListeners.remove(token); }
-            else if (token instanceof DocumentReplicationListenerToken) { docEndedListeners.remove(token); }
+            if (token instanceof ReplicatorChangeListenerToken) { removeReplicationListener(token); }
+            else if (token instanceof DocumentReplicationListenerToken) { removeDocumentReplicationListener(token); }
             else { throw new IllegalArgumentException("unexpected token: " + token); }
-            setProgressLevel();
         }
     }
 
@@ -590,6 +597,16 @@ public abstract class AbstractReplicator extends BaseReplicator {
         synchronized (getReplicatorLock()) { return changeListeners.size() + docEndedListeners.size(); }
     }
 
+    @VisibleForTesting
+    int getDocEndListenerCount() {
+        synchronized (getReplicatorLock()) { return docEndedListeners.size(); }
+    }
+
+    @VisibleForTesting
+    int getReplicatorListenerCount() {
+        synchronized (getReplicatorLock()) { return changeListeners.size(); }
+    }
+
     //---------------------------------------------
     // Private methods
     //---------------------------------------------
@@ -718,6 +735,17 @@ public abstract class AbstractReplicator extends BaseReplicator {
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
         return (filter != null) && filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
+    }
+
+    private void removeDocumentReplicationListener(@NonNull ListenerToken token) {
+        synchronized (getReplicatorLock()) {
+            docEndedListeners.remove(token);
+            setProgressLevel();
+        }
+    }
+
+    private void removeReplicationListener(@NonNull ListenerToken token) {
+        synchronized (getReplicatorLock()) { changeListeners.remove(token); }
     }
 
     @GuardedBy("getReplicatorLock()")

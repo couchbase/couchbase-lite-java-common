@@ -15,7 +15,21 @@
 //
 package com.couchbase.lite;
 
+import androidx.annotation.NonNull;
+
+import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Preconditions;
+
+
 /**
- * Opaque interface representing a subscription to a listener.
+ * Base class for a removable subscription to an observable.
  */
-public interface ListenerToken { }
+public class ListenerToken {
+    private final Fn.Consumer<ListenerToken> onRemove;
+
+    protected ListenerToken(@NonNull Fn.Consumer<ListenerToken> onRemove) {
+        this.onRemove = Preconditions.assertNotNull(onRemove, "onRemove task");
+    }
+
+    public void remove() { onRemove.accept(this); }
+}

@@ -86,6 +86,7 @@
 
     <!-- BEST PRACTICE -->
     <rule ref="category/java/bestpractices.xml">
+        <exclude name="AbstractClassWithoutAbstractMethod" />
         <exclude name="SwitchStmtsShouldHaveDefault" />
         <exclude name="UseVarargs" />
 

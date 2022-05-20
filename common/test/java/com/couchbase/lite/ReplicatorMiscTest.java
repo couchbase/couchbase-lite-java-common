@@ -49,11 +49,11 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         final ReplicatorChangeListener listener = change -> { };
 
         // custom Executor
-        ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener);
+        ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener, t -> { });
         assertEquals(executor, token.getExecutor());
 
         // UI thread Executor
-        token = new ReplicatorChangeListenerToken(null, listener);
+        token = new ReplicatorChangeListenerToken(null, listener, t -> { });
         assertEquals(CouchbaseLiteInternal.getExecutionService().getDefaultExecutor(), token.getExecutor());
     }
 
@@ -141,6 +141,30 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test(expected = IllegalArgumentException.class)
     public void testIllegalHeartbeatMax() throws URISyntaxException {
         new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(2147484);
+    }
+
+    @Test
+    public void testDocumentEndListenerTokenRemove() throws URISyntaxException {
+        final Replicator repl = testReplicator(new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()));
+        assertEquals(0, repl.getDocEndListenerCount());
+        ListenerToken token = repl.addDocumentReplicationListener(r -> { });
+        assertEquals(1, repl.getDocEndListenerCount());
+        token.remove();
+        assertEquals(0, repl.getDocEndListenerCount());
+        token.remove();
+        assertEquals(0, repl.getDocEndListenerCount());
+    }
+
+    @Test
+    public void tesReplicationListenerTokenRemove() throws URISyntaxException {
+        final Replicator repl = testReplicator(new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()));
+        assertEquals(0, repl.getReplicatorListenerCount());
+        ListenerToken token = repl.addChangeListener(r -> { });
+        assertEquals(1, repl.getReplicatorListenerCount());
+        token.remove();
+        assertEquals(0, repl.getReplicatorListenerCount());
+        token.remove();
+        assertEquals(0, repl.getReplicatorListenerCount());
     }
 
     @Test

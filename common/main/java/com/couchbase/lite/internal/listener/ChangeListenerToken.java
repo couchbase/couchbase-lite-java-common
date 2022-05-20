@@ -23,9 +23,10 @@ import java.util.concurrent.Executor;
 import com.couchbase.lite.ChangeListener;
 import com.couchbase.lite.ListenerToken;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.Fn;
 
 
-public class ChangeListenerToken<T> implements ListenerToken {
+public class ChangeListenerToken<T> extends ListenerToken {
     @NonNull
     private final ChangeListener<T> listener;
     @Nullable
@@ -34,7 +35,11 @@ public class ChangeListenerToken<T> implements ListenerToken {
     @Nullable
     private Object key;
 
-    public ChangeListenerToken(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
+    public ChangeListenerToken(
+        @Nullable Executor executor,
+        @NonNull ChangeListener<T> listener,
+        @NonNull Fn.Consumer<ListenerToken> onRemove) {
+        super(onRemove);
         this.executor = executor;
         this.listener = listener;
     }

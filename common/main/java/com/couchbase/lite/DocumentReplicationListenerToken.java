@@ -21,19 +21,23 @@ import androidx.annotation.Nullable;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-final class DocumentReplicationListenerToken implements ListenerToken {
+final class DocumentReplicationListenerToken extends ListenerToken {
     @NonNull
     private final DocumentReplicationListener listener;
     @Nullable
     private final Executor executor;
 
-    DocumentReplicationListenerToken(@Nullable Executor executor, @NonNull DocumentReplicationListener listener) {
-        Preconditions.assertNotNull(listener, "listener");
+    DocumentReplicationListenerToken(
+        @Nullable Executor executor,
+        @NonNull DocumentReplicationListener listener,
+        @NonNull Fn.Consumer<ListenerToken> onRemove) {
+        super(onRemove);
         this.executor = executor;
-        this.listener = listener;
+        this.listener = Preconditions.assertNotNull(listener, "listener");
     }
 
     void notify(@NonNull final DocumentReplication update) {
