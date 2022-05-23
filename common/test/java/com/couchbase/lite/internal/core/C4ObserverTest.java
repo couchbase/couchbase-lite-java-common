@@ -20,52 +20,53 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 
 public class C4ObserverTest extends C4BaseTest {
+    private final AtomicInteger callbackCount = new AtomicInteger(0);
     private C4DatabaseObserver dbObserver;
-    private C4DocumentObserver docObserver;
-    private AtomicInteger dbCallbackCalls;
-
-    @Before
-    public final void setUpC4ObserverTest() {
-        dbCallbackCalls = new AtomicInteger(0);
-    }
 
     @After
     public final void tearDownC4ObserverTest() {
         if (dbObserver != null) { dbObserver.close(); }
-        if (docObserver != null) { docObserver.close(); }
+    }
+
+    // - Doc Observer
+    @Test
+    public void testDocObserver() throws LiteCoreException {
+        createRev("A", "1-aa", fleeceBody);
+        try (C4DocumentObserver obs = this.c4Database.createDocumentObserver("A", callbackCount::incrementAndGet)) {
+            assertEquals(0, callbackCount.get());
+
+            createRev("A", "2-bb", fleeceBody);
+            createRev("B", "1-bb", fleeceBody);
+            assertEquals(1, callbackCount.get());
+        }
     }
 
     // - DB Observer
     @Test
     public void testDBObserver() throws LiteCoreException {
-        dbObserver = this.c4Database.createDatabaseObserver(this, (observer, context) -> {
-            assertEquals(C4ObserverTest.this, context);
-            dbCallbackCalls.incrementAndGet();
-        });
-        assertEquals(0, dbCallbackCalls.get());
+        dbObserver = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet);
+        assertEquals(0, callbackCount.get());
 
         createRev("A", "1-aa", fleeceBody);
-        assertEquals(1, dbCallbackCalls.get());
+        assertEquals(1, callbackCount.get());
         createRev("B", "1-bb", fleeceBody);
-        assertEquals(1, dbCallbackCalls.get());
+        assertEquals(1, callbackCount.get());
 
         checkChanges(Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
 
         createRev("B", "2-bbbb", fleeceBody);
-        assertEquals(2, dbCallbackCalls.get());
+        assertEquals(2, callbackCount.get());
         createRev("C", "1-cc", fleeceBody);
-        assertEquals(2, dbCallbackCalls.get());
+        assertEquals(2, callbackCount.get());
 
         checkChanges(Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
 
@@ -73,42 +74,19 @@ public class C4ObserverTest extends C4BaseTest {
         dbObserver = null;
 
         createRev("A", "2-aaaa", fleeceBody);
-        assertEquals(2, dbCallbackCalls.get());
-    }
-
-    // - Doc Observer
-    @Test
-    public void testDocObserver() throws LiteCoreException {
-        createRev("A", "1-aa", fleeceBody);
-
-        docObserver = this.c4Database.createDocumentObserver("A", this, (observer, docID, sequence, context) -> {
-            assertEquals(C4ObserverTest.this, context);
-            assertEquals("A", docID);
-            assertTrue(sequence > 0);
-            dbCallbackCalls.incrementAndGet();
-        });
-        assertEquals(0, dbCallbackCalls.get());
-
-        createRev("A", "2-bb", fleeceBody);
-        createRev("B", "1-bb", fleeceBody);
-        assertEquals(1, dbCallbackCalls.get());
+        assertEquals(2, callbackCount.get());
     }
 
     // - Multi-DBs Observer
     @Test
     public void testMultiDBsObserver() throws LiteCoreException {
-        dbObserver = this.c4Database.createDatabaseObserver(
-            this, (observer, context) -> {
-                assertEquals(C4ObserverTest.this, context);
-                dbCallbackCalls.incrementAndGet();
-            }
-        );
-        assertEquals(0, dbCallbackCalls.get());
+        dbObserver = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet);
+        assertEquals(0, callbackCount.get());
 
         createRev("A", "1-aa", fleeceBody);
-        assertEquals(1, dbCallbackCalls.get());
+        assertEquals(1, callbackCount.get());
         createRev("B", "1-bb", fleeceBody);
-        assertEquals(1, dbCallbackCalls.get());
+        assertEquals(1, callbackCount.get());
 
         checkChanges(Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
 
@@ -132,14 +110,14 @@ public class C4ObserverTest extends C4BaseTest {
             otherdb.endTransaction(commit);
         }
 
-        assertEquals(2, dbCallbackCalls.get());
+        assertEquals(2, callbackCount.get());
         checkChanges(Arrays.asList("c", "d", "e"), Arrays.asList("1-cc", "1-dd", "1-ee"), true);
 
         dbObserver.close();
         dbObserver = null;
 
         createRev("A", "2-aaaa", fleeceBody);
-        assertEquals(2, dbCallbackCalls.get());
+        assertEquals(2, callbackCount.get());
 
         otherdb.closeDb();
     }
@@ -147,48 +125,45 @@ public class C4ObserverTest extends C4BaseTest {
     // - Multi-DBObservers
     @Test
     public void testMultiDBObservers() throws LiteCoreException {
-        dbObserver = this.c4Database.createDatabaseObserver(this, (observer, context) -> {
-            assertEquals(C4ObserverTest.this, context);
-            dbCallbackCalls.incrementAndGet();
-        });
-        assertEquals(0, dbCallbackCalls.get());
+        dbObserver = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet);
+        assertEquals(0, callbackCount.get());
 
         final AtomicInteger dbCallbackCalls1 = new AtomicInteger(0);
-        C4DatabaseObserver dbObserver1 = this.c4Database.createDatabaseObserver(this, (observer, context) -> {
-            assertEquals(C4ObserverTest.this, context);
-            dbCallbackCalls1.incrementAndGet();
-        });
-        assertEquals(0, dbCallbackCalls1.get());
+        C4DatabaseObserver dbObserver1 = this.c4Database.createDatabaseObserver(dbCallbackCalls1::incrementAndGet);
+        try {
+            assertEquals(0, dbCallbackCalls1.get());
 
 
-        createRev("A", "1-aa", fleeceBody);
-        assertEquals(1, dbCallbackCalls.get());
-        assertEquals(1, dbCallbackCalls1.get());
-        createRev("B", "1-bb", fleeceBody);
-        assertEquals(1, dbCallbackCalls.get());
-        assertEquals(1, dbCallbackCalls1.get());
+            createRev("A", "1-aa", fleeceBody);
+            assertEquals(1, callbackCount.get());
+            assertEquals(1, dbCallbackCalls1.get());
+            createRev("B", "1-bb", fleeceBody);
+            assertEquals(1, callbackCount.get());
+            assertEquals(1, dbCallbackCalls1.get());
 
-        checkChanges(dbObserver, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
-        checkChanges(dbObserver1, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
+            checkChanges(dbObserver, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
+            checkChanges(dbObserver1, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
 
-        createRev("B", "2-bbbb", fleeceBody);
-        assertEquals(2, dbCallbackCalls.get());
-        assertEquals(2, dbCallbackCalls1.get());
-        createRev("C", "1-cc", fleeceBody);
-        assertEquals(2, dbCallbackCalls.get());
-        assertEquals(2, dbCallbackCalls1.get());
+            createRev("B", "2-bbbb", fleeceBody);
+            assertEquals(2, callbackCount.get());
+            assertEquals(2, dbCallbackCalls1.get());
+            createRev("C", "1-cc", fleeceBody);
+            assertEquals(2, callbackCount.get());
+            assertEquals(2, dbCallbackCalls1.get());
 
-        checkChanges(dbObserver, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
-        checkChanges(dbObserver1, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
+            checkChanges(dbObserver, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
+            checkChanges(dbObserver1, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
 
 
-        dbObserver.close();
-        dbObserver = null;
-
-        dbObserver1.close();
+            dbObserver.close();
+            dbObserver = null;
+        }
+        finally {
+            dbObserver1.close();
+        }
 
         createRev("A", "2-aaaa", fleeceBody);
-        assertEquals(2, dbCallbackCalls.get());
+        assertEquals(2, callbackCount.get());
         assertEquals(2, dbCallbackCalls1.get());
     }
 

@@ -22,7 +22,7 @@ import com.couchbase.lite.internal.core.C4DocumentObserver;
 import com.couchbase.lite.internal.listener.ChangeNotifier;
 
 
-class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
+class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> implements AutoCloseable {
     @NonNull
     private final Database db;
     @NonNull
@@ -34,17 +34,18 @@ class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
         this.db = db;
         this.docID = docID;
         this.observer = db.createDocumentObserver(
-            this,
             docID,
-            (ign1, ign2, ign3, context)
-                -> db.scheduleOnPostNotificationExecutor(((DocumentChangeNotifier) context)::postChange, 0)
+            () -> db.scheduleOnPostNotificationExecutor(this::postChange, 0)
         );
     }
+
+    @Override
+    public void close() { observer.close(); }
 
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { observer.close(); }
+        try { close(); }
         finally { super.finalize(); }
     }
 

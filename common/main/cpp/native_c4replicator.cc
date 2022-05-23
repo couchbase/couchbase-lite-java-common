@@ -284,7 +284,7 @@ static jboolean replicationFilter(
  * @param token
  */
 static bool pullFilterFunction(
-        C4String collectionName,
+        C4CollectionSpec collectionSpec,
         C4String docID,
         C4String revID,
         C4RevisionFlags flags,
@@ -306,7 +306,7 @@ static bool pullFilterFunction(
  * @param token
  */
 static bool pushFilterFunction(
-        C4String collectionName,
+        C4CollectionSpec collectionSpec,
         C4String docID,
         C4String revID,
         C4RevisionFlags flags,

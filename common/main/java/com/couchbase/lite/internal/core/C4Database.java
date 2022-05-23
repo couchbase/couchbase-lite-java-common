@@ -293,18 +293,13 @@ public abstract class C4Database extends C4NativePeer {
     ////////////////////////////////////////////////////////////////
 
     @NonNull
-    public C4DatabaseObserver createDatabaseObserver(
-        @NonNull Object context,
-        @NonNull C4DatabaseObserverListener listener) {
-        return C4DatabaseObserver.newObserver(getPeer(), listener, context);
+    public C4DatabaseObserver createDatabaseObserver(@NonNull Runnable listener) {
+        return C4DatabaseObserver.newObserver(getPeer(), listener);
     }
 
     @NonNull
-    public C4DocumentObserver createDocumentObserver(
-        @NonNull String docID,
-        @NonNull Object context,
-        @NonNull C4DocumentObserverListener listener) {
-        return C4DocumentObserver.newObserver(getPeer(), docID, listener, context);
+    public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
+        return C4DocumentObserver.newObserver(getPeer(), docID, listener);
     }
 
     ////////////////////////////////
@@ -451,15 +446,15 @@ public abstract class C4Database extends C4NativePeer {
         return C4Document.create(this, docID, mustExist);
     }
 
+    @NonNull
+    public FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
+
     //-------------------------------------------------------------------------
     // package access
     //-------------------------------------------------------------------------
 
     // !!!  Exposes the peer handle
     long getHandle() { return getPeer(); }
-
-    @NonNull
-    FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
 
     @VisibleForTesting
     @NonNull

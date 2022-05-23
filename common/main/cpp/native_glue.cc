@@ -145,18 +145,6 @@ namespace litecore {
 #endif
         }
 
-        void deleteGlobalRef(jobject gRef) {
-            JNIEnv *env = nullptr;
-            jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-            if (getEnvStat == JNI_OK) {
-                env->DeleteGlobalRef(gRef);
-            } else if (getEnvStat == JNI_EDETACHED) {
-                if (attachCurrentThread(&env) == 0) {
-                    env->DeleteGlobalRef(gRef);
-                }
-            }
-        }
-
         jstringSlice::jstringSlice(JNIEnv *env, jstring js) {
             assert(env != nullptr);
             if (js != nullptr) {

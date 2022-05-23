@@ -39,14 +39,7 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.lite.internal.utils.TestUtils;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 
 public class DocumentTest extends BaseDbTest {
@@ -1659,10 +1652,11 @@ public class DocumentTest extends BaseDbTest {
                 }
                 finally { latch.countDown(); }
             });
+        try {
+            baseTestDb.setDocumentExpiration("doc1", new Date(System.currentTimeMillis() + 100));
 
-        baseTestDb.setDocumentExpiration("doc1", new Date(System.currentTimeMillis() + 100));
-
-        try { assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
         finally { baseTestDb.removeChangeListener(token); }
     }
 

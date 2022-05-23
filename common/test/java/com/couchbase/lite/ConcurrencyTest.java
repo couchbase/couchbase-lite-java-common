@@ -447,19 +447,23 @@ public class ConcurrencyTest extends BaseDbTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
-        baseTestDb.addDocumentChangeListener("doc1", change -> latch2.countDown());
+        ListenerToken token = baseTestDb.addDocumentChangeListener("doc1", change -> latch2.countDown());
+        try {
+            testOnNewThread(
+                "testBlockDocumentChange",
+                latch1,
+                () -> {
+                    try { baseTestDb.save(new MutableDocument("doc1")); }
+                    catch (CouchbaseLiteException e) { fail(); }
+                });
 
-        testOnNewThread(
-            "testBlockDocumentChange",
-            latch1,
-            () -> {
-                try { baseTestDb.save(new MutableDocument("doc1")); }
-                catch (CouchbaseLiteException e) { fail(); }
-            });
-
-        assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
-        assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
-        checkForFailure();
+            assertTrue(latch1.await(TIMEOUT, TimeUnit.SECONDS));
+            assertTrue(latch2.await(TIMEOUT, TimeUnit.SECONDS));
+            checkForFailure();
+        }
+        finally {
+            baseTestDb.removeChangeListener(token);
+        }
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1407

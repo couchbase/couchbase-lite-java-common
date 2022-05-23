@@ -563,7 +563,7 @@ public abstract class C4Replicator extends C4NativePeer {
 
     protected abstract void releaseResources();
 
-    // Note: the reference in the REVERSE_LOOKUP_TABLE must already be gone, or we wouldn't be here...
+    // Note: the reference in the BOUND_REPLICATOR must already be gone, or we wouldn't be here...
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {

@@ -45,14 +45,13 @@ import com.couchbase.lite.internal.core.C4DatabaseChange;
 import com.couchbase.lite.internal.core.C4DatabaseObserver;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.core.C4DocumentObserver;
-import com.couchbase.lite.internal.core.C4DocumentObserverListener;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
-import com.couchbase.lite.internal.core.SharedKeys;
 import com.couchbase.lite.internal.exec.ClientTask;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
@@ -227,11 +226,12 @@ abstract class AbstractDatabase extends BaseDatabase {
     // Executor for LiveQuery.
     private final ExecutionService.CloseableExecutor queryExecutor;
 
-    private final SharedKeys sharedKeys;
+    private final FLSharedKeys sharedKeys;
 
     @GuardedBy("activeProcesses")
     private final Set<ActiveProcess<?>> activeProcesses;
 
+    // A map of doc ids to the groups of listeners listening for changes to that doc
     @GuardedBy("getDbLock()")
     private final Map<String, DocumentChangeNotifier> docChangeNotifiers;
 
@@ -286,7 +286,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         setC4DatabaseLocked(c4db);
 
         // Initialize a shared keys:
-        this.sharedKeys = new SharedKeys(c4db);
+        this.sharedKeys = c4db.getFLSharedKeys();
 
         // warn if logging has not been turned on
         Log.warn();
@@ -416,7 +416,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     /**
      * Deletes a document from the database. When write operations are executed
      * concurrently, the last writer will overwrite all other written values.
-     * Calling this function is the same as calling the delete(Document, ConcurrencyControl)
+     * Calling this function is the same as calling delete(Document, ConcurrencyControl)
      * function with LAST_WRITE_WINS concurrency control.
      *
      * @param document The document.
@@ -645,28 +645,29 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Deprecated
     @NonNull
-    public ListenerToken addDocumentChangeListener(@NonNull String id, @NonNull DocumentChangeListener listener) {
-        return addDocumentChangeListener(id, null, listener);
+    public ListenerToken addDocumentChangeListener(@NonNull String docId, @NonNull DocumentChangeListener listener) {
+        return addDocumentChangeListener(docId, null, listener);
     }
 
     /**
      * Adds a change listener for the changes that occur to the specified document with an executor on which
      * the changes will be posted to the listener.  If the executor is not specified, the changes will be
      * delivered on the UI thread for the Android platform and on an arbitrary thread for the Java platform.
+     *
      * @deprecated Use getDefaultCollection().
      */
     @Deprecated
     @NonNull
     public ListenerToken addDocumentChangeListener(
-        @NonNull String id,
+        @NonNull String docId,
         @Nullable Executor executor,
         @NonNull DocumentChangeListener listener) {
-        Preconditions.assertNotNull(id, "id");
+        Preconditions.assertNotNull(docId, "docId");
         Preconditions.assertNotNull(listener, "listener");
 
         synchronized (getDbLock()) {
             mustBeOpen();
-            return addDocumentChangeListenerLocked(id, executor, listener);
+            return addDocumentChangeListenerLocked(docId, executor, listener);
         }
     }
 
@@ -1059,11 +1060,8 @@ abstract class AbstractDatabase extends BaseDatabase {
     }
 
     @NonNull
-    C4DocumentObserver createDocumentObserver(
-        @NonNull ChangeNotifier<?> context,
-        @NonNull String docID,
-        @NonNull C4DocumentObserverListener listener) {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().createDocumentObserver(docID, context, listener); }
+    C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().createDocumentObserver(docID, listener); }
     }
 
     //////// REPLICATORS:
@@ -1369,7 +1367,10 @@ abstract class AbstractDatabase extends BaseDatabase {
         final String docID = (String) token.getKey();
         if (docChangeNotifiers.containsKey(docID)) {
             final DocumentChangeNotifier notifier = docChangeNotifiers.get(docID);
-            if ((notifier != null) && (notifier.removeChangeListener(token) == 0)) { docChangeNotifiers.remove(docID); }
+            if ((notifier != null) && (notifier.removeChangeListener(token) == 0)) {
+                docChangeNotifiers.remove(docID);
+                notifier.close();
+            }
         }
     }
 
@@ -1377,8 +1378,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     private void registerC4DbObserver() {
         if (!isOpen()) { return; }
         c4DbObserver = getOpenC4DbLocked().createDatabaseObserver(
-            this, (observer, context) -> scheduleOnPostNotificationExecutor(this::postDatabaseChanged, 0)
-        );
+            () -> scheduleOnPostNotificationExecutor(this::postDatabaseChanged, 0));
     }
 
     // ??? Refactor this to get rid of the warning
@@ -1576,7 +1576,7 @@ abstract class AbstractDatabase extends BaseDatabase {
             else {
                 try (FLSliceResult mergedBody = resolvedDoc.encode()) {
                     // if the resolved doc has attachments, be sure has the flag
-                    if (C4Document.dictContainsBlobs(mergedBody, sharedKeys.getFLSharedKeys())) {
+                    if (C4Document.dictContainsBlobs(mergedBody, sharedKeys)) {
                         mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
                     }
                     mergedBodyBytes = mergedBody.getBuf();
@@ -1726,7 +1726,7 @@ abstract class AbstractDatabase extends BaseDatabase {
             else if (!document.isEmpty()) {
                 // Encode properties to Fleece data:
                 body = document.encode();
-                if (C4Document.dictContainsBlobs(body, sharedKeys.getFLSharedKeys())) {
+                if (C4Document.dictContainsBlobs(body, sharedKeys)) {
                     revFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
                 }
             }

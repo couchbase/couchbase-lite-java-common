@@ -20,11 +20,8 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -35,23 +32,16 @@ public class C4DocumentObserver extends C4NativePeer {
     // Static Variables
     //-------------------------------------------------------------------------
 
-    // Long: handle to C4DocumentObserver's native peer
-    // C4DocumentObserver: The Java peer (the instance holding the handle that is the key)
-    private static final Map<Long, C4DocumentObserver> REVERSE_LOOKUP_TABLE
-        = Collections.synchronizedMap(new HashMap<>());
+    private static final NativeRefPeerBinding<C4DocumentObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
 
     //-------------------------------------------------------------------------
     // Static Factory Methods
     //-------------------------------------------------------------------------
 
     @NonNull
-    static C4DocumentObserver newObserver(
-        long db,
-        @NonNull String docID,
-        @NonNull C4DocumentObserverListener listener,
-        @NonNull Object context) {
-        final C4DocumentObserver observer = new C4DocumentObserver(db, docID, listener, context);
-        REVERSE_LOOKUP_TABLE.put(observer.getPeer(), observer);
+    static C4DocumentObserver newObserver(long db, @NonNull String docID, @NonNull Runnable listener) {
+        final C4DocumentObserver observer = new C4DocumentObserver(db, docID, listener);
+        BOUND_OBSERVERS.bind(observer.getPeer(), observer);
         return observer;
     }
 
@@ -66,10 +56,10 @@ public class C4DocumentObserver extends C4NativePeer {
             "C4DocumentObserver.callback @0x%x (%s): %s", peer, sequence, docID);
 
 
-        final C4DocumentObserver obs = REVERSE_LOOKUP_TABLE.get(peer);
-        if (obs == null) { return; }
+        final C4DocumentObserver observer = BOUND_OBSERVERS.getBinding(peer);
+        if (observer == null) { return; }
 
-        obs.listener.callback(obs, docID, sequence, obs.context);
+        observer.listener.run();
     }
 
 
@@ -78,22 +68,15 @@ public class C4DocumentObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    private final C4DocumentObserverListener listener;
-    @NonNull
-    private final Object context;
+    private final Runnable listener;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4DocumentObserver(
-        long db,
-        @NonNull String docID,
-        @NonNull C4DocumentObserverListener listener,
-        @NonNull Object context) {
+    C4DocumentObserver(long db, @NonNull String docID, @NonNull Runnable listener) {
         super(create(db, docID));
         this.listener = listener;
-        this.context = context;
     }
 
     //-------------------------------------------------------------------------
@@ -102,11 +85,9 @@ public class C4DocumentObserver extends C4NativePeer {
 
     @CallSuper
     @Override
-    public void close() {
-        REVERSE_LOOKUP_TABLE.remove(getPeerUnchecked());
-        closePeer(null);
-    }
+    public void close() { closePeer(null); }
 
+    // !!! This method will, invariably, cause a native crash: CBL-3193
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
@@ -118,8 +99,14 @@ public class C4DocumentObserver extends C4NativePeer {
     // Private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4DocumentObserver::free); }
-
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                BOUND_OBSERVERS.unbind(peer);
+                C4DocumentObserver.free(peer);
+            });
+    }
 
     //-------------------------------------------------------------------------
     // native methods

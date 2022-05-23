@@ -19,11 +19,8 @@ import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
 import com.couchbase.lite.internal.support.Log;
 
 
@@ -35,10 +32,7 @@ public class C4DatabaseObserver extends C4NativePeer {
     // Static Variables
     //-------------------------------------------------------------------------
 
-    // Long: handle to C4DatabaseObserver's native peer
-    // C4DatabaseObserver: The Java peer (the instance holding the handle that is the key)
-    private static final Map<Long, C4DatabaseObserver> REVERSE_LOOKUP_TABLE
-        = Collections.synchronizedMap(new HashMap<>());
+    private static final NativeRefPeerBinding<C4DatabaseObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
 
     //-------------------------------------------------------------------------
     // JNI callback methods
@@ -48,10 +42,10 @@ public class C4DatabaseObserver extends C4NativePeer {
     static void callback(long peer) {
         Log.d(LogDomain.DATABASE, "C4DatabaseObserver.callback @%x", peer);
 
-        final C4DatabaseObserver obs = REVERSE_LOOKUP_TABLE.get(peer);
-        if (obs == null) { return; }
+        final C4DatabaseObserver observer = BOUND_OBSERVERS.getBinding(peer);
+        if (observer == null) { return; }
 
-        obs.listener.callback(obs, obs.context);
+        observer.listener.run();
     }
 
     //-------------------------------------------------------------------------
@@ -59,12 +53,9 @@ public class C4DatabaseObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    static C4DatabaseObserver newObserver(
-        long db,
-        @NonNull C4DatabaseObserverListener listener,
-        @NonNull Object context) {
-        final C4DatabaseObserver observer = new C4DatabaseObserver(db, listener, context);
-        REVERSE_LOOKUP_TABLE.put(observer.getPeer(), observer);
+    static C4DatabaseObserver newObserver(long db, @NonNull Runnable listener) {
+        final C4DatabaseObserver observer = new C4DatabaseObserver(db, listener);
+        BOUND_OBSERVERS.bind(observer.getPeer(), observer);
         return observer;
     }
 
@@ -74,18 +65,15 @@ public class C4DatabaseObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    private final C4DatabaseObserverListener listener;
-    @NonNull
-    private final Object context;
+    private final Runnable listener;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4DatabaseObserver(long db, @NonNull C4DatabaseObserverListener listener, @NonNull Object context) {
+    C4DatabaseObserver(long db, @NonNull Runnable listener) {
         super(create(db));
         this.listener = listener;
-        this.context = context;
     }
 
     //-------------------------------------------------------------------------
@@ -98,12 +86,10 @@ public class C4DatabaseObserver extends C4NativePeer {
     @CallSuper
     @Override
     public void close() {
-        REVERSE_LOOKUP_TABLE.remove(getPeerUnchecked());
+        BOUND_OBSERVERS.unbind(getPeerUnchecked());
         closePeer(null);
     }
 
-    // This is whistling in the wind.  Unless the entry is removed
-    // from the REVERSE_LOOKUP_TABLE, we'll never get here.
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
@@ -111,7 +97,10 @@ public class C4DatabaseObserver extends C4NativePeer {
         finally { super.finalize(); }
     }
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4DatabaseObserver::free); }
+    private void closePeer(@Nullable LogDomain domain) {
+        BOUND_OBSERVERS.unbind(getPeerUnchecked());
+        releasePeer(domain, C4DatabaseObserver::free);
+    }
 
     //-------------------------------------------------------------------------
     // native methods

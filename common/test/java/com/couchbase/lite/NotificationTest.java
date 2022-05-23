@@ -22,10 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 
 public class NotificationTest extends BaseDbTest {
@@ -148,6 +145,8 @@ public class NotificationTest extends BaseDbTest {
     public void testExternalChanges() throws InterruptedException, CouchbaseLiteException {
         final Database db2 = baseTestDb.copy();
         assertNotNull(db2);
+
+        ListenerToken token = null;
         try {
             final CountDownLatch latchDB = new CountDownLatch(1);
             db2.addChangeListener(testSerialExecutor, change -> {
@@ -158,7 +157,7 @@ public class NotificationTest extends BaseDbTest {
             });
 
             final CountDownLatch latchDoc = new CountDownLatch(1);
-            db2.addDocumentChangeListener("doc-6", testSerialExecutor, change -> {
+            token = db2.addDocumentChangeListener("doc-6", testSerialExecutor, change -> {
                 assertNotNull(change);
                 assertEquals("doc-6", change.getDocumentID());
                 Document doc = db2.getDocument(change.getDocumentID());
@@ -179,6 +178,7 @@ public class NotificationTest extends BaseDbTest {
             assertTrue(latchDoc.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
+            if (token != null) { db2.removeChangeListener(token); }
             db2.close();
         }
     }
@@ -235,29 +235,30 @@ public class NotificationTest extends BaseDbTest {
                 latch2.countDown();
             }
         };
+
         ListenerToken token = baseTestDb.addDocumentChangeListener("doc1", listener);
+        try {
+            // Update doc1:
+            doc1 = savedDoc1.toMutable();
+            doc1.setValue("name", "Scott Tiger");
+            savedDoc1 = saveDocInBaseTestDb(doc1);
 
-        // Update doc1:
-        doc1 = savedDoc1.toMutable();
-        doc1.setValue("name", "Scott Tiger");
-        savedDoc1 = saveDocInBaseTestDb(doc1);
+            // Let's only wait for 0.5 seconds:
+            assertTrue(latch1.await(500, TimeUnit.MILLISECONDS));
 
-        // Let's only wait for 0.5 seconds:
-        assertTrue(latch1.await(500, TimeUnit.MILLISECONDS));
+            // Remove change listener:
+            baseTestDb.removeChangeListener(token);
 
-        // Remove change listener:
-        baseTestDb.removeChangeListener(token);
+            // Update doc1:
+            doc1 = savedDoc1.toMutable();
+            doc1.setValue("name", "Scotty");
+            saveDocInBaseTestDb(doc1);
 
-        // Update doc1:
-        doc1 = savedDoc1.toMutable();
-        doc1.setValue("name", "Scotty");
-        saveDocInBaseTestDb(doc1);
-
-        // Let's only wait for 0.5 seconds:
-        assertFalse(latch2.await(500, TimeUnit.MILLISECONDS));
-        assertEquals(1, latch2.getCount());
-
-        // Remove again:
-        baseTestDb.removeChangeListener(token);
+            assertFalse(latch2.await(500, TimeUnit.MILLISECONDS));
+            assertEquals(1, latch2.getCount());
+        }
+        finally {
+            baseTestDb.removeChangeListener(token);
+        }
     }
 }
