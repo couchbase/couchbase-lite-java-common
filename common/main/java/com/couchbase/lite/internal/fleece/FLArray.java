@@ -21,20 +21,32 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.couchbase.lite.internal.fleece.impl.NativeFLArray;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class FLArray {
+
+    public interface NativeImpl {
+        long nCount(long array);
+        long nGet(long array, long index);
+    }
+
+    static volatile NativeImpl nativeImpl = new NativeFLArray();
+    @NonNull
+    public static FLArray create(long peer) { return new FLArray(nativeImpl, peer); }
+
     private final long peer; // pointer to FLArray
+    private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // constructor
     //-------------------------------------------------------------------------
-
-    public FLArray(long peer) {
+    FLArray(@NonNull NativeImpl impl, long peer) {
         Preconditions.assertNotZero(peer, "peer");
         this.peer = peer;
+        this.impl = impl;
     }
 
     //-------------------------------------------------------------------------
@@ -46,7 +58,7 @@ public class FLArray {
      *
      * @return the number of items in an array; 0 if peer is null.
      */
-    public long count() { return count(peer); }
+    public long count() { return impl.nCount(peer); }
 
     /**
      * Returns an value at an array index, or null if the index is out of range.
@@ -55,7 +67,7 @@ public class FLArray {
      * @return the FLValue at index
      */
     @NonNull
-    public FLValue get(long index) { return new FLValue(get(peer, index)); }
+    public FLValue get(long index) { return new FLValue(impl.nGet(peer, index)); }
 
     @NonNull
     public List<Object> asArray() { return asTypedArray(); }
@@ -82,12 +94,4 @@ public class FLArray {
 
     @Nullable
     <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    private static native long count(long array);
-
-    private static native long get(long array, long index);
 }

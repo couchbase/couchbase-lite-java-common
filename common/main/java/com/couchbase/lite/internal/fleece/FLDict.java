@@ -22,18 +22,34 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.couchbase.lite.internal.fleece.impl.NativeFLDict;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class FLDict {
+
+    public interface NativeImpl {
+        long nCount(long dict);
+        long nGet(long dict, byte[] keyString);
+    }
+
+    static volatile NativeImpl nativeImpl = new NativeFLDict();
+
+    @NonNull
+    public static FLDict create(long peer) { return new FLDict(nativeImpl, peer); }
+
     private final long handle; // hold pointer to FLDict
+    private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    public FLDict(long handle) { this.handle = Preconditions.assertNotZero(handle, "handle"); }
+    FLDict(@NonNull NativeImpl impl, long handle) {
+        this.impl = impl;
+        this.handle = Preconditions.assertNotZero(handle, "handle");
+    }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -42,13 +58,13 @@ public class FLDict {
     @NonNull
     public FLValue toFLValue() { return new FLValue(handle); }
 
-    public long count() { return count(handle); }
+    public long count() { return impl.nCount(handle); }
 
     @Nullable
     public FLValue get(@Nullable String key) {
         if (key == null) { return null; }
 
-        final long hValue = get(handle, key.getBytes(StandardCharsets.UTF_8));
+        final long hValue = impl.nGet(handle, key.getBytes(StandardCharsets.UTF_8));
 
         return hValue != 0L ? new FLValue(hValue) : null;
     }
@@ -75,25 +91,4 @@ public class FLDict {
 
     @Nullable
     <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Returns the number of items in a dictionary, or 0 if the pointer is nullptr.
-     *
-     * @param dict FLDict
-     * @return uint32_t
-     */
-    static native long count(long dict);
-
-    /**
-     * Looks up a key in a _sorted_ dictionary, using a shared-keys mapping.
-     *
-     * @param dict      FLDict
-     * @param keyString FLSlice
-     * @return FLValue
-     */
-    static native long get(long dict, byte[] keyString);
 }

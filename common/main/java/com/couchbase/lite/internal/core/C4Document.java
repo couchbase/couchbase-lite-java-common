@@ -152,7 +152,7 @@ public final class C4Document extends C4NativePeer {
     @Nullable
     public FLDict getSelectedBody2() {
         final long value = withPeer(0L, C4Document::getSelectedBody2);
-        return value == 0 ? null : new FLDict(value);
+        return value == 0 ? null : FLDict.create(value);
     }
 
     // - Lifecycle

@@ -17,9 +17,9 @@
 //
 
 #include "native_glue.hh"
-#include "com_couchbase_lite_internal_fleece_FLArray.h"
+#include "com_couchbase_lite_internal_fleece_impl_NativeFLArray.h"
 #include "com_couchbase_lite_internal_fleece_FLArrayIterator.h"
-#include "com_couchbase_lite_internal_fleece_FLDict.h"
+#include "com_couchbase_lite_internal_fleece_impl_NativeFLDict.h"
 #include "com_couchbase_lite_internal_fleece_FLDictIterator.h"
 #include "com_couchbase_lite_internal_fleece_FLValue.h"
 #include "com_couchbase_lite_internal_fleece_FLEncoder.h"
@@ -30,26 +30,26 @@ using namespace litecore::jni;
 
 extern "C" {
 // ----------------------------------------------------------------------------
-// FLArray
+// NativeFLArray
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLArray
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLArray
  * Method:    count
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLArray_count(JNIEnv *env, jclass ignore, jlong jarray) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_count(JNIEnv *env, jclass ignore, jlong jarray) {
     return (jlong) FLArray_Count((FLArray) jarray);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLArray
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLArray
  * Method:    get
  * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLArray_get(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_get(
         JNIEnv *env,
         jclass ignore,
         jlong jarray,
@@ -125,16 +125,16 @@ Java_com_couchbase_lite_internal_fleece_FLArrayIterator_free(JNIEnv *env, jclass
 }
 
 // ----------------------------------------------------------------------------
-// FLDict
+// NativeFLDict
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLDict
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLDict
  * Method:    count
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDict_count(JNIEnv *env, jclass ignore, jlong jdict) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_count(JNIEnv *env, jclass ignore, jlong jdict) {
     return (jlong) FLDict_Count((FLDict) jdict);
 }
 
@@ -144,7 +144,7 @@ Java_com_couchbase_lite_internal_fleece_FLDict_count(JNIEnv *env, jclass ignore,
  * Signature: (J[B)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDict_get(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_get(
         JNIEnv *env,
         jclass ignore,
         jlong jdict,

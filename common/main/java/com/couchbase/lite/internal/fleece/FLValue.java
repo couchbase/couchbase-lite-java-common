@@ -201,7 +201,7 @@ public class FLValue {
      * @return String
      */
     @NonNull
-    public FLDict asFLDict() { return new FLDict(asDict(handle)); }
+    public FLDict asFLDict() { return FLDict.create(asDict(handle)); }
 
     /**
      * If a FLValue represents an array, returns it cast to FLDict, else nullptr.
@@ -247,7 +247,7 @@ public class FLValue {
     <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
 
     @NonNull
-    FLArray asFLArray() { return new FLArray(asArray(handle)); }
+    FLArray asFLArray() { return FLArray.create(asArray(handle)); }
 
     //-------------------------------------------------------------------------
     // native methods

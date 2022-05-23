@@ -734,7 +734,9 @@ public abstract class AbstractReplicator extends BaseReplicator {
         long dict,
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
-        return (filter != null) && filter.filtered(new Document(getDatabase(), docId, revId, new FLDict(dict)), flags);
+        return (filter != null) && filter.filtered(
+            new Document(getDatabase(), docId, revId, FLDict.create(dict)),
+            flags);
     }
 
     private void removeDocumentReplicationListener(@NonNull ListenerToken token) {
