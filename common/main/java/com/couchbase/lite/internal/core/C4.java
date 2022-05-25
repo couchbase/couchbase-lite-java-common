@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.impl.NativeC4;
 
 
@@ -33,13 +34,17 @@ public final class C4 {
         String nGetBuildInfo();
         @Nullable
         String nGetVersion();
+        void nDebug(boolean debugging);
+        void nSetTempDir(@NonNull String tempDir) throws LiteCoreException;
+        @Nullable
+        String nGetMessage(int domain, int code, int internalInfo);
     }
 
     @NonNull
     @VisibleForTesting
     static volatile NativeImpl nativeImpl = new NativeC4();
 
-    public static void setenv(@NonNull String name, @NonNull String value, int overwrite) {
+    public static void setEnv(@NonNull String name, @NonNull String value, int overwrite) {
         nativeImpl.nSetenv(name, value, overwrite);
     }
 
@@ -51,4 +56,13 @@ public final class C4 {
 
     @Nullable
     public static String getVersion() { return nativeImpl.nGetVersion(); }
+
+    public static void debug(boolean debugging) { nativeImpl.nDebug(debugging); }
+
+    public static void setTempDir(@NonNull String tempDir) throws LiteCoreException { nativeImpl.nSetTempDir(tempDir); }
+
+    @Nullable
+    public static String getMessage(int domain, int code, int internalInfo) {
+        return nativeImpl.nGetMessage(domain, code, internalInfo);
+    }
 }

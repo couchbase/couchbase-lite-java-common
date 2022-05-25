@@ -64,7 +64,7 @@ public class C4BaseTest extends BaseTest {
     public final void setUpC4BaseTest() throws CouchbaseLiteException {
         final String testDirName = getUniqueName("c4_test");
         try {
-            C4.setenv("TMPDIR", getScratchDirectoryPath(testDirName), 1);
+            C4.setEnv("TMPDIR", getScratchDirectoryPath(testDirName), 1);
 
             final File parentDir = new File(CouchbaseLiteInternal.getDefaultDbDir(), testDirName);
             if (!parentDir.mkdirs()) { throw new IOException("Can't create test db directory: " + parentDir); }

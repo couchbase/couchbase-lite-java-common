@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Map;
 
-import com.couchbase.lite.internal.core.C4Base;
+import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Error;
 import com.couchbase.lite.internal.core.CBLVersion;
@@ -57,7 +57,7 @@ public final class CouchbaseLiteException extends Exception {
     public static CouchbaseLiteException toCouchbaseLiteException(int domain, int status, int info) {
         return ((domain == 0) || (status == 0))
             ? toCouchbaseLiteException(domain, status, null, null)
-            : toCouchbaseLiteException(domain, status, C4Base.getMessage(domain, status, info), null);
+            : toCouchbaseLiteException(domain, status, C4.getMessage(domain, status, info), null);
     }
 
     @NonNull

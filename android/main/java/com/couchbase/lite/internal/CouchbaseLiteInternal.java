@@ -37,7 +37,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.R;
 import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
-import com.couchbase.lite.internal.core.C4Base;
+import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
@@ -56,7 +56,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public final class CouchbaseLiteInternal {
 
     // Utility class
-    private CouchbaseLiteInternal() {}
+    private CouchbaseLiteInternal() { }
 
     public static final String SCRATCH_DIR_NAME = "CouchbaseLiteTemp";
 
@@ -96,7 +96,7 @@ public final class CouchbaseLiteInternal {
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
 
-        C4Base.debug(debugging);
+        C4.debug(debugging);
 
         Log.initLogging(loadErrorMessages(ctxt));
 
@@ -171,7 +171,7 @@ public final class CouchbaseLiteInternal {
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {
         try {
-            synchronized (LOCK) { C4Base.setTempDir(scratchDir.getAbsolutePath()); }
+            synchronized (LOCK) { C4.setTempDir(scratchDir.getAbsolutePath()); }
         }
         catch (LiteCoreException e) { Log.w(LogDomain.DATABASE, "Failed to set c4TmpDir", e); }
     }

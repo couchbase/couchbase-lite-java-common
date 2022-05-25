@@ -57,8 +57,8 @@ set_property( TARGET LiteCore PROPERTY
 
 add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4.cc
-    ${JNI_SRC}/native_c4base.cc
     ${JNI_SRC}/native_c4blobstore.cc
+    ${JNI_SRC}/native_c4collection.cc
     ${JNI_SRC}/native_c4database.cc
     ${JNI_SRC}/native_c4docenumerator.cc
     ${JNI_SRC}/native_c4document.cc

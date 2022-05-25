@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.core.C4Base;
+import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.support.Log;
@@ -78,7 +78,7 @@ public final class CouchbaseLiteInternal {
 
         NativeLibrary.load(tmpDir);
 
-        C4Base.debug(debugging);
+        C4.debug(debugging);
 
         Log.initLogging(loadErrorMessages());
 
@@ -132,7 +132,7 @@ public final class CouchbaseLiteInternal {
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {
         try {
-            synchronized (LOCK) { C4Base.setTempDir(scratchDir.getAbsolutePath()); }
+            synchronized (LOCK) { C4.setTempDir(scratchDir.getAbsolutePath()); }
         }
         catch (LiteCoreException e) { Log.w(LogDomain.DATABASE, "Failed to set c4TmpDir", e); }
     }

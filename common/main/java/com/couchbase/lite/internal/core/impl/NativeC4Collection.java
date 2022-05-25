@@ -21,6 +21,11 @@ import androidx.annotation.Nullable;
 
 @SuppressWarnings("PMD.UnusedPrivateMethod")
 public class NativeC4Collection {
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+
     private static native long getDefaultCollection(long c4Db);
 
     private static native boolean hasCollection(long c4Db, @Nullable String scope, @NonNull String collection);

@@ -1,7 +1,5 @@
 //
-// native_c4.cc
-//
-// Copyright (c) 2017 Couchbase, Inc All rights reserved.
+// Copyright (c) 2022 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +21,7 @@
 
 #include "com_couchbase_lite_internal_core_impl_NativeC4.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Log.h"
-#include "com_couchbase_lite_internal_core_NativeC4Key.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Key.h"
 #include "native_glue.hh"
 
 using namespace litecore;
@@ -203,6 +201,50 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_getVersion(JNIEnv *env, jcla
     jstring jstr = toJString(env, result);
     c4slice_free(result);
     return jstr;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
+ * Method:    debug
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4_debug(JNIEnv *env, jclass ignore, jboolean debugging) {
+    c4log_enableFatalExceptionBacktrace();
+    if (debugging)
+        c4log_warnOnErrors(true);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
+ * Method:    getMessage
+ * Signature: (III)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4_getMessage(
+        JNIEnv *env,
+        jclass ignore,
+        jint jdomain,
+        jint jcode,
+        jint jinfo) {
+    C4Error c4err = {(C4ErrorDomain) jdomain, (int) jcode,  (unsigned) jinfo};
+    C4StringResult msg = c4error_getMessage(c4err);
+    jstring result = toJString(env, msg);
+    c4slice_free(msg);
+    return result;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
+ * Method:    setTempDir
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir(JNIEnv *env, jclass ignore, jstring jtempDir) {
+    jstringSlice tempDir(env, jtempDir);
+    C4Error error = {};
+    if (!c4_setTempDir(tempDir, &error))
+        throwError(env, error);
 }
 
 // ----------------------------------------------------------------------------
