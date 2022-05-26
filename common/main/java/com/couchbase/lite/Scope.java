@@ -25,16 +25,9 @@ import java.util.Objects;
 import java.util.Set;
 
 
+// This is still assuming that we can cache the collections...
 public class Scope {
     public static final String DEFAULT_NAME = "_default";
-
-    @NonNull
-    static Scope getDefault(@NonNull AbstractDatabase db) {
-        final Scope defaultScope = new Scope(DEFAULT_NAME, db);
-        defaultScope.addCollection(Collection.getDefault(defaultScope));
-        return defaultScope;
-    }
-
 
     @NonNull
     private final String name;
@@ -43,7 +36,7 @@ public class Scope {
     @NonNull
     private final Map<String, Collection> collections = new HashMap<>();
 
-    public Scope(@NonNull String name, @NonNull AbstractDatabase db) {
+    Scope(@NonNull String name, @NonNull AbstractDatabase db) {
         this.name = name;
         this.db = db;
     }
@@ -55,7 +48,6 @@ public class Scope {
      */
     @NonNull
     public String getName() { return name; }
-
 
     /**
      * Get all collections in the scope.
@@ -92,16 +84,32 @@ public class Scope {
     @NonNull
     Database getDatabase() { return (Database) db; }
 
-    void addCollection(@NonNull Collection collection) { collections.put(collection.getName(), collection); }
+    int getCollectionCount() { return collections.size(); }
 
-    void deleteCollection(@NonNull Collection collection) { collections.remove(collection.getName()); }
+    @NonNull
+    Collection getOrAddCollection(@NonNull String collectionName) {
+        final Collection collection = getCollection(collectionName);
+        return (collection != null) ? collection : addCollection(collectionName);
+    }
 
-    void deleteCollection(@NonNull String name) {
-        final Collection collection = collections.get(name);
+    @NonNull
+    Collection addCollection(@NonNull String collectionName) {
+        if (DEFAULT_NAME.equals(name)) { throw new IllegalArgumentException("Cannot create the default collection"); }
+        final Collection collection = db.addCollection(this, collectionName);
+        collections.put(name, collection);
+        return collection;
+    }
+
+    void deleteCollection(@NonNull String name) { deleteCollection(collections.get(name)); }
+
+    void deleteCollection(@Nullable Collection collection) {
         if (collection == null) { return; }
-        deleteCollection(collection);
+        db.deleteCollection(collection);
+        collections.remove(collection.getName());
     }
 
     @Nullable
     Collection getDefaultCollection() { return getCollection(Collection.DEFAULT_NAME); }
+
+    void cacheCollecion(@NonNull Collection collection) { collections.put(name, collection); }
 }

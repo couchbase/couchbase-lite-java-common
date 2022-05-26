@@ -101,7 +101,9 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
         if (!cls_C4DocEnded)
             return false;
 
-        m_C4DocEnded_init = env->GetMethodID(cls_C4DocEnded, "<init>", "(Ljava/lang/String;Ljava/lang/String;IJIIIZ)V");
+        m_C4DocEnded_init = env->GetMethodID(
+                cls_C4DocEnded, "<init>",
+                "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJIIIZ)V");
         if (!m_C4DocEnded_init)
             return false;
     }
@@ -122,12 +124,16 @@ static jobject toJavaReplStatus(JNIEnv *env, C4ReplicatorStatus status) {
 }
 
 static jobject toJavaDocumentEnded(JNIEnv *env, const C4DocumentEnded *document) {
+    jstring scope = toJString(env, document->collectionSpec.scope);
+    jstring collection = toJString(env, document->collectionSpec.name);
     jstring docID = toJString(env, document->docID);
     jstring revID = toJString(env, document->docID);
 
     jobject obj = env->NewObject(
             cls_C4DocEnded,
             m_C4DocEnded_init,
+            scope,
+            collection,
             docID,
             revID,
             (jint) document->flags,
@@ -532,7 +538,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(J
     sliceResult->buf = res.buf;
     sliceResult->size = res.size;
 
-    return (jlong) sliceResult;
+    return (jlong) copyToHeap(res);
 }
 
 /*

@@ -145,14 +145,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_endTrans
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    rawFree
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawFree
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    setCookie
  * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
@@ -165,21 +157,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_setCooki
  * Signature: (JLjava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4Database_getCookies
-        (JNIEnv *, jclass, jlong, jstring);
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    setDocumentExpiration
- * Signature: (JLjava/lang/String;J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_setDocumentExpiration
-        (JNIEnv *, jclass, jlong, jstring, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    getDocumentExpiration
- * Signature: (JLjava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getDocumentExpiration
         (JNIEnv *, jclass, jlong, jstring);
 
 /*
@@ -214,7 +191,72 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getFLSh
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Database_maintenance
         (JNIEnv *, jclass, jlong, jint);
 
+
+///// Collections
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    getScopes
+ * Signature: (J)J;
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_getScopeNames
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    hasScope
+ * Signature: (JLjava/lang/String;)Z;
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_hasScope
+        (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    collectionNames
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_getCollectionNames
+        (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    hasCollection
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_hasCollection
+        (JNIEnv *, jclass, jlong, jstring, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    deleteCollection
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_deleteCollection
+        (JNIEnv *, jclass, jlong, jstring, jstring);
+
 // !!! DEPRECATED: Delete these methods when the corresponding Java methods proxy to the default collection
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    setDocumentExpiration
+ * Signature: (JLjava/lang/String;J)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_setDocumentExpiration
+        (JNIEnv *, jclass, jlong, jstring, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    getDocumentExpiration
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getDocumentExpiration
+        (JNIEnv *, jclass, jlong, jstring);
+
 /*
  * Class:     Java_com_couchbase_lite_internal_core_C4Database
  * Method:    getIndexInfo

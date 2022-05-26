@@ -27,12 +27,37 @@ import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public final class C4Document extends C4NativePeer {
 
     //-------------------------------------------------------------------------
     // Static Factory Methods
     //-------------------------------------------------------------------------
+
+    @NonNull
+    static C4Document create(@NonNull C4Collection coll, @NonNull String docID, @Nullable FLSliceResult body, int flags)
+        throws LiteCoreException {
+        return new C4Document(createFromSlice(coll.getPeer(), docID, (body == null) ? 0 : body.getHandle(), flags));
+    }
+
+    @NonNull
+    static C4Document createRaw(@NonNull C4Collection coll, @NonNull String docID, @NonNull byte[] body, int flags)
+        throws LiteCoreException {
+        return new C4Document(createRaw(coll.getPeer(), docID, body, flags));
+    }
+
+    @NonNull
+    static C4Document get(@NonNull C4Collection coll, @NonNull String docID, boolean mustExist)
+        throws LiteCoreException {
+        return new C4Document(getFromCollection(coll.getPeer(), docID, mustExist));
+    }
+
+    @NonNull
+    static C4Document getBySequence(@NonNull C4Collection coll, long sequence)
+        throws LiteCoreException {
+        return new C4Document(getFromCollectionBySequence(coll.getPeer(), sequence));
+    }
+
 
     @NonNull
     static C4Document create(@NonNull C4Database db, @NonNull String docID, boolean mustExist)
@@ -45,6 +70,7 @@ public final class C4Document extends C4NativePeer {
         return new C4Document(getBySequence(db.getPeer(), sequence));
     }
 
+    @VisibleForTesting
     @NonNull
     static C4Document create(@NonNull C4Database db, @NonNull String docID, @NonNull byte[] body, int flags)
         throws LiteCoreException {
@@ -278,6 +304,17 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // - Creating and Updating Documents
+
+    private static native long createFromSlice(long coll, String docID, long body, int flags)
+        throws LiteCoreException;
+
+    private static native long createRaw(long coll, String docID, byte[] body, int flags)
+        throws LiteCoreException;
+
+    private static native long getFromCollection(long coll, String docID, boolean mustExist)
+        throws LiteCoreException;
+
+    private static native long getFromCollectionBySequence(long coll, long sequence) throws LiteCoreException;
 
     private static native long create(long db, String docID, byte[] body, int flags) throws LiteCoreException;
 

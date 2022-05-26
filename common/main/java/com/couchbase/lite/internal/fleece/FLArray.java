@@ -43,6 +43,7 @@ public class FLArray {
     //-------------------------------------------------------------------------
     // constructor
     //-------------------------------------------------------------------------
+
     FLArray(@NonNull NativeImpl impl, long peer) {
         Preconditions.assertNotZero(peer, "peer");
         this.peer = peer;

@@ -31,6 +31,14 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4RawDocument_me
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4RawDocument_body
   (JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     com_couchbase_lite_internal_core_C4RawDocument
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4RawDocument_free
+        (JNIEnv *, jclass, jlong);
+
 #ifdef __cplusplus
 }
 #endif

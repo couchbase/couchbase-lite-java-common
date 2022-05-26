@@ -630,6 +630,24 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_free(
 }
 
 JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareCollection(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4Listener,
+        jstring dbName,
+        jlong c4Database) {
+
+}
+
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareCollection(
+        JNIEnv *env,
+        jclass ignore,
+        jlong c4Listener,
+        jlong c4Database) {
+}
+
+JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb(
         JNIEnv *env,
         jclass ignore,

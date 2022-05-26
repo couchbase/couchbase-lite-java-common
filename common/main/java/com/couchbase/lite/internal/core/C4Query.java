@@ -46,6 +46,15 @@ public final class C4Query extends C4NativePeer {
 
     @NonNull
     public static C4Query create(
+        @NonNull C4Collection collection,
+        @NonNull AbstractIndex.QueryLanguage language,
+        @NonNull String expression)
+        throws LiteCoreException {
+        return create(collection.getDb(), language, expression);
+    }
+
+    @NonNull
+    public static C4Query create(
         @NonNull C4Database db,
         @NonNull AbstractIndex.QueryLanguage language,
         @NonNull String expression)

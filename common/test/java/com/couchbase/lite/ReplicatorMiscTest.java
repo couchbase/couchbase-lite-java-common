@@ -254,7 +254,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testReplicatedDocument() {
-        Collection collection = Scope.getDefault(baseTestDb).getCollection(Collection.DEFAULT_NAME);
+        Collection collection = baseTestDb.getDefaultCollection();
         String docID = "someDocumentID";
         int flags = C4Constants.DocumentFlags.DELETED;
         CouchbaseLiteException error = new CouchbaseLiteException(

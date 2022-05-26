@@ -18,7 +18,6 @@ package com.couchbase.lite;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -43,12 +42,6 @@ public abstract class BaseDatabase {
     @Nullable
     private String path;
 
-    @GuardedBy("dbLock")
-    protected void setC4DatabaseLocked(@Nullable C4Database c4Database) {
-        this.c4Database = c4Database;
-        if (c4Database != null) { this.path = c4Database.getDbPath(); }
-    }
-
     @SuppressWarnings("ConstantConditions")
     @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
     @GuardedBy("dbLock")
@@ -56,6 +49,18 @@ public abstract class BaseDatabase {
     protected C4Database getOpenC4DbLocked() {
         mustBeOpen();
         return c4Database;
+    }
+
+    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
+    @NonNull
+    C4Database getOpenC4Database() {
+        synchronized (getDbLock()) { return getOpenC4DbLocked(); }
+    }
+
+    @GuardedBy("dbLock")
+    protected void setC4DatabaseLocked(@Nullable C4Database c4Database) {
+        this.c4Database = c4Database;
+        if (c4Database != null) { this.path = c4Database.getDbPath(); }
     }
 
     @GuardedBy("dbLock")
@@ -78,16 +83,5 @@ public abstract class BaseDatabase {
     @NonNull
     protected C4BlobStore getBlobStore() throws LiteCoreException {
         synchronized (getDbLock()) { return getOpenC4DbLocked().getBlobStore(); }
-    }
-
-    @SuppressWarnings("ConstantConditions")
-    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
-    @NonNull
-    @VisibleForTesting
-    C4Database getOpenC4Database() {
-        synchronized (getDbLock()) {
-            mustBeOpen();
-            return c4Database;
-        }
     }
 }

@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 #include "com_couchbase_lite_internal_core_impl_NativeC4Collection.h"
+#include "c4DatabaseTypes.h"
+#include "c4Collection.h"
 
 extern "C" {
 
@@ -24,19 +26,9 @@ extern "C" {
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollection
-        (JNIEnv *, jclass, jlong) {
-    return 0L;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    hasCollection
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_hasCollection
-        (JNIEnv *, jclass, jlong, jstring, jstring) {
-    return JNI_FALSE;
+        (JNIEnv *env, jclass ignore, jlong db) {
+    // C4Collection* c4db_getDefaultCollection(C4Database *db)
+    return 0x8BADF00D;
 }
 
 /*
@@ -46,8 +38,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_hasCollection
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection
-        (JNIEnv *, jclass, jlong, jstring, jstring) {
-    return 0L;
+        (JNIEnv *env, jclass ignore, jlong db, jstring scope, jstring collection) {
+    // C4Collection* C4NULLABLE c4db_getCollection(C4Database *db, C4CollectionSpec spec)
+    return 0x8BADF00D;
 }
 
 /*
@@ -58,40 +51,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection
         (JNIEnv *, jclass, jlong, jstring, jstring) {
-    return 0L;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    deleteCollection
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteCollection
-        (JNIEnv *, jclass, jlong, jstring, jstring) {
-    return JNI_FALSE;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    collectionNames
- * Signature: (JLjava/lang/String;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollectionNames
-        (JNIEnv *, jclass, jlong, jstring) {
-    return NULL;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    scopeNames
- * Signature: (J)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getScopeNames
-        (JNIEnv *, jclass, jlong) {
-    return NULL;
+    // C4Collection* C4NULLABLE c4db_createCollection(C4Database *db, C4CollectionSpec spec, C4Error* C4NULLABLE outError)
+    return 0x8BADF00D;
 }
 
 /*
@@ -134,18 +95,18 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getLastSequence
-        (JNIEnv *, jclass, jlong) {
-    return 0L;
+        (JNIEnv *env, jclass ingnore, jlong collection) {
+    return (jlong) c4coll_getLastSequence((C4Collection *) collection);
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    getDoc
- * Signature: (JLjava/lang/String;ZJ)J
+ * Signature: (JLjava/lang/String;Z)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDoc
-        (JNIEnv *, jclass, jlong, jstring, jboolean, jlong) {
+        (JNIEnv *, jclass, jlong, jstring, jboolean) {
     return 0L;
 }
 
@@ -206,6 +167,17 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    deleteDoc
+ * Signature: (JLjava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteDoc
+        (JNIEnv *, jclass, jlong, jstring) {
+    return JNI_FALSE;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    setDocExpiration
  * Signature: (JLjava/lang/String;J)Z
  */
@@ -250,12 +222,25 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeExpiredDocs
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    getIndexesInfo
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo
+        (JNIEnv *, jclass, jlong) {
+    // c4coll_getIndexesInfo
+    return 0L;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createIndex
  * Signature: (JLjava/lang/String;Ljava/lang/String;II[B)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex
-        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jbyteArray) {
+        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jstring, jboolean) {
+    // c4coll_createIndex
     return JNI_FALSE;
 }
 
@@ -267,17 +252,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteIndex
         (JNIEnv *, jclass, jlong, jstring) {
+    // c4coll_deleteIndex
     return JNI_FALSE;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getIndexesInfo
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo
-        (JNIEnv *, jclass, jlong) {
-    return 0L;
 }
 }

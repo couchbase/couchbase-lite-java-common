@@ -115,6 +115,9 @@ namespace litecore {
                               jbyteArray jKeyBytes,
                               C4EncryptionKey *outKey);
 
+        // !!! We need to get rid of this.
+        C4SliceResult *copyToHeap(const C4SliceResult &sr);
+
         // lightweight logging
         void logError(const char *fmt, ...);
 

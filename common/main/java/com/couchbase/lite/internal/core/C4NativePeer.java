@@ -55,16 +55,15 @@ public abstract class C4NativePeer implements AutoCloseable {
     @Override
     public String toString() { return "@x" + Long.toHexString(peer); }
 
-    protected final void withPeer(@NonNull Fn.Consumer<Long> fn) {
+    @Nullable
+    protected final <T> T withPeer(@NonNull Fn.Function<Long, T> fn) {
         synchronized (getPeerLock()) {
             final long peer = get();
-            if (peer != 0L) {
-                fn.accept(peer);
-                return;
-            }
+            if (peer != 0L) { return fn.apply(peer); }
         }
 
         logBadCall();
+        return null;
     }
 
     protected final <E extends Exception> void withPeerThrows(
@@ -103,7 +102,7 @@ public abstract class C4NativePeer implements AutoCloseable {
             final long peer = get();
             if (peer != 0L) {
                 final T val = fn.apply(peer);
-                return (val == null) ? def : val;
+                return (val != null) ? val : def;
             }
         }
 

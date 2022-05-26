@@ -53,7 +53,7 @@ public interface Fn {
 
     @FunctionalInterface
     interface ProviderThrows<T, E extends Exception> {
-        @Nullable
+        @NonNull
         T get() throws E;
     }
 
@@ -92,22 +92,8 @@ public interface Fn {
         void run(@NonNull Runnable r);
     }
 
-    @NonNull
-    static <T, R> List<R> map(@NonNull List<? extends T> l, @NonNull Function<T, R> fn) {
-        final List<R> r = new ArrayList<>(l.size());
-        for (T e: l) { r.add(fn.apply(e)); }
-        return r;
-    }
-
-    @NonNull
-    static <T, R> Set<R> map(@NonNull Set<? extends T> s, @NonNull Function<T, R> fn) {
-        final Set<R> r = new HashSet<>(s.size());
-        for (T e: s) { r.add(fn.apply(e)); }
-        return r;
-    }
-
     @Nullable
-    static <T> T filter(@NonNull Collection<? extends T> c, @NonNull Predicate<T> pred) {
+    static <T> T first(@NonNull Collection<? extends T> c, @NonNull Predicate<T> pred) {
         for (T e: c) {
             if (pred.test(e)) { return e; }
         }
@@ -118,6 +104,38 @@ public interface Fn {
     static <T, R> R foldR(@NonNull Collection<? extends T> c, @NonNull R init, @NonNull BiFunction<R, T, R> fn) {
         R r = init;
         for (T e: c) { r = fn.apply(r, e); }
+        return r;
+    }
+
+    @NonNull
+    static <T> List<T> filterToList(@NonNull Collection<? extends T> s, @NonNull Predicate<T> pred) {
+        final List<T> r = new ArrayList<>(s.size());
+        for (T e: s) {
+            if (pred.test(e)) { r.add(e); }
+        }
+        return r;
+    }
+
+    @NonNull
+    static <T> Set<T> filterToSet(@NonNull Collection<? extends T> s, @NonNull Predicate<T> pred) {
+        final Set<T> r = new HashSet<>(s.size());
+        for (T e: s) {
+            if (pred.test(e)) { r.add(e); }
+        }
+        return r;
+    }
+
+    @NonNull
+    static <T, R> List<R> mapToList(@NonNull Collection<? extends T> l, @NonNull Function<T, R> fn) {
+        final List<R> r = new ArrayList<>(l.size());
+        for (T e: l) { r.add(fn.apply(e)); }
+        return r;
+    }
+
+    @NonNull
+    static <T, R> Set<R> mapToSet(@NonNull Collection<? extends T> s, @NonNull Function<T, R> fn) {
+        final Set<R> r = new HashSet<>(s.size());
+        for (T e: s) { r.add(fn.apply(e)); }
         return r;
     }
 }

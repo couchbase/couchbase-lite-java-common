@@ -241,7 +241,7 @@ public class C4DocumentTest extends C4BaseTest {
         boolean commit = false;
         c4Database.beginTransaction();
         try {
-            doc = c4Database.createDocument(DOC_ID, fleeceBody, 0);
+            doc = C4Document.create(c4Database, DOC_ID, fleeceBody, 0);
             assertNotNull(doc);
             commit = true;
         }
@@ -298,7 +298,7 @@ public class C4DocumentTest extends C4BaseTest {
         // Try to create a new doc with the same ID, which will fail:
         c4Database.beginTransaction();
         try {
-            c4Database.createDocument(DOC_ID, json2fleece("{'ok':'no way'}"), 0);
+            C4Document.create(c4Database, DOC_ID, json2fleece("{'ok':'no way'}"), 0);
             fail();
         }
         catch (LiteCoreException e) {

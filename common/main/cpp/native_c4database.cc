@@ -274,16 +274,6 @@ Java_com_couchbase_lite_internal_core_C4Database_endTransaction(
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    rawFree
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_rawFree(JNIEnv *env, jclass ignore, jlong jrawDoc) {
-    c4raw_free((C4RawDocument *) jrawDoc);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    rawGet
  * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
@@ -442,12 +432,11 @@ Java_com_couchbase_lite_internal_core_C4Database_encodeJSON(
     jbyteArraySlice body(env, jbody, false);
     C4Error error = {};
     C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
-    if (error.domain != 0 && error.code != 0)
+    if (error.domain != 0 && error.code != 0) {
         throwError(env, error);
-    auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
-    sliceResult->buf = res.buf;
-    sliceResult->size = res.size;
-    return (jlong) sliceResult;
+        return 0;
+    }
+    return (jlong) copyToHeap(res);
 }
 
 /*
@@ -475,6 +464,71 @@ Java_com_couchbase_lite_internal_core_C4Database_maintenance(
     if (error.domain != 0 && error.code != 0)
         throwError(env, error);
     return (jboolean) success;
+}
+
+
+///// Collections
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    getScopes
+ * Signature: (J)J;
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_getScopeNames(JNIEnv *env, jclass ignore, jlong db) {
+    // FLMutableArray c4db_scopeNames(C4Database *db)
+    return 0L;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    hasScope
+ * Signature: (JLjava/lang/String;)J;
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_hasScope
+        (JNIEnv *env, jclass ignore, jlong db, jstring scope) {
+    // ??? c4db_hasScope
+    return 0L;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    collectionNames
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_getCollectionNames(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db,
+        jstring scope) {
+    // FLMutableArray c4db_collectionNames(C4Database *db, C4String inScope) C
+    return 0L;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    hasCollection
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_hasCollection
+        (JNIEnv *, jclass, jlong, jstring, jstring) {
+    // bool c4db_hasCollection(C4Database *db, C4CollectionSpec spec)
+    return JNI_FALSE;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    deleteCollection
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_deleteCollection
+        (JNIEnv *, jclass, jlong, jstring, jstring) {
+    // bool c4db_deleteCollection(C4Database *db, C4CollectionSpec spec, C4Error* C4NULLABLE outError)
+    return JNI_FALSE;
 }
 
 // !!! DEPRECATED: Delete these methods when the corresponding Java methods proxy to the default collection

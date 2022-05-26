@@ -28,6 +28,7 @@ import java.util.Set;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.MaintenanceType;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.SlowTest;
@@ -468,14 +469,14 @@ public class C4DatabaseTest extends C4BaseTest {
 
             C4BlobStore store = c4Database.getBlobStore();
             assertNotNull(store);
-            c4Database.compact();
+            compact(c4Database);
             assertTrue(store.getSize(key1) > 0);
             assertTrue(store.getSize(key2) > 0);
             assertTrue(store.getSize(key3) > 0);
 
             // Only reference to first blob is gone
             createRev(doc1ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
-            c4Database.compact();
+            compact(c4Database);
             assertEquals(store.getSize(key1), -1);
             assertTrue(store.getSize(key2) > 0);
             assertTrue(store.getSize(key3) > 0);
@@ -483,21 +484,21 @@ public class C4DatabaseTest extends C4BaseTest {
             // Two references exist to the second blob, so it should still
             // exist after deleting doc002
             createRev(doc2ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
-            c4Database.compact();
+            compact(c4Database);
             assertEquals(store.getSize(key1), -1);
             assertTrue(store.getSize(key2) > 0);
             assertTrue(store.getSize(key3) > 0);
 
             // After deleting doc4 both blobs should be gone
             createRev(doc4ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
-            c4Database.compact();
+            compact(c4Database);
             assertEquals(store.getSize(key1), -1);
             assertEquals(store.getSize(key2), -1);
             assertTrue(store.getSize(key3) > 0);
 
             // Delete doc with legacy attachment, and it too will be gone
             createRev(doc3ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED);
-            c4Database.compact();
+            compact(c4Database);
             assertEquals(store.getSize(key1), -1);
             assertEquals(store.getSize(key2), -1);
             assertEquals(store.getSize(key3), -1);
@@ -675,6 +676,11 @@ public class C4DatabaseTest extends C4BaseTest {
         doc.close();
 
         return keys;
+    }
+
+    private void compact(C4Database db) {
+        try { db.performMaintenance(MaintenanceType.COMPACT); }
+        catch (LiteCoreException e) { throw new IllegalStateException("Db compation failed", e); }
     }
 }
 

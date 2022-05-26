@@ -253,11 +253,7 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_finish2(JNIEnv *env, jclass ig
         throwError(env, {FleeceDomain, error});
         return 0;
     }
-
-    auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
-    sliceResult->buf = res.buf;
-    sliceResult->size = res.size;
-    return (jlong) sliceResult;
+    return (jlong) copyToHeap(res);
 }
 
 /*

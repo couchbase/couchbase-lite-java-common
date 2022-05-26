@@ -254,5 +254,15 @@ namespace litecore {
             }
             return true;
         }
+
+        // !!! This is just a terrible idea
+        // Allocating space on heap, just to contain a pointer
+        // to a block of memory is totally dumb.
+        C4SliceResult *copyToHeap(const C4SliceResult &sr) {
+            auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
+            sliceResult->buf = sr.buf;
+            sliceResult->size = sr.size;
+            return sliceResult;
+        }
     }
 }

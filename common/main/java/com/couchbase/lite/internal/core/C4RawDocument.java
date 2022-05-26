@@ -70,7 +70,7 @@ public class C4RawDocument extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private void closePeer(@Nullable LogDomain domain) throws LiteCoreException {
-        releasePeer(domain, C4Database::rawFreeDocument);
+        releasePeer(domain, C4RawDocument::free);
     }
 
     //-------------------------------------------------------------------------
@@ -85,4 +85,6 @@ public class C4RawDocument extends C4NativePeer {
 
     @NonNull
     private static native byte[] body(long peer);
+
+    private static native void free(long rawDoc) throws LiteCoreException;
 }

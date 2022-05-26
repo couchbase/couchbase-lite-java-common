@@ -19,7 +19,7 @@ public class BaseCollectionTest extends BaseDbTest {
 
     @Before
     public final void setUpBaseCollectionTest(){
-        testScope = Scope.getDefault(baseTestDb);
+        testScope = baseTestDb.getDefaultScope();
         testCollection = testScope.getDefaultCollection();
         Report.log(LogLevel.INFO, "Created base test Collection: " + testCollection);
         assertNotNull(testCollection);

@@ -318,25 +318,35 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         withPeer(peer -> {
             impl.nGotHTTPResponse(peer, httpStatus, fleeceResponseHeaders);
             impl.nOpened(peer);
+            return null;
         });
     }
 
     @Override
     public void ackWriteToCore(long byteCount) {
         Log.d(LOG_DOMAIN, "%s.ackWriteToCore(%d)", this, byteCount);
-        withPeer(peer -> impl.nCompletedWrite(peer, byteCount));
+        withPeer(peer -> {
+            impl.nCompletedWrite(peer, byteCount);
+            return null;
+        });
     }
 
     @Override
     public void writeToCore(@NonNull byte[] data) {
         Log.d(LOG_DOMAIN, "%s.sendToCore(%d)", this, data.length);
-        withPeer(peer -> impl.nReceived(peer, data));
+        withPeer(peer -> {
+            impl.nReceived(peer, data);
+            return null;
+        });
     }
 
     @Override
     public void requestCoreClose(@NonNull CloseStatus status) {
         Log.d(LOG_DOMAIN, "%s.requestCoreClose(%d): '%s'", this, status.code, status.message);
-        withPeer(peer -> impl.nCloseRequested(peer, status.code, status.message));
+        withPeer(peer -> {
+            impl.nCloseRequested(peer, status.code, status.message);
+            return null;
+        });
     }
 
     @Override

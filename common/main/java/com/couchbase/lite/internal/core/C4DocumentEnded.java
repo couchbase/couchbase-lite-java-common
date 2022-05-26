@@ -24,6 +24,10 @@ import androidx.annotation.NonNull;
  */
 public class C4DocumentEnded {
     @NonNull
+    private final String scope;
+    @NonNull
+    private final String collection;
+    @NonNull
     private final String docID;
     @NonNull
     private final String revID;
@@ -35,7 +39,10 @@ public class C4DocumentEnded {
     private final int errorInternalInfo;
 
     // Called from native code
+    @SuppressWarnings("PMD.ExcessiveParameterList")
     public C4DocumentEnded(
+        @NonNull String scope,
+        @NonNull String collection,
         @NonNull String docID,
         @NonNull String revID,
         int flags,
@@ -44,6 +51,8 @@ public class C4DocumentEnded {
         int errorCode,
         int errorInternalInfo,
         boolean errorIsTransient) {
+        this.scope = scope;
+        this.collection = collection;
         this.docID = docID;
         this.revID = revID;
         this.flags = flags;
@@ -53,6 +62,11 @@ public class C4DocumentEnded {
         this.errorInternalInfo = errorInternalInfo;
         this.errorIsTransient = errorIsTransient;
     }
+    @NonNull
+    public String getScope() { return scope; }
+
+    @NonNull
+    public String getCollection() { return collection; }
 
     @NonNull
     public String getDocID() { return docID; }

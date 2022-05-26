@@ -29,6 +29,7 @@ using namespace litecore::jni;
 // source tree.  Moving this class to the test tree would require major changes
 // ----------------------------------------------------------------------------
 
+extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_C4RawDocument
  * Method:    key
@@ -57,4 +58,15 @@ Java_com_couchbase_lite_internal_core_C4RawDocument_meta(JNIEnv *env, jclass ign
 JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_core_C4RawDocument_body(JNIEnv *env, jclass ignore, jlong jrawDoc) {
     return toJByteArray(env, ((C4RawDocument *) jrawDoc)->body);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4RawDocument
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4RawDocument_free(JNIEnv *env, jclass ignore, jlong jrawDoc) {
+    c4raw_free((C4RawDocument *) jrawDoc);
+}
 }

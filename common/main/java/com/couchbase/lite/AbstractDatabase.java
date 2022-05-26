@@ -39,6 +39,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableDatabaseConfiguration;
 import com.couchbase.lite.internal.SocketFactory;
+import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.core.C4DatabaseChange;
@@ -219,14 +220,15 @@ abstract class AbstractDatabase extends BaseDatabase {
     @NonNull
     private final String name;
 
-    private final Map<String, Scope> scopes = new HashMap<>();
-
     // Executor for purge and posting Database/Document changes.
     private final ExecutionService.CloseableExecutor postExecutor;
     // Executor for LiveQuery.
     private final ExecutionService.CloseableExecutor queryExecutor;
 
     private final FLSharedKeys sharedKeys;
+
+    @GuardedBy("getDbLock()")
+    private final Map<String, Scope> scopes = new HashMap<>();
 
     @GuardedBy("activeProcesses")
     private final Set<ActiveProcess<?>> activeProcesses;
@@ -268,11 +270,6 @@ abstract class AbstractDatabase extends BaseDatabase {
         // Copy configuration
         this.config = config;
 
-        // Scope
-        // !!! temporary hack...
-        final Scope scope = Scope.getDefault(this);
-        scopes.put(scope.getName(), scope);
-
         this.postExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
         this.queryExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
@@ -284,6 +281,9 @@ abstract class AbstractDatabase extends BaseDatabase {
         // Can't open the DB until the file system is set up.
         final C4Database c4db = openC4Db();
         setC4DatabaseLocked(c4db);
+
+        // Scope
+        initScopesAndCollections(c4db);
 
         // Initialize a shared keys:
         this.sharedKeys = c4db.getFLSharedKeys();
@@ -833,19 +833,29 @@ abstract class AbstractDatabase extends BaseDatabase {
      * under it.
      */
     @NonNull
-    public Set<Scope> getScopes() { return new HashSet<>(scopes.values()); }
-
-    /**
-     * Get a scope object by name. As the scope cannot exist by itself without having a collection, the nil
-     * value will be returned if there are no collections under the given scope’s name.
-     * Note: The default scope is exceptional, and it will always be returned.
-     */
-    @Nullable
-    public Scope getScope(@NonNull String name) { return scopes.get(name); }
+    public Set<Scope> getScopes() {
+        synchronized (getDbLock()) {
+            return Fn.filterToSet(scopes.values(), scope -> scope.getCollectionCount() > 0);
+        }
+    }
 
     /// Get the default scope.
     @NonNull
-    public Scope getDefaultScope() { return scopes.get(Scope.DEFAULT_NAME); }
+    public Scope getDefaultScope() {
+        synchronized (getDbLock()) {
+            return Preconditions.assertNotNull(scopes.get(Scope.DEFAULT_NAME), "default scope");
+        }
+    }
+
+    /**
+     * Get a scope object by name. As the scope cannot exist by itself without having a collection,
+     * the hull value will be returned if there are no collections under the given scope’s name.
+     * Note: The default scope is exceptional, and it will always be returned.
+     */
+    @Nullable
+    public Scope getScope(@NonNull String name) {
+        synchronized (getDbLock()) { return scopes.get(name); }
+    }
 
     //---------------------------------------------
     // Collections
@@ -855,7 +865,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      * Get all collections in the default scope.
      */
     @Nullable
-    public Set<Collection> getCollections() { return getCollections(null); }
+    public Set<Collection> getCollections() { return getCollections(Scope.DEFAULT_NAME); }
 
     /**
      * Get all collections in the named scope.
@@ -865,7 +875,9 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Nullable
     public Set<Collection> getCollections(@Nullable String name) {
-        final Scope scope = scopes.get(StringUtils.isEmpty(name) ? Scope.DEFAULT_NAME : name);
+        final Scope scope;
+        synchronized (getDbLock()) { scope = scopes.get(StringUtils.isEmpty(name) ? Scope.DEFAULT_NAME : name); }
+
         return (scope == null) ? null : scope.getCollections();
     }
 
@@ -879,7 +891,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @NonNull
     public Collection createCollection(@NonNull String name) throws CouchbaseLiteException {
-        return createCollection(name, null);
+        return createCollection(name, Scope.DEFAULT_NAME);
     }
 
     /**
@@ -894,15 +906,17 @@ abstract class AbstractDatabase extends BaseDatabase {
     @NonNull
     public Collection createCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
         if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
-        Scope scope = scopes.get(scopeName);
-        if (scope == null) { scope = new Scope(scopeName, this); }
 
-        Collection collection = scope.getCollection(name);
-        if (collection != null) { return collection; }
+        Scope scope;
+        synchronized (getDbLock()) { scope = scopes.get(scopeName); }
+        if (scope == null) {
+            if (Scope.DEFAULT_NAME.equals(scopeName)) {
+                throw new IllegalArgumentException("Cannot recreate the default scope");
+            }
+            scope = new Scope(scopeName, this);
+        }
 
-        collection = new Collection(scope, name);
-        scope.addCollection(collection);
-        return collection;
+        return scope.getOrAddCollection(name);
     }
 
     /**
@@ -926,7 +940,8 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Nullable
     public Collection getCollection(@NonNull String name, @Nullable String scopeName) {
         if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
-        final Scope scope = scopes.get(scopeName);
+        final Scope scope;
+        synchronized (getDbLock()) { scope = scopes.get(scopeName); }
         return (scope == null) ? null : scope.getCollection(name);
     }
 
@@ -951,7 +966,8 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     public void deleteCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
         if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
-        final Scope scope = scopes.get(scopeName);
+        final Scope scope;
+        synchronized (getDbLock()) { scope = scopes.get(scopeName); }
         if (scope == null) { return; }
         scope.deleteCollection(name);
     }
@@ -1033,6 +1049,24 @@ abstract class AbstractDatabase extends BaseDatabase {
     File getDbFile() {
         final String path = getDbPath();
         return (path == null) ? null : new File(path);
+    }
+
+    //////// SCOPES AND COLLECTIONS:
+
+    @NonNull
+    Collection addCollection(@NonNull Scope scope, @NonNull String collectionName) {
+        synchronized (getDbLock()) {
+            return new Collection(
+                getOpenC4DbLocked().addCollection(scope.getName(), collectionName),
+                scope,
+                collectionName);
+        }
+    }
+
+    void deleteCollection(@NonNull Collection collection) {
+        synchronized (getDbLock()) {
+            getOpenC4DbLocked().deleteCollection(collection.getScope().getName(), collection.getName());
+        }
     }
 
     //////// DOCUMENTS:
@@ -1295,6 +1329,19 @@ abstract class AbstractDatabase extends BaseDatabase {
             throw CouchbaseLiteException.convertException(e);
         }
     }
+
+    //////// COLLECTIONS:
+
+    private void initScopesAndCollections(C4Database c4db) {
+        for (String scopeName: c4db.getScopes()) { scopes.put(scopeName, new Scope(scopeName, this)); }
+
+        final Scope defaultScope = Preconditions.assertNotNull(scopes.get(Scope.DEFAULT_NAME), "default scope");
+        final C4Collection c4Collection = c4db.getDefaultCollection();
+        if (c4Collection != null) {
+            defaultScope.cacheCollecion(new Collection(c4Collection, defaultScope, Collection.DEFAULT_NAME));
+        }
+    }
+
 
     //////// INDICES:
 

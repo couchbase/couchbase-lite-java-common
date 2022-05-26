@@ -473,6 +473,68 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2(
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    createFromSLice
+ * Signature: (JLjava/lang/String;JI)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createFromSlice(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jcollection,
+        jstring jdocID,
+        jlong jbody,
+        jint flags) {
+    jstringSlice docID(env, jdocID);
+    C4Slice body = (jbody == 0) ? kC4SliceNull : *(C4Slice *) jbody;
+    C4Error error;
+    return 0L;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    createRaw(
+ * Signature: (JLjava/lang/String;]BI)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createRaw(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jcollection,
+        jstring jdocID,
+        jbyteArray jbody,
+        jint flags) {
+    jstringSlice docID(env, jdocID);
+    C4Error error;
+    return 0L;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    getFromCollection
+ * Signature: (JLjava/lang/String;Z)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jcollection,
+        jstring jdocID,
+        jboolean mustExist) {
+    return 0L;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    getFromCollectionBySequence
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFromCollectionBySequence(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jcollection,
+        jlong sequence) {
+    return 0L;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    create
  * Signature: (JLjava/lang/String;[BI)J
  */

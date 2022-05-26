@@ -18,15 +18,6 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefault
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    hasCollection
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_hasCollection
-        (JNIEnv *, jclass, jlong, jstring, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    getCollection
  * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
@@ -45,47 +36,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    deleteCollection
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteCollection
-        (JNIEnv *, jclass, jlong, jstring, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    collectionNames
- * Signature: (JLjava/lang/String;)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollectionNames
-        (JNIEnv *, jclass, jlong, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    scopeNames
- * Signature: (J)Ljava/lang/Object;
- */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getScopeNames
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    isValid
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getDatabase
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDatabase
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -109,11 +64,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getLastSequence
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    getDoc
- * Signature: (JLjava/lang/String;ZJ)J
+ * Signature: (JLjava/lang/String;Z)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDoc
-        (JNIEnv *, jclass, jlong, jstring, jboolean, jlong);
+        (JNIEnv *, jclass, jlong, jstring, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
@@ -153,6 +108,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_moveDoc
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    deleteDoc
+ * Signature: (JLjava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteDoc
+        (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    purgeDoc
  * Signature: (JLjava/lang/String;)Z
  */
@@ -180,20 +144,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocExpiration
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    nextDocExpiration
+ * Method:    getIndexesInfo
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_nextDocExpiration
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    purgeExpiredDocs
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeExpiredDocs
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -203,7 +158,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeExpiredDocs
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex
-        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jbyteArray);
+        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jstring, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
@@ -213,15 +168,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteIndex
         (JNIEnv *, jclass, jlong, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getIndexesInfo
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo
-        (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }

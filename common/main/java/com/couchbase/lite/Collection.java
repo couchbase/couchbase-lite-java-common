@@ -20,35 +20,37 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import com.couchbase.lite.internal.core.C4Collection;
+
 
 public final class Collection implements Indexable, DatabaseChangeObservable {
     public static final String DEFAULT_NAME = "_default";
 
     @NonNull
-    static Collection getDefault(@NonNull Scope scope) { return new Collection(scope, DEFAULT_NAME); }
-
-
-    @NonNull
     private final String name;
     @NonNull
     private final Scope scope;
+    @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+    @NonNull
+    private final C4Collection c4Collection;
 
-    public Collection(@NonNull Scope scope, @NonNull String name) {
+    Collection(@NonNull C4Collection c4Collection, @NonNull Scope scope, @NonNull String name) {
+        this.c4Collection = c4Collection;
         this.scope = scope;
         this.name = name;
     }
-
-    /**
-     * Return the collection name
-     */
-    @NonNull
-    public String getName() { return name; }
 
     /**
      * Get scope
      */
     @NonNull
     public Scope getScope() { return scope; }
+
+    /**
+     * Return the collection name
+     */
+    @NonNull
+    public String getName() { return name; }
 
     /**
      * The number of documents in the collection.

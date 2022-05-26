@@ -550,7 +550,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
                 error = CouchbaseLiteException.convertC4Error(c4Error);
             }
 
-            unconflictedDocs.add(new ReplicatedDocument(collectionHack(), docId, docEnd.getFlags(), error));
+            unconflictedDocs.add(new ReplicatedDocument(getDefaultCollection(), docId, docEnd.getFlags(), error));
         }
 
         if (!unconflictedDocs.isEmpty()) { notifyDocumentEnded(pushing, unconflictedDocs); }
@@ -573,7 +573,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             }
         }
 
-        notifyDocumentEnded(false, Arrays.asList(new ReplicatedDocument(collectionHack(), docId, flags, err)));
+        notifyDocumentEnded(false, Arrays.asList(new ReplicatedDocument(getDefaultCollection(), docId, flags, err)));
 
         if ((pendingNotifications != null) && (!pendingNotifications.isEmpty())) {
             for (C4ReplicatorStatus status: pendingNotifications) { dispatcher.execute(() -> c4StatusChanged(status)); }
@@ -802,10 +802,9 @@ public abstract class AbstractReplicator extends BaseReplicator {
         return path;
     }
 
-    // !!! Temporary hack until Collections are wired up from LiteCore
     @NonNull
-    private Collection collectionHack() {
-        final Collection collection = Scope.getDefault(getDatabase()).getCollection(Collection.DEFAULT_NAME);
+    private Collection getDefaultCollection() {
+        final Collection collection = getDatabase().getDefaultCollection();
         if (collection != null) { return collection; }
         throw new IllegalStateException("Cannot find collection for replicator");
     }

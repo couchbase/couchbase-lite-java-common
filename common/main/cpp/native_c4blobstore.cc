@@ -125,11 +125,7 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_getContents(
         throwError(env, error);
         return 0;
     }
-
-    auto sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
-    sliceResult->buf = res.buf;
-    sliceResult->size = res.size;
-    return (jlong) sliceResult;
+    return (jlong) copyToHeap(res);
 }
 
 /*

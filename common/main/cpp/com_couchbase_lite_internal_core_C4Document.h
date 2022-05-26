@@ -10,6 +10,38 @@ extern "C" {
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    createFromSlice
+ * Signature: (JLjava/lang/String;JI)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createFromSlice
+        (JNIEnv *, jclass, jlong, jstring, jlong, jint);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    createRaw
+ * Signature: (JLjava/lang/String;[BI)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createRaw
+        (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    getFromCollection
+ * Signature: (JLjava/lang/String;Z)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFromCollection
+        (JNIEnv *, jclass, jlong, jstring, jboolean);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    getFromCollectionBySequence
+ * Signature: (JJ)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFromCollectionBySequence
+        (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    create
  * Signature: (JLjava/lang/String;[BI)J
  */

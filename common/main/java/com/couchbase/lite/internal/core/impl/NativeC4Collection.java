@@ -24,130 +24,101 @@ import com.couchbase.lite.internal.core.C4Collection;
 @SuppressWarnings({"PMD.UnusedPrivateMethod", "PMD.TooManyMethods"})
 public class NativeC4Collection implements C4Collection.NativeImpl {
 
+    // Collections
+
+    @Override
+    public long nGetDefaultCollection(long c4Db) { return getDefaultCollection(c4Db); }
+
+    @Override
+    public long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection) {
+        return getCollection(c4Db, scope, collection);
+    }
+
     @Override
     public long nCreateCollection(long c4Db, @Nullable String scope, @NonNull String collection) {
         return createCollection(c4Db, scope, collection);
     }
 
     @Override
-    public boolean nIsValid(long c4collection) { return isValid(c4collection); }
+    public boolean nCollectionIsValid(long peer) { return isValid(peer); }
+
 
     @Override
-    public long nGetDatabase(long c4collection) { return getDatabase(c4collection); }
+    public long nGetDocumentCount(long peer) { return getDocumentCount(peer); }
 
     @Override
-    public long nGetDocumentCount(long c4collection) { return getDocumentCount(c4collection); }
+    public long nGetLastSequence(long peer) { return getLastSequence(peer); }
+
+    // Documents
 
     @Override
-    public long nGetLastSequence(long c4collection) { return getLastSequence(c4collection); }
+    public long nGetDoc(long peer, @NonNull String docID, boolean mustExist) { return getDoc(peer, docID, mustExist); }
 
     @Override
-    public long nGetDoc(long c4Collection, @NonNull String docID, boolean mustExist, long contentLevel) {
-        return getDoc(c4Collection, docID, mustExist, contentLevel);
+    public long nGetDocExpiration(long peer, @NonNull String docID) { return getDocExpiration(peer, docID); }
+
+    @Override
+    public boolean nSetDocExpiration(long peer, @NonNull String docID, long timestamp) {
+        return setDocExpiration(peer, docID, timestamp);
     }
 
     @Override
-    public long nGetDocBySequence(long c4Collection, long seq) { return getDocBySequence(c4Collection, seq); }
+    public boolean nDeleteDoc(long peer, @NonNull String docID) { return deleteDoc(peer, docID); }
 
     @Override
-    public long nPutDoc(long c4Collection, long request) {
-        return putDoc(c4Collection, request);
-    }
+    public boolean nPurgeDoc(long peer, @NonNull String docID) { return purgeDoc(peer, docID); }
+
+    // Indexes
 
     @Override
-    public long nCreateDoc(long c4Collection, @NonNull String docID, @NonNull byte[] body, int revisionFlags) {
-        return createDoc(c4Collection, docID, body, revisionFlags);
-    }
-
-    @Override
-    public boolean nMoveDoc(long c4Collection, @NonNull String docID, long toCollection, @NonNull String newDocID) {
-        return moveDoc(c4Collection, docID, toCollection, newDocID);
-    }
-
-    @Override
-    public boolean nPurgeDoc(long c4Collection, @NonNull String docID) {
-        return purgeDoc(c4Collection, docID);
-    }
-
-    @Override
-    public boolean nSetDocExpiration(long c4Collection, @NonNull String docID, long timestamp) {
-        return setDocExpiration(c4Collection, docID, timestamp);
-    }
-
-    @Override
-    public long nGetDocExpiration(long c4Collection, @NonNull String docID) {
-        return getDocExpiration(c4Collection, docID);
-    }
-
-    @Override
-    public long nNextDocExpiration(long c4collection) { return nextDocExpiration(c4collection); }
-
-    @Override
-    public long nPurgeExpiredDocs(long c4collection) { return purgeExpiredDocs(c4collection); }
+    public long nGetIndexesInfo(long peer) { return getIndexesInfo(peer); }
 
     @Override
     public boolean nCreateIndex(
-        long c4Collection,
+        long peer,
         String name,
         String indexSpec,
         int queryLanguage,
         int indexType,
         String language,
         boolean ignoreDiacritics) {
-        return createIndex(c4Collection, name, indexSpec, queryLanguage, indexType, language, ignoreDiacritics);
+        return createIndex(peer, name, indexSpec, queryLanguage, indexType, language, ignoreDiacritics);
     }
 
     @Override
-    public boolean nDeleteIndex(long c4Collection, @NonNull String name) { return deleteIndex(c4Collection, name); }
-
-    @Override
-    public long nGetIndexesInfo(long c4Collection) { return getIndexesInfo(c4Collection); }
+    public boolean nDeleteIndex(long peer, @NonNull String name) { return deleteIndex(peer, name); }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
+    private static native long getDefaultCollection(long c4Db);
+
+    private static native long getCollection(long c4Db, @Nullable String scope, @NonNull String collection);
 
     private static native long createCollection(long c4Db, @Nullable String scope, @NonNull String collection);
 
-    private static native boolean isValid(long c4Collection);
+    private static native boolean isValid(long peer);
 
-    private static native long getDatabase(long c4Collection);
+    private static native long getDocumentCount(long peer);
 
-    private static native long getDocumentCount(long c4Collection);
+    private static native long getLastSequence(long peer);
 
-    private static native long getLastSequence(long c4Collection);
+    private static native long getDoc(long peer, @NonNull String docID, boolean mustExist);
 
-    private static native long getDoc(long c4Collection, @NonNull String docID, boolean mustExist, long contentLevel);
+    private static native boolean setDocExpiration(long poeer, @NonNull String docID, long timestamp);
 
-    private static native long getDocBySequence(long c4Collection, long seq);
+    private static native long getDocExpiration(long peer, @NonNull String docID);
 
-    private static native long putDoc(long c4Collection, long request);
+    private static native boolean deleteDoc(long peer, @NonNull String docID);
 
-    private static native long createDoc(
-        long c4Collection,
-        @NonNull String docID,
-        @NonNull byte[] body,
-        int revisionFlags);
+    private static native boolean purgeDoc(long peer, @NonNull String docID);
 
-    private static native boolean moveDoc(
-        long c4Collection,
-        @NonNull String docID,
-        long toCollection,
-        @NonNull String newDocID);
 
-    private static native boolean purgeDoc(long c4Collection, @NonNull String docID);
-
-    private static native boolean setDocExpiration(long c4Collection, @NonNull String docID, long timestamp);
-
-    private static native long getDocExpiration(long c4Collection, @NonNull String docID);
-
-    private static native long nextDocExpiration(long c4Collection);
-
-    private static native long purgeExpiredDocs(long c4Collection);
+    private static native long getIndexesInfo(long peer);
 
     private static native boolean createIndex(
-        long c4Collection,
+        long peer,
         String name,
         String indexSpec,
         int queryLanguage,
@@ -155,7 +126,5 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
         String language,
         boolean ignoreDiacritics);
 
-    private static native boolean deleteIndex(long c4Collection, @NonNull String name);
-
-    private static native long getIndexesInfo(long c4Collection);
+    private static native boolean deleteIndex(long peer, @NonNull String name);
 }
