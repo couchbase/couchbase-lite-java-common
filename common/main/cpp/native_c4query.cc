@@ -17,24 +17,21 @@
 //
 #include <c4.h>
 #include <c4Base.h>
-#include "com_couchbase_lite_internal_core_C4Query.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Query.h"
 #include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;
 
 extern "C" {
-// ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4Query
-// ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Query
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    init
  * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_createQuery(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_createQuery(
         JNIEnv *env,
         jclass ignore,
         jlong db,
@@ -61,12 +58,12 @@ Java_com_couchbase_lite_internal_core_C4Query_createQuery(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Query
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    setParameters
  * Signature: (JJ)V;
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_setParameters(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_setParameters(
         JNIEnv *env,
         jclass ignore,
         jlong jquery,
@@ -77,12 +74,12 @@ Java_com_couchbase_lite_internal_core_C4Query_setParameters(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Query
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    explain
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_explain(JNIEnv *env, jclass ignore, jlong jquery) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_explain(JNIEnv *env, jclass ignore, jlong jquery) {
     C4StringResult result = c4query_explain((C4Query *) jquery);
     jstring jstr = toJString(env, result);
     c4slice_free(result);
@@ -90,12 +87,12 @@ Java_com_couchbase_lite_internal_core_C4Query_explain(JNIEnv *env, jclass ignore
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Query
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    run
  * Signature: (JZJ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_run(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
         JNIEnv *env,
         jclass ignore,
         jlong jquery,
@@ -114,17 +111,17 @@ Java_com_couchbase_lite_internal_core_C4Query_run(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Query
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    columnCount
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_columnCount(JNIEnv *env, jclass ignore, jlong jquery) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_columnCount(JNIEnv *env, jclass ignore, jlong jquery) {
     return c4query_columnCount((C4Query *) jquery);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Query
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    columnName
  * Signature: (JI)Ljava/lang/String;
  *
@@ -133,87 +130,18 @@ Java_com_couchbase_lite_internal_core_C4Query_columnCount(JNIEnv *env, jclass ig
  * the entire map of column names to indices in one fell swoop...
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_columnName(JNIEnv *env, jclass ignore, jlong jquery, jint colIdx) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_columnName(JNIEnv *env, jclass ignore, jlong jquery,
+                                                                    jint colIdx) {
     return toJString(env, c4query_columnTitle((C4Query *) jquery, colIdx));
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Query
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    free
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_free(JNIEnv *env, jclass ignore, jlong jquery) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_free(JNIEnv *env, jclass ignore, jlong jquery) {
     c4query_release((C4Query *) jquery);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    createIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Z)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_createIndex(
-        JNIEnv *env,
-        jclass ignore,
-        jlong db,
-        jstring jname,
-        jstring jqueryExpressions,
-        jint queryLanguage,
-        jint indexType,
-        jstring jlanguage,
-        jboolean ignoreDiacritics) {
-    jstringSlice name(env, jname);
-    jstringSlice queryExpressions(env, jqueryExpressions);
-    jstringSlice language(env, jlanguage);
-
-    C4IndexOptions options = {};
-    options.language = language.c_str();
-    options.ignoreDiacritics = (bool) ignoreDiacritics;
-
-    C4Error error = {};
-    bool res = c4db_createIndex2(
-            (C4Database *) db,
-            name,
-            (C4Slice) queryExpressions,
-            (C4QueryLanguage) queryLanguage,
-            (C4IndexType) indexType,
-            &options,
-            &error);
-    if (!res) {
-        throwError(env, error);
-        return false;
-    }
-
-    return (jboolean) res;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    getIndexesInfo
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_getIndexInfo(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4SliceResult data = c4db_getIndexesInfo((C4Database *) jdb, nullptr);
-    return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Query
- * Method:    deleteIndex
- * Signature: (JLjava/lang/String;)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Query_deleteIndex(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdb,
-        jstring jname) {
-    jstringSlice name(env, jname);
-    C4Error error = {};
-    bool res = c4db_deleteIndex((C4Database *) jdb, name, &error);
-    if (!res)
-        throwError(env, error);
 }
 }

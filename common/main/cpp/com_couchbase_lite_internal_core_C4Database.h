@@ -214,6 +214,33 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getFLSh
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Database_maintenance
         (JNIEnv *, jclass, jlong, jint);
 
+// !!! DEPRECATED: Delete these methods when the corresponding Java methods proxy to the default collection
+/*
+ * Class:     Java_com_couchbase_lite_internal_core_C4Database
+ * Method:    getIndexInfo
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_getIndexesInfo
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     Java_com_couchbase_lite_internal_core_C4Database
+ * Method:    createIndex
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IILjava/lang/String;Z)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_createIndex
+        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jstring, jboolean);
+
+/*
+ * Class:     Java_com_couchbase_lite_internal_core_C4Database
+ * Method:    deleteIndex
+ * Signature: (JLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_deleteIndex
+        (JNIEnv *, jclass, jlong, jstring);
+
+// end of deprecation
+
 #ifdef __cplusplus
 }
 #endif

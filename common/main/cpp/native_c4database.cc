@@ -476,4 +476,73 @@ Java_com_couchbase_lite_internal_core_C4Database_maintenance(
         throwError(env, error);
     return (jboolean) success;
 }
+
+// !!! DEPRECATED: Delete these methods when the corresponding Java methods proxy to the default collection
+
+/*
+ * Class:     Java_com_couchbase_lite_internal_core_C4Database
+ * Method:    getIndexesInfoForDb
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_getIndexesInfo(JNIEnv *env, jclass ignore, jlong jdb) {
+    C4SliceResult data = c4db_getIndexesInfo((C4Database *) jdb, nullptr);
+    return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
+}
+
+/*
+ * Class:     Java_com_couchbase_lite_internal_core_C4Database
+ * Method:    createIndexForDb
+ * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Z)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_createIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db,
+        jstring jname,
+        jstring jqueryExpressions,
+        jint queryLanguage,
+        jint indexType,
+        jstring jlanguage,
+        jboolean ignoreDiacritics) {
+    jstringSlice name(env, jname);
+    jstringSlice queryExpressions(env, jqueryExpressions);
+    jstringSlice language(env, jlanguage);
+
+    C4IndexOptions options = {};
+    options.language = language.c_str();
+    options.ignoreDiacritics = (bool) ignoreDiacritics;
+
+    C4Error error = {};
+    bool res = c4db_createIndex2(
+            (C4Database *) db,
+            name,
+            (C4Slice) queryExpressions,
+            (C4QueryLanguage) queryLanguage,
+            (C4IndexType) indexType,
+            &options,
+            &error);
+    if (!res)
+        throwError(env, error);
+}
+
+/*
+ * Class:     Java_com_couchbase_lite_internal_core_C4Database
+ * Method:    deleteIndexForDb
+ * Signature: (JLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Database_deleteIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdb,
+        jstring jname) {
+    jstringSlice name(env, jname);
+    C4Error error = {};
+    bool res = c4db_deleteIndex((C4Database *) jdb, name, &error);
+    if (!res)
+        throwError(env, error);
+}
+// end deprecation
 }

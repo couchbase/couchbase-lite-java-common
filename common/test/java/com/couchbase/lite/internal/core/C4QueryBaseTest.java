@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,10 @@ public class C4QueryBaseTest extends C4BaseTest {
         finally { e.close(); }
     }
 
+    protected final C4QueryEnumerator runQuery(@NonNull C4Query query, @NonNull C4QueryOptions opts)
+        throws LiteCoreException {
+        try (FLSliceResult params = FLSliceResult.getManagedSliceResult()) { return query.run(opts, params); }
+    }
 
     protected final List<List<List<Long>>> runFTS() throws LiteCoreException {
         final List<List<List<Long>>> matches = new ArrayList<>();

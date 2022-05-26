@@ -40,6 +40,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -221,6 +222,12 @@ public abstract class C4Database extends C4NativePeer {
 
     public void rekey(int keyType, byte[] newKey) throws LiteCoreException { rekey(getPeer(), keyType, newKey); }
 
+    public boolean performMaintenance(MaintenanceType type) throws LiteCoreException {
+        return maintenance(
+            getPeer(),
+            Preconditions.assertNotNull(MAINTENANCE_TYPE_MAP.get(type), "Unrecognized maintenance type: " + type));
+    }
+
     // - Lifecycle
 
     // This is subtle
@@ -315,12 +322,23 @@ public abstract class C4Database extends C4NativePeer {
 
     @NonNull
     public C4Query createJsonQuery(@NonNull String expression) throws LiteCoreException {
-        return new C4Query(getPeer(), AbstractIndex.QueryLanguage.JSON, expression);
+        return C4Query.create(this, AbstractIndex.QueryLanguage.JSON, expression);
     }
 
     @NonNull
     public C4Query createN1qlQuery(@NonNull String expression) throws LiteCoreException {
-        return new C4Query(getPeer(), AbstractIndex.QueryLanguage.N1QL, expression);
+        return C4Query.create(this, AbstractIndex.QueryLanguage.N1QL, expression);
+    }
+
+    ////////////////////////////////
+    // Indexes
+    // !!! DEPRECATED: Delete these methods when the corresponding Java methods proxy to the default collection
+    ////////////////////////////////
+
+    @NonNull
+    public FLValue getIndexesInfo() throws LiteCoreException {
+        final FLValue info = withPeerOrNull((peer) -> new FLValue(getIndexesInfo(peer)));
+        return Preconditions.assertNotNull(info, "index info");
     }
 
     public void createIndex(
@@ -331,19 +349,24 @@ public abstract class C4Database extends C4NativePeer {
         @Nullable String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        C4Query.createIndex(this, name, queryExpression, queryLanguage, indexType, language, ignoreDiacritics);
+        Log.d(LogDomain.QUERY, "creating index: %s", queryExpression);
+        withPeerThrows(
+            (peer) -> createIndex(
+                peer,
+                name,
+                queryExpression,
+                queryLanguage.getValue(),
+                indexType.getValue(),
+                language,
+                ignoreDiacritics));
     }
 
-    public void deleteIndex(String name) throws LiteCoreException { C4Query.deleteIndex(this, name); }
-
-    @NonNull
-    public FLValue getIndexesInfo() throws LiteCoreException { return C4Query.getIndexInfo(this); }
-
-    public boolean performMaintenance(MaintenanceType type) throws LiteCoreException {
-        return maintenance(
-            getPeer(),
-            Preconditions.assertNotNull(MAINTENANCE_TYPE_MAP.get(type), "Unrecognized maintenance type: " + type));
+    public void deleteIndex(String name) throws LiteCoreException {
+        withPeerThrows((peer) -> deleteIndex(peer, name));
     }
+
+
+    // end deprecation
 
     ////////////////////////////////
     // C4Replicator
@@ -657,4 +680,22 @@ public abstract class C4Database extends C4NativePeer {
     private static native long getFLSharedKeys(long db);
 
     private static native boolean maintenance(long db, int type) throws LiteCoreException;
+
+    // !!! DEPRECATED: Delete these methods when the corresponding Java methods proxy to the default collection
+
+    private static native long getIndexesInfo(long db) throws LiteCoreException;
+
+    private static native void createIndex(
+        long db,
+        @NonNull String name,
+        @NonNull String queryExpressions,
+        int queryLanguage,
+        int indexType,
+        @Nullable String language,
+        boolean ignoreDiacritics)
+        throws LiteCoreException;
+
+    private static native void deleteIndex(long db, @NonNull String name) throws LiteCoreException;
+
+    // end deprecation
 }

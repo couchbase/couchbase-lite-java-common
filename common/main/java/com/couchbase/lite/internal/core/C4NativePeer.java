@@ -67,21 +67,18 @@ public abstract class C4NativePeer implements AutoCloseable {
         logBadCall();
     }
 
-    @NonNull
-    protected final <T, E extends Exception> T withPeer(
-        @NonNull T def,
-        @NonNull Fn.FunctionThrows<Long, T, E> fn)
+    protected final <E extends Exception> void withPeerThrows(
+        @NonNull Fn.ConsumerThrows<Long, E> fn)
         throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
             if (peer != 0L) {
-                final T val = fn.apply(peer);
-                return (val == null) ? def : val;
+                fn.accept(peer);
+                return;
             }
         }
 
         logBadCall();
-        return def;
     }
 
     @Nullable
@@ -95,6 +92,23 @@ public abstract class C4NativePeer implements AutoCloseable {
 
         logBadCall();
         return null;
+    }
+
+    @NonNull
+    protected final <T, E extends Exception> T withPeerOrDefault(
+        @NonNull T def,
+        @NonNull Fn.FunctionThrows<Long, T, E> fn)
+        throws E {
+        synchronized (getPeerLock()) {
+            final long peer = get();
+            if (peer != 0L) {
+                final T val = fn.apply(peer);
+                return (val == null) ? def : val;
+            }
+        }
+
+        logBadCall();
+        return def;
     }
 
     /**

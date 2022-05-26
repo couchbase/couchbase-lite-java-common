@@ -132,7 +132,7 @@ public final class C4Document extends C4NativePeer {
 
     // - C4Document
 
-    public int getFlags() { return withPeer(0, C4Document::getFlags); }
+    public int getFlags() { return withPeerOrDefault(0, C4Document::getFlags); }
 
     @Nullable
     public String getDocID() { return withPeerOrNull(C4Document::getDocID); }
@@ -140,30 +140,30 @@ public final class C4Document extends C4NativePeer {
     @Nullable
     public String getRevID() { return withPeerOrNull(C4Document::getRevID); }
 
-    public long getSequence() { return withPeer(0L, C4Document::getSequence); }
+    public long getSequence() { return withPeerOrDefault(0L, C4Document::getSequence); }
 
     // - C4Revision
 
     @Nullable
     public String getSelectedRevID() { return withPeerOrNull(C4Document::getSelectedRevID); }
 
-    public long getSelectedSequence() { return withPeer(0L, C4Document::getSelectedSequence); }
+    public long getSelectedSequence() { return withPeerOrDefault(0L, C4Document::getSelectedSequence); }
 
     @Nullable
     public FLDict getSelectedBody2() {
-        final long value = withPeer(0L, C4Document::getSelectedBody2);
+        final long value = withPeerOrDefault(0L, C4Document::getSelectedBody2);
         return value == 0 ? null : FLDict.create(value);
     }
 
     // - Lifecycle
 
-    public int getSelectedFlags() { return withPeer(0, C4Document::getSelectedFlags); }
+    public int getSelectedFlags() { return withPeerOrDefault(0, C4Document::getSelectedFlags); }
 
     public void save(int maxRevTreeDepth) throws LiteCoreException { save(getPeer(), maxRevTreeDepth); }
 
     // - Revisions
 
-    public boolean selectNextRevision() { return withPeer(false, C4Document::selectNextRevision); }
+    public boolean selectNextRevision() { return withPeerOrDefault(false, C4Document::selectNextRevision); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
         selectNextLeafRevision(getPeer(), includeDeleted, withBody);
@@ -181,14 +181,14 @@ public final class C4Document extends C4NativePeer {
     @Nullable
     public C4Document update(@Nullable FLSliceResult body, int flags) throws LiteCoreException {
         final long bodyHandle = (body != null) ? body.getHandle() : 0;
-        final long newDoc = withPeer(0L, h -> update2(h, bodyHandle, flags));
+        final long newDoc = withPeerOrDefault(0L, h -> update2(h, bodyHandle, flags));
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
 
     @VisibleForTesting
     @Nullable
     public C4Document update(@NonNull byte[] body, int flags) throws LiteCoreException {
-        final long newDoc = withPeer(0L, h -> update(h, body, flags));
+        final long newDoc = withPeerOrDefault(0L, h -> update(h, body, flags));
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
 
@@ -238,23 +238,25 @@ public final class C4Document extends C4NativePeer {
     byte[] getSelectedBody() { return withPeerOrNull(C4Document::getSelectedBody); }
 
     @VisibleForTesting
-    int purgeRevision(String revID) throws LiteCoreException { return withPeer(0, h -> purgeRevision(h, revID)); }
+    int purgeRevision(String revID) throws LiteCoreException {
+        return withPeerOrDefault(0, h -> purgeRevision(h, revID));
+    }
 
     @VisibleForTesting
-    boolean selectCurrentRevision() { return withPeer(false, C4Document::selectCurrentRevision); }
+    boolean selectCurrentRevision() { return withPeerOrDefault(false, C4Document::selectCurrentRevision); }
 
     @VisibleForTesting
     void loadRevisionBody() throws LiteCoreException { loadRevisionBody(getPeer()); }
 
     @VisibleForTesting
-    boolean hasRevisionBody() { return withPeer(false, C4Document::hasRevisionBody); }
+    boolean hasRevisionBody() { return withPeerOrDefault(false, C4Document::hasRevisionBody); }
 
     @VisibleForTesting
-    boolean selectParentRevision() { return withPeer(false, C4Document::selectParentRevision); }
+    boolean selectParentRevision() { return withPeerOrDefault(false, C4Document::selectParentRevision); }
 
     @VisibleForTesting
     boolean selectCommonAncestorRevision(String revID1, String revID2) {
-        return withPeer(false, h -> selectCommonAncestorRevision(h, revID1, revID2));
+        return withPeerOrDefault(false, h -> selectCommonAncestorRevision(h, revID1, revID2));
     }
 
     //-------------------------------------------------------------------------

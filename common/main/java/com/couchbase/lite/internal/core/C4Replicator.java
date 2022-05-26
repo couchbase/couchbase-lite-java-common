@@ -71,8 +71,15 @@ public abstract class C4Replicator extends C4NativePeer {
     public static final String C4_REPLICATOR_SCHEME_2 = "blip";
     public static final String C4_REPLICATOR_TLS_SCHEME_2 = "blips";
 
+    ////// values for enum C4ReplicatorProgressLevel
+
+    public static final int PROGRESS_OVERALL = 0;
+    public static final int PROGRESS_PER_DOC = 1;
+    public static final int PROGRESS_PER_ATTACHMENT = 2;
+
     ////// Replicator option dictionary keys:
 
+    // begin: collection specific properties.
     // Docs to replicate: string[]
     public static final String REPLICATOR_OPTION_DOC_IDS = "docIDs";
     // SG channel names: string[]
@@ -89,62 +96,67 @@ public abstract class C4Replicator extends C4NativePeer {
     public static final String REPLICATOR_OPTION_OUTGOING_CONFLICTS = "outgoingConflicts";
     // How often to checkpoint, in seconds: number
     public static final String REPLICATOR_CHECKPOINT_INTERVAL = "checkpointInterval";
+    // end: collection specific properties
+
     // Stable ID for remote db with unstable URL: string
     public static final String REPLICATOR_OPTION_REMOTE_DB_UNIQUE_ID = "remoteDBUniqueID";
-    // < Disables delta sync: bool
+    // Disables delta sync: bool
     public static final String REPLICATOR_OPTION_DISABLE_DELTAS = "noDeltas";
-    // < Max number of retry attempts (int)
+    // Disables property decryption
+    public static final String REPLICATOR_OPTION_DISABLE_PROPERTY_DECRYPTION = "noDecryption";
+    // Max number of retry attempts (int)
     public static final String REPLICATOR_OPTION_MAX_RETRIES = "maxRetries";
-    // < Max delay between retries (secs)
+    // Max delay between retries (secs)
     public static final String REPLICATOR_OPTION_MAX_RETRY_INTERVAL = "maxRetryInterval";
     // true, Enable auto-purge
     public static final String REPLICATOR_OPTION_ENABLE_AUTO_PURGE = "autoPurge";
 
-
-    // < Trusted root certs (data)
+    //// TLS options
+    // Trusted root certs (data)
     public static final String REPLICATOR_OPTION_ROOT_CERTS = "rootCerts";
     // Cert or public key: [data]
     public static final String REPLICATOR_OPTION_PINNED_SERVER_CERT = "pinnedCert";
-    // < Only accept self signed server certs (for P2P, bool)
+    // Only accept self signed server certs (for P2P, bool)
     public static final String REPLICATOR_OPTION_SELF_SIGNED_SERVER_CERT = "onlySelfSignedServer";
 
+    //// HTTP options
     // Extra HTTP headers: string[]
     public static final String REPLICATOR_OPTION_EXTRA_HEADERS = "headers";
     // HTTP Cookie header value: string
     public static final String REPLICATOR_OPTION_COOKIES = "cookies";
     // Auth settings: Dict
     public static final String REPLICATOR_OPTION_AUTHENTICATION = "auth";
-    // < Proxy settings (Dict); see [3]]
+    // Proxy settings (Dict); see [3]]
     public static final String REPLICATOR_OPTION_PROXY_SERVER = "proxy";
 
-    ////// WebSocket protocol options (WebSocketInterface.hh)
-
+    //// WebSocket options
     // Interval in secs to send a keep-alive: ping
     public static final String REPLICATOR_HEARTBEAT_INTERVAL = "heartbeat";
-    // < Sec-WebSocket-Protocol header value
+    // Sec-WebSocket-Protocol header value
     public static final String SOCKET_OPTION_WS_PROTOCOLS = "WS-Protocols";
-    // < Specific network interface (name or IP address) used for connecting to the remote server.
+    // Specific network interface (name or IP address) used for connecting to the remote server.
     public static final String SOCKET_OPTIONS_NETWORK_INTERFACE = "networkInterface";
-    // Auth settings: Dict
-    static final String REPLICATOR_AUTH_OPTION = "auth";
+
+    //// BLIP options
+    // Data compression level, 0..9
+    public static final String REPLICATOR_COMPRESSION_LEVEL = "BLIPCompressionLevel";
 
     ////// Auth dictionary keys:
 
-    // < Auth type; see [2] (string)
+    // Auth type; see [2] (string)
     public static final String REPLICATOR_AUTH_TYPE = "type";
-    // < User name for basic auth (string)
+    // User name for basic auth (string)
     public static final String REPLICATOR_AUTH_USER_NAME = "username";
-    // < Password for basic auth (string)
+    // Password for basic auth (string)
     public static final String REPLICATOR_AUTH_PASSWORD = "password";
-    // < TLS client certificate (value platform-dependent)
+    // TLS client certificate (value platform-dependent)
     public static final String REPLICATOR_AUTH_CLIENT_CERT = "clientCert";
-    // < Client cert's private key (data)
+    // Client cert's private key (data)
     public static final String REPLICATOR_AUTH_CLIENT_CERT_KEY = "clientCertKey";
-    // < Session cookie or auth token (string)
+    // Session cookie or auth token (string)
     public static final String REPLICATOR_AUTH_TOKEN = "token";
 
     ////// auth.type values:
-
     // HTTP Basic (the default)
     public static final String AUTH_TYPE_BASIC = "Basic";
     // SG session cookie
@@ -152,12 +164,6 @@ public abstract class C4Replicator extends C4NativePeer {
     public static final String AUTH_TYPE_OPEN_ID_CONNECT = "OpenID Connect";
     public static final String AUTH_TYPE_FACEBOOK = "Facebook";
     public static final String AUTH_TYPE_CLIENT_CERT = "Client Cert";
-
-    ////// values for enum C4ReplicatorProgressLevel
-
-    public static final int PROGRESS_OVERALL = 0;
-    public static final int PROGRESS_PER_DOC = 1;
-    public static final int PROGRESS_PER_ATTACHMENT = 2;
 
     //-------------------------------------------------------------------------
     // Types

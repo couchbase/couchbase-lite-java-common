@@ -42,7 +42,7 @@ class C4QueryObserverTest : C4BaseTest() {
         val impl = C4QueryObserver.nativeImpl
         try {
             C4QueryObserver.nativeImpl = mockQueryObserver
-            C4Query(c4Database.handle, AbstractIndex.QueryLanguage.JSON, query).use { c4Query ->
+            C4Query.create(c4Database, AbstractIndex.QueryLanguage.JSON, query).use { c4Query ->
                 C4QueryObserver.create(c4Query, { _, _ -> }).use { obs1 -> assertNotNull(obs1) }
             }
         } finally {
@@ -55,7 +55,7 @@ class C4QueryObserverTest : C4BaseTest() {
         var i = 0
         var expected: C4QueryEnumerator? = null
 
-        C4Query(c4Database.handle, AbstractIndex.QueryLanguage.JSON, query).use { c4Query ->
+        C4Query.create(c4Database, AbstractIndex.QueryLanguage.JSON, query).use { c4Query ->
             val obs = C4QueryObserver(
                 mockQueryObserver,
                 {
