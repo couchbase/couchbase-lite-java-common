@@ -158,12 +158,12 @@ public class C4Collection extends C4NativePeer {
 
     @NonNull
     public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) {
-        return C4CollectionObserver.newObserver(this, listener);
+        return C4CollectionObserver.newObserver(getPeer(), listener);
     }
 
     @NonNull
     public C4CollectionObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
-        return C4CollectionObserver.newObserver(this, docID, listener);
+        return C4CollectionObserver.newObserver(getPeer(), docID, listener);
     }
 
     //// Queries

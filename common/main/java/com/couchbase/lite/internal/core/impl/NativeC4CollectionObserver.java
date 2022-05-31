@@ -15,14 +15,23 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
-@SuppressWarnings("PMD.UnusedPrivateMethod")
-class NativeC4CollectionObserver {
+import com.couchbase.lite.internal.core.C4CollectionObserver;
+
+
+public class NativeC4CollectionObserver implements C4CollectionObserver.NativeImpl {
+
+    @Override
+    public long nCreate(long coll, long token) { return create(coll, token); }
+
+    @Override
+    public void nFree(long peer) { free(peer); }
+
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native long create(long db, long token);
+    private static native long create(long coll, long token);
 
     private static native void free(long peer);
 }

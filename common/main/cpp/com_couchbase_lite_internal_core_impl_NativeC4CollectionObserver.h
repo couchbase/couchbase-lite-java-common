@@ -15,7 +15,7 @@ extern "C" {
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create
-  (JNIEnv *, jclass, jlong, jlong);
+    (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
@@ -24,7 +24,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_free
-  (JNIEnv *, jclass, jlong);
+    (JNIEnv*, jclass, jlong);
 
 #ifdef __cplusplus
 }

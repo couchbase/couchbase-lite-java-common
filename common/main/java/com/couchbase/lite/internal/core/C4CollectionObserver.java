@@ -15,22 +15,100 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.impl.NativeC4CollectionObserver;
+import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
+import com.couchbase.lite.internal.support.Log;
 
 
-final class C4CollectionObserver {
-    @NonNull
-    public static C4CollectionObserver newObserver(@NonNull C4Collection collection, @NonNull Runnable listener) {
-        return new C4CollectionObserver();
+public final class C4CollectionObserver extends C4NativePeer {
+    public interface NativeImpl {
+        long nCreate(long coll, long token);
+        void nFree(long peer);
     }
 
     @NonNull
-    public static C4CollectionObserver newObserver(
-        @NonNull C4Collection collection,
-        @NonNull String id,
-        @NonNull Runnable listener) {
-        return new C4CollectionObserver();
+    private static final NativeImpl NATIVE_IMPL = new NativeC4CollectionObserver();
+
+    private static final TaggedWeakPeerBinding<C4CollectionObserver> BOUND_OBSERVERS = new TaggedWeakPeerBinding<>();
+
+    //-------------------------------------------------------------------------
+    // JNI callback methods
+    //-------------------------------------------------------------------------
+
+    // This method is called by reflection.  Don't change its signature.
+    static void callback(long peer) {
+        Log.d(LogDomain.DATABASE, "C4CollectionObserver.callback @%x", peer);
+
+        final C4CollectionObserver observer = BOUND_OBSERVERS.getBinding(peer);
+        if (observer == null) { return; }
+
+        observer.listener.run();
     }
 
-    private C4CollectionObserver() { }
+    //-------------------------------------------------------------------------
+    // Static factory methods
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    public static C4CollectionObserver newObserver(long c4Coll, @NonNull Runnable listener) {
+        return newObserver(NATIVE_IMPL, c4Coll, listener);
+    }
+
+    // !!! Here until C4CollectionDocObserver is implemented.
+    @NonNull
+    public static C4CollectionObserver newObserver(long c4Coll, @NonNull String id, @NonNull Runnable listener) {
+        return newObserver(NATIVE_IMPL, c4Coll, listener);
+    }
+
+    @NonNull
+    private static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener) {
+        final long token = BOUND_OBSERVERS.reserveKey();
+        final C4CollectionObserver observer = new C4CollectionObserver(impl, impl.nCreate(c4Coll, token), listener);
+        BOUND_OBSERVERS.bind(token, observer);
+        return observer;
+    }
+
+    //-------------------------------------------------------------------------
+    // Member Variables
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    private final Runnable listener;
+    @NonNull
+    private final NativeImpl impl;
+
+    //-------------------------------------------------------------------------
+    // Constructor
+    //-------------------------------------------------------------------------
+
+    private C4CollectionObserver(@NonNull NativeImpl impl, long collection, @NonNull Runnable listener) {
+        super(collection);
+        this.impl = impl;
+        this.listener = listener;
+    }
+
+    //-------------------------------------------------------------------------
+    // public methods
+    //-------------------------------------------------------------------------
+
+    @CallSuper
+    @Override
+    public void close() { closePeer(null); }
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        try { closePeer(LogDomain.DATABASE); }
+        finally { super.finalize(); }
+    }
+
+    private void closePeer(@Nullable LogDomain domain) {
+        BOUND_OBSERVERS.unbind(getPeerUnchecked());
+        releasePeer(domain, impl::nFree);
+    }
 }

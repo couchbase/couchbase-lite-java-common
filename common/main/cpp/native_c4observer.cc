@@ -238,7 +238,7 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create
         (JNIEnv *, jclass, jlong, jlong) {
     // c4dbobs_createOnCollection
-    return 0L;
+    return 0x0BADF00D;
 }
 
 /*
