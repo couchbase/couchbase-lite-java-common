@@ -161,6 +161,77 @@ static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C
     return ds;
 }
 
+
+// !!! Move the field stuff into initialization.
+// !!! Fix the filter callbacks.
+static bool fromJavaReplColls(JNIEnv *env, jobjectArray jColls, C4ReplicationCollection colls[], int nColls) {
+    jclass cls_replColl = env->FindClass("com/couchbase/lite/internal/core/C4ReplicationCollection");
+    if (!cls_replColl)
+        return false;
+
+    jfieldID f_ReplColl_scope = env->GetFieldID(cls_replColl, "scope", "Ljava/lang/String;");
+    if (!f_ReplColl_scope)
+        return false;
+
+    jfieldID m_ReplColl_name = env->GetFieldID(cls_replColl, "name", "Ljava/lang/String;");
+    if (!m_ReplColl_name)
+        return false;
+
+    jfieldID m_ReplColl_push = env->GetFieldID(cls_replColl, "push", "I");
+    if (!m_ReplColl_push)
+        return false;
+
+    jfieldID m_ReplColl_hasPushFilter = env->GetFieldID(cls_replColl, "hasPushFilter", "Z");
+    if (!m_ReplColl_hasPushFilter)
+        return false;
+
+    jfieldID m_ReplColl_pull = env->GetFieldID(cls_replColl, "pull", "I");
+    if (!m_ReplColl_pull)
+        return false;
+
+    jfieldID m_ReplColl_hasPullFilter = env->GetFieldID(cls_replColl, "hasPullFilter", "Z");
+    if (!m_ReplColl_hasPullFilter)
+        return false;
+
+    jfieldID f_ReplColl_options = env->GetFieldID(cls_replColl, "options", "[B");
+    if (!f_ReplColl_options)
+        return false;
+
+    jfieldID f_ReplColl_token = env->GetFieldID(cls_replColl, "token", "J");
+    if (!f_ReplColl_token)
+        return false;
+
+    for (jsize i = 0; i < nColls; i++) {
+        jobject replColl = env->GetObjectArrayElement(jColls, i);
+
+        jobject jscope = env->GetObjectField(replColl, f_ReplColl_scope);
+        jstringSlice scope(env, (jstring) jscope);
+        colls[i].collection.scope = scope;
+
+        jobject jname = env->GetObjectField(replColl, f_ReplColl_scope);
+        jstringSlice name(env, (jstring) jname);
+        colls[i].collection.name = name;
+
+// ??? Something like this...
+//
+//        collections[i].push = (C4ReplicatorMode) env->GetIntField(replColl, m_ReplColl_push);
+//        if (env->GetBooleanField(replColl, m_ReplColl_hasPushFilter) != JNI_TRUE)
+//            collections[i].pushFilter = &pushFilterFunction;
+//
+//        collections[i].pull = (C4ReplicatorMode) env->GetIntField(replColl, m_ReplColl_pull);
+//        if (env->GetBooleanField(replColl, m_ReplColl_hasPullFilter) != JNI_TRUE)
+//            collections[i].pullFilter = &pullFilterFunction;
+//
+//        colls[i].callbackContext = env->GetLongField(replColl, f_ReplColl_token);
+
+        jobject joptions = env->GetObjectField(replColl, f_ReplColl_options);
+        jbyteArraySlice options(env, (jbyteArray) joptions, false);
+        colls[i].optionsDictFleece = options;
+    }
+
+    return true;
+}
+
 /**
  * Callback a client can register, to get progress information.
  * This will be called on arbitrary background threads and should not block.
@@ -482,7 +553,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_free(
  * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_start(JNIEnv *env, jclass ignored, jlong repl, jboolean restart) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_start(
+        JNIEnv *env,
+        jclass ignored,
+        jlong repl,
+        jboolean restart) {
     c4repl_start((C4Replicator *) repl, (bool) restart);
 }
 
@@ -523,7 +598,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus(JNIEnv *
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(JNIEnv *env, jclass ignored, jlong repl) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
+        JNIEnv *env,
+        jclass ignored,
+        jlong repl) {
     C4Error c4Error = {};
 
     C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, &c4Error);
