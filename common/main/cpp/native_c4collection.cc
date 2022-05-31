@@ -16,6 +16,10 @@
 #include "com_couchbase_lite_internal_core_impl_NativeC4Collection.h"
 #include "c4DatabaseTypes.h"
 #include "c4Collection.h"
+#include "native_glue.hh"
+
+using namespace litecore;
+using namespace litecore::jni;
 
 extern "C" {
 
@@ -25,10 +29,11 @@ extern "C" {
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollection
-        (JNIEnv *env, jclass ignore, jlong db) {
-    // C4Collection* c4db_getDefaultCollection(C4Database *db)
-    return 0x8BADF00D;
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollection(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db) {
+    return (jlong) c4db_getDefaultCollection((C4Database *) db);
 }
 
 /*
@@ -38,9 +43,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollecti
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection
-        (JNIEnv *env, jclass ignore, jlong db, jstring scope, jstring collection) {
-    // C4Collection* C4NULLABLE c4db_getCollection(C4Database *db, C4CollectionSpec spec)
-    return 0x8BADF00D;
+        (JNIEnv *env, jclass ignore, jlong db, jstring jScope, jstring jCollection) {
+    jstringSlice scope(env, jScope);
+    jstringSlice collection(env, jCollection);
+    C4CollectionSpec spec = {scope, collection};
+    return (jlong) c4db_getCollection((C4Database *) db, spec);
 }
 
 /*
@@ -49,10 +56,24 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection
  * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection
-        (JNIEnv *, jclass, jlong, jstring, jstring) {
-    // C4Collection* C4NULLABLE c4db_createCollection(C4Database *db, C4CollectionSpec spec, C4Error* C4NULLABLE outError)
-    return 0x8BADF00D;
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db,
+        jstring jScope,
+        jstring jCollection) {
+    jstringSlice scope(env, jScope);
+    jstringSlice collection(env, jCollection);
+    C4CollectionSpec spec = {scope, collection};
+
+    C4Error error;
+    C4Collection *coll = c4db_createCollection((C4Database *) db, spec, &error);
+    if (!coll) {
+        throwError(env, error);
+        return 0;
+    }
+
+    return (jlong) coll;
 }
 
 /*
@@ -61,20 +82,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid
-        (JNIEnv *, jclass, jlong) {
-    return JNI_FALSE;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getDatabase
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDatabase
-        (JNIEnv *, jclass, jlong) {
-    return 0L;
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid(JNIEnv *env, jclass ignore, jlong coll) {
+    return (jboolean) true == c4coll_isValid((C4Collection *) coll);
 }
 
 /*
@@ -83,20 +92,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDatabase
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount
-        (JNIEnv *, jclass, jlong) {
-    return 0L;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getLastSequence
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getLastSequence
-        (JNIEnv *env, jclass ingnore, jlong collection) {
-    return (jlong) c4coll_getLastSequence((C4Collection *) collection);
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount(JNIEnv *env, jclass ignore, jlong coll) {
+    return (jlong) c4coll_getDocumentCount((C4Collection *) coll);
 }
 
 /*
@@ -105,86 +102,41 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getLastSequence
  * Signature: (JLjava/lang/String;Z)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDoc
-        (JNIEnv *, jclass, jlong, jstring, jboolean) {
-    return 0L;
-}
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDoc(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jDocId,
+        jboolean mustExist) {
+    jstringSlice docId(env, jDocId);
 
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getDocBySequence
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocBySequence
-        (JNIEnv *, jclass, jlong, jlong) {
-    return 0L;
-}
+    C4Error error;
+    C4Document *doc = c4coll_getDoc((C4Collection *) coll, docId, mustExist != JNI_TRUE, kDocGetAll, &error);
+    if (!doc) {
+        throwError(env, error);
+        return 0;
+    }
 
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    putDoc
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_putDoc
-        (JNIEnv *, jclass, jlong, jlong) {
-    return 0L;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    createDoc
- * Signature: (JLjava/lang/String;[BI)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createDoc
-        (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint) {
-    return 0L;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    moveDoc
- * Signature: (JLjava/lang/String;JLjava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_moveDoc
-        (JNIEnv *, jclass, jlong, jstring, jlong, jstring) {
-    return JNI_FALSE;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    purgeDoc
- * Signature: (JLjava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc
-        (JNIEnv *, jclass, jlong, jstring) {
-    return JNI_FALSE;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    deleteDoc
- * Signature: (JLjava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteDoc
-        (JNIEnv *, jclass, jlong, jstring) {
-    return JNI_FALSE;
+    return (jlong) doc;
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    setDocExpiration
- * Signature: (JLjava/lang/String;J)Z
+ * Signature: (JLjava/lang/String;J)V
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_setDocExpiration
-        (JNIEnv *, jclass, jlong, jstring, jlong) {
-    return JNI_FALSE;
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_setDocExpiration(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jDocId,
+        jlong timestamp) {
+    jstringSlice docId(env, jDocId);
+
+    C4Error error;
+    if (!c4coll_setDocExpiration((C4Collection *) coll, docId, timestamp, &error))
+        throwError(env, error);
 }
 
 /*
@@ -193,31 +145,39 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_setDocExpiration
  * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocExpiration
-        (JNIEnv *, jclass, jlong, jstring) {
-    return 0L;
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocExpiration(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jDocId) {
+    jstringSlice docID(env, jDocId);
+
+    C4Error error;
+    jlong exp = c4coll_getDocExpiration((C4Collection *) coll, docID, &error);
+    if (exp < 0) {
+        throwError(env, error);
+        return 0;
+    }
+
+    return exp;
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    nextDocExpiration
- * Signature: (J)J
+ * Method:    purgeDoc
+ * Signature: (JLjava/lang/String;)V
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_nextDocExpiration
-        (JNIEnv *, jclass, jlong) {
-    return 0L;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    purgeExpiredDocs
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeExpiredDocs
-        (JNIEnv *, jclass, jlong) {
-    return 0L;
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jDocId) {
+    jstringSlice docId(env, jDocId);
+    C4Error error;
+    bool purged = c4coll_purgeDoc((C4Collection *) coll, docId, &error);
+    if (!purged)
+        throwError(env, error);
 }
 
 /*
@@ -226,33 +186,64 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeExpiredDocs
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo
-        (JNIEnv *, jclass, jlong) {
-    // c4coll_getIndexesInfo
-    return 0L;
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo(JNIEnv *env, jclass ignore, jlong coll) {
+    C4SliceResult data = c4coll_getIndexesInfo((C4Collection *) coll, nullptr);
+    return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;II[B)Z
+ * Signature: (JLjava/lang/String;Ljava/lang/String;II[B)V
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex
-        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jstring, jboolean) {
-    // c4coll_createIndex
-    return JNI_FALSE;
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jName,
+        jstring jqueryExpressions,
+        jint queryLanguage,
+        jint indexType,
+        jstring jlanguage,
+        jboolean ignoreDiacritics) {
+    jstringSlice name(env, jName);
+    jstringSlice queryExpressions(env, jqueryExpressions);
+    jstringSlice language(env, jlanguage);
+
+    C4IndexOptions options = {};
+    options.language = language.c_str();
+    options.ignoreDiacritics = ignoreDiacritics == JNI_TRUE;
+
+    C4Error error;
+    bool res = c4coll_createIndex(
+            (C4Collection *) coll,
+            name,
+            (C4Slice) queryExpressions,
+            (C4QueryLanguage) queryLanguage,
+            (C4IndexType) indexType,
+            &options,
+            &error);
+    if (!res)
+        throwError(env, error);
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    deleteIndex
- * Signature: (JLjava/lang/String;)Z
+ * Signature: (JLjava/lang/String;)V
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteIndex
-        (JNIEnv *, jclass, jlong, jstring) {
-    // c4coll_deleteIndex
-    return JNI_FALSE;
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jName) {
+    jstringSlice name(env, jName);
+
+    C4Error error = {};
+    bool res = c4coll_deleteIndex((C4Collection *) coll, name, &error);
+    if (!res)
+        throwError(env, error);
 }
 }

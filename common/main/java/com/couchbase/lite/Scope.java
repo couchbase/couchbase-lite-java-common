@@ -87,13 +87,13 @@ public class Scope {
     int getCollectionCount() { return collections.size(); }
 
     @NonNull
-    Collection getOrAddCollection(@NonNull String collectionName) {
+    Collection getOrAddCollection(@NonNull String collectionName) throws CouchbaseLiteException {
         final Collection collection = getCollection(collectionName);
         return (collection != null) ? collection : addCollection(collectionName);
     }
 
     @NonNull
-    Collection addCollection(@NonNull String collectionName) {
+    Collection addCollection(@NonNull String collectionName) throws CouchbaseLiteException {
         if (DEFAULT_NAME.equals(name)) { throw new IllegalArgumentException("Cannot create the default collection"); }
         final Collection collection = db.addCollection(this, collectionName);
         collections.put(name, collection);

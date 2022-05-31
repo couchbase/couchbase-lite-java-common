@@ -54,15 +54,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getLastSequence
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getLastSequence
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    getDoc
  * Signature: (JLjava/lang/String;Z)J
  */
@@ -72,64 +63,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDoc
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getDocBySequence
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocBySequence
-        (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    putDoc
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_putDoc
-        (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    createDoc
- * Signature: (JLjava/lang/String;[BI)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createDoc
-        (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    moveDoc
- * Signature: (JLjava/lang/String;JLjava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_moveDoc
-        (JNIEnv *, jclass, jlong, jstring, jlong, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    deleteDoc
- * Signature: (JLjava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteDoc
-        (JNIEnv *, jclass, jlong, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    purgeDoc
- * Signature: (JLjava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc
-        (JNIEnv *, jclass, jlong, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    setDocExpiration
- * Signature: (JLjava/lang/String;J)Z
+ * Signature: (JLjava/lang/String;J)V
  */
-JNIEXPORT jboolean JNICALL
+JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_setDocExpiration
         (JNIEnv *, jclass, jlong, jstring, jlong);
 
@@ -144,6 +81,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocExpiration
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    purgeDoc
+ * Signature: (JLjava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc
+        (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    getIndexesInfo
  * Signature: (J)J
  */
@@ -154,18 +100,18 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;II[B)Z
+ * Signature: (JLjava/lang/String;Ljava/lang/String;II[B)V
  */
-JNIEXPORT jboolean JNICALL
+JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex
         (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jstring, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    deleteIndex
- * Signature: (JLjava/lang/String;)Z
+ * Signature: (JLjava/lang/String;)V
  */
-JNIEXPORT jboolean JNICALL
+JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteIndex
         (JNIEnv *, jclass, jlong, jstring);
 

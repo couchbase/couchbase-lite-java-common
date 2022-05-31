@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.core.impl;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Collection;
 
 
@@ -35,7 +36,8 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     }
 
     @Override
-    public long nCreateCollection(long c4Db, @Nullable String scope, @NonNull String collection) {
+    public long nCreateCollection(long c4Db, @Nullable String scope, @NonNull String collection)
+        throws LiteCoreException {
         return createCollection(c4Db, scope, collection);
     }
 
@@ -46,27 +48,26 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     @Override
     public long nGetDocumentCount(long peer) { return getDocumentCount(peer); }
 
-    @Override
-    public long nGetLastSequence(long peer) { return getLastSequence(peer); }
-
     // Documents
 
     @Override
-    public long nGetDoc(long peer, @NonNull String docID, boolean mustExist) { return getDoc(peer, docID, mustExist); }
-
-    @Override
-    public long nGetDocExpiration(long peer, @NonNull String docID) { return getDocExpiration(peer, docID); }
-
-    @Override
-    public boolean nSetDocExpiration(long peer, @NonNull String docID, long timestamp) {
-        return setDocExpiration(peer, docID, timestamp);
+    public long nGetDoc(long peer, @NonNull String docID, boolean mustExist) throws LiteCoreException {
+        return getDoc(peer, docID, mustExist);
     }
 
     @Override
-    public boolean nDeleteDoc(long peer, @NonNull String docID) { return deleteDoc(peer, docID); }
+    public long nGetDocExpiration(long peer, @NonNull String docID) throws LiteCoreException {
+        return getDocExpiration(peer, docID);
+    }
 
     @Override
-    public boolean nPurgeDoc(long peer, @NonNull String docID) { return purgeDoc(peer, docID); }
+    public void nSetDocExpiration(long peer, @NonNull String docID, long timestamp) throws LiteCoreException {
+        setDocExpiration(peer, docID, timestamp);
+    }
+
+    @Override
+    public void nPurgeDoc(long peer, @NonNull String docID)
+        throws LiteCoreException { purgeDoc(peer, docID); }
 
     // Indexes
 
@@ -74,7 +75,7 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     public long nGetIndexesInfo(long peer) { return getIndexesInfo(peer); }
 
     @Override
-    public boolean nCreateIndex(
+    public void nCreateIndex(
         long peer,
         String name,
         String indexSpec,
@@ -82,11 +83,11 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
         int indexType,
         String language,
         boolean ignoreDiacritics) {
-        return createIndex(peer, name, indexSpec, queryLanguage, indexType, language, ignoreDiacritics);
+        createIndex(peer, name, indexSpec, queryLanguage, indexType, language, ignoreDiacritics);
     }
 
     @Override
-    public boolean nDeleteIndex(long peer, @NonNull String name) { return deleteIndex(peer, name); }
+    public void nDeleteIndex(long peer, @NonNull String name) { deleteIndex(peer, name); }
 
     //-------------------------------------------------------------------------
     // native methods
@@ -96,28 +97,28 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
 
     private static native long getCollection(long c4Db, @Nullable String scope, @NonNull String collection);
 
-    private static native long createCollection(long c4Db, @Nullable String scope, @NonNull String collection);
+    private static native long createCollection(long c4Db, @Nullable String scope, @NonNull String collection)
+        throws LiteCoreException;
 
     private static native boolean isValid(long peer);
 
     private static native long getDocumentCount(long peer);
 
-    private static native long getLastSequence(long peer);
+    private static native long getDoc(long peer, @NonNull String docID, boolean mustExist)
+        throws LiteCoreException;
 
-    private static native long getDoc(long peer, @NonNull String docID, boolean mustExist);
+    private static native void setDocExpiration(long poeer, @NonNull String docID, long timestamp)
+        throws LiteCoreException;
 
-    private static native boolean setDocExpiration(long poeer, @NonNull String docID, long timestamp);
+    private static native long getDocExpiration(long peer, @NonNull String docID)
+        throws LiteCoreException;
 
-    private static native long getDocExpiration(long peer, @NonNull String docID);
-
-    private static native boolean deleteDoc(long peer, @NonNull String docID);
-
-    private static native boolean purgeDoc(long peer, @NonNull String docID);
-
+    private static native void purgeDoc(long peer, @NonNull String docID)
+        throws LiteCoreException;
 
     private static native long getIndexesInfo(long peer);
 
-    private static native boolean createIndex(
+    private static native void createIndex(
         long peer,
         String name,
         String indexSpec,
@@ -126,5 +127,5 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
         String language,
         boolean ignoreDiacritics);
 
-    private static native boolean deleteIndex(long peer, @NonNull String name);
+    private static native void deleteIndex(long peer, @NonNull String name);
 }

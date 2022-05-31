@@ -26,23 +26,22 @@ public class C4Collection extends C4NativePeer {
         // Factory methods
         long nGetDefaultCollection(long c4Db);
         long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection);
-        long nCreateCollection(long c4Db, @NonNull String scope, @NonNull String collection);
+        long nCreateCollection(long c4Db, @NonNull String scope, @NonNull String collection)
+            throws LiteCoreException;
 
         // Collections
         boolean nCollectionIsValid(long peer);
         long nGetDocumentCount(long peer);
-        long nGetLastSequence(long peer);
 
         // Documents
-        long nGetDoc(long peer, @NonNull String docID, boolean mustExist);
-        long nGetDocExpiration(long peer, @NonNull String docID);
-        boolean nSetDocExpiration(long peer, @NonNull String docID, long timestamp);
-        boolean nDeleteDoc(long peer, @NonNull String docID);
-        boolean nPurgeDoc(long peer, @NonNull String docID);
+        long nGetDoc(long peer, @NonNull String docID, boolean mustExist) throws LiteCoreException;
+        long nGetDocExpiration(long peer, @NonNull String docID) throws LiteCoreException;
+        void nSetDocExpiration(long peer, @NonNull String docID, long timestamp) throws LiteCoreException;
+        void nPurgeDoc(long peer, @NonNull String docID) throws LiteCoreException;
 
         // Indexes
         long nGetIndexesInfo(long peer);
-        boolean nCreateIndex(
+        void nCreateIndex(
             long peer,
             String name,
             String indexSpec,
@@ -50,7 +49,7 @@ public class C4Collection extends C4NativePeer {
             int indexType,
             String language,
             boolean ignoreDiacritics);
-        boolean nDeleteIndex(long peer, @NonNull String name);
+        void nDeleteIndex(long peer, @NonNull String name);
     }
 
     @NonNull
@@ -66,7 +65,8 @@ public class C4Collection extends C4NativePeer {
     }
 
     @NonNull
-    public static C4Collection create(@NonNull C4Database c4db, @NonNull String scope, @NonNull String collection) {
+    public static C4Collection create(@NonNull C4Database c4db, @NonNull String scope, @NonNull String collection)
+        throws LiteCoreException {
         return create(nativeImpl, c4db, scope, collection);
     }
 
@@ -90,7 +90,8 @@ public class C4Collection extends C4NativePeer {
         @NonNull NativeImpl impl,
         @NonNull C4Database c4db,
         @NonNull String scope,
-        @NonNull String collection) {
+        @NonNull String collection)
+        throws LiteCoreException {
         return new C4Collection(impl, impl.nCreateCollection(c4db.getPeer(), scope, collection), c4db);
     }
 
@@ -123,7 +124,7 @@ public class C4Collection extends C4NativePeer {
 
     @NonNull
     @Override
-    public String toString() { return "C4Collecton" + super.toString(); }
+    public String toString() { return "C4Collection" + super.toString(); }
 
     public boolean isValid() { return withPeerOrDefault(false, impl::nCollectionIsValid); }
 
@@ -142,17 +143,16 @@ public class C4Collection extends C4NativePeer {
         return C4Document.create(this, docID, body, flags);
     }
 
-    public long getDocumentExpiration(String docID) {
+    // ??? Is this ok?  Can it actually ever return 0?
+    public long getDocumentExpiration(String docID) throws LiteCoreException {
         return withPeerOrDefault(0L, peer -> impl.nGetDocExpiration(peer, docID));
     }
 
-    public boolean setDocumentExpiration(String docID, long timeStamp) {
-        return withPeerOrDefault(false, peer -> impl.nSetDocExpiration(peer, docID, timeStamp));
+    public void setDocumentExpiration(String docID, long timeStamp) throws LiteCoreException {
+        withPeerThrows(peer -> impl.nSetDocExpiration(peer, docID, timeStamp));
     }
 
-    public boolean deleteDocument(String docID) { return impl.nDeleteDoc(getPeer(), docID); }
-
-    public boolean purgeDocument(String docID) { return impl.nPurgeDoc(getPeer(), docID); }
+    public void purgeDocument(String docID) throws LiteCoreException { impl.nPurgeDoc(getPeer(), docID); }
 
     //// Observers
 
@@ -180,10 +180,10 @@ public class C4Collection extends C4NativePeer {
 
     //// Indexes
 
-    public boolean createIndex(
+    public void createIndex(
         String name, String indexSpec, AbstractIndex.QueryLanguage queryLanguage,
         AbstractIndex.IndexType indexType, String language, boolean ignoreDiacritics) {
-        return impl.nCreateIndex(
+        impl.nCreateIndex(
             getPeer(),
             name,
             indexSpec,
@@ -200,7 +200,7 @@ public class C4Collection extends C4NativePeer {
         return FLSliceResult.getManagedSliceResult(result);
     }
 
-    public void deleteIndex(String name) { withPeer(peer -> impl.nDeleteIndex(peer, name)); }
+    public void deleteIndex(String name) { withPeerThrows(peer -> impl.nDeleteIndex(peer, name)); }
 
     //-------------------------------------------------------------------------
     // package access
@@ -209,17 +209,12 @@ public class C4Collection extends C4NativePeer {
     @NonNull
     C4Database getDb() { return db; }
 
-    /* ok */
-    @VisibleForTesting
-    long getLastSequence() { return withPeerOrDefault(0L, impl::nGetLastSequence); }
-
     @VisibleForTesting
     @NonNull
     C4Document createRawDocument(@NonNull String docID, @NonNull byte[] body, int flags) throws LiteCoreException {
         return C4Document.createRaw(this, docID, body, flags);
     }
 
-    /* ok */
     @VisibleForTesting
     @NonNull
     public C4Document getDocBySequence(long sequence) throws LiteCoreException {

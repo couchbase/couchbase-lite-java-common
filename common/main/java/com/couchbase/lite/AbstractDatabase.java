@@ -1054,12 +1054,17 @@ abstract class AbstractDatabase extends BaseDatabase {
     //////// SCOPES AND COLLECTIONS:
 
     @NonNull
-    Collection addCollection(@NonNull Scope scope, @NonNull String collectionName) {
+    Collection addCollection(@NonNull Scope scope, @NonNull String collectionName) throws CouchbaseLiteException {
         synchronized (getDbLock()) {
-            return new Collection(
-                getOpenC4DbLocked().addCollection(scope.getName(), collectionName),
-                scope,
-                collectionName);
+            try {
+                return new Collection(
+                    getOpenC4DbLocked().addCollection(scope.getName(), collectionName),
+                    scope,
+                    collectionName);
+            }
+            catch (LiteCoreException err) {
+                throw CouchbaseLiteException.convertException(err);
+            }
         }
     }
 

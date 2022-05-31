@@ -340,7 +340,8 @@ public abstract class C4Database extends C4NativePeer {
     }
 
     @NonNull
-    public C4Collection addCollection(@NonNull String scopeName, @NonNull String collectionName) {
+    public C4Collection addCollection(@NonNull String scopeName, @NonNull String collectionName)
+        throws LiteCoreException {
         return C4Collection.create(this, scopeName, collectionName);
     }
 
