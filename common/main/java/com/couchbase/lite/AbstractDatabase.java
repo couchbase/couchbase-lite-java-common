@@ -964,7 +964,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param scopeName the scope from which to delete the collection
      * @throws CouchbaseLiteException on failure
      */
-    public void deleteCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
+    public void deleteCollection(@NonNull String name, @Nullable String scopeName) {
         if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
         final Scope scope;
         synchronized (getDbLock()) { scope = scopes.get(scopeName); }
@@ -1343,7 +1343,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         final Scope defaultScope = Preconditions.assertNotNull(scopes.get(Scope.DEFAULT_NAME), "default scope");
         final C4Collection c4Collection = c4db.getDefaultCollection();
         if (c4Collection != null) {
-            defaultScope.cacheCollecion(new Collection(c4Collection, defaultScope, Collection.DEFAULT_NAME));
+            defaultScope.cacheCollection(new Collection(c4Collection, defaultScope, Collection.DEFAULT_NAME));
         }
     }
 

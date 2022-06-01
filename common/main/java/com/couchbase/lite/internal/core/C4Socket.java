@@ -273,19 +273,6 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     @NonNull
     public String toString() { return "vC4Socket" + super.toString(); }
 
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            release(
-                LOG_DOMAIN,
-                C4Constants.ErrorDomain.NETWORK,
-                C4Constants.NetworkError.CONNECTION_ABORTED,
-                "Finalized");
-        }
-        finally { super.finalize(); }
-    }
-
     //-------------------------------------------------------------------------
     // Implementation of AutoCloseable
     //-------------------------------------------------------------------------
@@ -356,6 +343,23 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     }
 
     //-------------------------------------------------------------------------
+    // Protected methods
+    //-------------------------------------------------------------------------
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            release(
+                LOG_DOMAIN,
+                C4Constants.ErrorDomain.NETWORK,
+                C4Constants.NetworkError.CONNECTION_ABORTED,
+                "Finalized");
+        }
+        finally { super.finalize(); }
+    }
+
+    //-------------------------------------------------------------------------
     // Package protected methods
     //-------------------------------------------------------------------------
 
@@ -383,6 +387,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         releasePeer(
             logDomain,
             peer -> {
+                if (logDomain != null) { Log.d(logDomain, "#### RELEASE PEER", getHistory()); }
                 BOUND_SOCKETS.unbind(peer);
                 releaseSocket(impl, peer, domain, code, msg);
             });

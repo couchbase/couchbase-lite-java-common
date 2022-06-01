@@ -44,12 +44,16 @@ public abstract class C4NativePeer implements AutoCloseable {
     private volatile long peer;
 
     // Instrumentation
-    private volatile Exception closedAt;
+    private final Exception createdAt;
+    private volatile Exception releasedAt;
+
+    protected C4NativePeer(long peer) {
+        this();
+        this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME);
+    }
 
     // ??? questionable design
-    protected C4NativePeer() { }
-
-    protected C4NativePeer(long peer) { this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME); }
+    protected C4NativePeer() { createdAt = (!CouchbaseLiteInternal.debugging()) ? null : new Exception("Created:"); }
 
     @NonNull
     @Override
@@ -192,6 +196,9 @@ public abstract class C4NativePeer implements AutoCloseable {
     @NonNull
     protected final Object getPeerLock() { return this; }
 
+    @Nullable
+    protected final Exception getHistory() { return (releasedAt != null) ? releasedAt : createdAt; }
+
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
@@ -204,7 +211,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     private long releasePeerLocked() {
         final long peer = this.peer;
         this.peer = 0L;
-        if ((peer != 0L) && CouchbaseLiteInternal.debugging()) { closedAt = new Exception(); }
+        if ((peer != 0L) && CouchbaseLiteInternal.debugging()) { releasedAt = new Exception("Released:", createdAt); }
         return peer;
     }
 
@@ -212,7 +219,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         if (CouchbaseLiteInternal.debugging()) { return; }
 
         Log.i(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
-        final Exception closedLoc = closedAt;
+        final Exception closedLoc = releasedAt;
         if (closedLoc != null) { Log.e(LogDomain.DATABASE, "Closed at", closedLoc); }
     }
 }

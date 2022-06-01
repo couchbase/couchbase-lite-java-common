@@ -107,7 +107,7 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     private static native long getDoc(long peer, @NonNull String docID, boolean mustExist)
         throws LiteCoreException;
 
-    private static native void setDocExpiration(long poeer, @NonNull String docID, long timestamp)
+    private static native void setDocExpiration(long peer, @NonNull String docID, long timestamp)
         throws LiteCoreException;
 
     private static native long getDocExpiration(long peer, @NonNull String docID)

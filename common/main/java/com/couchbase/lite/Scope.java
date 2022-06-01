@@ -111,5 +111,5 @@ public class Scope {
     @Nullable
     Collection getDefaultCollection() { return getCollection(Collection.DEFAULT_NAME); }
 
-    void cacheCollecion(@NonNull Collection collection) { collections.put(name, collection); }
+    void cacheCollection(@NonNull Collection collection) { collections.put(name, collection); }
 }
