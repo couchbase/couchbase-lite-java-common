@@ -66,12 +66,16 @@ public class Scope {
     @Nullable
     public Collection getCollection(@NonNull String name) { return collections.get(name); }
 
+    @NonNull
+    @Override
+    public String toString() { return db.getName() + "." + name; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
-        final Scope scope = (Scope) o;
-        return name.equals(scope.name) && db.getName().equals(scope.name);
+        if (!(o instanceof Scope)) { return false; }
+        final Scope other = (Scope) o;
+        return name.equals(other.name) && db.getName().equals(other.db.getName());
     }
 
     @Override
@@ -100,9 +104,11 @@ public class Scope {
         return collection;
     }
 
-    void deleteCollection(@NonNull String name) { deleteCollection(collections.get(name)); }
+    void deleteCollection(@NonNull String name) throws CouchbaseLiteException {
+        deleteCollection(collections.get(name));
+    }
 
-    void deleteCollection(@Nullable Collection collection) {
+    void deleteCollection(@Nullable Collection collection) throws CouchbaseLiteException {
         if (collection == null) { return; }
         db.deleteCollection(collection);
         collections.remove(collection.getName());

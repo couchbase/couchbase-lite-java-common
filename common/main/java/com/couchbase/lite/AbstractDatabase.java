@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -822,6 +823,16 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Override
     public String toString() { return "Database{" + ClassUtils.objId(this) + ", name='" + name + "'}"; }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof AbstractDatabase)) { return false; }
+        final AbstractDatabase other = (AbstractDatabase) o;
+        return name.equals(other.name);
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash(name); }
 
     //---------------------------------------------
     // Scopes
@@ -964,7 +975,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param scopeName the scope from which to delete the collection
      * @throws CouchbaseLiteException on failure
      */
-    public void deleteCollection(@NonNull String name, @Nullable String scopeName) {
+    public void deleteCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
         if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
         final Scope scope;
         synchronized (getDbLock()) { scope = scopes.get(scopeName); }
@@ -1005,15 +1016,8 @@ abstract class AbstractDatabase extends BaseDatabase {
     // Package level access
     //---------------------------------------------
 
-    boolean equalsWithPath(Database other) {
-        if (other == null) { return false; }
-
-        final File path = getFilePath();
-        final File otherPath = other.getFilePath();
-
-        if ((path == null) && (otherPath == null)) { return true; }
-
-        return (path != null) && path.equals(otherPath);
+    boolean equalsWithPath(@Nullable Database other) {
+        return (other != null) && Objects.equals(getFilePath(), other.getFilePath());
     }
 
     // Instead of clone()
@@ -1068,7 +1072,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    void deleteCollection(@NonNull Collection collection) {
+    void deleteCollection(@NonNull Collection collection) throws CouchbaseLiteException {
         synchronized (getDbLock()) {
             getOpenC4DbLocked().deleteCollection(collection.getScope().getName(), collection.getName());
         }

@@ -18,30 +18,90 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.couchbase.lite.internal.utils.Preconditions;
+import java.util.ArrayList;
+import java.util.List;
 
 
-// !!! This may need an immutable counterpart.
 public class CollectionConfiguration {
-    private ReplicatorType type;
+    @Nullable
+    private List<String> channels;
+    @Nullable
+    private List<String> documentIDs;
+    @Nullable
     private ReplicationFilter pullFilter;
+    @Nullable
     private ReplicationFilter pushFilter;
+    @Nullable
     private ConflictResolver conflictResolver;
+
+    //---------------------------------------------
+    // Constructors
+    //---------------------------------------------
+
+    public CollectionConfiguration() { }
+
+    CollectionConfiguration(@NonNull CollectionConfiguration config) {
+        this.channels = config.channels;
+        this.documentIDs = config.documentIDs;
+        this.pullFilter = config.pullFilter;
+        this.pushFilter = config.pushFilter;
+        this.conflictResolver = config.conflictResolver;
+    }
+
+    public CollectionConfiguration(
+        @Nullable List<String> channels,
+        @Nullable List<String> documentIDs,
+        @Nullable ReplicationFilter pullFilter,
+        @Nullable ReplicationFilter pushFilter,
+        @Nullable ConflictResolver conflictResolver) {
+        this.channels = channels;
+        this.documentIDs = documentIDs;
+        this.pullFilter = pullFilter;
+        this.pushFilter = pushFilter;
+        this.conflictResolver = conflictResolver;
+    }
 
     //---------------------------------------------
     // Setters
     //---------------------------------------------
 
     /**
-     * Sets the replication type type indicating the direction of the replicator for this collection.
-     * The default value is .pushAndPull which is bi-directional.
+     * Sets a set of document IDs to filter by: if given, only documents
+     * with these IDs will be pushed and/or pulled.
      *
-     * @param type The replicator type.
+     * @param documentIDs The document IDs.
      * @return this.
      */
     @NonNull
-    public final CollectionConfiguration setType(@NonNull ReplicatorType type) {
-        this.type = Preconditions.assertNotNull(type, "replicator type");
+    public final CollectionConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
+        this.documentIDs = (documentIDs == null) ? null : new ArrayList<>(documentIDs);
+        return this;
+    }
+
+    /**
+     * Sets a set of Sync Gateway channel names to pull from. Ignored for
+     * push replication. If unset, all accessible channels will be pulled.
+     * Note: channels that are not accessible to the user will be ignored
+     * by Sync Gateway.
+     *
+     * @param channels The Sync Gateway channel names.
+     * @return this.
+     */
+    @NonNull
+    public final CollectionConfiguration setChannels(@Nullable List<String> channels) {
+        this.channels = (channels == null) ? null : new ArrayList<>(channels);
+        return this;
+    }
+
+    /**
+     * Sets the the conflict resolver.
+     *
+     * @param conflictResolver A conflict resolver.
+     * @return this.
+     */
+    @NonNull
+    public final CollectionConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
+        this.conflictResolver = conflictResolver;
         return this;
     }
 
@@ -71,34 +131,42 @@ public class CollectionConfiguration {
         return this;
     }
 
-    /**
-     * Sets the the conflict resolver.
-     *
-     * @param conflictResolver A conflict resolver.
-     * @return this.
-     */
-    @NonNull
-    public final CollectionConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
-        this.conflictResolver = conflictResolver;
-        return this;
-    }
-
-    /**
-     * Return type type indicating the direction of the replicator for this collection.
-     */
-    @NonNull
-    public final ReplicatorType getType() { return type; }
-
     //---------------------------------------------
     // Getters
     //---------------------------------------------
 
+    /**
+     * A set of Sync Gateway channel names to pull from. Ignored for push replication.
+     * The default value is null, meaning that all accessible channels will be pulled.
+     * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
+     */
+    @Nullable
+    public final List<String> getChannels() { return (channels == null) ? null : new ArrayList<>(channels); }
+
+    /**
+     * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
+     * and/or pulled.
+     */
+    @Nullable
+    public final List<String> getDocumentIDs() { return (documentIDs == null) ? null : new ArrayList<>(documentIDs); }
+
+    /**
+     * Return the conflict resolver.
+     */
+    @Nullable
+    public ConflictResolver getConflictResolver() { return conflictResolver; }
+
+    /**
+     * Gets the filter used to determine whether a document will be pulled
+     * from the remote endpoint.
+     */
     @Nullable
     public ReplicationFilter getPullFilter() { return pullFilter; }
 
+    /**
+     * Gets the filter used to determine whether a document will be pushed
+     * to the remote endpoint.
+     */
     @Nullable
     public ReplicationFilter getPushFilter() { return pushFilter; }
-
-    @Nullable
-    public ConflictResolver getConflictResolver() { return conflictResolver; }
 }

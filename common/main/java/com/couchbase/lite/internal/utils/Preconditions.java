@@ -23,7 +23,7 @@ import java.util.Collection;
 
 public final class Preconditions {
 
-    private Preconditions() {}
+    private Preconditions() { }
 
     public static long assertPositive(long n, @NonNull String name) {
         if (n <= 0) { throw new IllegalArgumentException(name + " must be >0"); }
@@ -91,6 +91,10 @@ public final class Preconditions {
     public static <K extends Collection<T>, T> K assertNotEmpty(@Nullable K obj, @NonNull String name) {
         if ((obj == null) || obj.isEmpty()) { throw new IllegalArgumentException(name + " must not be null or empty"); }
         return obj;
+    }
+
+    public static void assertThat(boolean condition, @NonNull String msg) {
+        if (!condition) { throw new IllegalArgumentException(msg); }
     }
 
     @Nullable

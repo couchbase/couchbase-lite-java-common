@@ -23,6 +23,9 @@ import java.util.concurrent.Executor;
 import com.couchbase.lite.internal.core.C4Collection;
 
 
+/**
+ *
+ */
 public final class Collection implements Indexable, DatabaseChangeObservable {
     public static final String DEFAULT_NAME = "_default";
 
@@ -30,15 +33,32 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
     private final String name;
     @NonNull
     private final Scope scope;
+
     @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
     @NonNull
     private final C4Collection c4Collection;
 
+    // Collections must be immutable
     Collection(@NonNull C4Collection c4Collection, @NonNull Scope scope, @NonNull String name) {
         this.c4Collection = c4Collection;
         this.scope = scope;
         this.name = name;
     }
+
+    @NonNull
+    @Override
+    public String toString() { return scope + "." + name; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof Collection)) { return false; }
+        final Collection other = (Collection) o;
+        return name.equals(other.name) && scope.equals(other.scope);
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash(name, scope); }
 
     /**
      * Get scope
@@ -217,17 +237,6 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
     public ListenerToken addChangeListener(@NonNull Executor executor, @NonNull DatabaseChangeListener listener) {
         return getDatabase().addChangeListener(executor, listener);
     }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (o == null || getClass() != o.getClass()) { return false; }
-        final Collection that = (Collection) o;
-        return name.equals(that.name) && scope.getName().equals(that.scope.getName());
-    }
-
-    @Override
-    public int hashCode() { return Objects.hash(name, scope); }
 
     // ??? This probably shouldn't be in the public API.
     // It is used by BaseImmutableReplicatorConfiguration

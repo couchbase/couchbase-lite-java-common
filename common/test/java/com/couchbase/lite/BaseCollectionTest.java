@@ -27,7 +27,8 @@ public class BaseCollectionTest extends BaseDbTest {
 
     @After
     public final void tearDownBaseCollectionTest() {
-        testScope.deleteCollection(testCollection);
+        try { testScope.deleteCollection(testCollection); }
+        catch (CouchbaseLiteException ignore) { }
         Report.log(LogLevel.INFO, "Deleted testCollection: " + testCollection);
     }
 

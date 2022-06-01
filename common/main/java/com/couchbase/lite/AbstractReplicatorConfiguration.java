@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.internal.Util;
 
 import com.couchbase.lite.internal.BaseImmutableReplicatorConfiguration;
+import com.couchbase.lite.internal.BaseReplicatorConfiguration;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -41,7 +42,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Replicator configuration.
  */
 @SuppressWarnings({"PMD.TooManyFields", "PMD.UnnecessaryFullyQualifiedName", "PMD.CyclomaticComplexity"})
-public abstract class AbstractReplicatorConfiguration {
+public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConfiguration {
     /**
      * This is a long time: just under 25 days.
      * This many seconds, however, is just less than Integer.MAX_INT millis and will fit in the heartbeat property.
@@ -70,8 +71,8 @@ public abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
     // Data Members
     //---------------------------------------------
-    @NonNull
-    private final Map<Collection, CollectionConfiguration> collectionConfigurations;
+    @Nullable
+    private Database database;
     @NonNull
     private com.couchbase.lite.ReplicatorType type;
     private boolean continuous;
@@ -105,17 +106,14 @@ public abstract class AbstractReplicatorConfiguration {
     @Deprecated
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
         this(target);
+        this.database = database;
         final Collection collection = database.getDefaultCollection();
-        if (collection == null) { return; }
-
-        // !!! This needs to be fixed as described in the spec modification of 5/17
-        internalAddCollection(collection, null);
+        if (collection != null) { addCollectionInternal(collection, new CollectionConfiguration()); }
     }
 
     protected AbstractReplicatorConfiguration(@NonNull Endpoint target) {
         this.target = Preconditions.assertNotNull(target, "target endpoint");
         this.type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
-        this.collectionConfigurations = new HashMap<>();
     }
 
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
@@ -140,7 +138,7 @@ public abstract class AbstractReplicatorConfiguration {
 
     protected AbstractReplicatorConfiguration(@NonNull BaseImmutableReplicatorConfiguration config) {
         this(
-            config.getCollections(), // !!! Must copy the collection objects here.
+            config.getCollectionConfigurations(),
             config.getType(),
             config.isContinuous(),
             config.getAuthenticator(),
@@ -158,6 +156,10 @@ public abstract class AbstractReplicatorConfiguration {
             config.getTarget());
     }
 
+    // The management of CollectionConfigurations is a bit subtle:
+    // Although they are mutable an AbstractReplicatorConfiguration holds
+    // the only reference to its copies (they are copied in and copied out)
+    // They are, therefore, effectively immutable
     @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
     protected AbstractReplicatorConfiguration(
         @Nullable Map<Collection, CollectionConfiguration> collections,
@@ -176,7 +178,7 @@ public abstract class AbstractReplicatorConfiguration {
         int heartbeat,
         boolean enableAutoPurge,
         @NonNull Endpoint target) {
-        this.collectionConfigurations = (collections != null) ? collections : new HashMap<>();
+        super(collections);
         this.type = type;
         this.continuous = continuous;
         this.authenticator = authenticator;
@@ -192,6 +194,7 @@ public abstract class AbstractReplicatorConfiguration {
         this.heartbeat = heartbeat;
         this.enableAutoPurge = enableAutoPurge;
         this.target = target;
+        this.database = getDb();
     }
 
     //---------------------------------------------
@@ -211,7 +214,7 @@ public abstract class AbstractReplicatorConfiguration {
     public final ReplicatorConfiguration addCollection(
         @NonNull Collection collection,
         @Nullable CollectionConfiguration config) {
-        internalAddCollection(collection, config);
+        copyCollectionConfig(collection, config);
         return getReplicatorConfiguration();
     }
 
@@ -229,7 +232,7 @@ public abstract class AbstractReplicatorConfiguration {
         @NonNull java.util.Collection<Collection> collections,
         @Nullable CollectionConfiguration config) {
         if (config == null) { config = new CollectionConfiguration(); }
-        for (Collection collection: collections) { internalAddCollection(collection, config); }
+        for (Collection collection: collections) { addCollectionConfig(collection, config); }
         return getReplicatorConfiguration();
     }
 
@@ -241,49 +244,20 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @NonNull
     public final ReplicatorConfiguration removeCollection(@NonNull Collection collection) {
-        collectionConfigurations.remove(collection);
+        removeCollectionInternal(collection);
         return getReplicatorConfiguration();
     }
 
     /**
-     * Sets the authenticator to authenticate with a remote target server.
-     * Currently there are two types of the authenticators,
-     * BasicAuthenticator and SessionAuthenticator, supported.
+     * Sets the replicator type indicating the direction of the replicator.
+     * The default value is .pushAndPull which is bi-directional.
      *
-     * @param authenticator The authenticator.
+     * @param type The replicator type.
      * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setAuthenticator(@NonNull Authenticator authenticator) {
-        this.authenticator = Preconditions.assertNotNull(authenticator, "authenticator");
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets a set of Sync Gateway channel names to pull from. Ignored for
-     * push replication. If unset, all accessible channels will be pulled.
-     * Note: channels that are not accessible to the user will be ignored
-     * by Sync Gateway.
-     *
-     * @param channels The Sync Gateway channel names.
-     * @return this.
-     */
-    @NonNull
-    public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
-        this.channels = (channels == null) ? null : new ArrayList<>(channels);
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets the the conflict resolver.
-     *
-     * @param conflictResolver A conflict resolver.
-     * @return this.
-     */
-    // !!! apply to default config
-    @NonNull
-    public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
-        this.conflictResolver = conflictResolver;
+    public final ReplicatorConfiguration setType(@NonNull com.couchbase.lite.ReplicatorType type) {
+        this.type = Preconditions.assertNotNull(type, "replicator type");
         return getReplicatorConfiguration();
     }
 
@@ -303,15 +277,12 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     /**
-     * Sets a set of document IDs to filter by: if given, only documents
-     * with these IDs will be pushed and/or pulled.
-     *
-     * @param documentIDs The document IDs.
-     * @return this.
+     * Enable/disable auto-purge.
+     * Default is enabled.
      */
     @NonNull
-    public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
-        this.documentIDs = (documentIDs == null) ? null : new ArrayList<>(documentIDs);
+    public final ReplicatorConfiguration setAutoPurgeEnabled(boolean enabled) {
+        this.enableAutoPurge = enabled;
         return getReplicatorConfiguration();
     }
 
@@ -328,100 +299,22 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     /**
-     * Sets the target server's SSL certificate.
+     * Sets the authenticator to authenticate with a remote target server.
+     * Currently there are two types of the authenticators,
+     * BasicAuthenticator and SessionAuthenticator, supported.
      *
-     * @param pinnedCert the SSL certificate.
+     * @param authenticator The authenticator.
      * @return this.
-     * @deprecated Please use setPinnedServerCertificate(Certificate)
      */
-    @Deprecated
     @NonNull
-    public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
-        if (pinnedCert == null) { pinnedServerCertificate = null; }
-        else {
-            try (InputStream is = new ByteArrayInputStream(pinnedCert)) {
-                pinnedServerCertificate
-                    = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
-            }
-            catch (IOException | CertificateException e) {
-                throw new IllegalArgumentException("Argument could not be parsed as an X509 Certificate", e);
-            }
-        }
-
+    public final ReplicatorConfiguration setAuthenticator(@NonNull Authenticator authenticator) {
+        this.authenticator = Preconditions.assertNotNull(authenticator, "authenticator");
         return getReplicatorConfiguration();
     }
 
     @NonNull
     public final ReplicatorConfiguration setPinnedServerX509Certificate(@Nullable X509Certificate pinnedCert) {
         pinnedServerCertificate = pinnedCert;
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets a filter object for validating whether the documents can be pulled from the
-     * remote endpoint. Only documents for which the object returns true are replicated.
-     *
-     * @param pullFilter The filter to filter the document to be pulled.
-     * @return this.
-     */
-    @NonNull
-    public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
-        this.pullFilter = pullFilter;
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets a filter object for validating whether the documents can be pushed
-     * to the remote endpoint.
-     *
-     * @param pushFilter The filter to filter the document to be pushed.
-     * @return this.
-     */
-    @NonNull
-    public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
-        this.pushFilter = pushFilter;
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Old setter for replicator type, indicating the direction of the replicator.
-     * The default value is PUSH_AND_PULL which is bi-directional.
-     *
-     * @param replicatorType The replicator type.
-     * @return this.
-     * @deprecated Use setType(AbstractReplicator.ReplicatorType)
-     */
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setReplicatorType(
-        @NonNull AbstractReplicatorConfiguration.ReplicatorType replicatorType) {
-        final com.couchbase.lite.ReplicatorType type;
-        switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
-            case PUSH_AND_PULL:
-                type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
-                break;
-            case PUSH:
-                type = com.couchbase.lite.ReplicatorType.PUSH;
-                break;
-            case PULL:
-                type = com.couchbase.lite.ReplicatorType.PULL;
-                break;
-            default:
-                throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
-        }
-        return setType(type);
-    }
-
-    /**
-     * Sets the replicator type indicating the direction of the replicator.
-     * The default value is .pushAndPull which is bi-directional.
-     *
-     * @param type The replicator type.
-     * @return this.
-     */
-    @NonNull
-    public final ReplicatorConfiguration setType(@NonNull com.couchbase.lite.ReplicatorType type) {
-        this.type = Preconditions.assertNotNull(type, "replicator type");
         return getReplicatorConfiguration();
     }
 
@@ -463,13 +356,137 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     /**
-     * Enable/disable auto-purge.
-     * Default is enabled.
+     * Sets a set of document IDs to filter by: if given, only documents
+     * with these IDs will be pushed and/or pulled.
+     *
+     * @param documentIDs The document IDs.
+     * @return this.
+     * @deprecated Use Collection.setDocumentIDs
      */
+    // ??? Apply to default config
+    @Deprecated
     @NonNull
-    public final ReplicatorConfiguration setAutoPurgeEnabled(boolean enabled) {
-        this.enableAutoPurge = enabled;
+    public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
+        this.documentIDs = (documentIDs == null) ? null : new ArrayList<>(documentIDs);
         return getReplicatorConfiguration();
+    }
+
+    /**
+     * Sets a set of Sync Gateway channel names to pull from. Ignored for
+     * push replication. If unset, all accessible channels will be pulled.
+     * Note: channels that are not accessible to the user will be ignored
+     * by Sync Gateway.
+     *
+     * @param channels The Sync Gateway channel names.
+     * @return this.
+     * @deprecated Use Collection.setChannels
+     */
+    // ??? Apply to default config
+    @Deprecated
+    @NonNull
+    public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
+        this.channels = (channels == null) ? null : new ArrayList<>(channels);
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * Sets the the conflict resolver.
+     *
+     * @param conflictResolver A conflict resolver.
+     * @return this.
+     * @deprecated Use Collection.setConflictResolver
+     */
+    // ??? Apply to default config
+    @Deprecated
+    @NonNull
+    public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
+        this.conflictResolver = conflictResolver;
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * Sets a filter object for validating whether the documents can be pulled from the
+     * remote endpoint. Only documents for which the object returns true are replicated.
+     *
+     * @param pullFilter The filter to filter the document to be pulled.
+     * @return this.
+     * @deprecated Use Collection.setPullFilter
+     */
+    // ??? Apply to default config
+    @Deprecated
+    @NonNull
+    public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
+        this.pullFilter = pullFilter;
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * Sets a filter object for validating whether the documents can be pushed
+     * to the remote endpoint.
+     *
+     * @param pushFilter The filter to filter the document to be pushed.
+     * @return this.
+     * @deprecated Use Collection.setPushFilter
+     */
+    // ??? Apply to default config
+    @Deprecated
+    @NonNull
+    public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
+        this.pushFilter = pushFilter;
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * Sets the target server's SSL certificate.
+     *
+     * @param pinnedCert the SSL certificate.
+     * @return this.
+     * @deprecated Please use setPinnedServerCertificate(Certificate)
+     */
+    @Deprecated
+    @NonNull
+    public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
+        if (pinnedCert == null) { pinnedServerCertificate = null; }
+        else {
+            try (InputStream is = new ByteArrayInputStream(pinnedCert)) {
+                pinnedServerCertificate
+                    = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
+            }
+            catch (IOException | CertificateException e) {
+                throw new IllegalArgumentException("Argument could not be parsed as an X509 Certificate", e);
+            }
+        }
+
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * Old setter for replicator type, indicating the direction of the replicator.
+     * The default value is PUSH_AND_PULL which is bi-directional.
+     *
+     * @param replicatorType The replicator type.
+     * @return this.
+     * @deprecated Use setType(AbstractReplicator.ReplicatorType)
+     */
+    @Deprecated
+    @NonNull
+    public final ReplicatorConfiguration setReplicatorType(
+        @NonNull AbstractReplicatorConfiguration.ReplicatorType replicatorType) {
+        final com.couchbase.lite.ReplicatorType type;
+        switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
+            case PUSH_AND_PULL:
+                type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
+                break;
+            case PUSH:
+                type = com.couchbase.lite.ReplicatorType.PUSH;
+                break;
+            case PULL:
+                type = com.couchbase.lite.ReplicatorType.PULL;
+                break;
+            default:
+                throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
+        }
+        return setType(type);
     }
 
     //---------------------------------------------
@@ -477,10 +494,10 @@ public abstract class AbstractReplicatorConfiguration {
     //---------------------------------------------
 
     /**
-     * Return the Authenticator used to authenticate the remote.
+     * Return the replication target to replicate with.
      */
-    @Nullable
-    public final Authenticator getAuthenticator() { return authenticator; }
+    @NonNull
+    public final Endpoint getTarget() { return target; }
 
     /**
      * Get the CollectionConfiguration for the passed Collection.
@@ -490,22 +507,15 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @Nullable
     public final CollectionConfiguration getCollection(@NonNull Collection collection) {
-        return collectionConfigurations.get(collection);
+        final CollectionConfiguration config = collectionConfigurations.get(collection);
+        return (config == null) ? null : new CollectionConfiguration(config);
     }
 
     /**
-     * A set of Sync Gateway channel names to pull from. Ignored for push replication.
-     * The default value is null, meaning that all accessible channels will be pulled.
-     * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
+     * Return Replicator type indicating the direction of the replicator.
      */
-    @Nullable
-    public final List<String> getChannels() { return (channels == null) ? null : new ArrayList<>(channels); }
-
-    /**
-     * Return the conflict resolver.
-     */
-    @Nullable
-    public final ConflictResolver getConflictResolver() { return conflictResolver; }
+    @NonNull
+    public final com.couchbase.lite.ReplicatorType getType() { return type; }
 
     /**
      * Return the continuous flag indicating whether the replicator should stay
@@ -514,21 +524,10 @@ public abstract class AbstractReplicatorConfiguration {
     public final boolean isContinuous() { return continuous; }
 
     /**
-     * Return the local database to replicate with the replication target.
+     * Enable/disable auto-purge.
+     * Default is enabled.
      */
-    @Nullable
-    public final Database getDatabase() {
-        return (collectionConfigurations.isEmpty())
-            ? null
-            : collectionConfigurations.keySet().iterator().next().getDatabase();
-    }
-
-    /**
-     * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
-     * and/or pulled.
-     */
-    @Nullable
-    public final List<String> getDocumentIDs() { return (documentIDs == null) ? null : new ArrayList<>(documentIDs); }
+    public final boolean isAutoPurgeEnabled() { return enableAutoPurge; }
 
     /**
      * Return Extra HTTP headers to send in all requests to the remote target.
@@ -537,19 +536,10 @@ public abstract class AbstractReplicatorConfiguration {
     public final Map<String, String> getHeaders() { return (headers == null) ? null : new HashMap<>(headers); }
 
     /**
-     * Return the remote target's SSL certificate.
-     *
-     * @deprecated Use getPinnedServerX509Certificate
+     * Return the Authenticator used to authenticate the remote.
      */
-    @SuppressWarnings("PMD.MethodReturnsInternalArray")
-    @Deprecated
     @Nullable
-    public final byte[] getPinnedServerCertificate() {
-        try { return (pinnedServerCertificate == null) ? null : pinnedServerCertificate.getEncoded(); }
-        catch (CertificateEncodingException e) {
-            throw new IllegalStateException("Unrecognized certificate encoding", e);
-        }
-    }
+    public final Authenticator getAuthenticator() { return authenticator; }
 
     /**
      * Return the remote target's SSL certificate.
@@ -558,16 +548,90 @@ public abstract class AbstractReplicatorConfiguration {
     public final X509Certificate getPinnedServerX509Certificate() { return pinnedServerCertificate; }
 
     /**
+     * Return the max number of retry attempts made after connection failure.
+     */
+    public final int getMaxAttempts() { return maxAttempts; }
+
+    /**
+     * Return the max time between retry attempts (exponential backoff).
+     *
+     * @return max retry wait time
+     */
+    public final int getMaxAttemptWaitTime() { return maxAttemptWaitTime; }
+
+    /**
+     * Return the heartbeat interval, in seconds.
+     *
+     * @return heartbeat interval in seconds
+     */
+    public final int getHeartbeat() { return heartbeat; }
+
+    /**
+     * Return the local database to replicate with the replication target.
+     *
+     * @deprecated Use Collection.setPushFilter
+     */
+    // ??? Apply to default config
+    @Deprecated
+    @NonNull
+    public final Database getDatabase() {
+        final Database db = getDb();
+        if (db != null) { return db; }
+        throw new IllegalStateException("Requested db for configuration with no Collections");
+    }
+
+    /**
+     * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
+     * and/or pulled.
+     *
+     * @deprecated Use Collection.setDocumentIDs
+     */
+    // ??? Apply to default config
+    @Deprecated
+    @Nullable
+    public final List<String> getDocumentIDs() { return (documentIDs == null) ? null : new ArrayList<>(documentIDs); }
+
+    /**
+     * A set of Sync Gateway channel names to pull from. Ignored for push replication.
+     * The default value is null, meaning that all accessible channels will be pulled.
+     * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
+     *
+     * @deprecated Use Collection.setChannels
+     */
+    // ??? Apply to default config
+    @Deprecated
+    @Nullable
+    public final List<String> getChannels() { return (channels == null) ? null : new ArrayList<>(channels); }
+
+    /**
+     * Return the conflict resolver.
+     *
+     * @deprecated Use Collection.getConflictResolver
+     */
+    // ??? Apply to default config
+    @Deprecated
+    @Nullable
+    public final ConflictResolver getConflictResolver() { return conflictResolver; }
+
+    /**
      * Gets the filter used to determine whether a document will be pulled
      * from the remote endpoint.
+     *
+     * @deprecated Use Collection.getPullFilter
      */
+    // ??? Apply to default config
+    @Deprecated
     @Nullable
     public final ReplicationFilter getPullFilter() { return pullFilter; }
 
     /**
      * Gets a filter used to determine whether a document will be pushed
      * to the remote endpoint.
+     *
+     * @deprecated Use Collection.getPushFilter
      */
+    // ??? Apply to default config
+    @Deprecated
     @Nullable
     public final ReplicationFilter getPushFilter() { return pushFilter; }
 
@@ -592,47 +656,25 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     /**
-     * Return Replicator type indicating the direction of the replicator.
-     */
-    @NonNull
-    public final com.couchbase.lite.ReplicatorType getType() { return type; }
-
-    /**
-     * Return the replication target to replicate with.
-     */
-    @NonNull
-    public final Endpoint getTarget() { return target; }
-
-    /**
-     * Return the max number of retry attempts made after connection failure.
-     */
-    public final int getMaxAttempts() { return maxAttempts; }
-
-    /**
-     * Return the max time between retry attempts (exponential backoff).
+     * Return the remote target's SSL certificate.
      *
-     * @return max retry wait time
+     * @deprecated Use getPinnedServerX509Certificate
      */
-    public final int getMaxAttemptWaitTime() { return maxAttemptWaitTime; }
-
-    /**
-     * Return the heartbeat interval, in seconds.
-     *
-     * @return heartbeat interval in seconds
-     */
-    public final int getHeartbeat() { return heartbeat; }
-
-    /**
-     * Enable/disable auto-purge.
-     * Default is enabled.
-     */
-    public final boolean isAutoPurgeEnabled() { return enableAutoPurge; }
+    @SuppressWarnings("PMD.MethodReturnsInternalArray")
+    @Deprecated
+    @Nullable
+    public final byte[] getPinnedServerCertificate() {
+        try { return (pinnedServerCertificate == null) ? null : pinnedServerCertificate.getEncoded(); }
+        catch (CertificateEncodingException e) {
+            throw new IllegalStateException("Unrecognized certificate encoding", e);
+        }
+    }
 
     @SuppressWarnings("PMD.NPathComplexity")
     @NonNull
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder();
+        final StringBuilder buf = new StringBuilder("(");
 
         for (Collection c: collectionConfigurations.keySet()) {
             if (buf.length() > 0) { buf.append(", "); }
@@ -653,6 +695,7 @@ public abstract class AbstractReplicatorConfiguration {
             || (type == com.couchbase.lite.ReplicatorType.PUSH_AND_PULL)) {
             buf.append('>');
         }
+
         if (pushFilter != null) { buf.append('|'); }
 
         buf.append('(');
@@ -674,15 +717,34 @@ public abstract class AbstractReplicatorConfiguration {
     @NonNull
     abstract ReplicatorConfiguration getReplicatorConfiguration();
 
-    // !!! This cannot be public
-    @NonNull
-    public Map<Collection, CollectionConfiguration> getCollections() { return collectionConfigurations; }
-
     //---------------------------------------------
-    // Private methods
+    // Private
     //---------------------------------------------
 
-    private void internalAddCollection(@NonNull Collection collection, @Nullable CollectionConfiguration config) {
-        collectionConfigurations.put(collection, (config != null) ? config : new CollectionConfiguration());
+    private void copyCollectionConfig(@NonNull Collection collection, @Nullable CollectionConfiguration config) {
+        addCollectionConfig(collection, (config == null) ? null : new CollectionConfiguration(config));
+    }
+
+    private void addCollectionConfig(@NonNull Collection collection, @Nullable CollectionConfiguration config) {
+        Preconditions.assertThat(
+            !collection.getName().equals(Collection.DEFAULT_NAME),
+            "Cannot create the default collection");
+
+        final Database db = collection.getDatabase();
+        if (database == null) { database = db; }
+        else {
+            Preconditions.assertThat(
+                database.equals(db),
+                "Attempt to add a collection from the wrong database: " + db + " != " + database);
+        }
+
+        addCollectionInternal(collection, (config != null) ? config : new CollectionConfiguration());
+    }
+
+    @Nullable
+    private Database getDb() {
+        return (collectionConfigurations.isEmpty())
+            ? null
+            : collectionConfigurations.keySet().iterator().next().getDatabase();
     }
 }

@@ -17,6 +17,34 @@ package com.couchbase.lite
 
 
 /**
+ * Configuration factory for new CollectionConfigurations
+ *
+ * Usage:
+ *      val collConfig = CollectionConfigurationFactory.create(...)
+ */
+val CollectionConfigurationFactory: CollectionConfiguration? = null
+
+/**
+ *
+ * @see com.couchbase.lite.CollectionConfiguration
+ */
+fun CollectionConfiguration?.create(
+    channels: List<String>?,
+    documentIDs: List<String>?,
+    pullFilter: ReplicationFilter?,
+    pushFilter: ReplicationFilter?,
+    conflictResolver: ConflictResolver?
+): CollectionConfiguration {
+    return CollectionConfiguration(
+        channels ?: this?.channels,
+        documentIDs ?: this?.documentIDs,
+        pushFilter ?: this?.pushFilter,
+        pullFilter ?: this?.pullFilter,
+        conflictResolver ?: this?.conflictResolver
+    )
+}
+
+/**
  * Configuration factory for new FullTextIndexConfigurations
  *
  * Usage:

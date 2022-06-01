@@ -52,7 +52,7 @@ public class BaseImmutableReplicatorConfiguration {
     // Data Members
     //---------------------------------------------
     @NonNull
-    private final Map<Collection, CollectionConfiguration> collections;
+    private final Map<Collection, CollectionConfiguration> collectionConfigurations;
     @NonNull
     private final ReplicatorType type;
     private final boolean continuous;
@@ -83,7 +83,11 @@ public class BaseImmutableReplicatorConfiguration {
     // Constructors
     //-------------------------------------------------------------------------
     protected BaseImmutableReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        this.collections = Preconditions.assertNotNull(config.getCollections(), "collections");
+        final Map<Collection, CollectionConfiguration> configs
+            = ((BaseReplicatorConfiguration) config).getCollectionConfigurations();
+        Preconditions.assertThat(!configs.isEmpty(), "Attempt to configure a replicator with no collections");
+
+        this.collectionConfigurations = new HashMap<>(configs);
         this.type = config.getType();
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
@@ -106,11 +110,15 @@ public class BaseImmutableReplicatorConfiguration {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public final Map<Collection, CollectionConfiguration> getCollections() { return collections; }
+    public final Map<Collection, CollectionConfiguration> getCollectionConfigurations() {
+        return collectionConfigurations;
+    }
 
     @Nullable
     public final Database getDatabase() {
-        return (collections.isEmpty()) ? null : collections.keySet().iterator().next().getDatabase();
+        return (collectionConfigurations.isEmpty())
+            ? null
+            : collectionConfigurations.keySet().iterator().next().getDatabase();
     }
 
     @NonNull

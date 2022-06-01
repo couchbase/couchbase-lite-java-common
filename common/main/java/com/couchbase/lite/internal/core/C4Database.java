@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.Collection;
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.MaintenanceType;
@@ -50,7 +51,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 @SuppressWarnings({
-     "PMD.UnusedPrivateMethod",
+    "PMD.UnusedPrivateMethod",
     "PMD.TooManyMethods",
     "PMD.ExcessivePublicCount",
     "PMD.ExcessiveParameterList",
@@ -345,8 +346,10 @@ public abstract class C4Database extends C4NativePeer {
         return C4Collection.create(this, scopeName, collectionName);
     }
 
-    public void deleteCollection(@NonNull String scopeName, @NonNull String collectionName) {
-        deleteCollection(getPeer(), scopeName, collectionName);
+    public void deleteCollection(@NonNull String scopeName, @NonNull String collectionName)
+        throws CouchbaseLiteException {
+        try { deleteCollection(getPeer(), scopeName, collectionName); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e);  }
     }
 
     // - Replicators
@@ -718,7 +721,8 @@ public abstract class C4Database extends C4NativePeer {
     private static native boolean hasCollection(long peer, @NonNull String scope, @NonNull String collection);
 
     // returns true if db has collection
-    private static native boolean deleteCollection(long peer, @NonNull String scope, @NonNull String collection);
+    private static native boolean deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
+        throws LiteCoreException;
 
     // - Raw Documents (i.e. info or _local)
 
