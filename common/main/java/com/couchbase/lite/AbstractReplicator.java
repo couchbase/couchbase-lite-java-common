@@ -550,7 +550,15 @@ public abstract class AbstractReplicator extends BaseReplicator {
                 error = CouchbaseLiteException.convertC4Error(c4Error);
             }
 
-            unconflictedDocs.add(new ReplicatedDocument(getDefaultCollection(), docId, docEnd.getFlags(), error));
+            // !!! temporary hack
+            final Collection coll = getDefaultCollection();
+
+            unconflictedDocs.add(new ReplicatedDocument(
+                coll.getScopeName(),
+                coll.getName(),
+                docId,
+                docEnd.getFlags(),
+                error));
         }
 
         if (!unconflictedDocs.isEmpty()) { notifyDocumentEnded(pushing, unconflictedDocs); }
@@ -573,7 +581,12 @@ public abstract class AbstractReplicator extends BaseReplicator {
             }
         }
 
-        notifyDocumentEnded(false, Arrays.asList(new ReplicatedDocument(getDefaultCollection(), docId, flags, err)));
+        // !!! temporary hack
+        final Collection coll = getDefaultCollection();
+
+        notifyDocumentEnded(
+            false,
+            Arrays.asList(new ReplicatedDocument(coll.getScopeName(), coll.getName(), docId, flags, err)));
 
         if ((pendingNotifications != null) && (!pendingNotifications.isEmpty())) {
             for (C4ReplicatorStatus status: pendingNotifications) { dispatcher.execute(() -> c4StatusChanged(status)); }

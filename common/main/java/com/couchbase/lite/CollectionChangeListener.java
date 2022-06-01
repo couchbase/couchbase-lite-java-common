@@ -20,17 +20,14 @@ import androidx.annotation.NonNull;
 
 /**
  * The listener interface for receiving Database change events.
- *
- * @deprecated Use CollectionChangeListener
  */
-@Deprecated
 @FunctionalInterface
-public interface DatabaseChangeListener extends ChangeListener<DatabaseChange> {
+public interface CollectionChangeListener extends ChangeListener<CollectionChange> {
     /**
-     * Callback from the Database when it changes
+     * Callback from Lite Core when the collection changes
      *
      * @param change change information
      */
     @Override
-    void changed(@NonNull DatabaseChange change);
+    void changed(@NonNull CollectionChange change);
 }

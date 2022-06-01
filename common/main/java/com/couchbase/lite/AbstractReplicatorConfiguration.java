@@ -234,6 +234,18 @@ public abstract class AbstractReplicatorConfiguration {
     }
 
     /**
+     * Remove a collection from the replication.
+     *
+     * @param collection the collection to be removed
+     * @return this
+     */
+    @NonNull
+    public final ReplicatorConfiguration removeCollection(@NonNull Collection collection) {
+        collectionConfigurations.remove(collection);
+        return getReplicatorConfiguration();
+    }
+
+    /**
      * Sets the authenticator to authenticate with a remote target server.
      * Currently there are two types of the authenticators,
      * BasicAuthenticator and SessionAuthenticator, supported.
@@ -268,6 +280,7 @@ public abstract class AbstractReplicatorConfiguration {
      * @param conflictResolver A conflict resolver.
      * @return this.
      */
+    // !!! apply to default config
     @NonNull
     public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
         this.conflictResolver = conflictResolver;
@@ -470,16 +483,14 @@ public abstract class AbstractReplicatorConfiguration {
     public final Authenticator getAuthenticator() { return authenticator; }
 
     /**
-     * The dictionary containing the collections and configurations used for replication. The dictionary
-     * contains the collections and the configurations added via the addCollection(_ collection:,config:) or
-     * addCollections(_ collections:,config:). Modifying the entries in the dictionary will reflect the collections
-     * and configured used for the replication.
+     * Get the CollectionConfiguration for the passed Collection.
      *
-     * @return a map of collections to their configurations
+     * @param collection a collection whose configuration is sought.
+     * @return the collections configuration
      */
-    @NonNull
-    public final Map<Collection, CollectionConfiguration> getCollections() {
-        return new HashMap<>(collectionConfigurations);
+    @Nullable
+    public final CollectionConfiguration getCollection(@NonNull Collection collection) {
+        return collectionConfigurations.get(collection);
     }
 
     /**
@@ -662,6 +673,10 @@ public abstract class AbstractReplicatorConfiguration {
 
     @NonNull
     abstract ReplicatorConfiguration getReplicatorConfiguration();
+
+    // !!! This cannot be public
+    @NonNull
+    public Map<Collection, CollectionConfiguration> getCollections() { return collectionConfigurations; }
 
     //---------------------------------------------
     // Private methods

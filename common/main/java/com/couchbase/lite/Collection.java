@@ -233,4 +233,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
     // It is used by BaseImmutableReplicatorConfiguration
     @NonNull
     public Database getDatabase() { return scope.getDatabase(); }
+
+    @NonNull
+    String getScopeName() { return scope.getName(); }
 }

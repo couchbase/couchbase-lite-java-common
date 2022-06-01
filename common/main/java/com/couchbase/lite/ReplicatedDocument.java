@@ -32,9 +32,12 @@ public final class ReplicatedDocument {
     // member variables
     //---------------------------------------------
     @NonNull
-    private final String id;
+    private final String scope;
     @NonNull
-    private final Collection collection;
+    private final String name;
+    @NonNull
+    private final String docId;
+
     @NonNull
     private final EnumSet<DocumentFlag> flags;
     @Nullable
@@ -45,12 +48,14 @@ public final class ReplicatedDocument {
     //---------------------------------------------
 
     ReplicatedDocument(
-        @NonNull Collection collection,
-        @NonNull String id,
+        @NonNull String scope,
+        @NonNull String name,
+        @NonNull String docId,
         int flags,
         @Nullable CouchbaseLiteException error) {
-        this.collection = collection;
-        this.id = id;
+        this.scope = scope;
+        this.name = name;
+        this.docId = docId;
 
         this.error = error;
 
@@ -69,16 +74,22 @@ public final class ReplicatedDocument {
     //---------------------------------------------
 
     /**
-     * The collection to which the changed document belongs.
+     * The scope of the collection to which the changed document belongs.
      */
     @NonNull
-    public Collection getCollection() { return collection; }
+    public String getCollectionScope() { return scope; }
+
+    /**
+     * The name of the collection to which the changed document belongs.
+     */
+    @NonNull
+    public String getCollectionName() { return name; }
 
     /**
      * The id document of the changed document.
      */
     @NonNull
-    public String getID() { return id; }
+    public String getID() { return docId; }
 
     /**
      * The current status flag of the document. eg. deleted, access removed
@@ -94,6 +105,6 @@ public final class ReplicatedDocument {
 
     @NonNull
     @Override
-    public String toString() { return "ReplicatedDocument{@" + id + ", " + error + "}"; }
+    public String toString() { return "ReplicatedDocument{@" + docId + ", " + error + "}"; }
 }
 

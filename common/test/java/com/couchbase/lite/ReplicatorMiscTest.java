@@ -262,14 +262,15 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             CBLError.Domain.CBLITE,
             CBLError.Code.BUSY);
 
-        ReplicatedDocument doc = new ReplicatedDocument(collection, docID, flags, error);
+        ReplicatedDocument doc
+            = new ReplicatedDocument(collection.getScopeName(), collection.getName(), docID, flags, error);
 
         assertEquals(doc.getID(), docID);
         assertTrue(doc.getFlags().contains(DocumentFlag.DELETED));
         CouchbaseLiteException err = doc.getError();
         assertEquals(CBLError.Domain.CBLITE, err.getDomain());
         assertEquals(CBLError.Code.BUSY, err.getCode());
-        assertEquals(Collection.DEFAULT_NAME, doc.getCollection().getName());
+        assertEquals(Collection.DEFAULT_NAME, doc.getCollectionName());
     }
 
     // CBL-1218

@@ -18,21 +18,32 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 // !!! This may need an immutable counterpart.
 public class CollectionConfiguration {
+    private ReplicatorType type;
     private ReplicationFilter pullFilter;
     private ReplicationFilter pushFilter;
     private ConflictResolver conflictResolver;
-    private Set<String> channels;
-    private Set<String> documentIds;
 
     //---------------------------------------------
     // Setters
     //---------------------------------------------
+
+    /**
+     * Sets the replication type type indicating the direction of the replicator for this collection.
+     * The default value is .pushAndPull which is bi-directional.
+     *
+     * @param type The replicator type.
+     * @return this.
+     */
+    @NonNull
+    public final CollectionConfiguration setType(@NonNull ReplicatorType type) {
+        this.type = Preconditions.assertNotNull(type, "replicator type");
+        return this;
+    }
 
     /**
      * Sets a filter object for validating whether the documents can be pulled from the
@@ -73,19 +84,14 @@ public class CollectionConfiguration {
     }
 
     /**
-     * Channels filter for specifying the channels for the pull the replicator will pull from. The  For any
-     * collections that do not have the channels filter specified, all accessible channels will be pulled. Push
-     * replicator will ignore this filter.
-     *
-     * @param channels replicator channels
+     * Return type type indicating the direction of the replicator for this collection.
      */
-    public void setChannels(java.util.Collection<String> channels) { this.channels = new HashSet<>(channels); }
+    @NonNull
+    public final ReplicatorType getType() { return type; }
 
     //---------------------------------------------
     // Getters
     //---------------------------------------------
-
-    public void setDocumentIds(Set<String> documentIds) { this.documentIds = new HashSet<>(documentIds); }
 
     @Nullable
     public ReplicationFilter getPullFilter() { return pullFilter; }
@@ -95,10 +101,4 @@ public class CollectionConfiguration {
 
     @Nullable
     public ConflictResolver getConflictResolver() { return conflictResolver; }
-
-    @NonNull
-    public Set<String> getChannels() { return new HashSet<>(channels); }
-
-    @NonNull
-    public Set<String> getDocumentIds() { return new HashSet<>(documentIds); }
 }
