@@ -43,9 +43,9 @@ import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Database;
-import com.couchbase.lite.internal.core.C4DatabaseChange;
 import com.couchbase.lite.internal.core.C4DatabaseObserver;
 import com.couchbase.lite.internal.core.C4Document;
+import com.couchbase.lite.internal.core.C4DocumentChange;
 import com.couchbase.lite.internal.core.C4DocumentObserver;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4ReplicationFilter;
@@ -1233,7 +1233,7 @@ abstract class AbstractDatabase extends BaseDatabase {
                     // it cannot find a conflicting revision and throws this error.
                     // The other resolver did the right thing, so there is no reason
                     // to report an error.
-                    Log.w(DOMAIN, e.getMessage());
+                    Log.w(DOMAIN, "Conflict already resolved: %s", e.getMessage());
                     break;
                 }
             }
@@ -1450,19 +1450,20 @@ abstract class AbstractDatabase extends BaseDatabase {
             List<String> docIDs = new ArrayList<>();
             do {
                 // Read changes in batches of MAX_CHANGES
-                final C4DatabaseChange[] c4DbChanges = c4DbObserver.getChanges(MAX_CHANGES);
+                final C4DocumentChange[] c4DocChanges = c4DbObserver.getChanges(MAX_CHANGES);
 
                 int i = 0;
-                nChanges = (c4DbChanges == null) ? 0 : c4DbChanges.length;
+                nChanges = (c4DocChanges == null) ? 0 : c4DocChanges.length;
                 if (nChanges > 0) {
-                    while (c4DbChanges[i] == null) {
+                    while (c4DocChanges[i] == null) {
                         i++;
                         nChanges--;
                     }
                 }
-                final boolean newExternal = (nChanges > 0) && c4DbChanges[i].isExternal();
+                final boolean newExternal = (nChanges > 0) && c4DocChanges[i].isExternal();
 
                 if ((!docIDs.isEmpty()) && ((nChanges <= 0) || (external != newExternal) || (docIDs.size() > 1000))) {
+                    // !!! This is going to have to find the collection that owns this change
                     dbChangeNotifier.postChange(new DatabaseChange((Database) this, docIDs));
                     docIDs = new ArrayList<>();
                 }
@@ -1470,7 +1471,7 @@ abstract class AbstractDatabase extends BaseDatabase {
                 external = newExternal;
 
                 for (int j = i; j < nChanges; j++) {
-                    final C4DatabaseChange change = c4DbChanges[j];
+                    final C4DocumentChange change = c4DocChanges[j];
                     if (change != null) { docIDs.add(change.getDocID()); }
                 }
             }

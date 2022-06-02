@@ -70,12 +70,14 @@ public class C4Collection extends C4NativePeer {
         return create(nativeImpl, c4db, scope, collection);
     }
 
+    @VisibleForTesting
     @Nullable
     static C4Collection getDefault(@NonNull NativeImpl impl, @NonNull C4Database c4db) {
         final long c4collection = impl.nGetDefaultCollection(c4db.getPeer());
         return c4collection == 0 ? null : new C4Collection(impl, c4collection, c4db);
     }
 
+    @VisibleForTesting
     @NonNull
     static C4Collection get(
         @NonNull NativeImpl impl,
@@ -85,6 +87,7 @@ public class C4Collection extends C4NativePeer {
         return new C4Collection(impl, impl.nGetCollection(c4db.getPeer(), scope, collection), c4db);
     }
 
+    @VisibleForTesting
     @NonNull
     static C4Collection create(
         @NonNull NativeImpl impl,
@@ -196,8 +199,10 @@ public class C4Collection extends C4NativePeer {
     @NonNull
     public FLSliceResult getIndexesInfo() {
         final Long result = withPeer(impl::nGetIndexesInfo);
-        if (Long.valueOf(0L).equals(result)) { throw new IllegalStateException("IndexesInfo returned 0"); }
-        return FLSliceResult.getManagedSliceResult(result);
+        if ((result != null) && (!result.equals(0L))) {
+            return FLSliceResult.getManagedSliceResult(result);
+        }
+        throw new IllegalStateException("IndexesInfo returned 0");
     }
 
     public void deleteIndex(String name) { withPeerThrows(peer -> impl.nDeleteIndex(peer, name)); }

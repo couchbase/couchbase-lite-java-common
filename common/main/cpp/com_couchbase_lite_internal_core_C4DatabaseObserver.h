@@ -18,7 +18,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4DatabaseObserver
 /*
  * Class:     com_couchbase_lite_internal_core_C4DatabaseObserver
  * Method:    getChanges
- * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4DatabaseChange;
+ * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4DocumentChange;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_couchbase_lite_internal_core_C4DatabaseObserver_getChanges
   (JNIEnv *, jclass, jlong, jint);

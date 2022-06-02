@@ -81,7 +81,7 @@ public class C4DatabaseObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @Nullable
-    public C4DatabaseChange[] getChanges(int maxChanges) { return getChanges(getPeer(), maxChanges); }
+    public C4DocumentChange[] getChanges(int maxChanges) { return getChanges(getPeer(), maxChanges); }
 
     @CallSuper
     @Override
@@ -109,7 +109,7 @@ public class C4DatabaseObserver extends C4NativePeer {
     private static native long create(long db);
 
     @NonNull
-    private static native C4DatabaseChange[] getChanges(long peer, int maxChanges);
+    private static native C4DocumentChange[] getChanges(long peer, int maxChanges);
 
     private static native void free(long peer);
 }

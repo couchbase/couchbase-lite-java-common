@@ -20,7 +20,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
  * Method:    getChanges
- * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4CollectionChange;
+ * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4DocumentChange;
  */
 JNIEXPORT jobjectArray JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_getChanges
         (JNIEnv *, jclass, jlong, jint);

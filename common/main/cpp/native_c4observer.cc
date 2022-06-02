@@ -17,36 +17,94 @@
 //
 #include <c4.h>
 #include "com_couchbase_lite_internal_core_C4DatabaseObserver.h"
-#include "com_couchbase_lite_internal_core_C4DocumentObserver.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4CollectionDocObserver.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4QueryObserver.h"
+#include "com_couchbase_lite_internal_core_C4DatabaseObserver.h"
+#include "com_couchbase_lite_internal_core_C4DocumentObserver.h"
 #include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;
 
 // -------------------------------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4DatabaseObserver and com_couchbase_lite_internal_core_C4DocumentObserver
+// Observer callbacks
 // -------------------------------------------------------------------------------------------------
 
-// C4DatabaseObserver
-static jclass cls_C4DBObs;           // global reference
-static jmethodID m_C4DBObs_callback; // callback method
+// C4CollectionObserver
+static jclass cls_C4CollObs;              // global reference
+static jmethodID m_C4CollObs_callback;    // callback method
 
-// C4DatabaseChange
-static jclass cls_C4DBChange; // global reference
-static jmethodID m_C4DBChange_create;
+// C4DocumentChange
+static jclass cls_C4DocChange;            // global reference
+static jmethodID m_C4DocChange_create;    // static constructor
+
+// C4CollectionDocObserver
+static jclass cls_C4CollDocObs;           // global reference
+static jmethodID m_C4CollDocObs_callback; // callback method
 
 // C4QueryObserver
-static jclass cls_C4QueryObs; // global reference
-static jmethodID m_C4QueryObs_callback;
+static jclass cls_C4QueryObs;             // global reference
+static jmethodID m_C4QueryObs_callback;   // callback method
+
+// C4DatabaseObserver
+// !!! Deprecated
+static jclass cls_C4DBObs;                // global reference
+static jmethodID m_C4DBObs_callback;      // callback method
 
 // C4DocumentObserver
-static jclass cls_C4DocObs;           // global reference
-static jmethodID m_C4DocObs_callback; // callback method
+// !!! Deprecated
+static jclass cls_C4DocObs;               // global reference
+static jmethodID m_C4DocObs_callback;     // callback method
 
 bool litecore::jni::initC4Observer(JNIEnv *env) {
-
     // C4CollectionObserver.callback
+    {
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4CollectionObserver");
+        if (!localClass)
+            return false;
+
+        cls_C4CollObs = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_C4CollObs)
+            return false;
+
+        m_C4CollObs_callback = env->GetStaticMethodID(cls_C4CollObs, "callback", "(J)V");
+        if (!m_C4CollObs_callback)
+            return false;
+    }
+
+    // C4DocumentChange.create
+    {
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DocumentChange");
+        if (!localClass)
+            return false;
+
+        cls_C4DocChange = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_C4DocChange)
+            return false;
+
+        m_C4DocChange_create = env->GetStaticMethodID(
+                cls_C4DocChange,
+                "createC4DocumentChange",
+                "(Ljava/lang/String;Ljava/lang/String;JZ)Lcom/couchbase/lite/internal/core/C4DocumentChange;");
+        if (!m_C4DocChange_create)
+            return false;
+    }
+
+    // C4CollectionDocObserver.callback
+    {
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4CollectionDocObserver");
+        if (!localClass)
+            return false;
+
+        cls_C4CollDocObs = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_C4CollDocObs)
+            return false;
+
+        m_C4CollDocObs_callback = env->GetStaticMethodID(cls_C4CollDocObs, "callback", "(JLjava/lang/String;J)V");
+        if (!m_C4CollDocObs_callback)
+            return false;
+    }
 
     // C4QueryObserver.onQueryChanged
     {
@@ -64,6 +122,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
     }
 
     // C4DatabaseObserver.callback
+    // !!! Deprecated
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DatabaseObserver");
         if (!localClass)
@@ -79,6 +138,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
     }
 
     // C4DocumentObserver.callback
+    // !!! Deprecated
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DocumentObserver");
         if (!localClass)
@@ -93,55 +153,90 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
             return false;
     }
 
-    // C4DatabaseChange.<init>
-    {
-        jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DatabaseChange");
-        if (!localClass)
-            return false;
-
-        cls_C4DBChange = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4DBChange)
-            return false;
-
-        m_C4DBChange_create = env->GetStaticMethodID(
-                cls_C4DBChange,
-                "createC4DatabaseChange",
-                "(Ljava/lang/String;Ljava/lang/String;JZ)Lcom/couchbase/lite/internal/core/C4DatabaseChange;");
-        if (!m_C4DBChange_create)
-            return false;
-    }
-
     return true;
 }
 
 // ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4CollectionObserver
+// com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
 // ----------------------------------------------------------------------------
 
 /**
- * Callback method from LiteCore C4DatabaseObserver
- * @param obs
- * @param ctx
+ * Callback method from LiteCore C4CollectionObserver
+ * @param observer reference to the C4CollectionObserver
+ * @param ignore "context". Ignored.
  */
 static void
-c4CollObsCallback(C4DatabaseObserver *obs, void *ignore) {
+c4CollectionObsCallback(C4CollectionObserver *observer, void *ignore) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    if (getEnvStat == JNI_OK) {
+        env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) observer);
+    } else if (getEnvStat == JNI_EDETACHED) {
+        if (attachCurrentThread(&env) == 0) {
+            env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) observer);
+            gJVM->DetachCurrentThread();
+        }
+    }
+}
+
+/**
+ * Convert a C array of C4CollectionChanges (C4DatabaseChanges) to a Java array of C4DocumentChanges.
+ *
+ * @param env Java env
+ * @param changes the C array of C4CollectionChanges
+ * @param nChanges the C array size
+ * @param external Change came from elsewhere (replication)
+ * @return
+ */
+static jobjectArray
+c4DocChangesToJavaArray(JNIEnv *env, C4CollectionChange changes[], uint32_t nChanges, bool external) {
+    jobjectArray array = env->NewObjectArray((jsize) nChanges, cls_C4DocChange, nullptr);
+    for (size_t i = 0; i < nChanges; i++) {
+        jobject obj = env->CallStaticObjectMethod(
+                cls_C4DocChange,
+                m_C4DocChange_create,
+                toJString(env, changes[i].docID),
+                toJString(env, changes[i].revID),
+                (jlong) changes[i].sequence,
+                (jboolean) external);
+        if (obj != nullptr)
+            env->SetObjectArrayElement(array, (jsize) i, obj);
+    }
+
+    return array;
 }
 
 // ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4CollectionDocumentObserver
+// com_couchbase_lite_internal_core_impl_NativeC4CollectionDocObserver
 // ----------------------------------------------------------------------------
 
 /**
  * Callback method from LiteCore C4DocumentObserver
- * @param docID
- * @param seq
+ * @param docID the changed document
+ * @param seq document sequence number
  */
 static void
-c4CollObsCallback(C4DocumentObserver *obs, C4Slice docID, C4SequenceNumber seq, void *ignore) {
+c4CollectionDocObsCallback(C4DocumentObserver *obs, C4Slice docID, C4SequenceNumber seq, void *ignore) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+    if (getEnvStat == JNI_OK) {
+        env->CallStaticVoidMethod(
+                cls_C4CollDocObs,
+                m_C4CollDocObs_callback,
+                (jlong) obs,
+                toJString(env, docID),
+                (jlong) seq);
+    } else if (getEnvStat == JNI_EDETACHED) {
+        if (attachCurrentThread(&env) == 0) {
+            env->CallStaticVoidMethod(
+                    cls_C4CollDocObs,
+                    m_C4CollDocObs_callback,
+                    (jlong) obs,
+                    toJString(env, docID),
+                    (jlong) seq);
+            gJVM->DetachCurrentThread();
+        }
+    }
 }
 
 // ----------------------------------------------------------------------------
@@ -169,6 +264,8 @@ c4QueryObserverCallback(C4QueryObserver *ignore1, C4Query *ignore2, void *ctx) {
 
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4DatabaseObserver
+// !!! Deprecated
+//
 // ----------------------------------------------------------------------------
 
 /**
@@ -191,30 +288,9 @@ c4DBObsCallback(C4DatabaseObserver *obs, void *ignore) {
 }
 
 // ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4CollectionObserver
-// ----------------------------------------------------------------------------
-
-/**
- * Callback method from LiteCore C4CollectionObserver
- * @param observer reference to the C4CollectionObserver
- * @param ignore "context". Ignored.
- */
-static void
-c4CollectionObsCallback(C4CollectionObserver *observer, void *ignore) {
-    JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4DBObs, m_C4DBObs_callback, (jlong) observer);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4DBObs, m_C4DBObs_callback, (jlong) observer);
-            gJVM->DetachCurrentThread();
-        }
-    }
-}
-
-// ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4DocumentObserver
+// !!! Deprecated
+//
 // ----------------------------------------------------------------------------
 
 /**
@@ -246,38 +322,6 @@ c4DocObsCallback(C4DocumentObserver *obs, C4Slice docID, C4SequenceNumber seq, v
     }
 }
 
-// ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_C4DocumentObserver
-// ----------------------------------------------------------------------------
-
-/**
- * Callback method from LiteCore C4DocumentObserver
- * @param docID
- * @param seq
- */
-static void
-c4CollectionDocObsCallback(C4DocumentObserver *obs, C4Slice docID, C4SequenceNumber seq, void *ignore) {
-    JNIEnv *env = nullptr;
-    jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(
-                cls_C4DocObs,
-                m_C4DocObs_callback,
-                (jlong) obs,
-                toJString(env, docID),
-                (jlong) seq);
-    } else if (getEnvStat == JNI_EDETACHED) {
-        if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(
-                    cls_C4DocObs,
-                    m_C4DocObs_callback,
-                    (jlong) obs,
-                    toJString(env, docID),
-                    (jlong) seq);
-            gJVM->DetachCurrentThread();
-        }
-    }
-}
 
 extern "C" {
 
@@ -295,13 +339,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
         JNIEnv *env,
         jclass ignore,
         jlong coll) {
-    return (jlong) c4dbobs_createOnCollection((C4Collection *) coll, c4CollObsCallback, nullptr);
+    return (jlong) c4dbobs_createOnCollection((C4Collection *) coll, c4CollectionObsCallback, nullptr);
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4DatabaseObserver
  * Method:    getChanges
- * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4CollectionChange;
+ * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4DocumentChange;
  */
 JNIEXPORT jobjectArray JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_getChanges(
@@ -317,22 +361,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_getChanges
             (uint32_t) maxChanges,
             &external);
 
-    // !!! Create CollectionChanges instead.
-    jobjectArray array = env->NewObjectArray(nChanges, cls_C4DBChange, nullptr);
-    for (size_t i = 0; i < nChanges; i++) {
-        jobject obj = env->CallStaticObjectMethod(
-                cls_C4DBChange,
-                m_C4DBChange_create,
-                toJString(env, c4changes[i].docID),
-                toJString(env, c4changes[i].revID),
-                (jlong) c4changes[i].sequence,
-                (jboolean) external);
-        if (obj != nullptr)
-            env->SetObjectArrayElement(array, i, obj);
-    }
+    auto changes = c4DocChangesToJavaArray(env, c4changes, nChanges, external);
+
     c4dbobs_releaseChanges(c4changes, nChanges);
 
-    return array;
+    return changes;
 }
 
 /*
@@ -353,7 +386,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_free(JNIEn
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4CollectionDocObserver
  * Method:    create
- * Signature: (JJ)J
+ * Signature: (JLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionDocObserver_create(
@@ -464,7 +497,7 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_create(JNIEnv *, jclass
 /*
  * Class:     com_couchbase_lite_internal_core_C4DatabaseObserver
  * Method:    getChanges
- * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4DatabaseChange;
+ * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4Change;
  * !!! Deprecated
  */
 JNIEXPORT jobjectArray JNICALL
@@ -473,28 +506,19 @@ Java_com_couchbase_lite_internal_core_C4DatabaseObserver_getChanges(
         jclass ignore,
         jlong observer,
         jint maxChanges) {
-    auto *c4changes = new C4DatabaseChange[maxChanges];
     bool external = false;
+    auto *c4changes = new C4DatabaseChange[maxChanges];
     uint32_t nChanges = c4dbobs_getChanges(
             (C4DatabaseObserver *) observer,
             c4changes,
             (uint32_t) maxChanges,
             &external);
 
-    jobjectArray array = env->NewObjectArray(nChanges, cls_C4DBChange, nullptr);
-    for (size_t i = 0; i < nChanges; i++) {
-        jobject obj = env->CallStaticObjectMethod(
-                cls_C4DBChange,
-                m_C4DBChange_create,
-                toJString(env, c4changes[i].docID),
-                toJString(env, c4changes[i].revID),
-                (jlong) c4changes[i].sequence,
-                (jboolean) external);
-        if (obj != nullptr)
-            env->SetObjectArrayElement(array, i, obj);
-    }
+    auto changes = c4DocChangesToJavaArray(env, c4changes, nChanges, external);
+
     c4dbobs_releaseChanges(c4changes, nChanges);
-    return array;
+
+    return changes;
 }
 
 /*

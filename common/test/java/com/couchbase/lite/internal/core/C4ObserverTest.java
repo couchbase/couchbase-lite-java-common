@@ -128,43 +128,38 @@ public class C4ObserverTest extends C4BaseTest {
         dbObserver = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet);
         assertEquals(0, callbackCount.get());
 
-        final AtomicInteger dbCallbackCalls1 = new AtomicInteger(0);
-        C4DatabaseObserver dbObserver1 = this.c4Database.createDatabaseObserver(dbCallbackCalls1::incrementAndGet);
-        try {
-            assertEquals(0, dbCallbackCalls1.get());
+        final AtomicInteger callbackCount = new AtomicInteger(0);
+        try (C4DatabaseObserver dbObs = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet)) {
+            assertEquals(0, callbackCount.get());
 
 
             createRev("A", "1-aa", fleeceBody);
+            assertEquals(1, this.callbackCount.get());
             assertEquals(1, callbackCount.get());
-            assertEquals(1, dbCallbackCalls1.get());
             createRev("B", "1-bb", fleeceBody);
+            assertEquals(1, this.callbackCount.get());
             assertEquals(1, callbackCount.get());
-            assertEquals(1, dbCallbackCalls1.get());
 
             checkChanges(dbObserver, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
-            checkChanges(dbObserver1, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
+            checkChanges(dbObs, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
 
             createRev("B", "2-bbbb", fleeceBody);
+            assertEquals(2, this.callbackCount.get());
             assertEquals(2, callbackCount.get());
-            assertEquals(2, dbCallbackCalls1.get());
             createRev("C", "1-cc", fleeceBody);
+            assertEquals(2, this.callbackCount.get());
             assertEquals(2, callbackCount.get());
-            assertEquals(2, dbCallbackCalls1.get());
 
             checkChanges(dbObserver, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
-            checkChanges(dbObserver1, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
-
+            checkChanges(dbObs, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
 
             dbObserver.close();
             dbObserver = null;
         }
-        finally {
-            dbObserver1.close();
-        }
 
         createRev("A", "2-aaaa", fleeceBody);
+        assertEquals(2, this.callbackCount.get());
         assertEquals(2, callbackCount.get());
-        assertEquals(2, dbCallbackCalls1.get());
     }
 
     private void checkChanges(
@@ -179,7 +174,7 @@ public class C4ObserverTest extends C4BaseTest {
         List<String> expectedDocIDs,
         List<String> expectedRevIDs,
         boolean expectedExternal) {
-        C4DatabaseChange[] changes = observer.getChanges(100);
+        C4DocumentChange[] changes = observer.getChanges(100);
         assertNotNull(changes);
         assertEquals(expectedDocIDs.size(), changes.length);
         for (int i = 0; i < changes.length; i++) {

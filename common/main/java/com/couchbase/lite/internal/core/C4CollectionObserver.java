@@ -30,7 +30,7 @@ public final class C4CollectionObserver extends C4NativePeer {
     public interface NativeImpl {
         long nCreate(long coll);
         @NonNull
-        C4CollectionChange[] nGetChanges(long peer, int maxChanges);
+        C4DocumentChange[] nGetChanges(long peer, int maxChanges);
         void nFree(long peer);
     }
 
@@ -94,7 +94,7 @@ public final class C4CollectionObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public C4CollectionChange[] getChanges(int maxChanges) { return impl.nGetChanges(getPeer(), maxChanges); }
+    public C4DocumentChange[] getChanges(int maxChanges) { return impl.nGetChanges(getPeer(), maxChanges); }
 
     @CallSuper
     @Override

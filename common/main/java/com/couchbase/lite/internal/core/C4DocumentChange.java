@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022 Couchbase, Inc All rights reserved.
+// Copyright (c) 2020 Couchbase, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,35 +22,36 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.support.Log;
 
 
-public final class C4CollectionChange {
+public final class C4DocumentChange {
+    // This method is called by reflection.  Don't change its signature.
     @Nullable
+    public static C4DocumentChange createC4DocumentChange(
+        @Nullable String docId,
+        @Nullable String revId,
+        long seq,
+        boolean ext) {
+        if ((docId != null) && (revId != null)) { return new C4DocumentChange(docId, revId, seq, ext); }
+
+        Log.i(LogDomain.DATABASE, "Bad db change notification: (%s, %s)", docId, revId);
+        return null;
+    }
+
+
+    @NonNull
     private final String docID;
     @NonNull
     private final String revID;
     private final long sequence;
     private final boolean external;
 
-    // This method is called by reflection.  Don't change its signature.
-    @Nullable
-    public static C4CollectionChange createC4DatabaseChange(
-        @Nullable String docId,
-        @Nullable String revId,
-        long seq,
-        boolean ext) {
-        if ((docId != null) && (revId != null)) { return new C4CollectionChange(docId, revId, seq, ext); }
-
-        Log.i(LogDomain.DATABASE, "Bad collection change notification: (%s, %s)", docId, revId);
-        return null;
-    }
-
-    private C4CollectionChange(@Nullable String docID, @NonNull String revID, long seq, boolean ext) {
+    private C4DocumentChange(@NonNull String docID, @NonNull String revID, long seq, boolean ext) {
         this.docID = docID;
         this.revID = revID;
         this.sequence = seq;
         this.external = ext;
     }
 
-    @Nullable
+    @NonNull
     public String getDocID() { return docID; }
 
     @NonNull
