@@ -21,10 +21,10 @@ public final class C4CollectionDocObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    private static final NativeImpl NATIVE_IMPL = new NativeC4CollectionDocObserver();
+    @VisibleForTesting
+    static volatile NativeImpl nativeImpl = new NativeC4CollectionDocObserver();
 
     private static final NativeRefPeerBinding<C4CollectionDocObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
-
 
     //-------------------------------------------------------------------------
     // JNI callback methods
@@ -38,9 +38,9 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
         final C4CollectionDocObserver observer = BOUND_OBSERVERS.getBinding(peer);
         if (observer == null) { return; }
-
-        observer.listener.run();
+        observer.docChanged();
     }
+
 
     //-------------------------------------------------------------------------
     // Static factory methods
@@ -48,7 +48,7 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
     @NonNull
     public static C4CollectionDocObserver newObserver(long c4Coll, @NonNull String docId, @NonNull Runnable listener) {
-        return newObserver(NATIVE_IMPL, c4Coll, docId, listener);
+        return newObserver(nativeImpl, c4Coll, docId, listener);
     }
 
     @VisibleForTesting
@@ -58,7 +58,10 @@ public final class C4CollectionDocObserver extends C4NativePeer {
         long c4Coll,
         @NonNull String id,
         @NonNull Runnable listener) {
-        final C4CollectionDocObserver observer = new C4CollectionDocObserver(impl, impl.nCreate(c4Coll, id), listener);
+        final C4CollectionDocObserver observer = new C4CollectionDocObserver(
+            impl,
+            impl.nCreate(c4Coll, id),
+            listener);
         BOUND_OBSERVERS.bind(observer.getPeer(), observer);
         return observer;
     }
@@ -76,7 +79,11 @@ public final class C4CollectionDocObserver extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    private C4CollectionDocObserver(@NonNull NativeImpl impl, long collection, @NonNull Runnable listener) {
+
+    private C4CollectionDocObserver(
+        @NonNull C4CollectionDocObserver.NativeImpl impl,
+        long collection,
+        @NonNull Runnable listener) {
         super(collection);
         this.impl = impl;
         this.listener = listener;
@@ -84,6 +91,9 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
     @Override
     public void close() { closePeer(null); }
+
+    @VisibleForTesting
+    void docChanged() { listener.run(); }
 
     @Override
     protected void finalize() throws Throwable {
