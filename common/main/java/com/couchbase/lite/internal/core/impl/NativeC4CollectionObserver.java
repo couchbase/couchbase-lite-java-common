@@ -15,13 +15,20 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.NonNull;
+
+import com.couchbase.lite.internal.core.C4CollectionChange;
 import com.couchbase.lite.internal.core.C4CollectionObserver;
 
 
 public class NativeC4CollectionObserver implements C4CollectionObserver.NativeImpl {
 
     @Override
-    public long nCreate(long coll, long token) { return create(coll, token); }
+    public long nCreate(long coll) { return create(coll); }
+
+    @Override
+    @NonNull
+    public C4CollectionChange[] nGetChanges(long peer, int maxChanges) { return getChanges(peer, maxChanges); }
 
     @Override
     public void nFree(long peer) { free(peer); }
@@ -31,7 +38,10 @@ public class NativeC4CollectionObserver implements C4CollectionObserver.NativeIm
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native long create(long coll, long token);
+    private static native long create(long coll);
+
+    @NonNull
+    private static native C4CollectionChange[] getChanges(long peer, int maxChanges);
 
     private static native void free(long peer);
 }

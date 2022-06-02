@@ -2,6 +2,7 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4CollectionDocObserver;
@@ -21,7 +22,25 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
     @NonNull
     private static final NativeImpl NATIVE_IMPL = new NativeC4CollectionDocObserver();
+
     private static final NativeRefPeerBinding<C4CollectionDocObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
+
+
+    //-------------------------------------------------------------------------
+    // JNI callback methods
+    //-------------------------------------------------------------------------
+
+    // This method is called by reflection.  Don't change its signature.
+    static void callback(long peer, @Nullable String docID, long sequence) {
+        Log.d(
+            LogDomain.DATABASE,
+            "C4CollectionDocObserver.callback @0x%x (%s): %s", peer, sequence, docID);
+
+        final C4CollectionDocObserver observer = BOUND_OBSERVERS.getBinding(peer);
+        if (observer == null) { return; }
+
+        observer.listener.run();
+    }
 
     //-------------------------------------------------------------------------
     // Static factory methods
@@ -32,8 +51,9 @@ public final class C4CollectionDocObserver extends C4NativePeer {
         return newObserver(NATIVE_IMPL, c4Coll, docId, listener);
     }
 
+    @VisibleForTesting
     @NonNull
-    private static C4CollectionDocObserver newObserver(
+    static C4CollectionDocObserver newObserver(
         @NonNull NativeImpl impl,
         long c4Coll,
         @NonNull String id,
@@ -56,29 +76,10 @@ public final class C4CollectionDocObserver extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    private C4CollectionDocObserver(
-        @NonNull C4CollectionDocObserver.NativeImpl impl,
-        long collection,
-        @NonNull Runnable listener) {
+    private C4CollectionDocObserver(@NonNull NativeImpl impl, long collection, @NonNull Runnable listener) {
         super(collection);
         this.impl = impl;
         this.listener = listener;
-    }
-
-    //-------------------------------------------------------------------------
-    // JNI callback methods
-    //-------------------------------------------------------------------------
-
-    // This method is called by reflection.  Don't change its signature.
-    static void callback(long peer, @Nullable String docID, long sequence) {
-        Log.d(
-            LogDomain.DATABASE,
-            "C4CollectionDocObserver.callback @0x%x (%s): %s", peer, sequence, docID);
-
-        final C4CollectionDocObserver observer = BOUND_OBSERVERS.getBinding(peer);
-        if (observer == null) { return; }
-
-        observer.listener.run();
     }
 
     @Override

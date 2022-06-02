@@ -881,13 +881,15 @@ abstract class AbstractDatabase extends BaseDatabase {
     /**
      * Get all collections in the named scope.
      *
-     * @param name the scope name
+     * @param scopeName the scope name
      * @return the collections in the named scope
      */
     @Nullable
-    public Set<Collection> getCollections(@Nullable String name) {
+    public Set<Collection> getCollections(@Nullable String scopeName) {
         final Scope scope;
-        synchronized (getDbLock()) { scope = scopes.get(StringUtils.isEmpty(name) ? Scope.DEFAULT_NAME : name); }
+        synchronized (getDbLock()) {
+            scope = scopes.get(StringUtils.isEmpty(scopeName) ? Scope.DEFAULT_NAME : scopeName);
+        }
 
         return (scope == null) ? null : scope.getCollections();
     }

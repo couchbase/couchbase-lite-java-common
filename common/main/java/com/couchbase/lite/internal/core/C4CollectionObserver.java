@@ -18,23 +18,26 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4CollectionObserver;
-import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
+import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
 import com.couchbase.lite.internal.support.Log;
 
 
 public final class C4CollectionObserver extends C4NativePeer {
     public interface NativeImpl {
-        long nCreate(long coll, long token);
+        long nCreate(long coll);
+        @NonNull
+        C4CollectionChange[] nGetChanges(long peer, int maxChanges);
         void nFree(long peer);
     }
 
     @NonNull
     private static final NativeImpl NATIVE_IMPL = new NativeC4CollectionObserver();
 
-    private static final TaggedWeakPeerBinding<C4CollectionObserver> BOUND_OBSERVERS = new TaggedWeakPeerBinding<>();
+    private static final NativeRefPeerBinding<C4CollectionObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
 
     //-------------------------------------------------------------------------
     // JNI callback methods
@@ -59,17 +62,11 @@ public final class C4CollectionObserver extends C4NativePeer {
         return newObserver(NATIVE_IMPL, c4Coll, listener);
     }
 
-    // !!! Here until C4CollectionDocObserver is implemented.
+    @VisibleForTesting
     @NonNull
-    public static C4CollectionObserver newObserver(long c4Coll, @NonNull String id, @NonNull Runnable listener) {
-        return newObserver(NATIVE_IMPL, c4Coll, listener);
-    }
-
-    @NonNull
-    private static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener) {
-        final long token = BOUND_OBSERVERS.reserveKey();
-        final C4CollectionObserver observer = new C4CollectionObserver(impl, impl.nCreate(c4Coll, token), listener);
-        BOUND_OBSERVERS.bind(token, observer);
+    static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener) {
+        final C4CollectionObserver observer = new C4CollectionObserver(impl, impl.nCreate(c4Coll), listener);
+        BOUND_OBSERVERS.bind(c4Coll, observer);
         return observer;
     }
 
@@ -95,6 +92,9 @@ public final class C4CollectionObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
+
+    @NonNull
+    public C4CollectionChange[] getChanges(int maxChanges) { return impl.nGetChanges(getPeer(), maxChanges); }
 
     @CallSuper
     @Override

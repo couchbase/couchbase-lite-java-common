@@ -11,11 +11,19 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
  * Method:    create
- * Signature: (JJ)J
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create
-    (JNIEnv *, jclass, jlong, jlong);
+    (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
+ * Method:    getChanges
+ * Signature: (JI)[Lcom/couchbase/lite/internal/core/C4CollectionChange;
+ */
+JNIEXPORT jobjectArray JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_getChanges
+        (JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
