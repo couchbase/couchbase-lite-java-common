@@ -60,6 +60,9 @@ public class C4BaseTest extends BaseTest {
 
     protected byte[] fleeceBody;
 
+    // map docID and revIDs
+    private Map<String, String> ids = new HashMap<>();
+
     @Before
     public final void setUpC4BaseTest() throws CouchbaseLiteException {
         final String testDirName = getUniqueName("c4_test");
@@ -113,6 +116,30 @@ public class C4BaseTest extends BaseTest {
     protected void createRev(C4Database db, String docID, String revID, byte[] body)
         throws LiteCoreException {
         createRev(db, docID, revID, body, 0);
+    }
+
+
+    // This method is a mock for c4Collection_putDoc. It checks whether a document is updated with a new revision id,
+    // if it is, we trigger observer callback
+    protected void createRevInCollection(
+        C4Collection collection,
+        String docID,
+        String revID,
+        byte[] body,
+        C4CollectionDocObserver observer)
+        throws LiteCoreException {
+        C4Document curDoc = collection.getDocument(docID);
+        assertNotNull(curDoc);
+
+        if (!ids.containsKey(curDoc.getDocID())) {
+            ids.put(curDoc.getDocID(), curDoc.getRevID());
+            return;
+        }
+        else if (ids.get(curDoc.getDocID()) == curDoc.getRevID()) { return; }
+
+        //if a doc is updated, trigger observer call back
+        C4CollectionDocObserver.callback(observer.getPeer(),curDoc.getDocID(), curDoc.getSequence());
+        curDoc.close();
     }
 
     protected long loadJsonAsset(String name) throws LiteCoreException, IOException {
@@ -217,7 +244,16 @@ public class C4BaseTest extends BaseTest {
             while ((l = br.readLine()) != null) {
                 try (FLSliceResult body = c4Database.encodeJSON(l)) {
                     String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
-                    try (C4Document doc = c4Database.putDocument(body, docID, 0, false, false, new String[0], true, 0, 0)) {
+                    try (C4Document doc = c4Database.putDocument(
+                        body,
+                        docID,
+                        0,
+                        false,
+                        false,
+                        new String[0],
+                        true,
+                        0,
+                        0)) {
                         assertNotNull(doc);
                     }
                 }
