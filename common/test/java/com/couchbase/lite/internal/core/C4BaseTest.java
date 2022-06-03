@@ -138,7 +138,7 @@ public class C4BaseTest extends BaseTest {
         else if (ids.get(curDoc.getDocID()) == curDoc.getRevID()) { return; }
 
         //if a doc is updated, trigger observer call back
-        observer.docChanged();
+        C4CollectionDocObserver.callback(observer.getPeer(),curDoc.getDocID(), curDoc.getSequence());
         curDoc.close();
     }
 

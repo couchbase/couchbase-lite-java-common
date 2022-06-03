@@ -1,11 +1,10 @@
 package com.couchbase.lite.internal.core
 
-import com.couchbase.lite.AbstractIndex
+
 import junit.framework.Assert.assertEquals
 import junit.framework.Assert.assertNotNull
 import org.junit.Ignore
 import org.junit.Test
-import java.util.concurrent.atomic.AtomicInteger
 
 class C4CollectionDocObserverTest : C4BaseTest() {
     private val mockCollectionDocObserver = object : C4CollectionDocObserver.NativeImpl {
@@ -13,43 +12,35 @@ class C4CollectionDocObserverTest : C4BaseTest() {
         override fun nFree(peer: Long) = Unit
     }
 
+    // Test creating a doc observer with mock native implementation
     @Test
     fun testCreateC4CollectionDocObserver() {
-        val impl = C4CollectionDocObserver.nativeImpl
-        var obs: C4CollectionDocObserver? = null
-        try {
-            C4CollectionDocObserver.nativeImpl = mockCollectionDocObserver
-            val coll = C4Collection.create(c4Database, "_default", "_default").peer
-            obs = C4CollectionDocObserver.newObserver(coll, "test") {}
+        val coll = C4Collection.create(c4Database, "_default", "_default").peer
+        C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll, "test") {}.use { obs ->
             assertNotNull(obs)
-        } finally {
-            obs?.close()
-            C4CollectionDocObserver.nativeImpl = impl
+            obs.close()
         }
     }
 
     // Test mock callback
     @Test
     fun testDocumentChanged() {
-        var i = 0;
+        var i = 0
         var obs: C4CollectionDocObserver? = null
-        createRev("A", "1-aa", fleeceBody);
-        val impl = C4CollectionDocObserver.nativeImpl
+        createRev("A", "1-aa", fleeceBody)
         try {
-            C4CollectionDocObserver.nativeImpl = mockCollectionDocObserver
             val coll = C4Collection.create(c4Database, "default", "_default").peer
-            obs = C4CollectionDocObserver.newObserver(coll, "A") { i++ }
+            obs = C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll, "A") { i++ }
             assertEquals(0, i)
 
-            obs.docChanged()
-            obs.docChanged()
-            obs.docChanged()
+            C4CollectionDocObserver.callback(obs.peer, "A", 0L)
+            C4CollectionDocObserver.callback(obs.peer, "A", 0L)
+            C4CollectionDocObserver.callback(obs.peer, "A", 0L)
 
             assertEquals(3, i)
 
         } finally {
             obs?.close()
-            C4CollectionDocObserver.nativeImpl = impl
         }
     }
 

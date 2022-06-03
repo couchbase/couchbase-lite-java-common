@@ -21,8 +21,7 @@ public final class C4CollectionDocObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    @VisibleForTesting
-    static volatile NativeImpl nativeImpl = new NativeC4CollectionDocObserver();
+    private static final NativeImpl NATIVE_IMPL = new NativeC4CollectionDocObserver();
 
     private static final NativeRefPeerBinding<C4CollectionDocObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
 
@@ -38,7 +37,7 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
         final C4CollectionDocObserver observer = BOUND_OBSERVERS.getBinding(peer);
         if (observer == null) { return; }
-        observer.docChanged();
+        observer.listener.run();
     }
 
 
@@ -48,7 +47,7 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
     @NonNull
     public static C4CollectionDocObserver newObserver(long c4Coll, @NonNull String docId, @NonNull Runnable listener) {
-        return newObserver(nativeImpl, c4Coll, docId, listener);
+        return newObserver(NATIVE_IMPL, c4Coll, docId, listener);
     }
 
     @VisibleForTesting
@@ -81,7 +80,7 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
 
     private C4CollectionDocObserver(
-        @NonNull C4CollectionDocObserver.NativeImpl impl,
+        @NonNull NativeImpl impl,
         long collection,
         @NonNull Runnable listener) {
         super(collection);
@@ -91,9 +90,6 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
     @Override
     public void close() { closePeer(null); }
-
-    @VisibleForTesting
-    void docChanged() { listener.run(); }
 
     @Override
     protected void finalize() throws Throwable {
