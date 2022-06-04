@@ -66,7 +66,7 @@ public final class C4CollectionObserver extends C4NativePeer {
     @NonNull
     static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener) {
         final C4CollectionObserver observer = new C4CollectionObserver(impl, impl.nCreate(c4Coll), listener);
-        BOUND_OBSERVERS.bind(c4Coll, observer);
+        BOUND_OBSERVERS.bind(observer.getPeer(), observer);
         return observer;
     }
 

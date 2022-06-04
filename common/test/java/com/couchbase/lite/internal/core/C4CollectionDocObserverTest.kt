@@ -45,48 +45,23 @@ class C4CollectionDocObserverTest : C4BaseTest() {
     }
 
     /**
-     * Functional Tests
+     * Functional Test
      */
 
-    // This tests that a revision to a document in a database will be listened as a document revision in _default collection
     @Test
-    @Ignore("This test should pass when we wire db methods to call collection methods")
-    fun testDbObserverWithCoreCallback() {
-        var i = 0
-        var obs: C4CollectionDocObserver? = null
-
-        createRev("A", "1-aa", fleeceBody)
-
-        try {
-            val coll = C4Collection.create(c4Database, "_default", "_default").peer
-            obs = C4CollectionDocObserver.newObserver(coll, "A") { i++ }
-
-            assertEquals(0, i)
-
-            createRev("A", "2-bb", fleeceBody)
-            createRev("B", "1-bb", fleeceBody)
-            assertEquals(1, i)
-        } finally {
-            obs?.close()
-        }
-    }
-
-    @Test
-    @Ignore("Can't create a C4Document at the moment, getFromCollection always return 0L")
     fun testCollObserverWithCoreCallback() {
         var i = 0
         var obs: C4CollectionDocObserver? = null
-
+        createRev(c4Database, "A", "1-aa", fleeceBody)
         try {
             val coll = C4Collection.create(c4Database, "_default", "_default")
             obs = C4CollectionDocObserver.newObserver(coll.peer, "A") { i++ }
 
-            createRevInCollection(coll, "A", "1-aa", fleeceBody, obs)
-
             assertEquals(0, i)
 
-            createRevInCollection(coll, "A", "2-bb", fleeceBody, obs)
-            createRevInCollection(coll, "B", "1-bb", fleeceBody, obs)
+            createRev(c4Database, "A", "2-bb", fleeceBody)
+            createRev(c4Database, "B", "1-bb", fleeceBody)
+
             assertEquals(1, i)
         } finally {
             obs?.close()
