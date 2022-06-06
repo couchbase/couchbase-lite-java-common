@@ -368,12 +368,16 @@ Java_com_couchbase_lite_internal_core_C4Database_encodeJSON(
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    getScopes
- * Signature: (J)J;
+ * Signature: (J)Ljava/util.List;
  */
-JNIEXPORT jlong JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_getScopeNames(JNIEnv *env, jclass ignore, jlong db) {
-    // FLMutableArray c4db_scopeNames(C4Database *db)
-    return 0L;
+    auto scopes = c4db_scopeNames((C4Database *) db);
+    if (!scopes)
+        return nullptr;
+    jobject scopeSet = toStringSet(env, scopes);
+    FLMutableArray_Release(scopes);
+    return scopeSet;
 }
 
 /*
@@ -382,37 +386,46 @@ Java_com_couchbase_lite_internal_core_C4Database_getScopeNames(JNIEnv *env, jcla
  * Signature: (JLjava/lang/String;)J;
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_hasScope
-        (JNIEnv *env, jclass ignore, jlong db, jstring scope) {
-    // ??? c4db_hasScope
-    return 0L;
+Java_com_couchbase_lite_internal_core_C4Database_hasScope(JNIEnv *env, jclass ignore, jlong db, jstring jscope) {
+    jstringSlice scope(env, jscope);
+    return c4db_hasScope((C4Database *) db, scope);
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    collectionNames
- * Signature: (JLjava/lang/String;)J
+ * Signature: (JLjava/lang/String;)Ljava/util.Set;
  */
-JNIEXPORT jlong JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_getCollectionNames(
         JNIEnv *env,
         jclass ignore,
         jlong db,
-        jstring scope) {
-    // FLMutableArray c4db_collectionNames(C4Database *db, C4String inScope) C
-    return 0L;
+        jstring jscope) {
+    jstringSlice scope(env, jscope);
+    auto collections = c4db_collectionNames((C4Database *) db, scope);
+    if (!collections)
+        return nullptr;
+    jobject collectionsSet = toStringSet(env, collections);
+    FLMutableArray_Release(collections);
+    return collectionsSet;
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    deleteCollection
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT jboolean JNICALL
+JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_deleteCollection
-        (JNIEnv *, jclass, jlong, jstring, jstring) {
-    // bool c4db_deleteCollection(C4Database *db, C4CollectionSpec spec, C4Error* C4NULLABLE outError)
-    return JNI_FALSE;
+        (JNIEnv *env, jclass ignore, jlong db, jstring jscope, jstring jcollection) {
+    C4CollectionSpec collSpec;
+    collSpec.name = jstringSlice(env, jcollection);
+    collSpec.scope = jstringSlice(env, jscope);
+
+    C4Error error;
+    if (!c4db_deleteCollection((C4Database *) db, collSpec, &error))
+        throwError(env, error);
 }
 
 // !!! DEPRECATED

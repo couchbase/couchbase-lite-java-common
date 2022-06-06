@@ -181,9 +181,9 @@ JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Database_main
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    getScopes
- * Signature: (J)J;
+ * Signature: (J)Ljava/util.Set;
  */
-JNIEXPORT jlong JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_getScopeNames
         (JNIEnv *, jclass, jlong);
 
@@ -199,18 +199,18 @@ Java_com_couchbase_lite_internal_core_C4Database_hasScope
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    collectionNames
- * Signature: (JLjava/lang/String;)J
+ * Signature: (JLjava/lang/String;)Ljava/util.Set;
  */
-JNIEXPORT jlong JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_getCollectionNames
         (JNIEnv *, jclass, jlong, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    deleteCollection
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT jboolean JNICALL
+JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_deleteCollection
         (JNIEnv *, jclass, jlong, jstring, jstring);
 

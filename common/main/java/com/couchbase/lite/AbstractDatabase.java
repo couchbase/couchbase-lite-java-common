@@ -846,7 +846,9 @@ abstract class AbstractDatabase extends BaseDatabase {
     @NonNull
     public Set<Scope> getScopes() {
         synchronized (getDbLock()) {
-            return Fn.filterToSet(scopes.values(), scope -> scope.getCollectionCount() > 0);
+            return Fn.filterToSet(
+                scopes.values(),
+                scope -> Scope.DEFAULT_NAME.equals(scope.getName()) || (scope.getCollectionCount() > 0));
         }
     }
 
@@ -1344,7 +1346,9 @@ abstract class AbstractDatabase extends BaseDatabase {
     //////// COLLECTIONS:
 
     private void initScopesAndCollections(C4Database c4db) {
-        for (String scopeName: c4db.getScopeNames()) { scopes.put(scopeName, new Scope(scopeName, this)); }
+        for (String scopeName: Preconditions.assertNotNull(c4db.getScopeNames(), "scopes")) {
+            scopes.put(scopeName, new Scope(scopeName, this));
+        }
 
         final Scope defaultScope = Preconditions.assertNotNull(scopes.get(Scope.DEFAULT_NAME), "default scope");
         final C4Collection c4Collection = c4db.getDefaultCollection();

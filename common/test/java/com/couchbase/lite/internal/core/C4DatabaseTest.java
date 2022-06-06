@@ -29,6 +29,7 @@ import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.MaintenanceType;
+import com.couchbase.lite.Scope;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.SlowTest;
@@ -585,6 +586,27 @@ public class C4DatabaseTest extends C4BaseTest {
         assertEquals(1, targetDb.getDocumentCount());
         targetDb.close();
     }
+
+    // - Scopes and Collections
+
+    @Test
+    public void testGetScopeNames() {
+        Set<String> scopes = c4Database.getScopeNames();
+        assertNotNull(scopes);
+        assertTrue(scopes.contains(Scope.DEFAULT_NAME));
+    }
+
+    @Test
+    public void testHasScope() { assertTrue(c4Database.hasScope(Scope.DEFAULT_NAME)); }
+
+    @Test
+    public void testGetCollectionNames() {
+        Set<String> collections = c4Database.getCollectionNames(Scope.DEFAULT_NAME);
+        assertNotNull(collections);
+        assertFalse(collections.isEmpty());
+    }
+
+    // - Utility methods
 
     private void setupAllDocs() throws LiteCoreException {
         for (int i = 1; i < 100; i++) {

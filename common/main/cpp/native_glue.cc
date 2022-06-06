@@ -103,6 +103,58 @@ std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
     return str;
 }
 
+
+// Java ArrayList class
+static jclass cls_ArrayList;                       // global reference
+static jmethodID m_ArrayList_init;                 // constructor
+static jmethodID m_ArrayList_add;                  // add
+
+// Java HashSet class
+static jclass cls_HashSet;                       // global reference
+static jmethodID m_HashSet_init;                 // constructor
+static jmethodID m_HashSet_add;                  // add
+
+
+static bool initC4Glue(JNIEnv *env) {
+    {
+        jclass localClass = env->FindClass("java/util/ArrayList");
+        if (!localClass)
+            return false;
+
+        cls_ArrayList = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_ArrayList)
+            return false;
+
+        m_ArrayList_init = env->GetMethodID(cls_ArrayList, "<init>", "(I)V");
+        if (!m_ArrayList_init)
+            return false;
+
+        m_ArrayList_add = env->GetMethodID(cls_ArrayList, "add", "(Ljava/lang/Object;)Z");
+        if (!m_ArrayList_add)
+            return false;
+    }
+    {
+        jclass localClass = env->FindClass("java/util/HashSet");
+        if (!localClass)
+            return false;
+
+        cls_HashSet = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_HashSet)
+            return false;
+
+        m_HashSet_init = env->GetMethodID(cls_HashSet, "<init>", "(I)V");
+        if (!m_HashSet_init)
+            return false;
+
+        m_HashSet_add = env->GetMethodID(cls_HashSet, "add", "(Ljava/lang/Object;)Z");
+        if (!m_HashSet_add)
+            return false;
+    }
+
+    return true;
+}
+
+
 /*
  * Will be called by JNI when the library is loaded
  *
@@ -116,6 +168,7 @@ JNI_OnLoad(JavaVM *jvm, void *reserved) {
     JNIEnv *env;
     if ((jvm->GetEnv((void **) &env, JNI_VERSION_1_6) == JNI_OK)
         && initC4Logging(env)
+        && initC4Glue(env)
         && initC4Observer(env)
         && initC4Replicator(env)
         #ifdef COUCHBASE_ENTERPRISE
@@ -253,6 +306,46 @@ namespace litecore {
                 memcpy(outKey->bytes, keySlice.buf, keySlice.size);
             }
             return true;
+        }
+
+        jobject toStringList(JNIEnv *env, FLMutableArray array) {
+            uint32_t n = FLArray_Count(array);
+
+            jobject result = env->NewObject(cls_ArrayList, m_ArrayList_init, (jint) n);
+
+            for (int i = 0; i < n; i++) {
+                auto arrayElem = FLArray_Get(array, (uint32_t) i);
+                auto str = FLValue_AsString((FLValue) arrayElem);
+                jstring jstr = toJString(env, str);
+                if (!jstr)
+                    continue;
+
+                env->CallBooleanMethod(result, m_ArrayList_add, jstr);
+
+                env->DeleteLocalRef(jstr);
+            }
+
+            return result;
+        }
+
+        jobject toStringSet(JNIEnv *env, FLMutableArray array) {
+            uint32_t n = FLArray_Count(array);
+
+            jobject result = env->NewObject(cls_HashSet, m_HashSet_init, (jint) n);
+
+            for (int i = 0; i < n; i++) {
+                auto arrayElem = FLArray_Get(array, (uint32_t) i);
+                auto str = FLValue_AsString((FLValue) arrayElem);
+                jstring jstr = toJString(env, str);
+                if (!jstr)
+                    continue;
+
+                env->CallBooleanMethod(result, m_HashSet_add, jstr);
+
+                env->DeleteLocalRef(jstr);
+            }
+
+            return result;
         }
 
         // !!! This is just a terrible idea

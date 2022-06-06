@@ -34,11 +34,6 @@ static jclass cls_C4Listener;                      // global reference
 static jmethodID m_C4Listener_certAuthCallback;    // statusChangedCallback method
 static jmethodID m_C4Listener_httpAuthCallback;    // documentEndedCallback method
 
-// Java ArrayList class
-static jclass cls_ArrayList;                       // global reference
-static jmethodID m_ArrayList_init;                 // constructor
-static jmethodID m_ArrayList_add;                  // add
-
 // Java KeyManager class
 static jclass cls_C4KeyPair;                      // global reference
 static jmethodID m_C4KeyPair_keyDataCallback;     // get key data
@@ -338,24 +333,6 @@ static bool initListenerCallbacks(JNIEnv *env) {
             return false;
     }
 
-    {
-        jclass localClass = env->FindClass("java/util/ArrayList");
-        if (!localClass)
-            return false;
-
-        cls_ArrayList = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_ArrayList)
-            return false;
-
-        m_ArrayList_init = env->GetMethodID(cls_ArrayList, "<init>", "(I)V");
-        if (!m_ArrayList_init)
-            return false;
-
-        m_ArrayList_add = env->GetMethodID(cls_ArrayList, "add", "(Ljava/lang/Object;)Z");
-        if (!m_ArrayList_add)
-            return false;
-    }
-
     return true;
 }
 
@@ -442,26 +419,6 @@ static jobject toConnectionStatus(JNIEnv *env, unsigned connectionCount, unsigne
             m_ConnectionStatus_init,
             (jint) connectionCount,
             (jint) activeConnectionCount);
-}
-
-static jobject toList(JNIEnv *env, FLMutableArray array) {
-    int n = FLArray_Count(array);
-
-    jobject result = env->NewObject(cls_ArrayList, m_ArrayList_init, (jint) n);
-
-    for (int i = 0; i < n; i++) {
-        auto arrayElem = FLArray_Get(array, (uint32_t) i);
-        auto str = FLValue_AsString((FLValue) arrayElem);
-        jstring jstr = toJString(env, str);
-        if (!jstr)
-            continue;
-
-        env->CallBooleanMethod(result, m_ArrayList_add, jstr);
-
-        env->DeleteLocalRef(jstr);
-    }
-
-    return result;
 }
 
 static C4Cert *getCert(JNIEnv *env, jbyteArray cert, bool &didThrow) {
@@ -699,7 +656,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
         return nullptr;
     }
 
-    return toList(env, urls);
+    return toStringList(env, urls);
 }
 
 JNIEXPORT jint JNICALL

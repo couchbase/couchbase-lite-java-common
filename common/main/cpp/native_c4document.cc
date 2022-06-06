@@ -396,7 +396,7 @@ Java_com_couchbase_lite_internal_core_C4Document_dictContainsBlobs(
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    create
  * Signature: (JLjava/lang/String;[BI)J
- * * !!! deprecated
+ * !!! Deprecated
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_create(
@@ -422,7 +422,6 @@ Java_com_couchbase_lite_internal_core_C4Document_create(
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    put
  * Signature: (J[BLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
- * !!! deprecated
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_put(
@@ -491,7 +490,6 @@ Java_com_couchbase_lite_internal_core_C4Document_put(
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    put2
  * Signature: (JJLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
- * !!! deprecated
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2(
         JNIEnv *env,

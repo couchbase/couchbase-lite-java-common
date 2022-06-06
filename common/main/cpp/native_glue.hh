@@ -115,14 +115,20 @@ namespace litecore {
                               jbyteArray jKeyBytes,
                               C4EncryptionKey *outKey);
 
-        // !!! We need to get rid of this.
-        C4SliceResult *copyToHeap(const C4SliceResult &sr);
-
         // lightweight logging
         void logError(const char *fmt, ...);
 
         // Sets a Java exception based on the LiteCore error.
         void throwError(JNIEnv *, C4Error);
+
+        // Copy a FLMutableArray of strings to a Java ArrayList<String>
+        jobject toStringList(JNIEnv *env, FLMutableArray array);
+
+        // Copy a FLMutableArray of strings to a Java HashSet<String>
+        jobject toStringSet(JNIEnv *env, FLMutableArray array);
+
+        // !!! We need to get rid of this.
+        C4SliceResult *copyToHeap(const C4SliceResult &sr);
     }
 }
 

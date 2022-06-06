@@ -25,21 +25,17 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.AbstractReplicator;
-import com.couchbase.lite.Collection;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.MaintenanceType;
-import com.couchbase.lite.Scope;
 import com.couchbase.lite.internal.SocketFactory;
-import com.couchbase.lite.internal.fleece.FLArray;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -297,41 +293,13 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Scopes and Collections
 
-    @NonNull
-    public Set<String> getScopeNames() {
-        final Set<String> scopes = new HashSet<>();
-        final long arrayRef = getScopeNames(getPeer());
-        if (arrayRef == 0) {
-            // !!! delete this once the native call works.
-            scopes.add(Scope.DEFAULT_NAME);
-            return scopes;
-        }
-        final FLArray flScopes = FLArray.create(arrayRef);
-        final long n = flScopes.count();
-        if (n <= 0) { return scopes; }
-        for (int i = 0; i < n; i++) { scopes.add(flScopes.get(i).toStr()); }
-
-        return scopes;
-    }
+    @Nullable
+    public Set<String> getScopeNames() { return getScopeNames(getPeer()); }
 
     public boolean hasScope(@NonNull String scope) { return hasScope(getPeer(), scope); }
 
-    @NonNull
-    public Set<String> getCollectionNames(@NonNull String scope) {
-        final Set<String> collections = new HashSet<>();
-        final long arrayRef = getCollectionNames(getPeer(), scope);
-        if (arrayRef == 0) {
-            // !!! delete this once the native call works.
-            collections.add(Collection.DEFAULT_NAME);
-            return collections;
-        }
-        final FLArray flCollections = FLArray.create(arrayRef);
-        final long n = flCollections.count();
-        if (n <= 0) { return collections; }
-        for (int i = 0; i < n; i++) { collections.add(flCollections.get(i).toStr()); }
-
-        return collections;
-    }
+    @Nullable
+    public Set<String> getCollectionNames(@NonNull String scope) { return getCollectionNames(getPeer(), scope); }
 
     @Nullable
     public final C4Collection getDefaultCollection() { return C4Collection.getDefault(this); }
@@ -434,7 +402,7 @@ public abstract class C4Database extends C4NativePeer {
     }
 
     // !!! DEPRECATED
-    // Delete these methods when the corresponding Java methods proxy to the default collection
+    // Delete these methods when the corresponding Database methods proxy to the default collection
 
     // - Documents
 
@@ -638,23 +606,25 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Scopes and Collections
 
-    // returns FLArray of scope names
-    private static native long getScopeNames(long peer);
+    // returns Set<String> of scope names
+    @Nullable
+    private static native Set<String> getScopeNames(long peer);
 
-    // returns FLArray of scope names
+    // returns true if the db has a scope with the passed name
     private static native boolean hasScope(long peer, @NonNull String scope);
 
-    // returns FLArray of scope names
-    private static native long getCollectionNames(long peer, @NonNull String scope);
+    // returns Set<String> of scope names
+    @Nullable
+    private static native Set<String> getCollectionNames(long peer, @NonNull String scope);
 
     // deletes the named collection
-    private static native boolean deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
+    private static native void deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException;
 
     // - Documents
 
     // !!! DEPRECATED:
-    //  Delete these methods when the corresponding Java methods proxy to the default collection
+    //  Delete these methods when the corresponding Database methods proxy to the default collection
 
     private static native long getDocumentCount(long db);
 

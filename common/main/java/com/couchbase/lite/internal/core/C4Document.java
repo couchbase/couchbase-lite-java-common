@@ -79,7 +79,6 @@ public final class C4Document extends C4NativePeer {
         return new C4Document(create(db.getPeer(), docID, body, flags));
     }
 
-    // ??? Deprecated
     @VisibleForTesting
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
@@ -108,7 +107,6 @@ public final class C4Document extends C4NativePeer {
             remoteDBID));
     }
 
-    // ??? Deprecated
     @VisibleForTesting
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
@@ -368,11 +366,11 @@ public final class C4Document extends C4NativePeer {
     private static native boolean dictContainsBlobs(long dict, long sk); // dict -> FLSliceResult
 
     // - Testing
+    // None of these methods may be used in production code.
 
     // !!! Deprecated
     private static native long create(long db, String docID, byte[] body, int flags) throws LiteCoreException;
 
-    // !!! Deprecated
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private static native long put(
         long db,
@@ -387,7 +385,6 @@ public final class C4Document extends C4NativePeer {
         int remoteDBID)
         throws LiteCoreException;
 
-    // !!! Deprecated
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private static native long put2(
         long db,
