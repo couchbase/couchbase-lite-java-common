@@ -17,9 +17,11 @@ package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.LiteCoreException
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Test
 
 
@@ -27,6 +29,7 @@ class C4CollectionTest : C4BaseTest() {
     @Test
     fun setUpC4CollectionTest() {
         assertNotNull(C4Collection.getDefault(c4Database))
+        // Would like to be able to verify that this is the default collection...
     }
 
     @Test
@@ -41,11 +44,12 @@ class C4CollectionTest : C4BaseTest() {
     }
 
     @Test
-    fun testDeleteCollection() {
+    fun testCollectionIsValidAfterClose() {
         val collection = C4Collection.create(c4Database, "Micro", "PezDispensers")
         assertTrue(collection.isValid)
-        c4Database.deleteCollection("Micro", "PezDispensers")
-        assertTrue(collection.isValid)
+        c4Database.closeDb()
+        c4Database = null
+        assertFalse(collection.isValid)
     }
 
     @Test(expected = LiteCoreException::class)

@@ -19,6 +19,7 @@ import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.impl.NativeC4Collection;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class C4Collection extends C4NativePeer {
@@ -141,7 +142,7 @@ public class C4Collection extends C4NativePeer {
     @VisibleForTesting
     @NonNull
     public C4Document getDocument(@NonNull String docId, boolean mustExist) throws LiteCoreException {
-        return C4Document.get(this, docId, mustExist);
+        return C4Document.get(this, Preconditions.assertNotNull(docId, "doc ID"), mustExist);
     }
 
     @NonNull
