@@ -1344,7 +1344,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     //////// COLLECTIONS:
 
     private void initScopesAndCollections(C4Database c4db) {
-        for (String scopeName: c4db.getScopes()) { scopes.put(scopeName, new Scope(scopeName, this)); }
+        for (String scopeName: c4db.getScopeNames()) { scopes.put(scopeName, new Scope(scopeName, this)); }
 
         final Scope defaultScope = Preconditions.assertNotNull(scopes.get(Scope.DEFAULT_NAME), "default scope");
         final C4Collection c4Collection = c4db.getDefaultCollection();
@@ -1650,7 +1650,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         rawDoc.resolveConflict(remoteDoc.getRevisionID(), localDoc.getRevisionID(), mergedBodyBytes, mergedFlags);
         rawDoc.save(0);
 
-        Log.d(DOMAIN, "Conflict resolved as doc '%s' rev %s", rawDoc.getDocID(), rawDoc.getRevID());
+        Log.d(DOMAIN, "Conflict resolved as doc '%s' rev %s", localDoc.getId(), rawDoc.getRevID());
     }
 
     private void saveWithConflictHandler(@NonNull MutableDocument document, @NonNull ConflictHandler handler)

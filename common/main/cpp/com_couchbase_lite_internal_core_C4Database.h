@@ -25,22 +25,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_free
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    rawGet
- * Signature: (JLjava/lang/String;Ljava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawGet
-        (JNIEnv *, jclass, jlong, jstring, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    rawPut
- * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;[B)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawPut
-        (JNIEnv *, jclass, jlong, jstring, jstring, jstring, jbyteArray);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    copy
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II[B)V
  */
@@ -220,15 +204,6 @@ Java_com_couchbase_lite_internal_core_C4Database_hasScope
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_getCollectionNames
         (JNIEnv *, jclass, jlong, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    hasCollection
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Database_hasCollection
-        (JNIEnv *, jclass, jlong, jstring, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database

@@ -18,14 +18,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createF
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    createRaw
- * Signature: (JLjava/lang/String;[BI)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createRaw
-        (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    getFromCollection
  * Signature: (JLjava/lang/String;Z)J
  */
@@ -34,18 +26,18 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFrom
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    getFromCollectionBySequence
- * Signature: (JJ)J
+ * Method:    createRaw
+ * Signature: (JLjava/lang/String;[BI)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFromCollectionBySequence
-        (JNIEnv *, jclass, jlong, jlong);
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createRaw
+        (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    create
  * Signature: (JLjava/lang/String;[BI)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_create__JLjava_lang_String_2_3BI
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_create
         (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint);
 
 /*
@@ -154,14 +146,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_get
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    getBySequence
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getBySequence
-        (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    save
  * Signature: (JI)V
  */
@@ -206,14 +190,6 @@ JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Document_hasR
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Document_selectParentRevision
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    selectNextRevision
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Document_selectNextRevision
         (JNIEnv *, jclass, jlong);
 
 /*

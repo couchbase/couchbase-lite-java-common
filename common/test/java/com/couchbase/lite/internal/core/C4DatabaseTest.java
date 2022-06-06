@@ -195,40 +195,6 @@ public class C4DatabaseTest extends C4BaseTest {
         }
     }
 
-    // - "Database CreateRawDoc"
-    @Test
-    public void testDatabaseCreateRawDoc() throws LiteCoreException {
-        final String store = "test";
-        final String key = "key";
-        final String meta = "meta";
-        boolean commit = false;
-        c4Database.beginTransaction();
-        try {
-            c4Database.rawPut(store, key, meta, fleeceBody);
-            commit = true;
-        }
-        finally {
-            c4Database.endTransaction(commit);
-        }
-
-        C4RawDocument doc = c4Database.rawGet(store, key);
-        assertNotNull(doc);
-        assertEquals(doc.key(), key);
-        assertEquals(doc.meta(), meta);
-        assertArrayEquals(doc.body(), fleeceBody);
-        doc.close();
-
-        // Nonexistent:
-        try {
-            c4Database.rawGet(store, "bogus");
-            fail("Should not come here.");
-        }
-        catch (LiteCoreException ex) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
-        }
-    }
-
     // - "Database AllDocs"
     @Test
     public void testDatabaseAllDocs() throws LiteCoreException {
@@ -661,7 +627,8 @@ public class C4DatabaseTest extends C4BaseTest {
         final C4Document doc;
         try (FLSliceResult body = c4Database.encodeJSON(jsonStr)) {
             // Save document:
-            doc = c4Database.putDocument(
+            doc = C4Document.create(
+                c4Database,
                 body,
                 docID,
                 C4Constants.RevisionFlags.HAS_ATTACHMENTS,

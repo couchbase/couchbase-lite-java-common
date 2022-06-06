@@ -207,11 +207,6 @@ public abstract class C4Database extends C4NativePeer {
         close();
     }
 
-    // This is subtle: see above.
-    public void deleteDb() throws LiteCoreException {
-        delete(getPeer());
-        close();
-    }
 
     // - File System
 
@@ -246,6 +241,12 @@ public abstract class C4Database extends C4NativePeer {
         return dbFileName;
     }
 
+    // This is subtle: see closeDb above.
+    public void deleteDb() throws LiteCoreException {
+        delete(getPeer());
+        close();
+    }
+
     // - UUID
 
     @NonNull
@@ -261,14 +262,6 @@ public abstract class C4Database extends C4NativePeer {
     public void beginTransaction() throws LiteCoreException { beginTransaction(getPeer()); }
 
     public void endTransaction(boolean commit) throws LiteCoreException { endTransaction(getPeer(), commit); }
-
-    // - Fleece
-
-    // This must be called holding both the document and the database locks!
-    @NonNull
-    public FLEncoder getSharedFleeceEncoder() {
-        return FLEncoder.getUnmanagedEncoder(getSharedFleeceEncoder(getPeer()));
-    }
 
     // - Maintenance
 
@@ -291,13 +284,21 @@ public abstract class C4Database extends C4NativePeer {
         return getCookies(getPeer(), uri.toString());
     }
 
+    // - Utilities
+
+    // This must be called holding both the document and the database locks!
+    @NonNull
+    public FLEncoder getSharedFleeceEncoder() {
+        return FLEncoder.getUnmanagedEncoder(getSharedFleeceEncoder(getPeer()));
+    }
+
     @NonNull
     public FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
 
     // - Scopes and Collections
 
     @NonNull
-    public Set<String> getScopes() {
+    public Set<String> getScopeNames() {
         final Set<String> scopes = new HashSet<>();
         final long arrayRef = getScopeNames(getPeer());
         if (arrayRef == 0) {
@@ -316,7 +317,7 @@ public abstract class C4Database extends C4NativePeer {
     public boolean hasScope(@NonNull String scope) { return hasScope(getPeer(), scope); }
 
     @NonNull
-    public Set<String> getCollections(@NonNull String scope) {
+    public Set<String> getCollectionNames(@NonNull String scope) {
         final Set<String> collections = new HashSet<>();
         final long arrayRef = getCollectionNames(getPeer(), scope);
         if (arrayRef == 0) {
@@ -349,7 +350,7 @@ public abstract class C4Database extends C4NativePeer {
     public void deleteCollection(@NonNull String scopeName, @NonNull String collectionName)
         throws CouchbaseLiteException {
         try { deleteCollection(getPeer(), scopeName, collectionName); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e);  }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     // - Replicators
@@ -435,25 +436,25 @@ public abstract class C4Database extends C4NativePeer {
     // !!! DEPRECATED
     // Delete these methods when the corresponding Java methods proxy to the default collection
 
+    // - Documents
+
+    public long getDocumentCount() { return getDocumentCount(getPeer()); }
+
+    @NonNull
+    public C4Document getDocument(@NonNull String docID) throws LiteCoreException {
+        return C4Document.create(this, docID, true);
+    }
+
     @VisibleForTesting
     @NonNull
     public C4Document getDocument(@NonNull String docID, boolean mustExist) throws LiteCoreException {
         return C4Document.create(this, docID, mustExist);
     }
 
-    // - Documents
-
-    public long getDocumentCount() { return getDocumentCount(getPeer()); }
-
     @NonNull
     public C4Document createDocument(@NonNull String docID, @Nullable FLSliceResult body, int flags)
         throws LiteCoreException {
         return C4Document.create(this, docID, body, flags);
-    }
-
-    @NonNull
-    public C4Document getDocument(@NonNull String docID) throws LiteCoreException {
-        return C4Document.create(this, docID, true);
     }
 
     public void setDocumentExpiration(@NonNull String docID, long timestamp) throws LiteCoreException {
@@ -492,12 +493,6 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Indexes
 
-    @NonNull
-    public FLValue getIndexesInfo() throws LiteCoreException {
-        final FLValue info = withPeerOrNull((peer) -> new FLValue(getIndexesInfo(peer)));
-        return Preconditions.assertNotNull(info, "index info");
-    }
-
     public void createIndex(
         @NonNull String name,
         @NonNull String queryExpression,
@@ -516,6 +511,12 @@ public abstract class C4Database extends C4NativePeer {
                 indexType.getValue(),
                 language,
                 ignoreDiacritics));
+    }
+
+    @NonNull
+    public FLValue getIndexesInfo() throws LiteCoreException {
+        final FLValue info = withPeerOrNull((peer) -> new FLValue(getIndexesInfo(peer)));
+        return Preconditions.assertNotNull(info, "index info");
     }
 
     public void deleteIndex(String name) throws LiteCoreException {
@@ -543,75 +544,6 @@ public abstract class C4Database extends C4NativePeer {
     @NonNull
     FLSliceResult encodeJSON(@NonNull String data) throws LiteCoreException {
         return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8)));
-    }
-
-    @VisibleForTesting
-    @NonNull
-    C4Document getDocumentBySequence(long sequence) throws LiteCoreException {
-        return C4Document.create(this, sequence);
-    }
-
-    @VisibleForTesting
-    void rawPut(String storeName, String key, String meta, byte[] body) throws LiteCoreException {
-        rawPut(getPeer(), storeName, key, meta, body);
-    }
-
-    @VisibleForTesting
-    @NonNull
-    C4RawDocument rawGet(@NonNull String storeName, @NonNull String docID) throws LiteCoreException {
-        return new C4RawDocument(rawGet(getPeer(), storeName, docID));
-    }
-
-    @VisibleForTesting
-    @NonNull
-    public C4Document putDocument(
-        @NonNull byte[] body,
-        @NonNull String docID,
-        int revFlags,
-        boolean existingRevision,
-        boolean allowConflict,
-        @NonNull String[] history,
-        boolean save,
-        int maxRevTreeDepth,
-        int remoteDBID)
-        throws LiteCoreException {
-        return C4Document.create(
-            this,
-            body,
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID);
-    }
-
-    @NonNull
-    @VisibleForTesting
-    C4Document putDocument(
-        @NonNull FLSliceResult body, // C4Slice*
-        @NonNull String docID,
-        int revFlags,
-        boolean existingRevision,
-        boolean allowConflict,
-        @NonNull String[] history,
-        boolean save,
-        int maxRevTreeDepth,
-        int remoteDBID)
-        throws LiteCoreException {
-        return C4Document.create(
-            this,
-            body,
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID);
     }
 
     //-------------------------------------------------------------------------
@@ -646,6 +578,16 @@ public abstract class C4Database extends C4NativePeer {
         byte[] encryptionKey)
         throws LiteCoreException;
 
+    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    private static native void close(long db) throws LiteCoreException;
+
+    static native void free(long db);
+
+// - File System
+
+    @Nullable
+    private static native String getPath(long db);
+
     private static native void copy(
         String sourcePath,
         String parentDir,
@@ -655,14 +597,9 @@ public abstract class C4Database extends C4NativePeer {
         byte[] encryptionKey)
         throws LiteCoreException;
 
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static native void close(long db) throws LiteCoreException;
-
     private static native void delete(long db) throws LiteCoreException;
 
     private static native void deleteNamed(@NonNull String name, @NonNull String dir) throws LiteCoreException;
-
-    static native void free(long db);
 
     // - UUID
 
@@ -672,24 +609,11 @@ public abstract class C4Database extends C4NativePeer {
     @NonNull
     private static native byte[] getPrivateUUID(long db) throws LiteCoreException;
 
-    // - File System
-
-    @Nullable
-    private static native String getPath(long db);
-
-    private static native long getLastSequence(long db);
-
     // - Transactions
 
     private static native void beginTransaction(long db) throws LiteCoreException;
 
     private static native void endTransaction(long db, boolean commit) throws LiteCoreException;
-
-    // - Fleece-related
-
-    private static native long getSharedFleeceEncoder(long db);
-
-    private static native long encodeJSON(long db, byte[] jsonData) throws LiteCoreException;
 
     // - Maintenance
 
@@ -704,6 +628,12 @@ public abstract class C4Database extends C4NativePeer {
     @NonNull
     private static native String getCookies(long db, @NonNull String url) throws LiteCoreException;
 
+    // - Utilities
+
+    private static native long getSharedFleeceEncoder(long db);
+
+    private static native long encodeJSON(long db, byte[] jsonData) throws LiteCoreException;
+
     private static native long getFLSharedKeys(long db);
 
     // - Scopes and Collections
@@ -717,24 +647,11 @@ public abstract class C4Database extends C4NativePeer {
     // returns FLArray of scope names
     private static native long getCollectionNames(long peer, @NonNull String scope);
 
-    // returns true if db has collection
-    private static native boolean hasCollection(long peer, @NonNull String scope, @NonNull String collection);
-
-    // returns true if db has collection
+    // deletes the named collection
     private static native boolean deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException;
 
-    // - Raw Documents (i.e. info or _local)
-
-    private static native long rawGet(long db, String storeName, String docID) throws LiteCoreException;
-
-    private static native void rawPut(
-        long db,
-        String storeName,
-        String key,
-        String meta,
-        byte[] body)
-        throws LiteCoreException;
+    // - Documents
 
     // !!! DEPRECATED:
     //  Delete these methods when the corresponding Java methods proxy to the default collection
@@ -762,4 +679,8 @@ public abstract class C4Database extends C4NativePeer {
     private static native void deleteIndex(long db, @NonNull String name) throws LiteCoreException;
 
     // !!! end deprecation
+
+    // - Testing
+
+    private static native long getLastSequence(long db);
 }

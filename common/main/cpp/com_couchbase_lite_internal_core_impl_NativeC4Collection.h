@@ -54,15 +54,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getDoc
- * Signature: (JLjava/lang/String;Z)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDoc
-        (JNIEnv *, jclass, jlong, jstring, jboolean);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    setDocExpiration
  * Signature: (JLjava/lang/String;J)V
  */

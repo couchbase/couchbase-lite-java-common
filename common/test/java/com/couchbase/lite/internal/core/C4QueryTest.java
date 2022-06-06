@@ -256,7 +256,8 @@ public class C4QueryTest extends C4QueryBaseTest {
                 C4Document doc = c4Database.getDocument("0000015", true);
                 assertNotNull(doc);
                 String[] history = {doc.getRevID()};
-                C4Document updatedDoc = c4Database.putDocument(
+                C4Document updatedDoc = C4Document.create(
+                    c4Database,
                     (byte[]) null,
                     doc.getDocID(),
                     C4Constants.RevisionFlags.DELETED,

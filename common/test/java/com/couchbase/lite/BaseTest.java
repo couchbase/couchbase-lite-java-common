@@ -127,7 +127,6 @@ public abstract class BaseTest extends PlatformBaseTest {
         if (exclusion != null) { Assume.assumeFalse(exclusion.msg, exclusion.test.get()); }
     }
 
-    @NonNull
     protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
 
     @SuppressWarnings("BusyWait")

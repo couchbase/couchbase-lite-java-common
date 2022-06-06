@@ -51,11 +51,6 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     // Documents
 
     @Override
-    public long nGetDoc(long peer, @NonNull String docID, boolean mustExist) throws LiteCoreException {
-        return getDoc(peer, docID, mustExist);
-    }
-
-    @Override
     public long nGetDocExpiration(long peer, @NonNull String docID) throws LiteCoreException {
         return getDocExpiration(peer, docID);
     }
@@ -103,9 +98,6 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     private static native boolean isValid(long peer);
 
     private static native long getDocumentCount(long peer);
-
-    private static native long getDoc(long peer, @NonNull String docID, boolean mustExist)
-        throws LiteCoreException;
 
     private static native void setDocExpiration(long peer, @NonNull String docID, long timestamp)
         throws LiteCoreException;

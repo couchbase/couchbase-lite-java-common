@@ -83,7 +83,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection(
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid(JNIEnv *env, jclass ignore, jlong coll) {
-    return (jboolean) true == c4coll_isValid((C4Collection *) coll);
+    return (jboolean) c4coll_isValid((C4Collection *) coll);
 }
 
 /*
@@ -94,30 +94,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid(JNIEnv *en
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount(JNIEnv *env, jclass ignore, jlong coll) {
     return (jlong) c4coll_getDocumentCount((C4Collection *) coll);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getDoc
- * Signature: (JLjava/lang/String;Z)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDoc(
-        JNIEnv *env,
-        jclass ignore,
-        jlong coll,
-        jstring jDocId,
-        jboolean mustExist) {
-    jstringSlice docId(env, jDocId);
-
-    C4Error error;
-    C4Document *doc = c4coll_getDoc((C4Collection *) coll, docId, mustExist != JNI_TRUE, kDocGetAll, &error);
-    if (!doc) {
-        throwError(env, error);
-        return 0;
-    }
-
-    return (jlong) doc;
 }
 
 /*

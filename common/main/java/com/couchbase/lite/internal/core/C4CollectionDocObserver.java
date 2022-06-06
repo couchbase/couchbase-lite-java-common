@@ -25,6 +25,7 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
     private static final NativeRefPeerBinding<C4CollectionDocObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
 
+
     //-------------------------------------------------------------------------
     // JNI callback methods
     //-------------------------------------------------------------------------
@@ -37,9 +38,9 @@ public final class C4CollectionDocObserver extends C4NativePeer {
 
         final C4CollectionDocObserver observer = BOUND_OBSERVERS.getBinding(peer);
         if (observer == null) { return; }
+
         observer.listener.run();
     }
-
 
     //-------------------------------------------------------------------------
     // Static factory methods
@@ -57,10 +58,7 @@ public final class C4CollectionDocObserver extends C4NativePeer {
         long c4Coll,
         @NonNull String id,
         @NonNull Runnable listener) {
-        final C4CollectionDocObserver observer = new C4CollectionDocObserver(
-            impl,
-            impl.nCreate(c4Coll, id),
-            listener);
+        final C4CollectionDocObserver observer = new C4CollectionDocObserver(impl, impl.nCreate(c4Coll, id), listener);
         BOUND_OBSERVERS.bind(observer.getPeer(), observer);
         return observer;
     }
@@ -78,11 +76,7 @@ public final class C4CollectionDocObserver extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-
-    private C4CollectionDocObserver(
-        @NonNull NativeImpl impl,
-        long collection,
-        @NonNull Runnable listener) {
+    private C4CollectionDocObserver(@NonNull NativeImpl impl, long collection, @NonNull Runnable listener) {
         super(collection);
         this.impl = impl;
         this.listener = listener;
