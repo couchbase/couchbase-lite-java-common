@@ -36,6 +36,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.MaintenanceType;
 import com.couchbase.lite.internal.SocketFactory;
+import com.couchbase.lite.internal.core.impl.NativeC4Database;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -53,21 +54,150 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {
+    public interface NativeImpl {
+        long nOpen(
+            @NonNull String parentDir,
+            @NonNull String name,
+            int flags,
+            int algorithm,
+            byte[] encryptionKey)
+            throws LiteCoreException;
+
+
+        void nClose(long db) throws LiteCoreException;
+
+        void nFree(long db);
+
+        // - File System
+
+        @Nullable
+        String nGetPath(long db);
+
+        void nCopy(
+            String sourcePath,
+            String parentDir,
+            String name,
+            int flags,
+            int algorithm,
+            byte[] encryptionKey)
+            throws LiteCoreException;
+
+        void nDelete(long db) throws LiteCoreException;
+
+        void nDeleteNamed(@NonNull String name, @NonNull String dir) throws LiteCoreException;
+
+        // - UUID
+
+        @NonNull
+        byte[] nGetPublicUUID(long db) throws LiteCoreException;
+
+        @NonNull
+        byte[] nGetPrivateUUID(long db) throws LiteCoreException;
+
+        // - Transactions
+
+        void nBeginTransaction(long db) throws LiteCoreException;
+
+        void nEndTransaction(long db, boolean commit) throws LiteCoreException;
+
+        // - Maintenance
+
+        boolean nMaintenance(long db, int type) throws LiteCoreException;
+
+        void nRekey(long db, int keyType, byte[] newKey) throws LiteCoreException;
+
+        // - Cookie Store
+
+        void nSetCookie(long db, String url, String setCookieHeader) throws LiteCoreException;
+
+        @NonNull
+        String nGetCookies(long db, @NonNull String url) throws LiteCoreException;
+
+        // - Utilities
+
+        long nGetSharedFleeceEncoder(long db);
+
+        long nEncodeJSON(long db, byte[] jsonData) throws LiteCoreException;
+
+        long nGetFLSharedKeys(long db);
+
+        // - Scopes and Collections
+
+        // returns Set<String> of scope names
+        @Nullable
+        Set<String> nGetScopeNames(long peer);
+
+        // returns true if the db has a scope with the passed name
+        boolean nHasScope(long peer, @NonNull String scope);
+
+        // returns Set<String> of collection names
+        @Nullable
+        Set<String> nGetCollectionNames(long peer, @NonNull String scope);
+
+        // deletes the named collection
+        void nDeleteCollection(long peer, @NonNull String scope, @NonNull String collection)
+            throws LiteCoreException;
+
+        // - Documents
+
+        // !!! DEPRECATED:
+        //  Delete these methods when the corresponding Database methods proxy to the default collection
+
+        long nGetDocumentCount(long db);
+
+        void nSetDocumentExpiration(long db, String docID, long timestamp)
+            throws LiteCoreException;
+
+        long nGetDocumentExpiration(long db, String docID) throws LiteCoreException;
+
+        void nPurgeDoc(long db, String id) throws LiteCoreException;
+
+        long nGetIndexesInfo(long db) throws LiteCoreException;
+
+        void nCreateIndex(
+            long db,
+            @NonNull String name,
+            @NonNull String queryExpressions,
+            int queryLanguage,
+            int indexType,
+            @Nullable String language,
+            boolean ignoreDiacritics)
+            throws LiteCoreException;
+
+        void nDeleteIndex(long db, @NonNull String name) throws LiteCoreException;
+
+        // !!! end deprecation
+
+        // - Testing
+
+        long nGetLastSequence(long db);
+    }
 
     @VisibleForTesting
     public static final String DB_EXTENSION = ".cblite2";
 
+    @NonNull
+    @VisibleForTesting
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Database();
+
     // unmanaged: the native code will free it
     static final class UnmanagedC4Database extends C4Database {
-        UnmanagedC4Database(long peer) { super(peer); }
+        UnmanagedC4Database(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
 
         @Override
         public void close() { releasePeer(); }
     }
 
+
     // managed: Java code is responsible for freeing it
     static final class ManagedC4Database extends C4Database {
-        ManagedC4Database(long peer) { super(peer); }
+        @NonNull
+        private final NativeImpl impl;
+
+        ManagedC4Database(@NonNull NativeImpl impl, long peer) {
+            super(impl, peer);
+            this.impl = impl;
+        }
 
         @Override
         public void close() { closePeer(null); }
@@ -79,7 +209,7 @@ public abstract class C4Database extends C4NativePeer {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4Database::free); }
+        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
     }
 
     // These enum values must match the ones in DataFile::MaintenanceType
@@ -106,12 +236,12 @@ public abstract class C4Database extends C4NativePeer {
 
         if (parentDir.charAt(parentDir.length() - 1) != File.separatorChar) { parentDir += File.separator; }
 
-        copy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
+        NATIVE_IMPL.nCopy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
     }
 
     // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair
     public static void deleteNamedDb(@NonNull String directory, @NonNull String name) throws LiteCoreException {
-        deleteNamed(name, directory);
+        NATIVE_IMPL.nDeleteNamed(name, directory);
     }
 
     @NonNull
@@ -126,7 +256,7 @@ public abstract class C4Database extends C4NativePeer {
 
     // unmanaged: someone else owns it
     @NonNull
-    public static C4Database getUnmanagedDatabase(long peer) { return new UnmanagedC4Database(peer); }
+    public static C4Database getUnmanagedDatabase(long peer) { return new UnmanagedC4Database(NATIVE_IMPL, peer); }
 
     // managed: Java code is responsible for freeing it
     @NonNull
@@ -137,7 +267,17 @@ public abstract class C4Database extends C4NativePeer {
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
+        return getDatabase(NATIVE_IMPL, parentDirPath, name, flags, algorithm, encryptionKey);
+    }
 
+    @VisibleForTesting
+    @NonNull
+    static C4Database getDatabase(
+        @NonNull NativeImpl impl, @NonNull String parentDirPath,
+        @NonNull String name,
+        int flags,
+        int algorithm,
+        @Nullable byte[] encryptionKey) throws LiteCoreException {
         // Stupid LiteCore will throw a total hissy fit if we pass
         // it something that it decides isn't a directory.
         boolean pathOk = false;
@@ -155,7 +295,7 @@ public abstract class C4Database extends C4NativePeer {
                 "Parent directory does not exist or is not a directory: " + parentDirPath);
         }
 
-        return new ManagedC4Database(open(
+        return new ManagedC4Database(impl, impl.nOpen(
             parentDirPath,
             name,
             flags,
@@ -169,12 +309,15 @@ public abstract class C4Database extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     final AtomicReference<File> dbFile = new AtomicReference<>();
+    private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
-
-    protected C4Database(long peer) { super(peer); }
+    protected C4Database(@NonNull NativeImpl impl, long peer) {
+        super(peer);
+        this.impl = impl;
+    }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -199,7 +342,7 @@ public abstract class C4Database extends C4NativePeer {
     // That means that close() will never be called and the failure will be reported normally.
     // The finalizer will backstop this rare case, so that the Database doesn't leak.
     public void closeDb() throws LiteCoreException {
-        close(getPeer());
+        impl.nClose(getPeer());
         close();
     }
 
@@ -239,14 +382,14 @@ public abstract class C4Database extends C4NativePeer {
 
     // This is subtle: see closeDb above.
     public void deleteDb() throws LiteCoreException {
-        delete(getPeer());
+        impl.nDelete(getPeer());
         close();
     }
 
     // - UUID
 
     @NonNull
-    public byte[] getPublicUUID() throws LiteCoreException { return getPublicUUID(getPeer()); }
+    public byte[] getPublicUUID() throws LiteCoreException { return impl.nGetPublicUUID(getPeer()); }
 
     // - Blobs
 
@@ -255,16 +398,16 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Transactions
 
-    public void beginTransaction() throws LiteCoreException { beginTransaction(getPeer()); }
+    public void beginTransaction() throws LiteCoreException { impl.nBeginTransaction(getPeer()); }
 
-    public void endTransaction(boolean commit) throws LiteCoreException { endTransaction(getPeer(), commit); }
+    public void endTransaction(boolean commit) throws LiteCoreException { impl.nEndTransaction(getPeer(), commit); }
 
     // - Maintenance
 
-    public void rekey(int keyType, byte[] newKey) throws LiteCoreException { rekey(getPeer(), keyType, newKey); }
+    public void rekey(int keyType, byte[] newKey) throws LiteCoreException { impl.nRekey(getPeer(), keyType, newKey); }
 
     public boolean performMaintenance(MaintenanceType type) throws LiteCoreException {
-        return maintenance(
+        return impl.nMaintenance(
             getPeer(),
             Preconditions.assertNotNull(MAINTENANCE_TYPE_MAP.get(type), "Unrecognized maintenance type: " + type));
     }
@@ -272,12 +415,12 @@ public abstract class C4Database extends C4NativePeer {
     // - Cookies
 
     public void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) throws LiteCoreException {
-        setCookie(getPeer(), uri.toString(), setCookieHeader);
+        impl.nSetCookie(getPeer(), uri.toString(), setCookieHeader);
     }
 
     @Nullable
     public String getCookies(@NonNull URI uri) throws LiteCoreException {
-        return getCookies(getPeer(), uri.toString());
+        return impl.nGetCookies(getPeer(), uri.toString());
     }
 
     // - Utilities
@@ -285,21 +428,21 @@ public abstract class C4Database extends C4NativePeer {
     // This must be called holding both the document and the database locks!
     @NonNull
     public FLEncoder getSharedFleeceEncoder() {
-        return FLEncoder.getUnmanagedEncoder(getSharedFleeceEncoder(getPeer()));
+        return FLEncoder.getUnmanagedEncoder(impl.nGetSharedFleeceEncoder(getPeer()));
     }
 
     @NonNull
-    public FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(getFLSharedKeys(getPeer())); }
+    public FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(impl.nGetFLSharedKeys(getPeer())); }
 
     // - Scopes and Collections
 
     @Nullable
-    public Set<String> getScopeNames() { return getScopeNames(getPeer()); }
+    public Set<String> getScopeNames() { return impl.nGetScopeNames(getPeer()); }
 
-    public boolean hasScope(@NonNull String scope) { return hasScope(getPeer(), scope); }
+    public boolean hasScope(@NonNull String scope) { return impl.nHasScope(getPeer(), scope); }
 
     @Nullable
-    public Set<String> getCollectionNames(@NonNull String scope) { return getCollectionNames(getPeer(), scope); }
+    public Set<String> getCollectionNames(@NonNull String scope) { return impl.nGetCollectionNames(getPeer(), scope); }
 
     @Nullable
     public final C4Collection getDefaultCollection() { return C4Collection.getDefault(this); }
@@ -317,7 +460,7 @@ public abstract class C4Database extends C4NativePeer {
 
     public void deleteCollection(@NonNull String scopeName, @NonNull String collectionName)
         throws CouchbaseLiteException {
-        try { deleteCollection(getPeer(), scopeName, collectionName); }
+        try { impl.nDeleteCollection(getPeer(), scopeName, collectionName); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
@@ -406,7 +549,7 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Documents
 
-    public long getDocumentCount() { return getDocumentCount(getPeer()); }
+    public long getDocumentCount() { return impl.nGetDocumentCount(getPeer()); }
 
     @NonNull
     public C4Document getDocument(@NonNull String docID) throws LiteCoreException {
@@ -426,14 +569,14 @@ public abstract class C4Database extends C4NativePeer {
     }
 
     public void setDocumentExpiration(@NonNull String docID, long timestamp) throws LiteCoreException {
-        setDocumentExpiration(getPeer(), docID, timestamp);
+        impl.nSetDocumentExpiration(getPeer(), docID, timestamp);
     }
 
     public long getDocumentExpiration(@NonNull String docID) throws LiteCoreException {
-        return getDocumentExpiration(getPeer(), docID);
+        return impl.nGetDocumentExpiration(getPeer(), docID);
     }
 
-    public void purgeDoc(String docID) throws LiteCoreException { purgeDoc(getPeer(), docID); }
+    public void purgeDoc(String docID) throws LiteCoreException { impl.nPurgeDoc(getPeer(), docID); }
 
     // - Queries
 
@@ -471,7 +614,7 @@ public abstract class C4Database extends C4NativePeer {
         throws LiteCoreException {
         Log.d(LogDomain.QUERY, "creating index: %s", queryExpression);
         withPeerThrows(
-            (peer) -> createIndex(
+            (peer) -> impl.nCreateIndex(
                 peer,
                 name,
                 queryExpression,
@@ -483,12 +626,12 @@ public abstract class C4Database extends C4NativePeer {
 
     @NonNull
     public FLValue getIndexesInfo() throws LiteCoreException {
-        final FLValue info = withPeerOrNull((peer) -> new FLValue(getIndexesInfo(peer)));
+        final FLValue info = withPeerOrNull((peer) -> new FLValue(impl.nGetIndexesInfo(peer)));
         return Preconditions.assertNotNull(info, "index info");
     }
 
     public void deleteIndex(String name) throws LiteCoreException {
-        withPeerThrows((peer) -> deleteIndex(peer, name));
+        withPeerThrows((peer) -> impl.nDeleteIndex(peer, name));
     }
 
     // !!! end deprecation
@@ -502,16 +645,16 @@ public abstract class C4Database extends C4NativePeer {
     long getHandle() { return getPeer(); }
 
     @VisibleForTesting
-    long getLastSequence() { return getLastSequence(getPeer()); }
+    long getLastSequence() { return impl.nGetLastSequence(getPeer()); }
 
     @NonNull
     @VisibleForTesting
-    byte[] getPrivateUUID() throws LiteCoreException { return getPrivateUUID(getPeer()); }
+    byte[] getPrivateUUID() throws LiteCoreException { return impl.nGetPrivateUUID(getPeer()); }
 
     @VisibleForTesting
     @NonNull
     FLSliceResult encodeJSON(@NonNull String data) throws LiteCoreException {
-        return FLSliceResult.getManagedSliceResult(encodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8)));
+        return FLSliceResult.getManagedSliceResult(impl.nEncodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8)));
     }
 
     //-------------------------------------------------------------------------
@@ -523,7 +666,7 @@ public abstract class C4Database extends C4NativePeer {
         final File file = dbFile.get();
         if (file != null) { return file; }
 
-        final String path = getPath(getPeer());
+        final String path = impl.nGetPath(getPeer());
         if (path == null) { return null; }
 
         try { dbFile.compareAndSet(null, new File(path).getCanonicalFile()); }
@@ -531,126 +674,4 @@ public abstract class C4Database extends C4NativePeer {
 
         return dbFile.get();
     }
-
-    //-------------------------------------------------------------------------
-    // Native methods
-    //-------------------------------------------------------------------------
-
-    // - Lifecycle
-
-    static native long open(
-        @NonNull String parentDir,
-        @NonNull String name,
-        int flags,
-        int algorithm,
-        byte[] encryptionKey)
-        throws LiteCoreException;
-
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static native void close(long db) throws LiteCoreException;
-
-    static native void free(long db);
-
-// - File System
-
-    @Nullable
-    private static native String getPath(long db);
-
-    private static native void copy(
-        String sourcePath,
-        String parentDir,
-        String name,
-        int flags,
-        int algorithm,
-        byte[] encryptionKey)
-        throws LiteCoreException;
-
-    private static native void delete(long db) throws LiteCoreException;
-
-    private static native void deleteNamed(@NonNull String name, @NonNull String dir) throws LiteCoreException;
-
-    // - UUID
-
-    @NonNull
-    private static native byte[] getPublicUUID(long db) throws LiteCoreException;
-
-    @NonNull
-    private static native byte[] getPrivateUUID(long db) throws LiteCoreException;
-
-    // - Transactions
-
-    private static native void beginTransaction(long db) throws LiteCoreException;
-
-    private static native void endTransaction(long db, boolean commit) throws LiteCoreException;
-
-    // - Maintenance
-
-    private static native boolean maintenance(long db, int type) throws LiteCoreException;
-
-    private static native void rekey(long db, int keyType, byte[] newKey) throws LiteCoreException;
-
-    // - Cookie Store
-
-    private static native void setCookie(long db, String url, String setCookieHeader) throws LiteCoreException;
-
-    @NonNull
-    private static native String getCookies(long db, @NonNull String url) throws LiteCoreException;
-
-    // - Utilities
-
-    private static native long getSharedFleeceEncoder(long db);
-
-    private static native long encodeJSON(long db, byte[] jsonData) throws LiteCoreException;
-
-    private static native long getFLSharedKeys(long db);
-
-    // - Scopes and Collections
-
-    // returns Set<String> of scope names
-    @Nullable
-    private static native Set<String> getScopeNames(long peer);
-
-    // returns true if the db has a scope with the passed name
-    private static native boolean hasScope(long peer, @NonNull String scope);
-
-    // returns Set<String> of scope names
-    @Nullable
-    private static native Set<String> getCollectionNames(long peer, @NonNull String scope);
-
-    // deletes the named collection
-    private static native void deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
-        throws LiteCoreException;
-
-    // - Documents
-
-    // !!! DEPRECATED:
-    //  Delete these methods when the corresponding Database methods proxy to the default collection
-
-    private static native long getDocumentCount(long db);
-
-    private static native void setDocumentExpiration(long db, String docID, long timestamp) throws LiteCoreException;
-
-    private static native long getDocumentExpiration(long db, String docID) throws LiteCoreException;
-
-    private static native void purgeDoc(long db, String id) throws LiteCoreException;
-
-    private static native long getIndexesInfo(long db) throws LiteCoreException;
-
-    private static native void createIndex(
-        long db,
-        @NonNull String name,
-        @NonNull String queryExpressions,
-        int queryLanguage,
-        int indexType,
-        @Nullable String language,
-        boolean ignoreDiacritics)
-        throws LiteCoreException;
-
-    private static native void deleteIndex(long db, @NonNull String name) throws LiteCoreException;
-
-    // !!! end deprecation
-
-    // - Testing
-
-    private static native long getLastSequence(long db);
 }
