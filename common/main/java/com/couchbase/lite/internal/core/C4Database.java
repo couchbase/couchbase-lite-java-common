@@ -177,7 +177,6 @@ public abstract class C4Database extends C4NativePeer {
     public static final String DB_EXTENSION = ".cblite2";
 
     @NonNull
-    @VisibleForTesting
     private static final NativeImpl NATIVE_IMPL = new NativeC4Database();
 
     // unmanaged: the native code will free it
@@ -273,11 +272,13 @@ public abstract class C4Database extends C4NativePeer {
     @VisibleForTesting
     @NonNull
     static C4Database getDatabase(
-        @NonNull NativeImpl impl, @NonNull String parentDirPath,
+        @NonNull NativeImpl impl,
+        @NonNull String parentDirPath,
         @NonNull String name,
         int flags,
         int algorithm,
-        @Nullable byte[] encryptionKey) throws LiteCoreException {
+        @Nullable byte[] encryptionKey)
+        throws LiteCoreException {
         // Stupid LiteCore will throw a total hissy fit if we pass
         // it something that it decides isn't a directory.
         boolean pathOk = false;
@@ -295,12 +296,14 @@ public abstract class C4Database extends C4NativePeer {
                 "Parent directory does not exist or is not a directory: " + parentDirPath);
         }
 
-        return new ManagedC4Database(impl, impl.nOpen(
-            parentDirPath,
-            name,
-            flags,
-            algorithm,
-            encryptionKey));
+        return new ManagedC4Database(
+            impl,
+            impl.nOpen(
+                parentDirPath,
+                name,
+                flags,
+                algorithm,
+                encryptionKey));
     }
 
 
