@@ -197,7 +197,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testCustomConnectionOptions() throws URISyntaxException {
+    public void testCustomConnectionOptions() throws URISyntaxException, CouchbaseLiteException {
         Set<Collection> collections = baseTestDb.getCollections();
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
             .setType(ReplicatorType.PUSH)
@@ -253,7 +253,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testReplicatedDocument() {
+    public void testReplicatedDocument() throws CouchbaseLiteException {
         Collection collection = baseTestDb.getDefaultCollection();
         String docID = "someDocumentID";
         int flags = C4Constants.DocumentFlags.DELETED;

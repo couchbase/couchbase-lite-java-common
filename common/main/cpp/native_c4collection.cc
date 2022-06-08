@@ -42,12 +42,20 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollecti
  * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection
-        (JNIEnv *env, jclass ignore, jlong db, jstring jScope, jstring jCollection) {
-    jstringSlice scope(env, jScope);
-    jstringSlice collection(env, jCollection);
-    C4CollectionSpec spec = {scope, collection};
-    return (jlong) c4db_getCollection((C4Database *) db, spec);
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db,
+        jstring jscope,
+        jstring jcollection) {
+    jstringSlice scope(env, jscope);
+    jstringSlice collection(env, jcollection);
+    C4CollectionSpec collSpec = {collection, scope};
+
+    C4Error error;
+    if (!c4db_deleteCollection((C4Database *) db, collSpec, &error))
+        throwError(env, error);
+    return (jlong) c4db_getCollection((C4Database *) db, collSpec);
 }
 
 /*
@@ -60,14 +68,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection(
         JNIEnv *env,
         jclass ignore,
         jlong db,
-        jstring jScope,
-        jstring jCollection) {
-    jstringSlice scope(env, jScope);
-    jstringSlice collection(env, jCollection);
-    C4CollectionSpec spec = {scope, collection};
+        jstring jscope,
+        jstring jcollection) {
+    jstringSlice scope(env, jscope);
+    jstringSlice collection(env, jcollection);
+    C4CollectionSpec collSpec = {collection, scope};
 
     C4Error error;
-    C4Collection *coll = c4db_createCollection((C4Database *) db, spec, &error);
+    C4Collection *coll = c4db_createCollection((C4Database *) db, collSpec, &error);
     if (!coll) {
         throwError(env, error);
         return 0;
@@ -82,7 +90,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection(
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid(JNIEnv *env, jclass ignore, jlong coll) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll) {
     return (jboolean) c4coll_isValid((C4Collection *) coll);
 }
 

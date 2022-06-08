@@ -8,9 +8,7 @@ import org.junit.Before;
 import com.couchbase.lite.internal.utils.Report;
 
 import static org.junit.Assert.assertEquals;
-
 import static org.junit.Assert.assertNotNull;
-
 
 
 public class BaseCollectionTest extends BaseDbTest {
@@ -18,9 +16,9 @@ public class BaseCollectionTest extends BaseDbTest {
     protected Scope testScope;
 
     @Before
-    public final void setUpBaseCollectionTest(){
+    public final void setUpBaseCollectionTest() throws CouchbaseLiteException {
         testScope = baseTestDb.getDefaultScope();
-        testCollection = testScope.getDefaultCollection();
+        testCollection = testScope.getCollection(Collection.DEFAULT_NAME);
         Report.log(LogLevel.INFO, "Created base test Collection: " + testCollection);
         assertNotNull(testCollection);
     }

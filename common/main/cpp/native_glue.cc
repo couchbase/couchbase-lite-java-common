@@ -310,12 +310,20 @@ namespace litecore {
 
         jobject toStringList(JNIEnv *env, FLMutableArray array) {
             uint32_t n = FLArray_Count(array);
-
             jobject result = env->NewObject(cls_ArrayList, m_ArrayList_init, (jint) n);
+
+            if (!array)
+                return result;
 
             for (int i = 0; i < n; i++) {
                 auto arrayElem = FLArray_Get(array, (uint32_t) i);
+                if (!arrayElem)
+                    continue;
+
                 auto str = FLValue_AsString((FLValue) arrayElem);
+                if (!str)
+                    continue;
+
                 jstring jstr = toJString(env, str);
                 if (!jstr)
                     continue;
@@ -330,12 +338,20 @@ namespace litecore {
 
         jobject toStringSet(JNIEnv *env, FLMutableArray array) {
             uint32_t n = FLArray_Count(array);
-
             jobject result = env->NewObject(cls_HashSet, m_HashSet_init, (jint) n);
+
+            if (!array)
+                return result;
 
             for (int i = 0; i < n; i++) {
                 auto arrayElem = FLArray_Get(array, (uint32_t) i);
+                if (!arrayElem)
+                    continue;
+
                 auto str = FLValue_AsString((FLValue) arrayElem);
+                if (!str)
+                    continue;
+
                 jstring jstr = toJString(env, str);
                 if (!jstr)
                     continue;

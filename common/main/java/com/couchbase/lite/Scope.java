@@ -24,6 +24,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import com.couchbase.lite.internal.core.C4Database;
+
 
 // This is still assuming that we can cache the collections...
 public class Scope {
@@ -98,9 +100,11 @@ public class Scope {
 
     @NonNull
     Collection addCollection(@NonNull String collectionName) throws CouchbaseLiteException {
-        if (DEFAULT_NAME.equals(name)) { throw new IllegalArgumentException("Cannot create the default collection"); }
+        if (DEFAULT_NAME.equals(collectionName)) {
+            throw new IllegalArgumentException("Cannot create the default collection");
+        }
         final Collection collection = db.addCollection(this, collectionName);
-        collections.put(name, collection);
+        collections.put(collectionName, collection);
         return collection;
     }
 
@@ -110,12 +114,26 @@ public class Scope {
 
     void deleteCollection(@Nullable Collection collection) throws CouchbaseLiteException {
         if (collection == null) { return; }
-        db.deleteCollection(collection);
         collections.remove(collection.getName());
+        db.deleteCollection(collection);
     }
 
-    @Nullable
-    Collection getDefaultCollection() { return getCollection(Collection.DEFAULT_NAME); }
+    // PMD is pretty stupid.
+    @SuppressWarnings("PMD.UnnecessaryFullyQualifiedName")
+    void loadCollections(@NonNull C4Database c4db) {
+        final Set<String> names = c4db.getCollectionNames(name);
+        for (String collectionName: names) {
+            try { cacheCollection(Collection.create(c4db, this, collectionName)); }
+            catch (CouchbaseLiteException e) {
+                com.couchbase.lite.internal.support.Log.d(
+                    LogDomain.DATABASE,
+                    "Failed loading collection %s.%s",
+                    e,
+                    name,
+                    collectionName);
+            }
+        }
+    }
 
     void cacheCollection(@NonNull Collection collection) { collections.put(name, collection); }
 }

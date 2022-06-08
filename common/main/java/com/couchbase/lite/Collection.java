@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.core.C4Collection;
+import com.couchbase.lite.internal.core.C4Database;
 
 
 /**
@@ -28,6 +29,24 @@ import com.couchbase.lite.internal.core.C4Collection;
  */
 public final class Collection implements Indexable, DatabaseChangeObservable {
     public static final String DEFAULT_NAME = "_default";
+
+    @NonNull
+    static Collection create(@NonNull C4Database c4db, @NonNull Scope scope, @NonNull String name)
+        throws CouchbaseLiteException {
+        try { return new Collection(c4db.addCollection(scope.getName(), name), scope, name); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+    }
+
+    @NonNull
+    static Collection create(@NonNull C4Collection c4coll, @NonNull Scope scope, @NonNull String name) {
+        return new Collection(c4coll, scope, name);
+    }
+
+    @Nullable
+    static Collection getDefaultCollection(@NonNull Database database) {
+        try { return database.getDefaultCollection(); }
+        catch (CouchbaseLiteException e) { throw new IllegalArgumentException("Database is not open??", e); }
+    }
 
     @NonNull
     private final String name;

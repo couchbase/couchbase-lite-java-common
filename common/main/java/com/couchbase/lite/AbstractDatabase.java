@@ -283,11 +283,11 @@ abstract class AbstractDatabase extends BaseDatabase {
         final C4Database c4db = openC4Db();
         setC4DatabaseLocked(c4db);
 
-        // Scope
-        initScopesAndCollections(c4db);
-
         // Initialize a shared keys:
         this.sharedKeys = c4db.getFLSharedKeys();
+
+        // Scope
+        loacScopesAndCollections(c4db);
 
         // warn if logging has not been turned on
         Log.warn();
@@ -844,19 +844,12 @@ abstract class AbstractDatabase extends BaseDatabase {
      * under it.
      */
     @NonNull
-    public Set<Scope> getScopes() {
+    public final Set<Scope> getScopes() throws CouchbaseLiteException {
         synchronized (getDbLock()) {
+            assertOpen();
             return Fn.filterToSet(
                 scopes.values(),
                 scope -> Scope.DEFAULT_NAME.equals(scope.getName()) || (scope.getCollectionCount() > 0));
-        }
-    }
-
-    /// Get the default scope.
-    @NonNull
-    public Scope getDefaultScope() {
-        synchronized (getDbLock()) {
-            return Preconditions.assertNotNull(scopes.get(Scope.DEFAULT_NAME), "default scope");
         }
     }
 
@@ -866,8 +859,20 @@ abstract class AbstractDatabase extends BaseDatabase {
      * Note: The default scope is exceptional, and it will always be returned.
      */
     @Nullable
-    public Scope getScope(@NonNull String name) {
-        synchronized (getDbLock()) { return scopes.get(name); }
+    public final Scope getScope(@NonNull String name) throws CouchbaseLiteException {
+        synchronized (getDbLock()) {
+            assertOpen();
+            final Scope scope = scopes.get(name);
+            return ((scope == null) || (Scope.DEFAULT_NAME.equals(name)) || ((scope.getCollectionCount() > 0)))
+                ? scope
+                : null;
+        }
+    }
+
+    /// Get the default scope.
+    @NonNull
+    public final Scope getDefaultScope() throws CouchbaseLiteException {
+        return Preconditions.assertNotNull(getScope(Scope.DEFAULT_NAME), "default scope");
     }
 
     //---------------------------------------------
@@ -877,8 +882,10 @@ abstract class AbstractDatabase extends BaseDatabase {
     /**
      * Get all collections in the default scope.
      */
-    @Nullable
-    public Set<Collection> getCollections() { return getCollections(Scope.DEFAULT_NAME); }
+    @NonNull
+    public final Set<Collection> getCollections() throws CouchbaseLiteException {
+        return getCollections(Scope.DEFAULT_NAME);
+    }
 
     /**
      * Get all collections in the named scope.
@@ -886,14 +893,57 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param scopeName the scope name
      * @return the collections in the named scope
      */
-    @Nullable
-    public Set<Collection> getCollections(@Nullable String scopeName) {
+    @NonNull
+    public final Set<Collection> getCollections(@Nullable String scopeName) throws CouchbaseLiteException {
         final Scope scope;
         synchronized (getDbLock()) {
+            assertOpen();
             scope = scopes.get(StringUtils.isEmpty(scopeName) ? Scope.DEFAULT_NAME : scopeName);
         }
 
-        return (scope == null) ? null : scope.getCollections();
+        return (scope == null) ? new HashSet<>() : scope.getCollections();
+    }
+
+    /**
+     * Get a collection in the default scope by name.
+     * If the collection doesn't exist, the function will return null.
+     *
+     * @param name the collection to find
+     * @return the named collection or null
+     */
+    @Nullable
+    public final Collection getCollection(@NonNull String name) throws CouchbaseLiteException {
+        return getCollection(name, Scope.DEFAULT_NAME);
+    }
+
+    /**
+     * Get a collection in the specified scope by name.
+     * If the collection doesn't exist, the function will return null.
+     *
+     * @param name      the collection to find
+     * @param scopeName the scope in which to create the collection
+     * @return the named collection or null
+     */
+    @Nullable
+    public final Collection getCollection(@NonNull String name, @Nullable String scopeName)
+        throws CouchbaseLiteException {
+        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
+        final Scope scope;
+        synchronized (getDbLock()) {
+            assertOpen();
+            scope = scopes.get(scopeName);
+        }
+        return (scope == null) ? null : scope.getCollection(name);
+    }
+
+    /**
+     * Get the default collection. If the default collection is deleted, null will be returned.
+     *
+     * @return the default collection or null if it does not exist.
+     */
+    @Nullable
+    public final Collection getDefaultCollection() throws CouchbaseLiteException {
+        return getCollection(Collection.DEFAULT_NAME);
     }
 
     /**
@@ -905,7 +955,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @throws CouchbaseLiteException on failure
      */
     @NonNull
-    public Collection createCollection(@NonNull String name) throws CouchbaseLiteException {
+    public final Collection createCollection(@NonNull String name) throws CouchbaseLiteException {
         return createCollection(name, Scope.DEFAULT_NAME);
     }
 
@@ -919,45 +969,22 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @throws CouchbaseLiteException on failure
      */
     @NonNull
-    public Collection createCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
+    public final Collection createCollection(@NonNull String name, @Nullable String scopeName)
+        throws CouchbaseLiteException {
         if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
 
         Scope scope;
-        synchronized (getDbLock()) { scope = scopes.get(scopeName); }
-        if (scope == null) {
-            if (Scope.DEFAULT_NAME.equals(scopeName)) {
-                throw new IllegalArgumentException("Cannot recreate the default scope");
+        synchronized (getDbLock()) {
+            assertOpen();
+
+            scope = scopes.get(scopeName);
+            if (scope == null) {
+                scope = new Scope(scopeName, this);
+                scopes.put(scopeName, scope);
             }
-            scope = new Scope(scopeName, this);
+
+            return scope.getOrAddCollection(name);
         }
-
-        return scope.getOrAddCollection(name);
-    }
-
-    /**
-     * Get a collection in the default scope by name.
-     * If the collection doesn't exist, the function will return null.
-     *
-     * @param name the collection to find
-     * @return the named collection or null
-     */
-    @Nullable
-    public Collection getCollection(@NonNull String name) { return getCollection(name, Scope.DEFAULT_NAME); }
-
-    /**
-     * Get a collection in the specified scope by name.
-     * If the collection doesn't exist, the function will return null.
-     *
-     * @param name      the collection to find
-     * @param scopeName the scope in which to create the collection
-     * @return the named collection or null
-     */
-    @Nullable
-    public Collection getCollection(@NonNull String name, @Nullable String scopeName) {
-        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
-        final Scope scope;
-        synchronized (getDbLock()) { scope = scopes.get(scopeName); }
-        return (scope == null) ? null : scope.getCollection(name);
     }
 
     /**
@@ -967,7 +994,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param name the collection to be deleted
      * @throws CouchbaseLiteException on failure
      */
-    public void deleteCollection(@NonNull String name) throws CouchbaseLiteException {
+    public final void deleteCollection(@NonNull String name) throws CouchbaseLiteException {
         deleteCollection(name, Scope.DEFAULT_NAME);
     }
 
@@ -979,22 +1006,12 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param scopeName the scope from which to delete the collection
      * @throws CouchbaseLiteException on failure
      */
-    public void deleteCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
+    public final void deleteCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
         if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
         final Scope scope;
         synchronized (getDbLock()) { scope = scopes.get(scopeName); }
         if (scope == null) { return; }
         scope.deleteCollection(name);
-    }
-
-    /**
-     * Get the default collection. If the default collection is deleted, null will be returned.
-     *
-     * @return the default collection or null if it does not exist.
-     */
-    @Nullable
-    public Collection getDefaultCollection() {
-        return getDefaultScope().getCollection(Collection.DEFAULT_NAME);
     }
 
     //---------------------------------------------
@@ -1063,17 +1080,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     @NonNull
     Collection addCollection(@NonNull Scope scope, @NonNull String collectionName) throws CouchbaseLiteException {
-        synchronized (getDbLock()) {
-            try {
-                return new Collection(
-                    getOpenC4DbLocked().addCollection(scope.getName(), collectionName),
-                    scope,
-                    collectionName);
-            }
-            catch (LiteCoreException err) {
-                throw CouchbaseLiteException.convertException(err);
-            }
-        }
+        synchronized (getDbLock()) { return Collection.create(getOpenC4DbLocked(), scope, collectionName); }
     }
 
     void deleteCollection(@NonNull Collection collection) throws CouchbaseLiteException {
@@ -1296,6 +1303,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Nullable
     abstract byte[] getEncryptionKey();
 
+
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
@@ -1345,15 +1353,26 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     //////// COLLECTIONS:
 
-    private void initScopesAndCollections(C4Database c4db) {
+    private void loacScopesAndCollections(@NonNull C4Database c4db) {
         for (String scopeName: Preconditions.assertNotNull(c4db.getScopeNames(), "scopes")) {
             scopes.put(scopeName, new Scope(scopeName, this));
         }
 
-        final Scope defaultScope = Preconditions.assertNotNull(scopes.get(Scope.DEFAULT_NAME), "default scope");
-        final C4Collection c4Collection = c4db.getDefaultCollection();
-        if (c4Collection != null) {
-            defaultScope.cacheCollection(new Collection(c4Collection, defaultScope, Collection.DEFAULT_NAME));
+        // ??? Is this necessary or can we count on LiteCore to do it correctly?
+        Scope defaultScope = scopes.get(Scope.DEFAULT_NAME);
+        if (defaultScope == null) {
+            defaultScope = new Scope(Scope.DEFAULT_NAME, this);
+            scopes.put(Scope.DEFAULT_NAME, defaultScope);
+        }
+
+        final C4Collection c4Coll = c4db.getDefaultCollection();
+        if ((c4Coll != null) && (defaultScope.getCollection(Scope.DEFAULT_NAME) == null)) {
+            defaultScope.cacheCollection(Collection.create(c4Coll, defaultScope, Collection.DEFAULT_NAME));
+        }
+
+        for (Scope scope: scopes.values()) {
+            if (Scope.DEFAULT_NAME.equals(scope.getName())) { continue; }
+            scope.loadCollections(c4db);
         }
     }
 

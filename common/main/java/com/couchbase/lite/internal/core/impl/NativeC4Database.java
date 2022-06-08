@@ -79,14 +79,14 @@ public class NativeC4Database implements C4Database.NativeImpl {
     @Override
     public long nGetFLSharedKeys(long db) { return getFLSharedKeys(db); }
 
-    @Nullable
+    @NonNull
     @Override
     public Set<String> nGetScopeNames(long peer) { return getScopeNames(peer); }
 
     @Override
     public boolean nHasScope(long peer, @NonNull String scope) { return hasScope(peer, scope); }
 
-    @Nullable
+    @NonNull
     @Override
     public Set<String> nGetCollectionNames(long peer, @NonNull String scope) { return getCollectionNames(peer, scope); }
 
@@ -206,14 +206,14 @@ public class NativeC4Database implements C4Database.NativeImpl {
     // - Scopes and Collections
 
     // returns Set<String> of scope names
-    @Nullable
+    @NonNull
     private static native Set<String> getScopeNames(long peer);
 
     // returns true if the db has a scope with the passed name
     private static native boolean hasScope(long peer, @NonNull String scope);
 
     // returns Set<String> of scope names
-    @Nullable
+    @NonNull
     private static native Set<String> getCollectionNames(long peer, @NonNull String scope);
 
     // deletes the named collection

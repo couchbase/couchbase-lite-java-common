@@ -150,7 +150,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_delete(JNIEnv *env, 
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed(JNIEnv *env, jclass ignore, jstring name, jstring dir) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed(
+        JNIEnv *env,
+        jclass ignore,
+        jstring name,
+        jstring dir) {
     jstringSlice dbName(env, name);
     jstringSlice inDirectory(env, dir);
     C4Error error;
@@ -298,7 +302,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie(
  * Signature: (JLjava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies(JNIEnv *env, jclass ignore, jlong jdb, jstring jurl) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdb,
+        jstring jurl) {
     jstringSlice url(env, jurl);
 
     C4Address address;
@@ -328,7 +336,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies(JNIEnv *e
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getSharedFleeceEncoder(JNIEnv *env, jclass ignore, jlong db) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getSharedFleeceEncoder(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db) {
     return (jlong) c4db_getSharedFleeceEncoder((C4Database *) db);
 }
 
@@ -373,8 +384,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON(
 JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames(JNIEnv *env, jclass ignore, jlong db) {
     auto scopes = c4db_scopeNames((C4Database *) db);
-    if (!scopes)
-        return nullptr;
     jobject scopeSet = toStringSet(env, scopes);
     FLMutableArray_Release(scopes);
     return scopeSet;
@@ -386,7 +395,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames(JNIEnv
  * Signature: (JLjava/lang/String;)J;
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_hasScope(JNIEnv *env, jclass ignore, jlong db, jstring jscope) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_hasScope(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db,
+        jstring jscope) {
     jstringSlice scope(env, jscope);
     return c4db_hasScope((C4Database *) db, scope);
 }
@@ -404,8 +417,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames(
         jstring jscope) {
     jstringSlice scope(env, jscope);
     auto collections = c4db_collectionNames((C4Database *) db, scope);
-    if (!collections)
-        return nullptr;
     jobject collectionsSet = toStringSet(env, collections);
     FLMutableArray_Release(collections);
     return collectionsSet;
@@ -417,11 +428,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames(
  * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection
-        (JNIEnv *env, jclass ignore, jlong db, jstring jscope, jstring jcollection) {
-    C4CollectionSpec collSpec;
-    collSpec.name = jstringSlice(env, jcollection);
-    collSpec.scope = jstringSlice(env, jscope);
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db,
+        jstring jscope,
+        jstring jcollection) {
+    jstringSlice scope(env, jscope);
+    jstringSlice collection(env, jcollection);
+    C4CollectionSpec collSpec = {collection, scope};
 
     C4Error error;
     if (!c4db_deleteCollection((C4Database *) db, collSpec, &error))

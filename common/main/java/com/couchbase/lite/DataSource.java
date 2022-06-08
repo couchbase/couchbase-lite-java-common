@@ -70,7 +70,8 @@ public class DataSource {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public static As database(@NonNull Database database) {
         Preconditions.assertNotNull(database, "database");
-        return new As(database.getDefaultCollection());
+        try { return new As(Preconditions.assertNotNull(database.getDefaultCollection(), "default collection")); }
+        catch (CouchbaseLiteException e) { throw new IllegalArgumentException("Database not open", e); }
     }
 
     /**

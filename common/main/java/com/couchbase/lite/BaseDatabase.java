@@ -71,6 +71,11 @@ public abstract class BaseDatabase {
         if (!isOpen()) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
     }
 
+    @GuardedBy("dbLock")
+    protected void assertOpen() throws CouchbaseLiteException {
+        if (!isOpen()) { throw new CouchbaseLiteException(Log.lookupStandardMessage("DBClosed")); }
+    }
+
     // When seizing multiple locks, always seize this lock first.
     @NonNull
     protected Object getDbLock() { return dbLock; }

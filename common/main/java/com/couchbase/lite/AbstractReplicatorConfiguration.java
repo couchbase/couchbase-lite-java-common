@@ -107,7 +107,11 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
         this(target);
         this.database = database;
-        final Collection collection = database.getDefaultCollection();
+        Collection collection = null;
+        try { collection = database.getDefaultCollection(); }
+        catch (CouchbaseLiteException e) {
+            com.couchbase.lite.internal.support.Log.d(LogDomain.REPLICATOR, "database is not open?", e);
+        }
         if (collection != null) { addCollectionInternal(collection, new CollectionConfiguration()); }
     }
 

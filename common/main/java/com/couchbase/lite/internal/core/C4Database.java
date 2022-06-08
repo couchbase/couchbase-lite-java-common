@@ -124,14 +124,14 @@ public abstract class C4Database extends C4NativePeer {
         // - Scopes and Collections
 
         // returns Set<String> of scope names
-        @Nullable
+        @NonNull
         Set<String> nGetScopeNames(long peer);
 
         // returns true if the db has a scope with the passed name
         boolean nHasScope(long peer, @NonNull String scope);
 
         // returns Set<String> of collection names
-        @Nullable
+        @NonNull
         Set<String> nGetCollectionNames(long peer, @NonNull String scope);
 
         // deletes the named collection
@@ -438,13 +438,12 @@ public abstract class C4Database extends C4NativePeer {
     public FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(impl.nGetFLSharedKeys(getPeer())); }
 
     // - Scopes and Collections
-
-    @Nullable
+    @NonNull
     public Set<String> getScopeNames() { return impl.nGetScopeNames(getPeer()); }
 
     public boolean hasScope(@NonNull String scope) { return impl.nHasScope(getPeer(), scope); }
 
-    @Nullable
+    @NonNull
     public Set<String> getCollectionNames(@NonNull String scope) { return impl.nGetCollectionNames(getPeer(), scope); }
 
     @Nullable

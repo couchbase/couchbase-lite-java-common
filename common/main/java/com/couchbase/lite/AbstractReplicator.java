@@ -817,8 +817,11 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     @NonNull
     private Collection getDefaultCollection() {
-        final Collection collection = getDatabase().getDefaultCollection();
-        if (collection != null) { return collection; }
-        throw new IllegalStateException("Cannot find collection for replicator");
+        try {
+            final Collection collection = getDatabase().getDefaultCollection();
+            if (collection != null) { return collection; }
+            throw new IllegalStateException("Cannot find collection for replicator");
+        }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException("Database is not open?", e); }
     }
 }

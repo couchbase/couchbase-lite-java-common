@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.CBLError;
@@ -27,27 +28,29 @@ public final class C4Key {
     private C4Key() { }
 
     public interface NativeImpl {
-        @NonNull
+        @Nullable
         byte[] nPbkdf2(@NonNull String password);
 
-        @NonNull
+        @Nullable
         byte[] nDeriveKeyFromPassword(@NonNull String password);
     }
 
     @NonNull
     @VisibleForTesting
-    static volatile NativeImpl nativeImpl = new NativeC4Key();
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Key();
+
     @NonNull
     public static byte[] getPbkdf2Key(@NonNull String password) throws CouchbaseLiteException {
-        final byte[] key = nativeImpl.nPbkdf2(password);
+        final byte[] key = NATIVE_IMPL.nPbkdf2(password);
         if (key != null) { return key; }
 
         throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
     }
 
+    @VisibleForTesting
     @NonNull
     public static byte[] getCoreKey(@NonNull String password) throws CouchbaseLiteException {
-        final byte[] key = nativeImpl.nDeriveKeyFromPassword(password);
+        final byte[] key = NATIVE_IMPL.nDeriveKeyFromPassword(password);
         if (key != null) { return key; }
 
         throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
