@@ -287,7 +287,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         this.sharedKeys = c4db.getFLSharedKeys();
 
         // Scope
-        loacScopesAndCollections(c4db);
+        loadScopesAndCollections(c4db);
 
         // warn if logging has not been turned on
         Log.warn();
@@ -1353,8 +1353,15 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     //////// COLLECTIONS:
 
-    private void loacScopesAndCollections(@NonNull C4Database c4db) {
-        for (String scopeName: Preconditions.assertNotNull(c4db.getScopeNames(), "scopes")) {
+    private void loadScopesAndCollections(@NonNull C4Database c4db) {
+        final Set<String> scopeNames;
+        try { scopeNames = c4db.getScopeNames(); }
+        catch (LiteCoreException e) {
+            Log.w(DOMAIN, "Failed getting scopes", e);
+            return;
+        }
+
+        for (String scopeName: Preconditions.assertNotNull(scopeNames, "scopes")) {
             scopes.put(scopeName, new Scope(scopeName, this));
         }
 

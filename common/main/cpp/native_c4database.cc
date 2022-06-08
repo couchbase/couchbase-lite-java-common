@@ -382,8 +382,18 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON(
  * Signature: (J)Ljava/util.List;
  */
 JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames(JNIEnv *env, jclass ignore, jlong db) {
-    auto scopes = c4db_scopeNames((C4Database *) db);
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db) {
+    C4Error error;
+    auto scopes = c4db_scopeNames((C4Database *) db, &error);
+    if (!scopes) {
+        FLMutableArray_Release(scopes);
+        throwError(env, error);
+        return nullptr;
+    }
+
     jobject scopeSet = toStringSet(env, scopes);
     FLMutableArray_Release(scopes);
     return scopeSet;
@@ -416,7 +426,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames(
         jlong db,
         jstring jscope) {
     jstringSlice scope(env, jscope);
-    auto collections = c4db_collectionNames((C4Database *) db, scope);
+
+    C4Error error;
+    auto collections = c4db_collectionNames((C4Database *) db, scope, &error);
+    if (!collections) {
+        FLMutableArray_Release(collections);
+        throwError(env, error);
+        return 0;
+    }
+
     jobject collectionsSet = toStringSet(env, collections);
     FLMutableArray_Release(collections);
     return collectionsSet;

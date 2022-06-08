@@ -125,14 +125,14 @@ public abstract class C4Database extends C4NativePeer {
 
         // returns Set<String> of scope names
         @NonNull
-        Set<String> nGetScopeNames(long peer);
+        Set<String> nGetScopeNames(long peer) throws LiteCoreException;
 
         // returns true if the db has a scope with the passed name
         boolean nHasScope(long peer, @NonNull String scope);
 
         // returns Set<String> of collection names
         @NonNull
-        Set<String> nGetCollectionNames(long peer, @NonNull String scope);
+        Set<String> nGetCollectionNames(long peer, @NonNull String scope) throws LiteCoreException;
 
         // deletes the named collection
         void nDeleteCollection(long peer, @NonNull String scope, @NonNull String collection)
@@ -439,18 +439,21 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Scopes and Collections
     @NonNull
-    public Set<String> getScopeNames() { return impl.nGetScopeNames(getPeer()); }
+    public Set<String> getScopeNames() throws LiteCoreException { return impl.nGetScopeNames(getPeer()); }
 
     public boolean hasScope(@NonNull String scope) { return impl.nHasScope(getPeer(), scope); }
 
     @NonNull
-    public Set<String> getCollectionNames(@NonNull String scope) { return impl.nGetCollectionNames(getPeer(), scope); }
+    public Set<String> getCollectionNames(@NonNull String scope) throws LiteCoreException {
+        return impl.nGetCollectionNames(getPeer(), scope);
+    }
 
     @Nullable
     public final C4Collection getDefaultCollection() { return C4Collection.getDefault(this); }
 
     @NonNull
-    public C4Collection getCollection(@NonNull String scopeName, @NonNull String collectionName) {
+    public C4Collection getCollection(@NonNull String scopeName, @NonNull String collectionName)
+        throws LiteCoreException {
         return C4Collection.get(this, scopeName, collectionName);
     }
 

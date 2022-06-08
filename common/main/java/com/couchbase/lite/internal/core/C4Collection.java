@@ -26,7 +26,7 @@ public class C4Collection extends C4NativePeer {
     public interface NativeImpl {
         // Factory methods
         long nGetDefaultCollection(long c4Db);
-        long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection);
+        long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection)throws LiteCoreException;
         long nCreateCollection(long c4Db, @NonNull String scope, @NonNull String collection)
             throws LiteCoreException;
 
@@ -60,7 +60,8 @@ public class C4Collection extends C4NativePeer {
     public static C4Collection getDefault(@NonNull C4Database c4db) { return getDefault(NATIVE_IMPL, c4db); }
 
     @NonNull
-    public static C4Collection get(@NonNull C4Database c4db, @NonNull String scope, @NonNull String collection) {
+    public static C4Collection get(@NonNull C4Database c4db, @NonNull String scope, @NonNull String collection)
+        throws LiteCoreException {
         return get(NATIVE_IMPL, c4db, scope, collection);
     }
 
@@ -83,7 +84,8 @@ public class C4Collection extends C4NativePeer {
         @NonNull NativeImpl impl,
         @NonNull C4Database c4db,
         @NonNull String scope,
-        @NonNull String collection) {
+        @NonNull String collection)
+        throws LiteCoreException {
         return new C4Collection(impl, impl.nGetCollection(c4db.getPeer(), scope, collection), c4db);
     }
 

@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import com.couchbase.lite.internal.core.C4Database;
+import com.couchbase.lite.internal.support.Log;
 
 
 // This is still assuming that we can cache the collections...
@@ -121,7 +122,12 @@ public class Scope {
     // PMD is pretty stupid.
     @SuppressWarnings("PMD.UnnecessaryFullyQualifiedName")
     void loadCollections(@NonNull C4Database c4db) {
-        final Set<String> names = c4db.getCollectionNames(name);
+        final Set<String> names;
+        try { names = c4db.getCollectionNames(name); }
+        catch (LiteCoreException e) {
+            Log.w(LogDomain.DATABASE, "Failed getting collections", e);
+            return;
+        }
         for (String collectionName: names) {
             try { cacheCollection(Collection.create(c4db, this, collectionName)); }
             catch (CouchbaseLiteException e) {

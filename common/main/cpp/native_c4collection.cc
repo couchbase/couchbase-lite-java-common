@@ -53,9 +53,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection(
     C4CollectionSpec collSpec = {collection, scope};
 
     C4Error error;
-    if (!c4db_deleteCollection((C4Database *) db, collSpec, &error))
+    C4Collection *coll = c4db_getCollection((C4Database *) db, collSpec, &error);
+    if (!coll) {
         throwError(env, error);
-    return (jlong) c4db_getCollection((C4Database *) db, collSpec);
+        return 0;
+    }
+
+    return (jlong) coll;
 }
 
 /*

@@ -590,7 +590,7 @@ public class C4DatabaseTest extends C4BaseTest {
     // - Scopes and Collections
 
     @Test
-    public void testGetScopeNames() {
+    public void testGetScopeNames() throws LiteCoreException {
         Set<String> scopes = c4Database.getScopeNames();
         assertNotNull(scopes);
         assertTrue(scopes.contains(Scope.DEFAULT_NAME));
@@ -600,7 +600,7 @@ public class C4DatabaseTest extends C4BaseTest {
     public void testHasScope() { assertTrue(c4Database.hasScope(Scope.DEFAULT_NAME)); }
 
     @Test
-    public void testGetCollectionNames() {
+    public void testGetCollectionNames() throws LiteCoreException {
         Set<String> collections = c4Database.getCollectionNames(Scope.DEFAULT_NAME);
         assertNotNull(collections);
         assertFalse(collections.isEmpty());

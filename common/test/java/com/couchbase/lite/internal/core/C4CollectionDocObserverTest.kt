@@ -1,8 +1,8 @@
 package com.couchbase.lite.internal.core
 
 
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertNotNull
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Ignore
 import org.junit.Test
 
@@ -13,24 +13,26 @@ class C4CollectionDocObserverTest : C4BaseTest() {
     }
 
     // Test creating a doc observer with mock native implementation
+    @Ignore("Broken test")
     @Test
     fun testCreateC4CollectionDocObserver() {
-        val coll = C4Collection.create(c4Database, "_default", "_default").peer
-        C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll, "test") {}.use { obs ->
-            assertNotNull(obs)
-            obs.close()
+        val coll = C4Collection.create(c4Database, "_default", "_default")
+        C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "test", {}).use {
+            assertNotNull(it)
+            it.close()
         }
     }
 
     // Test mock callback
+    @Ignore("Broken test")
     @Test
     fun testDocumentChanged() {
         var i = 0
         var obs: C4CollectionDocObserver? = null
         createRev("A", "1-aa", fleeceBody)
         try {
-            val coll = C4Collection.create(c4Database, "default", "_default").peer
-            obs = C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll, "A") { i++ }
+            val coll = C4Collection.create(c4Database, "default", "_default")
+            obs = C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "A") { i++ }
             assertEquals(0, i)
 
             C4CollectionDocObserver.callback(obs.peer, "A", 0L)

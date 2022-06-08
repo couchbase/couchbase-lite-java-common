@@ -81,18 +81,22 @@ public class NativeC4Database implements C4Database.NativeImpl {
 
     @NonNull
     @Override
-    public Set<String> nGetScopeNames(long peer) { return getScopeNames(peer); }
+    public Set<String> nGetScopeNames(long peer) throws LiteCoreException { return getScopeNames(peer); }
 
     @Override
     public boolean nHasScope(long peer, @NonNull String scope) { return hasScope(peer, scope); }
 
     @NonNull
     @Override
-    public Set<String> nGetCollectionNames(long peer, @NonNull String scope) { return getCollectionNames(peer, scope); }
+    public Set<String> nGetCollectionNames(long peer, @NonNull String scope) throws LiteCoreException {
+        return getCollectionNames(peer, scope);
+    }
 
     @Override
     public void nDeleteCollection(long peer, @NonNull String scope, @NonNull String collection)
-        throws LiteCoreException { deleteCollection(peer, scope, collection); }
+        throws LiteCoreException {
+        deleteCollection(peer, scope, collection);
+    }
 
     @Override
     public long nGetDocumentCount(long db) { return getDocumentCount(db); }
@@ -207,14 +211,14 @@ public class NativeC4Database implements C4Database.NativeImpl {
 
     // returns Set<String> of scope names
     @NonNull
-    private static native Set<String> getScopeNames(long peer);
+    private static native Set<String> getScopeNames(long peer) throws LiteCoreException;
 
     // returns true if the db has a scope with the passed name
     private static native boolean hasScope(long peer, @NonNull String scope);
 
     // returns Set<String> of scope names
     @NonNull
-    private static native Set<String> getCollectionNames(long peer, @NonNull String scope);
+    private static native Set<String> getCollectionNames(long peer, @NonNull String scope) throws LiteCoreException;
 
     // deletes the named collection
     private static native void deleteCollection(long peer, @NonNull String scope, @NonNull String collection)

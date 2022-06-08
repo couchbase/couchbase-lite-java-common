@@ -31,7 +31,7 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     public long nGetDefaultCollection(long c4Db) { return getDefaultCollection(c4Db); }
 
     @Override
-    public long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection) {
+    public long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection) throws LiteCoreException {
         return getCollection(c4Db, scope, collection);
     }
 
@@ -90,7 +90,8 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
 
     private static native long getDefaultCollection(long c4Db);
 
-    private static native long getCollection(long c4Db, @Nullable String scope, @NonNull String collection);
+    private static native long getCollection(long c4Db, @Nullable String scope, @NonNull String collection)
+        throws LiteCoreException;
 
     private static native long createCollection(long c4Db, @Nullable String scope, @NonNull String collection)
         throws LiteCoreException;
