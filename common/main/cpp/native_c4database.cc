@@ -53,9 +53,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open(
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))
         return 0;
 
-    C4Error error;
+    C4Error error{};
     C4Database *db = c4db_openNamed(name, &config, &error);
-    if (!db) {
+    if (!db && error.code != 0) {
         throwError(env, error);
         return 0;
     }
@@ -70,8 +70,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open(
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_close(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4Error error;
-    if (!c4db_close((C4Database *) jdb, &error))
+    C4Error error{};
+    bool res = c4db_close((C4Database *) jdb, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -127,8 +128,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy(
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))
         return;
 
-    C4Error error;
-    if (!c4db_copyNamed(fromPath, name, &config, &error))
+    C4Error error{};
+    bool res = c4db_copyNamed(fromPath, name, &config, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -139,8 +141,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy(
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_delete(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4Error error;
-    if (!c4db_delete((C4Database *) jdb, &error))
+    C4Error error{};
+    bool res = c4db_delete((C4Database *) jdb, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -157,8 +160,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed(
         jstring dir) {
     jstringSlice dbName(env, name);
     jstringSlice inDirectory(env, dir);
-    C4Error error;
-    if (!c4db_deleteNamed(dbName, inDirectory, &error))
+
+    C4Error error{};
+    bool res = c4db_deleteNamed(dbName, inDirectory, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -173,9 +178,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed(
 JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPublicUUID(JNIEnv *env, jclass ignore, jlong jdb) {
     C4UUID uuid;
-    C4Error error;
-    if (!c4db_getUUIDs((C4Database *) jdb, &uuid, nullptr, &error))
+
+    C4Error error{};
+    bool res = c4db_getUUIDs((C4Database *) jdb, &uuid, nullptr, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
+
     C4Slice s = {&uuid, sizeof(uuid)};
     return toJByteArray(env, s);
 }
@@ -188,9 +196,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPublicUUID(JNIEnv
 JNIEXPORT jbyteArray JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPrivateUUID(JNIEnv *env, jclass ignore, jlong jdb) {
     C4UUID uuid;
-    C4Error error;
-    if (!c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error))
+
+    C4Error error{};
+    bool res = c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
+
     C4Slice s = {&uuid, sizeof(uuid)};
     return toJByteArray(env, s);
 }
@@ -205,8 +216,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPrivateUUID(JNIEn
 */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_beginTransaction(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4Error error;
-    if (!c4db_beginTransaction((C4Database *) jdb, &error))
+    C4Error error{};
+    bool res = c4db_beginTransaction((C4Database *) jdb, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -221,8 +233,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_endTransaction(
         jclass ignore,
         jlong jdb,
         jboolean jcommit) {
-    C4Error error;
-    if (!c4db_endTransaction((C4Database *) jdb, jcommit, &error))
+    C4Error error{};
+    bool res = c4db_endTransaction((C4Database *) jdb, jcommit, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -245,8 +258,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_rekey(
     if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &key))
         return;
 
-    C4Error error;
-    if (!c4db_rekey((C4Database *) jdb, &key, &error))
+    C4Error error{};
+    bool res = c4db_rekey((C4Database *) jdb, &key, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -259,12 +273,14 @@ JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance(
         JNIEnv *env,
         jclass ignore,
-        jlong db, jint type) {
-    C4Error error = {};
-    bool success = c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
-    if (error.domain != 0 && error.code != 0)
+        jlong db,
+        jint type) {
+    C4Error error{};
+    bool res = c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
-    return (jboolean) success;
+
+    return (jboolean) res;
 }
 
 
@@ -291,8 +307,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie(
         return;
     }
 
-    C4Error error = {};
-    if (!c4db_setCookie((C4Database *) jdb, cookie, address.hostname, address.path, &error))
+    C4Error error{};
+    bool res = c4db_setCookie((C4Database *) jdb, cookie, address.hostname, address.path, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -315,9 +332,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies(
         return nullptr;
     }
 
-    C4Error error = {};
+    C4Error error{};
     C4StringResult result = c4db_getCookies((C4Database *) jdb, address, &error);
-    if (error.domain != 0 && error.code != 0) {
+    if (!result && error.code != 0) {
         throwError(env, error);
         return nullptr;
     }
@@ -365,12 +382,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON(
         jlong db,
         jbyteArray jbody) {
     jbyteArraySlice body(env, jbody, false);
-    C4Error error = {};
+
+    C4Error error{};
     C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
-    if (error.domain != 0 && error.code != 0) {
+    if (!res && error.code != 0) {
         throwError(env, error);
         return 0;
     }
+
     return (jlong) copyToHeap(res);
 }
 
@@ -386,10 +405,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames(
         JNIEnv *env,
         jclass ignore,
         jlong db) {
-    C4Error error;
+    C4Error error{};
     auto scopes = c4db_scopeNames((C4Database *) db, &error);
-    if (!scopes) {
-        FLMutableArray_Release(scopes);
+    if (!scopes && error.code != 0) {
         throwError(env, error);
         return nullptr;
     }
@@ -427,10 +445,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames(
         jstring jscope) {
     jstringSlice scope(env, jscope);
 
-    C4Error error;
+    C4Error error{};
     auto collections = c4db_collectionNames((C4Database *) db, scope, &error);
-    if (!collections) {
-        FLMutableArray_Release(collections);
+    if (!collections && error.code != 0) {
         throwError(env, error);
         return 0;
     }
@@ -456,9 +473,22 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection(
     jstringSlice collection(env, jcollection);
     C4CollectionSpec collSpec = {collection, scope};
 
-    C4Error error;
-    if (!c4db_deleteCollection((C4Database *) db, collSpec, &error))
+    C4Error error{};
+    bool res = c4db_deleteCollection((C4Database *) db, collSpec, &error);
+    if (!res && error.code != 0)
         throwError(env, error);
+}
+
+// - Testing
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Database
+ * Method:    getLastSequence
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getLastSequence(JNIEnv *env, jclass ignore, jlong jdb) {
+    return (jlong) c4db_getLastSequence((C4Database *) jdb);
 }
 
 // !!! DEPRECATED
@@ -491,7 +521,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setDocumentExpiratio
         jstring jdocID,
         jlong jtimestamp) {
     jstringSlice docID(env, jdocID);
-    C4Error error;
+    C4Error error{};
     if (!c4doc_setExpiration((C4Database *) jdb, docID, jtimestamp, &error))
         throwError(env, error);
 }
@@ -508,7 +538,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getDocumentExpiratio
         jlong jdb,
         jstring jdocID) {
     jstringSlice docID(env, jdocID);
-    C4Error error;
+    C4Error error{};
     jlong exp = c4doc_getExpiration((C4Database *) jdb, docID, &error);
     if (exp < 0) {
         throwError(env, error);
@@ -529,7 +559,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_purgeDoc(
         jlong jdb,
         jstring jdocID) {
     jstringSlice docID(env, jdocID);
-    C4Error error;
+    C4Error error{};
     if (!c4db_purgeDoc((C4Database *) jdb, docID, &error))
         throwError(env, error);
 }
@@ -572,7 +602,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_createIndex(
     options.language = language.c_str();
     options.ignoreDiacritics = (bool) ignoreDiacritics;
 
-    C4Error error = {};
+    C4Error error{};
     bool res = c4db_createIndex2(
             (C4Database *) db,
             name,
@@ -597,23 +627,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteIndex(
         jlong jdb,
         jstring jname) {
     jstringSlice name(env, jname);
-    C4Error error = {};
+    C4Error error{};
     bool res = c4db_deleteIndex((C4Database *) jdb, name, &error);
     if (!res)
         throwError(env, error);
 }
 // end deprecation
-
-
-// - Testing
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Database
- * Method:    getLastSequence
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getLastSequence(JNIEnv *env, jclass ignore, jlong jdb) {
-    return (jlong) c4db_getLastSequence((C4Database *) jdb);
-}
 }

@@ -28,7 +28,10 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     // Collections
 
     @Override
-    public long nGetDefaultCollection(long c4Db) { return getDefaultCollection(c4Db); }
+    public long nCreateCollection(long c4Db, @Nullable String scope, @NonNull String collection)
+        throws LiteCoreException {
+        return createCollection(c4Db, scope, collection);
+    }
 
     @Override
     public long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection) throws LiteCoreException {
@@ -36,14 +39,13 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     }
 
     @Override
-    public long nCreateCollection(long c4Db, @Nullable String scope, @NonNull String collection)
-        throws LiteCoreException {
-        return createCollection(c4Db, scope, collection);
-    }
+    public long nGetDefaultCollection(long c4Db) throws LiteCoreException { return getDefaultCollection(c4Db); }
 
     @Override
     public boolean nCollectionIsValid(long peer) { return isValid(peer); }
 
+    @Override
+    public void nFree(long peer) { free(peer); }
 
     @Override
     public long nGetDocumentCount(long peer) { return getDocumentCount(peer); }
@@ -61,13 +63,12 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     }
 
     @Override
-    public void nPurgeDoc(long peer, @NonNull String docID)
-        throws LiteCoreException { purgeDoc(peer, docID); }
+    public void nPurgeDoc(long peer, @NonNull String docID) throws LiteCoreException { purgeDoc(peer, docID); }
 
     // Indexes
 
     @Override
-    public long nGetIndexesInfo(long peer) { return getIndexesInfo(peer); }
+    public long nGetIndexesInfo(long peer) throws LiteCoreException { return getIndexesInfo(peer); }
 
     @Override
     public void nCreateIndex(
@@ -77,18 +78,19 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
         int queryLanguage,
         int indexType,
         String language,
-        boolean ignoreDiacritics) {
+        boolean ignoreDiacritics)
+    throws LiteCoreException {
         createIndex(peer, name, indexSpec, queryLanguage, indexType, language, ignoreDiacritics);
     }
 
     @Override
-    public void nDeleteIndex(long peer, @NonNull String name) { deleteIndex(peer, name); }
+    public void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException { deleteIndex(peer, name); }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native long getDefaultCollection(long c4Db);
+    private static native long getDefaultCollection(long c4Db) throws LiteCoreException;
 
     private static native long getCollection(long c4Db, @Nullable String scope, @NonNull String collection)
         throws LiteCoreException;
@@ -97,6 +99,8 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
         throws LiteCoreException;
 
     private static native boolean isValid(long peer);
+
+    private static native void free(long peer);
 
     private static native long getDocumentCount(long peer);
 
@@ -109,7 +113,7 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
     private static native void purgeDoc(long peer, @NonNull String docID)
         throws LiteCoreException;
 
-    private static native long getIndexesInfo(long peer);
+    private static native long getIndexesInfo(long peer) throws LiteCoreException;
 
     private static native void createIndex(
         long peer,
@@ -118,7 +122,8 @@ public class NativeC4Collection implements C4Collection.NativeImpl {
         int queryLanguage,
         int indexType,
         String language,
-        boolean ignoreDiacritics);
+        boolean ignoreDiacritics)
+        throws LiteCoreException;
 
-    private static native void deleteIndex(long peer, @NonNull String name);
+    private static native void deleteIndex(long peer, @NonNull String name)throws LiteCoreException;
 }

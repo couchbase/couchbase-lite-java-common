@@ -554,7 +554,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             final Collection coll = getDefaultCollection();
 
             unconflictedDocs.add(new ReplicatedDocument(
-                coll.getScopeName(),
+                coll.getScope().getName(),
                 coll.getName(),
                 docId,
                 docEnd.getFlags(),
@@ -586,7 +586,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
         notifyDocumentEnded(
             false,
-            Arrays.asList(new ReplicatedDocument(coll.getScopeName(), coll.getName(), docId, flags, err)));
+            Arrays.asList(new ReplicatedDocument(coll.getScope().getName(), coll.getName(), docId, flags, err)));
 
         if ((pendingNotifications != null) && (!pendingNotifications.isEmpty())) {
             for (C4ReplicatorStatus status: pendingNotifications) { dispatcher.execute(() -> c4StatusChanged(status)); }

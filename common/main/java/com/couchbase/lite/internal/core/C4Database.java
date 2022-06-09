@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.AbstractReplicator;
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.MaintenanceType;
@@ -54,6 +53,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {
+    @VisibleForTesting
+    public static final String DB_EXTENSION = ".cblite2";
+
     public interface NativeImpl {
         long nOpen(
             @NonNull String parentDir,
@@ -173,12 +175,6 @@ public abstract class C4Database extends C4NativePeer {
         long nGetLastSequence(long db);
     }
 
-    @VisibleForTesting
-    public static final String DB_EXTENSION = ".cblite2";
-
-    @NonNull
-    private static final NativeImpl NATIVE_IMPL = new NativeC4Database();
-
     // unmanaged: the native code will free it
     static final class UnmanagedC4Database extends C4Database {
         UnmanagedC4Database(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
@@ -186,7 +182,6 @@ public abstract class C4Database extends C4NativePeer {
         @Override
         public void close() { releasePeer(); }
     }
-
 
     // managed: Java code is responsible for freeing it
     static final class ManagedC4Database extends C4Database {
@@ -211,6 +206,9 @@ public abstract class C4Database extends C4NativePeer {
         private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
     }
 
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Database();
+
     // These enum values must match the ones in DataFile::MaintenanceType
     @NonNull
     private static final Map<MaintenanceType, Integer> MAINTENANCE_TYPE_MAP;
@@ -223,31 +221,6 @@ public abstract class C4Database extends C4NativePeer {
         m.put(MaintenanceType.FULL_OPTIMIZE, 4);
         MAINTENANCE_TYPE_MAP = Collections.unmodifiableMap(m);
     }
-    public static void copyDb(
-        @NonNull String sourcePath,
-        @NonNull String parentDir,
-        @NonNull String name,
-        int flags,
-        int algorithm,
-        @Nullable byte[] encryptionKey)
-        throws LiteCoreException {
-        if (sourcePath.charAt(sourcePath.length() - 1) != File.separatorChar) { sourcePath += File.separator; }
-
-        if (parentDir.charAt(parentDir.length() - 1) != File.separatorChar) { parentDir += File.separator; }
-
-        NATIVE_IMPL.nCopy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
-    }
-
-    // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair
-    public static void deleteNamedDb(@NonNull String directory, @NonNull String name) throws LiteCoreException {
-        NATIVE_IMPL.nDeleteNamed(name, directory);
-    }
-
-    @NonNull
-    public static File getDatabaseFile(@NonNull File directory, @NonNull String name) {
-        return new File(directory, name + DB_EXTENSION);
-    }
-
 
     //-------------------------------------------------------------------------
     // Factory Methods
@@ -304,6 +277,35 @@ public abstract class C4Database extends C4NativePeer {
                 flags,
                 algorithm,
                 encryptionKey));
+    }
+
+    //-------------------------------------------------------------------------
+    // Utility Methods
+    //-------------------------------------------------------------------------
+
+    public static void copyDb(
+        @NonNull String sourcePath,
+        @NonNull String parentDir,
+        @NonNull String name,
+        int flags,
+        int algorithm,
+        @Nullable byte[] encryptionKey)
+        throws LiteCoreException {
+        if (sourcePath.charAt(sourcePath.length() - 1) != File.separatorChar) { sourcePath += File.separator; }
+
+        if (parentDir.charAt(parentDir.length() - 1) != File.separatorChar) { parentDir += File.separator; }
+
+        NATIVE_IMPL.nCopy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
+    }
+
+    // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair
+    public static void deleteNamedDb(@NonNull String directory, @NonNull String name) throws LiteCoreException {
+        NATIVE_IMPL.nDeleteNamed(name, directory);
+    }
+
+    @NonNull
+    public static File getDatabaseFile(@NonNull File directory, @NonNull String name) {
+        return new File(directory, name + DB_EXTENSION);
     }
 
 
@@ -448,25 +450,26 @@ public abstract class C4Database extends C4NativePeer {
         return impl.nGetCollectionNames(getPeer(), scope);
     }
 
-    @Nullable
-    public final C4Collection getDefaultCollection() { return C4Collection.getDefault(this); }
-
-    @NonNull
-    public C4Collection getCollection(@NonNull String scopeName, @NonNull String collectionName)
-        throws LiteCoreException {
-        return C4Collection.get(this, scopeName, collectionName);
-    }
-
     @NonNull
     public C4Collection addCollection(@NonNull String scopeName, @NonNull String collectionName)
         throws LiteCoreException {
         return C4Collection.create(this, scopeName, collectionName);
     }
 
+    @Nullable
+    public C4Collection getCollection(@NonNull String scopeName, @NonNull String collectionName)
+        throws LiteCoreException {
+        return C4Collection.get(this, scopeName, collectionName);
+    }
+
+    @Nullable
+    public final C4Collection getDefaultCollection() throws LiteCoreException {
+        return C4Collection.getDefault(this);
+    }
+
     public void deleteCollection(@NonNull String scopeName, @NonNull String collectionName)
-        throws CouchbaseLiteException {
-        try { impl.nDeleteCollection(getPeer(), scopeName, collectionName); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        throws LiteCoreException {
+        impl.nDeleteCollection(getPeer(), scopeName, collectionName);
     }
 
     // - Replicators

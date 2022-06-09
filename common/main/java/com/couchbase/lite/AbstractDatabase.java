@@ -68,7 +68,6 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
@@ -81,19 +80,10 @@ import com.couchbase.lite.internal.utils.StringUtils;
     "PMD.ExcessivePublicCount"})
 abstract class AbstractDatabase extends BaseDatabase {
 
-    /**
-     * Gets the logging controller for the Couchbase Lite library to configure the
-     * logging settings and add custom logging.
-     * <p>
-     */
-    // Public API.  Do not fix the name.
-    @SuppressWarnings({"ConstantName", "PMD.FieldNamingConventions"})
-    @NonNull
-    public static final com.couchbase.lite.Log log = new com.couchbase.lite.Log();
-
     //---------------------------------------------
     // Constants
     //---------------------------------------------
+
     private static final String ERROR_RESOLVER_FAILED = "Conflict resolution failed for document '%s': %s";
     private static final String WARN_WRONG_DATABASE = "The database to which the document produced by"
         + " conflict resolution for document '%s' belongs, '%s', is not the one in which it will be stored (%s)";
@@ -143,6 +133,20 @@ abstract class AbstractDatabase extends BaseDatabase {
             return process.equals(other.process);
         }
     }
+
+    // ---------------------------------------------
+    // API - public static fields
+    // ---------------------------------------------
+
+    /**
+     * Gets the logging controller for the Couchbase Lite library to configure the
+     * logging settings and add custom logging.
+     * <p>
+     */
+    // Public API.  Do not fix the name.
+    @SuppressWarnings({"ConstantName", "PMD.FieldNamingConventions"})
+    @NonNull
+    public static final com.couchbase.lite.Log log = new com.couchbase.lite.Log();
 
     // ---------------------------------------------
     // API - public static methods
@@ -214,7 +218,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     // Member variables
     //---------------------------------------------
 
-
     @NonNull
     protected final ImmutableDatabaseConfiguration config;
 
@@ -227,9 +230,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     private final ExecutionService.CloseableExecutor queryExecutor;
 
     private final FLSharedKeys sharedKeys;
-
-    @GuardedBy("getDbLock()")
-    private final Map<String, Scope> scopes = new HashMap<>();
 
     @GuardedBy("activeProcesses")
     private final Set<ActiveProcess<?>> activeProcesses;
@@ -249,6 +249,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
+
     protected AbstractDatabase(@NonNull String name) throws CouchbaseLiteException {
         this(name, new ImmutableDatabaseConfiguration(null));
     }
@@ -286,9 +287,6 @@ abstract class AbstractDatabase extends BaseDatabase {
         // Initialize a shared keys:
         this.sharedKeys = c4db.getFLSharedKeys();
 
-        // Scope
-        loadScopesAndCollections(c4db);
-
         // warn if logging has not been turned on
         Log.warn();
     }
@@ -296,8 +294,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
-
-    // GET EXISTING DOCUMENT
 
     /**
      * Return the database name
@@ -316,6 +312,313 @@ abstract class AbstractDatabase extends BaseDatabase {
     public String getPath() {
         synchronized (getDbLock()) { return (!isOpen()) ? null : getDbPath(); }
     }
+
+    public boolean performMaintenance(MaintenanceType type) throws CouchbaseLiteException {
+        synchronized (getDbLock()) {
+            try { return getOpenC4DbLocked().performMaintenance(type); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
+    }
+
+    /**
+     * Closes a database.
+     * Closing a database will stop all replicators, live queries and all listeners attached to it.
+     *
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
+    public void close() throws CouchbaseLiteException {
+        Log.d(DOMAIN, "Closing %s at path %s", this, getDbPath());
+        shutdown(false, C4Database::closeDb);
+    }
+
+    //---------------------------------------------
+    // Scopes
+    //---------------------------------------------
+
+    /**
+     * Get scope names that have at least one collection.
+     * Note: the default scope is exceptional as it will always be listed even though there are no collections
+     * under it.
+     */
+    @NonNull
+    public final Set<Scope> getScopes() throws CouchbaseLiteException {
+        synchronized (getDbLock()) {
+            final C4Database c4db = getC4DbOrThrowLocked();
+
+            final Set<String> scopeNames;
+            try { scopeNames = c4db.getScopeNames(); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+
+            final Set<Scope> scopes = new HashSet<>(scopeNames.size());
+            for (String scopeName: scopeNames) { scopes.add(new Scope(scopeName, this)); }
+
+            return scopes;
+        }
+    }
+
+    /**
+     * Get a scope object by name. As the scope cannot exist by itself without having a collection,
+     * the hull value will be returned if there are no collections under the given scope’s name.
+     * Note: The default scope is exceptional, and it will always be returned.
+     */
+    @Nullable
+    public final Scope getScope(@NonNull String name) throws CouchbaseLiteException {
+        synchronized (getDbLock()) {
+            return (!getC4DbOrThrowLocked().hasScope(name)) ? null : new Scope(name, this);
+        }
+    }
+
+    /// Get the default scope.
+    @NonNull
+    public final Scope getDefaultScope() throws CouchbaseLiteException {
+        synchronized (getDbLock()) {
+            assertOpenChecked();
+            return new Scope(this);
+        }
+    }
+
+    //---------------------------------------------
+    // Collections
+    //---------------------------------------------
+
+    /**
+     * Create a named collection in the default scope.
+     * If the collection already exists, the existing collection will be returned.
+     *
+     * @param name the scope in which to create the collection
+     * @return the named collection in the default scope
+     * @throws CouchbaseLiteException on failure
+     */
+    @NonNull
+    public final Collection createCollection(@NonNull String name) throws CouchbaseLiteException {
+        return createCollection(name, Scope.DEFAULT_NAME);
+    }
+
+    /**
+     * Create a named collection in the specified scope.
+     * If the collection already exists, the existing collection will be returned.
+     *
+     * @param collectionName the name of the new collection
+     * @param scopeName      the scope in which to create the collection
+     * @return the named collection in the default scope
+     * @throws CouchbaseLiteException on failure
+     */
+    @NonNull
+    public final Collection createCollection(@NonNull String collectionName, @Nullable String scopeName)
+        throws CouchbaseLiteException {
+        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
+
+        synchronized (getDbLock()) {
+            assertOpenChecked();
+            return Collection.createCollection(getDatabase(), scopeName, collectionName);
+        }
+    }
+
+    /**
+     * Get all collections in the default scope.
+     */
+    @NonNull
+    public final Set<Collection> getCollections() throws CouchbaseLiteException {
+        return getCollections(Scope.DEFAULT_NAME);
+    }
+
+    /**
+     * Get all collections in the named scope.
+     *
+     * @param scopeName the scope name
+     * @return the collections in the named scope
+     */
+    @NonNull
+    public final Set<Collection> getCollections(@Nullable String scopeName) throws CouchbaseLiteException {
+        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
+
+        final Set<String> collectionNames;
+        synchronized (getDbLock()) {
+            final C4Database c4db = getC4DbOrThrowLocked();
+            try { collectionNames = c4db.getCollectionNames(scopeName); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
+
+        final Set<Collection> collections = new HashSet<>();
+        for (String collectionName: collectionNames) { collections.add(getCollection(collectionName, scopeName)); }
+
+        return collections;
+    }
+
+    /**
+     * Get a collection in the default scope by name.
+     * If the collection doesn't exist, the function will return null.
+     *
+     * @param name the collection to find
+     * @return the named collection or null
+     */
+    @Nullable
+    public final Collection getCollection(@NonNull String name) throws CouchbaseLiteException {
+        return getCollection(name, Scope.DEFAULT_NAME);
+    }
+
+    /**
+     * Get a collection in the specified scope by name.
+     * If the collection doesn't exist, the function will return null.
+     *
+     * @param collectionName the collection to find
+     * @param scopeName      the scope in which to create the collection
+     * @return the named collection or null
+     */
+    @Nullable
+    public final Collection getCollection(@NonNull String collectionName, @Nullable String scopeName)
+        throws CouchbaseLiteException {
+        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
+
+        synchronized (getDbLock()) {
+            assertOpenChecked();
+            return Collection.getCollection(getDatabase(), scopeName, collectionName);
+        }
+    }
+
+    /**
+     * Get the default collection. If the default collection is deleted, null will be returned.
+     *
+     * @return the default collection or null if it does not exist.
+     */
+    @Nullable
+    public final Collection getDefaultCollection() throws CouchbaseLiteException {
+        synchronized (getDbLock()) {
+            assertOpenChecked();
+            return Collection.getDefaultCollection(getDatabase());
+        }
+    }
+
+    /**
+     * Delete a collection by name  in the default scope. If the collection doesn't exist, the operation
+     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
+     *
+     * @param name the collection to be deleted
+     * @throws CouchbaseLiteException on failure
+     */
+    public final void deleteCollection(@NonNull String name) throws CouchbaseLiteException {
+        deleteCollection(name, Scope.DEFAULT_NAME);
+    }
+
+    /**
+     * Delete a collection by name  in the specified scope. If the collection doesn't exist, the operation
+     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
+     *
+     * @param collectionName the collection to be deleted
+     * @param scopeName      the scope from which to delete the collection
+     * @throws CouchbaseLiteException on failure
+     */
+    public final void deleteCollection(@NonNull String collectionName, @Nullable String scopeName)
+        throws CouchbaseLiteException {
+        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
+        synchronized (getDbLock()) {
+            try { getC4DbOrThrowLocked().deleteCollection(scopeName, collectionName); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
+    }
+
+    // Transactions:
+
+    /**
+     * Runs a group of database operations in a batch. Use this when performing bulk write operations
+     * like multiple inserts/updates; it saves the overhead of multiple database commits, greatly
+     * improving performance.
+     *
+     * @param work a unit of work that may terminate abruptly (with an exception)
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
+    public <T extends Exception> void inBatch(@NonNull UnitOfWork<T> work) throws CouchbaseLiteException, T {
+        Preconditions.assertNotNull(work, "work");
+
+        synchronized (getDbLock()) {
+            final C4Database db = getOpenC4DbLocked();
+            boolean commit = false;
+            try {
+                db.beginTransaction();
+                try {
+                    work.run();
+                    commit = true;
+                }
+                finally {
+                    db.endTransaction(commit);
+                }
+            }
+            catch (LiteCoreException e) {
+                throw CouchbaseLiteException.convertException(e);
+            }
+        }
+
+        postDatabaseChanged();
+    }
+
+    // Queries:
+
+    /**
+     * Create a SQL++ query.
+     *
+     * @param query a valid SQL++ query
+     * @return the Query object
+     */
+    @NonNull
+    public Query createQuery(@NonNull String query) {
+        synchronized (getDbLock()) {
+            assertOpenUnchecked();
+            return new N1qlQuery(this, query);
+        }
+    }
+
+    // Blobs:
+
+    /**
+     * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
+     * If you are developing a native app, you must use the {@link Blob} API.
+     *
+     * @param blob a blob
+     */
+    @Internal("This method is not part of the public API: it is for internal use only")
+    public void saveBlob(@NonNull Blob blob) {
+        synchronized (getDbLock()) { assertOpenUnchecked(); }
+        blob.installInDatabase((Database) this);
+    }
+
+    /**
+     * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
+     * If you are developing a native app, you must use the {@link Blob} API.
+     *
+     * @param props blob properties
+     */
+    @Internal("This method is not part of the public API: it is for internal use only")
+    @Nullable
+    public Blob getBlob(@NonNull Map<String, Object> props) {
+        synchronized (getDbLock()) { assertOpenUnchecked(); }
+
+        if (!Blob.isBlob(props)) { throw new IllegalArgumentException("getBlob arg does not specify a blob"); }
+
+        final Blob blob = new Blob(this, props);
+
+        return (blob.updateSize() < 0) ? null : blob;
+    }
+
+    // Object methods:
+
+    @NonNull
+    @Override
+    public String toString() { return "Database{" + ClassUtils.objId(this) + ", name='" + name + "'}"; }
+
+    @Override
+    public int hashCode() { return Objects.hash(name); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof AbstractDatabase)) { return false; }
+        final AbstractDatabase other = (AbstractDatabase) o;
+        return name.equals(other.name);
+    }
+
+    //---------------------------------------------
+    // Deprecated API methods
+    //---------------------------------------------
 
     /**
      * The number of documents in the database.
@@ -348,9 +651,8 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Nullable
     public Document getDocument(@NonNull String id) {
         Preconditions.assertNotEmpty(id, "id");
-
         synchronized (getDbLock()) {
-            mustBeOpen();
+            assertOpenUnchecked();
             try { return Document.getDocument((Database) this, id, false); }
             catch (CouchbaseLiteException e) { Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", e, id); }
         }
@@ -541,38 +843,6 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    /**
-     * Runs a group of database operations in a batch. Use this when performing bulk write operations
-     * like multiple inserts/updates; it saves the overhead of multiple database commits, greatly
-     * improving performance.
-     *
-     * @param work a unit of work that may terminate abruptly (with an exception)
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-    public <T extends Exception> void inBatch(@NonNull UnitOfWork<T> work) throws CouchbaseLiteException, T {
-        Preconditions.assertNotNull(work, "work");
-
-        synchronized (getDbLock()) {
-            final C4Database db = getOpenC4DbLocked();
-            boolean commit = false;
-            try {
-                db.beginTransaction();
-                try {
-                    work.run();
-                    commit = true;
-                }
-                finally {
-                    db.endTransaction(commit);
-                }
-            }
-            catch (LiteCoreException e) {
-                throw CouchbaseLiteException.convertException(e);
-            }
-        }
-
-        postDatabaseChanged();
-    }
-
     // Document changes:
 
     /**
@@ -606,7 +876,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
         synchronized (getDbLock()) {
-            mustBeOpen();
+            assertOpenUnchecked();
             return addDatabaseChangeListenerLocked(executor, listener);
         }
     }
@@ -667,20 +937,9 @@ abstract class AbstractDatabase extends BaseDatabase {
         Preconditions.assertNotNull(listener, "listener");
 
         synchronized (getDbLock()) {
-            mustBeOpen();
+            assertOpenUnchecked();
             return addDocumentChangeListenerLocked(docId, executor, listener);
         }
-    }
-
-    /**
-     * Closes a database.
-     * Closing a database will stop all replicators, live queries and all listeners attached to it.
-     *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
-     */
-    public void close() throws CouchbaseLiteException {
-        Log.d(DOMAIN, "Closing %s at path %s", this, getDbPath());
-        shutdown(false, C4Database::closeDb);
     }
 
     /**
@@ -693,22 +952,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     public void delete() throws CouchbaseLiteException {
         Log.d(DOMAIN, "Deleting %s at path %s", this, getDbPath());
         shutdown(true, C4Database::deleteDb);
-    }
-
-    // Queries:
-
-    /**
-     * Create a SQL++ query.
-     *
-     * @param query a valid SQL++ query
-     * @return the Query object
-     */
-    @NonNull
-    public Query createQuery(@NonNull String query) {
-        synchronized (getDbLock()) {
-            mustBeOpen();
-            return new N1qlQuery(this, query);
-        }
     }
 
     /**
@@ -782,241 +1025,12 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    public boolean performMaintenance(MaintenanceType type) throws CouchbaseLiteException {
-        synchronized (getDbLock()) {
-            try { return getOpenC4DbLocked().performMaintenance(type); }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        }
-    }
-
-    /**
-     * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
-     * If you are developing a native app, you must use the {@link Blob} API.
-     *
-     * @param blob a blob
-     */
-    @Internal("This method is not part of the public API: it is for internal use only")
-    public void saveBlob(@NonNull Blob blob) {
-        synchronized (getDbLock()) { mustBeOpen(); }
-        blob.installInDatabase((Database) this);
-    }
-
-    /**
-     * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
-     * If you are developing a native app, you must use the {@link Blob} API.
-     *
-     * @param props blob properties
-     */
-    @Internal("This method is not part of the public API: it is for internal use only")
-    @Nullable
-    public Blob getBlob(@NonNull Map<String, Object> props) {
-        synchronized (getDbLock()) { mustBeOpen(); }
-
-        if (!Blob.isBlob(props)) { throw new IllegalArgumentException("getBlob arg does not specify a blob"); }
-
-        final Blob blob = new Blob(this, props);
-
-        return (blob.updateSize() < 0) ? null : blob;
-    }
-
-    @NonNull
-    @Override
-    public String toString() { return "Database{" + ClassUtils.objId(this) + ", name='" + name + "'}"; }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (!(o instanceof AbstractDatabase)) { return false; }
-        final AbstractDatabase other = (AbstractDatabase) o;
-        return name.equals(other.name);
-    }
-
-    @Override
-    public int hashCode() { return Objects.hash(name); }
-
-    //---------------------------------------------
-    // Scopes
-    //---------------------------------------------
-
-    /**
-     * Get scope names that have at least one collection.
-     * Note: the default scope is exceptional as it will always be listed even though there are no collections
-     * under it.
-     */
-    @NonNull
-    public final Set<Scope> getScopes() throws CouchbaseLiteException {
-        synchronized (getDbLock()) {
-            assertOpen();
-            return Fn.filterToSet(
-                scopes.values(),
-                scope -> Scope.DEFAULT_NAME.equals(scope.getName()) || (scope.getCollectionCount() > 0));
-        }
-    }
-
-    /**
-     * Get a scope object by name. As the scope cannot exist by itself without having a collection,
-     * the hull value will be returned if there are no collections under the given scope’s name.
-     * Note: The default scope is exceptional, and it will always be returned.
-     */
-    @Nullable
-    public final Scope getScope(@NonNull String name) throws CouchbaseLiteException {
-        synchronized (getDbLock()) {
-            assertOpen();
-            final Scope scope = scopes.get(name);
-            return ((scope == null) || (Scope.DEFAULT_NAME.equals(name)) || ((scope.getCollectionCount() > 0)))
-                ? scope
-                : null;
-        }
-    }
-
-    /// Get the default scope.
-    @NonNull
-    public final Scope getDefaultScope() throws CouchbaseLiteException {
-        return Preconditions.assertNotNull(getScope(Scope.DEFAULT_NAME), "default scope");
-    }
-
-    //---------------------------------------------
-    // Collections
-    //---------------------------------------------
-
-    /**
-     * Get all collections in the default scope.
-     */
-    @NonNull
-    public final Set<Collection> getCollections() throws CouchbaseLiteException {
-        return getCollections(Scope.DEFAULT_NAME);
-    }
-
-    /**
-     * Get all collections in the named scope.
-     *
-     * @param scopeName the scope name
-     * @return the collections in the named scope
-     */
-    @NonNull
-    public final Set<Collection> getCollections(@Nullable String scopeName) throws CouchbaseLiteException {
-        final Scope scope;
-        synchronized (getDbLock()) {
-            assertOpen();
-            scope = scopes.get(StringUtils.isEmpty(scopeName) ? Scope.DEFAULT_NAME : scopeName);
-        }
-
-        return (scope == null) ? new HashSet<>() : scope.getCollections();
-    }
-
-    /**
-     * Get a collection in the default scope by name.
-     * If the collection doesn't exist, the function will return null.
-     *
-     * @param name the collection to find
-     * @return the named collection or null
-     */
-    @Nullable
-    public final Collection getCollection(@NonNull String name) throws CouchbaseLiteException {
-        return getCollection(name, Scope.DEFAULT_NAME);
-    }
-
-    /**
-     * Get a collection in the specified scope by name.
-     * If the collection doesn't exist, the function will return null.
-     *
-     * @param name      the collection to find
-     * @param scopeName the scope in which to create the collection
-     * @return the named collection or null
-     */
-    @Nullable
-    public final Collection getCollection(@NonNull String name, @Nullable String scopeName)
-        throws CouchbaseLiteException {
-        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
-        final Scope scope;
-        synchronized (getDbLock()) {
-            assertOpen();
-            scope = scopes.get(scopeName);
-        }
-        return (scope == null) ? null : scope.getCollection(name);
-    }
-
-    /**
-     * Get the default collection. If the default collection is deleted, null will be returned.
-     *
-     * @return the default collection or null if it does not exist.
-     */
-    @Nullable
-    public final Collection getDefaultCollection() throws CouchbaseLiteException {
-        return getCollection(Collection.DEFAULT_NAME);
-    }
-
-    /**
-     * Create a named collection in the default scope.
-     * If the collection already exists, the existing collection will be returned.
-     *
-     * @param name the scope in which to create the collection
-     * @return the named collection in the default scope
-     * @throws CouchbaseLiteException on failure
-     */
-    @NonNull
-    public final Collection createCollection(@NonNull String name) throws CouchbaseLiteException {
-        return createCollection(name, Scope.DEFAULT_NAME);
-    }
-
-    /**
-     * Create a named collection in the specified scope.
-     * If the collection already exists, the existing collection will be returned.
-     *
-     * @param name      the name of the new collection
-     * @param scopeName the scope in which to create the collection
-     * @return the named collection in the default scope
-     * @throws CouchbaseLiteException on failure
-     */
-    @NonNull
-    public final Collection createCollection(@NonNull String name, @Nullable String scopeName)
-        throws CouchbaseLiteException {
-        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
-
-        Scope scope;
-        synchronized (getDbLock()) {
-            assertOpen();
-
-            scope = scopes.get(scopeName);
-            if (scope == null) {
-                scope = new Scope(scopeName, this);
-                scopes.put(scopeName, scope);
-            }
-
-            return scope.getOrAddCollection(name);
-        }
-    }
-
-    /**
-     * Delete a collection by name  in the default scope. If the collection doesn't exist, the operation
-     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
-     *
-     * @param name the collection to be deleted
-     * @throws CouchbaseLiteException on failure
-     */
-    public final void deleteCollection(@NonNull String name) throws CouchbaseLiteException {
-        deleteCollection(name, Scope.DEFAULT_NAME);
-    }
-
-    /**
-     * Delete a collection by name  in the specified scope. If the collection doesn't exist, the operation
-     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
-     *
-     * @param name      the collection to be deleted
-     * @param scopeName the scope from which to delete the collection
-     * @throws CouchbaseLiteException on failure
-     */
-    public final void deleteCollection(@NonNull String name, @Nullable String scopeName) throws CouchbaseLiteException {
-        if (scopeName == null) { scopeName = Scope.DEFAULT_NAME; }
-        final Scope scope;
-        synchronized (getDbLock()) { scope = scopes.get(scopeName); }
-        if (scope == null) { return; }
-        scope.deleteCollection(name);
-    }
-
     //---------------------------------------------
     // Protected level access
     //---------------------------------------------
+
+    @NonNull
+    protected abstract Database getDatabase();
 
     @SuppressWarnings("NoFinalizer")
     @Override
@@ -1076,17 +1090,23 @@ abstract class AbstractDatabase extends BaseDatabase {
         return (path == null) ? null : new File(path);
     }
 
-    //////// SCOPES AND COLLECTIONS:
+    //////// COLLECTIONS:
 
     @NonNull
-    Collection addCollection(@NonNull Scope scope, @NonNull String collectionName) throws CouchbaseLiteException {
-        synchronized (getDbLock()) { return Collection.create(getOpenC4DbLocked(), scope, collectionName); }
+    C4Collection addC4Collection(@NonNull String scopeName, @NonNull String collectionName)
+        throws LiteCoreException {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().addCollection(scopeName, collectionName); }
     }
 
-    void deleteCollection(@NonNull Collection collection) throws CouchbaseLiteException {
-        synchronized (getDbLock()) {
-            getOpenC4DbLocked().deleteCollection(collection.getScope().getName(), collection.getName());
-        }
+    @Nullable
+    C4Collection getC4Collection(@NonNull String scopeName, @NonNull String collectionName)
+        throws LiteCoreException {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().getCollection(scopeName, collectionName); }
+    }
+
+    @Nullable
+    C4Collection getDefaultC4Collection() throws LiteCoreException {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().getDefaultCollection(); }
     }
 
     //////// DOCUMENTS:
@@ -1191,7 +1211,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     // !!! This method is *NOT* thread safe.
     // Used wo/synchronization, there is a race on the open db
     void addActiveReplicator(AbstractReplicator replicator) {
-        synchronized (getDbLock()) { mustBeOpen(); }
+        synchronized (getDbLock()) { assertOpenUnchecked(); }
 
         registerProcess(new ActiveProcess<AbstractReplicator>(replicator) {
             @Override
@@ -1351,39 +1371,6 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    //////// COLLECTIONS:
-
-    private void loadScopesAndCollections(@NonNull C4Database c4db) {
-        final Set<String> scopeNames;
-        try { scopeNames = c4db.getScopeNames(); }
-        catch (LiteCoreException e) {
-            Log.w(DOMAIN, "Failed getting scopes", e);
-            return;
-        }
-
-        for (String scopeName: Preconditions.assertNotNull(scopeNames, "scopes")) {
-            scopes.put(scopeName, new Scope(scopeName, this));
-        }
-
-        // ??? Is this necessary or can we count on LiteCore to do it correctly?
-        Scope defaultScope = scopes.get(Scope.DEFAULT_NAME);
-        if (defaultScope == null) {
-            defaultScope = new Scope(Scope.DEFAULT_NAME, this);
-            scopes.put(Scope.DEFAULT_NAME, defaultScope);
-        }
-
-        final C4Collection c4Coll = c4db.getDefaultCollection();
-        if ((c4Coll != null) && (defaultScope.getCollection(Scope.DEFAULT_NAME) == null)) {
-            defaultScope.cacheCollection(Collection.create(c4Coll, defaultScope, Collection.DEFAULT_NAME));
-        }
-
-        for (Scope scope: scopes.values()) {
-            if (Scope.DEFAULT_NAME.equals(scope.getName())) { continue; }
-            scope.loadCollections(c4db);
-        }
-    }
-
-
     //////// INDICES:
 
     private void createIndexInternal(@NonNull String name, @NonNull AbstractIndex config)
@@ -1511,7 +1498,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     @GuardedBy("getDbLock()")
     private void prepareDocument(Document document) throws CouchbaseLiteException {
-        mustBeOpen();
+        assertOpenUnchecked();
 
         final Database db = document.getDatabase();
         if (db == null) { document.setDatabase((Database) this); }

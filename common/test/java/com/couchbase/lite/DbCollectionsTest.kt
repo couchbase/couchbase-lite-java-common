@@ -18,10 +18,10 @@ package com.couchbase.lite
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Ignore
 import org.junit.Test
 
-class DbCollectionsTest : BaseDbTest() {
-
+class DbCollectionsTest : BaseCollectionTest() {
     @Test
     fun testGetDefaultScope() {
         val scope = baseTestDb.defaultScope
@@ -78,15 +78,22 @@ class DbCollectionsTest : BaseDbTest() {
         assertEquals(1, scopes.size)
     }
 
+    @Ignore("CBL-3257: getScopeNames does not return default scope when it is empty")
     @Test
     fun testDeleteDefaultCollection() {
-        baseTestDb.deleteCollection(Scope.DEFAULT_NAME)
-
-        // The default collection should not go away when it is empty
-        val scopes = baseTestDb.scopes
+        var scopes = baseTestDb.scopes
         assertEquals(1, scopes.size)
 
-        val scope = baseTestDb.getDefaultScope()
+        var scope = baseTestDb.defaultScope
+        assertEquals(1, scope.collectionCount)
+
+        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
+
+        // The default collection should not go away when it is empty
+        scopes = baseTestDb.scopes
+        assertEquals(1, scopes.size)
+
+        scope = baseTestDb.defaultScope
         assertEquals(0, scope.collectionCount)
     }
 }

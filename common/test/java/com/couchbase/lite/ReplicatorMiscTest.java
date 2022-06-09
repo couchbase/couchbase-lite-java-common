@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -197,8 +196,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testCustomConnectionOptions() throws URISyntaxException, CouchbaseLiteException {
-        Set<Collection> collections = baseTestDb.getCollections();
+    public void testCustomConnectionOptions() throws URISyntaxException {
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
             .setType(ReplicatorType.PUSH)
             .setContinuous(false)
@@ -263,7 +261,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             CBLError.Code.BUSY);
 
         ReplicatedDocument doc
-            = new ReplicatedDocument(collection.getScopeName(), collection.getName(), docID, flags, error);
+            = new ReplicatedDocument(collection.getScope().getName(), collection.getName(), docID, flags, error);
 
         assertEquals(doc.getID(), docID);
         assertTrue(doc.getFlags().contains(DocumentFlag.DELETED));

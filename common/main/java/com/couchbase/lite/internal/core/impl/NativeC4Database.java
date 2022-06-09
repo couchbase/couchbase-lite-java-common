@@ -188,9 +188,9 @@ public class NativeC4Database implements C4Database.NativeImpl {
 
     // - Maintenance
 
-    private static native boolean maintenance(long db, int type) throws LiteCoreException;
-
     private static native void rekey(long db, int keyType, byte[] newKey) throws LiteCoreException;
+
+    private static native boolean maintenance(long db, int type) throws LiteCoreException;
 
     // - Cookie Store
 
@@ -203,9 +203,9 @@ public class NativeC4Database implements C4Database.NativeImpl {
 
     private static native long getSharedFleeceEncoder(long db);
 
-    private static native long encodeJSON(long db, byte[] jsonData) throws LiteCoreException;
-
     private static native long getFLSharedKeys(long db);
+
+    private static native long encodeJSON(long db, byte[] jsonData) throws LiteCoreException;
 
     // - Scopes and Collections
 
@@ -224,10 +224,14 @@ public class NativeC4Database implements C4Database.NativeImpl {
     private static native void deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException;
 
-    // - Documents
+    // - Testing
+
+    private static native long getLastSequence(long db);
 
     // !!! DEPRECATED:
     //  Delete these methods when the corresponding Database methods proxy to the default collection
+
+    // - Documents
 
     private static native long getDocumentCount(long db);
 
@@ -252,8 +256,4 @@ public class NativeC4Database implements C4Database.NativeImpl {
     private static native void deleteIndex(long db, @NonNull String name) throws LiteCoreException;
 
     // !!! end deprecation
-
-    // - Testing
-
-    private static native long getLastSequence(long db);
 }

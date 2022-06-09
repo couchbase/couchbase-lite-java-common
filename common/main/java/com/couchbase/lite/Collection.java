@@ -21,87 +21,98 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.core.C4Collection;
-import com.couchbase.lite.internal.core.C4Database;
 
 
 /**
  *
  */
-public final class Collection implements Indexable, DatabaseChangeObservable {
+public final class Collection {
     public static final String DEFAULT_NAME = "_default";
 
     @NonNull
-    static Collection create(@NonNull C4Database c4db, @NonNull Scope scope, @NonNull String name)
+    static Collection createCollection(
+        @NonNull Database db,
+        @NonNull String scopeName,
+        @NonNull String collectionName)
         throws CouchbaseLiteException {
-        try { return new Collection(c4db.addCollection(scope.getName(), name), scope, name); }
+        try { return new Collection(db, db.addC4Collection(scopeName, collectionName)); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+    }
+
+    @Nullable
+    static Collection getCollection(
+        @NonNull Database db,
+        @NonNull String scopeName,
+        @NonNull String collectionName)
+        throws CouchbaseLiteException {
+        try {
+            final C4Collection c4Coll = db.getC4Collection(scopeName, collectionName);
+            return (c4Coll == null) ? null : new Collection(db, c4Coll);
+        }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+    }
+
+    @Nullable
+    static Collection getDefaultCollection(@NonNull Database db) throws CouchbaseLiteException {
+        try {
+            final C4Collection c4Coll = db.getDefaultC4Collection();
+            return (c4Coll == null) ? null : new Collection(db, c4Coll);
+        }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     @NonNull
-    static Collection create(@NonNull C4Collection c4coll, @NonNull Scope scope, @NonNull String name) {
-        return new Collection(c4coll, scope, name);
-    }
-
-    @Nullable
-    static Collection getDefaultCollection(@NonNull Database database) {
-        try { return database.getDefaultCollection(); }
-        catch (CouchbaseLiteException e) { throw new IllegalArgumentException("Database is not open??", e); }
-    }
-
-    @NonNull
-    private final String name;
-    @NonNull
-    private final Scope scope;
+    private final Database db;
 
     @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
     @NonNull
     private final C4Collection c4Collection;
 
     // Collections must be immutable
-    Collection(@NonNull C4Collection c4Collection, @NonNull Scope scope, @NonNull String name) {
+    Collection(@NonNull Database db, @NonNull C4Collection c4Collection) {
+        this.db = db;
         this.c4Collection = c4Collection;
-        this.scope = scope;
-        this.name = name;
     }
 
     @NonNull
     @Override
-    public String toString() { return scope + "." + name; }
+    public String toString() { return c4Collection.getScope() + "." + c4Collection.getName(); }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) { return true; }
         if (!(o instanceof Collection)) { return false; }
         final Collection other = (Collection) o;
-        return name.equals(other.name) && scope.equals(other.scope);
+        return c4Collection.getScope().equals(other.c4Collection.getScope())
+            && c4Collection.getName().equals(other.c4Collection.getName());
     }
 
     @Override
-    public int hashCode() { return Objects.hash(name, scope); }
+    public int hashCode() { return Objects.hash(c4Collection.getScope(), c4Collection.getName()); }
 
     /**
      * Get scope
      */
     @NonNull
-    public Scope getScope() { return scope; }
+    public Scope getScope() { return new Scope(c4Collection.getScope(), db); }
 
     /**
      * Return the collection name
      */
     @NonNull
-    public String getName() { return name; }
+    public String getName() { return c4Collection.getName(); }
 
     /**
      * The number of documents in the collection.
      */
-    public long getCount() { return getDatabase().getCount(); }
+    public long getCount() { return c4Collection.getDocumentCount(); }
 
     /**
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
      * exist in the collection, the value returned will be null.
      */
     @Nullable
-    public Document getDocument(@NonNull String id) { return getDatabase().getDocument(id); }
+    public Document getDocument(@NonNull String id) { return db.getDocument(id); }
 
     /**
      * Save a document into the collection. The default concurrency control, lastWriteWins,
@@ -111,7 +122,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      * the document and this collection instance must be the same, otherwise, the InvalidParameter
      * error will be thrown.
      */
-    public void save(@NonNull MutableDocument document) throws CouchbaseLiteException { getDatabase().save(document); }
+    public void save(@NonNull MutableDocument document) throws CouchbaseLiteException { db.save(document); }
 
     /**
      * Save a document into the collection with a specified concurrency control. When specifying
@@ -123,7 +134,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      */
     public boolean save(@NonNull MutableDocument document, @NonNull ConcurrencyControl concurrencyControl)
         throws CouchbaseLiteException {
-        return getDatabase().save(document, concurrencyControl);
+        return db.save(document, concurrencyControl);
     }
 
     /**
@@ -138,7 +149,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      */
     public boolean save(@NonNull MutableDocument document, @NonNull ConflictHandler conflictHandler)
         throws CouchbaseLiteException {
-        return getDatabase().save(document, conflictHandler);
+        return db.save(document, conflictHandler);
     }
 
     /**
@@ -150,7 +161,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      * the document and this collection instance must be the same, otherwise, the InvalidParameter error
      * will be thrown.
      */
-    public void delete(@NonNull Document document) throws CouchbaseLiteException { getDatabase().delete(document); }
+    public void delete(@NonNull Document document) throws CouchbaseLiteException { db.delete(document); }
 
     /**
      * Delete a document from the collection with a specified concurrency control. When specifying
@@ -162,27 +173,27 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      */
     public boolean delete(@NonNull Document document, @NonNull ConcurrencyControl concurrencyControl)
         throws CouchbaseLiteException {
-        return getDatabase().delete(document, concurrencyControl);
+        return db.delete(document, concurrencyControl);
     }
 
     /**
      * When purging a document, the collection instance of the document and this collection instance
      * must be the same, otherwise, the InvalidParameter error will be thrown.
      */
-    public void purge(@NonNull Document document) throws CouchbaseLiteException { getDatabase().purge(document); }
+    public void purge(@NonNull Document document) throws CouchbaseLiteException { db.purge(document); }
 
     /**
      * Purge a document by id from the collection. If the document doesn't exist in the collection,
      * the NotFound error will be thrown.
      */
-    public void purge(@NonNull String id) throws CouchbaseLiteException { getDatabase().purge(id); }
+    public void purge(@NonNull String id) throws CouchbaseLiteException { db.purge(id); }
 
 
     /**
      * Set an expiration date to the document of the given id. Setting a nil date will clear the expiration.
      */
     public void setDocumentExpiration(@NonNull String id, @Nullable Date expiration) throws CouchbaseLiteException {
-        getDatabase().setDocumentExpiration(id, expiration);
+        db.setDocumentExpiration(id, expiration);
     }
 
     /**
@@ -190,7 +201,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      */
     @Nullable
     public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
-        return getDatabase().getDocumentExpiration(id);
+        return db.getDocumentExpiration(id);
     }
 
     /**
@@ -199,7 +210,7 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      */
     @NonNull
     public ListenerToken addDocumentChangeListener(@NonNull String id, @NonNull DocumentChangeListener listener) {
-        return getDatabase().addDocumentChangeListener(id, listener);
+        return db.addDocumentChangeListener(id, listener);
     }
 
     /**
@@ -212,20 +223,17 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
         @NonNull String id,
         @Nullable Executor executor,
         @NonNull DocumentChangeListener listener) {
-        return getDatabase().addDocumentChangeListener(id, executor, listener);
+        return db.addDocumentChangeListener(id, executor, listener);
     }
 
-    @Override
     @NonNull
-    public Set<String> getIndexes() throws CouchbaseLiteException { return new HashSet<>(getDatabase().getIndexes()); }
+    public Set<String> getIndexes() throws CouchbaseLiteException { return new HashSet<>(db.getIndexes()); }
 
-    @Override
     public void createIndex(String name, IndexConfiguration config) throws CouchbaseLiteException {
-        getDatabase().createIndex(name, config);
+        db.createIndex(name, config);
     }
 
-    @Override
-    public void deleteIndex(String name) throws CouchbaseLiteException { getDatabase().deleteIndex(name); }
+    public void deleteIndex(String name) throws CouchbaseLiteException { db.deleteIndex(name); }
 
     /**
      * Add a change listener to listen to change events occurring to any documents in the collection.
@@ -235,10 +243,9 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      * @return token used to cancel the listener
      * @throws IllegalStateException if the default collection doesn’t exist.
      */
-    @Override
     @NonNull
     public ListenerToken addChangeListener(@NonNull DatabaseChangeListener listener) {
-        return getDatabase().addChangeListener(listener);
+        return db.addChangeListener(listener);
     }
 
     /**
@@ -251,17 +258,13 @@ public final class Collection implements Indexable, DatabaseChangeObservable {
      * @return token used to cancel the listener
      * @throws IllegalStateException if the default collection doesn’t exist.
      */
-    @Override
     @NonNull
     public ListenerToken addChangeListener(@NonNull Executor executor, @NonNull DatabaseChangeListener listener) {
-        return getDatabase().addChangeListener(executor, listener);
+        return db.addChangeListener(executor, listener);
     }
 
     // ??? This probably shouldn't be in the public API.
     // It is used by BaseImmutableReplicatorConfiguration
     @NonNull
-    public Database getDatabase() { return scope.getDatabase(); }
-
-    @NonNull
-    String getScopeName() { return scope.getName(); }
+    public Database getDatabase() { return (Database) db; }
 }

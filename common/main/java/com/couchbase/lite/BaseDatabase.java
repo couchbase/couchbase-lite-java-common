@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -25,6 +26,7 @@ import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Internal;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 @Internal("This class is not part of the public API")
@@ -42,21 +44,6 @@ public abstract class BaseDatabase {
     @Nullable
     private String path;
 
-    @SuppressWarnings("ConstantConditions")
-    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
-    @GuardedBy("dbLock")
-    @NonNull
-    protected C4Database getOpenC4DbLocked() {
-        mustBeOpen();
-        return c4Database;
-    }
-
-    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
-    @NonNull
-    C4Database getOpenC4Database() {
-        synchronized (getDbLock()) { return getOpenC4DbLocked(); }
-    }
-
     @GuardedBy("dbLock")
     protected void setC4DatabaseLocked(@Nullable C4Database c4Database) {
         this.c4Database = c4Database;
@@ -67,13 +54,28 @@ public abstract class BaseDatabase {
     protected boolean isOpen() { return c4Database != null; }
 
     @GuardedBy("dbLock")
-    protected void mustBeOpen() {
+    protected void assertOpenUnchecked() {
         if (!isOpen()) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
     }
 
     @GuardedBy("dbLock")
-    protected void assertOpen() throws CouchbaseLiteException {
+    @NonNull
+    protected C4Database getOpenC4DbLocked() {
+        assertOpenUnchecked();
+        return Preconditions.assertNotNull(c4Database, "c4db");
+    }
+
+    protected void assertOpenChecked() throws CouchbaseLiteException {
         if (!isOpen()) { throw new CouchbaseLiteException(Log.lookupStandardMessage("DBClosed")); }
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
+    @NonNull
+    @GuardedBy("dbLock")
+    protected C4Database getC4DbOrThrowLocked() throws CouchbaseLiteException {
+        assertOpenChecked();
+        return c4Database;
     }
 
     // When seizing multiple locks, always seize this lock first.
@@ -88,5 +90,13 @@ public abstract class BaseDatabase {
     @NonNull
     protected C4BlobStore getBlobStore() throws LiteCoreException {
         synchronized (getDbLock()) { return getOpenC4DbLocked().getBlobStore(); }
+    }
+
+
+    @VisibleForTesting
+    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
+    @NonNull
+    C4Database getOpenC4Database() {
+        synchronized (getDbLock()) { return getOpenC4DbLocked(); }
     }
 }

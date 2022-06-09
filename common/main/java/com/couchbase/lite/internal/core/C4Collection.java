@@ -16,7 +16,10 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.AbstractIndex;
+import com.couchbase.lite.Collection;
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.Scope;
 import com.couchbase.lite.internal.core.impl.NativeC4Collection;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -25,14 +28,15 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public class C4Collection extends C4NativePeer {
     public interface NativeImpl {
         // Factory methods
-        long nGetDefaultCollection(long c4Db);
-        long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection)throws LiteCoreException;
         long nCreateCollection(long c4Db, @NonNull String scope, @NonNull String collection)
             throws LiteCoreException;
+        long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection) throws LiteCoreException;
+        long nGetDefaultCollection(long c4Db) throws LiteCoreException;
 
         // Collections
         boolean nCollectionIsValid(long peer);
         long nGetDocumentCount(long peer);
+        void nFree(long peer);
 
         // Documents
         long nGetDocExpiration(long peer, @NonNull String docID) throws LiteCoreException;
@@ -40,7 +44,7 @@ public class C4Collection extends C4NativePeer {
         void nPurgeDoc(long peer, @NonNull String docID) throws LiteCoreException;
 
         // Indexes
-        long nGetIndexesInfo(long peer);
+        long nGetIndexesInfo(long peer) throws LiteCoreException;
         void nCreateIndex(
             long peer,
             String name,
@@ -48,22 +52,13 @@ public class C4Collection extends C4NativePeer {
             int queryLanguage,
             int indexType,
             String language,
-            boolean ignoreDiacritics);
-        void nDeleteIndex(long peer, @NonNull String name);
+            boolean ignoreDiacritics)
+            throws LiteCoreException;
+        void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException;
     }
 
     @NonNull
-    @VisibleForTesting
     private static final NativeImpl NATIVE_IMPL = new NativeC4Collection();
-
-    @Nullable
-    public static C4Collection getDefault(@NonNull C4Database c4db) { return getDefault(NATIVE_IMPL, c4db); }
-
-    @NonNull
-    public static C4Collection get(@NonNull C4Database c4db, @NonNull String scope, @NonNull String collection)
-        throws LiteCoreException {
-        return get(NATIVE_IMPL, c4db, scope, collection);
-    }
 
     @NonNull
     public static C4Collection create(@NonNull C4Database c4db, @NonNull String scope, @NonNull String collection)
@@ -71,22 +66,15 @@ public class C4Collection extends C4NativePeer {
         return create(NATIVE_IMPL, c4db, scope, collection);
     }
 
-    @VisibleForTesting
     @Nullable
-    static C4Collection getDefault(@NonNull NativeImpl impl, @NonNull C4Database c4db) {
-        final long c4collection = impl.nGetDefaultCollection(c4db.getPeer());
-        return c4collection == 0 ? null : new C4Collection(impl, c4collection, c4db);
+    public static C4Collection get(@NonNull C4Database c4db, @NonNull String scope, @NonNull String collection)
+        throws LiteCoreException {
+        return get(NATIVE_IMPL, c4db, scope, collection);
     }
 
-    @VisibleForTesting
-    @NonNull
-    static C4Collection get(
-        @NonNull NativeImpl impl,
-        @NonNull C4Database c4db,
-        @NonNull String scope,
-        @NonNull String collection)
-        throws LiteCoreException {
-        return new C4Collection(impl, impl.nGetCollection(c4db.getPeer(), scope, collection), c4db);
+    @Nullable
+    public static C4Collection getDefault(@NonNull C4Database c4db) throws LiteCoreException {
+        return getDefault(NATIVE_IMPL, c4db);
     }
 
     @VisibleForTesting
@@ -97,7 +85,33 @@ public class C4Collection extends C4NativePeer {
         @NonNull String scope,
         @NonNull String collection)
         throws LiteCoreException {
-        return new C4Collection(impl, impl.nCreateCollection(c4db.getPeer(), scope, collection), c4db);
+        return new C4Collection(
+            impl,
+            impl.nCreateCollection(c4db.getPeer(), scope, collection),
+            c4db,
+            scope,
+            collection);
+    }
+
+    @VisibleForTesting
+    @Nullable
+    static C4Collection get(
+        @NonNull NativeImpl impl,
+        @NonNull C4Database c4db,
+        @NonNull String scope,
+        @NonNull String collection)
+        throws LiteCoreException {
+        final long c4collection = impl.nGetCollection(c4db.getPeer(), scope, collection);
+        return (c4collection == 0L) ? null : new C4Collection(impl, c4collection, c4db, scope, collection);
+    }
+
+    @VisibleForTesting
+    @Nullable
+    static C4Collection getDefault(@NonNull NativeImpl impl, @NonNull C4Database c4db) throws LiteCoreException {
+        final long c4collection = impl.nGetDefaultCollection(c4db.getPeer());
+        return c4collection == 0
+            ? null
+            : new C4Collection(impl, c4collection, c4db, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME);
     }
 
 
@@ -110,15 +124,28 @@ public class C4Collection extends C4NativePeer {
     @NonNull
     private final C4Database db;
 
+    @NonNull
+    private final String scope;
+    @NonNull
+    private final String name;
+
+
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
     @VisibleForTesting
-    C4Collection(@NonNull NativeImpl impl, long peer, @NonNull C4Database db) {
+    C4Collection(
+        @NonNull NativeImpl impl,
+        long peer,
+        @NonNull C4Database db,
+        @NonNull String scope,
+        @NonNull String name) {
         super(peer);
         this.impl = impl;
         this.db = db;
+        this.scope = scope;
+        this.name = name;
     }
 
     //-------------------------------------------------------------------------
@@ -126,7 +153,7 @@ public class C4Collection extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @Override
-    public void close() { releasePeer(); }
+    public void close() { closePeer(null); }
 
     @NonNull
     @Override
@@ -191,33 +218,56 @@ public class C4Collection extends C4NativePeer {
     // - Indexes
 
     public void createIndex(
-        String name, String indexSpec, AbstractIndex.QueryLanguage queryLanguage,
-        AbstractIndex.IndexType indexType, String language, boolean ignoreDiacritics) {
-        impl.nCreateIndex(
-            getPeer(),
-            name,
-            indexSpec,
-            queryLanguage.getValue(),
-            indexType.getValue(),
-            language,
-            ignoreDiacritics);
+        String name,
+        String indexSpec,
+        AbstractIndex.QueryLanguage queryLanguage,
+        AbstractIndex.IndexType indexType,
+        String language,
+        boolean ignoreDiacritics)
+        throws LiteCoreException {
+        withPeerThrows(peer ->
+            impl.nCreateIndex(
+                peer,
+                name,
+                indexSpec,
+                queryLanguage.getValue(),
+                indexType.getValue(),
+                language,
+                ignoreDiacritics));
     }
 
     @NonNull
     public FLSliceResult getIndexesInfo() {
-        final Long result = withPeer(impl::nGetIndexesInfo);
-        if ((result != null) && (!result.equals(0L))) {
-            return FLSliceResult.getManagedSliceResult(result);
-        }
-        throw new IllegalStateException("IndexesInfo returned 0");
+        final Long result;
+        try { result = withPeerOrDefault(0L, impl::nGetIndexesInfo); }
+        catch (LiteCoreException e) { throw new IllegalStateException("Failed getting index info", e); }
+        if (result.equals(0L)) { throw new IllegalStateException("getIndexesInfo returned 0"); }
+        return FLSliceResult.getManagedSliceResult(result);
     }
 
-    public void deleteIndex(String name) { withPeerThrows(peer -> impl.nDeleteIndex(peer, name)); }
+    public void deleteIndex(String name) throws LiteCoreException {
+        withPeerThrows(peer -> impl.nDeleteIndex(peer, name));
+    }
+
+    @NonNull
+    public C4Database getDb() { return db; }
+
+    @NonNull
+    public String getScope() { return scope; }
+
+    @NonNull
+    public String getName() { return name; }
 
     //-------------------------------------------------------------------------
     // package access
     //-------------------------------------------------------------------------
 
-    @NonNull
-    C4Database getDb() { return db; }
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        try { closePeer(LogDomain.DATABASE); }
+        finally { super.finalize(); }
+    }
+
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
 }

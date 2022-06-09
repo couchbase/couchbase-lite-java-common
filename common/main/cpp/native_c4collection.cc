@@ -25,15 +25,30 @@ extern "C" {
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    getDefaultCollection
- * Signature: (J)J
+ * Method:    createCollection
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollection(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection(
         JNIEnv *env,
         jclass ignore,
-        jlong db) {
-    return (jlong) c4db_getDefaultCollection((C4Database *) db);
+        jlong db,
+        jstring jscope,
+        jstring jcollection) {
+    jstringSlice scope(env, jscope);
+    jstringSlice collection(env, jcollection);
+    C4CollectionSpec collSpec = {collection, scope};
+
+    C4Error error{};
+    C4Collection *coll = c4db_createCollection((C4Database *) db, collSpec, &error);
+    if (!coll && error.code != 0) {
+        throwError(env, error);
+        return 0;
+    }
+
+    c4coll_retain(coll);
+
+    return (jlong) coll;
 }
 
 /*
@@ -52,39 +67,35 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection(
     jstringSlice collection(env, jcollection);
     C4CollectionSpec collSpec = {collection, scope};
 
-    C4Error error;
+    C4Error error{};
     C4Collection *coll = c4db_getCollection((C4Database *) db, collSpec, &error);
-    if (!coll) {
+    if (!coll && error.code != 0) {
         throwError(env, error);
         return 0;
     }
 
+    c4coll_retain(coll);
     return (jlong) coll;
 }
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    createCollection
- * Signature: (JLjava/lang/String;Ljava/lang/String;)J
+ * Method:    getDefaultCollection
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollection(
         JNIEnv *env,
         jclass ignore,
-        jlong db,
-        jstring jscope,
-        jstring jcollection) {
-    jstringSlice scope(env, jscope);
-    jstringSlice collection(env, jcollection);
-    C4CollectionSpec collSpec = {collection, scope};
-
-    C4Error error;
-    C4Collection *coll = c4db_createCollection((C4Database *) db, collSpec, &error);
-    if (!coll) {
+        jlong db) {
+    C4Error error{}; // !!! I think we'll need this...
+    C4Collection *coll = c4db_getDefaultCollection((C4Database *) db);
+    if (!coll && error.code != 0) {
         throwError(env, error);
         return 0;
     }
 
+    c4coll_retain(coll);
     return (jlong) coll;
 }
 
@@ -99,6 +110,19 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid(
         jclass ignore,
         jlong coll) {
     return (jboolean) c4coll_isValid((C4Collection *) coll);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_free(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll) {
+    c4coll_release((C4Collection *) coll);
 }
 
 /*
@@ -125,8 +149,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_setDocExpiration(
         jlong timestamp) {
     jstringSlice docId(env, jDocId);
 
-    C4Error error;
-    if (!c4coll_setDocExpiration((C4Collection *) coll, docId, timestamp, &error))
+    C4Error error{};
+    bool ok = c4coll_setDocExpiration((C4Collection *) coll, docId, timestamp, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -143,14 +168,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocExpiration(
         jstring jDocId) {
     jstringSlice docID(env, jDocId);
 
-    C4Error error;
-    jlong exp = c4coll_getDocExpiration((C4Collection *) coll, docID, &error);
-    if (exp < 0) {
+    C4Error error{};
+    C4Timestamp exp = c4coll_getDocExpiration((C4Collection *) coll, docID, &error);
+    if (!exp && error.code != 0) {
         throwError(env, error);
         return 0;
     }
 
-    return exp;
+    return (jlong) exp;
 }
 
 /*
@@ -165,9 +190,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc(
         jlong coll,
         jstring jDocId) {
     jstringSlice docId(env, jDocId);
-    C4Error error;
+
+    C4Error error{};
     bool purged = c4coll_purgeDoc((C4Collection *) coll, docId, &error);
-    if (!purged)
+    if (!purged && error.code != 0)
         throwError(env, error);
 }
 
@@ -177,8 +203,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc(
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo(JNIEnv *env, jclass ignore, jlong coll) {
-    C4SliceResult data = c4coll_getIndexesInfo((C4Collection *) coll, nullptr);
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll) {
+    C4Error error{};
+    C4SliceResult data = c4coll_getIndexesInfo((C4Collection *) coll, &error);
+    if (!data && error.code != 0) {
+        throwError(env, error);
+        return 0;
+    }
     return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
 }
 
@@ -206,7 +240,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex(
     options.language = language.c_str();
     options.ignoreDiacritics = ignoreDiacritics == JNI_TRUE;
 
-    C4Error error;
+    C4Error error{};
     bool res = c4coll_createIndex(
             (C4Collection *) coll,
             name,
@@ -215,7 +249,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex(
             (C4IndexType) indexType,
             &options,
             &error);
-    if (!res)
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 
@@ -232,9 +266,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteIndex(
         jstring jName) {
     jstringSlice name(env, jName);
 
-    C4Error error = {};
+    C4Error error{};
     bool res = c4coll_deleteIndex((C4Collection *) coll, name, &error);
-    if (!res)
+    if (!res && error.code != 0)
         throwError(env, error);
 }
 }

@@ -19,9 +19,7 @@ import com.couchbase.lite.LiteCoreException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 
 
@@ -53,7 +51,7 @@ class C4CollectionTest : C4BaseTest() {
     }
 
     @Test(expected = LiteCoreException::class)
-    fun testGetNonExistantDoc() {
+    fun testGetNonExistentDoc() {
         val collection = C4Collection.create(c4Database, "Kaleido", "BeanieBabies")
         assertEquals(0, collection.documentCount)
         collection.getDocument("nexistpas")
