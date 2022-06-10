@@ -1,3 +1,19 @@
+//
+// Copyright (c) 2020 Couchbase, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.Collection
@@ -6,7 +22,6 @@ import com.couchbase.lite.MaintenanceType
 import com.couchbase.lite.Scope
 import com.couchbase.lite.internal.utils.FileUtils
 import com.couchbase.lite.internal.utils.SlowTest
-import com.couchbase.lite.internal.utils.TestUtils.assertThrows
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -21,6 +36,8 @@ import java.util.Locale
 import kotlin.experimental.and
 
 class C4DatabaseTest : C4BaseTest() {
+    private val POSIX_EEXIST = 17
+
     private val mockDatabase = object : C4Database.NativeImpl {
         override fun nOpen(
             parentDir: String,
@@ -134,13 +151,6 @@ class C4DatabaseTest : C4BaseTest() {
         C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0, 0, null).use { c4Database ->
             assertNotNull(c4Database.flSharedKeys)
         }
-    }
-
-    private val POSIX_EEXIST = 17
-
-    @Throws(LiteCoreException::class)
-    fun nextDocument(e: C4DocEnumerator): C4Document? {
-        return if (e.next()) e.document else null
     }
 
     /**
@@ -469,6 +479,9 @@ class C4DatabaseTest : C4BaseTest() {
     //  Test create 1 scope and 1 collection
     @Test
     fun testCreateScopeAndCollection() {
+        assertEquals(1, c4Database.scopeNames.size)
+        assertEquals(setOf(Scope.DEFAULT_NAME), c4Database.scopeNames)
+
         c4Database.addCollection("test_scope", "test_coll")
         assertEquals(2, c4Database.scopeNames.size)
         assertTrue(c4Database.hasScope("test_scope"))
@@ -483,9 +496,11 @@ class C4DatabaseTest : C4BaseTest() {
     fun testCreateMultipleCollections() {
         c4Database.addCollection("test_scope", "test_coll_1")
         c4Database.addCollection("test_scope", "test_coll_2")
+        c4Database.addCollection("test_scope", "test_coll_3")
 
-        assertEquals(2, c4Database.getCollectionNames("test_scope").size)
-        assertEquals(setOf("test_coll_1", "test_coll_2"), c4Database.getCollectionNames("test_scope"))
+        assertEquals(2, c4Database.scopeNames.size)
+        assertEquals(3, c4Database.getCollectionNames("test_scope").size)
+        assertEquals(setOf("test_coll_1", "test_coll_2", "test_coll_3"), c4Database.getCollectionNames("test_scope"))
     }
 
     @Test
@@ -495,27 +510,26 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     // After deleting a collection, we can no longer get that collection (make sure test doesn't crash)
-    @Test
+    @Test(expected = LiteCoreException::class)
     fun testDeleteCollection() {
         val coll = c4Database.addCollection("test_scope", "test_coll")
+        assertNotNull(c4Database.getCollection("test_scope", "test_coll"))
         c4Database.deleteCollection("test_scope", "test_coll")
 
         //getting a non-existent collection should return null, not an exception
         assertNull(c4Database.getCollection("test_scope", "test_coll"))
-
         assertEquals(0, coll.documentCount)
-        assertThrows(LiteCoreException::class.java) {
-            coll.createDocument("1", null, 0)
-        }
+
+        coll.createDocument("1", null, 0)
     }
 
     // Close Database and collection operations will throw error
-    @Test
+    @Test(expected = LiteCoreException::class)
     fun testCollectionOnClosedDB() {
         val col = c4Database.getCollection(Scope.DEFAULT_NAME, Collection.DEFAULT_NAME)
         c4Database.closeDb()
-        c4Database = null
-        assertThrows(LiteCoreException::class.java) { col?.createDocument("1", null, 0) }
+        c4Database = null // prevent @after from closing the database again
+        col?.createDocument("1", null, 0)
     }
 
 
@@ -657,6 +671,11 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     // - Utility methods
+    @Throws(LiteCoreException::class)
+    fun nextDocument(e: C4DocEnumerator): C4Document? {
+        return if (e.next()) e.document else null
+    }
+
     @Throws(LiteCoreException::class)
     private fun setupAllDocs() {
         for (i in 1..99) {
