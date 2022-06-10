@@ -32,7 +32,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileReader
 import java.io.InputStream
-import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.util.*
 import kotlin.Array
@@ -532,7 +531,7 @@ class LogTest : BaseDbTest() {
     // brittle:  will break when the wording of the error message is changed
     @Test
     fun testStandardCBLException() {
-        Log.initLogging(mapOf ("FOO" to "$$\$TEST DEBUG"))
+        Log.initLogging(mapOf("FOO" to "$$\$TEST DEBUG"))
         val msg = CouchbaseLiteException("FOO", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
         Assert.assertNotNull(msg)
         Assert.assertTrue(msg!!.startsWith("$$\$TEST DEBUG"))
@@ -540,7 +539,7 @@ class LogTest : BaseDbTest() {
 
     @Test
     fun testNonStandardCBLException() {
-        Log.initLogging(mapOf ("FOO" to "$$\$TEST DEBUG"))
+        Log.initLogging(mapOf("FOO" to "$$\$TEST DEBUG"))
         val msg = CouchbaseLiteException("bork", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
         Assert.assertNotNull(msg)
         Assert.assertTrue(msg!!.startsWith("bork"))

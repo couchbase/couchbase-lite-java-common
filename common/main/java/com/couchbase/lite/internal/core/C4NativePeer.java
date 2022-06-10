@@ -115,11 +115,10 @@ public abstract class C4NativePeer implements AutoCloseable {
     }
 
     /**
-     * Mark the peer as released.
+     * Convenience method: release peer with no message or goodbye-kiss.
+     * Useful from close() methods.
      */
-    protected final void releasePeer() {
-        synchronized (getPeerLock()) { releasePeerLocked(); }
-    }
+    protected final void releasePeer() { releasePeer(null, null); }
 
     /**
      * Release the native peer, giving it the passed goodbye-kiss.
@@ -138,12 +137,12 @@ public abstract class C4NativePeer implements AutoCloseable {
      */
     protected final <E extends Exception> void releasePeer(
         @Nullable LogDomain domain,
-        @NonNull Fn.ConsumerThrows<Long, E> fn)
+        @Nullable Fn.ConsumerThrows<Long, E> fn)
         throws E {
         final long peer;
         synchronized (getPeerLock()) {
             peer = releasePeerLocked();
-            if (peer != 0L) { fn.accept(peer); }
+            if ((peer != 0L) && (fn != null)) { fn.accept(peer); }
         }
 
         if (!CouchbaseLiteInternal.debugging()) { return; }
@@ -160,11 +159,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         }
     }
 
-    // ??? questionable design
-    // The next three methods should go away.
-    // They invite race conditions and are accidents waiting to happen.
-    // Ideally, this class should never expose the peer handle
-
+    // !!! Delete this method
     protected final void setPeer(long peer) {
         synchronized (getPeerLock()) {
             Preconditions.assertZero(this.peer, HANDLE_NAME);
@@ -172,6 +167,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         }
     }
 
+    // !!! Delete this method
     protected final long getPeerUnchecked() {
         final long peer = get();
         if (peer == 0L) { Log.v(LogDomain.DATABASE, "Unchecked peer is 0", new Exception("peer is 0")); }

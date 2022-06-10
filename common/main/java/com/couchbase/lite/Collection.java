@@ -20,14 +20,19 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
+import com.couchbase.lite.internal.BaseCollection;
 import com.couchbase.lite.internal.core.C4Collection;
 
 
 /**
  *
  */
-public final class Collection {
+public final class Collection extends BaseCollection {
     public static final String DEFAULT_NAME = "_default";
+
+    //-------------------------------------------------------------------------
+    // Factory methods
+    //-------------------------------------------------------------------------
 
     @NonNull
     static Collection createCollection(
@@ -61,40 +66,30 @@ public final class Collection {
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
-    @NonNull
-    private final Database db;
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
 
     @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
     @NonNull
     private final C4Collection c4Collection;
 
+    //-------------------------------------------------------------------------
+    // Constructor
+    //-------------------------------------------------------------------------
+
     // Collections must be immutable
     Collection(@NonNull Database db, @NonNull C4Collection c4Collection) {
-        this.db = db;
+        super(db);
         this.c4Collection = c4Collection;
     }
 
-    @NonNull
-    @Override
-    public String toString() { return c4Collection.getScope() + "." + c4Collection.getName(); }
+    //-------------------------------------------------------------------------
+    // Public API
+    //-------------------------------------------------------------------------
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (!(o instanceof Collection)) { return false; }
-        final Collection other = (Collection) o;
-        return c4Collection.getScope().equals(other.c4Collection.getScope())
-            && c4Collection.getName().equals(other.c4Collection.getName());
-    }
-
-    @Override
-    public int hashCode() { return Objects.hash(c4Collection.getScope(), c4Collection.getName()); }
-
-    /**
-     * Get scope
-     */
-    @NonNull
-    public Scope getScope() { return new Scope(c4Collection.getScope(), db); }
+    // - Properties
 
     /**
      * Return the collection name
@@ -103,9 +98,17 @@ public final class Collection {
     public String getName() { return c4Collection.getName(); }
 
     /**
+     * Get scope
+     */
+    @NonNull
+    public Scope getScope() { return new Scope(c4Collection.getScope(), db); }
+
+    /**
      * The number of documents in the collection.
      */
     public long getCount() { return c4Collection.getDocumentCount(); }
+
+    // - Documents
 
     /**
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
@@ -188,6 +191,7 @@ public final class Collection {
      */
     public void purge(@NonNull String id) throws CouchbaseLiteException { db.purge(id); }
 
+    // - Documents Expiry
 
     /**
      * Set an expiration date to the document of the given id. Setting a nil date will clear the expiration.
@@ -203,6 +207,8 @@ public final class Collection {
     public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
         return db.getDocumentExpiration(id);
     }
+
+    // - Document Change Notification
 
     /**
      * Add a change listener to listen to change events occurring to a document of the given document id.
@@ -226,6 +232,8 @@ public final class Collection {
         return db.addDocumentChangeListener(id, executor, listener);
     }
 
+    // - Indexes
+
     @NonNull
     public Set<String> getIndexes() throws CouchbaseLiteException { return new HashSet<>(db.getIndexes()); }
 
@@ -234,6 +242,8 @@ public final class Collection {
     }
 
     public void deleteIndex(String name) throws CouchbaseLiteException { db.deleteIndex(name); }
+
+    // - Collection Change Notification
 
     /**
      * Add a change listener to listen to change events occurring to any documents in the collection.
@@ -244,7 +254,7 @@ public final class Collection {
      * @throws IllegalStateException if the default collection doesn’t exist.
      */
     @NonNull
-    public ListenerToken addChangeListener(@NonNull DatabaseChangeListener listener) {
+    public ListenerToken addChangeListener(@NonNull CollectionChangeListener listener) {
         return db.addChangeListener(listener);
     }
 
@@ -259,12 +269,28 @@ public final class Collection {
      * @throws IllegalStateException if the default collection doesn’t exist.
      */
     @NonNull
-    public ListenerToken addChangeListener(@NonNull Executor executor, @NonNull DatabaseChangeListener listener) {
+    public ListenerToken addChangeListener(@NonNull Executor executor, @NonNull CollectionChangeListener listener) {
         return db.addChangeListener(executor, listener);
     }
 
-    // ??? This probably shouldn't be in the public API.
-    // It is used by BaseImmutableReplicatorConfiguration
+    // - Object Methods
+
     @NonNull
-    public Database getDatabase() { return (Database) db; }
+    @Override
+    public String toString() { return c4Collection.getScope() + "." + c4Collection.getName(); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof Collection)) { return false; }
+        final Collection other = (Collection) o;
+        return c4Collection.getScope().equals(other.c4Collection.getScope())
+            && c4Collection.getName().equals(other.c4Collection.getName());
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash(c4Collection.getScope(), c4Collection.getName()); }
+
+    @NonNull
+    Database getDatabase() { return getDb(); }
 }

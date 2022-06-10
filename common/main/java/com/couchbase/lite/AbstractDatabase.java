@@ -654,7 +654,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         synchronized (getDbLock()) {
             assertOpenUnchecked();
             try { return Document.getDocument((Database) this, id, false); }
-            catch (CouchbaseLiteException e) { Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", e, id); }
+            catch (CouchbaseLiteException e) { Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", id); }
         }
         return null;
     }

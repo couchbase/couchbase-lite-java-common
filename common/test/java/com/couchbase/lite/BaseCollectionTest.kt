@@ -22,8 +22,8 @@ import org.junit.Before
 import java.util.*
 
 open class BaseCollectionTest : BaseDbTest() {
-    var testScope: Scope? = null
-    var testCollection: Collection? = null
+    private var testScope: Scope? = null
+    private var testCollection: Collection? = null
 
     protected val Scope.collectionCount
         get() = this.collections.size
@@ -63,16 +63,6 @@ open class BaseCollectionTest : BaseDbTest() {
         Assert.assertNotNull(savedDoc)
         Assert.assertEquals(doc.id, savedDoc!!.id)
         return savedDoc
-    }
-
-    @Throws(CouchbaseLiteException::class)
-    protected fun createDocsInBaseCollectionTest(n: Int) {
-        for (i in 0 until n) {
-            val doc = MutableDocument(String.format(Locale.US, "doc_%03d", i))
-            doc.setValue("key", i)
-            saveDocInBaseCollectionTest(doc)
-        }
-        Assert.assertEquals(n.toLong(), testCollection!!.count)
     }
 }
 

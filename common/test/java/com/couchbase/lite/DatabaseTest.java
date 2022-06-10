@@ -1533,68 +1533,6 @@ public class DatabaseTest extends BaseDbTest {
         recreateBastTestDb();
     }
 
-    private void testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl cc)
-        throws CouchbaseLiteException {
-        MutableDocument doc = new MutableDocument("doc1");
-        doc.setString("firstName", "Daniel");
-        doc.setString("lastName", "Tiger");
-        baseTestDb.save(doc);
-
-        // Get two doc1 document objects (doc1a and doc1b):
-        Document doc1a = baseTestDb.getDocument("doc1");
-        MutableDocument doc1b = baseTestDb.getDocument("doc1").toMutable();
-
-        // Delete doc1a:
-        baseTestDb.delete(doc1a);
-        assertEquals(2, doc1a.getSequence());
-        assertNull(baseTestDb.getDocument(doc.getId()));
-
-        // Modify doc1b, result to conflict when save:
-        doc1b.setString("lastName", "Lion");
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(baseTestDb.save(doc1b, cc));
-            Document savedDoc = baseTestDb.getDocument(doc.getId());
-            assertEquals(doc1b.toMap(), savedDoc.toMap());
-            assertEquals(3, savedDoc.getSequence());
-        }
-        else {
-            assertFalse(baseTestDb.save(doc1b, cc));
-            assertNull(baseTestDb.getDocument(doc.getId()));
-        }
-
-        recreateBastTestDb();
-    }
-
-    private void testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl cc)
-        throws CouchbaseLiteException {
-        MutableDocument doc1a = new MutableDocument("doc1");
-        doc1a.setString("firstName", "Daniel");
-        doc1a.setString("lastName", "Tiger");
-        baseTestDb.save(doc1a);
-
-        Document savedDoc = baseTestDb.getDocument(doc1a.getId());
-        assertEquals(doc1a.toMap(), savedDoc.toMap());
-        assertEquals(1, savedDoc.getSequence());
-
-        MutableDocument doc1b = new MutableDocument("doc1");
-        doc1b.setString("firstName", "Scott");
-        doc1b.setString("lastName", "Tiger");
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(baseTestDb.save(doc1b, cc));
-            savedDoc = baseTestDb.getDocument(doc1b.getId());
-            assertEquals(doc1b.toMap(), savedDoc.toMap());
-            assertEquals(2, savedDoc.getSequence());
-        }
-        else {
-            assertFalse(baseTestDb.save(doc1b, cc));
-            savedDoc = baseTestDb.getDocument(doc1b.getId());
-            assertEquals(doc1a.toMap(), savedDoc.toMap());
-            assertEquals(1, savedDoc.getSequence());
-        }
-
-        recreateBastTestDb();
-    }
-
     private void testDeleteDocWithConflictUsingConcurrencyControl(ConcurrencyControl cc) throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setString("firstName", "Daniel");
@@ -1631,4 +1569,67 @@ public class DatabaseTest extends BaseDbTest {
 
         recreateBastTestDb();
     }
+
+    private void testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl cc)
+        throws CouchbaseLiteException {
+        MutableDocument doc1a = new MutableDocument("doc1");
+        doc1a.setString("firstName", "Daniel");
+        doc1a.setString("lastName", "Tiger");
+        baseTestDb.save(doc1a);
+
+        Document savedDoc = baseTestDb.getDocument(doc1a.getId());
+        assertEquals(doc1a.toMap(), savedDoc.toMap());
+        assertEquals(1, savedDoc.getSequence());
+
+        MutableDocument doc1b = new MutableDocument("doc1");
+        doc1b.setString("firstName", "Scott");
+        doc1b.setString("lastName", "Tiger");
+        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
+            assertTrue(baseTestDb.save(doc1b, cc));
+            savedDoc = baseTestDb.getDocument(doc1b.getId());
+            assertEquals(doc1b.toMap(), savedDoc.toMap());
+            assertEquals(2, savedDoc.getSequence());
+        }
+        else {
+            assertFalse(baseTestDb.save(doc1b, cc));
+            savedDoc = baseTestDb.getDocument(doc1b.getId());
+            assertEquals(doc1a.toMap(), savedDoc.toMap());
+            assertEquals(1, savedDoc.getSequence());
+        }
+
+        recreateBastTestDb();
+    }
+
+    private void testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl cc)
+        throws CouchbaseLiteException {
+        MutableDocument doc = new MutableDocument("doc1");
+        doc.setString("firstName", "Daniel");
+        doc.setString("lastName", "Tiger");
+        baseTestDb.save(doc);
+
+        // Get two doc1 document objects (doc1a and doc1b):
+        Document doc1a = baseTestDb.getDocument("doc1");
+        MutableDocument doc1b = baseTestDb.getDocument("doc1").toMutable();
+
+        // Delete doc1a:
+        baseTestDb.delete(doc1a);
+        assertEquals(2, doc1a.getSequence());
+        assertNull(baseTestDb.getDocument(doc.getId()));
+
+        // Modify doc1b, result to conflict when save:
+        doc1b.setString("lastName", "Lion");
+        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
+            assertTrue(baseTestDb.save(doc1b, cc));
+            Document savedDoc = baseTestDb.getDocument(doc.getId());
+            assertEquals(doc1b.toMap(), savedDoc.toMap());
+            assertEquals(3, savedDoc.getSequence());
+        }
+        else {
+            assertFalse(baseTestDb.save(doc1b, cc));
+            assertNull(baseTestDb.getDocument(doc.getId()));
+        }
+
+        recreateBastTestDb();
+    }
+
 }

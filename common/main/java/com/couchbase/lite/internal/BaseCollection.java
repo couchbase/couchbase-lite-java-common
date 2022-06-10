@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2022 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal;
 
-/**
- * The listener interface for receiving Database change events.
- */
-@FunctionalInterface
-public interface CollectionChangeListener extends DatabaseChangeListener { }
+import androidx.annotation.NonNull;
+
+import com.couchbase.lite.Database;
+
+
+public class BaseCollection {
+    @NonNull
+    protected final Database db;
+
+    protected BaseCollection(@NonNull Database db) { this.db = db; }
+
+    @NonNull
+    protected Database getDb() { return (Database) db; }
+}

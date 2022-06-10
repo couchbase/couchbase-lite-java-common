@@ -43,8 +43,8 @@ public class C4QueryObserver extends C4NativePeer {
     static final TaggedWeakPeerBinding<C4QueryObserver> QUERY_OBSERVER_CONTEXT = new TaggedWeakPeerBinding<>();
 
     // Not final for testing.
-    @NonNull
     @VisibleForTesting
+    @NonNull
     static volatile NativeImpl nativeImpl = new NativeC4QueryObserver();
 
     @NonNull
