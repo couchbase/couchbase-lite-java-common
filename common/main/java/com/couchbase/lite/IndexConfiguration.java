@@ -25,7 +25,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.StringUtils;
 
 
-class IndexConfiguration extends AbstractIndex {
+public class IndexConfiguration extends AbstractIndex {
     @NonNull
     private final List<String> expressions;
 
