@@ -28,14 +28,12 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * Objects with native peers subclass this type.
- * This object's log is part of its API, so that subclasses can create actions that are
+ * This object's lock is part of its API, so that subclasses can create actions that are
  * atomic WRT the peer.
  * Ideally, it would never expose the peer handle at all...
  */
 public abstract class C4NativePeer implements AutoCloseable {
     private static final String HANDLE_NAME = "peer handle";
-
-    private final Object lock = new Object();
 
     @GuardedBy("lock")
     private volatile long peer;
@@ -89,7 +87,7 @@ public abstract class C4NativePeer implements AutoCloseable {
      * Mark the peer as released.
      */
     protected final void releasePeer() {
-        synchronized (lock) { releasePeerLocked(); }
+        synchronized (getPeerLock()) { releasePeerLocked(); }
     }
 
     /**
@@ -113,9 +111,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         throws E {
         final long peer;
 
-        // !!! This code occasionally causes the error message:
-        //       java.lang.NullPointerException: Null reference used for synchronization (monitor-enter)
-        synchronized (lock) {
+        synchronized (getPeerLock()) {
             peer = releasePeerLocked();
             if (peer == 0L) { return; }
 
@@ -160,7 +156,7 @@ public abstract class C4NativePeer implements AutoCloseable {
      * @return the lock used by this object
      */
     @NonNull
-    protected final Object getPeerLock() { return lock; }
+    protected final Object getPeerLock() { return this; }
 
     //-------------------------------------------------------------------------
     // private methods
