@@ -162,11 +162,11 @@ public class C4Query extends C4NativePeer {
 
     private static native boolean createIndex(
         long db,
-        String name,
-        String queryExpressions,
+        @NonNull String name,
+        @NonNull String queryExpressions,
         int queryLanguage,
         int indexType,
-        String language,
+        @Nullable String language,
         boolean ignoreDiacritics)
         throws LiteCoreException;
 
