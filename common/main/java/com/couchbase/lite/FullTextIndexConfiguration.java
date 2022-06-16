@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite;
 
-
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -23,8 +22,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import com.couchbase.lite.internal.utils.StringUtils;
+
 
 public class FullTextIndexConfiguration extends IndexConfiguration {
+    @Nullable
     private String textLanguage = Locale.getDefault().getLanguage();
     private boolean ignoreDiacritics;
 
@@ -37,12 +39,12 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.
      * Setting the language code affects how word breaks and word stems are parsed.
-     * Without setting the value, the current locale's language will be used. Setting
-     * a null or "" value to disable the language features.
+     * If not explicitly set, the current locale's language will be used. Setting
+     * a null, empty, or unrecognized value will disable the language features.
      */
     @NonNull
     public FullTextIndexConfiguration setLanguage(@Nullable String language) {
-        this.textLanguage = language;
+        this.textLanguage = (StringUtils.isEmpty(language)) ? null : language;
         return this;
     }
 
@@ -55,7 +57,7 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
         return this;
     }
 
-    @NonNull
+    @Nullable
     @Override
     String getLanguage() { return textLanguage; }
 
