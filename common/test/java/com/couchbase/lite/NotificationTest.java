@@ -149,12 +149,14 @@ public class NotificationTest extends BaseDbTest {
         ListenerToken token = null;
         try {
             final CountDownLatch latchDB = new CountDownLatch(1);
-            db2.addChangeListener(testSerialExecutor, change -> {
-                assertNotNull(change);
-                assertEquals(10, change.getDocumentIDs().size());
-                assertEquals(1, latchDB.getCount());
-                latchDB.countDown();
-            });
+            db2.addChangeListener(
+                testSerialExecutor,
+                change -> {
+                    assertNotNull(change);
+                    assertEquals(10, change.getDocumentIDs().size());
+                    assertEquals(1, latchDB.getCount());
+                    latchDB.countDown();
+                });
 
             final CountDownLatch latchDoc = new CountDownLatch(1);
             token = db2.addDocumentChangeListener("doc-6", testSerialExecutor, change -> {

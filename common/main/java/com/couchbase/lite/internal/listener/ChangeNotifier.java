@@ -25,53 +25,45 @@ import java.util.concurrent.Executor;
 
 import com.couchbase.lite.ChangeListener;
 import com.couchbase.lite.ListenerToken;
-import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public class ChangeNotifier<T> {
+public abstract class ChangeNotifier<T> implements AutoCloseable {
     @NonNull
     private final Object lock = new Object();
     @NonNull
     private final Set<ChangeListenerToken<T>> listenerTokens = new HashSet<>();
 
     @NonNull
-    public ChangeListenerToken<T> addChangeListener(@Nullable Executor executor, @NonNull ChangeListener<T> listener) {
-        Preconditions.assertNotNull(listener, "listener");
+    public final ChangeListenerToken<T> addChangeListener(
+        @Nullable Executor executor,
+        @NonNull ChangeListener<T> listener) {
         synchronized (lock) {
-            final ChangeListenerToken<T> token = new ChangeListenerToken<>(
-                executor,
-                listener,
-                this::removeChangeListener);
+            final ChangeListenerToken<T> token
+                = new ChangeListenerToken<>(executor, listener, this::removeChangeListener);
             listenerTokens.add(token);
             return token;
         }
     }
 
-    /**
-     * Remove a change listener.
-     *
-     * @param token the listener token
-     * @return the number of remaining listeners.
-     * @deprecated use ListenerToken.remove
-     */
-    @Deprecated
-    public int removeChangeListener(@NonNull ListenerToken token) {
-        Preconditions.assertNotNull(token, "token");
+    // get rid of the Exception from the AutoCloseable interface
+    @Override
+    public abstract void close();
+
+    public final void removeChangeListener(@NonNull ListenerToken token) {
         synchronized (lock) {
             listenerTokens.remove(token);
-            return listenerTokens.size();
+            if (listenerTokens.isEmpty()) { close(); }
         }
     }
 
-    public void postChange(@NonNull T change) {
-        Preconditions.assertNotNull(change, "change");
+    public final void postChange(@NonNull T change) {
         synchronized (lock) {
             for (ChangeListenerToken<T> token: listenerTokens) { token.postChange(change); }
         }
     }
 
     @VisibleForTesting
-    public int getListenerCount() {
+    public final int getListenerCount() {
         synchronized (lock) { return listenerTokens.size(); }
     }
 }

@@ -53,7 +53,7 @@ public interface Fn {
 
     @FunctionalInterface
     interface ProviderThrows<T, E extends Exception> {
-        @NonNull
+        @Nullable
         T get() throws E;
     }
 
@@ -108,7 +108,7 @@ public interface Fn {
     }
 
     @NonNull
-    static <T> List<T> filterToList(@NonNull Collection<? extends T> s, @NonNull Predicate<T> pred) {
+    static <T> List<T> filterToList(@NonNull Collection<? extends T> s, @NonNull NullablePredicate<T> pred) {
         final List<T> r = new ArrayList<>(s.size());
         for (T e: s) {
             if (pred.test(e)) { r.add(e); }

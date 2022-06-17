@@ -134,8 +134,9 @@ public class SimpleDatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testChangeNotifier() {
-        ChangeNotifier<DatabaseChange> changeNotifier = new ChangeNotifier<>();
+    public void testChangeNotifier() throws CouchbaseLiteException {
+        Database db = createDb("default_config_db");
+        ChangeNotifier<DatabaseChange> changeNotifier = new DatabaseChangeNotifier(db.getDefaultCollection());
         assertEquals(0, changeNotifier.getListenerCount());
         ChangeListenerToken<DatabaseChange> t1 = changeNotifier.addChangeListener(null, c -> { });
         assertEquals(1, changeNotifier.getListenerCount());

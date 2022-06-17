@@ -17,37 +17,48 @@
 package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.couchbase.lite.internal.core.C4DocumentObserver;
 import com.couchbase.lite.internal.listener.ChangeNotifier;
+import com.couchbase.lite.internal.utils.Fn;
 
 
-class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> implements AutoCloseable {
+final class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
     @NonNull
     private final Database db;
     @NonNull
     private final String docID;
-    @NonNull
-    private final C4DocumentObserver observer;
+
+    @Nullable
+    private C4DocumentObserver c4Observer;
 
     DocumentChangeNotifier(@NonNull final Database db, @NonNull final String docID) {
         this.db = db;
         this.docID = docID;
-        this.observer = db.createDocumentObserver(
-            docID,
-            () -> db.scheduleOnPostNotificationExecutor(this::postChange, 0)
-        );
     }
 
+    // We give the caller a runnable  and they give us back a
+    // C4DocumentObserver that will call that function for every change.
+    void start(@NonNull Fn.Function<Runnable, C4DocumentObserver> fn) { c4Observer = fn.apply(this::postChange); }
+
     @Override
-    public void close() { observer.close(); }
+    public void close() {
+        closeObserver(c4Observer);
+        c4Observer = null;
+        db.removeDocumentObserver(docID);
+    }
 
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { close(); }
+        try { closeObserver(c4Observer); }
         finally { super.finalize(); }
     }
 
     private void postChange() { postChange(new DocumentChange(db, docID)); }
+
+    private void closeObserver(C4DocumentObserver observer) {
+        if (observer != null) { observer.close(); }
+    }
 }

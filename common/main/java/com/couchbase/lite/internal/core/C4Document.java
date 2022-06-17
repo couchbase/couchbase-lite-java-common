@@ -156,16 +156,14 @@ public final class C4Document extends C4NativePeer {
 
     // - Properties
 
-    public int getFlags() { return withPeerOrDefault(0, C4Document::getFlags); }
-
     @Nullable
     public String getRevID() { return withPeerOrNull(C4Document::getRevID); }
 
     public long getSequence() { return withPeerOrDefault(0L, C4Document::getSequence); }
 
-    // - Revisions
-
     public int getSelectedFlags() { return withPeerOrDefault(0, C4Document::getSelectedFlags); }
+
+    // - Revisions
 
     @Nullable
     public String getSelectedRevID() { return withPeerOrNull(C4Document::getSelectedRevID); }
@@ -207,12 +205,21 @@ public final class C4Document extends C4NativePeer {
 
     // - Helper methods
 
-    // helper methods for Document
-    public boolean deleted() { return isSelectedRevFlags(C4Constants.RevisionFlags.DELETED); }
+    public boolean docExists() { return C4Constants.hasFlags(getFlags(), C4Constants.DocumentFlags.EXISTS); }
 
-    public boolean exists() { return isFlags(C4Constants.DocumentFlags.EXISTS); }
+    public boolean isDocDeleted() { return C4Constants.hasFlags(getFlags(), C4Constants.DocumentFlags.DELETED); }
 
-    public boolean isSelectedRevFlags(int flag) { return (getSelectedFlags() & flag) == flag; }
+    public boolean isRevDeleted() {
+        return C4Constants.hasFlags(
+            getSelectedFlags(),
+            C4Constants.RevisionFlags.DELETED);
+    }
+
+    public boolean isRevConflicted() {
+        return C4Constants.hasFlags(
+            getSelectedFlags(),
+            C4Constants.RevisionFlags.IS_CONFLICT);
+    }
 
     @CallSuper
     @Override
@@ -221,6 +228,9 @@ public final class C4Document extends C4NativePeer {
     @NonNull
     @Override
     public String toString() { return "C4Document@" + super.toString(); }
+
+    @VisibleForTesting
+    public int getFlags() { return withPeerOrDefault(0, C4Document::getFlags); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -281,14 +291,6 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4Document::free); }
-
-    private boolean isFlags(int flag) { return (getFlags() & flag) == flag; }
-
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private boolean conflicted() { return isFlags(C4Constants.DocumentFlags.CONFLICTED); }
-
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private boolean accessRemoved() { return isSelectedRevFlags(C4Constants.RevisionFlags.PURGED); }
 
     //-------------------------------------------------------------------------
     // native methods

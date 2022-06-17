@@ -235,7 +235,7 @@ public class C4DocumentTest extends C4BaseTest {
 
         String kExpectedRevID = "1-042ca1d3a1d16fd5ab2f87efc7ebbf50b7498032";
         assertEquals(kExpectedRevID, doc.getRevID());
-        assertTrue(doc.exists());
+        assertTrue(doc.docExists());
         assertEquals(kExpectedRevID, doc.getSelectedRevID());
         assertEquals(DOC_ID, doc.getDocID());
 
@@ -261,7 +261,7 @@ public class C4DocumentTest extends C4BaseTest {
 
         String kExpectedRev2ID = "2-201796aeeaa6ddbb746d6cab141440f23412ac51";
         assertEquals(kExpectedRev2ID, doc.getRevID());
-        assertTrue(doc.exists());
+        assertTrue(doc.docExists());
         assertEquals(kExpectedRev2ID, doc.getSelectedRevID());
         assertEquals(DOC_ID, doc.getDocID());
 

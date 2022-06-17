@@ -731,10 +731,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @NonNull
     private EnumSet<DocumentFlag> getDocumentFlags(int flags) {
         final EnumSet<DocumentFlag> documentFlags = EnumSet.noneOf(DocumentFlag.class);
-        if ((flags & C4Constants.RevisionFlags.DELETED) == C4Constants.RevisionFlags.DELETED) {
+        if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.DELETED)) {
             documentFlags.add(DocumentFlag.DELETED);
         }
-        if ((flags & C4Constants.RevisionFlags.PURGED) == C4Constants.RevisionFlags.PURGED) {
+        if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.PURGED)) {
             documentFlags.add(DocumentFlag.ACCESS_REMOVED);
         }
         return documentFlags;
@@ -747,8 +747,11 @@ public abstract class AbstractReplicator extends BaseReplicator {
         long dict,
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
-        return (filter != null) && filter.filtered(
-            new Document(getDatabase(), docId, revId, FLDict.create(dict)),
+        final Database db = getDatabase();
+
+        return (filter != null)
+            && filter.filtered(
+            new Document(db.getDefaultCollectionOrThrow(), docId, revId, FLDict.create(dict)),
             flags);
     }
 

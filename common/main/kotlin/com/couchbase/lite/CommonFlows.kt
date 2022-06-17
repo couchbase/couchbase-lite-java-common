@@ -25,6 +25,7 @@ import java.util.concurrent.Executor
  * @param executor Optional executor on which to run the change listener: default is the main executor
  * @deprecated Use getDefaultCollection().collectionChangeFlow
  * @see com.couchbase.lite.Database.addChangeListener
+ * @deprecated Use Collection.collectionChangeFlow
  */
 fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow {
     val token = this@databaseChangeFlow.addChangeListener(executor) { trySend(it) }

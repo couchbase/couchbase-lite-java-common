@@ -17,38 +17,18 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 
-import java.util.Collections;
 import java.util.List;
 
 
 /**
  * Provides details about a Collection change.
  */
-public final class CollectionChange {
-    @NonNull
-    private final List<String> documentIDs;
-    private final Collection collection;
-
+public final class CollectionChange extends DatabaseChange {
     CollectionChange(@NonNull Collection collection, @NonNull List<String> documentIDs) {
-        this.collection = collection;
-        this.documentIDs = Collections.unmodifiableList(documentIDs);
+        super(collection, documentIDs);
     }
-
-    /**
-     * Returns the collection
-     */
-    @NonNull
-    public Collection getCollection() { return collection; }
-
-    /**
-     * Returns the list of the changed document IDs
-     *
-     * @return a list of IDs for changed documents
-     */
-    @NonNull
-    public List<String> getDocumentIDs() { return documentIDs; }
 
     @NonNull
     @Override
-    public String toString() { return "CollectionChange{" + collection + ": " + documentIDs + '}'; }
+    public String toString() { return "CollectionChange{" + getCollection() + ": " + getDocumentIDs() + '}'; }
 }

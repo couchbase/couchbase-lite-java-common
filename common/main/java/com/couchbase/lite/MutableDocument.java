@@ -97,7 +97,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     }
 
     protected MutableDocument(@NonNull Document doc) {
-        this(doc.getDatabase(), doc.getId(), doc.getC4doc());
+        this(doc.getCollection(), doc.getId(), doc.getC4doc());
         if (doc.isMutable()) { setContent(doc.getContent().toMutable()); }
     }
 
@@ -107,12 +107,12 @@ public final class MutableDocument extends Document implements MutableDictionary
     // mutable state, if the source has been changed since it was created
     // the previous constructor will lose those changes when it is encoded.
     MutableDocument(@NonNull String id, @NonNull Document doc) {
-        this(doc.getDatabase(), id, null);
+        this(doc.getCollection(), id, null);
         setData(doc.getContent().toMap());
     }
 
-    private MutableDocument(@Nullable Database database, @Nullable String id, @Nullable C4Document c4doc) {
-        super(database, (id != null) ? id : createUUID(), c4doc, true);
+    private MutableDocument(@Nullable Collection collection, @Nullable String id, @Nullable C4Document c4doc) {
+        super(collection, (id != null) ? id : createUUID(), c4doc, true);
     }
 
     //---------------------------------------------

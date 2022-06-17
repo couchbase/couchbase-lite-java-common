@@ -91,6 +91,7 @@ public final class C4Constants {
     ////////////////////////////////////
     // c4DocumentTypes.h
     ////////////////////////////////////
+    public static boolean hasFlags(int flags, int targetFlags) { return (flags & targetFlags) == targetFlags; }
 
     // C4DocumentFlags
     public static final class DocumentFlags {

@@ -17,6 +17,8 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -24,12 +26,25 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Base class for a removable subscription to an observable.
  */
-public class ListenerToken {
+public class ListenerToken extends AtomicBoolean implements AutoCloseable {
     private final Fn.Consumer<ListenerToken> onRemove;
 
     protected ListenerToken(@NonNull Fn.Consumer<ListenerToken> onRemove) {
+        super(true);
         this.onRemove = Preconditions.assertNotNull(onRemove, "onRemove task");
     }
 
-    public void remove() { onRemove.accept(this); }
+    @Override
+    public void close() throws Exception { remove(); }
+
+    public void remove() {
+        if (getAndSet(false)) { onRemove.accept(this); }
+    }
+
+    @SuppressWarnings("NoFinalizer")
+    @Override
+    protected void finalize() throws Throwable {
+        try { remove(); }
+        finally { super.finalize(); }
+    }
 }

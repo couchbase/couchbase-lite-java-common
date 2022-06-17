@@ -66,7 +66,12 @@ public abstract class BaseDatabase {
     }
 
     protected void assertOpenChecked() throws CouchbaseLiteException {
-        if (!isOpen()) { throw new CouchbaseLiteException(Log.lookupStandardMessage("DBClosed")); }
+        if (!isOpen()) {
+            throw new CouchbaseLiteException(
+                Log.lookupStandardMessage("DBClosed"),
+                CBLError.Domain.CBLITE,
+                CBLError.Code.NOT_OPEN);
+        }
     }
 
     @SuppressWarnings("ConstantConditions")

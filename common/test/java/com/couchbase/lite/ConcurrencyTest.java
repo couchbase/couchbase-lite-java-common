@@ -295,7 +295,7 @@ public class ConcurrencyTest extends BaseDbTest {
                 try { createDocs(kNDocs, tag1); }
                 catch (CouchbaseLiteException e) {
                     if (!e.getDomain().equals(CBLError.Domain.CBLITE) || e.getCode() != CBLError.Code.NOT_OPEN) {
-                        fail();
+                        throw new AssertionError("Unrecognized failure", e);
                     }
                 }
                 // db not open
@@ -329,6 +329,7 @@ public class ConcurrencyTest extends BaseDbTest {
             () -> {
                 try { createDocs(kNDocs, tag1); }
                 catch (CouchbaseLiteException e) {
+                    //
                     if (!e.getDomain().equals(CBLError.Domain.CBLITE) || e.getCode() != CBLError.Code.NOT_OPEN) {
                         fail();
                     }

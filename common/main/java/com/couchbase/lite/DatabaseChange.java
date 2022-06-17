@@ -23,24 +23,32 @@ import java.util.List;
 
 /**
  * Provides details about a Database change.
+ *
  * @deprecated Use CollectionChange
  */
 @Deprecated
-public final class DatabaseChange {
+public class DatabaseChange {
     @NonNull
     private final List<String> documentIDs;
-    private final Database database;
+    @NonNull
+    private final Collection collection;
 
-    DatabaseChange(@NonNull Database database, @NonNull List<String> documentIDs) {
-        this.database = database;
+    DatabaseChange(@NonNull Collection collection, @NonNull List<String> documentIDs) {
+        this.collection = collection;
         this.documentIDs = Collections.unmodifiableList(documentIDs);
     }
+
+    /**
+     * Returns the collection
+     */
+    @NonNull
+    public Collection getCollection() { return collection; }
 
     /**
      * Returns the database instance
      */
     @NonNull
-    public Database getDatabase() { return database; }
+    public Database getDatabase() { return collection.getDatabase(); }
 
     /**
      * Returns the list of the changed document IDs
@@ -53,6 +61,6 @@ public final class DatabaseChange {
     @NonNull
     @Override
     public String toString() {
-        return "DatabaseChange{" + "database=" + database + ", documentIDs=" + documentIDs + '}';
+        return "DatabaseChange{" + "database=" + getDatabase() + ", documentIDs=" + documentIDs + '}';
     }
 }

@@ -226,7 +226,7 @@ class SaveConflictResolutionTests : BaseDbTest() {
 
         val c4doc = baseTestDb.openC4Database.getDocument(docID, false)
         assertNotNull(c4doc)
-        assertTrue(c4doc.deleted())
+        assertTrue(c4doc.isRevDeleted())
     }
 
     /**

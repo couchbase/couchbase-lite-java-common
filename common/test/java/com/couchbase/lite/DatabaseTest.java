@@ -1631,5 +1631,4 @@ public class DatabaseTest extends BaseDbTest {
 
         recreateBastTestDb();
     }
-
 }

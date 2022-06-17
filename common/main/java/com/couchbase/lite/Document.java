@@ -26,7 +26,6 @@ import java.util.Map;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
-import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -72,9 +71,28 @@ public class Document implements DictionaryInterface, Iterable<String> {
         try { c4Doc = database.getC4Document(id); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
-        if (includeDeleted || ((c4Doc.getFlags() & C4Constants.DocumentFlags.DELETED) == 0)) {
-            return new Document(database, id, c4Doc, false);
-        }
+        final Collection collection = database.getDefaultCollectionOrThrow();
+
+        if (includeDeleted || (!c4Doc.isDocDeleted())) { return new Document(collection, id, c4Doc, false); }
+
+        throw new CouchbaseLiteException("DocumentNotFound", CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
+    }
+
+    @NonNull
+    static Document getDocument(@NonNull Collection collection, @NonNull String id) throws CouchbaseLiteException {
+        return getDocument(collection, id, true);
+    }
+
+    @NonNull
+    static Document getDocument(@NonNull Collection collection, @NonNull String id, boolean includeDeleted)
+        throws CouchbaseLiteException {
+        Preconditions.assertNotNull(collection, "collection");
+
+        final C4Document c4Doc;
+        try { c4Doc = collection.getC4Document(id); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+
+        if (includeDeleted || (!c4Doc.isDocDeleted())) { return new Document(collection, id, c4Doc, false); }
 
         throw new CouchbaseLiteException("DocumentNotFound", CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
     }
@@ -107,8 +125,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     @GuardedBy("lock")
     @Nullable
-    private Database database;
-
+    private Collection collection;
 
     @SuppressFBWarnings("URF_UNREAD_FIELD")
     @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField", "FieldCanBeLocal"})
@@ -136,16 +153,20 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
 
     // This is the only constructor that child classes should call
-    protected Document(@Nullable Database database, @NonNull String id, @Nullable C4Document c4doc, boolean mutable) {
-        this.database = database;
+    protected Document(
+        @Nullable Collection collection,
+        @NonNull String id,
+        @Nullable C4Document c4doc,
+        boolean mutable) {
+        this.collection = collection;
         this.id = Preconditions.assertNotNull(id, "id");
         this.mutable = mutable;
         setC4Document(c4doc, mutable);
     }
 
     // This constructor is used in replicator filters, to hack together a doc from its Fleece representation
-    Document(@NonNull Database database, @NonNull String id, @Nullable String revId, @Nullable FLDict body) {
-        this(database, id, null, false);
+    Document(@NonNull Collection collection, @NonNull String id, @Nullable String revId, @Nullable FLDict body) {
+        this(collection, id, null, false);
         this.revId = revId;
         setContentLocked(body, false);
     }
@@ -153,6 +174,14 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
+
+    /**
+     * return the collection to which the document belongs.
+     *
+     * @return the document's collection
+     */
+    @Nullable
+    public Collection getCollection() { return collection; }
 
     /**
      * return the document's ID.
@@ -499,7 +528,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return true if exists, false otherwise.
      */
     final boolean exists() {
-        synchronized (lock) { return (c4Document != null) && c4Document.exists(); }
+        synchronized (lock) { return (c4Document != null) && c4Document.docExists(); }
     }
 
     /**
@@ -508,16 +537,16 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * @return true if deleted, false otherwise
      */
     final boolean isDeleted() {
-        synchronized (lock) { return (c4Document != null) && c4Document.deleted(); }
+        synchronized (lock) { return (c4Document != null) && c4Document.isRevDeleted(); }
     }
 
     @Nullable
     final Database getDatabase() {
-        synchronized (lock) { return database; }
+        synchronized (lock) { return (collection == null) ? null : collection.getDatabase(); }
     }
 
-    void setDatabase(@Nullable Database database) {
-        synchronized (lock) { this.database = database; }
+    void setCollection(@Nullable Collection collection) {
+        synchronized (lock) { this.collection = collection; }
     }
 
     @Nullable
@@ -541,7 +570,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
                     if (e.code == 0) { break; }
                     else { throw e; }
                 }
-                foundConflict = c4Document.isSelectedRevFlags(C4Constants.RevisionFlags.IS_CONFLICT);
+                foundConflict = c4Document.isRevConflicted();
             }
 
             if (foundConflict) { setC4Document(c4Document, isMutable()); }
@@ -571,7 +600,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     private void setC4Document(@Nullable C4Document c4doc, boolean mutable) {
         synchronized (lock) {
             updateC4DocumentLocked(c4doc);
-            setContentLocked(((c4doc == null) || c4doc.deleted()) ? null : c4doc.getSelectedBody2(), mutable);
+            setContentLocked(((c4doc == null) || c4doc.isRevDeleted()) ? null : c4doc.getSelectedBody2(), mutable);
         }
     }
 

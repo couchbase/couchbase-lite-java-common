@@ -15,9 +15,6 @@
 //
 package com.couchbase.lite;
 
-import androidx.annotation.NonNull;
-
-
 /**
  * The listener interface for receiving Database change events.
  *
@@ -25,12 +22,4 @@ import androidx.annotation.NonNull;
  */
 @Deprecated
 @FunctionalInterface
-public interface DatabaseChangeListener extends ChangeListener<DatabaseChange> {
-    /**
-     * Callback from the Database when it changes
-     *
-     * @param change change information
-     */
-    @Override
-    void changed(@NonNull DatabaseChange change);
-}
+public interface DatabaseChangeListener<T extends DatabaseChange> extends ChangeListener<T> { }
