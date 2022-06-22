@@ -39,10 +39,8 @@ import com.couchbase.lite.internal.core.impl.NativeC4Database;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -139,40 +137,6 @@ public abstract class C4Database extends C4NativePeer {
         // deletes the named collection
         void nDeleteCollection(long peer, @NonNull String scope, @NonNull String collection)
             throws LiteCoreException;
-
-        // - Documents
-
-        // !!! DEPRECATED:
-        //  Delete these methods when the corresponding Database methods proxy to the default collection
-
-        long nGetDocumentCount(long db);
-
-        void nSetDocumentExpiration(long db, String docID, long timestamp)
-            throws LiteCoreException;
-
-        long nGetDocumentExpiration(long db, String docID) throws LiteCoreException;
-
-        void nPurgeDoc(long db, String id) throws LiteCoreException;
-
-        long nGetIndexesInfo(long db) throws LiteCoreException;
-
-        void nCreateIndex(
-            long db,
-            @NonNull String name,
-            @NonNull String queryExpressions,
-            int queryLanguage,
-            int indexType,
-            @Nullable String language,
-            boolean ignoreDiacritics)
-            throws LiteCoreException;
-
-        void nDeleteIndex(long db, @NonNull String name) throws LiteCoreException;
-
-        // !!! end deprecation
-
-        // - Testing
-
-        long nGetLastSequence(long db);
     }
 
     // unmanaged: the native code will free it
@@ -552,40 +516,6 @@ public abstract class C4Database extends C4NativePeer {
             listener);
     }
 
-    // !!! DEPRECATED
-    // Delete these methods when the corresponding Database methods proxy to the default collection
-
-    // - Documents
-
-    public long getDocumentCount() { return impl.nGetDocumentCount(getPeer()); }
-
-    @NonNull
-    public C4Document getDocument(@NonNull String docID) throws LiteCoreException {
-        return C4Document.create(this, docID, true);
-    }
-
-    @VisibleForTesting
-    @NonNull
-    public C4Document getDocument(@NonNull String docID, boolean mustExist) throws LiteCoreException {
-        return C4Document.create(this, docID, mustExist);
-    }
-
-    @NonNull
-    public C4Document createDocument(@NonNull String docID, @Nullable FLSliceResult body, int flags)
-        throws LiteCoreException {
-        return C4Document.create(this, docID, body, flags);
-    }
-
-    public void setDocumentExpiration(@NonNull String docID, long timestamp) throws LiteCoreException {
-        impl.nSetDocumentExpiration(getPeer(), docID, timestamp);
-    }
-
-    public long getDocumentExpiration(@NonNull String docID) throws LiteCoreException {
-        return impl.nGetDocumentExpiration(getPeer(), docID);
-    }
-
-    public void purgeDoc(String docID) throws LiteCoreException { impl.nPurgeDoc(getPeer(), docID); }
-
     // - Queries
 
     @NonNull
@@ -598,62 +528,12 @@ public abstract class C4Database extends C4NativePeer {
         return C4Query.create(this, AbstractIndex.QueryLanguage.N1QL, expression);
     }
 
-    // - Observers
-
-    @NonNull
-    public C4DatabaseObserver createDatabaseObserver(@NonNull Runnable listener) {
-        return C4DatabaseObserver.newObserver(getPeer(), listener);
-    }
-
-    @NonNull
-    public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
-        return C4DocumentObserver.newObserver(getPeer(), docID, listener);
-    }
-
-    // - Indexes
-
-    public void createIndex(
-        @NonNull String name,
-        @NonNull String queryExpression,
-        @NonNull AbstractIndex.QueryLanguage queryLanguage,
-        @NonNull AbstractIndex.IndexType indexType,
-        @Nullable String language,
-        boolean ignoreDiacritics)
-        throws LiteCoreException {
-        Log.d(LogDomain.QUERY, "creating index: %s", queryExpression);
-        withPeerThrows(
-            (peer) -> impl.nCreateIndex(
-                peer,
-                name,
-                queryExpression,
-                queryLanguage.getValue(),
-                indexType.getValue(),
-                language,
-                ignoreDiacritics));
-    }
-
-    @NonNull
-    public FLValue getIndexesInfo() throws LiteCoreException {
-        final FLValue info = withPeerOrNull((peer) -> new FLValue(impl.nGetIndexesInfo(peer)));
-        return Preconditions.assertNotNull(info, "index info");
-    }
-
-    public void deleteIndex(String name) throws LiteCoreException {
-        withPeerThrows((peer) -> impl.nDeleteIndex(peer, name));
-    }
-
-    // !!! end deprecation
-
-
     //-------------------------------------------------------------------------
     // package access
     //-------------------------------------------------------------------------
 
-    // !!!  Exposes the peer handle
+    // ??? Exposes the peer handle
     long getHandle() { return getPeer(); }
-
-    @VisibleForTesting
-    long getLastSequence() { return impl.nGetLastSequence(getPeer()); }
 
     @NonNull
     @VisibleForTesting

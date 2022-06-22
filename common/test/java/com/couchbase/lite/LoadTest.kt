@@ -159,7 +159,7 @@ class LoadTest : BaseDbTest() {
     @LoadIntegrationTest
     @Test
     fun testUpdate2() {
-        timeTest("testUpdate2", 20 * 1000L) {
+        timeTest("testUpdate2", 25 * 1000L) {
             val mDoc = MutableDocument("doc1")
             val map: MutableMap<String, Any> = HashMap()
             map["ID"] = "doc1"

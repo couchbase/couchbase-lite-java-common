@@ -82,7 +82,6 @@ public class C4BaseTest extends BaseTest {
             Map<String, Object> body = new HashMap<>();
             body.put("ans*wer", 42);
             fleeceBody = createFleeceBody(body);
-
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
@@ -182,13 +181,15 @@ public class C4BaseTest extends BaseTest {
 
     /**
      * @param flags C4RevisionFlags
+     *
+     * !!! CONVERT TO BE COLLECTION SAVVY
      */
     private void createRev(C4Database db, String docID, String revID, byte[] body, int flags)
         throws LiteCoreException {
         boolean commit = false;
         db.beginTransaction();
         try {
-            C4Document curDoc = db.getDocument(docID, false);
+            C4Document curDoc = db.getDefaultCollection().getDocument(docID, false);
             assertNotNull(curDoc);
             List<String> revIDs = new ArrayList<>();
             revIDs.add(revID);

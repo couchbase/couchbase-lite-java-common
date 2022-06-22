@@ -22,6 +22,7 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.Scope;
 import com.couchbase.lite.internal.core.impl.NativeC4Collection;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -109,7 +110,7 @@ public class C4Collection extends C4NativePeer {
     @Nullable
     static C4Collection getDefault(@NonNull NativeImpl impl, @NonNull C4Database c4db) throws LiteCoreException {
         final long c4collection = impl.nGetDefaultCollection(c4db.getPeer());
-        return c4collection == 0
+        return (c4collection == 0)
             ? null
             : new C4Collection(impl, c4collection, c4db, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME);
     }
@@ -211,8 +212,8 @@ public class C4Collection extends C4NativePeer {
     }
 
     @NonNull
-    public C4CollectionDocObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
-        return C4CollectionDocObserver.newObserver(getPeer(), docID, listener);
+    public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
+        return C4DocumentObserver.newObserver(getPeer(), docID, listener);
     }
 
     // - Indexes
@@ -236,13 +237,11 @@ public class C4Collection extends C4NativePeer {
                 ignoreDiacritics));
     }
 
+
     @NonNull
-    public FLSliceResult getIndexesInfo() {
-        final Long result;
-        try { result = withPeerOrDefault(0L, impl::nGetIndexesInfo); }
-        catch (LiteCoreException e) { throw new IllegalStateException("Failed getting index info", e); }
-        if (result.equals(0L)) { throw new IllegalStateException("getIndexesInfo returned 0"); }
-        return FLSliceResult.getManagedSliceResult(result);
+    public FLValue getIndexesInfo() throws LiteCoreException {
+        final FLValue info = withPeerOrNull((peer) -> new FLValue(impl.nGetIndexesInfo(peer)));
+        return Preconditions.assertNotNull(info, "index info");
     }
 
     public void deleteIndex(String name) throws LiteCoreException {

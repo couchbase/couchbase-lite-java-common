@@ -24,6 +24,7 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4CollectionObserver;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
 import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public final class C4CollectionObserver extends C4NativePeer {
@@ -65,8 +66,9 @@ public final class C4CollectionObserver extends C4NativePeer {
     @VisibleForTesting
     @NonNull
     static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener) {
-        final C4CollectionObserver observer = new C4CollectionObserver(impl, impl.nCreate(c4Coll), listener);
-        BOUND_OBSERVERS.bind(observer.getPeer(), observer);
+        final long peer = impl.nCreate(c4Coll);
+        final C4CollectionObserver observer = new C4CollectionObserver(impl, peer, listener);
+        BOUND_OBSERVERS.bind(peer, observer);
         return observer;
     }
 
@@ -83,8 +85,8 @@ public final class C4CollectionObserver extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    private C4CollectionObserver(@NonNull NativeImpl impl, long collection, @NonNull Runnable listener) {
-        super(collection);
+    private C4CollectionObserver(@NonNull NativeImpl impl, long peer, @NonNull Runnable listener) {
+        super(peer);
         this.impl = impl;
         this.listener = listener;
     }
@@ -94,7 +96,9 @@ public final class C4CollectionObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public C4DocumentChange[] getChanges(int maxChanges) { return impl.nGetChanges(getPeer(), maxChanges); }
+    public C4DocumentChange[] getChanges(int maxChanges) {
+        return Preconditions.assertNotNull(withPeer((peer) -> impl.nGetChanges(peer, maxChanges)), "changes");
+    }
 
     @CallSuper
     @Override
@@ -108,7 +112,11 @@ public final class C4CollectionObserver extends C4NativePeer {
     }
 
     private void closePeer(@Nullable LogDomain domain) {
-        BOUND_OBSERVERS.unbind(getPeerUnchecked());
-        releasePeer(domain, impl::nFree);
+        releasePeer(
+            domain,
+            (peer) -> {
+                BOUND_OBSERVERS.unbind(peer);
+                impl.nFree(peer);
+            });
     }
 }

@@ -58,13 +58,6 @@ public abstract class BaseDatabase {
         if (!isOpen()) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
     }
 
-    @GuardedBy("dbLock")
-    @NonNull
-    protected C4Database getOpenC4DbLocked() {
-        assertOpenUnchecked();
-        return Preconditions.assertNotNull(c4Database, "c4db");
-    }
-
     protected void assertOpenChecked() throws CouchbaseLiteException {
         if (!isOpen()) {
             throw new CouchbaseLiteException(
@@ -74,13 +67,18 @@ public abstract class BaseDatabase {
         }
     }
 
-    @SuppressWarnings("ConstantConditions")
-    @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
-    @NonNull
     @GuardedBy("dbLock")
+    @NonNull
+    protected C4Database getOpenC4DbLocked() {
+        assertOpenUnchecked();
+        return Preconditions.assertNotNull(c4Database, "c4db");
+    }
+
+    @GuardedBy("dbLock")
+    @NonNull
     protected C4Database getC4DbOrThrowLocked() throws CouchbaseLiteException {
         assertOpenChecked();
-        return c4Database;
+        return Preconditions.assertNotNull(c4Database, "c4db");
     }
 
     // When seizing multiple locks, always seize this lock first.

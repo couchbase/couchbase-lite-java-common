@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.Arrays;
 
@@ -52,7 +53,9 @@ abstract class AbstractFunction {
      * @return The COUNT(expr) function.
      */
     @NonNull
-    public static Expression count(@NonNull Expression operand) { return sexpr("COUNT()", operand); }
+    public static Expression count(@Nullable Expression operand) {
+        return sexpr("COUNT()", (operand != null) ? operand : Expression.value("."));
+    }
 
     /**
      * Creates a MIN(expr) function expression that returns the minimum value
@@ -480,14 +483,14 @@ abstract class AbstractFunction {
     public static Expression stringToUTC(@NonNull Expression operand) { return sexpr("STR_TO_UTC()", operand); }
 
     @NonNull
-    private static Expression.FunctionExpression sexpr(@NonNull String expr, @NonNull Expression op) {
+    private static Expression.FunctionExpression sexpr(@NonNull String expr, @NonNull Expression operand) {
         return new Expression.FunctionExpression(
             expr,
-            Arrays.asList(Preconditions.assertNotNull(op, "operand expression")));
+            Arrays.asList(Preconditions.assertNotNull(operand, "operand expression")));
     }
 
     @NonNull
-    private static Expression.FunctionExpression expr(@NonNull String expr, @NonNull Expression... ops) {
-        return new Expression.FunctionExpression(expr, Arrays.asList(ops));
+    private static Expression.FunctionExpression expr(@NonNull String expr, @NonNull Expression... operands) {
+        return new Expression.FunctionExpression(expr, Arrays.asList(operands));
     }
 }

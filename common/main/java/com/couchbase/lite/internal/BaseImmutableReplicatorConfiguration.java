@@ -118,7 +118,7 @@ public class BaseImmutableReplicatorConfiguration {
     public final Database getDatabase() {
         return (collectionConfigurations.isEmpty())
             ? null
-            : collectionConfigurations.keySet().iterator().next().getDb();
+            : collectionConfigurations.keySet().iterator().next().db;
     }
 
     @NonNull

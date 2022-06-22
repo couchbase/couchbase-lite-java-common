@@ -22,41 +22,32 @@ import java.util.concurrent.Executor;
 
 import com.couchbase.lite.ChangeListener;
 import com.couchbase.lite.ListenerToken;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class ChangeListenerToken<T> extends ListenerToken {
     @NonNull
     private final ChangeListener<T> listener;
     @Nullable
-    private final Executor executor;
-
-    @Nullable
-    private Object key;
+    private String key;
 
     public ChangeListenerToken(
-        @Nullable Executor executor,
         @NonNull ChangeListener<T> listener,
+        @Nullable Executor executor,
         @NonNull Fn.Consumer<ListenerToken> onRemove) {
-        super(onRemove);
-        this.executor = executor;
-        this.listener = listener;
+        super(executor, onRemove);
+        this.listener = Preconditions.assertNotNull(listener, "listener");
     }
-
-    @Nullable
-    public Object getKey() { return key; }
-
-    public void setKey(@Nullable Object key) { this.key = key; }
 
     @NonNull
     @Override
-    public String toString() { return "ChangeListenerToken{" + key + ", " + listener + ", " + executor + "}"; }
+    public String toString() { return "ChangeListenerToken{@" + key + ": " + listener + super.toString() + "}"; }
 
-    public void postChange(@NonNull T change) {
-        final Executor exec = (executor != null)
-            ? executor
-            : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();
-        exec.execute(() -> listener.changed(change));
-    }
+    @Nullable
+    public String getKey() { return key; }
+
+    public void setKey(@Nullable String key) { this.key = key; }
+
+    public void postChange(@NonNull T change) { send(() -> listener.changed(change)); }
 }

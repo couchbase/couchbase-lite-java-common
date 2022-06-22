@@ -33,6 +33,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 
+// !!! MAKE COLLECTION SAVVY
+
 /**
  * Ported from c4AllDocsPerformanceTest.cc
  */
@@ -41,7 +43,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
     private static final int DOC_NUM = 1000; // 100000
 
     @Before
-    public final void setUpC4AllDocsPerformanceTest() throws CouchbaseLiteException {
+    public final void setUpC4AllDocsPerformanceTest() throws CouchbaseLiteException, LiteCoreException {
         char[] chars = new char[DOC_SIZE];
         Arrays.fill(chars, 'a');
         final String content = new String(chars);
@@ -74,7 +76,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
-        assertEquals(DOC_NUM, c4Database.getDocumentCount());
+        assertEquals(DOC_NUM, c4Database.getDefaultCollection().getDocumentCount());
     }
 
     // - AllDocsPerformance

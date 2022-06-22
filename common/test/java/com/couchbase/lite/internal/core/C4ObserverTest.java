@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
@@ -30,18 +31,25 @@ import static org.junit.Assert.assertNotNull;
 
 public class C4ObserverTest extends C4BaseTest {
     private final AtomicInteger callbackCount = new AtomicInteger(0);
-    private C4DatabaseObserver dbObserver;
+    private C4CollectionObserver collObserver;
+    private C4Collection c4collection;
+
+    @Before
+    public final void setupC4ObserverTest() throws LiteCoreException {
+        c4collection = c4Database.getDefaultCollection();
+    }
 
     @After
     public final void tearDownC4ObserverTest() {
-        if (dbObserver != null) { dbObserver.close(); }
+        if (collObserver != null) { collObserver.close(); }
+        if (c4collection != null) { c4collection.close(); }
     }
 
     // - Doc Observer
     @Test
     public void testDocObserver() throws LiteCoreException {
         createRev("A", "1-aa", fleeceBody);
-        try (C4DocumentObserver obs = this.c4Database.createDocumentObserver("A", callbackCount::incrementAndGet)) {
+        try (C4DocumentObserver obs = c4collection.createDocumentObserver("A", callbackCount::incrementAndGet)) {
             assertEquals(0, callbackCount.get());
 
             createRev("A", "2-bb", fleeceBody);
@@ -52,8 +60,8 @@ public class C4ObserverTest extends C4BaseTest {
 
     // - DB Observer
     @Test
-    public void testDBObserver() throws LiteCoreException {
-        dbObserver = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet);
+    public void testCollectionObserver() throws LiteCoreException {
+        collObserver = c4collection.createCollectionObserver(callbackCount::incrementAndGet);
         assertEquals(0, callbackCount.get());
 
         createRev("A", "1-aa", fleeceBody);
@@ -70,8 +78,8 @@ public class C4ObserverTest extends C4BaseTest {
 
         checkChanges(Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
 
-        dbObserver.close();
-        dbObserver = null;
+        collObserver.close();
+        collObserver = null;
 
         createRev("A", "2-aaaa", fleeceBody);
         assertEquals(2, callbackCount.get());
@@ -80,7 +88,7 @@ public class C4ObserverTest extends C4BaseTest {
     // - Multi-DBs Observer
     @Test
     public void testMultiDBsObserver() throws LiteCoreException {
-        dbObserver = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet);
+        collObserver = c4collection.createCollectionObserver(callbackCount::incrementAndGet);
         assertEquals(0, callbackCount.get());
 
         createRev("A", "1-aa", fleeceBody);
@@ -113,8 +121,8 @@ public class C4ObserverTest extends C4BaseTest {
         assertEquals(2, callbackCount.get());
         checkChanges(Arrays.asList("c", "d", "e"), Arrays.asList("1-cc", "1-dd", "1-ee"), true);
 
-        dbObserver.close();
-        dbObserver = null;
+        collObserver.close();
+        collObserver = null;
 
         createRev("A", "2-aaaa", fleeceBody);
         assertEquals(2, callbackCount.get());
@@ -125,11 +133,11 @@ public class C4ObserverTest extends C4BaseTest {
     // - Multi-DBObservers
     @Test
     public void testMultiDBObservers() throws LiteCoreException {
-        dbObserver = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet);
+        collObserver = c4collection.createCollectionObserver(callbackCount::incrementAndGet);
         assertEquals(0, callbackCount.get());
 
         final AtomicInteger callbackCount = new AtomicInteger(0);
-        try (C4DatabaseObserver dbObs = this.c4Database.createDatabaseObserver(callbackCount::incrementAndGet)) {
+        try (C4CollectionObserver dbObs = c4collection.createCollectionObserver(callbackCount::incrementAndGet)) {
             assertEquals(0, callbackCount.get());
 
 
@@ -140,7 +148,7 @@ public class C4ObserverTest extends C4BaseTest {
             assertEquals(1, this.callbackCount.get());
             assertEquals(1, callbackCount.get());
 
-            checkChanges(dbObserver, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
+            checkChanges(collObserver, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
             checkChanges(dbObs, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
 
             createRev("B", "2-bbbb", fleeceBody);
@@ -150,11 +158,11 @@ public class C4ObserverTest extends C4BaseTest {
             assertEquals(2, this.callbackCount.get());
             assertEquals(2, callbackCount.get());
 
-            checkChanges(dbObserver, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
+            checkChanges(collObserver, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
             checkChanges(dbObs, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
 
-            dbObserver.close();
-            dbObserver = null;
+            collObserver.close();
+            collObserver = null;
         }
 
         createRev("A", "2-aaaa", fleeceBody);
@@ -166,11 +174,11 @@ public class C4ObserverTest extends C4BaseTest {
         List<String> expectedDocIDs,
         List<String> expectedRevIDs,
         boolean expectedExternal) {
-        checkChanges(dbObserver, expectedDocIDs, expectedRevIDs, expectedExternal);
+        checkChanges(collObserver, expectedDocIDs, expectedRevIDs, expectedExternal);
     }
 
     private void checkChanges(
-        C4DatabaseObserver observer,
+        C4CollectionObserver observer,
         List<String> expectedDocIDs,
         List<String> expectedRevIDs,
         boolean expectedExternal) {

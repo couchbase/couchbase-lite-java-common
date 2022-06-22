@@ -155,7 +155,7 @@ public abstract class C4NativePeer implements AutoCloseable {
 
         // here if we expected the peer to have been closed
         if (peer != 0L) {
-            Log.d(domain, "Peer %x for %s was not closed", peer, getClass().getSimpleName());
+            Log.d(domain, "%s@0x%x not closed", getClass().getSimpleName(), peer);
         }
     }
 

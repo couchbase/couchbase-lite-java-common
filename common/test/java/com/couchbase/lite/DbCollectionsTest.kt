@@ -23,6 +23,7 @@ import org.junit.Assert.assertNull
 import org.junit.Ignore
 import org.junit.Test
 
+
 class DbCollectionsTest : BaseCollectionTest() {
     @Test
     fun testGetDefaultScope() {
@@ -140,6 +141,9 @@ class DbCollectionsTest : BaseCollectionTest() {
         scopes = baseTestDb.scopes
         assertEquals(1, scopes.size)
     }
+
+
+// !!! TESTS BELOW NEED TO BE MOVED TO CollectionTest
 
     @Ignore("CBL-3257: getScopeNames does not return default scope when it is empty")
     @Test

@@ -1,9 +1,9 @@
 package com.couchbase.lite.internal.core.impl;
 
-import com.couchbase.lite.internal.core.C4CollectionDocObserver;
+import com.couchbase.lite.internal.core.C4DocumentObserver;
 
 
-public class NativeC4CollectionDocObserver implements C4CollectionDocObserver.NativeImpl {
+public class NativeC4DocumentObserver implements C4DocumentObserver.NativeImpl {
     @Override
     public long nCreate(long coll, String docId) { return create(coll, docId); }
 

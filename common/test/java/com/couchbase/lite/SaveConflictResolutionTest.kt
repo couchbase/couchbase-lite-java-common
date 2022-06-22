@@ -18,13 +18,16 @@ package com.couchbase.lite
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 
-private const val docID = "doc1"
 
+// !!! WILL LIKELY CHANGE WITH COLLECTION SAVVY REPLICATION
+
+private const val docID = "doc1"
 
 // These tests are largely translations of Jay Vavachan's Obj-C tests
 class SaveConflictResolutionTests : BaseDbTest() {
@@ -224,9 +227,9 @@ class SaveConflictResolutionTests : BaseDbTest() {
 
         assertNull(baseTestDb.getDocument(docID))
 
-        val c4doc = baseTestDb.openC4Database.getDocument(docID, false)
+        val c4doc = baseTestDb.getDefaultCollection()?.getC4Document(docID)
         assertNotNull(c4doc)
-        assertTrue(c4doc.isRevDeleted())
+        assertTrue(c4doc!!.isRevDeleted())
     }
 
     /**

@@ -20,7 +20,6 @@ import androidx.annotation.Nullable;
 
 import java.util.concurrent.Executor;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -28,24 +27,18 @@ import com.couchbase.lite.internal.utils.Preconditions;
 final class DocumentReplicationListenerToken extends ListenerToken {
     @NonNull
     private final DocumentReplicationListener listener;
-    @Nullable
-    private final Executor executor;
 
     DocumentReplicationListenerToken(
         @Nullable Executor executor,
         @NonNull DocumentReplicationListener listener,
         @NonNull Fn.Consumer<ListenerToken> onRemove) {
-        super(onRemove);
-        this.executor = executor;
+        super(executor, onRemove);
         this.listener = Preconditions.assertNotNull(listener, "listener");
     }
 
-    void notify(@NonNull final DocumentReplication update) {
-        getExecutor().execute(() -> listener.replication(update));
-    }
-
     @NonNull
-    Executor getExecutor() {
-        return (executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();
-    }
+    @Override
+    public String toString() { return "DocumentReplicationListenerToken{" + listener + super.toString() + "}"; }
+
+    void postChange(@NonNull DocumentReplication change) { send(() -> listener.replication(change)); }
 }

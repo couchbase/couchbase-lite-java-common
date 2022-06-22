@@ -175,10 +175,8 @@ abstract class AbstractQuery implements Query {
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull QueryChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
 
-        final ChangeListenerToken<QueryChange> token = new ChangeListenerToken<>(
-            executor,
-            listener,
-            this::removeChangeListener);
+        final ChangeListenerToken<QueryChange> token
+            = new ChangeListenerToken<>(listener, executor, this::removeChangeListener);
         final C4QueryObserver queryObserver;
         try {
             queryObserver = C4QueryObserver.create(
@@ -201,7 +199,7 @@ abstract class AbstractQuery implements Query {
      * Removes a change listener wih the given listener token.
      *
      * @param token The listener token.
-     * @deprecated use token.remove()
+     * @deprecated use ListenerToken.remove()
      */
     @Deprecated
     @Override

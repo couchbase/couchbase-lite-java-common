@@ -24,29 +24,26 @@ import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.utils.Fn;
 
 
-final class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
+final class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> implements AutoCloseable {
     @NonNull
-    private final Database db;
+    private final Collection collection;
     @NonNull
     private final String docID;
 
     @Nullable
     private C4DocumentObserver c4Observer;
 
-    DocumentChangeNotifier(@NonNull final Database db, @NonNull final String docID) {
-        this.db = db;
+    DocumentChangeNotifier(@NonNull final Collection collection, @NonNull final String docID) {
+        this.collection = collection;
         this.docID = docID;
     }
 
-    // We give the caller a runnable  and they give us back a
-    // C4DocumentObserver that will call that function for every change.
-    void start(@NonNull Fn.Function<Runnable, C4DocumentObserver> fn) { c4Observer = fn.apply(this::postChange); }
-
     @Override
     public void close() {
-        closeObserver(c4Observer);
-        c4Observer = null;
-        db.removeDocumentObserver(docID);
+        synchronized (collection.getDbLock()) {
+            closeObserver(c4Observer);
+            c4Observer = null;
+        }
     }
 
     @SuppressWarnings("NoFinalizer")
@@ -56,7 +53,15 @@ final class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> {
         finally { super.finalize(); }
     }
 
-    private void postChange() { postChange(new DocumentChange(db, docID)); }
+    void start(@NonNull Fn.Consumer<Runnable> onChange) {
+        synchronized (collection.getDbLock()) {
+            c4Observer = collection.getC4Collection().createDocumentObserver(
+                docID,
+                () -> onChange.accept(this::documentChanged));
+        }
+    }
+
+    private void documentChanged() { postChange(new DocumentChange(collection, docID)); }
 
     private void closeObserver(C4DocumentObserver observer) {
         if (observer != null) { observer.close(); }

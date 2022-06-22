@@ -25,7 +25,4 @@ public class BaseCollection {
     protected final Database db;
 
     protected BaseCollection(@NonNull Database db) { this.db = db; }
-
-    @NonNull
-    protected Database getDb() { return (Database) db; }
 }

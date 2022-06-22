@@ -88,8 +88,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollecti
         JNIEnv *env,
         jclass ignore,
         jlong db) {
-    C4Error error{}; // !!! I think we'll need this...
-    C4Collection *coll = c4db_getDefaultCollection((C4Database *) db);
+    C4Error error{};
+    C4Collection *coll = c4db_getDefaultCollection((C4Database *) db, &error);
     if (!coll && error.code != 0) {
         throwError(env, error);
         return 0;

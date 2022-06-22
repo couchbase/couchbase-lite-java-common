@@ -24,12 +24,12 @@ import androidx.annotation.NonNull;
  */
 public final class DocumentChange {
     @NonNull
-    private final Database database;
+    private final Collection collection;
     @NonNull
     private final String documentID;
 
-    DocumentChange(@NonNull Database database, @NonNull String documentID) {
-        this.database = database;
+    DocumentChange(@NonNull Collection collection, @NonNull String documentID) {
+        this.collection = collection;
         this.documentID = documentID;
     }
 
@@ -37,7 +37,7 @@ public final class DocumentChange {
      * Return the Database instance
      */
     @NonNull
-    public Database getDatabase() { return database; }
+    public Database getDatabase() { return collection.getDatabase(); }
 
     /**
      * Returns the changed document ID
@@ -48,6 +48,6 @@ public final class DocumentChange {
     @NonNull
     @Override
     public String toString() {
-        return "DocumentChange{database=" + database.getName() + ",documentID=" + documentID + "}";
+        return "DocumentChange{" + collection + ", " + documentID + "}";
     }
 }

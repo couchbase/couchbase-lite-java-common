@@ -19,4 +19,4 @@ package com.couchbase.lite;
  * The listener interface for receiving Database change events.
  */
 @FunctionalInterface
-public interface CollectionChangeListener extends DatabaseChangeListener<CollectionChange> { }
+public interface CollectionChangeListener extends DatabaseChangeListener { }

@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -28,7 +29,8 @@ import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.utils.Fn;
 
 
-final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> {
+// Not thread safe...
+final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> implements AutoCloseable {
     private static final int REQUESTED_CHANGES = 100;
     private static final int MAX_CHANGES = 1000;
 
@@ -36,6 +38,7 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> {
     @NonNull
     private final Collection collection;
 
+    @GuardedBy("collection.getDbLock()")
     @Nullable
     private C4CollectionObserver c4Observer;
 
@@ -47,7 +50,6 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> {
             closeObserver(c4Observer);
             c4Observer = null;
         }
-        collection.removeObserver();
     }
 
     @SuppressWarnings("NoFinalizer")
@@ -57,21 +59,11 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> {
         finally { super.finalize(); }
     }
 
-    // We give the caller a runnable  and they give us back a
-    // C4CollectionObserver that will call that function for every change.
-    void start(@NonNull Fn.Function<Runnable, C4CollectionObserver> fn) {
-        c4Observer = fn.apply(this::collectionChanged);
-    }
-
-    private void closeObserver(@Nullable C4CollectionObserver observer) {
-        if (observer != null) { observer.close(); }
-    }
-
-    // postChange will queue the notification:
-    // the client code will not execute while holding the db lock.
-    private void postChanges(List<String> docIds) {
-        if (docIds.isEmpty()) { return; }
-        postChange(new CollectionChange(collection, docIds));
+    void start(@NonNull Fn.Consumer<Runnable> onChange) {
+        synchronized (collection.getDbLock()) {
+            c4Observer = collection.getC4Collection().createCollectionObserver(
+                () -> onChange.accept(this::collectionChanged));
+        }
     }
 
     private void collectionChanged() {
@@ -109,5 +101,16 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> {
                 external = newExternal;
             }
         }
+    }
+
+    // postChange will queue the notification:
+    // the client code will not execute while holding the db lock.
+    private void postChanges(List<String> docIds) {
+        if (docIds.isEmpty()) { return; }
+        postChange(new CollectionChange(collection, docIds));
+    }
+
+    private void closeObserver(@Nullable C4CollectionObserver observer) {
+        if (observer != null) { observer.close(); }
     }
 }

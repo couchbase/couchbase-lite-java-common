@@ -19,11 +19,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import com.couchbase.lite.internal.listener.ChangeListenerToken;
+import com.couchbase.lite.internal.listener.ChangeNotifier;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+
+// !!! ADD COLLECTION NOTIFICATION TESTS
 
 public class NotificationTest extends BaseDbTest {
     @Test
@@ -74,7 +83,7 @@ public class NotificationTest extends BaseDbTest {
             assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
-            baseTestDb.removeChangeListener(token);
+            token.remove();
         }
     }
 
@@ -108,7 +117,7 @@ public class NotificationTest extends BaseDbTest {
             assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
-            baseTestDb.removeChangeListener(token);
+            token.remove();
         }
     }
 
@@ -137,7 +146,7 @@ public class NotificationTest extends BaseDbTest {
             assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
-            baseTestDb.removeChangeListener(token);
+            token.remove();
         }
     }
 
@@ -146,6 +155,8 @@ public class NotificationTest extends BaseDbTest {
         final Database db2 = baseTestDb.copy();
         assertNotNull(db2);
 
+        final AtomicInteger counter = new AtomicInteger(0);
+
         ListenerToken token = null;
         try {
             final CountDownLatch latchDB = new CountDownLatch(1);
@@ -153,9 +164,10 @@ public class NotificationTest extends BaseDbTest {
                 testSerialExecutor,
                 change -> {
                     assertNotNull(change);
-                    assertEquals(10, change.getDocumentIDs().size());
-                    assertEquals(1, latchDB.getCount());
-                    latchDB.countDown();
+                    if (counter.addAndGet(change.getDocumentIDs().size()) >= 10) {
+                        assertEquals(1, latchDB.getCount());
+                        latchDB.countDown();
+                    }
                 });
 
             final CountDownLatch latchDoc = new CountDownLatch(1);
@@ -180,7 +192,7 @@ public class NotificationTest extends BaseDbTest {
             assertTrue(latchDoc.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
-            if (token != null) { db2.removeChangeListener(token); }
+            if (token != null) { token.remove(); }
             db2.close();
         }
     }
@@ -213,11 +225,11 @@ public class NotificationTest extends BaseDbTest {
             assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
         }
         finally {
-            baseTestDb.removeChangeListener(token1);
-            baseTestDb.removeChangeListener(token2);
-            baseTestDb.removeChangeListener(token3);
-            baseTestDb.removeChangeListener(token4);
-            baseTestDb.removeChangeListener(token5);
+            token1.remove();
+            token2.remove();
+            token3.remove();
+            token4.remove();
+            token5.remove();
         }
     }
 
@@ -249,7 +261,7 @@ public class NotificationTest extends BaseDbTest {
             assertTrue(latch1.await(500, TimeUnit.MILLISECONDS));
 
             // Remove change listener:
-            baseTestDb.removeChangeListener(token);
+            token.remove();
 
             // Update doc1:
             doc1 = savedDoc1.toMutable();
@@ -260,7 +272,32 @@ public class NotificationTest extends BaseDbTest {
             assertEquals(1, latch2.getCount());
         }
         finally {
-            baseTestDb.removeChangeListener(token);
+            token.remove();
         }
+    }
+
+    @Test
+    public void testDatabaseChangeNotifier() throws CouchbaseLiteException {
+        Database db = createDb("default_config_db");
+        CollectionChangeNotifier changeNotifier = new CollectionChangeNotifier(db.getDefaultCollection());
+        assertEquals(0, changeNotifier.getListenerCount());
+        ListenerToken t1 = changeNotifier.addChangeListener(
+            null,
+            c -> { },
+            t -> assertTrue(changeNotifier.removeChangeListener(t)));
+        assertEquals(1, changeNotifier.getListenerCount());
+        ListenerToken t2 = changeNotifier.addChangeListener(
+            null,
+            c -> { },
+            t -> assertFalse(changeNotifier.removeChangeListener(t)));
+        assertEquals(2, changeNotifier.getListenerCount());
+        t2.remove();
+        assertEquals(1, changeNotifier.getListenerCount());
+        t1.remove();
+        assertEquals(0, changeNotifier.getListenerCount());
+        t1.remove();
+        assertEquals(0, changeNotifier.getListenerCount());
+        t2.remove();
+        assertEquals(0, changeNotifier.getListenerCount());
     }
 }

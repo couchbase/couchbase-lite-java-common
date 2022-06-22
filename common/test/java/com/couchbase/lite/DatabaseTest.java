@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -48,6 +49,12 @@ import static org.junit.Assert.fail;
 // If a test opens a new database it guarantee that it is deleted.
 // If a test opens a copy of the baseTestDb, it must close (but NOT delete)
 public class DatabaseTest extends BaseDbTest {
+    private static <T extends Comparable<T>> void assertContents(List<T> l1, T... contents) {
+        List<T> l2 = Arrays.asList(contents);
+        Collections.sort(l2);
+        Collections.sort(l1);
+        assertEquals(l1, l2);
+    }
 
     //---------------------------------------------
     //  Get Document
@@ -984,7 +991,7 @@ public class DatabaseTest extends BaseDbTest {
                 ValueIndexItem.expression(Expression.property("lastName"))));
         assertEquals(4, baseTestDb.getIndexes().size());
 
-        assertEquals(Arrays.asList("index1", "index2", "index3", "index4"), baseTestDb.getIndexes());
+        assertContents(baseTestDb.getIndexes(), "index1", "index2", "index3", "index4");
     }
 
     @Test
@@ -999,7 +1006,7 @@ public class DatabaseTest extends BaseDbTest {
             new FullTextIndexConfiguration("detail").ignoreAccents(true).setLanguage("es"));
         assertEquals(2, baseTestDb.getIndexes().size());
 
-        assertEquals(Arrays.asList("index1", "index2"), baseTestDb.getIndexes());
+        assertContents(baseTestDb.getIndexes(), "index1", "index2");
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -1019,7 +1026,7 @@ public class DatabaseTest extends BaseDbTest {
         baseTestDb.createIndex("myindex", index);
 
         assertEquals(1, baseTestDb.getIndexes().size());
-        assertEquals(Arrays.asList("myindex"), baseTestDb.getIndexes());
+        assertContents(baseTestDb.getIndexes(), "myindex");
     }
 
     @Test
@@ -1046,7 +1053,7 @@ public class DatabaseTest extends BaseDbTest {
 
         // Check:
         assertEquals(1, baseTestDb.getIndexes().size());
-        assertEquals(Arrays.asList("myindex"), baseTestDb.getIndexes());
+        assertContents(baseTestDb.getIndexes(), "myindex");
     }
 
     @Test
@@ -1057,15 +1064,15 @@ public class DatabaseTest extends BaseDbTest {
 
         baseTestDb.deleteIndex("index4");
         assertEquals(3, baseTestDb.getIndexes().size());
-        assertEquals(Arrays.asList("index1", "index2", "index3"), baseTestDb.getIndexes());
+        assertContents(baseTestDb.getIndexes(), "index1", "index2", "index3");
 
         baseTestDb.deleteIndex("index1");
         assertEquals(2, baseTestDb.getIndexes().size());
-        assertEquals(Arrays.asList("index2", "index3"), baseTestDb.getIndexes());
+        assertContents(baseTestDb.getIndexes(), "index2", "index3");
 
         baseTestDb.deleteIndex("index2");
         assertEquals(1, baseTestDb.getIndexes().size());
-        assertEquals(Arrays.asList("index3"), baseTestDb.getIndexes());
+        assertContents(baseTestDb.getIndexes(), "index3");
 
         baseTestDb.deleteIndex("index3");
         assertEquals(0, baseTestDb.getIndexes().size());

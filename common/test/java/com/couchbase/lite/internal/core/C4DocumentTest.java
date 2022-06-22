@@ -30,6 +30,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
+// !!! SEVERAL OF THESE TESTS DEPEND ON USE OF THE DEFAULT COLLECTION
+
 public class C4DocumentTest extends C4BaseTest {
     interface Verification {
         void verify(C4Document doc) throws LiteCoreException;
@@ -58,7 +60,7 @@ public class C4DocumentTest extends C4BaseTest {
     public void testCreateVersionedDoc() throws LiteCoreException {
         // Try reading doc with mustExist=true, which should fail:
         try {
-            C4Document doc = c4Database.getDocument(DOC_ID, true);
+            C4Document doc = c4Database.getDefaultCollection().getDocument(DOC_ID, true);
             doc.close();
             fail();
         }
@@ -68,7 +70,7 @@ public class C4DocumentTest extends C4BaseTest {
         }
 
         // Now get the doc with mustExist=false, which returns an empty doc:
-        try (C4Document doc = c4Database.getDocument(DOC_ID, false)) {
+        try (C4Document doc = c4Database.getDefaultCollection().getDocument(DOC_ID, false)) {
             assertNotNull(doc);
             assertEquals(0, doc.getFlags());
             assertEquals(DOC_ID, doc.getDocID());
@@ -89,7 +91,7 @@ public class C4DocumentTest extends C4BaseTest {
         finally { c4Database.endTransaction(commit); }
 
         // Reload the doc:
-        try (C4Document doc = c4Database.getDocument(DOC_ID, true)) {
+        try (C4Document doc = c4Database.getDefaultCollection().getDocument(DOC_ID, true)) {
             assertNotNull(doc);
             assertEquals(C4Constants.DocumentFlags.EXISTS, doc.getFlags());
             assertEquals(DOC_ID, doc.getDocID());
@@ -111,7 +113,7 @@ public class C4DocumentTest extends C4BaseTest {
         createRev(DOC_ID, REV_ID_2, kFleeceBody2); // test redundant insert
 
         // Reload the doc:
-        C4Document doc = c4Database.getDocument(DOC_ID, true);
+        C4Document doc = c4Database.getDefaultCollection().getDocument(DOC_ID, true);
         assertNotNull(doc);
         assertEquals(C4Constants.DocumentFlags.EXISTS, doc.getFlags());
         assertEquals(DOC_ID, doc.getDocID());
@@ -133,7 +135,7 @@ public class C4DocumentTest extends C4BaseTest {
         createRev(DOC_ID, REV_ID_3, kFleeceBody3);
 
         // Revision 2 should keep its body due to the kRevKeepBody flag:
-        doc = c4Database.getDocument(DOC_ID, true);
+        doc = c4Database.getDefaultCollection().getDocument(DOC_ID, true);
         assertNotNull(doc);
         assertTrue(doc.selectParentRevision());
         assertEquals(DOC_ID, doc.getDocID());
@@ -148,7 +150,7 @@ public class C4DocumentTest extends C4BaseTest {
         boolean commit = false;
         c4Database.beginTransaction();
         try {
-            doc = c4Database.getDocument(DOC_ID, true);
+            doc = c4Database.getDefaultCollection().getDocument(DOC_ID, true);
             int nPurged = doc.purgeRevision(REV_ID_3);
             assertEquals(3, nPurged);
             doc.save(20);
@@ -240,7 +242,7 @@ public class C4DocumentTest extends C4BaseTest {
         assertEquals(DOC_ID, doc.getDocID());
 
         // Read the doc into another C4Document:
-        C4Document doc2 = c4Database.getDocument(DOC_ID, false);
+        C4Document doc2 = c4Database.getDefaultCollection().getDocument(DOC_ID, false);
         assertNotNull(doc2);
         assertEquals(kExpectedRevID, doc2.getRevID());
 

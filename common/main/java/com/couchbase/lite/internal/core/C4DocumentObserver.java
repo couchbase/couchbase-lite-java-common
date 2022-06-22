@@ -16,11 +16,12 @@
 
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.impl.NativeC4DocumentObserver;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
 import com.couchbase.lite.internal.support.Log;
 
@@ -28,22 +29,20 @@ import com.couchbase.lite.internal.support.Log;
 // Class has package protected static factory methods
 @SuppressWarnings("PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal")
 public class C4DocumentObserver extends C4NativePeer {
+    public interface NativeImpl {
+        long nCreate(long coll, String docId);
+        void nFree(long peer);
+    }
+
     //-------------------------------------------------------------------------
     // Static Variables
     //-------------------------------------------------------------------------
 
-    private static final NativeRefPeerBinding<C4DocumentObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
-
-    //-------------------------------------------------------------------------
-    // Static Factory Methods
-    //-------------------------------------------------------------------------
-
     @NonNull
-    static C4DocumentObserver newObserver(long db, @NonNull String docID, @NonNull Runnable listener) {
-        final C4DocumentObserver observer = new C4DocumentObserver(db, docID, listener);
-        BOUND_OBSERVERS.bind(observer.getPeer(), observer);
-        return observer;
-    }
+    protected static final NativeImpl NATIVE_IMPL = new NativeC4DocumentObserver();
+
+    protected static final NativeRefPeerBinding<C4DocumentObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
+
 
     //-------------------------------------------------------------------------
     // JNI callback methods
@@ -53,8 +52,7 @@ public class C4DocumentObserver extends C4NativePeer {
     static void callback(long peer, @Nullable String docID, long sequence) {
         Log.d(
             LogDomain.DATABASE,
-            "C4DocumentObserver.callback @0x%x (%s): %s", peer, sequence, docID);
-
+            "C4CollectionDocObserver.callback @0x%x (%s): %s", peer, sequence, docID);
 
         final C4DocumentObserver observer = BOUND_OBSERVERS.getBinding(peer);
         if (observer == null) { return; }
@@ -62,6 +60,27 @@ public class C4DocumentObserver extends C4NativePeer {
         observer.listener.run();
     }
 
+    //-------------------------------------------------------------------------
+    // Static factory methods
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    public static C4DocumentObserver newObserver(long c4Coll, @NonNull String docId, @NonNull Runnable listener) {
+        return newObserver(NATIVE_IMPL, c4Coll, docId, listener);
+    }
+
+    @VisibleForTesting
+    @NonNull
+    static C4DocumentObserver newObserver(
+        @NonNull NativeImpl impl,
+        long c4Coll,
+        @NonNull String id,
+        @NonNull Runnable listener) {
+        final long peer = impl.nCreate(c4Coll, id);
+        final C4DocumentObserver observer = new C4DocumentObserver(impl, peer, listener);
+        BOUND_OBSERVERS.bind(peer, observer);
+        return observer;
+    }
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -69,55 +88,40 @@ public class C4DocumentObserver extends C4NativePeer {
 
     @NonNull
     private final Runnable listener;
+    @NonNull
+    private final NativeImpl impl;
+    private final Exception createdAt;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4DocumentObserver(long db, @NonNull String docID, @NonNull Runnable listener) {
-        super(create(db, docID));
+    protected C4DocumentObserver(@NonNull NativeImpl impl, long peer, @NonNull Runnable listener) {
+        super(peer);
+        this.impl = impl;
         this.listener = listener;
+        this.createdAt = new Exception("#### 0x" + Long.toHexString(peer) + " CREATED AT");
     }
 
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-
-    @CallSuper
     @Override
     public void close() { closePeer(null); }
 
-    // !!! This method will, invariably, cause a native crash: CBL-3193
-    @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
     }
 
-    //-------------------------------------------------------------------------
-    // Private methods
-    //-------------------------------------------------------------------------
-
+    // !!!  CRASH HERE
     private void closePeer(@Nullable LogDomain domain) {
         releasePeer(
             domain,
             (peer) -> {
+                Log.d(
+                    LogDomain.DATABASE,
+                    "#### 0x" + Long.toHexString(peer) + " DELETED", new Exception("CLOSED AT", createdAt));
                 BOUND_OBSERVERS.unbind(peer);
-                C4DocumentObserver.free(peer);
+                impl.nFree(peer);
             });
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    private static native long create(long db, String docID);
-
-    /**
-     * Free C4DocumentObserver* instance
-     *
-     * @param peer (C4DocumentObserver*)
-     */
-    private static native void free(long peer);
 }

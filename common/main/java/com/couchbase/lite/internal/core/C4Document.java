@@ -46,31 +46,6 @@ public final class C4Document extends C4NativePeer {
         return new C4Document(createFromSlice(coll.getPeer(), docID, (body == null) ? 0 : body.getHandle(), flags));
     }
 
-    @VisibleForTesting
-    @NonNull
-    static C4Document createRaw(
-        @NonNull C4Collection coll,
-        @NonNull String docID,
-        @Nullable byte[] body,
-        int flags)
-        throws LiteCoreException {
-        return new C4Document(createRaw(coll.getPeer(), docID, (body != null) ? body : new byte[0], flags));
-    }
-
-    // !!! Deprecated
-    @NonNull
-    static C4Document create(@NonNull C4Database db, @NonNull String docID, boolean mustExist)
-        throws LiteCoreException {
-        return new C4Document(get(db.getPeer(), docID, mustExist));
-    }
-
-    // !!! Deprecated
-    @NonNull
-    static C4Document create(@NonNull C4Database db, @NonNull String docID, @Nullable FLSliceResult body, int flags)
-        throws LiteCoreException {
-        return new C4Document(create2(db.getPeer(), docID, (body == null) ? 0 : body.getHandle(), flags));
-    }
-
     // !!! Deprecated
     @VisibleForTesting
     @NonNull
@@ -303,14 +278,6 @@ public final class C4Document extends C4NativePeer {
 
     private static native long createFromSlice(long coll, String docID, long body, int flags)
         throws LiteCoreException;
-
-    private static native long createRaw(long db, String docID, byte[] body, int flags) throws LiteCoreException;
-
-    // !!! Deprecated
-    private static native long create2(long db, String docID, long body, int flags) throws LiteCoreException;
-
-    // !!! Deprecated
-    private static native long get(long db, String docID, boolean mustExist) throws LiteCoreException;
 
     // - Properties
 

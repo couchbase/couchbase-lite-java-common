@@ -37,6 +37,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
+// !!! SEVERAL OF THESE TESTS DEPEND ON USE OF THE DEFAULT COLLECTION
+
 public class C4QueryTest extends C4QueryBaseTest {
 
     @Before
@@ -225,7 +227,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query expression index
     @Test
     public void testDBQueryExpressionIndex() throws LiteCoreException {
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "length",
             json5("[['length()', ['.name.first']]]"),
             AbstractIndex.QueryLanguage.JSON,
@@ -240,7 +242,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDeleteIndexedDoc() throws LiteCoreException {
         // Create the same index as the above test:
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "length",
             json5("[['length()', ['.name.first']]]"),
             AbstractIndex.QueryLanguage.JSON,
@@ -253,7 +255,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             boolean commit = false;
             c4Database.beginTransaction();
             try {
-                C4Document doc = c4Database.getDocument("0000015", true);
+                C4Document doc = c4Database.getDefaultCollection().getDocument("0000015", true);
                 assertNotNull(doc);
                 String[] history = {doc.getRevID()};
                 C4Document updatedDoc = C4Document.create(
@@ -302,7 +304,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text query
     @Test
     public void testFullTextQuery() throws LiteCoreException {
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
@@ -324,7 +326,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text multiple properties
     @Test
     public void testFullTextMultipleProperties() throws LiteCoreException {
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "byAddress",
             "[[\".contact.address.street\"], [\".contact.address.city\"], [\".contact.address.state\"]]",
             AbstractIndex.QueryLanguage.JSON,
@@ -380,14 +382,14 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Multiple Full-text indexes
     @Test
     public void testMultipleFullTextIndexes() throws LiteCoreException {
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
             AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "byCity",
             "[[\".contact.address.city\"]]",
             AbstractIndex.QueryLanguage.JSON,
@@ -402,14 +404,14 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text query in multiple ANDs
     @Test
     public void testFullTextQueryInMultipleANDs() throws LiteCoreException {
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
             AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "byCity",
             "[[\".contact.address.city\"]]",
             AbstractIndex.QueryLanguage.JSON,
@@ -426,7 +428,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testMultipleFullTextQueries() throws LiteCoreException {
         // You can't query the same FTS index multiple times in a query (says SQLite)
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
@@ -447,7 +449,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testBuriedFullTextQueries() throws LiteCoreException {
         // You can't put an FTS match inside an expression other than a top-level AND (says SQLite)
-        c4Database.createIndex(
+        c4Database.getDefaultCollection().createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,

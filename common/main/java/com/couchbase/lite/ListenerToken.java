@@ -16,9 +16,13 @@
 package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -27,12 +31,19 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Base class for a removable subscription to an observable.
  */
 public class ListenerToken extends AtomicBoolean implements AutoCloseable {
+    @Nullable
+    private final Executor executor;
     private final Fn.Consumer<ListenerToken> onRemove;
 
-    protected ListenerToken(@NonNull Fn.Consumer<ListenerToken> onRemove) {
+    protected ListenerToken(@Nullable Executor executor, @NonNull Fn.Consumer<ListenerToken> onRemove) {
         super(true);
+        this.executor = executor;
         this.onRemove = Preconditions.assertNotNull(onRemove, "onRemove task");
     }
+
+    @NonNull
+    @Override
+    public String toString() { return " on " + executor + " then " + onRemove; }
 
     @Override
     public void close() throws Exception { remove(); }
@@ -41,10 +52,11 @@ public class ListenerToken extends AtomicBoolean implements AutoCloseable {
         if (getAndSet(false)) { onRemove.accept(this); }
     }
 
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { remove(); }
-        finally { super.finalize(); }
+    protected void send(@NonNull Runnable notification) { getExecutor().execute(notification); }
+
+    @VisibleForTesting
+    @NonNull
+    Executor getExecutor() {
+        return (executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();
     }
 }

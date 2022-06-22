@@ -26,27 +26,11 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFrom
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    createRaw
- * Signature: (JLjava/lang/String;[BI)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createRaw
-        (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    create
  * Signature: (JLjava/lang/String;[BI)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_create
         (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    create2
- * Signature: (JLjava/lang/String;JI)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_create2
-        (JNIEnv *, jclass, jlong, jstring, jlong, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
@@ -135,14 +119,6 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Document_ge
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getSelectedBody2
         (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    get
- * Signature: (JLjava/lang/String;Z)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_get
-        (JNIEnv *, jclass, jlong, jstring, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document

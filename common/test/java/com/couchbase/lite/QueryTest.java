@@ -627,8 +627,8 @@ public class QueryTest extends BaseQueryTest {
         //Expression mainPropExpr = ;
 
         Query query = QueryBuilder.select(
-            SelectResult.expression(Expression.property("number2").from("main")),
-            SelectResult.expression(Expression.property("theone").from("secondary")))
+                SelectResult.expression(Expression.property("number2").from("main")),
+                SelectResult.expression(Expression.property("theone").from("secondary")))
             .from(DataSource.database(this.baseTestDb).as("main"))
             .join(Join.leftJoin(DataSource.database(this.baseTestDb).as("secondary"))
                 .on(Expression.property("number1").from("main")
@@ -654,8 +654,8 @@ public class QueryTest extends BaseQueryTest {
         loadNumberedDocs(10);
 
         Query query = QueryBuilder.select(
-            SelectResult.expression(Expression.property("number1").from("main")),
-            SelectResult.expression(Expression.property("number2").from("secondary")))
+                SelectResult.expression(Expression.property("number1").from("main")),
+                SelectResult.expression(Expression.property("number2").from("secondary")))
             .from(DataSource.database(this.baseTestDb).as("main"))
             .join(Join.crossJoin(DataSource.database(this.baseTestDb).as("secondary")));
 
@@ -967,10 +967,10 @@ public class QueryTest extends BaseQueryTest {
     public void testQueryResult() throws JSONException, IOException, CouchbaseLiteException {
         loadJSONResource("names_100.json");
         Query query = QueryBuilder.select(
-            SelectResult.property("name.first").as("firstname"),
-            SelectResult.property("name.last").as("lastname"),
-            SelectResult.property("gender"),
-            SelectResult.property("contact.address.city"))
+                SelectResult.property("name.first").as("firstname"),
+                SelectResult.property("name.last").as("lastname"),
+                SelectResult.property("gender"),
+                SelectResult.property("contact.address.city"))
             .from(DataSource.database(baseTestDb));
 
         int numRows = verifyQuery(
@@ -990,11 +990,11 @@ public class QueryTest extends BaseQueryTest {
         loadNumberedDocs(100);
 
         Query query = QueryBuilder.select(
-            SelectResult.expression(Function.avg(EXPR_NUMBER1)),
-            SelectResult.expression(Function.count(EXPR_NUMBER1)),
-            SelectResult.expression(Function.min(EXPR_NUMBER1)).as("min"),
-            SelectResult.expression(Function.max(EXPR_NUMBER1)),
-            SelectResult.expression(Function.sum(EXPR_NUMBER1)).as("sum"))
+                SelectResult.expression(Function.avg(EXPR_NUMBER1)),
+                SelectResult.expression(Function.count(EXPR_NUMBER1)),
+                SelectResult.expression(Function.min(EXPR_NUMBER1)).as("min"),
+                SelectResult.expression(Function.max(EXPR_NUMBER1)),
+                SelectResult.expression(Function.sum(EXPR_NUMBER1)).as("sum"))
             .from(DataSource.database(baseTestDb));
 
         int numRows = verifyQuery(
@@ -1048,7 +1048,7 @@ public class QueryTest extends BaseQueryTest {
         numRows = verifyQuery(
             query,
             false,
-            (n, result) -> { if (n == 1) { assertEquals("doc-007", result.getString(0)); }}
+            (n, result) -> { if (n == 1) { assertEquals("doc-007", result.getString(0)); } }
         );
         assertEquals(42, numRows);
 
@@ -1070,11 +1070,11 @@ public class QueryTest extends BaseQueryTest {
         loadNumberedDocs(100);
 
         Query query = QueryBuilder.select(
-            SelectResult.expression(Function.avg(EXPR_NUMBER1)),
-            SelectResult.expression(Function.count(EXPR_NUMBER1)),
-            SelectResult.expression(Function.min(EXPR_NUMBER1)),
-            SelectResult.expression(Function.max(EXPR_NUMBER1)),
-            SelectResult.expression(Function.sum(EXPR_NUMBER1)))
+                SelectResult.expression(Function.avg(EXPR_NUMBER1)),
+                SelectResult.expression(Function.count(EXPR_NUMBER1)),
+                SelectResult.expression(Function.min(EXPR_NUMBER1)),
+                SelectResult.expression(Function.max(EXPR_NUMBER1)),
+                SelectResult.expression(Function.sum(EXPR_NUMBER1)))
             .from(DataSource.database(this.baseTestDb));
         int numRows = verifyQuery(
             query,
@@ -1107,8 +1107,8 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(1, numRows);
 
         query = QueryBuilder.select(
-            SelectResult.expression(ArrayFunction.contains(exprArray, Expression.string("650-123-0001"))),
-            SelectResult.expression(ArrayFunction.contains(exprArray, Expression.string("650-123-0003"))))
+                SelectResult.expression(ArrayFunction.contains(exprArray, Expression.string("650-123-0001"))),
+                SelectResult.expression(ArrayFunction.contains(exprArray, Expression.string("650-123-0003"))))
             .from(ds);
 
         numRows = verifyQuery(
@@ -1225,11 +1225,11 @@ public class QueryTest extends BaseQueryTest {
         Expression fnUpper = Function.upper(prop);
 
         query = QueryBuilder.select(
-            SelectResult.expression(fnLower),
-            SelectResult.expression(fnLTrim),
-            SelectResult.expression(fnRTrim),
-            SelectResult.expression(fnTrim),
-            SelectResult.expression(fnUpper))
+                SelectResult.expression(fnLower),
+                SelectResult.expression(fnLTrim),
+                SelectResult.expression(fnRTrim),
+                SelectResult.expression(fnTrim),
+                SelectResult.expression(fnUpper))
             .from(ds);
 
         numRows = verifyQuery(
@@ -1303,8 +1303,8 @@ public class QueryTest extends BaseQueryTest {
 
         // SELECT testdb.*, testdb.number1
         query = QueryBuilder.select(
-            SelectResult.all().from(dbName),
-            SelectResult.expression(Expression.property("number1").from(dbName)))
+                SelectResult.all().from(dbName),
+                SelectResult.expression(Expression.property("number1").from(dbName)))
             .from(ds.as(dbName));
 
         numRows = verifyQuery(
@@ -2277,9 +2277,9 @@ public class QueryTest extends BaseQueryTest {
         saveDocInBaseTestDb(doc1);
 
         Query query = QueryBuilder.select(
-            SelectResult.property("name"),
-            SelectResult.property("address"),
-            SelectResult.property("age"))
+                SelectResult.property("name"),
+                SelectResult.property("address"),
+                SelectResult.property("age"))
             .from(DataSource.database(baseTestDb));
 
         // Array:
@@ -2778,9 +2778,9 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testAggregateFunctionEmptyArgs() {
-        assertThrows(IllegalArgumentException.class, () -> Function.avg(null));
+        Function.count(null);
 
-        assertThrows(IllegalArgumentException.class, () -> Function.count(null));
+        assertThrows(IllegalArgumentException.class, () -> Function.avg(null));
 
         assertThrows(IllegalArgumentException.class, () -> Function.min(null));
 
@@ -2909,12 +2909,12 @@ public class QueryTest extends BaseQueryTest {
         }
 
         Query query = QueryBuilder.select(
-            SelectResult.expression(Function.stringToMillis(Expression.property("local"))),
-            SelectResult.expression(Function.stringToMillis(Expression.property("JST"))),
-            SelectResult.expression(Function.stringToMillis(Expression.property("JST2"))),
-            SelectResult.expression(Function.stringToMillis(Expression.property("PST"))),
-            SelectResult.expression(Function.stringToMillis(Expression.property("PST2"))),
-            SelectResult.expression(Function.stringToMillis(Expression.property("UTC"))))
+                SelectResult.expression(Function.stringToMillis(Expression.property("local"))),
+                SelectResult.expression(Function.stringToMillis(Expression.property("JST"))),
+                SelectResult.expression(Function.stringToMillis(Expression.property("JST2"))),
+                SelectResult.expression(Function.stringToMillis(Expression.property("PST"))),
+                SelectResult.expression(Function.stringToMillis(Expression.property("PST2"))),
+                SelectResult.expression(Function.stringToMillis(Expression.property("UTC"))))
             .from(DataSource.database(baseTestDb))
             .orderBy(Ordering.property("local").ascending());
 
@@ -2967,12 +2967,12 @@ public class QueryTest extends BaseQueryTest {
         expectedUTC.add("1985-10-26T01:21:30.555Z");
 
         Query query = QueryBuilder.select(
-            SelectResult.expression(Function.stringToUTC(Expression.property("local"))),
-            SelectResult.expression(Function.stringToUTC(Expression.property("JST"))),
-            SelectResult.expression(Function.stringToUTC(Expression.property("JST2"))),
-            SelectResult.expression(Function.stringToUTC(Expression.property("PST"))),
-            SelectResult.expression(Function.stringToUTC(Expression.property("PST2"))),
-            SelectResult.expression(Function.stringToUTC(Expression.property("UTC"))))
+                SelectResult.expression(Function.stringToUTC(Expression.property("local"))),
+                SelectResult.expression(Function.stringToUTC(Expression.property("JST"))),
+                SelectResult.expression(Function.stringToUTC(Expression.property("JST2"))),
+                SelectResult.expression(Function.stringToUTC(Expression.property("PST"))),
+                SelectResult.expression(Function.stringToUTC(Expression.property("PST2"))),
+                SelectResult.expression(Function.stringToUTC(Expression.property("UTC"))))
             .from(DataSource.database(baseTestDb))
             .orderBy(Ordering.property("local").ascending());
 
@@ -3011,8 +3011,8 @@ public class QueryTest extends BaseQueryTest {
         for (Number t: millis) { baseTestDb.save(new MutableDocument().setNumber("timestamp", t)); }
 
         Query query = QueryBuilder.select(
-            SelectResult.expression(Function.millisToString(Expression.property("timestamp"))),
-            SelectResult.expression(Function.millisToUTC(Expression.property("timestamp"))))
+                SelectResult.expression(Function.millisToString(Expression.property("timestamp"))),
+                SelectResult.expression(Function.millisToUTC(Expression.property("timestamp"))))
             .from(DataSource.database(baseTestDb))
             .orderBy(Ordering.property("timestamp").ascending());
 
@@ -3043,9 +3043,9 @@ public class QueryTest extends BaseQueryTest {
         int books = 0;
 
         Where q = QueryBuilder.select(
-            SelectResult.expression(Meta.id),
-            SelectResult.expression(Expression.property("$type")),
-            SelectResult.expression(Expression.property("$price")))
+                SelectResult.expression(Meta.id),
+                SelectResult.expression(Expression.property("$type")),
+                SelectResult.expression(Expression.property("$price")))
             .from(DataSource.database(baseTestDb))
             .where(Expression.property("$type").equalTo(Expression.string("book")));
 

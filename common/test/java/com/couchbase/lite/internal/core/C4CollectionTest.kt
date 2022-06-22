@@ -32,38 +32,40 @@ class C4CollectionTest : C4BaseTest() {
 
     @Test
     fun testCreateCollection() {
-        assertNotNull(C4Collection.create(c4Database, "Tele", "Chintz"))
+        C4Collection.create(c4Database, "Tele", "Chintz").use { coll -> assertNotNull(coll) }
     }
 
     @Test
     fun testGetCollection() {
-        assertNotNull(C4Collection.create(c4Database, "Tele", "Chintz"))
-        assertNotNull(C4Collection.get(c4Database, "Tele", "Chintz"))
+        C4Collection.create(c4Database, "Tele", "Chintz").use { coll -> assertNotNull(coll) }
+        C4Collection.get(c4Database, "Tele", "Chintz").use { coll -> assertNotNull(coll) }
     }
 
     @Test
     fun testCollectionIsValidAfterClose() {
-        val collection = C4Collection.create(c4Database, "Micro", "PezDispensers")
-        assertTrue(collection.isValid)
-        c4Database.closeDb()
-        c4Database = null
-        assertFalse(collection.isValid)
+        C4Collection.create(c4Database, "Micro", "PezDispensers").use { coll ->
+            assertTrue(coll.isValid)
+            c4Database.closeDb()
+            c4Database = null
+            assertFalse(coll.isValid)
+        }
     }
 
     @Test(expected = LiteCoreException::class)
     fun testGetNonExistentDoc() {
-        val collection = C4Collection.create(c4Database, "Kaleido", "BeanieBabies")
-        assertEquals(0, collection.documentCount)
-        collection.getDocument("nexistpas")
+        C4Collection.create(c4Database, "Kaleido", "BeanieBabies").use { coll ->
+            assertEquals(0, coll.documentCount)
+            coll.getDocument("nexistpas")
+        }
     }
 
     @Test(expected = LiteCoreException::class)
     fun testCreateDocWithNullBody() {
-        val collection = C4Collection.create(c4Database, "Tachisto", "Stamps")
-        assertEquals(0, collection.documentCount)
-        assertNotNull(collection.createDocument("yep", null, 0))
-        assertEquals(1, collection.documentCount)
-        assertNotNull(collection.getDocument("yep"))
+        C4Collection.create(c4Database, "Tachisto", "Stamps").use { coll ->
+            assertEquals(0, coll.documentCount)
+            assertNotNull(coll.createDocument("yep", null, 0))
+            assertEquals(1, coll.documentCount)
+            assertNotNull(coll.getDocument("yep"))
+        }
     }
 }
-

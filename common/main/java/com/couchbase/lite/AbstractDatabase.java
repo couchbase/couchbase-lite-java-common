@@ -25,7 +25,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,8 +34,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableDatabaseConfiguration;
 import com.couchbase.lite.internal.SocketFactory;
@@ -44,7 +41,6 @@ import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.core.C4Document;
-import com.couchbase.lite.internal.core.C4DocumentObserver;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
@@ -53,7 +49,6 @@ import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.replicator.ConflictResolutionException;
 import com.couchbase.lite.internal.replicator.ReplicatorListener;
@@ -70,11 +65,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
-@SuppressWarnings({
-    "PMD.CyclomaticComplexity",
-    "PMD.TooManyMethods",
-    "PMD.ExcessiveImports",
-    "PMD.ExcessivePublicCount"})
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
 abstract class AbstractDatabase extends BaseDatabase {
 
     //---------------------------------------------
@@ -92,11 +83,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     private static final int DB_CLOSE_WAIT_SECS = 6; // > Core replicator timeout
     private static final int DB_CLOSE_MAX_RETRIES = 5; // random choice: wait for 5 replicators
     private static final int EXECUTOR_CLOSE_MAX_WAIT_SECS = 5;
-
-    private static final String INDEX_KEY_NAME = "name";
-
-    // A random but absurdly large number.
-    private static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
 
     private static final int DEFAULT_DATABASE_FLAGS
         = C4Constants.DatabaseFlags.CREATE
@@ -229,12 +215,10 @@ abstract class AbstractDatabase extends BaseDatabase {
     @GuardedBy("activeProcesses")
     private final Set<ActiveProcess<?>> activeProcesses;
 
-    // A map of doc ids to the groups of listeners listening for changes to that doc
-    @GuardedBy("getDbLock()")
-    private final Map<String, DocumentChangeNotifier> docChangeNotifiers;
-
-    @GuardedBy("getDbLock()")
-    private DatabaseChangeNotifier dbChangeNotifier;
+    @GuardedBy("dbLock")
+    private Collection defaultCollection;
+    @GuardedBy("dbLock")
+    private boolean noDefaultCollection;
 
     private volatile CountDownLatch closeLatch;
 
@@ -268,7 +252,6 @@ abstract class AbstractDatabase extends BaseDatabase {
         this.queryExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
         this.activeProcesses = new HashSet<>();
-        this.docChangeNotifiers = new HashMap<>();
 
         fixHydrogenBug(config, name);
 
@@ -323,9 +306,19 @@ abstract class AbstractDatabase extends BaseDatabase {
         shutdown(false, C4Database::closeDb);
     }
 
-    //---------------------------------------------
-    // Scopes
-    //---------------------------------------------
+    /**
+     * Deletes a database.
+     * Deleting a database will stop all replicators, live queries and all listeners attached to it.
+     * Although attempting to close a closed database is not an error, attempting to delete a closed database is.
+     *
+     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     */
+    public void delete() throws CouchbaseLiteException {
+        Log.d(DOMAIN, "Deleting %s at path %s", this, getDbPath());
+        shutdown(true, C4Database::deleteDb);
+    }
+
+    // - Scopes:
 
     /**
      * Get scope names that have at least one collection.
@@ -360,7 +353,10 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    /// Get the default scope.
+
+    /**
+     * Get the default scope.
+     */
     @NonNull
     public final Scope getDefaultScope() throws CouchbaseLiteException {
         synchronized (getDbLock()) {
@@ -369,9 +365,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    //---------------------------------------------
-    // Collections
-    //---------------------------------------------
+    // - Collections:
 
     /**
      * Create a named collection in the default scope.
@@ -477,7 +471,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     public final Collection getDefaultCollection() throws CouchbaseLiteException {
         synchronized (getDbLock()) {
             assertOpenChecked();
-            return Collection.getDefaultCollection(getDatabase());
+            return getDefaultCollectionLocked();
         }
     }
 
@@ -509,7 +503,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    // Transactions:
+    // - Transactions:
 
     /**
      * Runs a group of database operations in a batch. Use this when performing bulk write operations
@@ -522,7 +516,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     public <T extends Exception> void inBatch(@NonNull UnitOfWork<T> work) throws CouchbaseLiteException, T {
         Preconditions.assertNotNull(work, "work");
 
-        final DatabaseChangeNotifier observer;
         boolean commit = false;
         synchronized (getDbLock()) {
             final C4Database db = getOpenC4DbLocked();
@@ -540,13 +533,10 @@ abstract class AbstractDatabase extends BaseDatabase {
             catch (LiteCoreException e) {
                 throw CouchbaseLiteException.convertException(e);
             }
-            observer = dbChangeNotifier;
         }
-
-        if (observer != null) { observer.databaseChanged(); }
     }
 
-    // Queries:
+    // - Queries:
 
     /**
      * Create a SQL++ query.
@@ -562,7 +552,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    // Blobs:
+    // - Blobs:
 
     /**
      * (UNCOMMITTED) Use this API if you are developing Javascript language bindings.
@@ -594,7 +584,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         return (blob.updateSize() < 0) ? null : blob;
     }
 
-    // Object methods:
+    // - Object methods:
 
     @NonNull
     @Override
@@ -616,14 +606,15 @@ abstract class AbstractDatabase extends BaseDatabase {
     //---------------------------------------------
 
     /**
-     * The number of documents in the database.
+     * The number of documents in the default collection.
      *
      * @return the number of documents in the database, 0 if database is closed.
      * @deprecated Use getDefaultCollection().getCount()
      */
     @Deprecated
     public long getCount() {
-        synchronized (getDbLock()) { return (!isOpen()) ? 0L : getOpenC4DbLocked().getDocumentCount(); }
+        try { return getDefaultCollectionOrThrow().getCount(); }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
     }
 
     /**
@@ -635,8 +626,9 @@ abstract class AbstractDatabase extends BaseDatabase {
     public DatabaseConfiguration getConfig() { return new DatabaseConfiguration(config); }
 
     /**
-     * Gets an existing Document object with the given ID. If the document with the given ID doesn't
-     * exist in the database, the value returned will be null.
+     * Gets an existing Document with the given ID from the default collection.
+     * If the document with the given ID doesn't exist in the default collection,
+     * the method will return null.
      *
      * @param id the document ID
      * @return the Document object
@@ -645,20 +637,14 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Deprecated
     @Nullable
     public Document getDocument(@NonNull String id) {
-        Preconditions.assertNotEmpty(id, "id");
-        synchronized (getDbLock()) {
-            assertOpenUnchecked();
-            try { return Document.getDocument((Database) this, id, false); }
-            catch (CouchbaseLiteException e) { Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", id); }
-        }
-        return null;
+        try { return getDefaultCollectionOrThrow().getDocument(id); }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
     }
 
     /**
-     * Saves a document to the database. When write operations are executed
+     * Saves a document to the default collection. When write operations are executed
      * concurrently, the last writer will overwrite all other written values.
-     * Calling this method is the same as calling the ave(MutableDocument, ConcurrencyControl)
-     * method with LAST_WRITE_WINS concurrency control.
+     * Calling this method is the same as calling save(MutableDocument, ConcurrencyControl.LAST_WRITE_WINS)
      *
      * @param document The document.
      * @throws CouchbaseLiteException on error
@@ -670,9 +656,10 @@ abstract class AbstractDatabase extends BaseDatabase {
     }
 
     /**
-     * Saves a document to the database. When used with LAST_WRITE_WINS
+     * Saves a document to the default collection. When used with LAST_WRITE_WINS
      * concurrency control, the last write operation will win if there is a conflict.
-     * When used with FAIL_ON_CONFLICT concurrency control, save will fail with false value
+     * When used with FAIL_ON_CONFLICT concurrency control, save will fail when there
+     * is a conflict and the method will return false
      *
      * @param document           The document.
      * @param concurrencyControl The concurrency control.
@@ -683,22 +670,11 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Deprecated
     public boolean save(@NonNull MutableDocument document, @NonNull ConcurrencyControl concurrencyControl)
         throws CouchbaseLiteException {
-        try {
-            synchronized (getDbLock()) {
-                prepareDocument(document);
-                assertOpenUnchecked();
-                saveInternal(document, null, false, concurrencyControl);
-            }
-            return true;
-        }
-        catch (CouchbaseLiteException e) {
-            if (!CouchbaseLiteException.isConflict(e)) { throw e; }
-        }
-        return false;
+        return getDefaultCollectionOrThrow().save(document, concurrencyControl);
     }
 
     /**
-     * Saves a document to the database. Conflicts will be resolved by the passed ConflictHandler
+     * Saves a document to the default collection. Conflicts will be resolved by the passed ConflictHandler
      *
      * @param document        The document.
      * @param conflictHandler A conflict handler.
@@ -711,16 +687,17 @@ abstract class AbstractDatabase extends BaseDatabase {
         throws CouchbaseLiteException {
         Preconditions.assertNotNull(document, "document");
         Preconditions.assertNotNull(conflictHandler, "conflictHandler");
-        prepareDocument(document);
-        saveWithConflictHandler(document, conflictHandler);
-        return true;
+        try { return getDefaultCollectionOrThrow().save(document, conflictHandler); }
+        catch (CouchbaseLiteException e) {
+            if (!(CBLError.Domain.CBLITE.equals(e.getDomain()) && (CBLError.Code.NOT_OPEN == e.getCode()))) { throw e; }
+            else { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
+        }
     }
 
     /**
-     * Deletes a document from the database. When write operations are executed
+     * Deletes a document from the default collection. When write operations are executed
      * concurrently, the last writer will overwrite all other written values.
-     * Calling this function is the same as calling delete(Document, ConcurrencyControl)
-     * function with LAST_WRITE_WINS concurrency control.
+     * Calling this function is the same as calling delete(Document, ConcurrencyControl.LAST_WRITE_WINS)
      *
      * @param document The document.
      * @throws CouchbaseLiteException on error
@@ -732,10 +709,9 @@ abstract class AbstractDatabase extends BaseDatabase {
     }
 
     /**
-     * Deletes a document from the database. When used with lastWriteWins concurrency
+     * Deletes a document from the default collection. When used with lastWriteWins concurrency
      * control, the last write operation will win if there is a conflict.
-     * When used with FAIL_ON_CONFLICT concurrency control, delete will fail with
-     * 'false' value returned.
+     * When used with FAIL_ON_CONFLICT concurrency control, delete will fail and the method will return false.
      *
      * @param document           The document.
      * @param concurrencyControl The concurrency control.
@@ -745,65 +721,34 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Deprecated
     public boolean delete(@NonNull Document document, @NonNull ConcurrencyControl concurrencyControl)
         throws CouchbaseLiteException {
-        // NOTE: synchronized in save(Document, boolean, ConcurrencyControl, ConflictHandler) method
-        try {
-            synchronized (getDbLock()) {
-                prepareDocument(document);
-                assertOpenUnchecked();
-                saveInternal(document, null, true, concurrencyControl);
-            }
-            return true;
-        }
-        catch (CouchbaseLiteException e) {
-            if (!CouchbaseLiteException.isConflict(e)) { throw e; }
-        }
-        return false;
+        return getDefaultCollectionOrThrow().delete(document, concurrencyControl);
     }
 
     /**
-     * Purges the given document from the database. This is more drastic than delete(Document),
-     * it removes all traces of the document. The purge will NOT be replicated to other databases.
+     * Purges the passed document from the default collection. This is more drastic than delete(Document):
+     * it removes all local traces of the document. Purges will NOT be replicated to other databases.
      *
      * @param document the document to be purged.
      * @deprecated Use getDefaultCollection().purge
      */
     @Deprecated
     public void purge(@NonNull Document document) throws CouchbaseLiteException {
-        Preconditions.assertNotNull(document, "document");
-
-        if (document.isNewDocument()) {
-            throw new CouchbaseLiteException("DocumentNotFound", CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
-        }
-
-        synchronized (getDbLock()) {
-            prepareDocument(document);
-
-            try { purge(document.getId()); }
-            catch (CouchbaseLiteException e) {
-                // Ignore not found (already deleted)
-                if (e.getCode() != CBLError.Code.NOT_FOUND) { throw e; }
-            }
-
-            document.replaceC4Document(null); // Reset c4doc:
-        }
+        getDefaultCollectionOrThrow().purge(document);
     }
 
     /**
-     * Purges the given document id for the document in database. This is more drastic than delete(Document),
-     * it removes all traces of the document. The purge will NOT be replicated to other databases.
+     * Purges the document with the passed id from default collection. This is more drastic than delete(Document),
+     * it removes all local traces of the document. Purges will NOT be replicated to other databases.
      *
      * @param id the document ID
      * @deprecated Use getDefaultCollection().purge
      */
     @Deprecated
-    public void purge(@NonNull String id) throws CouchbaseLiteException {
-        Preconditions.assertNotNull(id, "id");
-        synchronized (getDbLock()) { purgeLocked(id); }
-    }
+    public void purge(@NonNull String id) throws CouchbaseLiteException { getDefaultCollectionOrThrow().purge(id); }
 
     /**
-     * Sets an expiration date on a document. After this time, the document
-     * will be purged from the database.
+     * Sets an expiration date for a document in the default collection. The document
+     * will be purged from the database at the set time.
      *
      * @param id         The ID of the Document
      * @param expiration Nullable expiration timestamp as a Date, set timestamp to null
@@ -813,16 +758,12 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Deprecated
     public void setDocumentExpiration(@NonNull String id, @Nullable Date expiration) throws CouchbaseLiteException {
-        Preconditions.assertNotNull(id, "id");
-        synchronized (getDbLock()) {
-            try { getOpenC4DbLocked().setDocumentExpiration(id, (expiration == null) ? 0 : expiration.getTime()); }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        }
+        getDefaultCollectionOrThrow().setDocumentExpiration(id, expiration);
     }
 
     /**
-     * Returns the expiration time of the document. null will be returned if there is
-     * no expiration time set
+     * Returns the expiration time of the document. If the document has no expiration time set,
+     * the method will return null.
      *
      * @param id The ID of the Document
      * @return Date a nullable expiration timestamp of the document or null if time not set.
@@ -832,18 +773,10 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Deprecated
     @Nullable
     public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
-        Preconditions.assertNotNull(id, "id");
-
-        synchronized (getDbLock()) {
-            try {
-                final long timestamp = getOpenC4DbLocked().getDocumentExpiration(id);
-                return (timestamp == 0) ? null : new Date(timestamp);
-            }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        }
+        return getDefaultCollectionOrThrow().getDocumentExpiration(id);
     }
 
-    // Database changes:
+    // - Change listeners:
 
     /**
      * Adds a change listener for the changes that occur in the database. The changes will be delivered on the UI
@@ -871,52 +804,20 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Deprecated
     @NonNull
-    public ListenerToken addChangeListener(
-        @Nullable Executor executor,
-        @NonNull DatabaseChangeListener<DatabaseChange> listener) {
-        Preconditions.assertNotNull(listener, "listener");
-        synchronized (getDbLock()) {
-            assertOpenUnchecked();
-            return addDatabaseChangeListenerLocked(executor, listener);
-        }
+    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener) {
+        try { return getDefaultCollectionOrThrow().addChangeListener(executor, listener); }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
     }
 
     /**
-     * Removes the change listener added to the database.
-     *
-     * @param token returned by a previous call to addChangeListener or addDocumentListener.
-     * @deprecated Use getDefaultCollection().removeChangeListener
-     */
-    @Deprecated
-    public void removeChangeListener(@NonNull ListenerToken token) {
-        Preconditions.assertNotNull(token, "token");
-
-        synchronized (getDbLock()) {
-            if (token instanceof ChangeListenerToken) {
-                final ChangeListenerToken<?> changeListenerToken = (ChangeListenerToken<?>) token;
-                final Object key = changeListenerToken.getKey();
-                if (key instanceof String) {
-                    removeDocumentChangeListenerLocked((String) key, changeListenerToken);
-                    return;
-                }
-            }
-
-            // this may call removeDatabaseObserver, so hold the dbLock to prevent deadlocks
-            if (dbChangeNotifier != null) { dbChangeNotifier.removeChangeListener(token); }
-        }
-    }
-
-    // Document changes:
-
-    /**
-     * Adds a change listener for the changes that occur to the specified document.
-     * The changes will be delivered on the UI thread for the Android platform and on an arbitrary
-     * thread for the Java platform. When developing a Java Desktop application using Swing or JavaFX
-     * that needs to update the UI after receiving the changes, make sure to schedule the UI update
+     * Adds a change listener for the changes that occur to the specified document, in the default collection.
+     * On the Android platform changes will be delivered on the UI thread.  On other Java platforms changes
+     * will be delivered on an arbitrary thread. When developing a Java Desktop application using Swing or JavaFX
+     * for a UI that will be updated in response to a change, make sure to schedule the UI update
      * on the UI thread by using SwingUtilities.invokeLater(Runnable) or Platform.runLater(Runnable)
      * respectively.
      *
-     * @deprecated Use getDefaultCollection().
+     * @deprecated Use getDefaultCollection().addDocumentChangeListener
      */
     @Deprecated
     @NonNull
@@ -925,9 +826,10 @@ abstract class AbstractDatabase extends BaseDatabase {
     }
 
     /**
-     * Adds a change listener for the changes that occur to the specified document with an executor on which
-     * the changes will be posted to the listener.  If the executor is not specified, the changes will be
-     * delivered on the UI thread for the Android platform and on an arbitrary thread for the Java platform.
+     * Adds a change listener for the changes that occur to the specified document, in the default collection.
+     * Changes will be posted to the listener on the passed  executor on which.
+     * If the executor is not specified, the changes will be delivered on the UI thread for
+     * the Android platform and on an arbitrary thread for the Java platform.
      *
      * @deprecated Use getDefaultCollection().
      */
@@ -937,29 +839,31 @@ abstract class AbstractDatabase extends BaseDatabase {
         @NonNull String docId,
         @Nullable Executor executor,
         @NonNull DocumentChangeListener listener) {
-        Preconditions.assertNotNull(docId, "docId");
-        Preconditions.assertNotNull(listener, "listener");
-
-        synchronized (getDbLock()) {
-            assertOpenUnchecked();
-            return addDocumentChangeListenerLocked(docId, executor, listener);
-        }
+        try { return getDefaultCollectionOrThrow().addDocumentChangeListener(docId, executor, listener); }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
     }
 
     /**
-     * Deletes a database.
-     * Deleting a database will stop all replicators, live queries and all listeners attached to it.
-     * Although attempting to close a closed database is not an error, attempting to delete a closed database is.
+     * Removes a change listener added to the default collection.
      *
-     * @throws CouchbaseLiteException Throws an exception if any error occurs during the operation.
+     * @param token returned by a previous call to addChangeListener or addDocumentListener.
+     * @deprecated Use ListenerToken.remove
      */
-    public void delete() throws CouchbaseLiteException {
-        Log.d(DOMAIN, "Deleting %s at path %s", this, getDbPath());
-        shutdown(true, C4Database::deleteDb);
+    @Deprecated
+    public void removeChangeListener(@NonNull ListenerToken token) {
+        Preconditions.assertNotNull(token, "token");
+        if (!(token instanceof ChangeListenerToken)) { return; }
+        final Collection defaultCollection = getDefaultCollectionOrThrow();
+        final String docId = ((ChangeListenerToken<?>) token).getKey();
+        // This hackery depends on the fact that we only set the keys for DocumentChangeListeners
+        if (docId == null) { defaultCollection.removeCollectionChangeListener(token); }
+        else { defaultCollection.removeDocumentChangeListener(token); }
     }
 
+    // - Indices:
+
     /**
-     * Get a list of the names of database indices.
+     * Get a list of the names of indices on the default collection.
      *
      * @return the list of index names
      * @throws CouchbaseLiteException on failure
@@ -968,28 +872,11 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Deprecated
     @NonNull
     public List<String> getIndexes() throws CouchbaseLiteException {
-        final FLValue flIndexInfo;
-        synchronized (getDbLock()) {
-            try { flIndexInfo = getOpenC4DbLocked().getIndexesInfo(); }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        }
-
-        final List<String> indexNames = new ArrayList<>();
-
-        final Object indexesInfo = flIndexInfo.asObject();
-        if (!(indexesInfo instanceof List<?>)) { return indexNames; }
-
-        for (Object idxInfo: (List<?>) indexesInfo) {
-            if (!(idxInfo instanceof Map<?, ?>)) { continue; }
-            final Object idxName = ((Map<?, ?>) idxInfo).get(INDEX_KEY_NAME);
-            if (idxName instanceof String) { indexNames.add((String) idxName); }
-        }
-
-        return indexNames;
+        return new ArrayList<>(getDefaultCollectionOrThrow().getIndexes());
     }
 
     /**
-     * Add an index to the database
+     * Add an index to the default collection.
      *
      * @param name  index name
      * @param index index description
@@ -998,11 +885,11 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Deprecated
     public void createIndex(@NonNull String name, @NonNull Index index) throws CouchbaseLiteException {
-        createIndexInternal(name, index);
+        getDefaultCollectionOrThrow().createIndexInternal(name, index);
     }
 
     /**
-     * Add an index to the database
+     * Add an index to the default collection.
      *
      * @param name   index name
      * @param config index configuration
@@ -1011,11 +898,11 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Deprecated
     public void createIndex(@NonNull String name, @NonNull IndexConfiguration config) throws CouchbaseLiteException {
-        createIndexInternal(name, config);
+        getDefaultCollectionOrThrow().createIndexInternal(name, config);
     }
 
     /**
-     * Delete the named index.
+     * Delete the named index from the default collection.
      *
      * @param name name of the index to delete
      * @throws CouchbaseLiteException on failure
@@ -1023,14 +910,11 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Deprecated
     public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
-        synchronized (getDbLock()) {
-            try { getOpenC4DbLocked().deleteIndex(name); }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        }
+        getDefaultCollectionOrThrow().deleteIndex(name);
     }
 
     //---------------------------------------------
-    // Protected level access
+    // Protected access
     //---------------------------------------------
 
     @NonNull
@@ -1040,12 +924,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Override
     protected void finalize() throws Throwable {
         try {
-            // This is the only thing that is really essential.
-            // Android has trouble with locks in finalizers.
-            final DatabaseChangeNotifier observer = dbChangeNotifier;
-            if (observer != null) { observer.close(); }
-
-            // This stuff might just speed things up a little
+            // Closing these things might just speed things up a little
             shutdownActiveProcesses(activeProcesses);
             shutdownExecutors(postExecutor, queryExecutor, 0);
         }
@@ -1056,15 +935,27 @@ abstract class AbstractDatabase extends BaseDatabase {
     // Package level access
     //---------------------------------------------
 
-    boolean equalsWithPath(@Nullable Database other) {
-        return (other != null) && Objects.equals(getFilePath(), other.getFilePath());
-    }
+    // - Databases:
 
     // Instead of clone()
     @NonNull
     Database copy() throws CouchbaseLiteException { return new Database(name, config); }
 
-    //////// DATABASES:
+    @Nullable
+    File getFilePath() {
+        final String path = getPath();
+        return (path == null) ? null : new File(path);
+    }
+
+    @Nullable
+    File getDbFile() {
+        final String path = getDbPath();
+        return (path == null) ? null : new File(path);
+    }
+
+    boolean equalsWithPath(@Nullable Database other) {
+        return (other != null) && Objects.equals(getFilePath(), other.getFilePath());
+    }
 
     @Nullable
     String getUuid() {
@@ -1083,28 +974,10 @@ abstract class AbstractDatabase extends BaseDatabase {
         return (uuid == null) ? null : PlatformUtils.getEncoder().encodeToString(uuid);
     }
 
-    @Nullable
-    File getFilePath() {
-        final String path = getPath();
-        return (path == null) ? null : new File(path);
-    }
-
-    @Nullable
-    File getDbFile() {
-        final String path = getDbPath();
-        return (path == null) ? null : new File(path);
-    }
-
-    //////// COLLECTIONS:
-
     @NonNull
-    Collection getDefaultCollectionOrThrow() {
-        final Collection collection;
-        try { collection = getDefaultCollection(); }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed getting default collection", e); }
-        if (collection == null) { throw new IllegalStateException("No default collection"); }
-        return collection;
-    }
+    FLSharedKeys getSharedKeys() { return sharedKeys; }
+
+    // - Collections:
 
     @NonNull
     C4Collection addC4Collection(@NonNull String scopeName, @NonNull String collectionName)
@@ -1123,153 +996,26 @@ abstract class AbstractDatabase extends BaseDatabase {
         synchronized (getDbLock()) { return getOpenC4DbLocked().getDefaultCollection(); }
     }
 
-    //////// DOCUMENTS:
-
-    @NonNull
-    C4Query createJsonQuery(@NonNull String json) throws LiteCoreException {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().createJsonQuery(json); }
-    }
-
-    @NonNull
-    C4Query createN1qlQuery(@NonNull String n1ql) throws LiteCoreException {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().createN1qlQuery(n1ql); }
-    }
+    // - Documents:
 
     @NonNull
     C4Document getC4Document(@NonNull String id) throws LiteCoreException {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().getDocument(id); }
-    }
-
-    @NonNull
-    FLEncoder getSharedFleeceEncoder() {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().getSharedFleeceEncoder(); }
-    }
-
-    @NonNull
-    C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().createDocumentObserver(docID, listener); }
-    }
-
-    void removeDatabaseObserver() {
-        synchronized (getDbLock()) { dbChangeNotifier = null; }
-    }
-
-    void removeDocumentObserver(@NonNull String docID) {
-        synchronized (getDbLock()) { docChangeNotifiers.remove(docID); }
-    }
-
-    // Contract:
-    //     Document must have a valid collection (see: prepareDocument)
-    void saveWithConflictHandler(@NonNull MutableDocument document, @NonNull ConflictHandler handler)
-        throws CouchbaseLiteException {
-        final Collection collection = document.getCollection();
-        Document oldDoc = null;
-        int n = 0;
-        while (true) {
-            if (n++ > MAX_CONFLICT_RESOLUTION_RETRIES) {
-                throw new CouchbaseLiteException(
-                    "Too many attempts to resolve a conflicted document: " + n,
-                    CBLError.Domain.CBLITE,
-                    CBLError.Code.UNEXPECTED_ERROR);
-            }
-
-            synchronized (getDbLock()) {
-                assertOpenUnchecked();
-                try {
-                    saveInternal(document, oldDoc, false, ConcurrencyControl.FAIL_ON_CONFLICT);
-                    return;
-                }
-                catch (CouchbaseLiteException e) {
-                    if (!CouchbaseLiteException.isConflict(e)) { throw e; }
-                }
-
-                // Conflict
-                oldDoc = Document.getDocument(collection, document.getId());
-            }
-
-            try {
-                if (!handler.handle(document, (oldDoc.isDeleted()) ? null : oldDoc)) {
-                    throw new CouchbaseLiteException(
-                        "Conflict handler returned false",
-                        CBLError.Domain.CBLITE,
-                        CBLError.Code.CONFLICT
-                    );
-                }
-            }
-            catch (Exception e) {
-                throw new CouchbaseLiteException(
-                    "Conflict handler threw an exception",
-                    e,
-                    CBLError.Domain.CBLITE,
-                    CBLError.Code.CONFLICT
-                );
-            }
-        }
-    }
-
-    // The main save method.
-    // Contract:
-    //     Called holding the db lock,
-    //     Database must be open
-    //     document must have a valid collection (see: prepareDocument)
-    @GuardedBy("getDbLock()")
-    void saveInternal(
-        @NonNull Document document,
-        @Nullable Document baseDoc,
-        boolean deleting,
-        @NonNull ConcurrencyControl concurrencyControl)
-        throws CouchbaseLiteException {
-        Preconditions.assertNotNull(document, "document");
-        Preconditions.assertNotNull(concurrencyControl, "concurrencyControl");
-
-        if (deleting && (!document.exists())) {
-            throw new CouchbaseLiteException(
-                "DeleteDocFailedNotSaved",
-                CBLError.Domain.CBLITE,
-                CBLError.Code.NOT_FOUND);
-        }
-
-        boolean commit = false;
-        beginTransaction();
-        try {
-            try {
-                saveInTransaction(document, (baseDoc == null) ? null : baseDoc.getC4doc(), deleting);
-                commit = true;
-                return;
-            }
-            catch (CouchbaseLiteException e) {
-                if (!CouchbaseLiteException.isConflict(e)) { throw e; }
-            }
-
-            // Conflict
-            if (concurrencyControl.equals(ConcurrencyControl.FAIL_ON_CONFLICT)) {
-                throw new CouchbaseLiteException("Conflict", CBLError.Domain.CBLITE, CBLError.Code.CONFLICT);
-            }
-
-            commit = saveConflicted(document, deleting);
-        }
-        finally {
-            endTransaction(commit);
-        }
+        synchronized (getDbLock()) { return getDefaultCollectionOrThrow().getC4Document(id); }
     }
 
     @GuardedBy("getDbLock()")
-    void purgeLocked(@NonNull String id) throws CouchbaseLiteException {
-        boolean commit = false;
-        beginTransaction();
-        try {
-            getOpenC4DbLocked().purgeDoc(id);
-            commit = true;
-        }
-        catch (LiteCoreException e) {
-            throw CouchbaseLiteException.convertException(e);
-        }
-        finally {
-            endTransaction(commit);
-        }
+    void beginTransaction() throws CouchbaseLiteException {
+        try { getOpenC4DbLocked().beginTransaction(); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
-    //////// REPLICATORS:
+    @GuardedBy("getDbLock()")
+    void endTransaction(boolean commit) throws CouchbaseLiteException {
+        try { getOpenC4DbLocked().endTransaction(commit); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+    }
+
+    // - Replicators:
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
@@ -1339,7 +1085,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         return c4Repl;
     }
 
-    // !!! This method is *NOT* thread safe.
+    // ??? This method is *NOT* thread safe.
     // Used wo/synchronization, there is a race on the open db
     void addActiveReplicator(AbstractReplicator replicator) {
         synchronized (getDbLock()) { assertOpenUnchecked(); }
@@ -1357,7 +1103,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     void removeActiveReplicator(AbstractReplicator replicator) { unregisterProcess(replicator); }
 
-    //////// RESOLVING REPLICATED CONFLICTS:
+    // - Replicator: Conflict resolution
 
     void resolveReplicationConflict(
         @Nullable ConflictResolver resolver,
@@ -1367,7 +1113,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         CouchbaseLiteException err = null;
         try {
             while (true) {
-                if (n++ > MAX_CONFLICT_RESOLUTION_RETRIES) {
+                if (n++ > Collection.MAX_CONFLICT_RESOLUTION_RETRIES) {
                     err = new CouchbaseLiteException(
                         "Too many attempts to resolve a conflicted document: " + n,
                         CBLError.Domain.CBLITE,
@@ -1410,7 +1156,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         callback.accept(err);
     }
 
-    //////// Cookie Store:
+    // - Cookie Store:
 
     void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) {
         try {
@@ -1428,15 +1174,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         return null;
     }
 
-    //////// Execution:
-
-    void scheduleOnPostNotificationExecutor(@NonNull Runnable task, long delayMs) {
-        CouchbaseLiteInternal.getExecutionService().postDelayedOnExecutor(delayMs, postExecutor, task);
-    }
-
-    void scheduleOnQueryExecutor(@NonNull Runnable task, long delayMs) {
-        CouchbaseLiteInternal.getExecutionService().postDelayedOnExecutor(delayMs, queryExecutor, task);
-    }
+    // - Execution:
 
     void registerProcess(ActiveProcess<?> process) {
         synchronized (activeProcesses) { activeProcesses.add(process); }
@@ -1449,28 +1187,62 @@ abstract class AbstractDatabase extends BaseDatabase {
         verifyActiveProcesses();
     }
 
+    // - Queries:
+
+    @NonNull
+    C4Query createJsonQuery(@NonNull String json) throws LiteCoreException {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().createJsonQuery(json); }
+    }
+
+    @NonNull
+    C4Query createN1qlQuery(@NonNull String n1ql) throws LiteCoreException {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().createN1qlQuery(n1ql); }
+    }
+
+    // - Utility:
+
+    @NonNull
+    FLEncoder getSharedFleeceEncoder() {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().getSharedFleeceEncoder(); }
+    }
+
     abstract int getEncryptionAlgorithm();
 
     @Nullable
     abstract byte[] getEncryptionKey();
 
+    // !!! This method will be private, when conversion to Collections is complete
+    @NonNull
+    Collection getDefaultCollectionOrThrow() {
+        final Collection collection;
+        try {
+            synchronized (getDbLock()) { collection = getDefaultCollectionLocked(); }
+        }
+        catch (CouchbaseLiteException e) {
+            throw new IllegalStateException("Failed getting default collection", e);
+        }
+
+        if (collection == null) { throw new IllegalStateException("No default collection"); }
+
+        return collection;
+    }
 
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
-    //////// DATABASES:
+    // - Database:
 
-    @GuardedBy("getDbLock()")
-    private void beginTransaction() throws CouchbaseLiteException {
-        try { getOpenC4DbLocked().beginTransaction(); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-    }
+    @Nullable
+    private Collection getDefaultCollectionLocked() throws CouchbaseLiteException {
+        if (noDefaultCollection) { return null; }
 
-    @GuardedBy("getDbLock()")
-    private void endTransaction(boolean commit) throws CouchbaseLiteException {
-        try { getOpenC4DbLocked().endTransaction(commit); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        if (defaultCollection == null) { defaultCollection = Collection.getDefaultCollection(getDatabase()); }
+        else if (!defaultCollection.isValid()) { defaultCollection = null; }
+
+        noDefaultCollection = defaultCollection == null;
+
+        return defaultCollection;
     }
 
     @NonNull
@@ -1502,93 +1274,8 @@ abstract class AbstractDatabase extends BaseDatabase {
         }
     }
 
-    //////// INDICES:
+    // - Replication: Conflict resolution
 
-    private void createIndexInternal(@NonNull String name, @NonNull AbstractIndex config)
-        throws CouchbaseLiteException {
-        Preconditions.assertNotNull(name, "name");
-        Preconditions.assertNotNull(config, "config");
-
-        synchronized (getDbLock()) {
-            final C4Database c4Db = getOpenC4DbLocked();
-            try {
-                c4Db.createIndex(
-                    name,
-                    config.getIndexSpec(),
-                    config.getQueryLanguage(),
-                    config.getIndexType(),
-                    config.getLanguage(),
-                    config.isIgnoringDiacritics());
-            }
-            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        }
-    }
-
-    //////// DOCUMENTS:
-
-    // --- Database changes:
-
-    @GuardedBy("getDbLock()")
-    @NonNull
-    private ListenerToken addDatabaseChangeListenerLocked(
-        @Nullable Executor executor,
-        @NonNull DatabaseChangeListener<DatabaseChange> listener) {
-        if (dbChangeNotifier == null) {
-            final Collection collection;
-            collection = getDefaultCollectionOrThrow();
-            dbChangeNotifier = new DatabaseChangeNotifier(collection);
-            if (isOpen()) {
-                dbChangeNotifier.start((onChange) -> getOpenC4DbLocked().createDatabaseObserver(
-                    () -> scheduleOnPostNotificationExecutor(onChange, 0)));
-            }
-        }
-        return dbChangeNotifier.addChangeListener(executor, listener);
-    }
-
-    // --- Document changes:
-
-    @GuardedBy("getDbLock()")
-    @NonNull
-    private ListenerToken addDocumentChangeListenerLocked(
-        @NonNull String docID,
-        @Nullable Executor executor,
-        @NonNull DocumentChangeListener listener) {
-        DocumentChangeNotifier docNotifier = docChangeNotifiers.get(docID);
-        if (docNotifier == null) {
-            docNotifier = new DocumentChangeNotifier((Database) this, docID);
-            docNotifier.start((onChange) ->
-                createDocumentObserver(docID, () -> scheduleOnPostNotificationExecutor(onChange, 0)));
-            docChangeNotifiers.put(docID, docNotifier);
-        }
-        final ChangeListenerToken<?> token = docNotifier.addChangeListener(executor, listener);
-        token.setKey(docID);
-        return token;
-    }
-
-    @GuardedBy("getDbLock()")
-    private void removeDocumentChangeListenerLocked(@NonNull String docID, @NonNull ChangeListenerToken<?> token) {
-        final DocumentChangeNotifier notifier = docChangeNotifiers.get(docID);
-        if (notifier == null) { return; }
-        notifier.removeChangeListener(token);
-    }
-
-    @GuardedBy("getDbLock()")
-    private void prepareDocument(@NonNull Document document)
-        throws CouchbaseLiteException {
-        final Collection defaultCollection = getDefaultCollectionOrThrow();
-        final Collection docCollection = document.getCollection();
-        if (docCollection == null) { document.setCollection(defaultCollection); }
-        // Do not use .equals here!  The database must be the exact same db.
-        else if ((defaultCollection.getDatabase() != docCollection.getDatabase())
-            || (!defaultCollection.equals(docCollection))) {
-            throw new CouchbaseLiteException(
-                "DocumentAnotherDatabase",
-                CBLError.Domain.CBLITE,
-                CBLError.Code.INVALID_PARAMETER);
-        }
-    }
-
-    //////// RESOLVE REPLICATED CONFLICTS:
     private void resolveConflictOnce(@Nullable ConflictResolver resolver, @NonNull String docID)
         throws CouchbaseLiteException, ConflictResolutionException {
         final Document localDoc;
@@ -1669,6 +1356,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
         final Database target = doc.getDatabase();
         if (!this.equals(target)) {
+            // !!! This will have to change before Collection Replication will work
             if (target == null) { doc.setCollection(getDefaultCollection()); }
             else {
                 final String msg = String.format(WARN_WRONG_DATABASE, docID, target.getName(), getName());
@@ -1699,6 +1387,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
         int mergedFlags = 0x00;
         if (resolvedDoc != null) {
+            // !!! This will have to change before Collection Replication will work
             if (resolvedDoc != localDoc) { resolvedDoc.setCollection(getDefaultCollection()); }
 
             final C4Document c4Doc = resolvedDoc.getC4doc();
@@ -1748,74 +1437,6 @@ abstract class AbstractDatabase extends BaseDatabase {
         Log.d(DOMAIN, "Conflict resolved as doc '%s' rev %s", localDoc.getId(), rawDoc.getRevID());
     }
 
-    @GuardedBy("getDbLock()")
-    private boolean saveConflicted(@NonNull Document document, boolean deleting) throws CouchbaseLiteException {
-        final C4Document curDoc;
-
-        try { curDoc = getC4Document(document.getId()); }
-        catch (LiteCoreException e) {
-            // here if deleting and the curDoc doesn't exist.
-            if (deleting
-                && (e.domain == C4Constants.ErrorDomain.LITE_CORE)
-                && (e.code == C4Constants.LiteCoreError.NOT_FOUND)) {
-                return false;
-            }
-
-            // here if the save failed.
-            throw CouchbaseLiteException.convertException(e);
-        }
-
-        // here if deleting and the curDoc has already been deleted
-        if (deleting && curDoc.isDocDeleted()) {
-            document.replaceC4Document(curDoc);
-            return false;
-        }
-
-        // Save changes on the current branch:
-        saveInTransaction(document, curDoc, deleting);
-
-        return true;
-    }
-
-    // Low-level save method
-    @GuardedBy("getDbLock()")
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
-    private void saveInTransaction(@NonNull Document document, @Nullable C4Document base, boolean deleting)
-        throws CouchbaseLiteException {
-        FLSliceResult body = null;
-        try {
-            int revFlags = 0;
-            if (deleting) { revFlags = C4Constants.RevisionFlags.DELETED; }
-            else if (!document.isEmpty()) {
-                // Encode properties to Fleece data:
-                body = document.encode();
-                if (C4Document.dictContainsBlobs(body, sharedKeys)) {
-                    revFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
-                }
-            }
-
-            // Save to database:
-            C4Document c4Doc = (base != null) ? base : document.getC4doc();
-
-            if (c4Doc != null) { c4Doc = c4Doc.update(body, revFlags); }
-            else {
-                final Collection collection = document.getCollection();
-                if (collection == null) {
-                    throw new IllegalStateException("Attempt to save document in null collection");
-                }
-                c4Doc = collection.createC4Document(document.getId(), body, revFlags);
-            }
-
-            document.replaceC4Document(c4Doc);
-        }
-        catch (LiteCoreException e) {
-            throw CouchbaseLiteException.convertException(e);
-        }
-        finally {
-            if (body != null) { body.close(); }
-        }
-    }
-
     private void verifyActiveProcesses() {
         final Set<ActiveProcess<?>> processes;
         final Set<ActiveProcess<?>> deadProcesses = new HashSet<>();
@@ -1852,10 +1473,9 @@ abstract class AbstractDatabase extends BaseDatabase {
             setC4DatabaseLocked(null);
             // mustBeOpen will now fail, which should prevent any new processes from being registered.
 
-            if (dbChangeNotifier != null) { dbChangeNotifier.close(); }
-            for (DocumentChangeNotifier notifier: docChangeNotifiers.values()) { notifier.close(); }
-            closeLatch = new CountDownLatch(1);
+            // ??? Need to shutdown observers?
 
+            closeLatch = new CountDownLatch(1);
             Set<ActiveProcess<?>> liveProcesses = null;
             synchronized (activeProcesses) {
                 if (!activeProcesses.isEmpty()) { liveProcesses = new HashSet<>(activeProcesses); }

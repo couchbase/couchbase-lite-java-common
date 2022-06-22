@@ -529,7 +529,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         // this will probably make this instance eligible for garbage collection...
         if (isStopped(c4Status)) { getDatabase().removeActiveReplicator(this); }
 
-        for (ReplicatorChangeListenerToken token: tokens) { token.notify(change); }
+        for (ReplicatorChangeListenerToken token: tokens) { token.postChange(change); }
     }
 
     void documentEnded(boolean pushing, @NonNull C4DocumentEnded... docEnds) {
@@ -597,7 +597,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         final DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
         final List<DocumentReplicationListenerToken> tokens;
         synchronized (getReplicatorLock()) { tokens = new ArrayList<>(docEndedListeners); }
-        for (DocumentReplicationListenerToken token: tokens) { token.notify(update); }
+        for (DocumentReplicationListenerToken token: tokens) { token.postChange(update); }
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
     }
 
@@ -747,11 +747,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
         long dict,
         boolean isPush) {
         final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
-        final Database db = getDatabase();
-
         return (filter != null)
             && filter.filtered(
-            new Document(db.getDefaultCollectionOrThrow(), docId, revId, FLDict.create(dict)),
+            // !!! This will have to change before Collection replication filters will work
+            new Document(getDatabase().getDefaultCollectionOrThrow(), docId, revId, FLDict.create(dict)),
             flags);
     }
 

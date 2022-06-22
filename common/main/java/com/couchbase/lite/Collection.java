@@ -16,7 +16,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
@@ -26,9 +29,12 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.couchbase.lite.internal.BaseCollection;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Collection;
+import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -37,8 +43,14 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  *
  */
-public final class Collection extends BaseCollection {
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
+public final class Collection extends BaseCollection implements AutoCloseable {
     public static final String DEFAULT_NAME = "_default";
+
+    // A random but absurdly large number.
+    static final int MAX_CONFLICT_RESOLUTION_RETRIES = 13;
+
+    private static final String INDEX_KEY_NAME = "name";
 
 
     //-------------------------------------------------------------------------
@@ -85,8 +97,14 @@ public final class Collection extends BaseCollection {
     @NonNull
     private final C4Collection c4Collection;
 
+    // !!! This leaks notifiers that go out of scope without being (explicitly) closed
     @GuardedBy("getDbLock()")
     private CollectionChangeNotifier collectionChangeNotifier;
+
+    // A map of doc ids to the groups of listeners listening for changes to that doc
+    // !!! This leaks notifiers that go out of scope without being (explicitly) closed
+    @GuardedBy("getDbLock()")
+    private final Map<String, DocumentChangeNotifier> docChangeNotifiers = new HashMap<>();
 
     // Executor for changes.
     private final ExecutionService.CloseableExecutor postExecutor;
@@ -120,18 +138,15 @@ public final class Collection extends BaseCollection {
     @NonNull
     public Scope getScope() { return new Scope(c4Collection.getScope(), db); }
 
+    // - Documents
+
     /**
      * The number of documents in the collection.
      */
-
-    // - Documents
-    @SuppressWarnings("ConstantConditions")
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     long getCount() throws CouchbaseLiteException {
-        return withLock(() -> {
-            // there is no way this can return null...
-            return (!db.isOpen()) ? 0L : c4Collection.getDocumentCount();
-        });
+        return Preconditions.assertNotNull(
+            withLock(() -> (!db.isOpen()) ? 0L : c4Collection.getDocumentCount()),
+            "token");
     }
 
     /**
@@ -168,13 +183,12 @@ public final class Collection extends BaseCollection {
      * document and this collection instance must be the same, otherwise, the InvalidParameter
      * error will be thrown.
      */
-
     public boolean save(@NonNull MutableDocument document, @NonNull ConcurrencyControl concurrencyControl)
         throws CouchbaseLiteException {
         try {
+            prepareDocument(document);
             withLockAndOpenDb(() -> {
-                prepareDocument(document);
-                db.saveInternal(document, null, false, concurrencyControl);
+                saveLocked(document, null, false, concurrencyControl);
                 return null;
             });
             return true;
@@ -200,7 +214,7 @@ public final class Collection extends BaseCollection {
         Preconditions.assertNotNull(document, "document");
         Preconditions.assertNotNull(conflictHandler, "conflictHandler");
         prepareDocument(document);
-        db.saveWithConflictHandler(document, conflictHandler);
+        saveWithConflictHandler(document, conflictHandler);
         return true;
     }
 
@@ -228,9 +242,9 @@ public final class Collection extends BaseCollection {
     public boolean delete(@NonNull Document document, @NonNull ConcurrencyControl concurrencyControl)
         throws CouchbaseLiteException {
         try {
+            prepareDocument(document);
             withLockAndOpenDb(() -> {
-                prepareDocument(document);
-                db.saveInternal(document, null, true, concurrencyControl);
+                saveLocked(document, null, true, concurrencyControl);
                 return null;
             });
             return true;
@@ -298,14 +312,13 @@ public final class Collection extends BaseCollection {
     @Nullable
     public Date getDocumentExpiration(@NonNull String id) throws CouchbaseLiteException {
         Preconditions.assertNotNull(id, "id");
-        withLockAndOpenDb(() -> {
+        return withLockAndOpenDb(() -> {
             try {
                 final long timestamp = c4Collection.getDocumentExpiration(id);
                 return (timestamp == 0) ? null : new Date(timestamp);
             }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         });
-        throw new IllegalStateException("Unreachable");
     }
 
     // - Collection Change Notification
@@ -335,11 +348,13 @@ public final class Collection extends BaseCollection {
      */
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     @NonNull
-    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull CollectionChangeListener listener)
+    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener)
         throws CouchbaseLiteException {
-        return withLock(() ->
-            // this call cannot, in fact, return null
-            addChangeListenerLocked(executor, Preconditions.assertNotNull(listener, "listener")));
+        return Preconditions.assertNotNull(
+            withLock(() ->
+                // this call cannot, in fact, return null
+                addCollectionChangeListenerLocked(executor, Preconditions.assertNotNull(listener, "listener"))),
+            "token");
     }
 
     // - Document Change Notification
@@ -349,8 +364,9 @@ public final class Collection extends BaseCollection {
      * To remove the listener, call remove() function on the returned listener token.
      */
     @NonNull
-    public ListenerToken addDocumentChangeListener(@NonNull String id, @NonNull DocumentChangeListener listener) {
-        return db.addDocumentChangeListener(id, listener);
+    public ListenerToken addDocumentChangeListener(@NonNull String id, @NonNull DocumentChangeListener listener)
+        throws CouchbaseLiteException {
+        return addDocumentChangeListener(id, null, listener);
     }
 
     /**
@@ -362,20 +378,59 @@ public final class Collection extends BaseCollection {
     public ListenerToken addDocumentChangeListener(
         @NonNull String id,
         @Nullable Executor executor,
-        @NonNull DocumentChangeListener listener) {
-        return db.addDocumentChangeListener(id, executor, listener);
+        @NonNull DocumentChangeListener listener)
+        throws CouchbaseLiteException {
+        Preconditions.assertNotNull(id, "docId");
+        Preconditions.assertNotNull(listener, "listener");
+        return Preconditions.assertNotNull(
+            withLock(() -> addDocumentChangeListenerLocked(id, executor, listener)),
+            "token");
     }
 
     // - Indexes
 
     @NonNull
-    public Set<String> getIndexes() throws CouchbaseLiteException { return new HashSet<>(db.getIndexes()); }
+    public Set<String> getIndexes() throws CouchbaseLiteException {
+        final FLValue flIndexInfo;
+        synchronized (getDbLock()) {
+            try { flIndexInfo = c4Collection.getIndexesInfo(); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
 
-    public void createIndex(String name, IndexConfiguration config) throws CouchbaseLiteException {
-        db.createIndex(name, config);
+        final Set<String> indexNames = new HashSet<>();
+
+        final Object indexesInfo = flIndexInfo.asObject();
+        if (!(indexesInfo instanceof List<?>)) { return indexNames; }
+
+        for (Object idxInfo: (List<?>) indexesInfo) {
+            if (!(idxInfo instanceof Map<?, ?>)) { continue; }
+            final Object idxName = ((Map<?, ?>) idxInfo).get(INDEX_KEY_NAME);
+            if (idxName instanceof String) { indexNames.add((String) idxName); }
+        }
+
+        return indexNames;
     }
 
-    public void deleteIndex(String name) throws CouchbaseLiteException { db.deleteIndex(name); }
+    public void createIndex(String name, IndexConfiguration config) throws CouchbaseLiteException {
+        createIndexInternal(name, config);
+    }
+
+    public void deleteIndex(String name) throws CouchbaseLiteException {
+        try { c4Collection.deleteIndex(name); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+    }
+
+    // - Autoclosable
+
+    @Override
+    public void close() {
+        synchronized (getDbLock()) {
+            closeCollectionChangNotifierLocked();
+            for (DocumentChangeNotifier notifier: docChangeNotifiers.values()) { notifier.close(); }
+            docChangeNotifiers.clear();
+            c4Collection.close();
+        }
+    }
 
     // - Object Methods
 
@@ -388,7 +443,9 @@ public final class Collection extends BaseCollection {
         if (this == o) { return true; }
         if (!(o instanceof Collection)) { return false; }
         final Collection other = (Collection) o;
-        return c4Collection.getScope().equals(other.c4Collection.getScope())
+        // don't use .equals here!  The database must be the exact same instance.
+        return db == other.db
+            && c4Collection.getScope().equals(other.c4Collection.getScope())
             && c4Collection.getName().equals(other.c4Collection.getName());
     }
 
@@ -400,9 +457,19 @@ public final class Collection extends BaseCollection {
     //-------------------------------------------------------------------------
 
     @NonNull
+    C4Collection getC4Collection() { return c4Collection; }
+
+    public boolean isValid() { return c4Collection.isValid(); }
+
+    @NonNull
     Database getDatabase() { return db; }
 
     boolean isOpen() { return db.isOpen(); }
+
+    @NonNull
+    Object getDbLock() { return db.getDbLock(); }
+
+    // - Documents:
 
     @NonNull
     C4Document createC4Document(@NonNull String docID, @Nullable FLSliceResult body, int flags)
@@ -415,17 +482,199 @@ public final class Collection extends BaseCollection {
         synchronized (getDbLock()) { return c4Collection.getDocument(id); }
     }
 
+    void saveWithConflictHandler(@NonNull MutableDocument document, @NonNull ConflictHandler handler)
+        throws CouchbaseLiteException {
+        Document oldDoc = null;
+        int n = 0;
+        while (true) {
+            if (n++ > MAX_CONFLICT_RESOLUTION_RETRIES) {
+                throw new CouchbaseLiteException(
+                    "Too many attempts to resolve a conflicted document: " + n,
+                    CBLError.Domain.CBLITE,
+                    CBLError.Code.UNEXPECTED_ERROR);
+            }
+
+            synchronized (getDbLock()) {
+                assertOpen();
+                try {
+                    saveLocked(document, oldDoc, false, ConcurrencyControl.FAIL_ON_CONFLICT);
+                    return;
+                }
+                catch (CouchbaseLiteException e) {
+                    if (!CouchbaseLiteException.isConflict(e)) { throw e; }
+                }
+
+                // Conflict
+                oldDoc = Document.getDocument(this, document.getId());
+            }
+
+            try {
+                if (!handler.handle(document, (oldDoc.isDeleted()) ? null : oldDoc)) {
+                    throw new CouchbaseLiteException(
+                        "Conflict handler returned false",
+                        CBLError.Domain.CBLITE,
+                        CBLError.Code.CONFLICT
+                    );
+                }
+            }
+            catch (Exception e) {
+                throw new CouchbaseLiteException(
+                    "Conflict handler threw an exception",
+                    e,
+                    CBLError.Domain.CBLITE,
+                    CBLError.Code.CONFLICT
+                );
+            }
+        }
+    }
+
+    // The main save method.
+    // Contract:
+    //     Called holding the db lock,
+    //     Database must be open
+    //     document must have a valid collection (see: prepareDocument)
+    @GuardedBy("getDbLock()")
+    void saveLocked(
+        @NonNull Document document,
+        @Nullable Document baseDoc,
+        boolean deleting,
+        @NonNull ConcurrencyControl concurrencyControl)
+        throws CouchbaseLiteException {
+        Preconditions.assertNotNull(document, "document");
+        Preconditions.assertNotNull(concurrencyControl, "concurrencyControl");
+
+        if (deleting && (!document.exists())) {
+            throw new CouchbaseLiteException(
+                "DeleteDocFailedNotSaved",
+                CBLError.Domain.CBLITE,
+                CBLError.Code.NOT_FOUND);
+        }
+
+        boolean commit = false;
+        db.beginTransaction();
+        try {
+            try {
+                saveInTransaction(document, (baseDoc == null) ? null : baseDoc.getC4doc(), deleting);
+                commit = true;
+                return;
+            }
+            catch (CouchbaseLiteException e) {
+                if (!CouchbaseLiteException.isConflict(e)) { throw e; }
+            }
+
+            // Conflict
+            if (concurrencyControl.equals(ConcurrencyControl.FAIL_ON_CONFLICT)) {
+                throw new CouchbaseLiteException("Conflict", CBLError.Domain.CBLITE, CBLError.Code.CONFLICT);
+            }
+
+            commit = saveConflicted(document, deleting);
+        }
+        finally {
+            db.endTransaction(commit);
+        }
+    }
+
+    @GuardedBy("getDbLock()")
     @NonNull
-    Object getDbLock() { return db.getDbLock(); }
+    ListenerToken addCollectionChangeListenerLocked(
+        @Nullable Executor executor,
+        @NonNull DatabaseChangeListener listener) {
+        if (collectionChangeNotifier == null) {
+            collectionChangeNotifier = new CollectionChangeNotifier(this);
+            if (isOpen()) { collectionChangeNotifier.start(this::scheduleImmediateOnPostExecutor); }
+        }
+        return collectionChangeNotifier.addChangeListener(executor, listener, this::removeCollectionChangeListener);
+    }
+
+    @SuppressWarnings("PMD.CollapsibleIfStatements")
+    void removeCollectionChangeListener(@NonNull ListenerToken token) {
+        if (!(token instanceof ChangeListenerToken)) {
+            Log.d(LogDomain.DATABASE, "Attempt to remove unrecognized db change listener: " + token);
+            return;
+        }
+        synchronized (getDbLock()) {
+            if (collectionChangeNotifier != null) {
+                if (collectionChangeNotifier.removeChangeListener(token)) {
+                    closeCollectionChangNotifierLocked();
+                }
+            }
+        }
+    }
+
+    @GuardedBy("getDbLock()")
+    @NonNull
+    ListenerToken addDocumentChangeListenerLocked(
+        @NonNull String docID,
+        @Nullable Executor executor,
+        @NonNull DocumentChangeListener listener) {
+        DocumentChangeNotifier docNotifier = docChangeNotifiers.get(docID);
+        if (docNotifier == null) {
+            docNotifier = new DocumentChangeNotifier(this, docID);
+            docChangeNotifiers.put(docID, docNotifier);
+            if (isOpen()) { docNotifier.start(this::scheduleImmediateOnPostExecutor); }
+        }
+        final ChangeListenerToken<?> token
+            = docNotifier.addChangeListener(executor, listener, this::removeDocumentChangeListener);
+        token.setKey(docID);
+        return token;
+    }
+
+    void removeDocumentChangeListener(@NonNull ListenerToken token) {
+        if (!(token instanceof ChangeListenerToken)) {
+            Log.d(LogDomain.DATABASE, "Attempt to remove unrecognized doc change listener: " + token);
+            return;
+        }
+
+        final String docId = ((ChangeListenerToken<?>) token).getKey();
+        synchronized (getDbLock()) {
+            final DocumentChangeNotifier notifier = docChangeNotifiers.get(docId);
+            if (notifier == null) { return; }
+
+            if (notifier.removeChangeListener(token)) {
+                notifier.close();
+                docChangeNotifiers.remove(docId);
+            }
+        }
+    }
+
+    // - Indices:
+
+    void createIndexInternal(@NonNull String name, @NonNull AbstractIndex config)
+        throws CouchbaseLiteException {
+        Preconditions.assertNotNull(name, "name");
+        Preconditions.assertNotNull(config, "config");
+
+        synchronized (getDbLock()) {
+            try {
+                c4Collection.createIndex(
+                    name,
+                    config.getIndexSpec(),
+                    config.getQueryLanguage(),
+                    config.getIndexType(),
+                    config.getLanguage(),
+                    config.isIgnoringDiacritics());
+            }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // Private (class only)
+    //-------------------------------------------------------------------------
+
+    @Nullable
+    private <T> T withLock(@NonNull Fn.Provider<T> task) {
+        synchronized (getDbLock()) { return task.get(); }
+    }
 
     @GuardedBy("dbLock")
     private void assertOpen() throws CouchbaseLiteException {
-        if (!db.isOpen()) { throw new CouchbaseLiteException(Log.lookupStandardMessage("DBClosed")); }
-    }
-
-    @Nullable
-    private <T> T withLock(@NonNull Fn.Provider<T> task) throws CouchbaseLiteException {
-        synchronized (getDbLock()) { return task.get(); }
+        if (!db.isOpen()) {
+            throw new CouchbaseLiteException(
+                Log.lookupStandardMessage("DBClosed"),
+                CBLError.Domain.CBLITE,
+                CBLError.Code.NOT_OPEN);
+        }
     }
 
     @Nullable
@@ -437,11 +686,13 @@ public final class Collection extends BaseCollection {
         }
     }
 
+    // - Documents:
+
     @GuardedBy("getDbLock()")
     private void prepareDocument(@NonNull Document document) throws CouchbaseLiteException {
         final Collection docCollection = document.getCollection();
         if (docCollection == null) { document.setCollection(this); }
-        else if (docCollection != this) {
+        else if (!this.equals(docCollection)) {
             throw new CouchbaseLiteException(
                 "DocumentAnotherDatabase",
                 CBLError.Domain.CBLITE,
@@ -455,24 +706,80 @@ public final class Collection extends BaseCollection {
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e, "Purge failed"); }
     }
 
-
     @GuardedBy("getDbLock()")
-    @NonNull
-    private ListenerToken addChangeListenerLocked(
-        @Nullable Executor executor,
-        @NonNull CollectionChangeListener listener) {
-        if (collectionChangeNotifier == null) {
-            collectionChangeNotifier = new CollectionChangeNotifier(this);
-            if (isOpen()) {
-                final ExecutionService exSvc = CouchbaseLiteInternal.getExecutionService();
-                collectionChangeNotifier.start((onChange) ->
-                    c4Collection.createCollectionObserver(() ->
-                        exSvc.postDelayedOnExecutor(0L, postExecutor, onChange)));
+    private boolean saveConflicted(@NonNull Document document, boolean deleting) throws CouchbaseLiteException {
+        final C4Document curDoc;
+
+        try { curDoc = getC4Document(document.getId()); }
+        catch (LiteCoreException e) {
+            // here if deleting and the curDoc doesn't exist.
+            if (deleting
+                && (e.domain == C4Constants.ErrorDomain.LITE_CORE)
+                && (e.code == C4Constants.LiteCoreError.NOT_FOUND)) {
+                return false;
             }
+
+            // here if the save failed.
+            throw CouchbaseLiteException.convertException(e);
         }
-        return collectionChangeNotifier.addChangeListener(executor, listener);
+
+        // here if deleting and the curDoc has already been deleted
+        if (deleting && curDoc.isDocDeleted()) {
+            document.replaceC4Document(curDoc);
+            return false;
+        }
+
+        // Save changes on the current branch:
+        saveInTransaction(document, curDoc, deleting);
+
+        return true;
     }
 
+    // Low-level save method
     @GuardedBy("getDbLock()")
-    void removeObserver() { collectionChangeNotifier = null; }
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
+    private void saveInTransaction(@NonNull Document document, @Nullable C4Document base, boolean deleting)
+        throws CouchbaseLiteException {
+        FLSliceResult body = null;
+        try {
+            int revFlags = 0;
+            if (deleting) { revFlags = C4Constants.RevisionFlags.DELETED; }
+            else if (!document.isEmpty()) {
+                // Encode properties to Fleece data:
+                body = document.encode();
+                if (C4Document.dictContainsBlobs(body, db.getSharedKeys())) {
+                    revFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
+                }
+            }
+
+            // Save to database:
+            C4Document c4Doc = (base != null) ? base : document.getC4doc();
+
+            if (c4Doc != null) { c4Doc = c4Doc.update(body, revFlags); }
+            else {
+                final Collection collection = document.getCollection();
+                if (collection == null) {
+                    throw new IllegalStateException("Attempt to save document in null collection");
+                }
+                c4Doc = collection.createC4Document(document.getId(), body, revFlags);
+            }
+
+            document.replaceC4Document(c4Doc);
+        }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(e);
+        }
+        finally {
+            if (body != null) { body.close(); }
+        }
+    }
+
+    private void closeCollectionChangNotifierLocked() {
+        collectionChangeNotifier.close();
+        collectionChangeNotifier = null;
+    }
+
+    private void scheduleImmediateOnPostExecutor(@NonNull Runnable task) {
+        CouchbaseLiteInternal.getExecutionService().postDelayedOnExecutor(0L, postExecutor, task);
+    }
 }

@@ -284,18 +284,15 @@ public class ConcurrencyTest extends BaseDbTest {
     @Test
     @ConcurrencyUnitTest
     public void testConcurrentCreateAndCloseDB() throws InterruptedException {
-        final int kNDocs = 100;
-
         final CountDownLatch latch1 = new CountDownLatch(1);
-        final String tag1 = "Create1";
         testOnNewThread(
             "testConcurrentCreateAndCloseDB-1",
             latch1,
             () -> {
-                try { createDocs(kNDocs, tag1); }
+                try { createDocs(100, "Create1"); }
                 catch (CouchbaseLiteException e) {
                     if (!e.getDomain().equals(CBLError.Domain.CBLITE) || e.getCode() != CBLError.Code.NOT_OPEN) {
-                        throw new AssertionError("Unrecognized failure", e);
+                        throw new AssertionError("Unrecognized exception", e);
                     }
                 }
                 // db not open
@@ -329,7 +326,6 @@ public class ConcurrencyTest extends BaseDbTest {
             () -> {
                 try { createDocs(kNDocs, tag1); }
                 catch (CouchbaseLiteException e) {
-                    //
                     if (!e.getDomain().equals(CBLError.Domain.CBLITE) || e.getCode() != CBLError.Code.NOT_OPEN) {
                         fail();
                     }

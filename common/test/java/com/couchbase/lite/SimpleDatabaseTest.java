@@ -22,8 +22,6 @@ import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Database;
-import com.couchbase.lite.internal.listener.ChangeListenerToken;
-import com.couchbase.lite.internal.listener.ChangeNotifier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -131,24 +129,5 @@ public class SimpleDatabaseTest extends BaseTest {
         finally {
             deleteDb(db);
         }
-    }
-
-    @Test
-    public void testChangeNotifier() throws CouchbaseLiteException {
-        Database db = createDb("default_config_db");
-        ChangeNotifier<DatabaseChange> changeNotifier = new DatabaseChangeNotifier(db.getDefaultCollection());
-        assertEquals(0, changeNotifier.getListenerCount());
-        ChangeListenerToken<DatabaseChange> t1 = changeNotifier.addChangeListener(null, c -> { });
-        assertEquals(1, changeNotifier.getListenerCount());
-        ChangeListenerToken<DatabaseChange> t2 = changeNotifier.addChangeListener(null, c -> { });
-        assertEquals(2, changeNotifier.getListenerCount());
-        t2.remove();
-        assertEquals(1, changeNotifier.getListenerCount());
-        t1.remove();
-        assertEquals(0, changeNotifier.getListenerCount());
-        t1.remove();
-        assertEquals(0, changeNotifier.getListenerCount());
-        t2.remove();
-        assertEquals(0, changeNotifier.getListenerCount());
     }
 }

@@ -8,6 +8,7 @@ import java.util.Set;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Database;
 
+
 @SuppressWarnings("PMD.TooManyMethods")
 public class NativeC4Database implements C4Database.NativeImpl {
 
@@ -98,43 +99,6 @@ public class NativeC4Database implements C4Database.NativeImpl {
         deleteCollection(peer, scope, collection);
     }
 
-    @Override
-    public long nGetDocumentCount(long db) { return getDocumentCount(db); }
-
-    @Override
-    public void nSetDocumentExpiration(long db, String docID, long timestamp) throws LiteCoreException {
-        setDocumentExpiration(db, docID, timestamp);
-    }
-
-    @Override
-    public long nGetDocumentExpiration(long db, String docID) throws LiteCoreException {
-        return getDocumentExpiration(db, docID);
-    }
-
-    @Override
-    public void nPurgeDoc(long db, String id) throws LiteCoreException { purgeDoc(db, id); }
-
-    @Override
-    public long nGetIndexesInfo(long db) throws LiteCoreException { return getIndexesInfo(db); }
-
-    @Override
-    public void nCreateIndex(
-        long db,
-        @NonNull String name,
-        @NonNull String queryExpressions,
-        int queryLanguage,
-        int indexType,
-        @Nullable String language,
-        boolean ignoreDiacritics) throws LiteCoreException {
-        createIndex(db, name, queryExpressions, queryLanguage, indexType, language, ignoreDiacritics);
-    }
-
-    @Override
-    public void nDeleteIndex(long db, @NonNull String name) throws LiteCoreException { deleteIndex(db, name); }
-
-    @Override
-    public long nGetLastSequence(long db) { return getLastSequence(db); }
-
     //-------------------------------------------------------------------------
     // Native methods
     //-------------------------------------------------------------------------
@@ -223,37 +187,4 @@ public class NativeC4Database implements C4Database.NativeImpl {
     // deletes the named collection
     private static native void deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException;
-
-    // - Testing
-
-    private static native long getLastSequence(long db);
-
-    // !!! DEPRECATED:
-    //  Delete these methods when the corresponding Database methods proxy to the default collection
-
-    // - Documents
-
-    private static native long getDocumentCount(long db);
-
-    private static native void setDocumentExpiration(long db, String docID, long timestamp) throws LiteCoreException;
-
-    private static native long getDocumentExpiration(long db, String docID) throws LiteCoreException;
-
-    private static native void purgeDoc(long db, String id) throws LiteCoreException;
-
-    private static native long getIndexesInfo(long db) throws LiteCoreException;
-
-    private static native void createIndex(
-        long db,
-        @NonNull String name,
-        @NonNull String queryExpressions,
-        int queryLanguage,
-        int indexType,
-        @Nullable String language,
-        boolean ignoreDiacritics)
-        throws LiteCoreException;
-
-    private static native void deleteIndex(long db, @NonNull String name) throws LiteCoreException;
-
-    // !!! end deprecation
 }

@@ -60,7 +60,5 @@ public class DatabaseChange {
 
     @NonNull
     @Override
-    public String toString() {
-        return "DatabaseChange{" + "database=" + getDatabase() + ", documentIDs=" + documentIDs + '}';
-    }
+    public String toString() { return "DatabaseChange{" + getDatabase() + ", " + documentIDs + '}'; }
 }

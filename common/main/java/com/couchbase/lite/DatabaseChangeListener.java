@@ -22,4 +22,4 @@ package com.couchbase.lite;
  */
 @Deprecated
 @FunctionalInterface
-public interface DatabaseChangeListener<T extends DatabaseChange> extends ChangeListener<T> { }
+public interface DatabaseChangeListener extends ChangeListener<CollectionChange> { }

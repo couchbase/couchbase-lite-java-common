@@ -81,14 +81,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Datab
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    getLastSequence
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getLastSequence
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    purgeDoc
  * Signature: (JLjava/lang/String;)V
  */
@@ -213,50 +205,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection
         (JNIEnv *, jclass, jlong, jstring, jstring);
-
-// !!! DEPRECATED: Delete these methods when the corresponding Java methods proxy to the default collection
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    setDocumentExpiration
- * Signature: (JLjava/lang/String;J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setDocumentExpiration
-        (JNIEnv *, jclass, jlong, jstring, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    getDocumentExpiration
- * Signature: (JLjava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getDocumentExpiration
-        (JNIEnv *, jclass, jlong, jstring);
-
-/*
- * Class:     Java_com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    getIndexInfo
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getIndexesInfo
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     Java_com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    createIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;IILjava/lang/String;Z)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_createIndex
-        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jstring, jboolean);
-
-/*
- * Class:     Java_com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    deleteIndex
- * Signature: (JLjava/lang/String;)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteIndex
-        (JNIEnv *, jclass, jlong, jstring);
-
-// end of deprecation
 
 #ifdef __cplusplus
 }
