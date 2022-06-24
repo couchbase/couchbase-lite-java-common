@@ -62,6 +62,10 @@ class DbCollectionsTest : BaseCollectionTest() {
     }
 
     @Test(expected = CouchbaseLiteException::class)
+    fun testCollectionNameContainingIllegalChars(){
+        baseTestDb.createCollection("notval!d")
+    }
+
     fun testCreateCollectionInNamedScope() {
         baseTestDb.createCollection("chintz", "micro")
         baseTestDb.createCollection("chintz", "3icro")
@@ -84,20 +88,29 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertEquals(1, scope?.collectionCount)
         assertNotNull(scope?.getCollection("chintz"))
 
-        //Illegal chars
-        baseTestDb.createCollection("chintz", "!micro")
+    }
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun testScopeNameWithIllegalChar1(){
+        baseTestDb.createCollection("chintz", "_micro")
+    }
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun testScopeNameWithIllegalChar2(){
+        baseTestDb.createCollection("chintz", "%micro")
     }
 
     @Test
     fun testScopeNameCaseSensitive(){
         baseTestDb.createCollection("coll1", "scope1")
-        baseTestDb.createCollection("coll2", "Scope1")
-
         val scope1 = baseTestDb.getScope("scope1")
+
+        baseTestDb.createCollection("coll2", "Scope1")
         val scope2 = baseTestDb.getScope("Scope1")
 
         assertNotNull(scope1)
         assertNotNull(scope2)
+        assertEquals(scope1, baseTestDb.getScope("scope1"))
         assertNotSame(scope1, scope2)
     }
 
@@ -387,16 +400,17 @@ class DbCollectionsTest : BaseCollectionTest() {
      * Collections and Cross Database instance
      */
 
-    @Ignore("There is no collection on other db")
+    @Ignore("Core update 170 will resolve this test fail")
     @Test
     fun testCreateThenGetCollectionFromDifferentDatabaseInstance(){
-        var otherDb = createDb("other_db")
+        var otherDb = duplicateDb(baseTestDb)
         baseTestDb.createCollection("testColl")
         val collection = otherDb.getCollection("testColl")
         assertNotNull(collection)
 
         //delete coll from a db
         baseTestDb.deleteCollection("testColl")
+        assertNull(baseTestDb.getCollection("testColl"))
         assertNull(otherDb.getCollection("testColl"))
 
         //recreate collection
