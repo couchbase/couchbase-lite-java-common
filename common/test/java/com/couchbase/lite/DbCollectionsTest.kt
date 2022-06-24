@@ -18,6 +18,7 @@ package com.couchbase.lite
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Ignore
 import org.junit.Test
@@ -31,17 +32,44 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertNotNull(scope.getCollection(Collection.DEFAULT_NAME))
     }
 
+    @Ignore("CouchbaseLiteException: duplicate column when creating collection Chintz")
     @Test
+    //create valid collections
     fun testCreateCollectionInDefaultScope() {
+        //name with valid characters
         baseTestDb.createCollection("chintz")
+        baseTestDb.createCollection("Chintz") //collection is case sensitive, this collection should be created independently from chintz
+        baseTestDb.createCollection("6hintz")
+        baseTestDb.createCollection("-Ch1ntz")
+
         val scope = baseTestDb.defaultScope
-        assertEquals(2, scope.collectionCount)
+        assertEquals(5, scope.collectionCount)
         assertNotNull(scope.getCollection("chintz"))
+        assertNotNull(scope.getCollection("Chintz"))
+        assertNotNull(scope.getCollection("6hintz"))
+        assertNotNull(scope.getCollection("-Ch1ntz"))
     }
 
-    @Test
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun testCollectionNameStartWithIllegalChars1() {
+        baseTestDb.createCollection("_notvalid")
+    }
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun tesCollectionNameStartWithIllegalChars2() {
+        baseTestDb.createCollection("%notvalid")
+    }
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun testCollectionNameContainingIllegalChars(){
+        baseTestDb.createCollection("notval!d")
+    }
+
     fun testCreateCollectionInNamedScope() {
         baseTestDb.createCollection("chintz", "micro")
+        baseTestDb.createCollection("chintz", "3icro")
+        baseTestDb.createCollection("chintz", "-micro")
 
         var scope: Scope? = baseTestDb.defaultScope
         assertEquals(1, scope?.collectionCount)
@@ -50,6 +78,40 @@ class DbCollectionsTest : BaseCollectionTest() {
         scope = baseTestDb.getScope("micro")
         assertEquals(1, scope?.collectionCount)
         assertNotNull(scope?.getCollection("chintz"))
+
+        scope = baseTestDb.getScope("3icro")
+        assertEquals(1, scope?.collectionCount)
+        assertNotNull(scope?.getCollection("chintz"))
+
+
+        scope = baseTestDb.getScope("-micro")
+        assertEquals(1, scope?.collectionCount)
+        assertNotNull(scope?.getCollection("chintz"))
+
+    }
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun testScopeNameWithIllegalChar1(){
+        baseTestDb.createCollection("chintz", "_micro")
+    }
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun testScopeNameWithIllegalChar2(){
+        baseTestDb.createCollection("chintz", "%micro")
+    }
+
+    @Test
+    fun testScopeNameCaseSensitive(){
+        baseTestDb.createCollection("coll1", "scope1")
+        val scope1 = baseTestDb.getScope("scope1")
+
+        baseTestDb.createCollection("coll2", "Scope1")
+        val scope2 = baseTestDb.getScope("Scope1")
+
+        assertNotNull(scope1)
+        assertNotNull(scope2)
+        assertEquals(scope1, baseTestDb.getScope("scope1"))
+        assertNotSame(scope1, scope2)
     }
 
     @Test
@@ -333,4 +395,30 @@ class DbCollectionsTest : BaseCollectionTest() {
 
         recreateBastTestDb()
     }
+
+    /**
+     * Collections and Cross Database instance
+     */
+
+    @Ignore("Core update 170 will resolve this test fail")
+    @Test
+    fun testCreateThenGetCollectionFromDifferentDatabaseInstance(){
+        var otherDb = duplicateDb(baseTestDb)
+        baseTestDb.createCollection("testColl")
+        val collection = otherDb.getCollection("testColl")
+        assertNotNull(collection)
+
+        //delete coll from a db
+        baseTestDb.deleteCollection("testColl")
+        assertNull(baseTestDb.getCollection("testColl"))
+        assertNull(otherDb.getCollection("testColl"))
+
+        //recreate collection
+        baseTestDb.createCollection("testColl")
+        val collectionRecreated = otherDb.getCollection("testColl")
+        assertNotSame(collectionRecreated, collection)
+
+    }
+
 }
+
