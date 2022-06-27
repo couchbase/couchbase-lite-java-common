@@ -41,8 +41,8 @@ public class IndexConfiguration extends AbstractIndex {
     }
 
     @NonNull
-    String getIndexSpec() { return StringUtils.join(",", expressions); }
+    public List<String> getExpressions() { return new ArrayList<>(expressions); }
 
     @NonNull
-    List<String> getExpressions() { return new ArrayList<>(expressions); }
+    String getIndexSpec() { return StringUtils.join(",", expressions); }
 }
