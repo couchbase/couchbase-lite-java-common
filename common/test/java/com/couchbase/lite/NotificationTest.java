@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite;
 
+import androidx.annotation.NonNull;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CountDownLatch;
@@ -22,9 +25,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
-
-import com.couchbase.lite.internal.listener.ChangeListenerToken;
-import com.couchbase.lite.internal.listener.ChangeNotifier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -299,5 +299,68 @@ public class NotificationTest extends BaseDbTest {
         assertEquals(0, changeNotifier.getListenerCount());
         t2.remove();
         assertEquals(0, changeNotifier.getListenerCount());
+    }
+
+    @Test
+    public void testDatabaseChangeAPI() throws CouchbaseLiteException, InterruptedException {
+        CountDownLatch latch1 = new CountDownLatch(1);
+        // don't change this to a lambda.
+        DatabaseChangeListener dbListener = new DatabaseChangeListener() {
+            @Override
+            public void changed(@NonNull DatabaseChange change) { latch1.countDown(); }
+        };
+        dbListener.changed(new DatabaseChange(baseTestDb.getDefaultCollection(), Collections.emptyList()));
+        assertTrue(latch1.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+
+        CountDownLatch latch2 = new CountDownLatch(1);
+        // don't change this to a lambda.
+        CollectionChangeListener colListener = new CollectionChangeListener() {
+            @Override
+            public void changed(@NonNull CollectionChange change) { latch2.countDown(); }
+        };
+        colListener.changed(new CollectionChange(baseTestDb.getDefaultCollection(), Collections.emptyList()));
+        assertTrue(latch2.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+
+        CountDownLatch latch3 = new CountDownLatch(2);
+        ListenerToken t1 = null;
+        ListenerToken t2 = null;
+        try {
+            // don't change this to a lambda.
+            t1 = baseTestDb.addChangeListener(
+                new DatabaseChangeListener() {
+                    @Override
+                    public void changed(@NonNull DatabaseChange change) { latch3.countDown(); }
+                });
+            // don't change this to a lambda.
+            t2 = baseTestDb.getDefaultCollection().addChangeListener(
+                new CollectionChangeListener() {
+                    @Override
+                    public void changed(@NonNull CollectionChange change) { latch3.countDown(); }
+                });
+            assertEquals(2, baseTestDb.getDefaultCollection().getCollectionListenerCount());
+            createDocsInDb(1000, 1, baseTestDb);
+            assertTrue(latch3.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+        }
+        finally {
+            if (t1 != null) { t1.remove(); }
+            if (t2 != null) { t2.remove(); }
+        }
+        assertEquals(0, baseTestDb.getDefaultCollection().getCollectionListenerCount());
+
+        CountDownLatch latch4 = new CountDownLatch(2);
+        ListenerToken t3 = null;
+        ListenerToken t4 = null;
+        try {
+            t3 = baseTestDb.addChangeListener(change -> latch4.countDown());
+            t4 = baseTestDb.getDefaultCollection().addChangeListener(change -> latch4.countDown());
+            assertEquals(2, baseTestDb.getDefaultCollection().getCollectionListenerCount());
+            createDocsInDb(2000, 1, baseTestDb);
+            assertTrue(latch4.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS));
+        }
+        finally {
+            if (t3 != null) { t3.remove(); }
+            if (t4 != null) { t4.remove(); }
+        }
+        assertEquals(0, baseTestDb.getDefaultCollection().getCollectionListenerCount());
     }
 }

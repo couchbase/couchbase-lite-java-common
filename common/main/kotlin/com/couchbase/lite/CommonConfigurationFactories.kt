@@ -62,8 +62,12 @@ val FullTextIndexConfigurationFactory: FullTextIndexConfiguration? = null
  * @see com.couchbase.lite.FullTextIndexConfiguration
  */
 fun FullTextIndexConfiguration?.create(
-    vararg expressions: String = emptyArray()
+    vararg expressions: String = emptyArray(),
+    language: String? = null,
+    ignoreAccents: Boolean? = null
 ) = FullTextIndexConfiguration(
+    language ?: this?.language,
+    ignoreAccents ?: this?.isIgnoringAccents() ?: false,
     if (!expressions.isEmpty()) expressions.asList() else this?.expressions
         ?: error("Must specify an expression")
 )

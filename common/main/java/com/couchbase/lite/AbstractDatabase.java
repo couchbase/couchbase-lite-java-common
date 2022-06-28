@@ -805,7 +805,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Deprecated
     @NonNull
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener) {
-        try { return getDefaultCollectionOrThrow().addChangeListener(executor, listener); }
+        try { return getDefaultCollectionOrThrow().addChangeListener(executor, listener::changed); }
         catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
     }
 

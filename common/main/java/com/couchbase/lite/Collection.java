@@ -14,6 +14,7 @@ package com.couchbase.lite;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -348,7 +349,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
      */
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     @NonNull
-    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener)
+    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull CollectionChangeListener listener)
         throws CouchbaseLiteException {
         return Preconditions.assertNotNull(
             withLock(() ->
@@ -578,7 +579,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     @NonNull
     ListenerToken addCollectionChangeListenerLocked(
         @Nullable Executor executor,
-        @NonNull DatabaseChangeListener listener) {
+        @NonNull CollectionChangeListener listener) {
         if (collectionChangeNotifier == null) {
             collectionChangeNotifier = new CollectionChangeNotifier(this);
             if (isOpen()) { collectionChangeNotifier.start(this::scheduleImmediateOnPostExecutor); }
@@ -652,9 +653,16 @@ public final class Collection extends BaseCollection implements AutoCloseable {
                     config.getQueryLanguage(),
                     config.getIndexType(),
                     config.getLanguage(),
-                    config.isIgnoringDiacritics());
+                    config.isIgnoringAccents());
             }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
+    }
+
+    @VisibleForTesting
+    int getCollectionListenerCount() {
+        synchronized (getDbLock()) {
+            return (collectionChangeNotifier == null) ? 0 : collectionChangeNotifier.getListenerCount();
         }
     }
 

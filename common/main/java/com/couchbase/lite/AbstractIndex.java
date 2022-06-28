@@ -65,7 +65,7 @@ public abstract class AbstractIndex {
     String getLanguage() { return null; }
 
     // Default value: may be overridden
-    boolean isIgnoringDiacritics() { return false; }
+    boolean isIgnoringAccents() { return false; }
 
     @NonNull
     @Override

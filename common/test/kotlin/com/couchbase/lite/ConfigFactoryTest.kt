@@ -30,6 +30,16 @@ class ConfigFactoryTest : BaseTest() {
         assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
     }
 
+    @Test
+    fun testFullTextIndexConfigurationFactoryWithProps() {
+        val config =
+            FullTextIndexConfigurationFactory.create(CONFIG_FACTORY_TEST_STRING, language = "fr", ignoreAccents = true)
+        assertEquals(1, config.expressions.size)
+        assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
+        assertEquals(true, config.isIgnoringAccents)
+        assertEquals("fr", config.language)
+    }
+
     @Test(expected = IllegalStateException::class)
     fun testFullTextIndexConfigurationFactoryNullExp() {
         FullTextIndexConfigurationFactory.create()

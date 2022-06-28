@@ -31,12 +31,20 @@ import com.couchbase.lite.internal.utils.StringUtils;
  */
 public class FullTextIndexConfiguration extends IndexConfiguration {
     @Nullable
-    private String textLanguage = Locale.getDefault().getLanguage();
-    private boolean ignoreDiacritics;
+    private String language;
+    private boolean ignoreDiacrits;
 
-    public FullTextIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
+    public FullTextIndexConfiguration(@NonNull String... expressions) { this(null, false, Arrays.asList(expressions)); }
 
-    FullTextIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.FULL_TEXT, expressions); }
+    FullTextIndexConfiguration(
+        @Nullable String language,
+        boolean ignoreDiacritics,
+        @NonNull List<String> expressions) {
+        super(IndexType.FULL_TEXT, expressions);
+        this.language = (language != null) ? language : Locale.getDefault().getLanguage();
+        this.ignoreDiacrits = ignoreDiacritics;
+    }
+
 
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.
@@ -46,23 +54,23 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
      */
     @NonNull
     public FullTextIndexConfiguration setLanguage(@Nullable String language) {
-        this.textLanguage = (StringUtils.isEmpty(language)) ? null : language;
+        this.language = (StringUtils.isEmpty(language)) ? null : language;
         return this;
     }
+
+    @Nullable
+    @Override
+    public String getLanguage() { return language; }
 
     /**
      * Set the true value to ignore accents/diacritical marks. The default value is false.
      */
     @NonNull
     public FullTextIndexConfiguration ignoreAccents(boolean ignoreAccents) {
-        this.ignoreDiacritics = ignoreAccents;
+        this.ignoreDiacrits = ignoreAccents;
         return this;
     }
 
-    @Nullable
     @Override
-    String getLanguage() { return textLanguage; }
-
-    @Override
-    boolean isIgnoringDiacritics() { return ignoreDiacritics; }
+    public boolean isIgnoringAccents() { return ignoreDiacrits; }
 }

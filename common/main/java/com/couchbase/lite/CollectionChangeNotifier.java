@@ -27,6 +27,7 @@ import com.couchbase.lite.internal.core.C4CollectionObserver;
 import com.couchbase.lite.internal.core.C4DocumentChange;
 import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 // Not thread safe...
@@ -42,7 +43,9 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
     @Nullable
     private C4CollectionObserver c4Observer;
 
-    CollectionChangeNotifier(@NonNull Collection collection) { this.collection = collection; }
+    CollectionChangeNotifier(@NonNull Collection collection) {
+        this.collection = Preconditions.assertNotNull(collection, "collection");
+    }
 
     @Override
     public void close() {

@@ -67,7 +67,7 @@ public class FullTextIndex extends Index {
     String getLanguage() { return language; }
 
     @Override
-    boolean isIgnoringDiacritics() { return ignoreDiacritics; }
+    boolean isIgnoringAccents() { return ignoreDiacritics; }
 
     @NonNull
     @Override

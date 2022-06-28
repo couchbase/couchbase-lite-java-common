@@ -53,9 +53,10 @@ fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) 
  * @see com.couchbase.lite.Collection.addChangeListener
  */
 fun Collection.collectionChangeFlow(executor: Executor) = callbackFlow {
-    val token = this@collectionChangeFlow.addChangeListener(executor) { trySend(it) }
+    val token = this@collectionChangeFlow.addChangeListener(executor, CollectionChangeListener { trySend(it) })
     awaitClose { token.remove() }
 }
+
 
 /**
  * A Flow of document changes
