@@ -29,11 +29,11 @@ public class Scope {
     @NonNull
     private final String name;
     @NonNull
-    private final AbstractDatabase db;
+    private final Database db;
 
-    Scope(@NonNull AbstractDatabase db) { this(DEFAULT_NAME, db); }
+    Scope(@NonNull Database db) { this(DEFAULT_NAME, db); }
 
-    Scope(@NonNull String name, @NonNull AbstractDatabase db) {
+    Scope(@NonNull String name, @NonNull Database db) {
         this.name = name;
         this.db = db;
     }
@@ -74,9 +74,12 @@ public class Scope {
         if (this == o) { return true; }
         if (!(o instanceof Scope)) { return false; }
         final Scope other = (Scope) o;
-        return db.getName().equals(other.db.getName()) && name.equals(other.name);
+        return (db == other.db) && name.equals(other.name);
     }
 
     @Override
     public int hashCode() { return Objects.hash(name, db); }
+
+    @NonNull
+    Database getDb() { return db; }
 }

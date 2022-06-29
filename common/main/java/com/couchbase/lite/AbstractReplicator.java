@@ -31,7 +31,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -427,7 +426,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             makeMode(config.isPush(), continuous),
             makeMode(config.isPull(), continuous),
             MessageFraming.NO_FRAMING,
-            getFleeceOptions(),
+            FLEncoder.encodeMap(config.getConnectionOptions()),
             c4ReplListener,
             (Replicator) this,
             c4ReplPushFilter,
@@ -451,7 +450,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             targetDb,
             makeMode(config.isPush(), continuous),
             makeMode(config.isPull(), continuous),
-            getFleeceOptions(),
+            FLEncoder.encodeMap(config.getConnectionOptions()),
             c4ReplListener,
             (Replicator) this,
             c4ReplPushFilter,
@@ -479,7 +478,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             makeMode(config.isPush(), continuous),
             makeMode(config.isPull(), continuous),
             framing,
-            getFleeceOptions(),
+            FLEncoder.encodeMap(config.getConnectionOptions()),
             c4ReplListener,
             (Replicator) this,
             c4ReplPushFilter,
@@ -631,7 +630,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
             C4Replicator c4Repl = getC4Replicator();
 
             if (c4Repl != null) {
-                c4Repl.setOptions(getFleeceOptions());
+                c4Repl.setOptions(FLEncoder.encodeMap(config.getConnectionOptions()));
                 // !!! This is probably a bug.  SetOptions should not clear the progress level
                 synchronized (getReplicatorLock()) { setProgressLevel(); }
                 return c4Repl;
@@ -689,22 +688,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
             executor.execute(() -> db.resolveReplicationConflict(resolver, docId, task));
             pendingResolutions.add(task);
         }
-    }
-
-    @Nullable
-    private byte[] getFleeceOptions() {
-        final Map<String, Object> options = config.getConnectionOptions();
-
-        byte[] optionsFleece = null;
-        if (!options.isEmpty()) {
-            try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
-                enc.write(options);
-                optionsFleece = enc.finish();
-            }
-            catch (LiteCoreException e) { Log.w(DOMAIN, "Failed encoding replicator options", e); }
-        }
-
-        return optionsFleece;
     }
 
     private void setupFilters() {

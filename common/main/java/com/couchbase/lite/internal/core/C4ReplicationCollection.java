@@ -16,44 +16,49 @@
 package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.util.Map;
+
+import com.couchbase.lite.ReplicatorType;
+import com.couchbase.lite.internal.fleece.FLEncoder;
 
 
 /**
  * POJO used to populate LiteCore struct of the same name
  */
-class C4ReplicationCollection {
-    final long token;
-
+public class C4ReplicationCollection {
     @NonNull
     final String scope;
     @NonNull
     final String name;
 
-    final int push;
-    final boolean hasPushFilter;
-    final int pull;
-    final boolean hasPullFilter;
+    final boolean push;
+    final boolean pull;
 
-    @NonNull
+    @Nullable
     final byte[] options;
 
+    final boolean hasPushFilter;
+    final boolean hasPullFilter;
+
+    final long token;
+
     C4ReplicationCollection(
-        long token,
         @NonNull String scope,
         @NonNull String name,
-        int push,
+        @NonNull ReplicatorType type,
         boolean hasPushFilter,
-        int pull,
         boolean hasPullFilter,
-        @NonNull byte[] options) {
-        this.token = token;
+        @NonNull Map<String, Object> options,
+        long token) {
         this.scope = scope;
         this.name = name;
-        this.push = push;
+        this.push = (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PUSH);
+        this.pull = (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PULL);
+        this.options = FLEncoder.encodeMap(options);
         this.hasPushFilter = hasPushFilter;
-        this.pull = pull;
         this.hasPullFilter = hasPullFilter;
-        this.options = new byte[options.length];
-        System.arraycopy(options, 0, this.options, 0, this.options.length);
+        this.token = token;
     }
 }

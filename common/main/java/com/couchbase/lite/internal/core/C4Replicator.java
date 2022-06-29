@@ -172,6 +172,52 @@ public abstract class C4Replicator extends C4NativePeer {
     public interface NativeImpl {
         @SuppressWarnings("PMD.ExcessiveParameterList")
         long nCreate(
+            C4ReplicationCollection[] collections,
+            long db,
+            String scheme,
+            String host,
+            int port,
+            String path,
+            String remoteDbName,
+            int framing,
+            boolean continuous,
+            byte[] options,
+            long replicatorToken,
+            long socketFactoryToken)
+            throws LiteCoreException;
+
+        long nCreateLocal(
+            C4ReplicationCollection[] collections,
+            long db,
+            long targetDb,
+            boolean continuous,
+            byte[] options,
+            long replicatorToken)
+            throws LiteCoreException;
+
+        long nCreateWithSocket(
+            C4ReplicationCollection[] collections,
+            long db,
+            long openSocket,
+            boolean continuous,
+            byte[] options,
+            long replicatorToken)
+            throws LiteCoreException;
+
+        @NonNull
+        C4ReplicatorStatus nGetStatus(long peer);
+
+        void nStart(long peer, boolean restart);
+        void nStop(long peer);
+        void nSetOptions(long peer, byte[] options);
+        long nGetPendingDocIds(long peer) throws LiteCoreException;
+        boolean nIsDocumentPending(long peer, String id) throws LiteCoreException;
+        void nSetProgressLevel(long peer, int progressLevel) throws LiteCoreException;
+        void nSetHostReachable(long peer, boolean reachable);
+        void nFree(long peer);
+
+        @SuppressWarnings("PMD.ExcessiveParameterList")
+        long nCreateDeprecated(
             long db,
             String scheme,
             String host,
@@ -188,7 +234,7 @@ public abstract class C4Replicator extends C4NativePeer {
             long socketFactoryToken)
             throws LiteCoreException;
 
-        long nCreateLocal(
+        long nCreateLocalDeprecated(
             long db,
             long targetDb,
             int push,
@@ -199,7 +245,7 @@ public abstract class C4Replicator extends C4NativePeer {
             long replicatorToken)
             throws LiteCoreException;
 
-        long nCreateWithSocket(
+        long nCreateWithSocketDeprecated(
             long db,
             long openSocket,
             int push,
@@ -207,18 +253,6 @@ public abstract class C4Replicator extends C4NativePeer {
             byte[] options,
             long replicatorToken)
             throws LiteCoreException;
-
-        @NonNull
-        C4ReplicatorStatus nGetStatus(long peer);
-
-        void nStart(long peer, boolean restart);
-        void nStop(long peer);
-        void nSetOptions(long peer, byte[] options);
-        long nGetPendingDocIds(long peer) throws LiteCoreException;
-        boolean nIsDocumentPending(long peer, String id) throws LiteCoreException;
-        void nSetProgressLevel(long peer, int progressLevel) throws LiteCoreException;
-        void nSetHostReachable(long peer, boolean reachable);
-        void nFree(long peer);
     }
 
     static final class C4MessageEndpointReplicator extends C4Replicator {
@@ -383,6 +417,129 @@ public abstract class C4Replicator extends C4NativePeer {
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
+    static C4Replicator newCreateRemoteReplicator(
+        @NonNull C4ReplicationCollection[] collections,
+        long db,
+        @Nullable String scheme,
+        @Nullable String host,
+        int port,
+        @Nullable String path,
+        @Nullable String remoteDbName,
+        @NonNull MessageFraming framing,
+        boolean continuous,
+        @Nullable byte[] options,
+        @NonNull ReplicatorListener listener,
+        @NonNull AbstractReplicator replicator,
+        @Nullable C4ReplicationFilter pushFilter,
+        @Nullable C4ReplicationFilter pullFilter,
+        @Nullable SocketFactory socketFactory)
+        throws LiteCoreException {
+        final long replicatorToken = BOUND_REPLICATORS.reserveKey();
+        final long sfToken = (socketFactory == null) ? 0L : BaseSocketFactory.bindSocketFactory(socketFactory);
+
+        final long peer = NATIVE_IMPL.nCreate(
+            collections,
+            db,
+            scheme,
+            host,
+            port,
+            path,
+            remoteDbName,
+            MessageFraming.getC4Framing(framing),
+            continuous,
+            options,
+            replicatorToken,
+            sfToken);
+
+        final C4Replicator c4Replicator = new C4ReplicatorReplicator(
+            NATIVE_IMPL,
+            peer,
+            replicatorToken,
+            listener,
+            replicator,
+            pushFilter,
+            pullFilter,
+            socketFactory,
+            sfToken
+        );
+
+        BOUND_REPLICATORS.bind(replicatorToken, c4Replicator);
+
+        return c4Replicator;
+    }
+
+    @NonNull
+    static C4Replicator newCreateLocalReplicator(
+        @NonNull C4ReplicationCollection[] collections,
+        long db,
+        @NonNull C4Database targetDb,
+        boolean continuous,
+        @Nullable byte[] options,
+        @NonNull ReplicatorListener listener,
+        @NonNull AbstractReplicator replicator,
+        @Nullable C4ReplicationFilter pushFilter,
+        @Nullable C4ReplicationFilter pullFilter)
+        throws LiteCoreException {
+        final long replicatorToken = BOUND_REPLICATORS.reserveKey();
+
+        final long peer = NATIVE_IMPL.nCreateLocal(
+            collections,
+            db,
+            targetDb.getHandle(),
+            continuous,
+            options,
+            replicatorToken);
+
+        final C4Replicator c4Replicator = new C4ReplicatorReplicator(
+            NATIVE_IMPL,
+            peer,
+            replicatorToken,
+            listener,
+            replicator,
+            pushFilter,
+            pullFilter);
+
+        BOUND_REPLICATORS.bind(replicatorToken, c4Replicator);
+
+        return c4Replicator;
+    }
+
+    @NonNull
+    static C4Replicator createMessageEndpointReplicator(
+        @NonNull C4ReplicationCollection[] collections,
+        long db,
+        @NonNull C4Socket c4Socket,
+        boolean continuous,
+        @Nullable byte[] options,
+        @NonNull ReplicatorListener listener)
+        throws LiteCoreException {
+        final long replicatorToken = BOUND_REPLICATORS.reserveKey();
+
+        final long peer = NATIVE_IMPL.nCreateWithSocket(
+            collections,
+            db,
+            c4Socket.getPeerHandle(),
+            continuous,
+            options,
+            replicatorToken);
+
+        final C4Replicator c4Replicator = new C4MessageEndpointReplicator(
+            NATIVE_IMPL,
+            peer,
+            replicatorToken,
+            listener);
+
+        BOUND_REPLICATORS.bind(replicatorToken, c4Replicator);
+
+        return c4Replicator;
+    }
+
+    //-------------------------------------------------------------------------
+    // Deprecated Static Factory Methods
+    //-------------------------------------------------------------------------
+
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
     static C4Replicator createRemoteReplicator(
         long db,
         @Nullable String scheme,
@@ -403,7 +560,7 @@ public abstract class C4Replicator extends C4NativePeer {
         final long replicatorToken = BOUND_REPLICATORS.reserveKey();
         final long sfToken = (socketFactory == null) ? 0L : BaseSocketFactory.bindSocketFactory(socketFactory);
 
-        final long peer = NATIVE_IMPL.nCreate(
+        final long peer = NATIVE_IMPL.nCreateDeprecated(
             db,
             scheme,
             host,
@@ -450,7 +607,7 @@ public abstract class C4Replicator extends C4NativePeer {
         throws LiteCoreException {
         final long replicatorToken = BOUND_REPLICATORS.reserveKey();
 
-        final long peer = NATIVE_IMPL.nCreateLocal(
+        final long peer = NATIVE_IMPL.nCreateLocalDeprecated(
             db,
             targetDb.getHandle(),
             push,
@@ -485,7 +642,7 @@ public abstract class C4Replicator extends C4NativePeer {
         throws LiteCoreException {
         final long replicatorToken = BOUND_REPLICATORS.reserveKey();
 
-        final long peer = NATIVE_IMPL.nCreateWithSocket(
+        final long peer = NATIVE_IMPL.nCreateWithSocketDeprecated(
             db,
             c4Socket.getPeerHandle(),
             push,

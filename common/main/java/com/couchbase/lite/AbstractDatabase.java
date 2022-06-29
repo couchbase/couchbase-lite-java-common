@@ -65,7 +65,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
-@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.CyclomaticComplexity", "PMD.TooManyMethods"})
+@SuppressWarnings({
+    "PMD.ExcessivePublicCount",
+    "PMD.CyclomaticComplexity",
+    "PMD.TooManyMethods",
+    "PMD.CouplingBetweenObjects"})
 abstract class AbstractDatabase extends BaseDatabase {
 
     //---------------------------------------------
@@ -192,6 +196,17 @@ abstract class AbstractDatabase extends BaseDatabase {
         FileUtils.eraseFileOrDir(C4Database.getDatabaseFile(new File(dbDir), name));
 
         throw err;
+    }
+
+    @NonNull
+    static Set<Collection> getDefaultCollectionAsSet(@NonNull Database database) {
+        final Collection collection;
+        try { collection = Collection.getDefaultCollection(database); }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException("Can't get default collection", e); }
+        if (collection == null) { throw new IllegalStateException("Default collection was deleted"); }
+        final HashSet<Collection> collections = new HashSet<>();
+        collections.add(collection);
+        return collections;
     }
 
 
@@ -335,7 +350,7 @@ abstract class AbstractDatabase extends BaseDatabase {
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
             final Set<Scope> scopes = new HashSet<>(scopeNames.size());
-            for (String scopeName: scopeNames) { scopes.add(new Scope(scopeName, this)); }
+            for (String scopeName: scopeNames) { scopes.add(new Scope(scopeName, getDatabase())); }
 
             return scopes;
         }
@@ -349,7 +364,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Nullable
     public final Scope getScope(@NonNull String name) throws CouchbaseLiteException {
         synchronized (getDbLock()) {
-            return (!getC4DbOrThrowLocked().hasScope(name)) ? null : new Scope(name, this);
+            return (!getC4DbOrThrowLocked().hasScope(name)) ? null : new Scope(name, getDatabase());
         }
     }
 
@@ -361,7 +376,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     public final Scope getDefaultScope() throws CouchbaseLiteException {
         synchronized (getDbLock()) {
             assertOpenChecked();
-            return new Scope(this);
+            return new Scope(getDatabase());
         }
     }
 

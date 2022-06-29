@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.core.impl;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.core.C4ReplicationCollection;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 
@@ -26,34 +27,30 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @Override
     public long nCreate(
+        C4ReplicationCollection[] collections,
         long db,
         String scheme,
         String host,
         int port,
         String path,
         String remoteDbName,
-        int push,
-        int pull,
         int framing,
+        boolean continuous,
         byte[] options,
-        boolean hasPushFilter,
-        boolean hasPullFilter,
         long replicatorToken,
         long socketFactoryToken)
         throws LiteCoreException {
         return create(
+            collections,
             db,
             scheme,
             host,
             port,
             path,
             remoteDbName,
-            push,
-            pull,
             framing,
+            continuous,
             options,
-            hasPushFilter,
-            hasPullFilter,
             replicatorToken,
             socketFactoryToken
         );
@@ -61,28 +58,32 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     @Override
     public long nCreateLocal(
+        C4ReplicationCollection[] collections,
         long db,
         long targetDb,
-        int push,
-        int pull,
+        boolean continuous,
         byte[] options,
-        boolean hasPushFilter,
-        boolean hasPullFilter,
         long replicatorToken)
         throws LiteCoreException {
-        return createLocal(db, targetDb, push, pull, options, hasPushFilter, hasPullFilter, replicatorToken);
+        return createLocal(
+            collections,
+            db,
+            targetDb,
+            continuous,
+            options,
+            replicatorToken);
     }
 
     @Override
     public long nCreateWithSocket(
+        C4ReplicationCollection[] collections,
         long db,
         long openSocket,
-        int push,
-        int pull,
+        boolean continuous,
         byte[] options,
         long replicatorToken)
         throws LiteCoreException {
-        return createWithSocket(db, openSocket, push, pull, options, replicatorToken);
+        return createWithSocket(collections, db, openSocket, continuous, options, replicatorToken);
     }
 
     @Override
@@ -117,16 +118,9 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     @Override
     public void nSetHostReachable(long peer, boolean reachable) { setHostReachable(peer, reachable); }
 
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Creates a new replicator.
-     */
     @SuppressWarnings("PMD.ExcessiveParameterList")
-    private static native long create(
+    @Override
+    public long nCreateDeprecated(
         long db,
         String scheme,
         String host,
@@ -141,12 +135,27 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         boolean hasPullFilter,
         long replicatorToken,
         long socketFactoryToken)
-        throws LiteCoreException;
+        throws LiteCoreException {
+        return createDeprecated(
+            db,
+            scheme,
+            host,
+            port,
+            path,
+            remoteDbName,
+            push,
+            pull,
+            framing,
+            options,
+            hasPushFilter,
+            hasPullFilter,
+            replicatorToken,
+            socketFactoryToken
+        );
+    }
 
-    /**
-     * Creates a new local replicator.
-     */
-     private static native long createLocal(
+    @Override
+    public long nCreateLocalDeprecated(
         long db,
         long targetDb,
         int push,
@@ -154,6 +163,64 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         byte[] options,
         boolean hasPushFilter,
         boolean hasPullFilter,
+        long replicatorToken)
+        throws LiteCoreException {
+        return createLocalDeprecated(
+            db,
+            targetDb,
+            push,
+            pull,
+            options,
+            hasPushFilter,
+            hasPullFilter,
+            replicatorToken);
+    }
+
+    @Override
+    public long nCreateWithSocketDeprecated(
+        long db,
+        long openSocket,
+        int push,
+        int pull,
+        byte[] options,
+        long replicatorToken)
+        throws LiteCoreException {
+        return createWithSocketDeprecated(db, openSocket, push, pull, options, replicatorToken);
+    }
+
+
+    //-------------------------------------------------------------------------
+    // native methods
+    //-------------------------------------------------------------------------
+
+    /**
+     * Creates a new replicator.
+     */
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    private static native long create(
+        C4ReplicationCollection[] collections,
+        long db,
+        String scheme,
+        String host,
+        int port,
+        String path,
+        String remoteDbName,
+        int framing,
+        boolean continuous,
+        byte[] options,
+        long replicatorToken,
+        long socketFactoryToken)
+        throws LiteCoreException;
+
+    /**
+     * Creates a new local replicator.
+     */
+    private static native long createLocal(
+        C4ReplicationCollection[] collections,
+        long db,
+        long targetDb,
+        boolean continuous,
+        byte[] options,
         long replicatorToken)
         throws LiteCoreException;
 
@@ -164,17 +231,15 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      *
      * @param db              The local database.
      * @param openSocket      An already-created C4Socket.
-     * @param push            boolean: push replication
-     * @param pull            boolean: pull replication
      * @param options         flags
      * @param replicatorToken replicatorToken
      * @return The pointer of the newly created replicator
      */
     private static native long createWithSocket(
+        C4ReplicationCollection[] collections,
         long db,
         long openSocket,
-        int push,
-        int pull,
+        boolean continuous,
         byte[] options,
         long replicatorToken)
         throws LiteCoreException;
@@ -224,4 +289,42 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      * Hint to core about the reachability of the target of this replicator.
      */
     private static native void setHostReachable(long peer, boolean reachable);
+
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    private static native long createDeprecated(
+        long db,
+        String scheme,
+        String host,
+        int port,
+        String path,
+        String remoteDbName,
+        int push,
+        int pull,
+        int framing,
+        byte[] options,
+        boolean hasPushFilter,
+        boolean hasPullFilter,
+        long replicatorToken,
+        long socketFactoryToken)
+        throws LiteCoreException;
+
+    private static native long createLocalDeprecated(
+        long db,
+        long targetDb,
+        int push,
+        int pull,
+        byte[] options,
+        boolean hasPushFilter,
+        boolean hasPullFilter,
+        long replicatorToken)
+        throws LiteCoreException;
+
+    private static native long createWithSocketDeprecated(
+        long db,
+        long openSocket,
+        int push,
+        int pull,
+        byte[] options,
+        long replicatorToken)
+        throws LiteCoreException;
 }

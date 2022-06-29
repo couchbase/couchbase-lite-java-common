@@ -25,6 +25,7 @@ import java.util.Map;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 
 
@@ -36,6 +37,19 @@ import com.couchbase.lite.internal.utils.ClassUtils;
  */
 @SuppressWarnings("PMD.TooManyMethods")
 public abstract class FLEncoder extends C4NativePeer {
+    @Nullable
+    public static byte[] encodeMap(@NonNull Map<String, Object> options) {
+        if (options.isEmpty()) { return null; }
+
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
+            enc.write(options);
+            return enc.finish();
+        }
+        catch (LiteCoreException e) { Log.w(LogDomain.REPLICATOR, "Failed encoding replicator options", e); }
+
+        return null;
+    }
+
 
     // unmanaged: the native code will free it
     static final class UnmanagedFLEncoder extends FLEncoder {

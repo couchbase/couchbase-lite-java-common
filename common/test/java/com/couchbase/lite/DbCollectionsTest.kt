@@ -67,6 +67,7 @@ class DbCollectionsTest : BaseCollectionTest() {
         baseTestDb.createCollection("notval!d")
     }
 
+    @Test
     fun testCreateCollectionInNamedScope() {
         baseTestDb.createCollection("chintz", "micro")
         baseTestDb.createCollection("chintz", "3icro")
@@ -404,10 +405,9 @@ class DbCollectionsTest : BaseCollectionTest() {
      * Collections and Cross Database instance
      */
 
-    @Ignore("Core update 170 will resolve this test fail")
     @Test
     fun testCreateThenGetCollectionFromDifferentDatabaseInstance(){
-        var otherDb = duplicateDb(baseTestDb)
+        val otherDb = duplicateDb(baseTestDb)
         baseTestDb.createCollection("testColl")
         val collection = otherDb.getCollection("testColl")
         assertNotNull(collection)

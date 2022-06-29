@@ -454,7 +454,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     public int hashCode() { return Objects.hash(c4Collection.getScope(), c4Collection.getName()); }
 
     //-------------------------------------------------------------------------
-    // Package Protected
+    // Package visibility
     //-------------------------------------------------------------------------
 
     @NonNull

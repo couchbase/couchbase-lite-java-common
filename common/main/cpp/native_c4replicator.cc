@@ -162,9 +162,17 @@ static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C
 }
 
 
-// !!! Move the field stuff into initialization.
-// !!! Fix the filter callbacks.
-static bool fromJavaReplColls(JNIEnv *env, jobjectArray jColls, C4ReplicationCollection colls[], int nColls) {
+static bool pullFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
+
+static bool pushFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
+
+// ??? Move the field stuff into initialization.
+static bool fromJavaReplColls(
+        JNIEnv *env,
+        int nColls,
+        jobjectArray jColls,
+        C4ReplicationCollection colls[],
+        C4ReplicatorMode mode) {
     jclass cls_replColl = env->FindClass("com/couchbase/lite/internal/core/C4ReplicationCollection");
     if (!cls_replColl)
         return false;
@@ -173,28 +181,28 @@ static bool fromJavaReplColls(JNIEnv *env, jobjectArray jColls, C4ReplicationCol
     if (!f_ReplColl_scope)
         return false;
 
-    jfieldID m_ReplColl_name = env->GetFieldID(cls_replColl, "name", "Ljava/lang/String;");
-    if (!m_ReplColl_name)
+    jfieldID f_ReplColl_name = env->GetFieldID(cls_replColl, "name", "Ljava/lang/String;");
+    if (!f_ReplColl_name)
         return false;
 
-    jfieldID m_ReplColl_push = env->GetFieldID(cls_replColl, "push", "I");
-    if (!m_ReplColl_push)
+    jfieldID f_ReplColl_push = env->GetFieldID(cls_replColl, "push", "Z");
+    if (!f_ReplColl_push)
         return false;
 
-    jfieldID m_ReplColl_hasPushFilter = env->GetFieldID(cls_replColl, "hasPushFilter", "Z");
-    if (!m_ReplColl_hasPushFilter)
-        return false;
-
-    jfieldID m_ReplColl_pull = env->GetFieldID(cls_replColl, "pull", "I");
-    if (!m_ReplColl_pull)
-        return false;
-
-    jfieldID m_ReplColl_hasPullFilter = env->GetFieldID(cls_replColl, "hasPullFilter", "Z");
-    if (!m_ReplColl_hasPullFilter)
+    jfieldID f_ReplColl_pull = env->GetFieldID(cls_replColl, "pull", "Z");
+    if (!f_ReplColl_pull)
         return false;
 
     jfieldID f_ReplColl_options = env->GetFieldID(cls_replColl, "options", "[B");
     if (!f_ReplColl_options)
+        return false;
+
+    jfieldID f_ReplColl_hasPushFilter = env->GetFieldID(cls_replColl, "hasPushFilter", "Z");
+    if (!f_ReplColl_hasPushFilter)
+        return false;
+
+    jfieldID f_ReplColl_hasPullFilter = env->GetFieldID(cls_replColl, "hasPullFilter", "Z");
+    if (!f_ReplColl_hasPullFilter)
         return false;
 
     jfieldID f_ReplColl_token = env->GetFieldID(cls_replColl, "token", "J");
@@ -208,25 +216,23 @@ static bool fromJavaReplColls(JNIEnv *env, jobjectArray jColls, C4ReplicationCol
         jstringSlice scope(env, (jstring) jscope);
         colls[i].collection.scope = scope;
 
-        jobject jname = env->GetObjectField(replColl, f_ReplColl_scope);
+        jobject jname = env->GetObjectField(replColl, f_ReplColl_name);
         jstringSlice name(env, (jstring) jname);
         colls[i].collection.name = name;
 
-// ??? Something like this...
-//
-//        collections[i].push = (C4ReplicatorMode) env->GetIntField(replColl, m_ReplColl_push);
-//        if (env->GetBooleanField(replColl, m_ReplColl_hasPushFilter) != JNI_TRUE)
-//            collections[i].pushFilter = &pushFilterFunction;
-//
-//        collections[i].pull = (C4ReplicatorMode) env->GetIntField(replColl, m_ReplColl_pull);
-//        if (env->GetBooleanField(replColl, m_ReplColl_hasPullFilter) != JNI_TRUE)
-//            collections[i].pullFilter = &pullFilterFunction;
-//
-//        colls[i].callbackContext = env->GetLongField(replColl, f_ReplColl_token);
+        colls[i].push = (env->GetBooleanField(replColl, f_ReplColl_push) == JNI_TRUE) ? mode : kC4Disabled;
+        colls[i].pull = (env->GetBooleanField(replColl, f_ReplColl_pull) == JNI_TRUE) ? mode : kC4Disabled;
 
         jobject joptions = env->GetObjectField(replColl, f_ReplColl_options);
         jbyteArraySlice options(env, (jbyteArray) joptions, false);
         colls[i].optionsDictFleece = options;
+
+        if (env->GetBooleanField(replColl, f_ReplColl_hasPushFilter) == JNI_TRUE)
+            colls[i].pushFilter = &pushFilterFunction;
+        if (env->GetBooleanField(replColl, f_ReplColl_hasPullFilter) == JNI_TRUE)
+            colls[i].pullFilter = &pullFilterFunction;
+
+        colls[i].callbackContext = (void *) env->GetLongField(replColl, f_ReplColl_token);
     }
 
     return true;
@@ -392,29 +398,27 @@ static bool pushFilterFunction(
     return (bool) replicationFilter(docID, revID, flags, dict, true, token);
 }
 
-extern "C" {
 
+extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;III[BZZJJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ[BJJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
         JNIEnv *env,
         jclass ignored,
+        jobjectArray collections,
         jlong jdb,
         jstring jscheme,
         jstring jhost,
         jint jport,
         jstring jpath,
         jstring jremoteDBName,
-        jint jpush,
-        jint jpull,
         jint jframing,
+        jboolean continuous,
         jbyteArray joptions,
-        jboolean hasPushFilter,
-        jboolean hasPullFilter,
         jlong replicatorToken,
         jlong socketFactoryToken) {
     jstringSlice scheme(env, jscheme);
@@ -434,19 +438,21 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
     socketFactory.framing = (C4SocketFraming) jframing;
 
     C4ReplicatorParameters params = {};
-    params.push = (C4ReplicatorMode) jpush;
-    params.pull = (C4ReplicatorMode) jpull;
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.onDocumentsEnded = &documentEndedCallback;
-    if (hasPushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
-    if (hasPullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
     params.callbackContext = (void *) replicatorToken;
     params.socketFactory = &socketFactory;
 
-    C4Error error;
+    int nCollections = env->GetArrayLength(collections);
+    C4ReplicationCollection collectionDescs[nCollections];
+    fromJavaReplColls(env, nCollections, collections, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    params.collectionCount = nCollections;
+    params.collections = collectionDescs;
+
+    C4Error error{};
     C4Replicator *repl = c4repl_new((C4Database *) jdb, c4Address, remoteDBName, params, &error);
-    if (!repl) {
+    if (!repl && error.code != 0) {
         throwError(env, error);
         return 0;
     }
@@ -457,19 +463,17 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: ((JJII[BZZJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZ[BJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
         JNIEnv *env,
         jclass ignored,
+        jobjectArray collections,
         jlong jdb,
         jlong targetDb,
-        jint jpush,
-        jint jpull,
+        jboolean continuous,
         jbyteArray joptions,
-        jboolean hasPushFilter,
-        jboolean hasPullFilter,
         jlong replicatorToken) {
 #ifndef COUCHBASE_ENTERPRISE
     C4Error error = {LiteCoreDomain, kC4ErrorUnimplemented};
@@ -479,21 +483,25 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
     jbyteArraySlice options(env, joptions, false);
 
     C4ReplicatorParameters params = {};
-    params.push = (C4ReplicatorMode) jpush;
-    params.pull = (C4ReplicatorMode) jpull;
+
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.onDocumentsEnded = &documentEndedCallback;
-    if (hasPushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
-    if (hasPullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
     params.callbackContext = (void *) replicatorToken;
 
-    C4Error error;
+    int nCollections = env->GetArrayLength(collections);
+    C4ReplicationCollection collectionDescs[nCollections];
+    fromJavaReplColls(env, nCollections, collections, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    params.collectionCount = nCollections;
+    params.collections = collectionDescs;
+
+    C4Error error{};
     C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) targetDb, params, &error);
-    if (!repl) {
+    if (!repl && error.code != 0) {
         throwError(env, error);
         return 0;
     }
+
     return (jlong) repl;
 #endif
 }
@@ -501,16 +509,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    createWithSocket
- * Signature: (JJII[BJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZ[BJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
         JNIEnv *env,
         jclass ignored,
+        jobjectArray collections,
         jlong jdb,
         jlong jopenSocket,
-        jint jpush,
-        jint jpull,
+        jboolean continuous,
         jbyteArray joptions,
         jlong replicatorToken) {
     auto *db = (C4Database *) jdb;
@@ -518,15 +526,19 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
     jbyteArraySlice options(env, joptions, false);
 
     C4ReplicatorParameters params = {};
-    params.push = (C4ReplicatorMode) jpush;
-    params.pull = (C4ReplicatorMode) jpull;
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.callbackContext = (void *) replicatorToken;
 
-    C4Error error;
+    int nCollections = env->GetArrayLength(collections);
+    C4ReplicationCollection collectionDescs[nCollections];
+    fromJavaReplColls(env, nCollections, collections, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    params.collectionCount = nCollections;
+    params.collections = collectionDescs;
+
+    C4Error error{};
     C4Replicator *repl = c4repl_newWithSocket(db, openSocket, params, &error);
-    if (!repl) {
+    if (!repl && error.code != 0) {
         throwError(env, error);
         return 0;
     }
@@ -602,10 +614,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
         JNIEnv *env,
         jclass ignored,
         jlong repl) {
-    C4Error c4Error = {};
+
+    C4Error c4Error{};
 
     C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, &c4Error);
-
     if (c4Error.domain != 0 && c4Error.code != 0) {
         throwError(env, c4Error);
         return 0L;
@@ -632,9 +644,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_isDocumentPending(
         jstring jDocId) {
     jstringSlice docId(env, jDocId);
 
-    C4Error c4Error = {};
+    C4Error c4Error{};
     bool pending = c4repl_isDocumentPending((C4Replicator *) repl, docId, &c4Error);
-
     if (c4Error.domain != 0 && c4Error.code != 0) {
         throwError(env, c4Error);
         return false;
@@ -654,9 +665,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setProgressLevel(
         jclass ignored,
         jlong repl,
         jint level) {
-    C4Error c4Error = {};
-    if (!c4repl_setProgressLevel((C4Replicator *) repl, (C4ReplicatorProgressLevel) level, &c4Error))
-        throwError(env, c4Error);
+    C4Error error{};
+    auto ok = c4repl_setProgressLevel((C4Replicator *) repl, (C4ReplicatorProgressLevel) level, &error);
+    if (!ok && error.code != 0) {
+        throwError(env, error);
+    }
 }
 
 /*
@@ -671,5 +684,145 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setHostReachable(
         jlong repl,
         jboolean reachable) {
     c4repl_setHostReachable((C4Replicator *) repl, (bool) reachable);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
+ * Method:    create
+ * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;III[BZZJJ)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createDeprecated(
+        JNIEnv *env,
+        jclass ignored,
+        jlong jdb,
+        jstring jscheme,
+        jstring jhost,
+        jint jport,
+        jstring jpath,
+        jstring jremoteDBName,
+        jint jpush,
+        jint jpull,
+        jint jframing,
+        jbyteArray joptions,
+        jboolean hasPushFilter,
+        jboolean hasPullFilter,
+        jlong replicatorToken,
+        jlong socketFactoryToken) {
+    jstringSlice scheme(env, jscheme);
+    jstringSlice host(env, jhost);
+    jstringSlice path(env, jpath);
+    jstringSlice remoteDBName(env, jremoteDBName);
+    jbyteArraySlice options(env, joptions, false);
+
+    C4Address c4Address = {};
+    c4Address.scheme = scheme;
+    c4Address.hostname = host;
+    c4Address.port = (uint16_t) jport;
+    c4Address.path = path;
+
+    C4SocketFactory socketFactory = socket_factory();
+    socketFactory.context = (void *) socketFactoryToken;
+    socketFactory.framing = (C4SocketFraming) jframing;
+
+    C4ReplicatorParameters params = {};
+    params.push = (C4ReplicatorMode) jpush;
+    params.pull = (C4ReplicatorMode) jpull;
+    params.optionsDictFleece = options;
+    params.onStatusChanged = &statusChangedCallback;
+    params.onDocumentsEnded = &documentEndedCallback;
+    if (hasPushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
+    if (hasPullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
+    params.callbackContext = (void *) replicatorToken;
+    params.socketFactory = &socketFactory;
+
+    C4Error error;
+    C4Replicator *repl = c4repl_new((C4Database *) jdb, c4Address, remoteDBName, params, &error);
+    if (!repl) {
+        throwError(env, error);
+        return 0;
+    }
+
+    return (jlong) repl;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
+ * Method:    create
+ * Signature: ((JJII[BZZJ)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocalDeprecated(
+        JNIEnv *env,
+        jclass ignored,
+        jlong jdb,
+        jlong targetDb,
+        jint jpush,
+        jint jpull,
+        jbyteArray joptions,
+        jboolean hasPushFilter,
+        jboolean hasPullFilter,
+        jlong replicatorToken) {
+#ifndef COUCHBASE_ENTERPRISE
+    C4Error error = {LiteCoreDomain, kC4ErrorUnimplemented};
+    throwError(env, error);
+    return 0;
+#else
+    jbyteArraySlice options(env, joptions, false);
+
+    C4ReplicatorParameters params = {};
+    params.push = (C4ReplicatorMode) jpush;
+    params.pull = (C4ReplicatorMode) jpull;
+    params.optionsDictFleece = options;
+    params.onStatusChanged = &statusChangedCallback;
+    params.onDocumentsEnded = &documentEndedCallback;
+    if (hasPushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
+    if (hasPullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
+    params.callbackContext = (void *) replicatorToken;
+
+    C4Error error;
+    C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) targetDb, params, &error);
+    if (!repl) {
+        throwError(env, error);
+        return 0;
+    }
+    return (jlong) repl;
+#endif
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
+ * Method:    createWithSocket
+ * Signature: (JJII[BJ)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocketDeprecated(
+        JNIEnv *env,
+        jclass ignored,
+        jlong jdb,
+        jlong jopenSocket,
+        jint jpush,
+        jint jpull,
+        jbyteArray joptions,
+        jlong replicatorToken) {
+    auto *db = (C4Database *) jdb;
+    auto openSocket = (C4Socket *) jopenSocket;
+    jbyteArraySlice options(env, joptions, false);
+
+    C4ReplicatorParameters params = {};
+    params.push = (C4ReplicatorMode) jpush;
+    params.pull = (C4ReplicatorMode) jpull;
+    params.optionsDictFleece = options;
+    params.onStatusChanged = &statusChangedCallback;
+    params.callbackContext = (void *) replicatorToken;
+
+    C4Error error;
+    C4Replicator *repl = c4repl_newWithSocket(db, openSocket, params, &error);
+    if (!repl) {
+        throwError(env, error);
+        return 0;
+    }
+
+    return (jlong) repl;
 }
 }
