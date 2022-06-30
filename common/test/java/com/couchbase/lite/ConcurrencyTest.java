@@ -371,7 +371,7 @@ public class ConcurrencyTest extends BaseDbTest {
             "testConcurrentCreateAndCompactDB-2",
             latch2,
             () -> {
-                try { baseTestDb.performMaintenance(MaintenanceType.COMPACT); }
+                try { assertTrue(baseTestDb.performMaintenance(MaintenanceType.COMPACT)); }
                 catch (CouchbaseLiteException e) { fail(); }
             });
 

@@ -49,9 +49,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     private final List<FLValue> values;
     @NonNull
-    private final long missingColumns;
-    @NonNull
     private final DbContext context;
+    private final long missingColumns;
 
     //---------------------------------------------
     // constructors

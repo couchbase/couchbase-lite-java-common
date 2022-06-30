@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit
 
 private const val MOCK_PEER = 500005L
 
-private open class MockSocketFromCore : SocketFromCore {
+open class MockSocketFromCore : SocketFromCore {
     val latch = CountDownLatch(1)
     var threadId: Long? = null
     override fun coreRequestsOpen() = Unit
@@ -46,7 +46,7 @@ private open class MockSocketFromCore : SocketFromCore {
     }
 }
 
-private open class MockSocketFactory : BaseSocketFactory {
+open class MockSocketFactory : BaseSocketFactory {
     override fun createSocket(
         toCore: SocketToCore,
         scheme: String,
@@ -59,7 +59,7 @@ private open class MockSocketFactory : BaseSocketFactory {
 
 // https://youtrack.jetbrains.com/issue/KT-5870
 // fingers crossed...
-private open class MockImpl : C4Socket.NativeImpl {
+open class MockImpl : C4Socket.NativeImpl {
     private var peer = 0L
     var totalCalls = 0
 

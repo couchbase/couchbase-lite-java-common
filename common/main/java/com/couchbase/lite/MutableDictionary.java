@@ -224,7 +224,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setBlob(@NonNull String key, @NonNull Blob value) { return setValue(key, value); }
+    public MutableDictionary setBlob(@NonNull String key, @Nullable Blob value) { return setValue(key, value); }
 
     /**
      * Set a Date object for the given key.
@@ -235,7 +235,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setDate(@NonNull String key, @NonNull Date value) { return setValue(key, value); }
+    public MutableDictionary setDate(@NonNull String key, @Nullable Date value) { return setValue(key, value); }
 
     /**
      * Set an Array object for the given key.
@@ -246,7 +246,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setArray(@NonNull String key, @NonNull Array value) { return setValue(key, value); }
+    public MutableDictionary setArray(@NonNull String key, @Nullable Array value) { return setValue(key, value); }
 
     /**
      * Set a Dictionary object for the given key.
@@ -257,7 +257,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setDictionary(@NonNull String key, @NonNull Dictionary value) {
+    public MutableDictionary setDictionary(@NonNull String key, @Nullable Dictionary value) {
         checkSelf(value);
         return setValue(key, value);
     }
@@ -304,7 +304,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
 
-    protected boolean isChanged() {
+    boolean isChanged() {
         synchronized (lock) { return internalDict.isMutated(); }
     }
 

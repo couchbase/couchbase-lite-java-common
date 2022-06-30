@@ -278,7 +278,7 @@ public abstract class C4Replicator extends C4NativePeer {
         }
     }
 
-    static final class C4ReplicatorReplicator extends C4Replicator {
+    static final class C4CommonReplicator extends C4Replicator {
         @NonNull
         private final AbstractReplicator replicator;
 
@@ -291,7 +291,7 @@ public abstract class C4Replicator extends C4NativePeer {
         private final SocketFactory socketFactory;
         private final long socketFactoryToken;
 
-        C4ReplicatorReplicator(
+        C4CommonReplicator(
             @NonNull NativeImpl impl,
             long peer,
             long token,
@@ -302,7 +302,7 @@ public abstract class C4Replicator extends C4NativePeer {
             this(impl, peer, token, listener, replicator, pushFilter, pullFilter, null, 0L);
         }
 
-        C4ReplicatorReplicator(
+        C4CommonReplicator(
             @NonNull NativeImpl impl,
             long peer,
             long token,
@@ -390,12 +390,19 @@ public abstract class C4Replicator extends C4NativePeer {
             revID,
             replicatorToken,
             repl);
-        // supported only for replicators
-        if (!(repl instanceof C4ReplicatorReplicator)) { return true; }
-        final C4ReplicatorReplicator c4Repl = (C4ReplicatorReplicator) repl;
+        // not supported for MessageEndpointReplicators
+        if (!(repl instanceof C4CommonReplicator)) { return true; }
+        final C4CommonReplicator c4Repl = (C4CommonReplicator) repl;
 
         final C4ReplicationFilter filter = (isPush) ? c4Repl.pushFilter : c4Repl.pullFilter;
         if (filter == null) { return true; }
+
+        // This shouldn't happen.
+        // If it does, we have no idea what is going on and shouldn't get in the way.
+        if ((docID == null) || (revID == null)) {
+            Log.w(LOG_DOMAIN, "Ignoring filter request for null %s/%s", docID, revID);
+            return true;
+        }
 
         final ClientTask<Boolean> task
             = new ClientTask<>(() -> filter.validationFunction(docID, revID, flags, dict, isPush, c4Repl.replicator));
@@ -417,7 +424,7 @@ public abstract class C4Replicator extends C4NativePeer {
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
-    static C4Replicator newCreateRemoteReplicator(
+    static C4Replicator createRemoteReplicator(
         @NonNull C4ReplicationCollection[] collections,
         long db,
         @Nullable String scheme,
@@ -451,7 +458,7 @@ public abstract class C4Replicator extends C4NativePeer {
             replicatorToken,
             sfToken);
 
-        final C4Replicator c4Replicator = new C4ReplicatorReplicator(
+        final C4Replicator c4Replicator = new C4CommonReplicator(
             NATIVE_IMPL,
             peer,
             replicatorToken,
@@ -469,7 +476,7 @@ public abstract class C4Replicator extends C4NativePeer {
     }
 
     @NonNull
-    static C4Replicator newCreateLocalReplicator(
+    static C4Replicator createLocalReplicator(
         @NonNull C4ReplicationCollection[] collections,
         long db,
         @NonNull C4Database targetDb,
@@ -490,7 +497,7 @@ public abstract class C4Replicator extends C4NativePeer {
             options,
             replicatorToken);
 
-        final C4Replicator c4Replicator = new C4ReplicatorReplicator(
+        final C4Replicator c4Replicator = new C4CommonReplicator(
             NATIVE_IMPL,
             peer,
             replicatorToken,
@@ -576,7 +583,7 @@ public abstract class C4Replicator extends C4NativePeer {
             replicatorToken,
             sfToken);
 
-        final C4Replicator c4Replicator = new C4ReplicatorReplicator(
+        final C4Replicator c4Replicator = new C4CommonReplicator(
             NATIVE_IMPL,
             peer,
             replicatorToken,
@@ -617,7 +624,7 @@ public abstract class C4Replicator extends C4NativePeer {
             pullFilter != null,
             replicatorToken);
 
-        final C4Replicator c4Replicator = new C4ReplicatorReplicator(
+        final C4Replicator c4Replicator = new C4CommonReplicator(
             NATIVE_IMPL,
             peer,
             replicatorToken,

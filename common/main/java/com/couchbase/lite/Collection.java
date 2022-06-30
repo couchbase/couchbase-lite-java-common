@@ -421,7 +421,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
-    // - Autoclosable
+    // - AutoCloseable
 
     @Override
     public void close() {
@@ -437,7 +437,9 @@ public final class Collection extends BaseCollection implements AutoCloseable {
 
     @NonNull
     @Override
-    public String toString() { return c4Collection.getScope() + "." + c4Collection.getName(); }
+    public String toString() {
+        return c4Collection.getDb() + "." + c4Collection.getScope() + "." + c4Collection.getName();
+    }
 
     @Override
     public boolean equals(Object o) {

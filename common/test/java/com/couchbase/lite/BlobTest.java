@@ -433,7 +433,7 @@ public class BlobTest extends BaseDbTest {
         Blob blob = makeBlob();
         baseTestDb.saveBlob(blob);
 
-        baseTestDb.performMaintenance(MaintenanceType.COMPACT);
+        assertTrue(baseTestDb.performMaintenance(MaintenanceType.COMPACT));
 
         Map<String, Object> props = new HashMap<>();
         props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);

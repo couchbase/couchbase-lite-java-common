@@ -872,7 +872,7 @@ public class DatabaseTest extends BaseDbTest {
         assertEquals(nDocs, attsDir.listFiles().length);
 
         // Compact:
-        baseTestDb.performMaintenance(MaintenanceType.COMPACT);
+        assertTrue(baseTestDb.performMaintenance(MaintenanceType.COMPACT));
         assertEquals(nDocs, attsDir.listFiles().length);
 
         // Delete all docs:
@@ -883,7 +883,7 @@ public class DatabaseTest extends BaseDbTest {
         }
 
         // Compact:
-        baseTestDb.performMaintenance(MaintenanceType.COMPACT);
+        assertTrue(baseTestDb.performMaintenance(MaintenanceType.COMPACT));
         assertEquals(0, attsDir.listFiles().length);
     }
 
@@ -1091,7 +1091,7 @@ public class DatabaseTest extends BaseDbTest {
     @Test
     public void testRebuildIndex() throws CouchbaseLiteException {
         testCreateIndex();
-        baseTestDb.performMaintenance(MaintenanceType.REINDEX);
+        assertTrue(baseTestDb.performMaintenance(MaintenanceType.REINDEX));
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1416

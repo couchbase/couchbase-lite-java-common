@@ -32,6 +32,7 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 
+import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
@@ -51,6 +52,8 @@ public abstract class BaseDbTest extends BaseTest {
 
     public static final String TEST_DATE = "2019-02-21T05:37:22.014Z";
     public static final String BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box.";
+
+    public static C4Database getC4Db(@NonNull Database db) { return db.getOpenC4Database(); }
 
 
     protected Database baseTestDb;

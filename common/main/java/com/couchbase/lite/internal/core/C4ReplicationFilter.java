@@ -16,7 +16,6 @@
 package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.couchbase.lite.AbstractReplicator;
 
@@ -24,8 +23,8 @@ import com.couchbase.lite.AbstractReplicator;
 @FunctionalInterface
 public interface C4ReplicationFilter {
     boolean validationFunction(
-        @Nullable String docID,
-        @Nullable String revID,
+        @NonNull String docID,
+        @NonNull String revID,
         int flags,
         long dict,
         boolean isPush,

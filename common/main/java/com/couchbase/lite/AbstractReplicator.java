@@ -777,8 +777,9 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @NonNull
     private String description() { return baseDesc() + "," + getDatabase() + " => " + config.getTarget() + "}"; }
 
+    // keep this around
     @NonNull
-    @SuppressWarnings("PMD.UnusedPrivateMethod")
+    @SuppressWarnings({"PMD.UnusedPrivateMethod", "unused"})
     private String simpleDesc() { return baseDesc() + "}"; }
 
     @NonNull

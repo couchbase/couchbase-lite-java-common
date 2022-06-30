@@ -730,9 +730,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     private void addCollectionConfig(@NonNull Collection collection, @Nullable CollectionConfiguration config) {
-        Preconditions.assertThat(
-            !collection.getName().equals(Collection.DEFAULT_NAME),
-            "Cannot create the default collection");
+        // !!! Should forbid adding the default collection?
 
         final Database db = collection.getDatabase();
         if (database == null) { database = db; }
