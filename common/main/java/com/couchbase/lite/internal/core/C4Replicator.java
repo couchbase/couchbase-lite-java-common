@@ -417,7 +417,7 @@ public abstract class C4Replicator extends C4NativePeer {
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
-    static C4Replicator newCreateRemoteReplicator(
+    static C4Replicator createRemoteReplicator(
         @NonNull C4ReplicationCollection[] collections,
         long db,
         @Nullable String scheme,
@@ -469,7 +469,7 @@ public abstract class C4Replicator extends C4NativePeer {
     }
 
     @NonNull
-    static C4Replicator newCreateLocalReplicator(
+    static C4Replicator createLocalReplicator(
         @NonNull C4ReplicationCollection[] collections,
         long db,
         @NonNull C4Database targetDb,

@@ -166,49 +166,50 @@ static bool pullFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionF
 
 static bool pushFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
 
-// ??? Move the field stuff into initialization.
-static bool fromJavaReplColls(
+// ??? Move the field introspection into initialization.
+static int fromJavaReplColls(
         JNIEnv *env,
-        int nColls,
         jobjectArray jColls,
-        C4ReplicationCollection colls[],
+        std::vector<C4ReplicationCollection> colls,
         C4ReplicatorMode mode) {
     jclass cls_replColl = env->FindClass("com/couchbase/lite/internal/core/C4ReplicationCollection");
     if (!cls_replColl)
-        return false;
+        return -1;
 
     jfieldID f_ReplColl_scope = env->GetFieldID(cls_replColl, "scope", "Ljava/lang/String;");
     if (!f_ReplColl_scope)
-        return false;
+        return -1;
 
     jfieldID f_ReplColl_name = env->GetFieldID(cls_replColl, "name", "Ljava/lang/String;");
     if (!f_ReplColl_name)
-        return false;
+        return -1;
 
     jfieldID f_ReplColl_push = env->GetFieldID(cls_replColl, "push", "Z");
     if (!f_ReplColl_push)
-        return false;
+        return -1;
 
     jfieldID f_ReplColl_pull = env->GetFieldID(cls_replColl, "pull", "Z");
     if (!f_ReplColl_pull)
-        return false;
+        return -1;
 
     jfieldID f_ReplColl_options = env->GetFieldID(cls_replColl, "options", "[B");
     if (!f_ReplColl_options)
-        return false;
+        return -1;
 
     jfieldID f_ReplColl_hasPushFilter = env->GetFieldID(cls_replColl, "hasPushFilter", "Z");
     if (!f_ReplColl_hasPushFilter)
-        return false;
+        return -1;
 
     jfieldID f_ReplColl_hasPullFilter = env->GetFieldID(cls_replColl, "hasPullFilter", "Z");
     if (!f_ReplColl_hasPullFilter)
-        return false;
+        return -1;
 
     jfieldID f_ReplColl_token = env->GetFieldID(cls_replColl, "token", "J");
     if (!f_ReplColl_token)
-        return false;
+        return -1;
 
+    int nColls = env->GetArrayLength(jColls);
+    colls.resize(nColls);
     for (jsize i = 0; i < nColls; i++) {
         jobject replColl = env->GetObjectArrayElement(jColls, i);
 
@@ -235,7 +236,7 @@ static bool fromJavaReplColls(
         colls[i].callbackContext = (void *) env->GetLongField(replColl, f_ReplColl_token);
     }
 
-    return true;
+    return nColls;
 }
 
 /**
@@ -409,7 +410,7 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
         JNIEnv *env,
         jclass ignored,
-        jobjectArray collections,
+        jobjectArray jCollDescs,
         jlong jdb,
         jstring jscheme,
         jstring jhost,
@@ -444,11 +445,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
     params.callbackContext = (void *) replicatorToken;
     params.socketFactory = &socketFactory;
 
-    int nCollections = env->GetArrayLength(collections);
-    C4ReplicationCollection collectionDescs[nCollections];
-    fromJavaReplColls(env, nCollections, collections, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
-    params.collectionCount = nCollections;
-    params.collections = collectionDescs;
+
+    std::vector<C4ReplicationCollection> collectionDescs;
+    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    if (nColls < 0) {
+        C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
+        throwError(env, error);
+        return 0;
+    }
+    params.collectionCount = nColls;
+    params.collections = collectionDescs.data();
 
     C4Error error{};
     C4Replicator *repl = c4repl_new((C4Database *) jdb, c4Address, remoteDBName, params, &error);
@@ -469,7 +475,7 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
         JNIEnv *env,
         jclass ignored,
-        jobjectArray collections,
+        jobjectArray jCollDescs,
         jlong jdb,
         jlong targetDb,
         jboolean continuous,
@@ -489,11 +495,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
     params.onDocumentsEnded = &documentEndedCallback;
     params.callbackContext = (void *) replicatorToken;
 
-    int nCollections = env->GetArrayLength(collections);
-    C4ReplicationCollection collectionDescs[nCollections];
-    fromJavaReplColls(env, nCollections, collections, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
-    params.collectionCount = nCollections;
-    params.collections = collectionDescs;
+    std::vector<C4ReplicationCollection> collectionDescs;
+    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    if (nColls < 0) {
+        C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
+        throwError(env, error);
+        return 0;
+    }
+    params.collectionCount = nColls;
+    params.collections = collectionDescs.data();
 
     C4Error error{};
     C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) targetDb, params, &error);
@@ -515,7 +525,7 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
         JNIEnv *env,
         jclass ignored,
-        jobjectArray collections,
+        jobjectArray jCollDescs,
         jlong jdb,
         jlong jopenSocket,
         jboolean continuous,
@@ -530,11 +540,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
     params.onStatusChanged = &statusChangedCallback;
     params.callbackContext = (void *) replicatorToken;
 
-    int nCollections = env->GetArrayLength(collections);
-    C4ReplicationCollection collectionDescs[nCollections];
-    fromJavaReplColls(env, nCollections, collections, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
-    params.collectionCount = nCollections;
-    params.collections = collectionDescs;
+    std::vector<C4ReplicationCollection> collectionDescs;
+    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    if (nColls < 0) {
+        C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
+        throwError(env, error);
+        return 0;
+    }
+    params.collectionCount = nColls;
+    params.collections = collectionDescs.data();
 
     C4Error error{};
     C4Replicator *repl = c4repl_newWithSocket(db, openSocket, params, &error);
