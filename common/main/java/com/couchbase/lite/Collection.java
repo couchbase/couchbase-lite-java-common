@@ -154,14 +154,21 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     /**
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
      * exist in the collection, the value returned will be null.
+     * <p>
+     *
      */
     @Nullable
     public Document getDocument(@NonNull String id) throws CouchbaseLiteException {
         Preconditions.assertNotEmpty(id, "id");
         return withLockAndOpenDb(() -> {
             try { return Document.getDocument(this, id, false); }
-            catch (CouchbaseLiteException e) { Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", id); }
-            return null;
+            catch (CouchbaseLiteException e) {
+                if (e.getCode() == CBLError.Code.NOT_FOUND) {
+                    Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", id);
+                    return null;
+                }
+                else { throw e; }
+            }
         });
     }
 

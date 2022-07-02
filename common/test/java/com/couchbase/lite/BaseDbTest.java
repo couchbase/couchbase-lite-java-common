@@ -21,9 +21,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 
 import org.json.JSONArray;
@@ -55,6 +59,12 @@ public abstract class BaseDbTest extends BaseTest {
 
     public static C4Database getC4Db(@NonNull Database db) { return db.getOpenC4Database(); }
 
+    protected static <T extends Comparable<T>> void assertContents(List<T> l1, T... contents) {
+        List<T> l2 = Arrays.asList(contents);
+        Collections.sort(l2);
+        Collections.sort(l1);
+        assertEquals(l1, l2);
+    }
 
     protected Database baseTestDb;
 
@@ -1655,9 +1665,14 @@ public abstract class BaseDbTest extends BaseTest {
         verifyBlob(doc.getBlob("doc-29"));
     }
 
+    protected Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb("test_db")); }
+
     protected final void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
 
     protected final void recreateBastTestDb() throws CouchbaseLiteException { baseTestDb = recreateDb(baseTestDb); }
+
+    protected Database duplicateBaseTestDb() throws CouchbaseLiteException { return verifyDb(duplicateDb(baseTestDb)); }
+
 
     // Some JSON encoding will promote a Float to a Double.
     protected final Float demoteToFloat(Object val) {
@@ -1665,4 +1680,23 @@ public abstract class BaseDbTest extends BaseTest {
         if (val instanceof Double) { return ((Double) val).floatValue(); }
         throw new IllegalArgumentException("expected a floating point value");
     }
+    private Database verifyDb(Database db) {
+        try {
+            assertNotNull(db);
+            assertTrue(new File(db.getPath()).getCanonicalPath().endsWith(C4Database.DB_EXTENSION));
+
+            return db;
+        }
+        catch (IOException e) {
+            deleteDb(db);
+            throw new AssertionError("Unable to get db path", e);
+        }
+        catch (AssertionError e) {
+            deleteDb(db);
+            throw e;
+        }
+    }
+
+
+
 }

@@ -49,12 +49,6 @@ import static org.junit.Assert.fail;
 // If a test opens a new database it guarantee that it is deleted.
 // If a test opens a copy of the baseTestDb, it must close (but NOT delete)
 public class DatabaseTest extends BaseDbTest {
-    private static <T extends Comparable<T>> void assertContents(List<T> l1, T... contents) {
-        List<T> l2 = Arrays.asList(contents);
-        Collections.sort(l2);
-        Collections.sort(l1);
-        assertEquals(l1, l2);
-    }
 
     //---------------------------------------------
     //  Get Document
@@ -1423,12 +1417,6 @@ public class DatabaseTest extends BaseDbTest {
         }
     }
 
-    private Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb("test_db")); }
-
-    private Database duplicateBaseTestDb() throws CouchbaseLiteException {
-        return verifyDb(duplicateDb(baseTestDb));
-    }
-
     private Database duplicateBaseTestDb(int count) throws CouchbaseLiteException {
         Database db = duplicateBaseTestDb();
 
@@ -1439,23 +1427,6 @@ public class DatabaseTest extends BaseDbTest {
         }
 
         return db;
-    }
-
-    private Database verifyDb(Database db) {
-        try {
-            assertNotNull(db);
-            assertTrue(new File(db.getPath()).getCanonicalPath().endsWith(C4Database.DB_EXTENSION));
-
-            return db;
-        }
-        catch (IOException e) {
-            deleteDb(db);
-            throw new AssertionError("Unable to get db path", e);
-        }
-        catch (AssertionError e) {
-            deleteDb(db);
-            throw e;
-        }
     }
 
     // helper method to save n number of docs

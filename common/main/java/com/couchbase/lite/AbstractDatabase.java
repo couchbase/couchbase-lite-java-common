@@ -660,12 +660,22 @@ abstract class AbstractDatabase extends BaseDatabase {
      * @param id the document ID
      * @return the Document object
      * @deprecated Use getDefaultCollection().getCount()
+     *
+     *
      */
+    @SuppressWarnings("PMD.PreserveStackTrace")
     @Deprecated
     @Nullable
     public Document getDocument(@NonNull String id) {
         try { return getDefaultCollectionOrThrow().getDocument(id); }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
+        catch (CouchbaseLiteException e) {
+            if (e.getCode() == CBLError.Code.NOT_OPEN) {
+                throw new IllegalStateException(
+                    Log.lookupStandardMessage("DBClosedOrCollectionDeleted"),
+                    e);
+            }
+            return null;
+        }
     }
 
     /**
