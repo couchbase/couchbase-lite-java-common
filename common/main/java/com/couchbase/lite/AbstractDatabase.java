@@ -42,8 +42,8 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.core.C4Query;
-import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
+import com.couchbase.lite.internal.core.C4Socket;
 import com.couchbase.lite.internal.exec.ClientTask;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -209,6 +209,17 @@ abstract class AbstractDatabase extends BaseDatabase {
         return collections;
     }
 
+    @Nullable
+    static Database getDbForCollection(@Nullable Set<Collection> collections) {
+        if ((collections == null) || collections.isEmpty()) { return null; }
+
+        final Database db = collections.iterator().next().getDatabase();
+        if (!db.verifyCollections(collections)) {
+            throw new IllegalArgumentException("All collections must belong to the same database");
+        }
+
+        return db;
+    }
 
     //---------------------------------------------
     // Member variables
@@ -608,6 +619,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Override
     public int hashCode() { return Objects.hash(name); }
 
+    // !!! This should check the path.
     @Override
     public boolean equals(Object o) {
         if (this == o) { return true; }
@@ -1011,6 +1023,14 @@ abstract class AbstractDatabase extends BaseDatabase {
         synchronized (getDbLock()) { return getOpenC4DbLocked().getDefaultCollection(); }
     }
 
+    boolean verifyCollections(@Nullable Set<Collection> collections) {
+        if (collections == null) { return true; }
+        for (Collection collection: collections) {
+            if (collection.getDatabase() != this) { return false; }
+        }
+        return true;
+    }
+
     // - Documents:
 
     @NonNull
@@ -1035,39 +1055,36 @@ abstract class AbstractDatabase extends BaseDatabase {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
     C4Replicator createRemoteReplicator(
+        @NonNull Map<Collection, CollectionConfiguration> collections,
         @Nullable String scheme,
         @Nullable String host,
         int port,
         @Nullable String path,
-        @Nullable String remoteDatabaseName,
-        int push,
-        int pull,
+        @Nullable String remoteDbName,
         @NonNull MessageFraming framing,
-        @Nullable byte[] options,
+        @NonNull ReplicatorType type,
+        boolean continuous,
+        @Nullable Map<String, Object> options,
         @NonNull ReplicatorListener listener,
         @NonNull Replicator replicator,
-        @Nullable C4ReplicationFilter pushFilter,
-        @Nullable C4ReplicationFilter pullFilter,
         @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
         final C4Replicator c4Repl;
         synchronized (getDbLock()) {
             c4Repl = getOpenC4DbLocked().createRemoteReplicator(
+                collections,
                 scheme,
                 host,
                 port,
                 path,
-                remoteDatabaseName,
-                push,
-                pull,
+                remoteDbName,
                 framing,
+                type,
+                continuous,
                 options,
                 listener,
                 replicator,
-                pushFilter,
-                pullFilter,
-                socketFactory
-            );
+                socketFactory);
         }
         return c4Repl;
     }
@@ -1075,29 +1092,38 @@ abstract class AbstractDatabase extends BaseDatabase {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
     C4Replicator createLocalReplicator(
+        @NonNull Map<Collection, CollectionConfiguration> collections,
         @NonNull Database targetDb,
-        int push,
-        int pull,
-        @Nullable byte[] options,
+        @NonNull ReplicatorType type,
+        boolean continuous,
+        @Nullable Map<String, Object> options,
         @NonNull ReplicatorListener listener,
-        @NonNull Replicator replicator,
-        @Nullable C4ReplicationFilter pushFilter,
-        @Nullable C4ReplicationFilter pullFilter)
+        @NonNull Replicator replicator)
         throws LiteCoreException {
         final C4Replicator c4Repl;
         synchronized (getDbLock()) {
             c4Repl = getOpenC4DbLocked().createLocalReplicator(
+                collections,
                 targetDb.getOpenC4DbLocked(),
-                push,
-                pull,
+                type,
+                continuous,
                 options,
                 listener,
-                replicator,
-                pushFilter,
-                pullFilter
-            );
+                replicator);
         }
         return c4Repl;
+    }
+
+    @NonNull
+    C4Replicator createMessageEndpointReplicator(
+        @NonNull Set<Collection> collections,
+        @NonNull C4Socket c4Socket,
+        @Nullable Map<String, Object> options,
+        @NonNull ReplicatorListener listener)
+        throws LiteCoreException {
+        synchronized (getDbLock()) {
+            return getOpenC4DbLocked().createMessageEndpointReplicator(collections, c4Socket, options, listener);
+        }
     }
 
     // ??? This method is *NOT* thread safe.

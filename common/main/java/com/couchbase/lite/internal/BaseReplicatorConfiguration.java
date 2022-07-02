@@ -28,17 +28,16 @@ import com.couchbase.lite.CollectionConfiguration;
 
 public class BaseReplicatorConfiguration {
     @NonNull
-    private final Map<Collection, CollectionConfiguration> internalCollectionConfigurations = new HashMap<>();
+    private final Map<Collection, CollectionConfiguration> internalCollectionConfigurations;
 
-    // subclasses can read the collection directly but not write it.
+    // subclasses can read the collection configurations directly but must use mutators to change them.
     @NonNull
-    protected final Map<Collection, CollectionConfiguration> collectionConfigurations
-        = Collections.unmodifiableMap(internalCollectionConfigurations);
+    protected final Map<Collection, CollectionConfiguration> collectionConfigurations;
 
-    protected BaseReplicatorConfiguration() { }
-
-    protected BaseReplicatorConfiguration(@Nullable Map<Collection, CollectionConfiguration> collections) {
-        if (collections != null) { internalCollectionConfigurations.putAll(collections); }
+    // Contract: caller must provide a safe collection
+    protected BaseReplicatorConfiguration(@Nullable Map<Collection, CollectionConfiguration> configs) {
+        internalCollectionConfigurations = (configs != null) ? configs : new HashMap<>();
+        collectionConfigurations = Collections.unmodifiableMap(internalCollectionConfigurations);
     }
 
     protected void addCollectionInternal(@Nullable Collection coll, @Nullable CollectionConfiguration config) {
@@ -50,5 +49,7 @@ public class BaseReplicatorConfiguration {
     }
 
     @NonNull
-    Map<Collection, CollectionConfiguration> getCollectionConfigurations() { return collectionConfigurations; }
+    protected Map<Collection, CollectionConfiguration> getCollectionConfigurations() {
+        return collectionConfigurations;
+    }
 }

@@ -33,8 +33,9 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.internal.Util;
 
-import com.couchbase.lite.internal.BaseImmutableReplicatorConfiguration;
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
+import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -57,8 +58,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @deprecated Use com.couchbase.lite.ReplicatorType
      */
-    // Maybe if we keep this around for another 3 years
-    // we can pretend it wasn't a dumb idea.
     @Deprecated
     public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
 
@@ -67,12 +66,37 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         return heartbeat;
     }
 
+    @Nullable
+    protected static Database getDb(@Nullable Map<Collection, CollectionConfiguration> collections) {
+        return ((collections == null) || (collections.isEmpty()))
+            ? null
+            : collections.keySet().iterator().next().getDatabase();
+    }
+
+    @Nullable
+    protected static Map<Collection, CollectionConfiguration> getDefaultCollection(@Nullable Database db) {
+        if (db == null) { return null; }
+
+        final Collection defaultCollection;
+        try { defaultCollection = db.getDefaultCollection(); }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed getting default collection", e); }
+
+        if (defaultCollection == null) {
+            throw new IllegalStateException("Database " + db + " has no default collection");
+        }
+
+        final Map<Collection, CollectionConfiguration> collections = new HashMap<>();
+
+        collections.put(defaultCollection, new CollectionConfiguration());
+        return collections;
+    }
 
     //---------------------------------------------
     // Data Members
     //---------------------------------------------
-    @Nullable
-    private Database database;
+    @NonNull
+    private final Endpoint target;
+
     @NonNull
     private com.couchbase.lite.ReplicatorType type;
     private boolean continuous;
@@ -82,123 +106,99 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     private Map<String, String> headers;
     @Nullable
     private X509Certificate pinnedServerCertificate;
-    @Nullable
-    private List<String> channels;
-    @Nullable
-    private List<String> documentIDs;
-    @Nullable
-    private ReplicationFilter pushFilter;
-    @Nullable
-    private ReplicationFilter pullFilter;
-    @Nullable
-    private ConflictResolver conflictResolver;
     private int maxAttempts;
     private int maxAttemptWaitTime;
     private int heartbeat;
-    private boolean enableAutoPurge = true;
-    @NonNull
-    private final Endpoint target;
+    private boolean enableAutoPurge;
+
+    @Nullable
+    private Database database;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
-    @Deprecated
-    protected AbstractReplicatorConfiguration(@NonNull Database database, @NonNull Endpoint target) {
-        this(target);
-        this.database = database;
-        Collection collection = null;
-        try { collection = database.getDefaultCollection(); }
-        catch (CouchbaseLiteException e) {
-            com.couchbase.lite.internal.support.Log.d(LogDomain.REPLICATOR, "database is not open?", e);
-        }
-        if (collection != null) { addCollectionInternal(collection, new CollectionConfiguration()); }
-    }
-
-    protected AbstractReplicatorConfiguration(@NonNull Endpoint target) {
-        this.target = Preconditions.assertNotNull(target, "target endpoint");
-        this.type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
+    @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
+    protected AbstractReplicatorConfiguration(
+        @Nullable Map<Collection, CollectionConfiguration> collections,
+        @NonNull Endpoint target) {
+        this(
+            collections,
+            target,
+            com.couchbase.lite.ReplicatorType.PUSH_AND_PULL,
+            true,
+            null,
+            null,
+            null,
+            0,
+            0,
+            0,
+            true,
+            getDb(collections));
     }
 
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
         this(
             config.collectionConfigurations,
+            config.target,
             config.type,
             config.continuous,
             config.authenticator,
             config.headers,
             config.pinnedServerCertificate,
-            config.channels,
-            config.documentIDs,
-            config.pullFilter,
-            config.pushFilter,
-            config.conflictResolver,
             config.maxAttempts,
             config.maxAttemptWaitTime,
             config.heartbeat,
             config.enableAutoPurge,
-            config.target);
+            config.database);
     }
 
-    protected AbstractReplicatorConfiguration(@NonNull BaseImmutableReplicatorConfiguration config) {
+    AbstractReplicatorConfiguration(@NonNull ImmutableReplicatorConfiguration config) {
         this(
-            config.getCollectionConfigurations(),
+            config.getCollectionConfigs(),
+            config.getTarget(),
             config.getType(),
             config.isContinuous(),
             config.getAuthenticator(),
             config.getHeaders(),
             config.getPinnedServerCertificate(),
-            config.getChannels(),
-            config.getDocumentIDs(),
-            config.getPullFilter(),
-            config.getPushFilter(),
-            config.getConflictResolver(),
             config.getMaxRetryAttempts(),
             config.getMaxRetryAttemptWaitTime(),
             config.getHeartbeat(),
             config.isAutoPurgeEnabled(),
-            config.getTarget());
+            config.getDatabase());
     }
 
     // The management of CollectionConfigurations is a bit subtle:
-    // Although they are mutable an AbstractReplicatorConfiguration holds
+    // Although they are mutable, an AbstractReplicatorConfiguration holds
     // the only reference to its copies (they are copied in and copied out)
     // They are, therefore, effectively immutable
     @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
     protected AbstractReplicatorConfiguration(
         @Nullable Map<Collection, CollectionConfiguration> collections,
+        @NonNull Endpoint target,
         @NonNull com.couchbase.lite.ReplicatorType type,
         boolean continuous,
         @Nullable Authenticator authenticator,
         @Nullable Map<String, String> headers,
         @Nullable X509Certificate pinnedServerCertificate,
-        @Nullable List<String> channels,
-        @Nullable List<String> documentIDs,
-        @Nullable ReplicationFilter pushFilter,
-        @Nullable ReplicationFilter pullFilter,
-        @Nullable ConflictResolver conflictResolver,
         int maxAttempts,
         int maxAttemptWaitTime,
         int heartbeat,
         boolean enableAutoPurge,
-        @NonNull Endpoint target) {
+        @Nullable Database database) {
         super(collections);
+        this.target = target;
         this.type = type;
         this.continuous = continuous;
         this.authenticator = authenticator;
         this.headers = headers;
         this.pinnedServerCertificate = pinnedServerCertificate;
-        this.channels = channels;
-        this.documentIDs = documentIDs;
-        this.pullFilter = pullFilter;
-        this.pushFilter = pushFilter;
-        this.conflictResolver = conflictResolver;
         this.maxAttempts = maxAttempts;
         this.maxAttemptWaitTime = maxAttemptWaitTime;
         this.heartbeat = heartbeat;
         this.enableAutoPurge = enableAutoPurge;
-        this.target = target;
-        this.database = getDb();
+        this.database = database;
     }
 
     //---------------------------------------------
@@ -367,11 +367,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use Collection.setDocumentIDs
      */
-    // ??? Apply to default config
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
-        this.documentIDs = (documentIDs == null) ? null : new ArrayList<>(documentIDs);
+        getDefaultConfig().setDocumentIDs((documentIDs == null) ? null : new ArrayList<>(documentIDs));
         return getReplicatorConfiguration();
     }
 
@@ -385,11 +384,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use Collection.setChannels
      */
-    // ??? Apply to default config
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
-        this.channels = (channels == null) ? null : new ArrayList<>(channels);
+        getDefaultConfig().setChannels((channels == null) ? null : new ArrayList<>(channels));
         return getReplicatorConfiguration();
     }
 
@@ -400,11 +398,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use Collection.setConflictResolver
      */
-    // ??? Apply to default config
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
-        this.conflictResolver = conflictResolver;
+        getDefaultConfig().setConflictResolver(conflictResolver);
         return getReplicatorConfiguration();
     }
 
@@ -416,11 +413,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use Collection.setPullFilter
      */
-    // ??? Apply to default config
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
-        this.pullFilter = pullFilter;
+        getDefaultConfig().setPullFilter(pullFilter);
         return getReplicatorConfiguration();
     }
 
@@ -432,11 +428,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use Collection.setPushFilter
      */
-    // ??? Apply to default config
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
-        this.pushFilter = pushFilter;
+        getDefaultConfig().setPushFilter(pushFilter);
         return getReplicatorConfiguration();
     }
 
@@ -573,14 +568,12 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Return the local database to replicate with the replication target.
      *
-     * @deprecated Use Collection.setPushFilter
+     * @deprecated Use Collection.getDatabase
      */
-    // ??? Apply to default config
     @Deprecated
     @NonNull
     public final Database getDatabase() {
-        final Database db = getDb();
-        if (db != null) { return db; }
+        if (database != null) { return database; }
         throw new IllegalStateException("Requested db for configuration with no Collections");
     }
 
@@ -588,34 +581,31 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
      * and/or pulled.
      *
-     * @deprecated Use Collection.setDocumentIDs
+     * @deprecated Use Collection.getDocumentIDs
      */
-    // ??? Apply to default config
     @Deprecated
     @Nullable
-    public final List<String> getDocumentIDs() { return (documentIDs == null) ? null : new ArrayList<>(documentIDs); }
+    public final List<String> getDocumentIDs() { return getDefaultConfig().getDocumentIDs(); }
 
     /**
      * A set of Sync Gateway channel names to pull from. Ignored for push replication.
      * The default value is null, meaning that all accessible channels will be pulled.
      * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
      *
-     * @deprecated Use Collection.setChannels
+     * @deprecated Use Collection.getChannels
      */
-    // ??? Apply to default config
     @Deprecated
     @Nullable
-    public final List<String> getChannels() { return (channels == null) ? null : new ArrayList<>(channels); }
+    public final List<String> getChannels() { return getDefaultConfig().getChannels(); }
 
     /**
      * Return the conflict resolver.
      *
      * @deprecated Use Collection.getConflictResolver
      */
-    // ??? Apply to default config
     @Deprecated
     @Nullable
-    public final ConflictResolver getConflictResolver() { return conflictResolver; }
+    public final ConflictResolver getConflictResolver() { return getDefaultConfig().getConflictResolver(); }
 
     /**
      * Gets the filter used to determine whether a document will be pulled
@@ -623,10 +613,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @deprecated Use Collection.getPullFilter
      */
-    // ??? Apply to default config
     @Deprecated
     @Nullable
-    public final ReplicationFilter getPullFilter() { return pullFilter; }
+    public final ReplicationFilter getPullFilter() { return getDefaultConfig().getPullFilter(); }
 
     /**
      * Gets a filter used to determine whether a document will be pushed
@@ -634,10 +623,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @deprecated Use Collection.getPushFilter
      */
-    // ??? Apply to default config
     @Deprecated
     @Nullable
-    public final ReplicationFilter getPushFilter() { return pushFilter; }
+    public final ReplicationFilter getPushFilter() { return getDefaultConfig().getPushFilter(); }
 
     /**
      * Old getter for Replicator type indicating the direction of the replicator.
@@ -686,8 +674,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         }
         buf.append(") ");
 
-        if (pullFilter != null) { buf.append('|'); }
-
         if ((type == com.couchbase.lite.ReplicatorType.PULL)
             || (type == com.couchbase.lite.ReplicatorType.PUSH_AND_PULL)) {
             buf.append('<');
@@ -700,16 +686,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             buf.append('>');
         }
 
-        if (pushFilter != null) { buf.append('|'); }
-
         buf.append('(');
         if (authenticator != null) { buf.append('@'); }
         if (pinnedServerCertificate != null) { buf.append('^'); }
-        buf.append(')');
-
-        if (conflictResolver != null) { buf.append('!'); }
-
-        buf.append(' ');
+        buf.append(") ");
 
         return "ReplicatorConfig{(" + buf + target + '}';
     }
@@ -730,23 +710,25 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     private void addCollectionConfig(@NonNull Collection collection, @Nullable CollectionConfiguration config) {
-        // !!! Should forbid adding the default collection?
-
         final Database db = collection.getDatabase();
         if (database == null) { database = db; }
         else {
-            Preconditions.assertThat(
-                database.equals(db),
-                "Attempt to add a collection from the wrong database: " + db + " != " + database);
+            if (!database.equals(db)) {
+                throw new IllegalArgumentException(
+                    "Attempt to add a collection from the wrong database: " + db + " != " + database);
+            }
+            if (!database.isOpen()) {
+                throw new IllegalArgumentException("Cannot use a collection from a closed database");
+            }
         }
 
         addCollectionInternal(collection, (config != null) ? config : new CollectionConfiguration());
     }
 
-    @Nullable
-    private Database getDb() {
-        return (collectionConfigurations.isEmpty())
-            ? null
-            : collectionConfigurations.keySet().iterator().next().getDatabase();
+    @NonNull
+    private CollectionConfiguration getDefaultConfig() {
+        return Preconditions.assertNotNull(
+            collectionConfigurations.get(Fn.first(collectionConfigurations.keySet(), Collection::isDefault)),
+            "The default collection");
     }
 }

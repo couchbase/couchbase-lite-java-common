@@ -40,14 +40,6 @@ public class CollectionConfiguration {
 
     public CollectionConfiguration() { }
 
-    CollectionConfiguration(@NonNull CollectionConfiguration config) {
-        this.channels = config.channels;
-        this.documentIDs = config.documentIDs;
-        this.pullFilter = config.pullFilter;
-        this.pushFilter = config.pushFilter;
-        this.conflictResolver = config.conflictResolver;
-    }
-
     public CollectionConfiguration(
         @Nullable List<String> channels,
         @Nullable List<String> documentIDs,
@@ -59,6 +51,10 @@ public class CollectionConfiguration {
         this.pullFilter = pullFilter;
         this.pushFilter = pushFilter;
         this.conflictResolver = conflictResolver;
+    }
+
+    CollectionConfiguration(@NonNull CollectionConfiguration config) {
+        this(config.channels, config.documentIDs, config.pullFilter, config.pushFilter, config.conflictResolver);
     }
 
     //---------------------------------------------
@@ -169,4 +165,15 @@ public class CollectionConfiguration {
      */
     @Nullable
     public ReplicationFilter getPushFilter() { return pushFilter; }
+
+    @Override
+    @NonNull
+    public String toString() {
+        return "CollectionConfiguration("
+            + channels + ", "
+            + documentIDs + ", "
+            + pullFilter + ", "
+            + pushFilter + ", "
+            + conflictResolver + "}";
+    }
 }

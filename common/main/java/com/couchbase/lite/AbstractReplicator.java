@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,12 +40,9 @@ import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4DocumentEnded;
 import com.couchbase.lite.internal.core.C4Error;
-import com.couchbase.lite.internal.core.C4ReplicationFilter;
 import com.couchbase.lite.internal.core.C4Replicator;
-import com.couchbase.lite.internal.core.C4ReplicatorMode;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.replicator.BaseReplicator;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
@@ -124,11 +120,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
         = new ReplicatorStatus(ReplicatorActivityLevel.STOPPED, new ReplicatorProgress(0, 0), null);
 
     @GuardedBy("getReplicatorLock()")
-    private C4ReplicationFilter c4ReplPushFilter;
-    @GuardedBy("getReplicatorLock()")
-    private C4ReplicationFilter c4ReplPullFilter;
-
-    @GuardedBy("getReplicatorLock()")
     @Nullable
     private CouchbaseLiteException lastError;
 
@@ -145,8 +136,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
      */
     protected AbstractReplicator(@NonNull ReplicatorConfiguration config) {
         Preconditions.assertNotNull(config, "config");
-        Preconditions.assertNotNull(config.getDatabase(), "Configuration must include at least one collection");
         this.config = new ImmutableReplicatorConfiguration(config);
+
         this.socketFactory = new SocketFactory(
             config,
             new ReplicatorCookieStore(getDatabase()),
@@ -397,6 +388,26 @@ public abstract class AbstractReplicator extends BaseReplicator {
     protected abstract void handleOffline(@NonNull ReplicatorActivityLevel prevState, boolean nowOnline);
 
     /**
+     * Create and return a c4Replicator targeting the passed Database
+     *
+     * @param targetDb a local database for the replication target
+     * @return the c4Replicator
+     * @throws LiteCoreException on failure to create the replicator
+     */
+    @GuardedBy("getDbLock()")
+    @NonNull
+    protected final C4Replicator getLocalC4Replicator(@NonNull Database targetDb) throws LiteCoreException {
+        return getDatabase().createLocalReplicator(
+            config.getCollectionConfigs(),
+            targetDb,
+            config.getType(),
+            config.isContinuous(),
+            config.getConnectionOptions(),
+            c4ReplListener,
+            (Replicator) this);
+    }
+
+    /**
      * Create and return a c4Replicator targeting the passed URI
      *
      * @param remoteUri a URI for the replication target
@@ -415,46 +426,21 @@ public abstract class AbstractReplicator extends BaseReplicator {
         final String dbName = (splitPath.size() <= 0) ? "" : splitPath.removeLast();
         final String path = "/" + StringUtils.join("/", splitPath);
 
-        final boolean continuous = config.isContinuous();
-
         return getDatabase().createRemoteReplicator(
+            config.getCollectionConfigs(),
             remoteUri.getScheme(),
             remoteUri.getHost(),
             port,
             path,
             dbName,
-            makeMode(config.isPush(), continuous),
-            makeMode(config.isPull(), continuous),
             MessageFraming.NO_FRAMING,
-            FLEncoder.encodeMap(config.getConnectionOptions()),
+            config.getType(),
+            config.isContinuous(),
+            config.getConnectionOptions(),
             c4ReplListener,
             (Replicator) this,
-            c4ReplPushFilter,
-            c4ReplPullFilter,
             socketFactory
         );
-    }
-
-    /**
-     * Create and return a c4Replicator targeting the passed Database
-     *
-     * @param targetDb a local database for the replication target
-     * @return the c4Replicator
-     * @throws LiteCoreException on failure to create the replicator
-     */
-    @GuardedBy("getDbLock()")
-    @NonNull
-    protected final C4Replicator getLocalC4Replicator(@NonNull Database targetDb) throws LiteCoreException {
-        final boolean continuous = config.isContinuous();
-        return getDatabase().createLocalReplicator(
-            targetDb,
-            makeMode(config.isPush(), continuous),
-            makeMode(config.isPull(), continuous),
-            FLEncoder.encodeMap(config.getConnectionOptions()),
-            c4ReplListener,
-            (Replicator) this,
-            c4ReplPushFilter,
-            c4ReplPullFilter);
     }
 
     /**
@@ -468,23 +454,20 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @GuardedBy("getDbLock()")
     @NonNull
     protected final C4Replicator getMessageC4Replicator(@NonNull MessageFraming framing) throws LiteCoreException {
-        final boolean continuous = config.isContinuous();
         return getDatabase().createRemoteReplicator(
+            config.getCollectionConfigs(),
             C4Replicator.MESSAGE_SCHEME,
             null,
             0,
             null,
             null,
-            makeMode(config.isPush(), continuous),
-            makeMode(config.isPull(), continuous),
             framing,
-            FLEncoder.encodeMap(config.getConnectionOptions()),
+            config.getType(),
+            config.isContinuous(),
+            config.getConnectionOptions(),
             c4ReplListener,
             (Replicator) this,
-            c4ReplPushFilter,
-            c4ReplPullFilter,
-            socketFactory
-        );
+            socketFactory);
     }
 
     //---------------------------------------------
@@ -630,13 +613,13 @@ public abstract class AbstractReplicator extends BaseReplicator {
             C4Replicator c4Repl = getC4Replicator();
 
             if (c4Repl != null) {
+                // !!! Does this work with Collections?
                 c4Repl.setOptions(FLEncoder.encodeMap(config.getConnectionOptions()));
                 // !!! This is probably a bug.  SetOptions should not clear the progress level
                 synchronized (getReplicatorLock()) { setProgressLevel(); }
                 return c4Repl;
             }
 
-            setupFilters();
             try {
                 c4Repl = createReplicatorForTarget(config.getTarget());
                 synchronized (getReplicatorLock()) {
@@ -679,7 +662,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         final ExecutionService.CloseableExecutor executor
             = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
         final Database db = getDatabase();
-        final ConflictResolver resolver = config.getConflictResolver();
+        final ConflictResolver resolver = config.getDefaultConflictResolver();
         final Fn.NullableConsumer<CouchbaseLiteException> task = new Fn.NullableConsumer<CouchbaseLiteException>() {
             public void accept(CouchbaseLiteException err) { onConflictResolved(this, docId, flags, err); }
         };
@@ -688,53 +671,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
             executor.execute(() -> db.resolveReplicationConflict(resolver, docId, task));
             pendingResolutions.add(task);
         }
-    }
-
-    private void setupFilters() {
-        synchronized (getReplicatorLock()) {
-            if (config.getPushFilter() != null) {
-                c4ReplPushFilter = (docID, revId, flags, dict, isPush, repl) ->
-                    repl.filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
-            }
-
-            if (config.getPullFilter() != null) {
-                c4ReplPullFilter = (docID, revId, flags, dict, isPush, repl) ->
-                    repl.filterDocument(docID, revId, getDocumentFlags(flags), dict, isPush);
-            }
-        }
-    }
-
-    private int makeMode(boolean active, boolean continuous) {
-        final C4ReplicatorMode mode = (!active)
-            ? C4ReplicatorMode.C4_DISABLED
-            : ((continuous) ? C4ReplicatorMode.C4_CONTINUOUS : C4ReplicatorMode.C4_ONE_SHOT);
-        return mode.getVal();
-    }
-
-    @NonNull
-    private EnumSet<DocumentFlag> getDocumentFlags(int flags) {
-        final EnumSet<DocumentFlag> documentFlags = EnumSet.noneOf(DocumentFlag.class);
-        if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.DELETED)) {
-            documentFlags.add(DocumentFlag.DELETED);
-        }
-        if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.PURGED)) {
-            documentFlags.add(DocumentFlag.ACCESS_REMOVED);
-        }
-        return documentFlags;
-    }
-
-    private boolean filterDocument(
-        @NonNull String docId,
-        String revId,
-        @NonNull EnumSet<DocumentFlag> flags,
-        long dict,
-        boolean isPush) {
-        final ReplicationFilter filter = (isPush) ? config.getPushFilter() : config.getPullFilter();
-        return (filter != null)
-            && filter.filtered(
-            // !!! This will have to change before Collection replication filters will work
-            new Document(getDatabase().getDefaultCollectionOrThrow(), docId, revId, FLDict.create(dict)),
-            flags);
     }
 
     private void removeDocumentReplicationListener(@NonNull ListenerToken token) {

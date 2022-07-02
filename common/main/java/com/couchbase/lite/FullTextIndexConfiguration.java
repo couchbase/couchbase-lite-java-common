@@ -31,20 +31,22 @@ import com.couchbase.lite.internal.utils.StringUtils;
  */
 public class FullTextIndexConfiguration extends IndexConfiguration {
     @Nullable
-    private String language;
+    private String language = Locale.getDefault().getLanguage();
     private boolean ignoreDiacrits;
 
-    public FullTextIndexConfiguration(@NonNull String... expressions) { this(null, false, Arrays.asList(expressions)); }
+    public FullTextIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
+    FullTextIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.FULL_TEXT, expressions); }
+
+    // For Kotlin
     FullTextIndexConfiguration(
         @Nullable String language,
         boolean ignoreDiacritics,
         @NonNull List<String> expressions) {
         super(IndexType.FULL_TEXT, expressions);
-        this.language = (language != null) ? language : Locale.getDefault().getLanguage();
+        this.language = language;
         this.ignoreDiacrits = ignoreDiacritics;
     }
-
 
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.

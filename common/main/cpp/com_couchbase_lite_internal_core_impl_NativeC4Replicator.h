@@ -11,26 +11,26 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ[BJJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZZZJJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create
-  (JNIEnv *, jclass, jobjectArray, jlong, jstring, jstring, jint, jstring, jstring, jint, jboolean, jbyteArray, jlong, jlong);
+  (JNIEnv *, jclass, jobjectArray, jlong, jstring, jstring, jint, jstring, jstring, jint, jboolean, jboolean, jboolean, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    createLocal
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZ[BJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZZZJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal
-  (JNIEnv *, jclass, jobjectArray, jlong, jlong, jboolean, jbyteArray, jlong);
+  (JNIEnv *, jclass, jobjectArray, jlong, jlong, jboolean, jboolean, jboolean, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    createWithSocket
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZ[BJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket
-  (JNIEnv *, jclass, jobjectArray, jlong, jlong, jboolean, jbyteArray, jlong);
+  (JNIEnv *, jclass, jobjectArray, jlong, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
@@ -103,31 +103,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replic
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setHostReachable
   (JNIEnv *, jclass, jlong, jboolean);
-
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
- * Method:    create
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;III[BZZJJ)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createDeprecated
-        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jstring, jstring, jint, jint, jint, jbyteArray, jboolean, jboolean, jlong, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
- * Method:    createLocal
- * Signature: (JJII[BZZJ)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocalDeprecated
-        (JNIEnv *, jclass, jlong, jlong, jint, jint, jbyteArray, jboolean , jboolean, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
- * Method:    createWithSocket
- * Signature: (JJII[BJ)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocketDeprecated
-        (JNIEnv *, jclass, jlong, jlong, jint, jint, jbyteArray, jlong);
 
 #ifdef __cplusplus
 }

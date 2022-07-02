@@ -18,11 +18,19 @@ package com.couchbase.lite.internal;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.Database;
+import com.couchbase.lite.Document;
+import com.couchbase.lite.internal.fleece.FLDict;
 
 
-public class BaseCollection {
+public abstract class BaseCollection {
     @NonNull
     protected final Database db;
 
     protected BaseCollection(@NonNull Database db) { this.db = db; }
+
+    @NonNull
+    protected abstract Document createFilterDocument(
+        @NonNull String docId,
+        @NonNull String revId,
+        @NonNull FLDict body);
 }

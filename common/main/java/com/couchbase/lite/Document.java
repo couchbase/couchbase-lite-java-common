@@ -165,7 +165,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     // This constructor is used in replicator filters, to hack together a doc from its Fleece representation
-    Document(@NonNull Collection collection, @NonNull String id, @Nullable String revId, @Nullable FLDict body) {
+    Document(@NonNull Collection collection, @NonNull String id, @Nullable String revId, @NonNull FLDict body) {
         this(collection, id, null, false);
         this.revId = revId;
         setContentLocked(body, false);

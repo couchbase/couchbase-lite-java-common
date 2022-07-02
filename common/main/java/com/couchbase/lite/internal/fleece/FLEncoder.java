@@ -38,8 +38,8 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 @SuppressWarnings("PMD.TooManyMethods")
 public abstract class FLEncoder extends C4NativePeer {
     @Nullable
-    public static byte[] encodeMap(@NonNull Map<String, Object> options) {
-        if (options.isEmpty()) { return null; }
+    public static byte[] encodeMap(@Nullable Map<String, Object> options) {
+        if ((options == null) || options.isEmpty()) { return null; }
 
         try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
             enc.write(options);

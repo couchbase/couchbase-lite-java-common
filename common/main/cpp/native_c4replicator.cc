@@ -34,15 +34,27 @@ using namespace litecore::jni;
 static jclass cls_C4Replicator;                         // global reference
 static jmethodID m_C4Replicator_statusChangedCallback;  // statusChangedCallback method
 static jmethodID m_C4Replicator_documentEndedCallback;  // documentEndedCallback method
-static jmethodID m_C4Replicator_filterCallback;         // validationFunction method
 
 // C4ReplicatorStatus
 static jclass cls_C4ReplStatus; // global reference
 static jmethodID m_C4ReplStatus_init;
 
-//C4DocumentEnded
+// C4DocumentEnded
 static jclass cls_C4DocEnded;
 static jmethodID m_C4DocEnded_init;
+
+// ReplicationCollection
+static jclass cls_ReplColl;                             // global reference
+static jfieldID f_ReplColl_scope;
+static jfieldID f_ReplColl_name;
+static jfieldID f_ReplColl_options;
+static jfieldID f_ReplColl_pushFilter;
+static jfieldID f_ReplColl_pullFilter;
+static jfieldID f_ReplColl_token;
+static jmethodID m_ReplColl_filterCallback;             // validationFunction method
+static bool pullFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
+
+static bool pushFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
 
 bool litecore::jni::initC4Replicator(JNIEnv *env) {
     {
@@ -66,13 +78,6 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
                 "documentEndedCallback",
                 "(JZ[Lcom/couchbase/lite/internal/core/C4DocumentEnded;)V");
         if (!m_C4Replicator_documentEndedCallback)
-            return false;
-
-        m_C4Replicator_filterCallback = env->GetStaticMethodID(
-                cls_C4Replicator,
-                "filterCallback",
-                "(JLjava/lang/String;Ljava/lang/String;IJZ)Z");
-        if (!m_C4Replicator_filterCallback)
             return false;
     }
 
@@ -107,6 +112,56 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
         if (!m_C4DocEnded_init)
             return false;
     }
+
+    {
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/ReplicationCollection");
+        if (!localClass)
+            return false;
+
+        cls_ReplColl = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_C4Replicator)
+            return false;
+
+        f_ReplColl_scope = env->GetFieldID(cls_ReplColl, "scope", "Ljava/lang/String;");
+        if (!f_ReplColl_scope)
+            return -1;
+
+        f_ReplColl_name = env->GetFieldID(cls_ReplColl, "name", "Ljava/lang/String;");
+        if (!f_ReplColl_name)
+            return false;
+
+        f_ReplColl_options = env->GetFieldID(cls_ReplColl, "options", "[B");
+        if (!f_ReplColl_options)
+            return false;
+
+        f_ReplColl_pushFilter
+                = env->GetFieldID(
+                cls_ReplColl,
+                "c4PushFilter",
+                "Lcom/couchbase/lite/internal/ReplicationCollection$Filter;");
+        if (!f_ReplColl_pushFilter)
+            return false;
+
+        f_ReplColl_pullFilter
+                = env->GetFieldID(
+                cls_ReplColl,
+                "c4PushFilter",
+                "Lcom/couchbase/lite/internal/ReplicationCollection$Filter;");
+        if (!f_ReplColl_pullFilter)
+            return false;
+
+        f_ReplColl_token = env->GetFieldID(cls_ReplColl, "token", "J");
+        if (!f_ReplColl_token)
+            return false;
+
+        m_ReplColl_filterCallback = env->GetStaticMethodID(
+                cls_ReplColl,
+                "filterCallback",
+                "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJZ)Z");
+        if (!m_ReplColl_filterCallback)
+            return false;
+    }
+
     return true;
 }
 
@@ -161,52 +216,13 @@ static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C
     return ds;
 }
 
-
-static bool pullFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
-
-static bool pushFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionFlags, FLDict, void *);
-
 // ??? Move the field introspection into initialization.
 static int fromJavaReplColls(
         JNIEnv *env,
         jobjectArray jColls,
         std::vector<C4ReplicationCollection> &colls,
-        C4ReplicatorMode mode) {
-    jclass cls_replColl = env->FindClass("com/couchbase/lite/internal/core/C4ReplicationCollection");
-    if (!cls_replColl)
-        return -1;
-
-    jfieldID f_ReplColl_scope = env->GetFieldID(cls_replColl, "scope", "Ljava/lang/String;");
-    if (!f_ReplColl_scope)
-        return -1;
-
-    jfieldID f_ReplColl_name = env->GetFieldID(cls_replColl, "name", "Ljava/lang/String;");
-    if (!f_ReplColl_name)
-        return -1;
-
-    jfieldID f_ReplColl_push = env->GetFieldID(cls_replColl, "push", "Z");
-    if (!f_ReplColl_push)
-        return -1;
-
-    jfieldID f_ReplColl_pull = env->GetFieldID(cls_replColl, "pull", "Z");
-    if (!f_ReplColl_pull)
-        return -1;
-
-    jfieldID f_ReplColl_options = env->GetFieldID(cls_replColl, "options", "[B");
-    if (!f_ReplColl_options)
-        return -1;
-
-    jfieldID f_ReplColl_hasPushFilter = env->GetFieldID(cls_replColl, "hasPushFilter", "Z");
-    if (!f_ReplColl_hasPushFilter)
-        return -1;
-
-    jfieldID f_ReplColl_hasPullFilter = env->GetFieldID(cls_replColl, "hasPullFilter", "Z");
-    if (!f_ReplColl_hasPullFilter)
-        return -1;
-
-    jfieldID f_ReplColl_token = env->GetFieldID(cls_replColl, "token", "J");
-    if (!f_ReplColl_token)
-        return -1;
+        C4ReplicatorMode pushMode,
+        C4ReplicatorMode pullMode) {
 
     int nColls = env->GetArrayLength(jColls);
     colls.resize(nColls);
@@ -221,16 +237,16 @@ static int fromJavaReplColls(
         jstringSlice name(env, (jstring) jname);
         colls[i].collection.name = name;
 
-        colls[i].push = (env->GetBooleanField(replColl, f_ReplColl_push) == JNI_TRUE) ? mode : kC4Disabled;
-        colls[i].pull = (env->GetBooleanField(replColl, f_ReplColl_pull) == JNI_TRUE) ? mode : kC4Disabled;
+        colls[i].push = pushMode;
+        colls[i].pull = pullMode;
 
         jobject joptions = env->GetObjectField(replColl, f_ReplColl_options);
         jbyteArraySlice options(env, (jbyteArray) joptions, false);
         colls[i].optionsDictFleece = options;
 
-        if (env->GetBooleanField(replColl, f_ReplColl_hasPushFilter) == JNI_TRUE)
+        if (env->GetObjectField(replColl, f_ReplColl_pushFilter) == nullptr)
             colls[i].pushFilter = &pushFilterFunction;
-        if (env->GetBooleanField(replColl, f_ReplColl_hasPullFilter) == JNI_TRUE)
+        if (env->GetObjectField(replColl, f_ReplColl_pullFilter) == nullptr)
             colls[i].pullFilter = &pullFilterFunction;
 
         colls[i].callbackContext = (void *) env->GetLongField(replColl, f_ReplColl_token);
@@ -316,19 +332,22 @@ static void documentEndedCallback(C4Replicator *ignored,
 }
 
 static jboolean replicationFilter(
+        void *token,
+        C4CollectionSpec coll,
         C4String docID,
         C4String revID,
         C4RevisionFlags flags,
         FLDict dict,
-        bool isPush,
-        void *token) {
+        bool isPush) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     bool res = false;
     if (getEnvStat == JNI_OK) {
-        res = env->CallStaticBooleanMethod(cls_C4Replicator,
-                                           m_C4Replicator_filterCallback,
+        res = env->CallStaticBooleanMethod(cls_ReplColl,
+                                           m_ReplColl_filterCallback,
                                            (jlong) token,
+                                           toJString(env, coll.scope),
+                                           toJString(env, coll.name),
                                            toJString(env, docID),
                                            toJString(env, revID),
                                            flags,
@@ -336,9 +355,11 @@ static jboolean replicationFilter(
                                            isPush);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            res = env->CallStaticBooleanMethod(cls_C4Replicator,
-                                               m_C4Replicator_filterCallback,
+            res = env->CallStaticBooleanMethod(cls_ReplColl,
+                                               m_ReplColl_filterCallback,
                                                (jlong) token,
+                                               toJString(env, coll.scope),
+                                               toJString(env, coll.name),
                                                toJString(env, docID),
                                                toJString(env, revID),
                                                flags,
@@ -360,21 +381,21 @@ static jboolean replicationFilter(
  * (Note: In the case of an incoming revision, no flags other than 'deletion' and
  * 'hasAttachments' will be set.)
  *
- * @param collectionName
+ * @param coll
+ * @param token
  * @param docID
  * @param revID
  * @param flags
  * @param dict
- * @param token
  */
 static bool pullFilterFunction(
-        C4CollectionSpec collectionSpec,
+        C4CollectionSpec coll,
         C4String docID,
         C4String revID,
         C4RevisionFlags flags,
         FLDict dict,
         void *token) {
-    return (bool) replicationFilter(docID, revID, flags, dict, false, token);
+    return replicationFilter(token, coll, docID, revID, flags, dict, false) == JNI_TRUE;
 }
 
 /**
@@ -382,7 +403,8 @@ static bool pullFilterFunction(
  * (Note: In the case of an incoming revision, no flags other than 'deletion' and
  * 'hasAttachments' will be set.)
  *
- * @param collectionName
+ * @param coll
+ * @param token
  * @param docID
  * @param revID
  * @param flags
@@ -390,13 +412,13 @@ static bool pullFilterFunction(
  * @param token
  */
 static bool pushFilterFunction(
-        C4CollectionSpec collectionSpec,
+        C4CollectionSpec coll,
         C4String docID,
         C4String revID,
         C4RevisionFlags flags,
         FLDict dict,
         void *token) {
-    return (bool) replicationFilter(docID, revID, flags, dict, true, token);
+    return (bool) replicationFilter(token, coll, docID, revID, flags, dict, true) == JNI_TRUE;
 }
 
 
@@ -404,7 +426,7 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZ[BJJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZZZJJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
@@ -418,15 +440,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
         jstring jpath,
         jstring jremoteDBName,
         jint jframing,
+        jboolean push,
+        jboolean pull,
         jboolean continuous,
-        jbyteArray joptions,
         jlong replicatorToken,
         jlong socketFactoryToken) {
     jstringSlice scheme(env, jscheme);
     jstringSlice host(env, jhost);
     jstringSlice path(env, jpath);
     jstringSlice remoteDBName(env, jremoteDBName);
-    jbyteArraySlice options(env, joptions, false);
 
     C4Address c4Address = {};
     c4Address.scheme = scheme;
@@ -439,15 +461,20 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
     socketFactory.framing = (C4SocketFraming) jframing;
 
     C4ReplicatorParameters params = {};
-    params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.onDocumentsEnded = &documentEndedCallback;
     params.callbackContext = (void *) replicatorToken;
     params.socketFactory = &socketFactory;
 
+    C4ReplicatorMode mode = (continuous) ? kC4Continuous : kC4OneShot;
 
     std::vector<C4ReplicationCollection> collectionDescs;
-    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    int nColls = fromJavaReplColls(
+            env,
+            jCollDescs,
+            collectionDescs,
+            (push == JNI_TRUE) ? mode : kC4Disabled,
+            (pull == JNI_TRUE) ? mode : kC4Disabled);
     if (nColls < 0) {
         C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
         throwError(env, error);
@@ -469,7 +496,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZ[BJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZZZJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
@@ -478,25 +505,30 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
         jobjectArray jCollDescs,
         jlong jdb,
         jlong targetDb,
+        jboolean push,
+        jboolean pull,
         jboolean continuous,
-        jbyteArray joptions,
         jlong replicatorToken) {
 #ifndef COUCHBASE_ENTERPRISE
     C4Error error = {LiteCoreDomain, kC4ErrorUnimplemented};
     throwError(env, error);
     return 0;
 #else
-    jbyteArraySlice options(env, joptions, false);
-
     C4ReplicatorParameters params = {};
 
-    params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.onDocumentsEnded = &documentEndedCallback;
     params.callbackContext = (void *) replicatorToken;
 
+    C4ReplicatorMode mode = (continuous) ? kC4Continuous : kC4OneShot;
+
     std::vector<C4ReplicationCollection> collectionDescs;
-    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    int nColls = fromJavaReplColls(
+            env,
+            jCollDescs,
+            collectionDescs,
+            (push == JNI_TRUE) ? mode : kC4Disabled,
+            (pull == JNI_TRUE) ? mode : kC4Disabled);
     if (nColls < 0) {
         C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
         throwError(env, error);
@@ -519,7 +551,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    createWithSocket
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZ[BJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
@@ -528,20 +560,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
         jobjectArray jCollDescs,
         jlong jdb,
         jlong jopenSocket,
-        jboolean continuous,
-        jbyteArray joptions,
         jlong replicatorToken) {
     auto *db = (C4Database *) jdb;
     auto openSocket = (C4Socket *) jopenSocket;
-    jbyteArraySlice options(env, joptions, false);
 
     C4ReplicatorParameters params = {};
-    params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.callbackContext = (void *) replicatorToken;
 
     std::vector<C4ReplicationCollection> collectionDescs;
-    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, (continuous) ? kC4Continuous : kC4OneShot);
+    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, kC4Passive, kC4Passive);
     if (nColls < 0) {
         C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
         throwError(env, error);
@@ -593,14 +621,17 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_start(
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_stop(JNIEnv *env, jclass ignored, jlong repl) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_stop(
+        JNIEnv *env,
+        jclass ignored,
+        jlong repl) {
     c4repl_stop((C4Replicator *) repl);
 }
 
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setOptions(
         JNIEnv *env,
-        jclass clazz,
+        jclass ignored,
         jlong repl,
         jbyteArray joptions) {
     jbyteArraySlice options(env, joptions, false);
@@ -613,7 +644,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setOptions(
  * Signature: (J)Lcom/couchbase/lite/internal/core/C4ReplicatorStatus;
  */
 JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus(JNIEnv *env, jclass ignored, jlong repl) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus(
+        JNIEnv *env,
+        jclass ignored,
+        jlong repl) {
     C4ReplicatorStatus status = c4repl_getStatus((C4Replicator *) repl);
     return toJavaReplStatus(env, status);
 }
@@ -698,145 +732,5 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setHostReachable(
         jlong repl,
         jboolean reachable) {
     c4repl_setHostReachable((C4Replicator *) repl, (bool) reachable);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
- * Method:    create
- * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;III[BZZJJ)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createDeprecated(
-        JNIEnv *env,
-        jclass ignored,
-        jlong jdb,
-        jstring jscheme,
-        jstring jhost,
-        jint jport,
-        jstring jpath,
-        jstring jremoteDBName,
-        jint jpush,
-        jint jpull,
-        jint jframing,
-        jbyteArray joptions,
-        jboolean hasPushFilter,
-        jboolean hasPullFilter,
-        jlong replicatorToken,
-        jlong socketFactoryToken) {
-    jstringSlice scheme(env, jscheme);
-    jstringSlice host(env, jhost);
-    jstringSlice path(env, jpath);
-    jstringSlice remoteDBName(env, jremoteDBName);
-    jbyteArraySlice options(env, joptions, false);
-
-    C4Address c4Address = {};
-    c4Address.scheme = scheme;
-    c4Address.hostname = host;
-    c4Address.port = (uint16_t) jport;
-    c4Address.path = path;
-
-    C4SocketFactory socketFactory = socket_factory();
-    socketFactory.context = (void *) socketFactoryToken;
-    socketFactory.framing = (C4SocketFraming) jframing;
-
-    C4ReplicatorParameters params = {};
-    params.push = (C4ReplicatorMode) jpush;
-    params.pull = (C4ReplicatorMode) jpull;
-    params.optionsDictFleece = options;
-    params.onStatusChanged = &statusChangedCallback;
-    params.onDocumentsEnded = &documentEndedCallback;
-    if (hasPushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
-    if (hasPullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
-    params.callbackContext = (void *) replicatorToken;
-    params.socketFactory = &socketFactory;
-
-    C4Error error;
-    C4Replicator *repl = c4repl_new((C4Database *) jdb, c4Address, remoteDBName, params, &error);
-    if (!repl) {
-        throwError(env, error);
-        return 0;
-    }
-
-    return (jlong) repl;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
- * Method:    create
- * Signature: ((JJII[BZZJ)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocalDeprecated(
-        JNIEnv *env,
-        jclass ignored,
-        jlong jdb,
-        jlong targetDb,
-        jint jpush,
-        jint jpull,
-        jbyteArray joptions,
-        jboolean hasPushFilter,
-        jboolean hasPullFilter,
-        jlong replicatorToken) {
-#ifndef COUCHBASE_ENTERPRISE
-    C4Error error = {LiteCoreDomain, kC4ErrorUnimplemented};
-    throwError(env, error);
-    return 0;
-#else
-    jbyteArraySlice options(env, joptions, false);
-
-    C4ReplicatorParameters params = {};
-    params.push = (C4ReplicatorMode) jpush;
-    params.pull = (C4ReplicatorMode) jpull;
-    params.optionsDictFleece = options;
-    params.onStatusChanged = &statusChangedCallback;
-    params.onDocumentsEnded = &documentEndedCallback;
-    if (hasPushFilter == JNI_TRUE) params.pushFilter = &pushFilterFunction;
-    if (hasPullFilter == JNI_TRUE) params.validationFunc = &pullFilterFunction;
-    params.callbackContext = (void *) replicatorToken;
-
-    C4Error error;
-    C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) targetDb, params, &error);
-    if (!repl) {
-        throwError(env, error);
-        return 0;
-    }
-    return (jlong) repl;
-#endif
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
- * Method:    createWithSocket
- * Signature: (JJII[BJ)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocketDeprecated(
-        JNIEnv *env,
-        jclass ignored,
-        jlong jdb,
-        jlong jopenSocket,
-        jint jpush,
-        jint jpull,
-        jbyteArray joptions,
-        jlong replicatorToken) {
-    auto *db = (C4Database *) jdb;
-    auto openSocket = (C4Socket *) jopenSocket;
-    jbyteArraySlice options(env, joptions, false);
-
-    C4ReplicatorParameters params = {};
-    params.push = (C4ReplicatorMode) jpush;
-    params.pull = (C4ReplicatorMode) jpull;
-    params.optionsDictFleece = options;
-    params.onStatusChanged = &statusChangedCallback;
-    params.callbackContext = (void *) replicatorToken;
-
-    C4Error error;
-    C4Replicator *repl = c4repl_newWithSocket(db, openSocket, params, &error);
-    if (!repl) {
-        throwError(env, error);
-        return 0;
-    }
-
-    return (jlong) repl;
 }
 }

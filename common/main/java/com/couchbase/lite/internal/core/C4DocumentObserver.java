@@ -90,7 +90,6 @@ public class C4DocumentObserver extends C4NativePeer {
     private final Runnable listener;
     @NonNull
     private final NativeImpl impl;
-    private final Exception createdAt;
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -100,7 +99,6 @@ public class C4DocumentObserver extends C4NativePeer {
         super(peer);
         this.impl = impl;
         this.listener = listener;
-        this.createdAt = new Exception("#### 0x" + Long.toHexString(peer) + " CREATED AT");
     }
 
     @Override
@@ -117,9 +115,6 @@ public class C4DocumentObserver extends C4NativePeer {
         releasePeer(
             domain,
             (peer) -> {
-                Log.d(
-                    LogDomain.DATABASE,
-                    "#### 0x" + Long.toHexString(peer) + " DELETED", new Exception("CLOSED AT", createdAt));
                 BOUND_OBSERVERS.unbind(peer);
                 impl.nFree(peer);
             });

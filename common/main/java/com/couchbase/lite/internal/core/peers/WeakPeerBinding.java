@@ -39,13 +39,11 @@ abstract class WeakPeerBinding<T> extends PeerBinding<T> {
         if (ref == null) { return null; }
 
         final T obj = ref.get();
-        if (obj == null) {
-            // clean up dead objects...
-            bindings.remove(key);
-            return null;
-        }
+        if (obj != null) { return obj; }
 
-        return obj;
+        // clean up dead objects...
+        bindings.remove(key);
+        return null;
     }
 
     @GuardedBy("this")

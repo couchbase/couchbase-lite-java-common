@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.couchbase.lite.Authenticator;
@@ -31,7 +30,6 @@ import com.couchbase.lite.ConflictResolver;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Endpoint;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.ReplicationFilter;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.core.C4Replicator;
@@ -42,8 +40,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * These properties are not simply properties on the AbstractReplicator object as is mandated by a spec:
+ * The spec:
  * https://docs.google.com/document/d/16XmIOw7aZ_NcFc6Dy6fc1jV7sc994r6iv5qm9_J7qKo/edit#heading=h.kt1n12mtpzx4
+ * mandates that these cannot be simple properties on ReplicatorConfiguration.
  */
 @SuppressWarnings("PMD.TooManyFields")
 public class BaseImmutableReplicatorConfiguration {
@@ -52,7 +51,9 @@ public class BaseImmutableReplicatorConfiguration {
     // Data Members
     //---------------------------------------------
     @NonNull
-    private final Map<Collection, CollectionConfiguration> collectionConfigurations;
+    private final Map<Collection, CollectionConfiguration> configs;
+    @NonNull
+    private final Endpoint target;
     @NonNull
     private final ReplicatorType type;
     private final boolean continuous;
@@ -62,64 +63,59 @@ public class BaseImmutableReplicatorConfiguration {
     private final Map<String, String> headers;
     @Nullable
     private final X509Certificate pinnedServerCertificate;
-    @Nullable
-    private final List<String> channels;
-    @Nullable
-    private final List<String> documentIDs;
-    @Nullable
-    private final ReplicationFilter pushFilter;
-    @Nullable
-    private final ReplicationFilter pullFilter;
-    @Nullable
-    private final ConflictResolver conflictResolver;
-    private final int maxRetryAttempts;
-    private final int maxRetryAttemptWaitTime;
+    private final int maxAttempts;
+    private final int maxAttemptWaitTime;
     private final int heartbeat;
     private final boolean enableAutoPurge;
-    @NonNull
-    private final Endpoint target;
+
+    @Nullable
+    private final Database database;
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
-    protected BaseImmutableReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        final Map<Collection, CollectionConfiguration> configs
-            = ((BaseReplicatorConfiguration) config).getCollectionConfigurations();
-        Preconditions.assertThat(!configs.isEmpty(), "Attempt to configure a replicator with no collections");
 
-        this.collectionConfigurations = new HashMap<>(configs);
+    // The management of CollectionConfigurations is a bit subtle:
+    // Although they are mutable, an AbstractReplicatorConfiguration holds
+    // the only reference to its copies (they are copied in and copied out)
+    // They are, therefore, effectively immutable
+    protected BaseImmutableReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
+        this.configs = ((BaseReplicatorConfiguration) config).getCollectionConfigurations();
+        this.target = config.getTarget();
         this.type = config.getType();
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
         this.headers = config.getHeaders();
         this.pinnedServerCertificate = config.getPinnedServerX509Certificate();
-        this.channels = config.getChannels();
-        this.documentIDs = config.getDocumentIDs();
-        this.pushFilter = config.getPushFilter();
-        this.pullFilter = config.getPullFilter();
-        this.conflictResolver = config.getConflictResolver();
-        this.maxRetryAttempts = config.getMaxAttempts();
-        this.maxRetryAttemptWaitTime = config.getMaxAttemptWaitTime();
+        this.maxAttempts = config.getMaxAttempts();
+        this.maxAttemptWaitTime = config.getMaxAttemptWaitTime();
         this.heartbeat = config.getHeartbeat();
         this.enableAutoPurge = config.isAutoPurgeEnabled();
-        this.target = config.getTarget();
+        this.database = config.getDatabase();
+
+        if ((configs == null) || (configs.isEmpty())) {
+            throw new IllegalArgumentException("Attempt to configure a replicator with no collections");
+        }
+        Preconditions.assertNotNull(target, "replication target");
+        Preconditions.assertNotNull(type, "replicator type");
+        Preconditions.assertNotNull(database, "replications source database");
     }
 
     //-------------------------------------------------------------------------
     // Properties
     //-------------------------------------------------------------------------
 
-    @NonNull
-    public final Map<Collection, CollectionConfiguration> getCollectionConfigurations() {
-        return collectionConfigurations;
+    // !!! Temporary hack!
+    @Nullable
+    public ConflictResolver getDefaultConflictResolver() {
+        return configs.values().iterator().next().getConflictResolver();
     }
 
+    @NonNull
+    public final Map<Collection, CollectionConfiguration> getCollectionConfigs() { return configs; }
+
     @Nullable
-    public final Database getDatabase() {
-        return (collectionConfigurations.isEmpty())
-            ? null
-            : collectionConfigurations.keySet().iterator().next().db;
-    }
+    public final Database getDatabase() { return database; }
 
     @NonNull
     public final ReplicatorType getType() { return type; }
@@ -145,24 +141,9 @@ public class BaseImmutableReplicatorConfiguration {
     @Nullable
     public final X509Certificate getPinnedServerCertificate() { return pinnedServerCertificate; }
 
-    @Nullable
-    public final List<String> getChannels() { return channels; }
+    public final int getMaxRetryAttempts() { return maxAttempts; }
 
-    @Nullable
-    public final List<String> getDocumentIDs() { return documentIDs; }
-
-    @Nullable
-    public final ReplicationFilter getPushFilter() { return pushFilter; }
-
-    @Nullable
-    public final ReplicationFilter getPullFilter() { return pullFilter; }
-
-    @Nullable
-    public final ConflictResolver getConflictResolver() { return conflictResolver; }
-
-    public final int getMaxRetryAttempts() { return maxRetryAttempts; }
-
-    public final int getMaxRetryAttemptWaitTime() { return maxRetryAttemptWaitTime; }
+    public final int getMaxRetryAttemptWaitTime() { return maxAttemptWaitTime; }
 
     public final int getHeartbeat() { return heartbeat; }
 
@@ -188,18 +169,10 @@ public class BaseImmutableReplicatorConfiguration {
             }
         }
 
-        if ((documentIDs != null) && (!documentIDs.isEmpty())) {
-            options.put(C4Replicator.REPLICATOR_OPTION_DOC_IDS, documentIDs);
-        }
-
-        if ((channels != null) && (!channels.isEmpty())) {
-            options.put(C4Replicator.REPLICATOR_OPTION_CHANNELS, channels);
-        }
-
         if (heartbeat > 0) { options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, heartbeat); }
-        if (maxRetryAttempts > 0) { options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, maxRetryAttempts - 1); }
-        if (maxRetryAttemptWaitTime > 0) {
-            options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxRetryAttemptWaitTime);
+        if (maxAttempts > 0) { options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, maxAttempts - 1); }
+        if (maxAttemptWaitTime > 0) {
+            options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxAttemptWaitTime);
         }
 
         if (!enableAutoPurge) { options.put(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE, Boolean.FALSE); }

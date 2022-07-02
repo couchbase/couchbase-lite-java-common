@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite
 
+import java.util.*
+
 
 /**
  * Configuration factory for new CollectionConfigurations
@@ -66,7 +68,7 @@ fun FullTextIndexConfiguration?.create(
     language: String? = null,
     ignoreAccents: Boolean? = null
 ) = FullTextIndexConfiguration(
-    language ?: this?.language,
+    language ?: this?.language ?: Locale.getDefault().getLanguage(),
     ignoreAccents ?: this?.isIgnoringAccents() ?: false,
     if (!expressions.isEmpty()) expressions.asList() else this?.expressions
         ?: error("Must specify an expression")

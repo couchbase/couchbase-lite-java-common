@@ -31,9 +31,12 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.AbstractReplicator;
+import com.couchbase.lite.Collection;
+import com.couchbase.lite.CollectionConfiguration;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.MaintenanceType;
+import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Database;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -441,77 +444,70 @@ public abstract class C4Database extends C4NativePeer {
     @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public C4Replicator createRemoteReplicator(
+        @NonNull Map<Collection, CollectionConfiguration> collections,
         @Nullable String scheme,
         @Nullable String host,
         int port,
         @Nullable String path,
-        @Nullable String remoteDatabaseName,
-        int push,
-        int pull,
+        @Nullable String remoteDbName,
         @NonNull MessageFraming framing,
-        @Nullable byte[] options,
+        @NonNull ReplicatorType type,
+        boolean continuous,
+        @Nullable Map<String, Object> options,
         @NonNull ReplicatorListener listener,
         @NonNull AbstractReplicator replicator,
-        @Nullable C4ReplicationFilter pushFilter,
-        @Nullable C4ReplicationFilter pullFilter,
         @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
         return C4Replicator.createRemoteReplicator(
+            collections,
             getPeer(),
             scheme,
             host,
             port,
             path,
-            remoteDatabaseName,
-            push,
-            pull,
-            framing, options,
+            remoteDbName,
+            framing,
+            type,
+            continuous,
+            options,
             listener,
             replicator,
-            pushFilter,
-            pullFilter,
-            socketFactory
-        );
+            socketFactory);
     }
 
     @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public C4Replicator createLocalReplicator(
+        @NonNull Map<Collection, CollectionConfiguration> collections,
         @NonNull C4Database targetDb,
-        int push,
-        int pull,
-        @Nullable byte[] options,
+        @NonNull ReplicatorType type,
+        boolean continuous,
+        @Nullable Map<String, Object> options,
         @NonNull ReplicatorListener listener,
-        @NonNull AbstractReplicator replicator,
-        @Nullable C4ReplicationFilter pushFilter,
-        @Nullable C4ReplicationFilter pullFilter)
+        @NonNull AbstractReplicator replicator)
         throws LiteCoreException {
         return C4Replicator.createLocalReplicator(
+            collections,
             getPeer(),
             targetDb,
-            push,
-            pull,
+            type,
+            continuous,
             options,
             listener,
-            replicator,
-            pushFilter,
-            pullFilter
-        );
+            replicator);
     }
 
     @NonNull
-    public C4Replicator createTargetReplicator(
+    public C4Replicator createMessageEndpointReplicator(
+        @NonNull Set<Collection> collections,
         @NonNull C4Socket c4Socket,
-        int push,
-        int pull,
-        @Nullable byte[] options,
+        @Nullable Map<String, Object> options,
         @NonNull ReplicatorListener listener)
         throws LiteCoreException {
         return C4Replicator.createMessageEndpointReplicator(
+            collections,
             getPeer(),
             c4Socket,
-            push,
-            pull,
             options,
             listener);
     }

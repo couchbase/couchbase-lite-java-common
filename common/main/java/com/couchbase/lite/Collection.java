@@ -33,6 +33,7 @@ import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.exec.ExecutionService;
+import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
@@ -462,12 +463,16 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     @NonNull
     C4Collection getC4Collection() { return c4Collection; }
 
-    public boolean isValid() { return c4Collection.isValid(); }
-
     @NonNull
     Database getDatabase() { return db; }
 
+    boolean isValid() { return c4Collection.isValid(); }
+
     boolean isOpen() { return db.isOpen(); }
+
+    boolean isDefault() {
+        return Scope.DEFAULT_NAME.equals(getScope().getName()) && Collection.DEFAULT_NAME.equals(getName());
+    }
 
     @NonNull
     Object getDbLock() { return db.getDbLock(); }
@@ -791,5 +796,11 @@ public final class Collection extends BaseCollection implements AutoCloseable {
 
     private void scheduleImmediateOnPostExecutor(@NonNull Runnable task) {
         CouchbaseLiteInternal.getExecutionService().postDelayedOnExecutor(0L, postExecutor, task);
+    }
+
+    @NonNull
+    @Override
+    protected Document createFilterDocument(@NonNull String docId, @NonNull String revId, @NonNull FLDict body) {
+        return new Document(this, docId, revId, body);
     }
 }
