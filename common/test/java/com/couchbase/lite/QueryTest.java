@@ -2775,9 +2775,9 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testAggregateFunctionEmptyArgs() {
-        assertThrows(IllegalArgumentException.class, () -> Function.avg(null));
+        Function.count(null);
 
-        assertThrows(IllegalArgumentException.class, () -> Function.count(null));
+        assertThrows(IllegalArgumentException.class, () -> Function.avg(null));
 
         assertThrows(IllegalArgumentException.class, () -> Function.min(null));
 
