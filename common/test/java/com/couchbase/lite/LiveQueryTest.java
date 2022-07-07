@@ -248,7 +248,7 @@ public class LiveQueryTest extends BaseDbTest {
             latchHolder.set(new CountDownLatch(1));
             createDocNumbered(11);
             assertTrue(
-                latchHolder.get().await(LiveQuery.LIVE_QUERY_UPDATE_INTERVAL_MS + slopMs, TimeUnit.MILLISECONDS));
+                latchHolder.get().await((2 * LiveQuery.LIVE_QUERY_UPDATE_INTERVAL_MS) + slopMs, TimeUnit.MILLISECONDS));
             assertEquals(2, resultsHolder.get().size());
         }
         finally {
