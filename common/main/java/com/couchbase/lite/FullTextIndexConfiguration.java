@@ -34,7 +34,7 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
         super(IndexType.FULL_TEXT, Arrays.asList(expressions));
     }
 
-    FullTextIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.FULL_TEXT, expressions); }
+    public FullTextIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.FULL_TEXT, expressions); }
 
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.
@@ -48,6 +48,10 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
         return this;
     }
 
+    @Nullable
+    @Override
+    public String getLanguage() { return textLanguage; }
+
     /**
      * Set the true value to ignore accents/diacritical marks. The default value is false.
      */
@@ -57,10 +61,6 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
         return this;
     }
 
-    @Nullable
     @Override
-    String getLanguage() { return textLanguage; }
-
-    @Override
-    boolean isIgnoringDiacritics() { return ignoreDiacritics; }
+    public boolean isIgnoringAccents() { return ignoreDiacritics; }
 }

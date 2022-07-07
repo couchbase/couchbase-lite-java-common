@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Arrays;
 
@@ -52,7 +53,9 @@ abstract class AbstractFunction {
      * @return The COUNT(expr) function.
      */
     @NonNull
-    public static Expression count(@NonNull Expression operand) { return sexpr("COUNT()", operand); }
+    public static Expression count(@Nullable Expression operand) {
+        return sexpr("COUNT()", (operand != null) ? operand : Expression.value("."));
+    }
 
     /**
      * Creates a MIN(expr) function expression that returns the minimum value

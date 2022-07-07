@@ -522,12 +522,12 @@ public class QueryTest extends BaseQueryTest {
         loadJSONResource("sentences.json");
 
         final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense");
-        assertFalse(idxConfig.isIgnoringDiacritics());
+        assertFalse(idxConfig.isIgnoringAccents());
         assertEquals("en", idxConfig.getLanguage());
 
         idxConfig.setLanguage("en-ca").ignoreAccents(true);
         assertEquals("en-ca", idxConfig.getLanguage());
-        assertTrue(idxConfig.isIgnoringDiacritics());
+        assertTrue(idxConfig.isIgnoringAccents());
 
         baseTestDb.createIndex("sentence", idxConfig);
 
@@ -2775,9 +2775,9 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testAggregateFunctionEmptyArgs() {
-        assertThrows(IllegalArgumentException.class, () -> Function.avg(null));
+        Function.count(null);
 
-        assertThrows(IllegalArgumentException.class, () -> Function.count(null));
+        assertThrows(IllegalArgumentException.class, () -> Function.avg(null));
 
         assertThrows(IllegalArgumentException.class, () -> Function.min(null));
 
