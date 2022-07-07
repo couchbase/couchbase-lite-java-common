@@ -20,31 +20,26 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import java.util.concurrent.Executor
 
-@ExperimentalCoroutinesApi
 fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow<DatabaseChange> {
     val token = this@databaseChangeFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { this@databaseChangeFlow.removeChangeListener(token) }
 }
 
-@ExperimentalCoroutinesApi
 fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) = callbackFlow {
     val token = this@documentChangeFlow.addDocumentChangeListener(documentId, executor) { trySend(it) }
     awaitClose { this@documentChangeFlow.removeChangeListener(token) }
 }
 
-@ExperimentalCoroutinesApi
 fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow {
     val token = this@replicatorChangesFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { this@replicatorChangesFlow.removeChangeListener(token) }
 }
 
-@ExperimentalCoroutinesApi
 fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlow {
     val token = this@documentReplicationFlow.addDocumentReplicationListener(executor) { trySend(it) }
     awaitClose { this@documentReplicationFlow.removeChangeListener(token) }
 }
 
-@ExperimentalCoroutinesApi
 fun Query.queryChangeFlow(executor: Executor? = null) = callbackFlow {
     val token = this@queryChangeFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { this@queryChangeFlow.removeChangeListener(token) }
