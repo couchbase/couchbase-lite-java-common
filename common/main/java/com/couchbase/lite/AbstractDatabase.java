@@ -1106,7 +1106,7 @@ abstract class AbstractDatabase extends BaseDatabase {
                     config.getQueryLanguage(),
                     config.getIndexType(),
                     config.getLanguage(),
-                    config.isIgnoringDiacritics());
+                    config.isIgnoringAccents());
             }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
