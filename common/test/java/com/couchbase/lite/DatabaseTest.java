@@ -959,7 +959,7 @@ public class DatabaseTest extends BaseDbTest {
             }
         }
         finally {
-            closeDb(newDb);
+            deleteDb(newDb);
         }
     }
 

@@ -408,20 +408,23 @@ class DbCollectionsTest : BaseCollectionTest() {
     @Test
     fun testCreateThenGetCollectionFromDifferentDatabaseInstance(){
         val otherDb = duplicateDb(baseTestDb)
-        baseTestDb.createCollection("testColl")
-        val collection = otherDb.getCollection("testColl")
-        assertNotNull(collection)
+        try {
+            baseTestDb.createCollection("testColl")
+            val collection = otherDb.getCollection("testColl")
+            assertNotNull(collection)
 
-        //delete coll from a db
-        baseTestDb.deleteCollection("testColl")
-        assertNull(baseTestDb.getCollection("testColl"))
-        assertNull(otherDb.getCollection("testColl"))
+            //delete coll from a db
+            baseTestDb.deleteCollection("testColl")
+            assertNull(baseTestDb.getCollection("testColl"))
+            assertNull(otherDb.getCollection("testColl"))
 
-        //recreate collection
-        baseTestDb.createCollection("testColl")
-        val collectionRecreated = otherDb.getCollection("testColl")
-        assertNotSame(collectionRecreated, collection)
-
+            //recreate collection
+            baseTestDb.createCollection("testColl")
+            val collectionRecreated = otherDb.getCollection("testColl")
+            assertNotSame(collectionRecreated, collection)
+        } finally {
+            closeDb(otherDb);
+        }
     }
 
 }

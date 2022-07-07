@@ -279,26 +279,30 @@ public class NotificationTest extends BaseDbTest {
     @Test
     public void testDatabaseChangeNotifier() throws CouchbaseLiteException {
         Database db = createDb("default_config_db");
-        CollectionChangeNotifier changeNotifier = new CollectionChangeNotifier(db.getDefaultCollection());
-        assertEquals(0, changeNotifier.getListenerCount());
-        ListenerToken t1 = changeNotifier.addChangeListener(
-            null,
-            c -> { },
-            t -> assertTrue(changeNotifier.removeChangeListener(t)));
-        assertEquals(1, changeNotifier.getListenerCount());
-        ListenerToken t2 = changeNotifier.addChangeListener(
-            null,
-            c -> { },
-            t -> assertFalse(changeNotifier.removeChangeListener(t)));
-        assertEquals(2, changeNotifier.getListenerCount());
-        t2.remove();
-        assertEquals(1, changeNotifier.getListenerCount());
-        t1.remove();
-        assertEquals(0, changeNotifier.getListenerCount());
-        t1.remove();
-        assertEquals(0, changeNotifier.getListenerCount());
-        t2.remove();
-        assertEquals(0, changeNotifier.getListenerCount());
+        try {
+            CollectionChangeNotifier changeNotifier = new CollectionChangeNotifier(db.getDefaultCollection());
+            assertEquals(0, changeNotifier.getListenerCount());
+            ListenerToken t1 = changeNotifier.addChangeListener(
+                    null,
+                    c -> { },
+                    t -> assertTrue(changeNotifier.removeChangeListener(t)));
+            assertEquals(1, changeNotifier.getListenerCount());
+            ListenerToken t2 = changeNotifier.addChangeListener(
+                    null,
+                    c -> { },
+                    t -> assertFalse(changeNotifier.removeChangeListener(t)));
+            assertEquals(2, changeNotifier.getListenerCount());
+            t2.remove();
+            assertEquals(1, changeNotifier.getListenerCount());
+            t1.remove();
+            assertEquals(0, changeNotifier.getListenerCount());
+            t1.remove();
+            assertEquals(0, changeNotifier.getListenerCount());
+            t2.remove();
+            assertEquals(0, changeNotifier.getListenerCount());
+        } finally {
+            deleteDb(db);
+        }
     }
 
     @Test

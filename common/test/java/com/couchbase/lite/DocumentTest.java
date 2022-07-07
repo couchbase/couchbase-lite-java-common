@@ -2137,7 +2137,7 @@ public class DocumentTest extends BaseDbTest {
         }
         finally {
             closeDb(sameDB);
-            closeDb(otherDB);
+            deleteDb(otherDB);
         }
     }
 
