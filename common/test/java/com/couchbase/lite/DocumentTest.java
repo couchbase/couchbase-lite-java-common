@@ -1536,8 +1536,8 @@ public class DocumentTest extends BaseDbTest {
         saveDocInBaseTestDb(mDoc);
 
         Map<String, Object> newProps = new HashMap<>();
-        props.put("PropName3", "Val3");
-        props.put("PropName4", 84);
+        newProps.put("PropName3", "Val3");
+        newProps.put("PropName4", 84);
 
         MutableDocument existingDoc = baseTestDb.getDocument("docName").toMutable();
         existingDoc.setData(newProps);
