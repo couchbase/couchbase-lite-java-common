@@ -242,7 +242,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
         }
 
         final Set<String> pending;
-        try { pending = getOrCreateC4Replicator().getPendingDocIDs(); }
+        // !!! Must specify the correct collection here
+        try { pending = getOrCreateC4Replicator().getPendingDocIDs(Scope.DEFAULT_NAME, Collection.DEFAULT_NAME); }
         catch (LiteCoreException e) {
             throw CouchbaseLiteException.convertException(e, "Failed fetching pending documentIds");
         }
@@ -266,7 +267,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
                 CBLError.Code.UNSUPPORTED);
         }
 
-        try { return getOrCreateC4Replicator().isDocumentPending(docId); }
+        // !!! Must specify the correct collection here
+        try { return getOrCreateC4Replicator().isDocumentPending(docId, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME); }
         catch (LiteCoreException e) {
             throw CouchbaseLiteException.convertException(e, "Failed getting document pending status");
         }

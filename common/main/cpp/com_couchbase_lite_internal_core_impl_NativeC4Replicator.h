@@ -75,18 +75,18 @@ JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Rep
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    getPendingDocIds
- * Signature: (J)J
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass, jlong, jstring, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    isDocumentPending
- * Signature: (JLjava/lang/String;)Z
+ * Signature:  (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_isDocumentPending
-  (JNIEnv *, jclass, jlong, jstring);
+  (JNIEnv *, jclass, jlong, jstring, jstring, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator

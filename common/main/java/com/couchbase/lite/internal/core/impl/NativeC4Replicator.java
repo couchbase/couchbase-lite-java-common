@@ -105,11 +105,15 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     public C4ReplicatorStatus nGetStatus(long peer) { return getStatus(peer); }
 
     @Override
-    public long nGetPendingDocIds(long peer) throws LiteCoreException { return getPendingDocIds(peer); }
+    public long nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
+        throws LiteCoreException {
+        return getPendingDocIds(peer, scope, collection);
+    }
 
     @Override
-    public boolean nIsDocumentPending(long peer, String id) throws LiteCoreException {
-        return isDocumentPending(peer, id);
+    public boolean nIsDocumentPending(long peer, @NonNull String id, @NonNull String scope, @NonNull String collection)
+        throws LiteCoreException {
+        return isDocumentPending(peer, id, scope, collection);
     }
 
     @Override
@@ -198,12 +202,18 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     /**
      * Returns a list of string ids for pending documents.
      */
-    private static native long getPendingDocIds(long peer) throws LiteCoreException;
+    private static native long getPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
+        throws LiteCoreException;
 
     /**
      * Returns true if there are documents that have not been resolved.
      */
-    private static native boolean isDocumentPending(long peer, String id) throws LiteCoreException;
+    private static native boolean isDocumentPending(
+        long peer,
+        @NonNull String id,
+        @NonNull String scope,
+        @NonNull String collection)
+        throws LiteCoreException;
 
     /**
      * Set the core progress callback level.

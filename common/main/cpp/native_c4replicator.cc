@@ -655,17 +655,22 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    getPendingDocIDs
- * Signature: (J)J
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
         JNIEnv *env,
         jclass ignored,
-        jlong repl) {
+        jlong repl,
+        jstring jscope,
+        jstring jcollection) {
+    jstringSlice scope(env, jscope);
+    jstringSlice collection(env, jcollection);
+    C4CollectionSpec collSpec = {collection, scope};
 
     C4Error c4Error{};
 
-    C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, &c4Error);
+    C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, collSpec, &c4Error);
     if (c4Error.domain != 0 && c4Error.code != 0) {
         throwError(env, c4Error);
         return 0L;
@@ -682,18 +687,23 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    isDocumentPending
- * Signature: (JLjava/lang/String;)Z
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_isDocumentPending(
         JNIEnv *env,
         jclass ignored,
         jlong repl,
-        jstring jDocId) {
+        jstring jDocId,
+        jstring jscope,
+        jstring jcollection) {
     jstringSlice docId(env, jDocId);
+    jstringSlice scope(env, jscope);
+    jstringSlice collection(env, jcollection);
+    C4CollectionSpec collSpec = {collection, scope};
 
     C4Error c4Error{};
-    bool pending = c4repl_isDocumentPending((C4Replicator *) repl, docId, &c4Error);
+    bool pending = c4repl_isDocumentPending((C4Replicator *) repl, docId, collSpec, &c4Error);
     if (c4Error.domain != 0 && c4Error.code != 0) {
         throwError(env, c4Error);
         return false;
