@@ -33,13 +33,14 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertNotNull(scope.getCollection(Collection.DEFAULT_NAME))
     }
 
-    @Ignore("CouchbaseLiteException: duplicate column when creating collection Chintz")
+    @Ignore("COLLECTIONS")
     @Test
     //create valid collections
     fun testCreateCollectionInDefaultScope() {
         //name with valid characters
         baseTestDb.createCollection("chintz")
-        baseTestDb.createCollection("Chintz") //collection is case sensitive, this collection should be created independently from chintz
+        // collection names should be case sensitive
+        baseTestDb.createCollection("Chintz")
         baseTestDb.createCollection("6hintz")
         baseTestDb.createCollection("-Ch1ntz")
 
@@ -144,9 +145,8 @@ class DbCollectionsTest : BaseCollectionTest() {
     }
 
 
-// !!! TESTS BELOW NEED TO BE MOVED TO CollectionTest
+    // !!! TESTS BELOW NEED TO BE MOVED TO CollectionTest
 
-    @Ignore("CBL-3257: getScopeNames does not return default scope when it is empty")
     @Test
     fun testDeleteDefaultCollection() {
         var scopes = baseTestDb.scopes

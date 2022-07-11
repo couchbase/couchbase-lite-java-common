@@ -196,7 +196,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         }
     }
 
-    @Ignore("Failing while in transition to the new Collections API")
+    @Ignore("COLLECTIONS")
     @Test
     public void testCustomConnectionOptions() throws URISyntaxException {
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())

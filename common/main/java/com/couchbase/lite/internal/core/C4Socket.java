@@ -388,7 +388,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             logDomain,
             peer -> {
                 // ??? Debugging: frequent crashes here.
-                if (logDomain != null) { Log.d(logDomain, "#### RELEASE PEER", getHistory()); }
+                Log.d(logDomain, "#### RELEASE PEER: " + Long.toHexString(peer), getHistory());
                 BOUND_SOCKETS.unbind(peer);
                 releaseSocket(impl, peer, domain, code, msg);
             });
