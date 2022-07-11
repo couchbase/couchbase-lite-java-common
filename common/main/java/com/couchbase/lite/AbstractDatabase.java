@@ -669,7 +669,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     public Document getDocument(@NonNull String id) {
         try { return getDefaultCollectionOrThrow().getDocument(id); }
         catch (CouchbaseLiteException e) {
-            if (e.getCode() == CBLError.Code.NOT_OPEN) {
+            if (e.getDomain().equals(CBLError.Domain.CBLITE) && e.getCode() == CBLError.Code.NOT_OPEN) {
                 throw new IllegalStateException(
                     Log.lookupStandardMessage("DBClosedOrCollectionDeleted"),
                     e);

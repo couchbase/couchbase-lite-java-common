@@ -31,8 +31,8 @@ open class BaseCollectionTest : BaseDbTest() {
 
     @Before
     fun setUpBaseCollectionTest() {
-        testColName = "test_collection"
-        testScopeName = "test_scope"
+        testColName = getUniqueName("test_collection")
+        testScopeName = getUniqueName("test_scope")
         testCollection = baseTestDb.createCollection(testColName, testScopeName)
         Report.log(LogLevel.INFO, "Created base test Collection: $testCollection")
     }
@@ -68,7 +68,7 @@ open class BaseCollectionTest : BaseDbTest() {
     }
 
     @Throws(CouchbaseLiteException::class)
-    protected fun createDocsInBaseCollectionTest(n: Int) {
+    protected fun createDocsInCollectionTest(n: Int) {
         for (i in 0 until n) {
             val doc = MutableDocument(String.format(Locale.US, "doc_%03d", i))
             doc.setValue("key", i)

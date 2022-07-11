@@ -61,9 +61,7 @@ public abstract class BaseDbTest extends BaseTest {
 
     protected static <T extends Comparable<T>> void assertContents(List<T> l1, T... contents) {
         List<T> l2 = Arrays.asList(contents);
-        Collections.sort(l2);
-        Collections.sort(l1);
-        assertEquals(l1, l2);
+        assertTrue(l1.containsAll(l2) && l2.containsAll(l1));
     }
 
     protected Database baseTestDb;
@@ -1665,7 +1663,7 @@ public abstract class BaseDbTest extends BaseTest {
         verifyBlob(doc.getBlob("doc-29"));
     }
 
-    protected Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb("test_db")); }
+    protected Database openDatabase() throws CouchbaseLiteException { return verifyDb(createDb(getUniqueName("test_db"))); }
 
     protected final void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
 

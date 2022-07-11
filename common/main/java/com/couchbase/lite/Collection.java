@@ -163,8 +163,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
         return withLockAndOpenDb(() -> {
             try { return Document.getDocument(this, id, false); }
             catch (CouchbaseLiteException e) {
-                if (e.getCode() == CBLError.Code.NOT_FOUND) {
-                    Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", id);
+                if (e.getDomain().equals(CBLError.Domain.CBLITE) && e.getCode() == CBLError.Code.NOT_FOUND) {
                     return null;
                 }
                 else { throw e; }
