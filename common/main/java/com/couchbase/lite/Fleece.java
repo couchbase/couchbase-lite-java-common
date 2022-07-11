@@ -71,7 +71,7 @@ final class Fleece {
 
         throw new IllegalArgumentException(
             Log.formatStandardMessage(
-                "InvalidValueToBeDeserialized",
+                "InvalidCouchbaseObjType",
                 value.getClass().getSimpleName(),
                 SUPPORTED_TYPES));
     }
