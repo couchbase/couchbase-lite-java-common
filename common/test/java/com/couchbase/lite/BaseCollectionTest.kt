@@ -22,9 +22,9 @@ import org.junit.Before
 import java.util.*
 
 open class BaseCollectionTest : BaseDbTest() {
-    protected var testCollection: Collection? = null
-    protected var testColName = ""
-    protected var testScopeName = ""
+    protected lateinit var testCollection: Collection
+    protected lateinit var testColName : String
+    protected lateinit var testScopeName : String
 
     protected val Scope.collectionCount
         get() = this.collections.size
