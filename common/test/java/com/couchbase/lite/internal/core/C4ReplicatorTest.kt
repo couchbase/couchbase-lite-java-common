@@ -15,7 +15,240 @@
 //
 package com.couchbase.lite.internal.core
 
-class C4ReplicatorTest : C4BaseTest() {
+import com.couchbase.lite.BaseDbTest
+import com.couchbase.lite.BaseReplicatorTest
+import com.couchbase.lite.Collection
+import com.couchbase.lite.CollectionConfiguration
+import com.couchbase.lite.Replicator
+import com.couchbase.lite.ReplicatorConfiguration
+import com.couchbase.lite.ReplicatorType
+import com.couchbase.lite.URLEndpoint
+import com.couchbase.lite.internal.SocketFactory
+import com.couchbase.lite.internal.boundCollectionCount
+import com.couchbase.lite.internal.clearBoundCollections
+import com.couchbase.lite.internal.replicator.CBLCookieStore
+import com.couchbase.lite.internal.sockets.MessageFraming
+import com.couchbase.lite.mock.MockNativeReplicator
+import com.couchbase.lite.mock.MockNativeSocket
+import com.couchbase.lite.mock.MockReplicatorListener
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Before
+import org.junit.Test
+import java.net.URI
+
+class C4ReplicatorTest : BaseDbTest() {
+    private lateinit var testReplicatorConfig: ReplicatorConfiguration
+    private lateinit var testReplicator: Replicator
+    private lateinit var testCollection: Collection
+
+    @Before
+    fun setUpC4ReplicatorTest() {
+        C4Replicator.BOUND_REPLICATORS.clear()
+        clearBoundCollections()
+        testCollection = baseTestDb.createCollection(getUniqueName("stamps"))
+        testReplicatorConfig = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
+        testReplicatorConfig.addCollection(testCollection, CollectionConfiguration())
+        testReplicator = BaseReplicatorTest.testReplicator(testReplicatorConfig)
+    }
+
+    @After
+    fun tearDownC4ReplicatorTest() {
+        clearBoundCollections()
+        C4Replicator.BOUND_REPLICATORS.clear()
+    }
+
+    @Test
+    fun testCreateRemoteReplicator() {
+        var calls = 0
+
+        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        assertEquals(0, boundCollectionCount())
+
+        val c4Repl = C4Replicator.createRemoteReplicator(
+            object : MockNativeReplicator() {
+                override fun nStop(peer: Long) {
+                    calls++
+                }
+
+                override fun nFree(peer: Long) {
+                    calls++
+                }
+            },
+            mapOf(testCollection to CollectionConfiguration()),
+            C4BaseTest.MOCK_PEER,
+            null,
+            null,
+            0,
+            null,
+            null,
+            MessageFraming.NO_FRAMING,
+            ReplicatorType.PUSH_AND_PULL,
+            false,
+            null,
+            MockReplicatorListener(),
+            testReplicator,
+            SocketFactory(
+                testReplicatorConfig,
+                object : CBLCookieStore {
+                    override fun setCookie(uri: URI, setCookieHeader: String) = Unit
+                    override fun getCookies(uri: URI): String? = null
+                },
+                { }
+            )
+        )
+
+        assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
+        assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
+
+        assertEquals(1, c4Repl.colls.size)
+        assertEquals(1, boundCollectionCount())
+
+        c4Repl.close()
+        assertEquals(2, calls)
+
+        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        assertEquals(0, boundCollectionCount())
+    }
+
+    @Test
+    fun testCreateLocalReplicator() {
+        var calls = 0
+
+        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        assertEquals(0, boundCollectionCount())
+
+        val c4Repl = C4Replicator.createLocalReplicator(
+            object : MockNativeReplicator() {
+                override fun nStop(peer: Long) {
+                    calls++
+                }
+
+                override fun nFree(peer: Long) {
+                    calls++
+                }
+            },
+            mapOf(testCollection to CollectionConfiguration()),
+            C4BaseTest.MOCK_PEER,
+            getC4Db(baseTestDb),
+            ReplicatorType.PUSH_AND_PULL,
+            false,
+            null,
+            MockReplicatorListener(),
+            testReplicator
+        )
+
+        assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
+        assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
+
+        assertEquals(1, c4Repl.colls.size)
+        assertEquals(1, boundCollectionCount())
+
+        c4Repl.close()
+        assertEquals(2, calls)
+
+        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        assertEquals(0, boundCollectionCount())
+    }
+
+    @Test
+    fun testCreateMessageEndpointReplicator() {
+        var calls = 0
+
+        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        val c4Repl = C4Replicator.createMessageEndpointReplicator(
+            object : MockNativeReplicator() {
+                override fun nStop(peer: Long) {
+                    calls++
+                }
+
+                override fun nFree(peer: Long) {
+                    calls++
+                }
+            },
+            setOf(testCollection),
+            C4BaseTest.MOCK_PEER,
+            C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
+            null,
+            MockReplicatorListener()
+        )
+
+        assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
+        assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
+
+        assertEquals(1, c4Repl.colls.size)
+        assertEquals(1, boundCollectionCount())
+
+        c4Repl.close()
+        assertEquals(2, calls)
+
+        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+        assertEquals(0, boundCollectionCount())
+    }
+
+    @Test
+    fun testStatusChangedCallback() {
+        var calls = 0
+
+        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+
+        val c4Repl = C4Replicator.createMessageEndpointReplicator(
+            MockNativeReplicator(),
+            setOf(testCollection),
+            C4BaseTest.MOCK_PEER,
+            C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
+            null,
+            object : MockReplicatorListener() {
+                override fun statusChanged(repl: C4Replicator?, status: C4ReplicatorStatus?) {
+                    calls++
+                }
+            }
+        )
+
+        C4Replicator.statusChangedCallback(
+            c4Repl.token,
+            C4ReplicatorStatus(C4ReplicatorStatus.ActivityLevel.BUSY, 0, 0)
+        )
+        assertEquals(1, calls)
+
+        c4Repl.close()
+
+        C4Replicator.statusChangedCallback(
+            c4Repl.token,
+            C4ReplicatorStatus(C4ReplicatorStatus.ActivityLevel.BUSY, 0, 0)
+        )
+        assertEquals(1, calls)
+    }
 
 
+    @Test
+    fun testDocumentEndedCallback() {
+        var calls = 0
+
+        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
+
+        val c4Repl = C4Replicator.createMessageEndpointReplicator(
+            MockNativeReplicator(),
+            setOf(testCollection),
+            C4BaseTest.MOCK_PEER,
+            C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
+            null,
+            object : MockReplicatorListener() {
+                override fun documentEnded(repl: C4Replicator?, push: Boolean, docs: Array<out C4DocumentEnded>?) {
+                    calls++
+                }
+            }
+        )
+
+        C4Replicator.documentEndedCallback(c4Repl.token, true)
+        assertEquals(1, calls)
+
+        c4Repl.close()
+
+        C4Replicator.statusChangedCallback(
+            c4Repl.token,
+            C4ReplicatorStatus(C4ReplicatorStatus.ActivityLevel.BUSY, 0, 0)
+        )
+        assertEquals(1, calls)
+    }
 }

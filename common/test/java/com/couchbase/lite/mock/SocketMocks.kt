@@ -13,14 +13,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.replicator
+package com.couchbase.lite.mock
 
+import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket
+import com.couchbase.lite.internal.replicator.CBLCookieStore
 import com.couchbase.lite.internal.sockets.*
+import com.couchbase.lite.internal.utils.Fn
 import java.net.URI
+import java.security.cert.Certificate
 
+
+open class MockCBLWebSocket(
+    toRemote: SocketToRemote,
+    toCore: SocketToCore,
+    uri: URI,
+    opts: ByteArray?,
+    cookieStore: CBLCookieStore,
+    serverCertsListener: Fn.Consumer<MutableList<Certificate>>
+) : AbstractCBLWebSocket(toRemote, toCore, uri, opts, cookieStore, serverCertsListener) {
+    override fun handleClose(error: Throwable): CloseStatus? = null
+    override fun handleCloseCause(error: Throwable): Int = 0
+}
 
 open class MockCore : SocketToCore {
-    val mutex = Object()
+    private val mutex = Object()
     override fun getLock() = mutex
     override fun init(listener: SocketFromCore): Unit = TODO("Not yet implemented")
     override fun close(): Unit = TODO("Not yet implemented")

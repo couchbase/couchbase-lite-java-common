@@ -34,6 +34,11 @@ import static org.junit.Assert.assertTrue;
 
 
 public abstract class BaseReplicatorTest extends BaseDbTest {
+
+    // Don't let the NetworkConnectivityManager confuse tests
+    public static Replicator testReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
+
+
     protected Replicator baseTestReplicator;
     protected Database otherDB;
 
@@ -54,9 +59,6 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected final URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {
         return new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
     }
-
-    // Don't let the NetworkConnectivityManager confuse tests
-    protected final Replicator testReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
 
     protected final ReplicatorConfiguration makeConfig(
         Endpoint target,

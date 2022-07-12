@@ -28,7 +28,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class FLDict {
-
     public interface NativeImpl {
         long nCount(long dict);
         long nGet(long dict, byte[] keyString);
@@ -39,16 +38,16 @@ public class FLDict {
     @NonNull
     public static FLDict create(long peer) { return new FLDict(nativeImpl, peer); }
 
-    private final long handle; // hold pointer to FLDict
+    private final long peer; // hold pointer to FLDict
     private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    FLDict(@NonNull NativeImpl impl, long handle) {
+    FLDict(@NonNull NativeImpl impl, long peer) {
         this.impl = impl;
-        this.handle = Preconditions.assertNotZero(handle, "handle");
+        this.peer = Preconditions.assertNotZero(peer, "peer");
     }
 
     //-------------------------------------------------------------------------
@@ -56,15 +55,15 @@ public class FLDict {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public FLValue toFLValue() { return new FLValue(handle); }
+    public FLValue toFLValue() { return new FLValue(peer); }
 
-    public long count() { return impl.nCount(handle); }
+    public long count() { return impl.nCount(peer); }
 
     @Nullable
     public FLValue get(@Nullable String key) {
         if (key == null) { return null; }
 
-        final long hValue = impl.nGet(handle, key.getBytes(StandardCharsets.UTF_8));
+        final long hValue = impl.nGet(peer, key.getBytes(StandardCharsets.UTF_8));
 
         return hValue != 0L ? new FLValue(hValue) : null;
     }
@@ -90,5 +89,5 @@ public class FLDict {
     //-------------------------------------------------------------------------
 
     @Nullable
-    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
+    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
 }

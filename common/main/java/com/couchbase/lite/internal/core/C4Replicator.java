@@ -239,17 +239,7 @@ public abstract class C4Replicator extends C4NativePeer {
             @NonNull NativeImpl impl,
             long peer,
             long token,
-            @NonNull ReplicationCollection[] colls,
-            @NonNull ReplicatorListener listener,
-            @NonNull AbstractReplicator replicator) {
-            this(impl, peer, token, colls, listener, replicator, null, 0L);
-        }
-
-        C4CommonReplicator(
-            @NonNull NativeImpl impl,
-            long peer,
-            long token,
-            @NonNull ReplicationCollection[] colls,
+            @NonNull List<ReplicationCollection> colls,
             @NonNull ReplicatorListener listener,
             @NonNull AbstractReplicator replicator,
             @Nullable SocketFactory socketFactory,
@@ -286,7 +276,7 @@ public abstract class C4Replicator extends C4NativePeer {
             @NonNull NativeImpl impl,
             long peer,
             long token,
-            @NonNull ReplicationCollection[] colls,
+            @NonNull List<ReplicationCollection> colls,
             @NonNull ReplicatorListener listener) {
             super(impl, peer, token, colls, listener);
         }
@@ -312,8 +302,8 @@ public abstract class C4Replicator extends C4NativePeer {
     private static final NativeImpl NATIVE_IMPL = new NativeC4Replicator();
 
     // Lookup table: maps a random token (context) to its companion Java C4Replicator
-    @NonNull
     @VisibleForTesting
+    @NonNull
     static final TaggedWeakPeerBinding<C4Replicator> BOUND_REPLICATORS = new TaggedWeakPeerBinding<>();
 
     //-------------------------------------------------------------------------
@@ -358,12 +348,50 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull AbstractReplicator replicator,
         @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
+        return createRemoteReplicator(
+            NATIVE_IMPL,
+            collections,
+            db,
+            scheme,
+            host,
+            port,
+            path,
+            remoteDbName,
+            framing,
+            type,
+            continuous,
+            options,
+            listener,
+            replicator,
+            socketFactory);
+    }
+
+    @VisibleForTesting
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
+    static C4Replicator createRemoteReplicator(
+        @NonNull NativeImpl impl,
+        @NonNull Map<Collection, CollectionConfiguration> collections,
+        long db,
+        @Nullable String scheme,
+        @Nullable String host,
+        int port,
+        @Nullable String path,
+        @Nullable String remoteDbName,
+        @NonNull MessageFraming framing,
+        @NonNull ReplicatorType type,
+        boolean continuous,
+        @Nullable Map<String, Object> options,
+        @NonNull ReplicatorListener listener,
+        @NonNull AbstractReplicator replicator,
+        @Nullable SocketFactory socketFactory)
+        throws LiteCoreException {
         final long replToken = BOUND_REPLICATORS.reserveKey();
         final long sfToken = (socketFactory == null) ? 0L : BaseSocketFactory.bindSocketFactory(socketFactory);
 
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections, options);
 
-        final long peer = NATIVE_IMPL.nCreate(
+        final long peer = impl.nCreate(
             colls,
             db,
             scheme,
@@ -378,8 +406,15 @@ public abstract class C4Replicator extends C4NativePeer {
             replToken,
             sfToken);
 
-        final C4Replicator c4Replicator
-            = new C4CommonReplicator(NATIVE_IMPL, peer, replToken, colls, listener, replicator, socketFactory, sfToken);
+        final C4Replicator c4Replicator = new C4CommonReplicator(
+            impl,
+            peer,
+            replToken,
+            Arrays.asList(colls),
+            listener,
+            replicator,
+            socketFactory,
+            sfToken);
 
         BOUND_REPLICATORS.bind(replToken, c4Replicator);
 
@@ -397,23 +432,49 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull ReplicatorListener listener,
         @NonNull AbstractReplicator replicator)
         throws LiteCoreException {
-        final long replToken = BOUND_REPLICATORS.reserveKey();
+        return createLocalReplicator(
+            NATIVE_IMPL,
+            collections,
+            db,
+            targetDb,
+            type,
+            continuous,
+            options,
+            listener,
+            replicator);
+    }
+
+    @VisibleForTesting
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
+    static C4Replicator createLocalReplicator(
+        @NonNull NativeImpl impl,
+        @NonNull Map<Collection, CollectionConfiguration> collections,
+        long db,
+        @NonNull C4Database targetDb,
+        @NonNull ReplicatorType type,
+        boolean continuous,
+        @Nullable Map<String, Object> options,
+        @NonNull ReplicatorListener listener,
+        @NonNull AbstractReplicator replicator)
+        throws LiteCoreException {
+        final long token = BOUND_REPLICATORS.reserveKey();
 
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections, options);
 
-        final long peer = NATIVE_IMPL.nCreateLocal(
+        final long peer = impl.nCreateLocal(
             colls,
             db,
             targetDb.getHandle(),
             (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PUSH),
             (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PULL),
             continuous,
-            replToken);
+            token);
 
         final C4Replicator c4Replicator
-            = new C4CommonReplicator(NATIVE_IMPL, peer, replToken, colls, listener, replicator);
+            = new C4CommonReplicator(impl, peer, token, Arrays.asList(colls), listener, replicator, null, 0L);
 
-        BOUND_REPLICATORS.bind(replToken, c4Replicator);
+        BOUND_REPLICATORS.bind(token, c4Replicator);
 
         return c4Replicator;
     }
@@ -426,18 +487,38 @@ public abstract class C4Replicator extends C4NativePeer {
         @Nullable Map<String, Object> options,
         @NonNull ReplicatorListener listener)
         throws LiteCoreException {
+        return createMessageEndpointReplicator(
+            NATIVE_IMPL,
+            collections,
+            db,
+            c4Socket,
+            options,
+            listener);
+    }
+
+    @VisibleForTesting
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    @NonNull
+    static C4Replicator createMessageEndpointReplicator(
+        @NonNull NativeImpl impl,
+        @NonNull Set<Collection> collections,
+        long db,
+        @NonNull C4Socket c4Socket,
+        @Nullable Map<String, Object> options,
+        @NonNull ReplicatorListener listener)
+        throws LiteCoreException {
         final long replToken = BOUND_REPLICATORS.reserveKey();
 
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections, options);
 
-        final long peer = NATIVE_IMPL.nCreateWithSocket(
+        final long peer = impl.nCreateWithSocket(
             colls,
             db,
             c4Socket.getPeerHandle(),
             replToken);
 
         final C4Replicator c4Replicator
-            = new C4MessageEndpointReplicator(NATIVE_IMPL, peer, replToken, colls, listener);
+            = new C4MessageEndpointReplicator(impl, peer, replToken,  Arrays.asList(colls), listener);
 
         BOUND_REPLICATORS.bind(replToken, c4Replicator);
 
@@ -452,10 +533,12 @@ public abstract class C4Replicator extends C4NativePeer {
     @NonNull
     private final NativeImpl impl;
 
-    private final long token;
+    @VisibleForTesting
+    final long token;
 
+    @VisibleForTesting
     @NonNull
-    private final List<ReplicationCollection> colls;
+    final List<ReplicationCollection> colls;
 
     @NonNull
     protected final ReplicatorListener listener;
@@ -468,16 +551,13 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull NativeImpl impl,
         long peer,
         long token,
-        @NonNull ReplicationCollection[] colls,
+        @NonNull List<ReplicationCollection> colls,
         @NonNull ReplicatorListener listener) {
         super(peer);
 
         this.impl = impl;
-
         this.token = Preconditions.assertNotZero(token, "token");
-
-        this.colls = Arrays.asList(colls);
-
+        this.colls = Preconditions.assertNotNull(colls, "collections");
         this.listener = Preconditions.assertNotNull(listener, "listener");
     }
 
@@ -524,7 +604,6 @@ public abstract class C4Replicator extends C4NativePeer {
 
     protected abstract void releaseResources();
 
-    // Note: the reference in the BOUND_REPLICATOR must already be gone, or we wouldn't be here...
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
@@ -542,6 +621,8 @@ public abstract class C4Replicator extends C4NativePeer {
             peer -> {
                 releaseResources();
                 BOUND_REPLICATORS.unbind(token);
+
+                // It might be better to queue this stuff to be done on another thread...
                 impl.nStop(peer);
                 impl.nFree(peer);
             });

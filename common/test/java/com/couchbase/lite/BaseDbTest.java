@@ -49,10 +49,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-@SuppressWarnings("ConstantConditions")
 public abstract class BaseDbTest extends BaseTest {
     @FunctionalInterface
-    public interface DocValidator extends Fn.ConsumerThrows<Document, CouchbaseLiteException> {}
+    public interface DocValidator extends Fn.ConsumerThrows<Document, CouchbaseLiteException> { }
 
     public static final String TEST_DATE = "2019-02-21T05:37:22.014Z";
     public static final String BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box.";

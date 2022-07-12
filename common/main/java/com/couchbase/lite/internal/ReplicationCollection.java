@@ -27,7 +27,7 @@ import java.util.Set;
 
 import com.couchbase.lite.Collection;
 import com.couchbase.lite.CollectionConfiguration;
-import com.couchbase.lite.Document;
+import com.couchbase.lite.ConflictResolver;
 import com.couchbase.lite.DocumentFlag;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.ReplicationFilter;
@@ -40,19 +40,46 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.support.Log;
 
 
-public class ReplicationCollection implements AutoCloseable {
+public final class ReplicationCollection implements AutoCloseable {
 
     //-------------------------------------------------------------------------
     // Constants
     //-------------------------------------------------------------------------
-    public static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
+    private static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
 
     //-------------------------------------------------------------------------
     // Types
     //-------------------------------------------------------------------------
     @FunctionalInterface
-    public interface Filter {
-        boolean test(@NonNull String docID, @NonNull String revID, long flDict, int flags);
+    interface C4Filter {
+        boolean test(@NonNull String docId, @NonNull String revId, long body, int flags);
+    }
+
+    private static final class CollectionFilter implements C4Filter {
+        @NonNull
+        private final BaseCollection collection;
+        @NonNull
+        private final ReplicationFilter filter;
+
+        CollectionFilter(@NonNull Collection collection, @NonNull ReplicationFilter filter) {
+            this.collection = collection;
+            this.filter = filter;
+        }
+
+        @Override
+        public boolean test(@NonNull String docId, @NonNull String revId, long body, int flags) {
+            return filter.filtered(
+                collection.createFilterDocument(docId, revId, FLDict.create(body)),
+                getDocumentFlags(flags));
+        }
+
+        @NonNull
+        private EnumSet<DocumentFlag> getDocumentFlags(int flags) {
+            final EnumSet<DocumentFlag> fs = EnumSet.noneOf(DocumentFlag.class);
+            if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.DELETED)) { fs.add(DocumentFlag.DELETED); }
+            if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.PURGED)) { fs.add(DocumentFlag.ACCESS_REMOVED); }
+            return fs;
+        }
     }
 
     //-------------------------------------------------------------------------
@@ -92,7 +119,7 @@ public class ReplicationCollection implements AutoCloseable {
             return true;
         }
 
-        final ReplicationCollection.Filter filter = (isPush) ? coll.getPushFilter() : coll.getPullFilter();
+        final C4Filter filter = (isPush) ? coll.getPushFilter() : coll.getPullFilter();
         if (filter == null) { return true; }
 
         // This shouldn't happen.
@@ -102,8 +129,7 @@ public class ReplicationCollection implements AutoCloseable {
             return true;
         }
 
-        final ClientTask<Boolean> task
-            = new ClientTask<>(() -> filter.test(docID, revID, body, flags));
+        final ClientTask<Boolean> task = new ClientTask<>(() -> filter.test(docID, revID, body, flags));
         task.execute();
 
         final Exception err = task.getFailure();
@@ -126,7 +152,7 @@ public class ReplicationCollection implements AutoCloseable {
         @Nullable Map<String, Object> options) {
         final ReplicationCollection[] replColls = new ReplicationCollection[collections.size()];
         int i = 0;
-        for (Collection coll: collections) { replColls[i++] = create(coll, options, null, null); }
+        for (Collection coll: collections) { replColls[i++] = create(coll, options, null, null, null); }
         return replColls;
     }
 
@@ -137,7 +163,7 @@ public class ReplicationCollection implements AutoCloseable {
         final ReplicationCollection[] replColls = new ReplicationCollection[collections.size()];
         int i = 0;
         for (Map.Entry<Collection, CollectionConfiguration> entry: collections.entrySet()) {
-            replColls[i++] = create(entry.getKey(), options, entry.getValue());
+            replColls[i++] = create(entry.getKey(), entry.getValue(), options);
         }
         return replColls;
     }
@@ -145,8 +171,8 @@ public class ReplicationCollection implements AutoCloseable {
     @NonNull
     public static ReplicationCollection create(
         @NonNull Collection coll,
-        @Nullable Map<String, Object> opts,
-        @NonNull CollectionConfiguration config) {
+        @NonNull CollectionConfiguration config,
+        @Nullable Map<String, Object> opts) {
         final Map<String, Object> options = (opts == null) ? new HashMap<>() : new HashMap<>(opts);
 
         final List<String> documentIDs = config.getDocumentIDs();
@@ -159,7 +185,7 @@ public class ReplicationCollection implements AutoCloseable {
             options.put(C4Replicator.REPLICATOR_OPTION_CHANNELS, channels);
         }
 
-        return create(coll, options, config.getPushFilter(), config.getPullFilter());
+        return create(coll, options, config.getPushFilter(), config.getPullFilter(), config.getConflictResolver());
     }
 
     @SuppressWarnings("CheckFunctionalParameters")
@@ -168,12 +194,18 @@ public class ReplicationCollection implements AutoCloseable {
         @NonNull Collection coll,
         @Nullable Map<String, Object> options,
         @Nullable ReplicationFilter pushFilter,
-        @Nullable ReplicationFilter pullFilter) {
+        @Nullable ReplicationFilter pullFilter,
+        @Nullable ConflictResolver resolver) {
         final long token = BOUND_COLLECTIONS.reserveKey();
-        final ReplicationCollection replColl
-            = new ReplicationCollection(coll, token, pushFilter, pullFilter, options);
+        final ReplicationCollection replColl = new ReplicationCollection(
+            token,
+            coll.getScope().getName(),
+            coll.getName(),
+            FLEncoder.encodeMap(options),
+            (pushFilter == null) ? null : new CollectionFilter(coll, pushFilter),
+            (pullFilter == null) ? null : new CollectionFilter(coll, pullFilter),
+            resolver);
         BOUND_COLLECTIONS.bind(token, replColl);
-
         return replColl;
     }
 
@@ -182,49 +214,51 @@ public class ReplicationCollection implements AutoCloseable {
     // Member Variables
     //-------------------------------------------------------------------------
 
-    @NonNull
-    final Collection collection;
-
     // These fields are accessed by reflection.  Don't change them.
 
+    @VisibleForTesting
     final long token;
 
+    @VisibleForTesting
     @NonNull
     final String scope;
+    @VisibleForTesting
     @NonNull
     final String name;
 
+    @VisibleForTesting
     @Nullable
     final byte[] options;
 
+    @VisibleForTesting
     @Nullable
-    final Filter c4PushFilter;
+    final C4Filter c4PushFilter;
+    @VisibleForTesting
     @Nullable
-    final Filter c4PullFilter;
+    final C4Filter c4PullFilter;
+    @VisibleForTesting
+    @Nullable
+    final ConflictResolver resolver;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    ReplicationCollection(
-        @NonNull Collection collection,
+    private ReplicationCollection(
         long token,
-        @Nullable ReplicationFilter pushFilter,
-        @Nullable ReplicationFilter pullFilter,
-        @Nullable Map<String, Object> options) {
-        this.collection = collection;
+        @NonNull String scope,
+        @NonNull String name,
+        @Nullable byte[] options,
+        @Nullable C4Filter pushFilter,
+        @Nullable C4Filter pullFilter,
+        @Nullable ConflictResolver resolver) {
         this.token = token;
-        this.scope = collection.getScope().getName();
-        this.name = collection.getName();
-        this.options = FLEncoder.encodeMap(options);
-        this.c4PushFilter = (pushFilter == null)
-            ? null
-            : (docId, revId, body, flags) ->
-                pushFilter.filtered(createFilterDoc(docId, revId, body), getDocumentFlags(flags));
-        this.c4PullFilter = (pullFilter == null)
-            ? null
-            : (docId, revId, body, flags) ->
-                pullFilter.filtered(createFilterDoc(docId, revId, body), getDocumentFlags(flags));
+        this.scope = scope;
+        this.name = name;
+        this.options = options;
+        this.c4PushFilter = pushFilter;
+        this.c4PullFilter = pullFilter;
+        this.resolver = resolver;
     }
 
     //-------------------------------------------------------------------------
@@ -232,23 +266,13 @@ public class ReplicationCollection implements AutoCloseable {
     //-------------------------------------------------------------------------
 
     @Nullable
-    public Filter getPushFilter() { return c4PushFilter; }
+    public ConflictResolver getConflictResolver() { return resolver; }
 
     @Nullable
-    public Filter getPullFilter() { return c4PullFilter; }
+    public C4Filter getPushFilter() { return c4PushFilter; }
 
-    @NonNull
-    private Document createFilterDoc(@NonNull String docId, @NonNull String revId, long body) {
-        return ((BaseCollection) collection).createFilterDocument(docId, revId, FLDict.create(body));
-    }
-
-    @NonNull
-    private EnumSet<DocumentFlag> getDocumentFlags(int flags) {
-        final EnumSet<DocumentFlag> fs = EnumSet.noneOf(DocumentFlag.class);
-        if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.DELETED)) { fs.add(DocumentFlag.DELETED); }
-        if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.PURGED)) { fs.add(DocumentFlag.ACCESS_REMOVED); }
-        return fs;
-    }
+    @Nullable
+    public C4Filter getPullFilter() { return c4PullFilter; }
 
     @Override
     public void close() { BOUND_COLLECTIONS.unbind(token); }

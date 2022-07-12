@@ -19,26 +19,14 @@ import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.sockets.CloseStatus
 import com.couchbase.lite.internal.sockets.SocketState
-import com.couchbase.lite.internal.sockets.SocketToCore
-import com.couchbase.lite.internal.sockets.SocketToRemote
-import com.couchbase.lite.internal.utils.Fn
+import com.couchbase.lite.mock.MockCBLWebSocket
+import com.couchbase.lite.mock.MockCookieStore
+import com.couchbase.lite.mock.MockCore
+import com.couchbase.lite.mock.MockRemote
 import org.junit.Assert
 import org.junit.Test
 import java.net.SocketTimeoutException
 import java.net.URI
-import java.security.cert.Certificate
-
-open class TestCBLWebSocket(
-    toRemote: SocketToRemote,
-    toCore: SocketToCore,
-    uri: URI,
-    opts: ByteArray?,
-    cookieStore: CBLCookieStore,
-    serverCertsListener: Fn.Consumer<MutableList<Certificate>>
-) : AbstractCBLWebSocket(toRemote, toCore, uri, opts, cookieStore, serverCertsListener) {
-    override fun handleClose(error: Throwable): CloseStatus? = null
-    override fun handleCloseCause(error: Throwable): Int = 0
-}
 
 class CBLWebSocketTest : BaseTest() {
     @Test
@@ -46,7 +34,7 @@ class CBLWebSocketTest : BaseTest() {
         var openStatus: Int? = null
 
         lateinit var ws: AbstractCBLWebSocket
-        ws = TestCBLWebSocket(
+        ws = MockCBLWebSocket(
             object : MockRemote() {
                 override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean {
                     ws.remoteOpened(200, null)
@@ -73,7 +61,7 @@ class CBLWebSocketTest : BaseTest() {
     fun testCoreRequestsOpenFails() {
         var coreStatus: CloseStatus? = null
         lateinit var ws: AbstractCBLWebSocket
-        ws = TestCBLWebSocket(
+        ws = MockCBLWebSocket(
             object : MockRemote() {
                 override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean {
                     ws.remoteClosed(
@@ -110,7 +98,7 @@ class CBLWebSocketTest : BaseTest() {
         var openStatus: Int? = null
         var closeStatus: CloseStatus? = null
         lateinit var ws: AbstractCBLWebSocket
-        ws = TestCBLWebSocket(
+        ws = MockCBLWebSocket(
             object : MockRemote() {
                 override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean {
                     ws.remoteOpened(200, null)
@@ -121,6 +109,7 @@ class CBLWebSocketTest : BaseTest() {
                 override fun ackOpenToCore(httpStatus: Int, responseHeadersFleece: ByteArray?) {
                     openStatus = httpStatus
                 }
+
                 override fun closeCore(status: CloseStatus) {
                     closeStatus = status
                 }

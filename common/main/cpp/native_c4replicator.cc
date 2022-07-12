@@ -138,7 +138,7 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
                 = env->GetFieldID(
                 cls_ReplColl,
                 "c4PushFilter",
-                "Lcom/couchbase/lite/internal/ReplicationCollection$Filter;");
+                "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
         if (!f_ReplColl_pushFilter)
             return false;
 
@@ -146,7 +146,7 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
                 = env->GetFieldID(
                 cls_ReplColl,
                 "c4PushFilter",
-                "Lcom/couchbase/lite/internal/ReplicationCollection$Filter;");
+                "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
         if (!f_ReplColl_pullFilter)
             return false;
 

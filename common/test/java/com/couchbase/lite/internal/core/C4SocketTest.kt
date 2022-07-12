@@ -30,7 +30,6 @@ import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-private const val MOCK_PEER = 500005L
 
 open class MockSocketFromCore : SocketFromCore {
     val latch = CountDownLatch(1)
@@ -70,7 +69,7 @@ open class MockImpl : C4Socket.NativeImpl {
         port: Int,
         path: String?,
         framing: Int
-    ) = MOCK_PEER
+    ) = C4BaseTest.MOCK_PEER
 
     override fun nRetain(peer: Long) {
         assertEquals(0L, this.peer)
@@ -108,7 +107,7 @@ class C4SocketTest : BaseTest() {
     @Test
     fun testCreateSocket() {
         assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
-        verifySocket(C4Socket.createSocket(MockImpl(), MOCK_PEER))
+        verifySocket(C4Socket.createSocket(MockImpl(), C4BaseTest.MOCK_PEER))
     }
 
 
@@ -126,7 +125,7 @@ class C4SocketTest : BaseTest() {
 
         createSocket(fromCore)
 
-        C4Socket.open(MOCK_PEER, 0L, null, null, 0, null, null)
+        C4Socket.open(C4BaseTest.MOCK_PEER, 0L, null, null, 0, null, null)
         awaitCall(fromCore)
     }
 
@@ -148,7 +147,7 @@ class C4SocketTest : BaseTest() {
 
         val token = BaseSocketFactory.bindSocketFactory(MockSocketFactory())
         try {
-            assertFalse(C4Socket.openSocket(mockImpl, MOCK_PEER, token, "ws:", "Oprah", 86, "/fail", ByteArray(0)))
+            assertFalse(C4Socket.openSocket(mockImpl, C4BaseTest.MOCK_PEER, token, "ws:", "Oprah", 86, "/fail", ByteArray(0)))
             assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
             assertEquals(2, mockImpl.totalCalls)
             assertEquals(C4Constants.ErrorDomain.NETWORK, mockImpl.domain)
@@ -174,7 +173,7 @@ class C4SocketTest : BaseTest() {
         createSocket(fromCore)
 
         val data = byteArrayOf(0x2E, 0x38)
-        C4Socket.write(MOCK_PEER, data)
+        C4Socket.write(C4BaseTest.MOCK_PEER, data)
         awaitCall(fromCore)
 
         assertArrayEquals(data, fromCore.realData)
@@ -192,7 +191,7 @@ class C4SocketTest : BaseTest() {
 
         createSocket(fromCore)
 
-        C4Socket.completedReceive(MOCK_PEER, 15L)
+        C4Socket.completedReceive(C4BaseTest.MOCK_PEER, 15L)
         awaitCall(fromCore)
 
         assertEquals(15L, fromCore.realNBytes)
@@ -210,7 +209,7 @@ class C4SocketTest : BaseTest() {
 
         createSocket(fromCore)
 
-        C4Socket.requestClose(MOCK_PEER, 19, "Upstate NY")
+        C4Socket.requestClose(C4BaseTest.MOCK_PEER, 19, "Upstate NY")
         awaitCall(fromCore)
 
         assertEquals("Upstate NY", fromCore.realMessage)
@@ -224,7 +223,7 @@ class C4SocketTest : BaseTest() {
 
         createSocket(fromCore)
 
-        C4Socket.close(MOCK_PEER)
+        C4Socket.close(C4BaseTest.MOCK_PEER)
         awaitCall(fromCore)
     }
 
@@ -268,7 +267,7 @@ class C4SocketTest : BaseTest() {
         val socket = createSocket(impl)
         val headers = ByteArray(4)
         socket.ackOpenToCore(302, headers)
-        assertEquals(MOCK_PEER, impl.peer)
+        assertEquals(C4BaseTest.MOCK_PEER, impl.peer)
         assertEquals(302, impl.status)
         assertEquals(headers, impl.headers)
         assertEquals(3, impl.totalCalls)
@@ -287,7 +286,7 @@ class C4SocketTest : BaseTest() {
         }
         val socket = createSocket(impl)
         socket.ackWriteToCore(23L)
-        assertEquals(MOCK_PEER, impl.peer)
+        assertEquals(C4BaseTest.MOCK_PEER, impl.peer)
         assertEquals(23L, impl.nBytes)
         assertEquals(2, impl.totalCalls)
     }
@@ -306,7 +305,7 @@ class C4SocketTest : BaseTest() {
         val socket = createSocket(impl)
         val data = byteArrayOf(0x2E, 0x38)
         socket.writeToCore(data)
-        assertEquals(MOCK_PEER, impl.peer)
+        assertEquals(C4BaseTest.MOCK_PEER, impl.peer)
         assertEquals(data, impl.data)
         assertEquals(2, impl.totalCalls)
     }
@@ -326,7 +325,7 @@ class C4SocketTest : BaseTest() {
         }
         val socket = createSocket(impl)
         socket.requestCoreClose(CloseStatus(47, "truly..."))
-        assertEquals(MOCK_PEER, impl.peer)
+        assertEquals(C4BaseTest.MOCK_PEER, impl.peer)
         assertEquals(47, impl.code)
         assertEquals("truly...", impl.msg)
         assertEquals(2, impl.totalCalls)
@@ -344,14 +343,14 @@ class C4SocketTest : BaseTest() {
     ////////////////  U T I L I T I E S   ////////////////
 
     private fun createSocket(impl: MockImpl): C4Socket {
-        val socket = C4Socket(impl, MOCK_PEER)
+        val socket = C4Socket(impl, C4BaseTest.MOCK_PEER)
         assertEquals(1, impl.totalCalls)
         return socket
     }
 
     private fun createSocket(fromCore: SocketFromCore): C4Socket {
         assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
-        val socket = C4Socket.createSocket(MockImpl(), MOCK_PEER)
+        val socket = C4Socket.createSocket(MockImpl(), C4BaseTest.MOCK_PEER)
         socket.init(fromCore)
         verifySocket(socket)
         return socket
@@ -364,6 +363,6 @@ class C4SocketTest : BaseTest() {
 
     private fun verifySocket(socket: C4Socket) {
         assertEquals(1, C4Socket.BOUND_SOCKETS.keySet().size)
-        assertEquals(socket, C4Socket.BOUND_SOCKETS.getBinding(MOCK_PEER))
+        assertEquals(socket, C4Socket.BOUND_SOCKETS.getBinding(C4BaseTest.MOCK_PEER))
     }
 }

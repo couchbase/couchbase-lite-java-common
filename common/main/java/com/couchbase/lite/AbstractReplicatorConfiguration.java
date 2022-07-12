@@ -574,7 +574,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     public final Database getDatabase() {
         if (database != null) { return database; }
-        throw new IllegalStateException("Requested db for configuration with no Collections");
+        throw new IllegalStateException("No database or collections provided for replication configuration");
     }
 
     /**

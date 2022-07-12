@@ -48,6 +48,9 @@ import static org.junit.Assert.fail;
 
 
 public class C4BaseTest extends BaseTest {
+    public static final long MOCK_PEER = 500005L;
+    public static final long MOCK_TOKEN = 0xba5eba11;
+
     public static final String DOC_ID = "mydoc";
     public static final String REV_ID_1 = "1-abcd";
     public static final String REV_ID_2 = "2-c001d00d";

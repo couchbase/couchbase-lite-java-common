@@ -95,7 +95,6 @@ public abstract class BaseDatabase {
         synchronized (getDbLock()) { return getOpenC4DbLocked().getBlobStore(); }
     }
 
-
     @VisibleForTesting
     @SuppressFBWarnings("NP_NONNULL_RETURN_VIOLATION")
     @NonNull

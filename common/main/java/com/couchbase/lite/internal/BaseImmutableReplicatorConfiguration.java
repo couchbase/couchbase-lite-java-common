@@ -80,7 +80,7 @@ public class BaseImmutableReplicatorConfiguration {
     // the only reference to its copies (they are copied in and copied out)
     // They are, therefore, effectively immutable
     protected BaseImmutableReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        this.configs = ((BaseReplicatorConfiguration) config).getCollectionConfigurations();
+        this.configs = config.getCollectionConfigurations();
         this.target = config.getTarget();
         this.type = config.getType();
         this.continuous = config.isContinuous();
