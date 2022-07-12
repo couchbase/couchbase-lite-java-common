@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Report;
@@ -87,6 +88,44 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
+    @Test
+    public void testQueryGetColumnNameAfter32Items() throws CouchbaseLiteException {
+        MutableDocument document = new MutableDocument("doc");
+        document.setString("key", "value");
+        saveDocInBaseTestDb(document);
+
+        String query = "select\n"
+            + "                `1`,`2`,`3`,`4`,`5`,`6`,`7`,`8`,`9`,`10`,`11`,`12`,\n"
+            + "                `13`,`14`,`15`,`16`,`17`,`18`,`19`,`20`,`21`,`22`,`23`,`24`,\n"
+            + "                `25`,`26`,`27`,`28`,`29`,`30`,`31`,`32`, `key` from _ limit 1";
+
+        Query queryBuild = QueryBuilder.createQuery(query,baseTestDb);
+        Result result;
+
+        //expected results
+        String key = "key";
+        String value = "value";
+
+        List<String> arrayResult = new ArrayList();
+        for (int i = 0; i < 32; i++){
+            arrayResult.add(null);
+        }
+        arrayResult.add(value);
+
+        Map<String,String> mapResult = new HashMap();
+        mapResult.put(key,value);
+
+        try (ResultSet rs = queryBuild.execute()) {
+            while ((result = rs.next()) != null) {
+                assertEquals("{\"key\":\"value\"}", result.toJSON());
+                assertEquals(arrayResult, result.toList());
+                assertEquals(mapResult, result.toMap());
+                assertEquals(value,result.getValue("key").toString());
+                assertEquals(value, result.getString("key"));
+                assertEquals(value, result.getString(32));
+            }
+        }
+    }
     @Test
     public void testQueryDocumentExpiration() throws CouchbaseLiteException, InterruptedException {
         long now = System.currentTimeMillis();

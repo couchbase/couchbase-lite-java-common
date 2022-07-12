@@ -22,16 +22,18 @@ import org.junit.Before
 import java.util.*
 
 open class BaseCollectionTest : BaseDbTest() {
-    private var testScope: Scope? = null
-    private var testCollection: Collection? = null
+    protected lateinit var testCollection: Collection
+    protected lateinit var testColName : String
+    protected lateinit var testScopeName : String
 
     protected val Scope.collectionCount
         get() = this.collections.size
 
     @Before
     fun setUpBaseCollectionTest() {
-        testScope = baseTestDb.defaultScope
-        testCollection = testScope!!.getCollection(Collection.DEFAULT_NAME)
+        testColName = getUniqueName("test_collection")
+        testScopeName = getUniqueName("test_scope")
+        testCollection = baseTestDb.createCollection(testColName, testScopeName)
         Report.log(LogLevel.INFO, "Created base test Collection: $testCollection")
     }
 
@@ -63,6 +65,16 @@ open class BaseCollectionTest : BaseDbTest() {
         Assert.assertNotNull(savedDoc)
         Assert.assertEquals(doc.id, savedDoc!!.id)
         return savedDoc
+    }
+
+    @Throws(CouchbaseLiteException::class)
+    protected fun createDocsInCollectionTest(n: Int) {
+        for (i in 0 until n) {
+            val doc = MutableDocument(String.format(Locale.US, "doc_%03d", i))
+            doc.setValue("key", i)
+            saveDocInBaseCollectionTest(doc)
+        }
+        Assert.assertEquals(n.toLong(), testCollection!!.count)
     }
 }
 
