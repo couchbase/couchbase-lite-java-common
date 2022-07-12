@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.utils.Report
 import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -118,26 +119,22 @@ class DbCollectionsTest : BaseCollectionTest() {
 
     @Test
     fun testGetScopes() {
-        baseTestDb.createCollection("pezDispenser", "tele")
-
         val scopes = baseTestDb.scopes
         assertEquals(2, scopes.size)
 
         var scope = scopes.first { it.name == Scope.DEFAULT_NAME }
         assertNotNull(scope.getCollection(Scope.DEFAULT_NAME))
 
-        scope = scopes.first { it.name == "tele" }
-        assertNotNull(scope.getCollection("pezDispenser"))
+        scope = scopes.first { it.name == testScopeName}
+        assertNotNull(scope.getCollection(testColName))
     }
 
     @Test
     fun testDeleteCollectionFromNamedScope() {
-        baseTestDb.createCollection("pezDispenser", "tele")
-
         var scopes = baseTestDb.scopes
         assertEquals(2, scopes.size)
 
-        baseTestDb.deleteCollection("pezDispenser", "tele")
+        baseTestDb.deleteCollection(testColName, testScopeName)
 
         scopes = baseTestDb.scopes
         assertEquals(1, scopes.size)
@@ -149,7 +146,9 @@ class DbCollectionsTest : BaseCollectionTest() {
     @Test
     fun testDeleteDefaultCollection() {
         var scopes = baseTestDb.scopes
-        assertEquals(1, scopes.size)
+
+        // scopes should have a default scope and a non default test scope created in BaseCollection
+        assertEquals(2, scopes.size)
 
         var scope = baseTestDb.defaultScope
         assertEquals(1, scope.collectionCount)
@@ -158,7 +157,8 @@ class DbCollectionsTest : BaseCollectionTest() {
 
         // The default collection should not go away when it is empty
         scopes = baseTestDb.scopes
-        assertEquals(1, scopes.size)
+        assertEquals(2, scopes.size)
+        assertNotNull(baseTestDb.defaultScope)
 
         scope = baseTestDb.defaultScope
         assertEquals(0, scope.collectionCount)
