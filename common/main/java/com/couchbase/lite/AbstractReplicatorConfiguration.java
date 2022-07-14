@@ -27,8 +27,10 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.internal.Util;
@@ -505,9 +507,18 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return the collections configuration
      */
     @Nullable
-    public final CollectionConfiguration getCollection(@NonNull Collection collection) {
+    public final CollectionConfiguration getCollectionConfiguration(@NonNull Collection collection) {
         final CollectionConfiguration config = collectionConfigurations.get(collection);
         return (config == null) ? null : new CollectionConfiguration(config);
+    }
+
+    /**
+     * Return the list of collections in the replicator configuration
+     */
+    @Nullable
+    public final Set<Collection> getCollections() {
+        final Set collections = collectionConfigurations.keySet();
+        return (collections == null) ? null : new HashSet<>(collections);
     }
 
     /**
