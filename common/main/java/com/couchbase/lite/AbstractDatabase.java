@@ -51,7 +51,6 @@ import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.replicator.ConflictResolutionException;
-import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -1075,7 +1074,8 @@ abstract class AbstractDatabase extends BaseDatabase {
         @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener,
+        @NonNull C4Replicator.StatusListener statusListener,
+        @NonNull C4Replicator.DocEndsListener docEndsListener,
         @NonNull Replicator replicator,
         @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
@@ -1092,7 +1092,8 @@ abstract class AbstractDatabase extends BaseDatabase {
                 type,
                 continuous,
                 options,
-                listener,
+                statusListener,
+                docEndsListener,
                 replicator,
                 socketFactory);
         }
@@ -1107,7 +1108,8 @@ abstract class AbstractDatabase extends BaseDatabase {
         @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener,
+        @NonNull C4Replicator.StatusListener statusListener,
+        @NonNull C4Replicator.DocEndsListener docEndsListener,
         @NonNull Replicator replicator)
         throws LiteCoreException {
         final C4Replicator c4Repl;
@@ -1118,7 +1120,8 @@ abstract class AbstractDatabase extends BaseDatabase {
                 type,
                 continuous,
                 options,
-                listener,
+                statusListener,
+                docEndsListener,
                 replicator);
         }
         return c4Repl;
@@ -1129,7 +1132,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         @NonNull Set<Collection> collections,
         @NonNull C4Socket c4Socket,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener)
+        @NonNull C4Replicator.StatusListener listener)
         throws LiteCoreException {
         synchronized (getDbLock()) {
             return getOpenC4DbLocked().createMessageEndpointReplicator(collections, c4Socket, options, listener);

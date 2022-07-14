@@ -205,6 +205,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     }
 
     protected final boolean closeDb(@Nullable Database db) {
+        if (db == null) { return true; }
         synchronized (db.getDbLock()) {
             if ((db == null) || (!db.isOpen())) { return true; }
         }

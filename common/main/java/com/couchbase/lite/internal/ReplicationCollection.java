@@ -91,8 +91,10 @@ public final class ReplicationCollection implements AutoCloseable {
     static final TaggedWeakPeerBinding<ReplicationCollection> BOUND_COLLECTIONS = new TaggedWeakPeerBinding<>();
 
     //-------------------------------------------------------------------------
-    // Native callback methods
+    // Native methods
     //-------------------------------------------------------------------------
+
+    //// Native Callbacks
 
     // This method is called by reflection.  Don't change its signature.
     // It is called from a native thread that Java has never even heard of...
@@ -119,7 +121,7 @@ public final class ReplicationCollection implements AutoCloseable {
             return true;
         }
 
-        final C4Filter filter = (isPush) ? coll.getPushFilter() : coll.getPullFilter();
+        final C4Filter filter = (isPush) ? coll.c4PushFilter : coll.c4PullFilter;
         if (filter == null) { return true; }
 
         // This shouldn't happen.
@@ -142,38 +144,29 @@ public final class ReplicationCollection implements AutoCloseable {
         return (accepted != null) && accepted;
     }
 
-    //-------------------------------------------------------------------------
-    // Static Factory Methods
-    //-------------------------------------------------------------------------
+    //// Factories
 
     @NonNull
-    public static ReplicationCollection[] createAll(
-        @NonNull Set<Collection> collections,
-        @Nullable Map<String, Object> options) {
+    public static ReplicationCollection[] createAll(@NonNull Set<Collection> collections) {
         final ReplicationCollection[] replColls = new ReplicationCollection[collections.size()];
         int i = 0;
-        for (Collection coll: collections) { replColls[i++] = create(coll, options, null, null, null); }
+        for (Collection coll: collections) { replColls[i++] = create(coll, null, null, null, null); }
         return replColls;
     }
 
     @NonNull
-    public static ReplicationCollection[] createAll(
-        @NonNull Map<Collection, CollectionConfiguration> collections,
-        @Nullable Map<String, Object> options) {
+    public static ReplicationCollection[] createAll(@NonNull Map<Collection, CollectionConfiguration> collections) {
         final ReplicationCollection[] replColls = new ReplicationCollection[collections.size()];
         int i = 0;
         for (Map.Entry<Collection, CollectionConfiguration> entry: collections.entrySet()) {
-            replColls[i++] = create(entry.getKey(), entry.getValue(), options);
+            replColls[i++] = create(entry.getKey(), entry.getValue());
         }
         return replColls;
     }
 
     @NonNull
-    public static ReplicationCollection create(
-        @NonNull Collection coll,
-        @NonNull CollectionConfiguration config,
-        @Nullable Map<String, Object> opts) {
-        final Map<String, Object> options = (opts == null) ? new HashMap<>() : new HashMap<>(opts);
+    public static ReplicationCollection create(@NonNull Collection coll, @NonNull CollectionConfiguration config) {
+        final Map<String, Object> options = new HashMap<>();
 
         final List<String> documentIDs = config.getDocumentIDs();
         if ((documentIDs != null) && (!documentIDs.isEmpty())) {
@@ -201,7 +194,7 @@ public final class ReplicationCollection implements AutoCloseable {
             token,
             coll.getScope().getName(),
             coll.getName(),
-            FLEncoder.encodeMap(options),
+            ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
             (pushFilter == null) ? null : new CollectionFilter(coll, pushFilter),
             (pullFilter == null) ? null : new CollectionFilter(coll, pullFilter),
             resolver);
@@ -209,6 +202,10 @@ public final class ReplicationCollection implements AutoCloseable {
         return replColl;
     }
 
+    //// Utility
+
+    @Nullable
+    public static ReplicationCollection getBinding(long token) { return BOUND_COLLECTIONS.getBinding(token); }
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -216,29 +213,24 @@ public final class ReplicationCollection implements AutoCloseable {
 
     // These fields are accessed by reflection.  Don't change them.
 
-    @VisibleForTesting
-    final long token;
+    public final long token;
 
-    @VisibleForTesting
     @NonNull
-    final String scope;
-    @VisibleForTesting
+    public final String scope;
     @NonNull
-    final String name;
+    public final String name;
 
+    @Nullable
+    public final C4Filter c4PushFilter;
+    @Nullable
+    public final C4Filter c4PullFilter;
+    @Nullable
+    public final ConflictResolver resolver;
+
+    @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
     @VisibleForTesting
     @Nullable
     final byte[] options;
-
-    @VisibleForTesting
-    @Nullable
-    final C4Filter c4PushFilter;
-    @VisibleForTesting
-    @Nullable
-    final C4Filter c4PullFilter;
-    @VisibleForTesting
-    @Nullable
-    final ConflictResolver resolver;
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -267,12 +259,6 @@ public final class ReplicationCollection implements AutoCloseable {
 
     @Nullable
     public ConflictResolver getConflictResolver() { return resolver; }
-
-    @Nullable
-    public C4Filter getPushFilter() { return c4PushFilter; }
-
-    @Nullable
-    public C4Filter getPullFilter() { return c4PullFilter; }
 
     @Override
     public void close() { BOUND_COLLECTIONS.unbind(token); }

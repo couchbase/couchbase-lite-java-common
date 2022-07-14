@@ -39,9 +39,9 @@ import com.couchbase.lite.internal.ReplicationCollection;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Replicator;
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
+import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -175,40 +175,53 @@ public abstract class C4Replicator extends C4NativePeer {
     // Types
     //-------------------------------------------------------------------------
 
+    @FunctionalInterface
+    public interface StatusListener {
+        void statusChanged(@NonNull C4Replicator replicator, @NonNull C4ReplicatorStatus status);
+    }
+
+    @FunctionalInterface
+    public interface DocEndsListener {
+        void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing);
+    }
+
     ////// Native API
 
     public interface NativeImpl {
         @SuppressWarnings("PMD.ExcessiveParameterList")
         long nCreate(
-            ReplicationCollection[] collections,
+            @NonNull ReplicationCollection[] collections,
             long db,
-            String scheme,
-            String host,
+            @Nullable String scheme,
+            @Nullable String host,
             int port,
-            String path,
-            String remoteDbName,
+            @Nullable String path,
+            @Nullable String remoteDbName,
             int framing,
             boolean push,
             boolean pull,
             boolean continuous,
+            @Nullable byte[] options,
             long replicatorToken,
             long socketFactoryToken)
             throws LiteCoreException;
 
         long nCreateLocal(
-            ReplicationCollection[] collections,
+            @NonNull ReplicationCollection[] collections,
             long db,
             long targetDb,
             boolean push,
             boolean pull,
             boolean continuous,
+            @Nullable byte[] options,
             long replicatorToken)
             throws LiteCoreException;
 
         long nCreateWithSocket(
-            ReplicationCollection[] collections,
+            @NonNull ReplicationCollection[] collections,
             long db,
             long openSocket,
+            @Nullable byte[] options,
             long replicatorToken)
             throws LiteCoreException;
 
@@ -216,57 +229,13 @@ public abstract class C4Replicator extends C4NativePeer {
         C4ReplicatorStatus nGetStatus(long peer);
         void nStart(long peer, boolean restart);
         void nStop(long peer);
-        void nSetOptions(long peer, byte[] options);
+        void nSetOptions(long peer, @Nullable byte[] options);
         long nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection) throws LiteCoreException;
         boolean nIsDocumentPending(long peer, @NonNull String id, @NonNull String scope, @NonNull String collection)
             throws LiteCoreException;
         void nSetProgressLevel(long peer, int progressLevel) throws LiteCoreException;
         void nSetHostReachable(long peer, boolean reachable);
         void nFree(long peer);
-    }
-
-    ////// Standard Replicator
-
-    static final class C4CommonReplicator extends C4Replicator {
-        @NonNull
-        private final AbstractReplicator replicator;
-
-        @Nullable
-        private final SocketFactory socketFactory;
-        private final long socketFactoryToken;
-
-        C4CommonReplicator(
-            @NonNull NativeImpl impl,
-            long peer,
-            long token,
-            @NonNull List<ReplicationCollection> colls,
-            @NonNull ReplicatorListener listener,
-            @NonNull AbstractReplicator replicator,
-            @Nullable SocketFactory socketFactory,
-            long socketFactoryToken) {
-            super(impl, peer, token, colls, listener);
-
-            this.replicator = Preconditions.assertNotNull(replicator, "replicator");
-
-            this.socketFactory = socketFactory;
-            this.socketFactoryToken = socketFactoryToken;
-        }
-
-        @Override
-        @NonNull
-        public AbstractReplicator getReplicator() { return replicator; }
-
-        @Override
-        protected void releaseResources() { BaseSocketFactory.unbindSocketFactory(socketFactoryToken); }
-
-        @NonNull
-        @Override
-        public String toString() {
-            return "C4Repl{" + ClassUtils.objId(this) + "/" + super.toString() + ": " + listener
-                // don't try to stringify the replicator: it stringifies this
-                + ", " + ClassUtils.objId(replicator) + ", "
-                + socketFactory + "'}";
-        }
     }
 
     ////// Message Endpoint Replicator
@@ -277,21 +246,73 @@ public abstract class C4Replicator extends C4NativePeer {
             long peer,
             long token,
             @NonNull List<ReplicationCollection> colls,
-            @NonNull ReplicatorListener listener) {
-            super(impl, peer, token, colls, listener);
+            @NonNull StatusListener statusListener) {
+            super(impl, peer, token, colls, statusListener);
         }
-
-        @Override
-        @Nullable
-        public AbstractReplicator getReplicator() { return null; }
 
         @Override
         protected void releaseResources() { }
 
+        @Override
+        protected void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
+            Log.d(LOG_DOMAIN, "Unsupported call to doc ended for MessageEndpoint");
+        }
+
         @NonNull
         @Override
         public String toString() {
-            return "C4MessageEndpointReplicator{" + ClassUtils.objId(this) + "/" + super.toString() + listener + "'}";
+            return "C4MessageEndpointRepl{" + ClassUtils.objId(this) + "/" + super.toString() + statusListener + "'}";
+        }
+    }
+
+    ////// Standard Replicator
+
+    static final class C4CommonReplicator extends C4Replicator {
+        @NonNull
+        private final DocEndsListener docEndsListener;
+
+        @NonNull
+        private final AbstractReplicator replicator;
+
+        @Nullable
+        private final SocketFactory socketFactory;
+        private final long socketFactoryToken;
+
+
+        C4CommonReplicator(
+            @NonNull NativeImpl impl,
+            long peer,
+            long token,
+            @NonNull List<ReplicationCollection> colls,
+            @NonNull StatusListener statusListener,
+            @NonNull DocEndsListener docEndsListener,
+            @NonNull AbstractReplicator replicator,
+            @Nullable SocketFactory socketFactory,
+            long socketFactoryToken) {
+            super(impl, peer, token, colls, statusListener);
+
+            this.docEndsListener = docEndsListener;
+
+            this.replicator = Preconditions.assertNotNull(replicator, "replicator");
+
+            this.socketFactory = socketFactory;
+            this.socketFactoryToken = socketFactoryToken;
+        }
+
+        @Override
+        protected void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
+            docEndsListener.documentsEnded(docEnds, pushing);
+        }
+
+        @Override
+        protected void releaseResources() { BaseSocketFactory.unbindSocketFactory(socketFactoryToken); }
+
+        @NonNull
+        @Override
+        public String toString() {
+            return "C4CommonRepl{" + ClassUtils.objId(this) + "/" + super.toString()
+                // don't try to stringify the replicator: it stringifies this
+                + ClassUtils.objId(replicator) + ", " + socketFactory + "'}";
         }
     }
 
@@ -314,16 +335,39 @@ public abstract class C4Replicator extends C4NativePeer {
     static void statusChangedCallback(long token, @Nullable C4ReplicatorStatus status) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
         Log.d(LOG_DOMAIN, "C4Replicator.statusChangedCallback(0x%x) %s: %s", token, c4Repl, status);
-        if (c4Repl == null) { return; }
-        c4Repl.listener.statusChanged(c4Repl, status);
+
+        if (c4Repl == null) {
+            Log.w(LOG_DOMAIN, "No such replicator");
+            return;
+        }
+
+        if (status == null) {
+            Log.w(LOG_DOMAIN, "Empty status");
+            return;
+        }
+
+        c4Repl.statusChanged(c4Repl, status);
     }
 
     // This method is called by reflection.  Don't change its signature.
-    static void documentEndedCallback(long token, boolean pushing, @Nullable C4DocumentEnded... documentsEnded) {
+    static void documentEndedCallback(long token, boolean pushing, @Nullable C4DocumentEnded... docEnds) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
-        Log.d(LOG_DOMAIN, "C4Replicator.documentEndedCallback %s@0x%x: %s", c4Repl, token, pushing);
-        if (c4Repl == null) { return; }
-        c4Repl.listener.documentEnded(c4Repl, pushing, documentsEnded);
+
+        final int nDocs = (docEnds == null) ? 0 : docEnds.length;
+
+        Log.d(LOG_DOMAIN, "C4Replicator.documentEndedCallback %s@0x%x: %d (%s)", c4Repl, token, nDocs, pushing);
+
+        if (c4Repl == null) {
+            Log.w(LOG_DOMAIN, "No such replicator");
+            return;
+        }
+
+        if (nDocs <= 0) {
+            Log.w(LOG_DOMAIN, "Empty doc ends");
+            return;
+        }
+
+        c4Repl.documentsEnded(Arrays.asList(docEnds), pushing);
     }
 
     //-------------------------------------------------------------------------
@@ -344,7 +388,8 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener,
+        @NonNull StatusListener statusListener,
+        @NonNull DocEndsListener docEndsListener,
         @NonNull AbstractReplicator replicator,
         @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
@@ -361,7 +406,8 @@ public abstract class C4Replicator extends C4NativePeer {
             type,
             continuous,
             options,
-            listener,
+            statusListener,
+            docEndsListener,
             replicator,
             socketFactory);
     }
@@ -382,14 +428,15 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener,
+        @NonNull StatusListener statusListener,
+        @NonNull DocEndsListener docEndsListener,
         @NonNull AbstractReplicator replicator,
         @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
         final long replToken = BOUND_REPLICATORS.reserveKey();
         final long sfToken = (socketFactory == null) ? 0L : BaseSocketFactory.bindSocketFactory(socketFactory);
 
-        final ReplicationCollection[] colls = ReplicationCollection.createAll(collections, options);
+        final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
         final long peer = impl.nCreate(
             colls,
@@ -403,6 +450,7 @@ public abstract class C4Replicator extends C4NativePeer {
             (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PUSH),
             (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PULL),
             continuous,
+            ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
             replToken,
             sfToken);
 
@@ -411,7 +459,8 @@ public abstract class C4Replicator extends C4NativePeer {
             peer,
             replToken,
             Arrays.asList(colls),
-            listener,
+            statusListener,
+            docEndsListener,
             replicator,
             socketFactory,
             sfToken);
@@ -429,7 +478,8 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener,
+        @NonNull StatusListener statusListener,
+        @NonNull DocEndsListener docEndsListener,
         @NonNull AbstractReplicator replicator)
         throws LiteCoreException {
         return createLocalReplicator(
@@ -440,7 +490,8 @@ public abstract class C4Replicator extends C4NativePeer {
             type,
             continuous,
             options,
-            listener,
+            statusListener,
+            docEndsListener,
             replicator);
     }
 
@@ -455,12 +506,13 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener,
+        @NonNull StatusListener statusListener,
+        @NonNull DocEndsListener docEndsListener,
         @NonNull AbstractReplicator replicator)
         throws LiteCoreException {
         final long token = BOUND_REPLICATORS.reserveKey();
 
-        final ReplicationCollection[] colls = ReplicationCollection.createAll(collections, options);
+        final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
         final long peer = impl.nCreateLocal(
             colls,
@@ -469,10 +521,19 @@ public abstract class C4Replicator extends C4NativePeer {
             (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PUSH),
             (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PULL),
             continuous,
+            ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
             token);
 
-        final C4Replicator c4Replicator
-            = new C4CommonReplicator(impl, peer, token, Arrays.asList(colls), listener, replicator, null, 0L);
+        final C4Replicator c4Replicator = new C4CommonReplicator(
+            impl,
+            peer,
+            token,
+            Arrays.asList(colls),
+            statusListener,
+            docEndsListener,
+            replicator,
+            null,
+            0L);
 
         BOUND_REPLICATORS.bind(token, c4Replicator);
 
@@ -485,7 +546,7 @@ public abstract class C4Replicator extends C4NativePeer {
         long db,
         @NonNull C4Socket c4Socket,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener)
+        @NonNull StatusListener statusListener)
         throws LiteCoreException {
         return createMessageEndpointReplicator(
             NATIVE_IMPL,
@@ -493,7 +554,7 @@ public abstract class C4Replicator extends C4NativePeer {
             db,
             c4Socket,
             options,
-            listener);
+            statusListener);
     }
 
     @VisibleForTesting
@@ -505,20 +566,21 @@ public abstract class C4Replicator extends C4NativePeer {
         long db,
         @NonNull C4Socket c4Socket,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener)
+        @NonNull StatusListener statusListener)
         throws LiteCoreException {
         final long replToken = BOUND_REPLICATORS.reserveKey();
 
-        final ReplicationCollection[] colls = ReplicationCollection.createAll(collections, options);
+        final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
         final long peer = impl.nCreateWithSocket(
             colls,
             db,
             c4Socket.getPeerHandle(),
+            ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
             replToken);
 
         final C4Replicator c4Replicator
-            = new C4MessageEndpointReplicator(impl, peer, replToken,  Arrays.asList(colls), listener);
+            = new C4MessageEndpointReplicator(impl, peer, replToken, Arrays.asList(colls), statusListener);
 
         BOUND_REPLICATORS.bind(replToken, c4Replicator);
 
@@ -541,7 +603,7 @@ public abstract class C4Replicator extends C4NativePeer {
     final List<ReplicationCollection> colls;
 
     @NonNull
-    protected final ReplicatorListener listener;
+    protected final StatusListener statusListener;
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -552,13 +614,13 @@ public abstract class C4Replicator extends C4NativePeer {
         long peer,
         long token,
         @NonNull List<ReplicationCollection> colls,
-        @NonNull ReplicatorListener listener) {
+        @NonNull StatusListener statusListener) {
         super(peer);
 
         this.impl = impl;
         this.token = Preconditions.assertNotZero(token, "token");
         this.colls = Preconditions.assertNotNull(colls, "collections");
-        this.listener = Preconditions.assertNotNull(listener, "listener");
+        this.statusListener = Preconditions.assertNotNull(statusListener, "status listener");
     }
 
     //-------------------------------------------------------------------------
@@ -575,9 +637,6 @@ public abstract class C4Replicator extends C4NativePeer {
         for (ReplicationCollection coll: colls) { coll.close(); }
         closePeer(null);
     }
-
-    @Nullable
-    public abstract AbstractReplicator getReplicator();
 
     public void setOptions(@Nullable byte[] options) { impl.nSetOptions(getPeer(), options); }
 
@@ -604,11 +663,17 @@ public abstract class C4Replicator extends C4NativePeer {
 
     protected abstract void releaseResources();
 
+    protected abstract void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing);
+
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
         try { closePeer(LOG_DOMAIN); }
         finally { super.finalize(); }
+    }
+
+    void statusChanged(@NonNull C4Replicator replicator, @NonNull C4ReplicatorStatus status) {
+        statusListener.statusChanged(replicator, status);
     }
 
     //-------------------------------------------------------------------------

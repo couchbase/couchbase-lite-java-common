@@ -18,7 +18,10 @@ package com.couchbase.lite.internal.replicator;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.concurrent.Executor;
+
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -26,6 +29,7 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 
 public class BaseReplicator implements AutoCloseable {
     private final Object lock = new Object();
+    protected final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
     @Nullable
     private C4Replicator c4Replicator;

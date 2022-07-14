@@ -17,16 +17,9 @@ package com.couchbase.lite.mock
 
 import com.couchbase.lite.internal.ReplicationCollection
 import com.couchbase.lite.internal.core.C4BaseTest
-import com.couchbase.lite.internal.core.C4DocumentEnded
 import com.couchbase.lite.internal.core.C4Replicator
 import com.couchbase.lite.internal.core.C4ReplicatorStatus
 import com.couchbase.lite.internal.core.C4Socket
-import com.couchbase.lite.internal.replicator.ReplicatorListener
-
-open class MockReplicatorListener : ReplicatorListener {
-    override fun statusChanged(repl: C4Replicator?, status: C4ReplicatorStatus?) = Unit
-    override fun documentEnded(repl: C4Replicator?, push: Boolean, docs: Array<out C4DocumentEnded>?) = Unit
-}
 
 open class MockNativeSocket : C4Socket.NativeImpl {
     override fun nRetain(peer: Long) = Unit
@@ -49,7 +42,7 @@ open class MockNativeSocket : C4Socket.NativeImpl {
 
 open class MockNativeReplicator : C4Replicator.NativeImpl {
     override fun nCreate(
-        collections: Array<out ReplicationCollection>?,
+        collections: Array<out ReplicationCollection>,
         db: Long,
         scheme: String?,
         host: String?,
@@ -60,24 +53,27 @@ open class MockNativeReplicator : C4Replicator.NativeImpl {
         push: Boolean,
         pull: Boolean,
         continuous: Boolean,
+        options: ByteArray?,
         replicatorToken: Long,
         socketFactoryToken: Long
     ) = C4BaseTest.MOCK_PEER
 
     override fun nCreateLocal(
-        collections: Array<out ReplicationCollection>?,
+        collections: Array<out ReplicationCollection>,
         db: Long,
         targetDb: Long,
         push: Boolean,
         pull: Boolean,
         continuous: Boolean,
+        options: ByteArray?,
         replicatorToken: Long
     ) = C4BaseTest.MOCK_PEER
 
     override fun nCreateWithSocket(
-        collections: Array<out ReplicationCollection>?,
+        collections: Array<out ReplicationCollection>,
         db: Long,
         openSocket: Long,
+        options: ByteArray?,
         replicatorToken: Long
     ) = C4BaseTest.MOCK_PEER
 

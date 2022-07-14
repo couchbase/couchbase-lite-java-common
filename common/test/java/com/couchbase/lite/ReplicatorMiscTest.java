@@ -196,7 +196,6 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         }
     }
 
-    @Ignore("COLLECTIONS")
     @Test
     public void testCustomConnectionOptions() throws URISyntaxException {
         final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())

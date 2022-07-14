@@ -11,26 +11,26 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZZZJJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZZZ[BJJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create
-  (JNIEnv *, jclass, jobjectArray, jlong, jstring, jstring, jint, jstring, jstring, jint, jboolean, jboolean, jboolean, jlong, jlong);
+  (JNIEnv *, jclass, jobjectArray, jlong, jstring, jstring, jint, jstring, jstring, jint, jboolean, jboolean, jboolean, jbyteArray, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    createLocal
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZZZJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZZZ[BJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal
-  (JNIEnv *, jclass, jobjectArray, jlong, jlong, jboolean, jboolean, jboolean, jlong);
+  (JNIEnv *, jclass, jobjectArray, jlong, jlong, jboolean, jboolean, jboolean, jbyteArray, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    createWithSocket
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJJ)J
+ * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJ[BJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket
-  (JNIEnv *, jclass, jobjectArray, jlong, jlong, jlong);
+  (JNIEnv *, jclass, jobjectArray, jlong, jlong, jbyteArray, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator

@@ -23,38 +23,41 @@ import androidx.annotation.NonNull;
  * This class and its members are referenced by name, from native code.
  */
 public class C4DocumentEnded {
+    public final long token;
     @NonNull
-    private final String scope;
+    public final String scope;
     @NonNull
-    private final String collection;
+    public final String collection;
     @NonNull
-    private final String docID;
+    public final String docId;
     @NonNull
-    private final String revID;
-    private final int flags;
-    private final long sequence;
-    private final boolean errorIsTransient;
-    private final int errorDomain;
-    private final int errorCode;
-    private final int errorInternalInfo;
+    public final String revId;
+    public final int flags;
+    public final long sequence;
+    public final boolean errorIsTransient;
+    public final int errorDomain;
+    public final int errorCode;
+    public final int errorInternalInfo;
 
     // Called from native code
     @SuppressWarnings("PMD.ExcessiveParameterList")
     public C4DocumentEnded(
+        long token,
         @NonNull String scope,
         @NonNull String collection,
-        @NonNull String docID,
-        @NonNull String revID,
+        @NonNull String docId,
+        @NonNull String revId,
         int flags,
         long sequence,
         int errorDomain,
         int errorCode,
         int errorInternalInfo,
         boolean errorIsTransient) {
+        this.token = token;
         this.scope = scope;
         this.collection = collection;
-        this.docID = docID;
-        this.revID = revID;
+        this.docId = docId;
+        this.revId = revId;
         this.flags = flags;
         this.sequence = sequence;
         this.errorDomain = errorDomain;
@@ -62,29 +65,6 @@ public class C4DocumentEnded {
         this.errorInternalInfo = errorInternalInfo;
         this.errorIsTransient = errorIsTransient;
     }
-    @NonNull
-    public String getScope() { return scope; }
-
-    @NonNull
-    public String getCollection() { return collection; }
-
-    @NonNull
-    public String getDocID() { return docID; }
-
-    @NonNull
-    public String getRevID() { return revID; }
-
-    public int getFlags() { return flags; }
-
-    public long getSequence() { return sequence; }
-
-    public int getErrorDomain() { return errorDomain; }
-
-    public int getErrorCode() { return errorCode; }
-
-    public int getErrorInternalInfo() { return errorInternalInfo; }
-
-    public boolean errorIsTransient() { return errorIsTransient; }
 
     @NonNull
     public C4Error getC4Error() { return new C4Error(errorDomain, errorCode, errorInternalInfo); }
@@ -97,10 +77,12 @@ public class C4DocumentEnded {
     @NonNull
     @Override
     public String toString() {
-        return "C4DocumentEnded{id=" + docID
-            + ",rev=" + revID
-            + ",flags=" + flags
-            + ",error=@" + errorDomain + "#" + errorCode + "(" + errorInternalInfo + "):" + errorIsTransient
+        return "C4DocumentEnded{"
+            + token
+            + ", " + docId
+            + ", " + revId
+            + ", 0x" + Integer.toHexString(flags)
+            + " @" + errorDomain + "#" + errorCode + "(" + errorInternalInfo + "):" + errorIsTransient
             + "}";
     }
 }

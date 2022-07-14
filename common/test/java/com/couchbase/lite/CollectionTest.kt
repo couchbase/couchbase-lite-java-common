@@ -18,7 +18,6 @@ package com.couchbase.lite
 
 import com.couchbase.lite.internal.utils.Report
 import com.couchbase.lite.internal.utils.TestUtils
-import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -34,7 +33,7 @@ class CollectionTest : BaseCollectionTest() {
     //---------------------------------------------
     @Test
     fun testGetNonExistingDocWithID() {
-        assertNull(testCollection!!.getDocument("non-exist"))
+        assertNull(testCollection.getDocument("non-exist"))
     }
 
     // get doc in the collection
@@ -80,7 +79,7 @@ class CollectionTest : BaseCollectionTest() {
         baseTestDb.deleteCollection(testColName, testScopeName)
 
         //should fail
-        testCollection!!.getDocument("doc1")
+        testCollection.getDocument("doc1")
     }
 
     //---------------------------------------------
@@ -108,7 +107,7 @@ class CollectionTest : BaseCollectionTest() {
             doc.setValue("key", i)
             saveDocInBaseCollectionTest(doc)
         }
-        assertEquals(nDocs.toLong(), testCollection!!.count)
+        assertEquals(nDocs.toLong(), testCollection.count)
         verifyDocuments(nDocs)
     }
 
@@ -129,7 +128,7 @@ class CollectionTest : BaseCollectionTest() {
             // Update doc and store it into different instance
             doc.setValue("key", 2)
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
-                collection!!.save(doc)
+                collection.save(doc)
             }
         } finally {
             closeDb(otherDB)
@@ -147,7 +146,7 @@ class CollectionTest : BaseCollectionTest() {
         // update doc
         doc.setValue("key", 2)
         saveDocInBaseCollectionTest(doc)
-        assertEquals(1, testCollection!!.count)
+        assertEquals(1, testCollection.count)
 
         // validate document by getDocument
         verifyGetDocumentInCollection(docID, 2)
@@ -159,7 +158,7 @@ class CollectionTest : BaseCollectionTest() {
         val docID = "doc1"
         val doc = createSingleDocInCollectionWithId(docID).toMutable()
         assertEquals(docID, saveDocInBaseCollectionTest(doc).id)
-        assertEquals(1, testCollection!!.count)
+        assertEquals(1, testCollection.count)
     }
 
     @Test(expected = CouchbaseLiteException::class)
@@ -168,29 +167,29 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setValue("key", 1)
 
-        testCollection!!.save(doc)
+        testCollection.save(doc)
     }
 
     @Test
     fun testSaveAndUpdateMutableDoc() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Update:
         doc.setString("lastName", "Tiger")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Update:
         doc.setLong("age", 20L) // Int vs Long assertEquals can not ignore diff.
-        testCollection!!.save(doc)
+        testCollection.save(doc)
         assertEquals(3, doc.sequence)
         val expected: MutableMap<String, Any> = HashMap()
         expected["firstName"] = "Daniel"
         expected["lastName"] = "Tiger"
         expected["age"] = 20L
         assertEquals(expected, doc.toMap())
-        val savedDoc = testCollection!!.getDocument(doc.id)
+        val savedDoc = testCollection.getDocument(doc.id)
         assertEquals(expected, savedDoc!!.toMap())
         assertEquals(3, savedDoc.sequence)
     }
@@ -233,11 +232,11 @@ class CollectionTest : BaseCollectionTest() {
         mDoc.setValue("name", "Scott Tiger")
 
         // Save:
-        testCollection!!.save(mDoc)
+        testCollection.save(mDoc)
 
         // Delete:
-        testCollection!!.delete(mDoc)
-        assertNull(testCollection!!.getDocument(docID))
+        testCollection.delete(mDoc)
+        assertNull(testCollection.getDocument(docID))
 
         // NOTE: doc is reserved.
         val v = mDoc.getValue("name")
@@ -252,7 +251,7 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setValue("key", 1)
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
-            testCollection!!.delete(doc)
+            testCollection.delete(doc)
         }
     }
 
@@ -261,10 +260,10 @@ class CollectionTest : BaseCollectionTest() {
     fun testDeleteDoc() {
         val docID = "doc1"
         val doc = createSingleDocInCollectionWithId(docID)
-        assertEquals(1, testCollection!!.count)
-        testCollection!!.delete(doc)
-        assertEquals(0, testCollection!!.count)
-        assertNull(testCollection!!.getDocument(docID))
+        assertEquals(1, testCollection.count)
+        testCollection.delete(doc)
+        assertEquals(0, testCollection.count)
+        assertNull(testCollection.getDocument(docID))
     }
 
     @Test
@@ -276,12 +275,12 @@ class CollectionTest : BaseCollectionTest() {
         createDocsInCollectionTest(nDocs)
         for (i in 0 until nDocs) {
             val docID = String.format(Locale.US, "doc_%03d", i)
-            val doc = testCollection!!.getDocument(docID)
-            testCollection!!.delete(doc!!)
-            assertNull(testCollection!!.getDocument(docID))
-            assertEquals(9 - i, testCollection!!.count.toInt())
+            val doc = testCollection.getDocument(docID)
+            testCollection.delete(doc!!)
+            assertNull(testCollection.getDocument(docID))
+            assertEquals(9 - i, testCollection.count.toInt())
         }
-        assertEquals(0, testCollection!!.count)
+        assertEquals(0, testCollection.count)
     }
 
     @Test
@@ -301,10 +300,9 @@ class CollectionTest : BaseCollectionTest() {
             assertEquals(1, collection!!.count)
 
             // Delete from the different db instance:
-            TestUtils.assertThrowsCBL(
-                CBLError.Domain.CBLITE,
-                CBLError.Code.INVALID_PARAMETER
-            ) { collection!!.delete(doc) }
+            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+                collection.delete(doc)
+            }
         } finally {
             closeDb(otherDb)
         }
@@ -343,7 +341,7 @@ class CollectionTest : BaseCollectionTest() {
     fun testDeleteDocOnDeletedCollection() {
         val doc = createSingleDocInCollectionWithId("doc1")
         baseTestDb.deleteCollection(testColName, testScopeName)
-        testCollection!!.delete(doc)
+        testCollection.delete(doc)
     }
 
     @Test
@@ -352,42 +350,42 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = testCollection!!.getDocument("doc1")
-        val doc1b = testCollection!!.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Delete doc1a:
-        testCollection!!.delete(doc1a!!)
+        testCollection.delete(doc1a!!)
         assertEquals(2, doc1a.sequence)
-        assertNull(testCollection!!.getDocument(doc.id))
+        assertNull(testCollection.getDocument(doc.id))
 
         // Delete doc1b:
-        testCollection!!.delete(doc1b)
+        testCollection.delete(doc1b)
         assertEquals(2, doc1b.sequence)
-        assertNull(testCollection!!.getDocument(doc.id))
+        assertNull(testCollection.getDocument(doc.id))
     }
 
     @Test
     @Throws(CouchbaseLiteException::class)
     fun testDeleteNonExistingDoc() {
         val doc1a = createSingleDocInCollectionWithId("doc1")
-        val doc1b = testCollection!!.getDocument("doc1")
+        val doc1b = testCollection.getDocument("doc1")
 
         // purge doc
-        testCollection!!.purge(doc1a)
-        assertEquals(0, testCollection!!.count)
-        assertNull(testCollection!!.getDocument(doc1a.id))
+        testCollection.purge(doc1a)
+        assertEquals(0, testCollection.count)
+        assertNull(testCollection.getDocument(doc1a.id))
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
-            testCollection!!.delete(doc1a)
+            testCollection.delete(doc1a)
         }
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
-            testCollection!!.delete(
+            testCollection.delete(
                 doc1b!!)
         }
-        assertEquals(0, testCollection!!.count)
-        assertNull(testCollection!!.getDocument(doc1b!!.id))
+        assertEquals(0, testCollection.count)
+        assertNull(testCollection.getDocument(doc1b!!.id))
     }
 
     //---------------------------------------------
@@ -396,11 +394,11 @@ class CollectionTest : BaseCollectionTest() {
     @Test
     fun testPurgePreSaveDoc() {
         val doc = MutableDocument("doc1")
-        assertEquals(0, testCollection!!.count)
+        assertEquals(0, testCollection.count)
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
-            testCollection!!.purge(doc)
+            testCollection.purge(doc)
         }
-        assertEquals(0, testCollection!!.count)
+        assertEquals(0, testCollection.count)
     }
 
     @Test
@@ -411,7 +409,7 @@ class CollectionTest : BaseCollectionTest() {
 
         // Purge Doc
         purgeDocInCollectionAndVerify(doc)
-        assertEquals(0, testCollection!!.count)
+        assertEquals(0, testCollection.count)
     }
 
     @Test
@@ -422,15 +420,15 @@ class CollectionTest : BaseCollectionTest() {
         val doc = createSingleDocInCollectionWithId(docID)
 
         // Get the document for the second purge:
-        val doc1 = testCollection!!.getDocument(docID)
+        val doc1 = testCollection.getDocument(docID)
 
         // Purge the document first time:
         purgeDocInCollectionAndVerify(doc)
-        assertEquals(0, testCollection!!.count)
+        assertEquals(0, testCollection.count)
 
         // Purge the document second time:
         purgeDocInCollectionAndVerify(doc1)
-        assertEquals(0, testCollection!!.count)
+        assertEquals(0, testCollection.count)
     }
 
     @Test
@@ -491,7 +489,7 @@ class CollectionTest : BaseCollectionTest() {
         baseTestDb.deleteCollection(testColName, testScopeName)
 
         //purge doc
-        testCollection!!.purge(doc)
+        testCollection.purge(doc)
     }
 
     //---------------------------------------------
@@ -500,26 +498,26 @@ class CollectionTest : BaseCollectionTest() {
     @Test
     @Throws(CouchbaseLiteException::class)
     fun testCreateIndexInCollection() {
-        assertEquals(0, testCollection!!.indexes.size)
-        testCollection!!.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
-        assertEquals(1, testCollection!!.indexes.size)
-        testCollection!!.createIndex(
+        assertEquals(0, testCollection.indexes.size)
+        testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
+        assertEquals(1, testCollection.indexes.size)
+        testCollection.createIndex(
             "index2",
             FullTextIndexConfiguration("detail").ignoreAccents(true).setLanguage("es"))
-        assertEquals(2, testCollection!!.indexes.size)
-        assertTrue(testCollection!!.indexes.contains("index1"))
-        assertTrue(testCollection!!.indexes.contains("index2"))
+        assertEquals(2, testCollection.indexes.size)
+        assertTrue(testCollection.indexes.contains("index1"))
+        assertTrue(testCollection.indexes.contains("index2"))
     }
 
     @Test
     @Throws(CouchbaseLiteException::class)
     fun testCreateSameIndexTwice() {
-        testCollection!!.createIndex("myindex", ValueIndexConfiguration("firstName", "lastName"))
+        testCollection.createIndex("myindex", ValueIndexConfiguration("firstName", "lastName"))
 
         // Call create index again:
-        testCollection!!.createIndex("myindex", ValueIndexConfiguration("firstName", "lastName"))
-        assertEquals(1, testCollection!!.indexes.size)
-        assertContents(testCollection!!.indexes.toList(), "myindex")
+        testCollection.createIndex("myindex", ValueIndexConfiguration("firstName", "lastName"))
+        assertEquals(1, testCollection.indexes.size)
+        assertContents(testCollection.indexes.toList(), "myindex")
     }
 
     @Test
@@ -527,21 +525,21 @@ class CollectionTest : BaseCollectionTest() {
     fun testCreateSameNameIndexes() {
 
         // Create value index with first name:
-        testCollection!!.createIndex("myindex", ValueIndexConfiguration("firstName"))
+        testCollection.createIndex("myindex", ValueIndexConfiguration("firstName"))
 
         // Create value index with last name:
-        testCollection!!.createIndex("myindex", ValueIndexConfiguration("lastName"))
+        testCollection.createIndex("myindex", ValueIndexConfiguration("lastName"))
 
         // Check:
-        assertEquals(1, testCollection!!.indexes.size)
-        assertEquals(listOf("myindex"), testCollection!!.indexes.toList())
+        assertEquals(1, testCollection.indexes.size)
+        assertEquals(listOf("myindex"), testCollection.indexes.toList())
 
 
-        testCollection!!.createIndex("myindex", ValueIndexConfiguration("detail"))
+        testCollection.createIndex("myindex", ValueIndexConfiguration("detail"))
 
         // Check:
-        assertEquals(1, testCollection!!.indexes.size)
-        assertContents(testCollection!!.indexes.toList(), "myindex")
+        assertEquals(1, testCollection.indexes.size)
+        assertContents(testCollection.indexes.toList(), "myindex")
     }
 
     @Test
@@ -550,18 +548,18 @@ class CollectionTest : BaseCollectionTest() {
         testCreateIndexInCollection()
 
         // Delete indexes:
-        testCollection!!.deleteIndex("index2")
-        assertEquals(1, testCollection!!.indexes.size)
-        assertTrue(testCollection!!.indexes.contains("index1"))
-        testCollection!!.deleteIndex("index1")
-        assertEquals(0, testCollection!!.indexes.size)
-        assertTrue(testCollection!!.indexes.isEmpty())
+        testCollection.deleteIndex("index2")
+        assertEquals(1, testCollection.indexes.size)
+        assertTrue(testCollection.indexes.contains("index1"))
+        testCollection.deleteIndex("index1")
+        assertEquals(0, testCollection.indexes.size)
+        assertTrue(testCollection.indexes.isEmpty())
 
         // Delete non existing index:
-        testCollection!!.deleteIndex("dummy")
+        testCollection.deleteIndex("dummy")
 
         // Delete deleted index:
-        testCollection!!.deleteIndex("index1")
+        testCollection.deleteIndex("index1")
     }
 
 
@@ -573,17 +571,17 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = testCollection!!.getDocument("doc1")!!.toMutable()
-        val doc1b = testCollection!!.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")!!.toMutable()
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Modify doc1a:
         doc1a.setString("firstName", "Scott")
-        testCollection!!.save(doc1a)
+        testCollection.save(doc1a)
         doc1a.setString("nickName", "Scotty")
-        testCollection!!.save(doc1a)
+        testCollection.save(doc1a)
 
         val expected: MutableMap<String, Any> = HashMap()
         expected["firstName"] = "Scott"
@@ -594,8 +592,8 @@ class CollectionTest : BaseCollectionTest() {
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Lion")
-        assertTrue(testCollection!!.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
-        val savedDoc = testCollection!!.getDocument(doc.id)
+        assertTrue(testCollection.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
+        val savedDoc = testCollection.getDocument(doc.id)
         assertEquals(doc1b.toMap(), savedDoc!!.toMap())
         assertEquals(4, savedDoc.sequence)
     }
@@ -605,17 +603,17 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = testCollection!!.getDocument("doc1")!!.toMutable()
-        val doc1b = testCollection!!.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")!!.toMutable()
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Modify doc1a:
         doc1a.setString("firstName", "Scott")
-        testCollection!!.save(doc1a)
+        testCollection.save(doc1a)
         doc1a.setString("nickName", "Scotty")
-        testCollection!!.save(doc1a)
+        testCollection.save(doc1a)
 
         val expected: MutableMap<String, Any> = HashMap()
         expected["firstName"] = "Scott"
@@ -626,8 +624,8 @@ class CollectionTest : BaseCollectionTest() {
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Lion")
-        assertFalse(testCollection!!.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
-        val savedDoc = testCollection!!.getDocument(doc.id)
+        assertFalse(testCollection.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
+        val savedDoc = testCollection.getDocument(doc.id)
         assertEquals(expected, savedDoc!!.toMap())
         assertEquals(3, savedDoc.sequence)
     }
@@ -637,15 +635,15 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = testCollection!!.getDocument("doc1")!!.toMutable()
-        val doc1b = testCollection!!.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")!!.toMutable()
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Modify doc1a:
         doc1a.setString("firstName", "Scott")
-        testCollection!!.save(doc1a)
+        testCollection.save(doc1a)
 
         val expected: MutableMap<String, Any> = HashMap()
         expected["firstName"] = "Scott"
@@ -655,9 +653,9 @@ class CollectionTest : BaseCollectionTest() {
 
         // Modify doc1b and delete, result to conflict when delete:
         doc1b.setString("lastName", "Lion")
-        assertTrue(testCollection!!.delete(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
+        assertTrue(testCollection.delete(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
         assertEquals(3, doc1b.sequence)
-        assertNull(testCollection!!.getDocument(doc1b.id))
+        assertNull(testCollection.getDocument(doc1b.id))
     }
 
     @Test
@@ -665,15 +663,15 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = testCollection!!.getDocument("doc1")!!.toMutable()
-        val doc1b = testCollection!!.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")!!.toMutable()
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Modify doc1a:
         doc1a.setString("firstName", "Scott")
-        testCollection!!.save(doc1a)
+        testCollection.save(doc1a)
 
         val expected: MutableMap<String, Any> = HashMap()
         expected["firstName"] = "Scott"
@@ -682,8 +680,8 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(2, doc1a.sequence)
 
         // Modify doc1b and delete, result to conflict when delete:
-        assertFalse(testCollection!!.delete(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
-        val savedDoc = testCollection!!.getDocument(doc.id)
+        assertFalse(testCollection.delete(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
+        val savedDoc = testCollection.getDocument(doc.id)
         assertEquals(expected, savedDoc!!.toMap())
         assertEquals(2, savedDoc.sequence)
     }
@@ -693,9 +691,9 @@ class CollectionTest : BaseCollectionTest() {
         val doc1a = MutableDocument("doc1")
         doc1a.setString("firstName", "Daniel")
         doc1a.setString("lastName", "Tiger")
-        testCollection!!.save(doc1a)
+        testCollection.save(doc1a)
 
-        var savedDoc = testCollection!!.getDocument(doc1a.id)
+        var savedDoc = testCollection.getDocument(doc1a.id)
         assertEquals(doc1a.toMap(), savedDoc!!.toMap())
         assertEquals(1, savedDoc.sequence)
 
@@ -703,8 +701,8 @@ class CollectionTest : BaseCollectionTest() {
         doc1b.setString("firstName", "Scott")
         doc1b.setString("lastName", "Tiger")
 
-        assertTrue(testCollection!!.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
-        savedDoc = testCollection!!.getDocument(doc1b.id)
+        assertTrue(testCollection.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
+        savedDoc = testCollection.getDocument(doc1b.id)
         assertEquals(doc1b.toMap(), savedDoc!!.toMap())
         assertEquals(2, savedDoc.sequence)
     }
@@ -714,9 +712,9 @@ class CollectionTest : BaseCollectionTest() {
         val doc1a = MutableDocument("doc1")
         doc1a.setString("firstName", "Daniel")
         doc1a.setString("lastName", "Tiger")
-        testCollection!!.save(doc1a)
+        testCollection.save(doc1a)
 
-        var savedDoc = testCollection!!.getDocument(doc1a.id)
+        var savedDoc = testCollection.getDocument(doc1a.id)
         assertEquals(doc1a.toMap(), savedDoc!!.toMap())
         assertEquals(1, savedDoc.sequence)
 
@@ -724,8 +722,8 @@ class CollectionTest : BaseCollectionTest() {
         doc1b.setString("firstName", "Scott")
         doc1b.setString("lastName", "Tiger")
 
-        assertFalse(testCollection!!.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
-        savedDoc = testCollection!!.getDocument(doc1b.id)
+        assertFalse(testCollection.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
+        savedDoc = testCollection.getDocument(doc1b.id)
         assertEquals(doc1a.toMap(), savedDoc!!.toMap())
         assertEquals(1, savedDoc.sequence)
     }
@@ -735,21 +733,21 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = testCollection!!.getDocument("doc1")
-        val doc1b = testCollection!!.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Delete doc1a:
-        testCollection!!.delete(doc1a!!)
+        testCollection.delete(doc1a!!)
         assertEquals(2, doc1a.sequence)
-        assertNull(testCollection!!.getDocument(doc.id))
+        assertNull(testCollection.getDocument(doc.id))
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Lion")
-        assertTrue(testCollection!!.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
-        val savedDoc = testCollection!!.getDocument(doc.id)
+        assertTrue(testCollection.save(doc1b, ConcurrencyControl.LAST_WRITE_WINS))
+        val savedDoc = testCollection.getDocument(doc.id)
         assertEquals(doc1b.toMap(), savedDoc!!.toMap())
         assertEquals(3, savedDoc.sequence)
     }
@@ -759,28 +757,28 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        testCollection!!.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = testCollection!!.getDocument("doc1")
-        val doc1b = testCollection!!.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Delete doc1a:
-        testCollection!!.delete(doc1a!!)
+        testCollection.delete(doc1a!!)
         assertEquals(2, doc1a.sequence)
-        assertNull(testCollection!!.getDocument(doc.id))
+        assertNull(testCollection.getDocument(doc.id))
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Lion")
-        assertFalse(testCollection!!.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
-        assertNull(testCollection!!.getDocument(doc.id))
+        assertFalse(testCollection.save(doc1b, ConcurrencyControl.FAIL_ON_CONFLICT))
+        assertNull(testCollection.getDocument(doc.id))
     }
 
     @Throws(CouchbaseLiteException::class)
     private fun saveNewDocInCollectionWithIDTest(docID: String) {
         // store doc
         createSingleDocInCollectionWithId(docID)
-        Assert.assertEquals(1, testCollection!!.count)
+        assertEquals(1, testCollection.count)
 
         // validate document by getDocument
         verifyGetDocumentInCollection(docID)
@@ -815,14 +813,14 @@ class CollectionTest : BaseCollectionTest() {
     @Test
     fun testDeleteThenGetCollectionName() {
         baseTestDb.deleteCollection(testColName, testScopeName)
-        assertEquals(testColName, testCollection!!.name)
+        assertEquals(testColName, testCollection.name)
     }
 
 
     // helper methods to verify getDoc
     private fun verifyGetDocumentInCollection(docID: String, value: Int = 1) {
         verifyGetDocumentInCollection(
-            testCollection!!,
+            testCollection,
             docID,
             value)
     }
@@ -839,7 +837,7 @@ class CollectionTest : BaseCollectionTest() {
     @Throws(CouchbaseLiteException::class)
     private fun purgeDocInCollectionAndVerify(doc: Document?) {
         val docID = doc!!.id
-        testCollection!!.purge(doc)
-        assertNull(testCollection!!.getDocument(docID))
+        testCollection.purge(doc)
+        assertNull(testCollection.getDocument(docID))
     }
 }

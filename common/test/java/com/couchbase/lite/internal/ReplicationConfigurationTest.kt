@@ -62,7 +62,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         )
 
         assertEquals(0, boundCollectionCount())
-        val replColls = ReplicationCollection.createAll(colls, null)
+        val replColls = ReplicationCollection.createAll(colls)
         assertEquals(2, replColls.size)
         assertEquals(2, boundCollectionCount())
 
@@ -80,7 +80,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val config = CollectionConfiguration()
         config.channels = listOf("x", "y", "z")
         val colls = mapOf(baseTestDb.createCollection("rockwell_plates") to config)
-        val opts = FLValue.fromData(ReplicationCollection.createAll(colls, null)[0].options!!).asDict()
+        val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!).asDict()
         assertEquals(1, opts.size)
         assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_CHANNELS])
     }
@@ -90,19 +90,9 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val config = CollectionConfiguration()
         config.documentIDs = listOf("x", "y", "z")
         val colls = mapOf(baseTestDb.createCollection("porcelain_dolls") to config)
-        val opts = FLValue.fromData(ReplicationCollection.createAll(colls, null)[0].options!!).asDict()
+        val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!).asDict()
         assertEquals(1, opts.size)
         assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_DOC_IDS])
-    }
-
-    @Test
-    fun testReplicationCollectionOtherOpts() {
-        val config = CollectionConfiguration()
-        val optMap = mapOf("Melanie" to "Safka")
-        val colls = mapOf(baseTestDb.createCollection("pogs") to config)
-        val opts = FLValue.fromData(ReplicationCollection.createAll(colls, optMap)[0].options!!).asDict()
-        assertEquals(1, opts.size)
-        assertEquals("Safka", opts["Melanie"])
     }
 
     @Test
@@ -118,7 +108,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val config = CollectionConfiguration()
         config.pullFilter = ReplicationFilter { _, _ -> calls++; true }
         val colls = mapOf(baseTestDb.createCollection("pogs") to config)
-        val token = ReplicationCollection.createAll(colls, null)[0].token
+        val token = ReplicationCollection.createAll(colls)[0].token
 
         body.withContent {
             ReplicationCollection.filterCallback(token, null, null, "doc-1", "99", 0, it, false)
@@ -141,7 +131,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val config = CollectionConfiguration()
         config.pushFilter = ReplicationFilter { _, _ -> calls++; true }
         val colls = mapOf(baseTestDb.createCollection("pogs") to config)
-        val token = ReplicationCollection.createAll(colls, null)[0].token
+        val token = ReplicationCollection.createAll(colls)[0].token
 
         body.withContent {
             ReplicationCollection.filterCallback(token, null, null, "doc-1", "99", 0, it, false)
@@ -165,7 +155,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         config.pushFilter = ReplicationFilter { _, _ -> calls++; true }
         config.pullFilter = ReplicationFilter { _, _ -> calls++; true }
         val colls = mapOf(baseTestDb.createCollection("pogs") to config)
-        val token = ReplicationCollection.createAll(colls, null)[0].token
+        val token = ReplicationCollection.createAll(colls)[0].token
 
         body.withContent {
             ReplicationCollection.filterCallback(token, null, null, "doc-1", "99", 0, it, false)
@@ -191,7 +181,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val colls = mapOf(baseTestDb.createCollection("pogs") to config)
 
         // this token should be ignored.
-        val token = ReplicationCollection.createAll(colls, null)[0].token + 1
+        val token = ReplicationCollection.createAll(colls)[0].token + 1
 
         body.withContent {
             ReplicationCollection.filterCallback(token, null, null, "doc-1", "99", 0, it, false)

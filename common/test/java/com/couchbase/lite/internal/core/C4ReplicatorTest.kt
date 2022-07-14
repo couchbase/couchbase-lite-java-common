@@ -30,7 +30,6 @@ import com.couchbase.lite.internal.replicator.CBLCookieStore
 import com.couchbase.lite.internal.sockets.MessageFraming
 import com.couchbase.lite.mock.MockNativeReplicator
 import com.couchbase.lite.mock.MockNativeSocket
-import com.couchbase.lite.mock.MockReplicatorListener
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -86,7 +85,8 @@ class C4ReplicatorTest : BaseDbTest() {
             ReplicatorType.PUSH_AND_PULL,
             false,
             null,
-            MockReplicatorListener(),
+            { _, _ -> },
+            { _, _ -> },
             testReplicator,
             SocketFactory(
                 testReplicatorConfig,
@@ -134,7 +134,8 @@ class C4ReplicatorTest : BaseDbTest() {
             ReplicatorType.PUSH_AND_PULL,
             false,
             null,
-            MockReplicatorListener(),
+            { _, _ -> },
+            { _, _ -> },
             testReplicator
         )
 
@@ -170,7 +171,7 @@ class C4ReplicatorTest : BaseDbTest() {
             C4BaseTest.MOCK_PEER,
             C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
             null,
-            MockReplicatorListener()
+            { _, _ -> }
         )
 
         assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
@@ -198,11 +199,7 @@ class C4ReplicatorTest : BaseDbTest() {
             C4BaseTest.MOCK_PEER,
             C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
             null,
-            object : MockReplicatorListener() {
-                override fun statusChanged(repl: C4Replicator?, status: C4ReplicatorStatus?) {
-                    calls++
-                }
-            }
+            { _, _ -> calls++ }
         )
 
         C4Replicator.statusChangedCallback(
@@ -225,30 +222,28 @@ class C4ReplicatorTest : BaseDbTest() {
     fun testDocumentEndedCallback() {
         var calls = 0
 
-        assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
-
-        val c4Repl = C4Replicator.createMessageEndpointReplicator(
+        val c4Repl = C4Replicator.createLocalReplicator(
             MockNativeReplicator(),
-            setOf(testCollection),
+            mapOf(testCollection to CollectionConfiguration()),
             C4BaseTest.MOCK_PEER,
-            C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
+            getC4Db(baseTestDb),
+            ReplicatorType.PUSH_AND_PULL,
+            false,
             null,
-            object : MockReplicatorListener() {
-                override fun documentEnded(repl: C4Replicator?, push: Boolean, docs: Array<out C4DocumentEnded>?) {
-                    calls++
-                }
-            }
+            { _, _ -> },
+            { _, _ -> calls++ },
+            testReplicator
         )
 
-        C4Replicator.documentEndedCallback(c4Repl.token, true)
+        val docEnd = C4DocumentEnded(C4BaseTest.MOCK_TOKEN, "micro", "WWI sabres", "doc-1", "#57", 0, 0L, 0, 0, 0, true)
+
+        C4Replicator.documentEndedCallback(c4Repl.token, true, docEnd)
         assertEquals(1, calls)
 
         c4Repl.close()
 
-        C4Replicator.statusChangedCallback(
-            c4Repl.token,
-            C4ReplicatorStatus(C4ReplicatorStatus.ActivityLevel.BUSY, 0, 0)
-        )
+        C4Replicator.documentEndedCallback(c4Repl.token, true, docEnd)
+
         assertEquals(1, calls)
     }
 }

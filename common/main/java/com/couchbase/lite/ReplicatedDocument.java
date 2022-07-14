@@ -37,11 +37,10 @@ public final class ReplicatedDocument {
     private final String name;
     @NonNull
     private final String docId;
-
     @NonNull
     private final EnumSet<DocumentFlag> flags;
     @Nullable
-    private final CouchbaseLiteException error;
+    private volatile CouchbaseLiteException error;
 
     //---------------------------------------------
     // Constructors
@@ -101,6 +100,11 @@ public final class ReplicatedDocument {
      */
     @Nullable
     public CouchbaseLiteException getError() { return error; }
+
+    /**
+     * Set the current document replication error.
+     */
+    public void setError(CouchbaseLiteException error) { this.error = error; }
 
     @NonNull
     @Override

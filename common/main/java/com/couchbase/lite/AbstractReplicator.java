@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
+import com.couchbase.lite.internal.ReplicationCollection;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4DocumentEnded;
@@ -46,7 +47,6 @@ import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.replicator.BaseReplicator;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
-import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
@@ -95,8 +95,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @NonNull
     private final ImmutableReplicatorConfiguration config;
 
-    private final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
-
     @GuardedBy("getReplicatorLock()")
     private final Set<ReplicatorChangeListenerToken> changeListeners = new HashSet<>();
     @GuardedBy("getReplicatorLock()")
@@ -106,8 +104,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
     private final Set<Fn.NullableConsumer<CouchbaseLiteException>> pendingResolutions = new HashSet<>();
     @NonNull
     private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
-    @NonNull
-    private final ReplicatorListener c4ReplListener;
     @NonNull
     private final SocketFactory socketFactory;
 
@@ -142,7 +138,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
             config,
             new ReplicatorCookieStore(getDatabase()),
             this::setServerCertificates);
-        this.c4ReplListener = new ReplicatorReplicatorListener(dispatcher);
     }
 
     //---------------------------------------------
@@ -179,7 +174,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
             status = updateStatus(status);
 
-            c4ReplListener.statusChanged(repl, status);
+            dispatchStatusChange(repl, status);
         }
     }
 
@@ -405,7 +400,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
             config.getType(),
             config.isContinuous(),
             config.getConnectionOptions(),
-            c4ReplListener,
+            this::dispatchStatusChange,
+            this::dispatchDocumentsEnded,
             (Replicator) this);
     }
 
@@ -439,7 +435,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
             config.getType(),
             config.isContinuous(),
             config.getConnectionOptions(),
-            c4ReplListener,
+            this::dispatchStatusChange,
+            this::dispatchDocumentsEnded,
             (Replicator) this,
             socketFactory
         );
@@ -467,7 +464,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
             config.getType(),
             config.isContinuous(),
             config.getConnectionOptions(),
-            c4ReplListener,
+            this::dispatchStatusChange,
+            this::dispatchDocumentsEnded,
             (Replicator) this,
             socketFactory);
     }
@@ -478,6 +476,14 @@ public abstract class AbstractReplicator extends BaseReplicator {
     // Some of these are package protected only to avoid a synthetic accessor
     //---------------------------------------------
 
+    void dispatchStatusChange(@NonNull C4Replicator ignored, @NonNull C4ReplicatorStatus status) {
+        dispatcher.execute(() -> statusChanged(status));
+    }
+
+    void dispatchDocumentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
+        dispatcher.execute(() -> documentsEnded(docEnds, pushing));
+    }
+
     @Nullable
     @VisibleForTesting
     CouchbaseLiteException getLastError() { return lastError; }
@@ -487,74 +493,9 @@ public abstract class AbstractReplicator extends BaseReplicator {
         synchronized (getReplicatorLock()) { return status.getActivityLevel(); }
     }
 
-    void c4StatusChanged(@NonNull C4ReplicatorStatus c4Status) {
-        final ReplicatorChange change;
-        final List<ReplicatorChangeListenerToken> tokens;
-        synchronized (getReplicatorLock()) {
-            Log.i(
-                DOMAIN,
-                "status changed: (%d, %d) @%s for %s",
-                pendingResolutions.size(), pendingStatusNotifications.size(), c4Status, this);
-
-            if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !isOffline(c4Status)); }
-
-            if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
-            if (!pendingStatusNotifications.isEmpty()) { return; }
-
-            // Update my properties:
-            updateStatus(c4Status);
-
-            // Post notification
-            // Replicator.getStatus() creates a copy of Status.
-            change = new ReplicatorChange((Replicator) this, this.getStatus());
-            tokens = new ArrayList<>(changeListeners);
-        }
-
-        // this will probably make this instance eligible for garbage collection...
-        if (isStopped(c4Status)) { getDatabase().removeActiveReplicator(this); }
-
-        for (ReplicatorChangeListenerToken token: tokens) { token.postChange(change); }
-    }
-
-    void documentEnded(boolean pushing, @NonNull C4DocumentEnded... docEnds) {
-        final List<ReplicatedDocument> unconflictedDocs = new ArrayList<>();
-
-        for (C4DocumentEnded docEnd: docEnds) {
-            final String docId = docEnd.getDocID();
-            final C4Error c4Error = docEnd.getC4Error();
-
-            CouchbaseLiteException error = null;
-
-            if ((c4Error != null) && (c4Error.getCode() != 0)) {
-                if (!pushing && docEnd.isConflicted()) {
-                    queueConflictResolution(docId, docEnd.getFlags());
-                    continue;
-                }
-
-                error = CouchbaseLiteException.convertC4Error(c4Error);
-            }
-
-            // !!! temporary hack
-            final Collection coll = getDefaultCollection();
-
-            unconflictedDocs.add(new ReplicatedDocument(
-                coll.getScope().getName(),
-                coll.getName(),
-                docId,
-                docEnd.getFlags(),
-                error));
-        }
-
-        if (!unconflictedDocs.isEmpty()) { notifyDocumentEnded(pushing, unconflictedDocs); }
-    }
-
     // callback from queueConflictResolution
-    void onConflictResolved(
-        Fn.NullableConsumer<CouchbaseLiteException> task,
-        String docId,
-        int flags,
-        CouchbaseLiteException err) {
-        Log.i(DOMAIN, "Conflict resolved: %s", err, docId);
+    void onConflictResolved(Fn.NullableConsumer<CouchbaseLiteException> task, @NonNull ReplicatedDocument rDoc) {
+        Log.i(DOMAIN, "Conflict resolved: %s", rDoc.getError(), rDoc.getID());
         List<C4ReplicatorStatus> pendingNotifications = null;
         synchronized (getReplicatorLock()) {
             pendingResolutions.remove(task);
@@ -565,15 +506,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
             }
         }
 
-        // !!! temporary hack
-        final Collection coll = getDefaultCollection();
-
-        notifyDocumentEnded(
-            false,
-            Arrays.asList(new ReplicatedDocument(coll.getScope().getName(), coll.getName(), docId, flags, err)));
+        notifyDocumentEnded(false, Arrays.asList(rDoc));
 
         if ((pendingNotifications != null) && (!pendingNotifications.isEmpty())) {
-            for (C4ReplicatorStatus status: pendingNotifications) { dispatcher.execute(() -> c4StatusChanged(status)); }
+            for (C4ReplicatorStatus status: pendingNotifications) { dispatcher.execute(() -> statusChanged(status)); }
         }
     }
 
@@ -638,6 +574,65 @@ public abstract class AbstractReplicator extends BaseReplicator {
         }
     }
 
+    private void statusChanged(@NonNull C4ReplicatorStatus c4Status) {
+        final ReplicatorChange change;
+        final List<ReplicatorChangeListenerToken> tokens;
+        synchronized (getReplicatorLock()) {
+            Log.i(
+                DOMAIN,
+                "status changed: (%d, %d) @%s for %s",
+                pendingResolutions.size(), pendingStatusNotifications.size(), c4Status, this);
+
+            if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !isOffline(c4Status)); }
+
+            if (!pendingResolutions.isEmpty()) { pendingStatusNotifications.add(c4Status); }
+            if (!pendingStatusNotifications.isEmpty()) { return; }
+
+            // Update my properties:
+            updateStatus(c4Status);
+
+            // Post notification
+            // Replicator.getStatus() creates a copy of Status.
+            change = new ReplicatorChange((Replicator) this, this.getStatus());
+            tokens = new ArrayList<>(changeListeners);
+        }
+
+        // this will probably make this instance eligible for garbage collection...
+        if (isStopped(c4Status)) { getDatabase().removeActiveReplicator(this); }
+
+        for (ReplicatorChangeListenerToken token: tokens) { token.postChange(change); }
+    }
+
+    private void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
+        Log.d(LogDomain.REPLICATOR, "AbstractReplicator.documentsEnded: " + docEnds.size());
+
+        final List<ReplicatedDocument> unconflictedDocs = new ArrayList<>();
+
+        for (C4DocumentEnded docEnd: docEnds) {
+            final ReplicationCollection coll = ReplicationCollection.getBinding(docEnd.token);
+            if (coll == null) {
+                Log.w(LogDomain.REPLICATOR, "No collection for document end: " + docEnd);
+                continue;
+            }
+
+            final String docId = docEnd.docId;
+            final ReplicatedDocument rDoc = new ReplicatedDocument(coll.scope, coll.name, docId, docEnd.flags, null);
+
+            final C4Error err = docEnd.getC4Error();
+            if ((err != null) && (err.getCode() != 0)) {
+                if (pushing || !docEnd.isConflicted()) { rDoc.setError(CouchbaseLiteException.convertC4Error(err)); }
+                else {
+                    queueConflictResolution(rDoc, coll.getConflictResolver());
+                    continue;
+                }
+            }
+
+            unconflictedDocs.add(rDoc);
+        }
+
+        if (!unconflictedDocs.isEmpty()) { notifyDocumentEnded(pushing, unconflictedDocs); }
+    }
+
     @NonNull
     @GuardedBy("getReplicatorLock()")
     private C4ReplicatorStatus updateStatus(@NonNull C4ReplicatorStatus c4Status) {
@@ -658,19 +653,21 @@ public abstract class AbstractReplicator extends BaseReplicator {
         return c4Status.copy();
     }
 
-    private void queueConflictResolution(@NonNull String docId, int flags) {
-        Log.i(DOMAIN, "%s: pulled conflicting version of '%s'", this, docId);
+    private void queueConflictResolution(@NonNull ReplicatedDocument rDoc, @Nullable ConflictResolver resolver) {
+        Log.i(DOMAIN, "%s: pulled conflicting version of '%s'", this, rDoc.getID());
 
         final ExecutionService.CloseableExecutor executor
             = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
         final Database db = getDatabase();
-        final ConflictResolver resolver = config.getDefaultConflictResolver();
         final Fn.NullableConsumer<CouchbaseLiteException> task = new Fn.NullableConsumer<CouchbaseLiteException>() {
-            public void accept(CouchbaseLiteException err) { onConflictResolved(this, docId, flags, err); }
+            public void accept(CouchbaseLiteException err) {
+                rDoc.setError(err);
+                onConflictResolved(this, rDoc);
+            }
         };
 
         synchronized (getReplicatorLock()) {
-            executor.execute(() -> db.resolveReplicationConflict(resolver, docId, task));
+            executor.execute(() -> db.resolveReplicationConflict(resolver, rDoc.getID(), task));
             pendingResolutions.add(task);
         }
     }
@@ -737,15 +734,5 @@ public abstract class AbstractReplicator extends BaseReplicator {
             if (element.length() > 0) { path.addLast(element); }
         }
         return path;
-    }
-
-    @NonNull
-    private Collection getDefaultCollection() {
-        try {
-            final Collection collection = getDatabase().getDefaultCollection();
-            if (collection != null) { return collection; }
-            throw new IllegalStateException("Cannot find collection for replicator");
-        }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException("Database is not open?", e); }
     }
 }

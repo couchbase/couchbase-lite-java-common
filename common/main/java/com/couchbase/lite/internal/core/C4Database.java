@@ -42,7 +42,6 @@ import com.couchbase.lite.internal.core.impl.NativeC4Database;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.replicator.ReplicatorListener;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -454,7 +453,8 @@ public abstract class C4Database extends C4NativePeer {
         @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener,
+        @NonNull C4Replicator.StatusListener statusListener,
+        @NonNull C4Replicator.DocEndsListener docEndsListener,
         @NonNull AbstractReplicator replicator,
         @Nullable SocketFactory socketFactory)
         throws LiteCoreException {
@@ -470,7 +470,8 @@ public abstract class C4Database extends C4NativePeer {
             type,
             continuous,
             options,
-            listener,
+            statusListener,
+            docEndsListener,
             replicator,
             socketFactory);
     }
@@ -483,7 +484,8 @@ public abstract class C4Database extends C4NativePeer {
         @NonNull ReplicatorType type,
         boolean continuous,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener,
+        @NonNull C4Replicator.StatusListener statusListener,
+        @NonNull C4Replicator.DocEndsListener docEndsListener,
         @NonNull AbstractReplicator replicator)
         throws LiteCoreException {
         return C4Replicator.createLocalReplicator(
@@ -493,7 +495,8 @@ public abstract class C4Database extends C4NativePeer {
             type,
             continuous,
             options,
-            listener,
+            statusListener,
+            docEndsListener,
             replicator);
     }
 
@@ -502,14 +505,14 @@ public abstract class C4Database extends C4NativePeer {
         @NonNull Set<Collection> collections,
         @NonNull C4Socket c4Socket,
         @Nullable Map<String, Object> options,
-        @NonNull ReplicatorListener listener)
+        @NonNull C4Replicator.StatusListener statusListener)
         throws LiteCoreException {
         return C4Replicator.createMessageEndpointReplicator(
             collections,
             getPeer(),
             c4Socket,
             options,
-            listener);
+            statusListener);
     }
 
     // - Queries

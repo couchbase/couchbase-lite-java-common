@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core.impl;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.ReplicationCollection;
@@ -27,17 +28,18 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @Override
     public long nCreate(
-        ReplicationCollection[] collections,
+        @NonNull ReplicationCollection[] collections,
         long db,
-        String scheme,
-        String host,
+        @Nullable String scheme,
+        @Nullable String host,
         int port,
-        String path,
-        String remoteDbName,
+        @Nullable String path,
+        @Nullable String remoteDbName,
         int framing,
         boolean push,
         boolean pull,
         boolean continuous,
+        @Nullable byte[] options,
         long replicatorToken,
         long socketFactoryToken)
         throws LiteCoreException {
@@ -53,6 +55,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
             push,
             pull,
             continuous,
+            options,
             replicatorToken,
             socketFactoryToken
         );
@@ -60,12 +63,13 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     @Override
     public long nCreateLocal(
-        ReplicationCollection[] collections,
+        @NonNull ReplicationCollection[] collections,
         long db,
         long targetDb,
         boolean push,
         boolean pull,
         boolean continuous,
+        @Nullable byte[] options,
         long replicatorToken)
         throws LiteCoreException {
         return createLocal(
@@ -75,17 +79,19 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
             push,
             pull,
             continuous,
+            options,
             replicatorToken);
     }
 
     @Override
     public long nCreateWithSocket(
-        ReplicationCollection[] collections,
+        @NonNull ReplicationCollection[] collections,
         long db,
         long openSocket,
+        @Nullable byte[] options,
         long replicatorToken)
         throws LiteCoreException {
-        return createWithSocket(collections, db, openSocket, replicatorToken);
+        return createWithSocket(collections, db, openSocket, options, replicatorToken);
     }
 
     @Override
@@ -98,7 +104,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     public void nStop(long peer) { stop(peer); }
 
     @Override
-    public void nSetOptions(long peer, byte[] options) { setOptions(peer, options); }
+    public void nSetOptions(long peer, @Nullable byte[] options) { setOptions(peer, options); }
 
     @NonNull
     @Override
@@ -133,17 +139,18 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      */
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private static native long create(
-        ReplicationCollection[] collections,
+        @NonNull ReplicationCollection[] collections,
         long db,
-        String scheme,
-        String host,
+        @Nullable String scheme,
+        @Nullable String host,
         int port,
-        String path,
-        String remoteDbName,
+        @Nullable String path,
+        @Nullable String remoteDbName,
         int framing,
         boolean push,
         boolean pull,
         boolean continuous,
+        @Nullable byte[] options,
         long replicatorToken,
         long socketFactoryToken)
         throws LiteCoreException;
@@ -152,12 +159,13 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      * Creates a new local replicator.
      */
     private static native long createLocal(
-        ReplicationCollection[] collections,
+        @NonNull ReplicationCollection[] collections,
         long db,
         long targetDb,
         boolean push,
         boolean pull,
         boolean continuous,
+        @Nullable byte[] options,
         long replicatorToken)
         throws LiteCoreException;
 
@@ -167,9 +175,10 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      * start a passive replication to service them.
      */
     private static native long createWithSocket(
-        ReplicationCollection[] collections,
+        @NonNull ReplicationCollection[] collections,
         long db,
         long openSocket,
+        @Nullable byte[] options,
         long replicatorToken)
         throws LiteCoreException;
 
@@ -191,7 +200,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     /**
      * Set the replicator options.
      */
-    private static native void setOptions(long peer, byte[] options);
+    private static native void setOptions(long peer, @Nullable byte[] options);
 
     /**
      * Returns the current state of a replicator.

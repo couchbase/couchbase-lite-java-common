@@ -69,14 +69,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     @Nullable
-    protected static Database getDb(@Nullable Map<Collection, CollectionConfiguration> collections) {
-        return ((collections == null) || (collections.isEmpty()))
-            ? null
-            : collections.keySet().iterator().next().getDatabase();
-    }
-
-    @Nullable
-    protected static Map<Collection, CollectionConfiguration> getDefaultCollection(@Nullable Database db) {
+    protected static Map<Collection, CollectionConfiguration> configureDefaultCollection(@Nullable Database db) {
         if (db == null) { return null; }
 
         final Collection defaultCollection;
@@ -122,6 +115,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
     protected AbstractReplicatorConfiguration(
+        @Nullable Database db,
         @Nullable Map<Collection, CollectionConfiguration> collections,
         @NonNull Endpoint target) {
         this(
@@ -136,7 +130,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             0,
             0,
             true,
-            getDb(collections));
+            db);
     }
 
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
@@ -220,7 +214,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public final ReplicatorConfiguration addCollection(
         @NonNull Collection collection,
         @Nullable CollectionConfiguration config) {
-        copyCollectionConfig(collection, config);
+        addCollectionConfig(
+            collection,
+            (config == null) ? new CollectionConfiguration() : new CollectionConfiguration(config));
         return getReplicatorConfiguration();
     }
 
@@ -237,6 +233,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public final ReplicatorConfiguration addCollections(
         @NonNull java.util.Collection<Collection> collections,
         @Nullable CollectionConfiguration config) {
+        // Use a single config instance for all of the collections
         if (config == null) { config = new CollectionConfiguration(); }
         for (Collection collection: collections) { addCollectionConfig(collection, config); }
         return getReplicatorConfiguration();
@@ -362,6 +359,59 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
+     * Old setter for replicator type, indicating the direction of the replicator.
+     * The default value is PUSH_AND_PULL which is bi-directional.
+     *
+     * @param replicatorType The replicator type.
+     * @return this.
+     * @deprecated Use setType(AbstractReplicator.ReplicatorType)
+     */
+    @Deprecated
+    @NonNull
+    public final ReplicatorConfiguration setReplicatorType(
+        @NonNull AbstractReplicatorConfiguration.ReplicatorType replicatorType) {
+        final com.couchbase.lite.ReplicatorType type;
+        switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
+            case PUSH_AND_PULL:
+                type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
+                break;
+            case PUSH:
+                type = com.couchbase.lite.ReplicatorType.PUSH;
+                break;
+            case PULL:
+                type = com.couchbase.lite.ReplicatorType.PULL;
+                break;
+            default:
+                throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
+        }
+        return setType(type);
+    }
+
+    /**
+     * Sets the target server's SSL certificate.
+     *
+     * @param pinnedCert the SSL certificate.
+     * @return this.
+     * @deprecated Please use setPinnedServerCertificate(Certificate)
+     */
+    @Deprecated
+    @NonNull
+    public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
+        if (pinnedCert == null) { pinnedServerCertificate = null; }
+        else {
+            try (InputStream is = new ByteArrayInputStream(pinnedCert)) {
+                pinnedServerCertificate
+                    = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
+            }
+            catch (IOException | CertificateException e) {
+                throw new IllegalArgumentException("Argument could not be parsed as an X509 Certificate", e);
+            }
+        }
+
+        return getReplicatorConfiguration();
+    }
+
+    /**
      * Sets a set of document IDs to filter by: if given, only documents
      * with these IDs will be pushed and/or pulled.
      *
@@ -435,59 +485,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
         getDefaultConfig().setPushFilter(pushFilter);
         return getReplicatorConfiguration();
-    }
-
-    /**
-     * Sets the target server's SSL certificate.
-     *
-     * @param pinnedCert the SSL certificate.
-     * @return this.
-     * @deprecated Please use setPinnedServerCertificate(Certificate)
-     */
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
-        if (pinnedCert == null) { pinnedServerCertificate = null; }
-        else {
-            try (InputStream is = new ByteArrayInputStream(pinnedCert)) {
-                pinnedServerCertificate
-                    = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(is);
-            }
-            catch (IOException | CertificateException e) {
-                throw new IllegalArgumentException("Argument could not be parsed as an X509 Certificate", e);
-            }
-        }
-
-        return getReplicatorConfiguration();
-    }
-
-    /**
-     * Old setter for replicator type, indicating the direction of the replicator.
-     * The default value is PUSH_AND_PULL which is bi-directional.
-     *
-     * @param replicatorType The replicator type.
-     * @return this.
-     * @deprecated Use setType(AbstractReplicator.ReplicatorType)
-     */
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setReplicatorType(
-        @NonNull AbstractReplicatorConfiguration.ReplicatorType replicatorType) {
-        final com.couchbase.lite.ReplicatorType type;
-        switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
-            case PUSH_AND_PULL:
-                type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
-                break;
-            case PUSH:
-                type = com.couchbase.lite.ReplicatorType.PUSH;
-                break;
-            case PULL:
-                type = com.couchbase.lite.ReplicatorType.PULL;
-                break;
-            default:
-                throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
-        }
-        return setType(type);
     }
 
     //---------------------------------------------
@@ -577,6 +574,41 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public final int getHeartbeat() { return heartbeat; }
 
     /**
+     * Old getter for Replicator type indicating the direction of the replicator.
+     *
+     * @deprecated Use getType()
+     */
+    @Deprecated
+    @NonNull
+    public final AbstractReplicatorConfiguration.ReplicatorType getReplicatorType() {
+        switch (type) {
+            case PUSH_AND_PULL:
+                return AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
+            case PUSH:
+                return AbstractReplicatorConfiguration.ReplicatorType.PUSH;
+            case PULL:
+                return AbstractReplicatorConfiguration.ReplicatorType.PULL;
+            default:
+                throw new IllegalStateException("Unrecognized replicator type: " + type);
+        }
+    }
+
+    /**
+     * Return the remote target's SSL certificate.
+     *
+     * @deprecated Use getPinnedServerX509Certificate
+     */
+    @SuppressWarnings("PMD.MethodReturnsInternalArray")
+    @Deprecated
+    @Nullable
+    public final byte[] getPinnedServerCertificate() {
+        try { return (pinnedServerCertificate == null) ? null : pinnedServerCertificate.getEncoded(); }
+        catch (CertificateEncodingException e) {
+            throw new IllegalStateException("Unrecognized certificate encoding", e);
+        }
+    }
+
+    /**
      * Return the local database to replicate with the replication target.
      *
      * @deprecated Use Collection.getDatabase
@@ -638,41 +670,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Nullable
     public final ReplicationFilter getPushFilter() { return getDefaultConfig().getPushFilter(); }
 
-    /**
-     * Old getter for Replicator type indicating the direction of the replicator.
-     *
-     * @deprecated Use getType()
-     */
-    @Deprecated
-    @NonNull
-    public final AbstractReplicatorConfiguration.ReplicatorType getReplicatorType() {
-        switch (type) {
-            case PUSH_AND_PULL:
-                return AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
-            case PUSH:
-                return AbstractReplicatorConfiguration.ReplicatorType.PUSH;
-            case PULL:
-                return AbstractReplicatorConfiguration.ReplicatorType.PULL;
-            default:
-                throw new IllegalStateException("Unrecognized replicator type: " + type);
-        }
-    }
-
-    /**
-     * Return the remote target's SSL certificate.
-     *
-     * @deprecated Use getPinnedServerX509Certificate
-     */
-    @SuppressWarnings("PMD.MethodReturnsInternalArray")
-    @Deprecated
-    @Nullable
-    public final byte[] getPinnedServerCertificate() {
-        try { return (pinnedServerCertificate == null) ? null : pinnedServerCertificate.getEncoded(); }
-        catch (CertificateEncodingException e) {
-            throw new IllegalStateException("Unrecognized certificate encoding", e);
-        }
-    }
-
     @SuppressWarnings("PMD.NPathComplexity")
     @NonNull
     @Override
@@ -716,12 +713,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     // Private
     //---------------------------------------------
 
-    private void copyCollectionConfig(@NonNull Collection collection, @Nullable CollectionConfiguration config) {
-        addCollectionConfig(collection, (config == null) ? null : new CollectionConfiguration(config));
-    }
-
-    private void addCollectionConfig(@NonNull Collection collection, @Nullable CollectionConfiguration config) {
-        final Database db = collection.getDatabase();
+    private void addCollectionConfig(@NonNull Collection collection, @NonNull CollectionConfiguration config) {
+        final Database db = Preconditions.assertNotNull(collection, "collection").getDatabase();
         if (database == null) { database = db; }
         else {
             if (!database.equals(db)) {
@@ -733,7 +726,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             }
         }
 
-        addCollectionInternal(collection, (config != null) ? config : new CollectionConfiguration());
+        addCollectionInternal(collection, config);
     }
 
     @NonNull
