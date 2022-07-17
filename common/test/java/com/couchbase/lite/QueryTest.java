@@ -606,9 +606,9 @@ public class QueryTest extends BaseQueryTest {
 
         // Don't replace this with Comparator.naturalOrder.
         // it doesn't exist on older versions of Android
-        //noinspection Convert2MethodRef,ComparatorCombinators
-        testOrdered(order.ascending(), (c1, c2) -> c1.compareTo(c2));
-        testOrdered(order.descending(), String::compareTo);
+        testOrdered(order.ascending(), String::compareTo);
+        //noinspection ComparatorCombinators
+        testOrdered(order.descending(), (c1, c2) -> c2.compareTo(c1));
     }
 
     // https://github.com/couchbase/couchbase-lite-ios/issues/1669
@@ -3292,6 +3292,7 @@ public class QueryTest extends BaseQueryTest {
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(
             QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).orderBy(ordering),
+            false,
             (n, result) -> {
                 String docID = result.getString(0);
                 Document doc = baseTestDb.getDocument(docID);
@@ -3300,11 +3301,12 @@ public class QueryTest extends BaseQueryTest {
                 firstNames.add(firstName);
             });
         assertEquals(100, numRows);
+        assertEquals(100, firstNames.size());
 
         List<String> sorted = new ArrayList<>(firstNames);
         Collections.sort(sorted, cmp);
         String[] array1 = firstNames.toArray(new String[0]);
-        String[] array2 = firstNames.toArray(new String[sorted.size()]);
+        String[] array2 = sorted.toArray(new String[0]);
         assertArrayEquals(array1, array2);
     }
 }
