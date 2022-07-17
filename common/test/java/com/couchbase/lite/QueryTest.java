@@ -338,7 +338,7 @@ public class QueryTest extends BaseQueryTest {
             int numRows = verifyQuery(
                 QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).where(testCase.expr),
                 (n, result) -> {
-                    if (n < testCase.docIds.size()) {
+                    if (n <= testCase.docIds.size()) {
                         assertEquals(testCase.docIds.get(n - 1), result.getString(0));
                     }
                 });
@@ -368,7 +368,7 @@ public class QueryTest extends BaseQueryTest {
             new TestCase(name.isNotValued()),
             new TestCase(name.isValued(), 1, 2),
             new TestCase(address.isNotValued(), 1),
-            new TestCase(address.isNotValued(), 2),
+            new TestCase(address.isValued(), 2),
             new TestCase(age.isNotValued(), 1),
             new TestCase(age.isValued(), 2),
             new TestCase(work.isNotValued(), 1, 2),
@@ -379,7 +379,7 @@ public class QueryTest extends BaseQueryTest {
             int numRows = verifyQuery(
                 QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).where(testCase.expr),
                 (n, result) -> {
-                    if (n < testCase.docIds.size()) {
+                    if (n <= testCase.docIds.size()) {
                         assertEquals(testCase.docIds.get(n - 1), result.getString(0));
                     }
                 });
