@@ -3305,8 +3305,8 @@ public class QueryTest extends BaseQueryTest {
 
         List<String> sorted = new ArrayList<>(firstNames);
         Collections.sort(sorted, cmp);
-        String[] array1 = firstNames.toArray(new String[0]);
-        String[] array2 = sorted.toArray(new String[0]);
+        String[] array1 = sorted.toArray(new String[0]);
+        String[] array2 = firstNames.toArray(new String[0]);
         assertArrayEquals(array1, array2);
     }
 }
