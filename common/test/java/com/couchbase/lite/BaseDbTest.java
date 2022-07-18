@@ -471,8 +471,8 @@ public abstract class BaseDbTest extends BaseTest {
         //#11 array.addFloat(Float.MAX_VALUE);
         assertEquals(Float.valueOf(Float.MAX_VALUE), demoteToFloat(array.getValue(11)));
         assertTrue(array.getBoolean(11));
-        // !!! Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).intValue(), array.getInt(11));
-        // !!! Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).longValue(), array.getLong(11));
+        // ??? Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).intValue(), array.getInt(11));
+        // ??? Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).longValue(), array.getLong(11));
         assertEquals(Float.MAX_VALUE, array.getFloat(11), 100.0F);
         assertEquals((double) Float.MAX_VALUE, demoteToFloat(array.getDouble(11)), 100.0);
         assertEquals(Float.valueOf(Float.MAX_VALUE), demoteToFloat(array.getNumber(11)));
@@ -513,8 +513,8 @@ public abstract class BaseDbTest extends BaseTest {
         //#14 array.addDouble(Double.MAX_VALUE);
         assertEquals(Double.valueOf(Double.MAX_VALUE), array.getValue(14));
         assertTrue(array.getBoolean(14));
-        // !!! Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).intValue(), array.getInt(14));
-        // !!! Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).longValue(), array.getLong(14));
+        // ??? Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).intValue(), array.getInt(14));
+        // ??? Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).longValue(), array.getLong(14));
         assertEquals(Double.valueOf(Double.MAX_VALUE).floatValue(), array.getFloat(14), 100.0F);
         assertEquals(Double.MAX_VALUE, array.getDouble(14), 100.0);
         assertEquals(Double.valueOf(Double.MAX_VALUE), array.getNumber(14));
@@ -954,8 +954,8 @@ public abstract class BaseDbTest extends BaseTest {
         //#11 dict.setFloat(Float.MAX_VALUE);
         assertEquals(Float.valueOf(Float.MAX_VALUE), demoteToFloat(dict.getValue("dict-12")));
         assertTrue(dict.getBoolean("dict-12"));
-        // !!! Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).intValue(), dict.getInt("dict-12"));
-        // !!! Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).longValue(), dict.getLong("dict-12"));
+        // ??? Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).intValue(), dict.getInt("dict-12"));
+        // ??? Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).longValue(), dict.getLong("dict-12"));
         assertEquals(Float.MAX_VALUE, dict.getFloat("dict-12"), 1.0E32);
         assertEquals((double) Float.MAX_VALUE, dict.getDouble("dict-12"), 1.0E32);
         assertEquals(Float.valueOf(Float.MAX_VALUE), demoteToFloat(dict.getNumber("dict-12")));
@@ -996,8 +996,8 @@ public abstract class BaseDbTest extends BaseTest {
         //#14 dict.setDouble(Double.MAX_VALUE);
         assertEquals(Double.valueOf(Double.MAX_VALUE), dict.getValue("dict-15"));
         assertTrue(dict.getBoolean("dict-15"));
-        // !!! Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).intValue(), dict.getInt("dict-15"));
-        // !!! Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).longValue(), dict.getLong("dict-15"));
+        // ??? Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).intValue(), dict.getInt("dict-15"));
+        // ??? Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).longValue(), dict.getLong("dict-15"));
         assertEquals(Double.valueOf(Double.MAX_VALUE).floatValue(), dict.getFloat("dict-15"), 100.0F);
         assertEquals(Double.MAX_VALUE, dict.getDouble("dict-15"), 100.0);
         assertEquals(Double.valueOf(Double.MAX_VALUE), dict.getNumber("dict-15"));
@@ -1390,7 +1390,7 @@ public abstract class BaseDbTest extends BaseTest {
 
         //#7 doc.setLong(Long.MIN_VALUE);
         assertEquals(Long.valueOf(Long.MIN_VALUE), doc.getValue("doc-8"));
-        // !!! Value differs for Documents and Results: assertTrue(doc.getBoolean("doc-8"));
+        // ??? Value differs for Documents and Results: assertTrue(doc.getBoolean("doc-8"));
         assertEquals(Long.valueOf(Long.MIN_VALUE).intValue(), doc.getInt("doc-8"));
         assertEquals(Long.MIN_VALUE, doc.getLong("doc-8"));
         assertEquals((float) Long.MIN_VALUE, doc.getFloat("doc-8"), 0.001F);
@@ -1447,8 +1447,8 @@ public abstract class BaseDbTest extends BaseTest {
         //#11 doc.setFloat(Float.MAX_VALUE);
         assertEquals(Float.valueOf(Float.MAX_VALUE), demoteToFloat(doc.getValue("doc-12")));
         assertTrue(doc.getBoolean("doc-12"));
-        // !!! Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).intValue(), doc.getInt("doc-12"));
-        // !!! Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).longValue(), doc.getLong("doc-12"));
+        // ??? Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).intValue(), doc.getInt("doc-12"));
+        // ??? Fails: assertEquals(Float.valueOf(Float.MAX_VALUE).longValue(), doc.getLong("doc-12"));
         assertEquals(Float.MAX_VALUE, doc.getFloat("doc-12"), 1.0E32);
         assertEquals((double) Float.MAX_VALUE, doc.getDouble("doc-12"), 1.0E32);
         assertEquals(Float.valueOf(Float.MAX_VALUE), demoteToFloat(doc.getNumber("doc-12")));
@@ -1488,8 +1488,8 @@ public abstract class BaseDbTest extends BaseTest {
 
         //#14 doc.setDouble(Double.MAX_VALUE);
         assertEquals(Double.valueOf(Double.MAX_VALUE), doc.getValue("doc-15"));
-        // !!! Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).intValue(), doc.getInt("doc-15"));
-        // !!! Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).longValue(), doc.getLong("doc-15"));
+        // ??? Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).intValue(), doc.getInt("doc-15"));
+        // ??? Fails: assertEquals(Double.valueOf(Double.MAX_VALUE).longValue(), doc.getLong("doc-15"));
         assertEquals(Double.valueOf(Double.MAX_VALUE).floatValue(), doc.getFloat("doc-15"), 100.0F);
         assertEquals(Double.MAX_VALUE, doc.getDouble("doc-15"), 100.0);
         assertEquals(Double.valueOf(Double.MAX_VALUE), doc.getNumber("doc-15"));
@@ -1543,7 +1543,7 @@ public abstract class BaseDbTest extends BaseTest {
 
         //#18 doc.setNumber(Long.MIN_VALUE);
         assertEquals(Long.valueOf(Long.MIN_VALUE), doc.getValue("doc-19"));
-        // !!! Value differs for Documents and Results: assertTrue(doc.getBoolean("doc-19"));
+        // ??? Value differs for Documents and Results: assertTrue(doc.getBoolean("doc-19"));
         assertEquals(Long.valueOf(Long.MIN_VALUE).intValue(), doc.getInt("doc-19"));
         assertEquals(Long.MIN_VALUE, doc.getLong("doc-19"));
         assertEquals((float) Long.MIN_VALUE, doc.getFloat("doc-19"), 0.001F);

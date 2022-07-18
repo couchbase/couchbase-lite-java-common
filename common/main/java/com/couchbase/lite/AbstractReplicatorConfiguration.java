@@ -732,7 +732,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     private CollectionConfiguration getDefaultConfig() {
         return Preconditions.assertNotNull(
-            collectionConfigurations.get(Fn.first(collectionConfigurations.keySet(), Collection::isDefault)),
+            collectionConfigurations.get(Fn.firstOrNull(collectionConfigurations.keySet(), Collection::isDefault)),
             "The default collection");
     }
 }

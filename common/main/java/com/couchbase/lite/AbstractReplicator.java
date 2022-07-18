@@ -223,27 +223,38 @@ public abstract class AbstractReplicator extends BaseReplicator {
     }
 
     /**
-     * Get a best effort list of documents still pending replication.
+     * Get a best effort list of documents in the default collection, that are still pending replication.
      *
-     * @return a set of ids for documents still awaiting replication.
+     * @return a set of ids for documents in the default collection still awaiting replication.
+     * @deprecated Use getPendingDocumentIds(Collection)
      */
+    @Deprecated
     @NonNull
     public Set<String> getPendingDocumentIds() throws CouchbaseLiteException {
-        if (config.getType().equals(ReplicatorType.PULL)) {
-            throw new CouchbaseLiteException(
-                "PullOnlyPendingDocIDs",
-                CBLError.Domain.CBLITE,
-                CBLError.Code.UNSUPPORTED);
-        }
+        return getPendingDocIds(Scope.DEFAULT_NAME, Collection.DEFAULT_NAME);
+    }
 
-        final Set<String> pending;
-        // !!! Must specify the correct collection here
-        try { pending = getOrCreateC4Replicator().getPendingDocIDs(Scope.DEFAULT_NAME, Collection.DEFAULT_NAME); }
-        catch (LiteCoreException e) {
-            throw CouchbaseLiteException.convertException(e, "Failed fetching pending documentIds");
-        }
+    /**
+     * Get a best effort list of documents in the passed collection that are still pending replication.
+     *
+     * @return a set of ids for documents in the passed collection still awaiting replication.
+     */
+    @NonNull
+    public Set<String> getPendingDocumentIds(@NonNull Collection collection) throws CouchbaseLiteException {
+        return getPendingDocIds(collection.getScope().getName(), collection.getName());
+    }
 
-        return Collections.unmodifiableSet(pending);
+    /**
+     * Best effort check to see if the document whose ID is passed is still pending replication.
+     *
+     * @param docId Document id
+     * @return true if the document is pending
+     * @deprecated Use isDocumentPending(String)
+     */
+    @Deprecated
+    public boolean isDocumentPending(@NonNull String docId)
+        throws CouchbaseLiteException {
+        return isDocPending(docId, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME);
     }
 
     /**
@@ -252,21 +263,9 @@ public abstract class AbstractReplicator extends BaseReplicator {
      * @param docId Document id
      * @return true if the document is pending
      */
-    public boolean isDocumentPending(@NonNull String docId) throws CouchbaseLiteException {
-        Preconditions.assertNotNull(docId, "document ID");
-
-        if (config.getType().equals(ReplicatorType.PULL)) {
-            throw new CouchbaseLiteException(
-                "PullOnlyPendingDocIDs",
-                CBLError.Domain.CBLITE,
-                CBLError.Code.UNSUPPORTED);
-        }
-
-        // !!! Must specify the correct collection here
-        try { return getOrCreateC4Replicator().isDocumentPending(docId, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME); }
-        catch (LiteCoreException e) {
-            throw CouchbaseLiteException.convertException(e, "Failed getting document pending status");
-        }
+    public boolean isDocumentPending(@NonNull String docId, @NonNull Collection collection)
+        throws CouchbaseLiteException {
+        return isDocPending(docId, collection.getScope().getName(), collection.getName());
     }
 
     /**
@@ -545,15 +544,69 @@ public abstract class AbstractReplicator extends BaseReplicator {
     //---------------------------------------------
 
     @NonNull
+    private Set<String> getPendingDocIds(@NonNull String scope, @NonNull String coll) throws CouchbaseLiteException {
+        if (config.getType().equals(ReplicatorType.PULL)) {
+            throw new CouchbaseLiteException(
+                "PullOnlyPendingDocIDs",
+                CBLError.Domain.CBLITE,
+                CBLError.Code.UNSUPPORTED);
+        }
+
+        verifyCollection(scope, coll);
+
+        final Set<String> pending;
+        try { pending = getOrCreateC4Replicator().getPendingDocIDs(scope, coll); }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(e, "Failed fetching pending documentIds");
+        }
+
+        return Collections.unmodifiableSet(pending);
+    }
+
+    /**
+     * Best effort check to see if the document whose ID is passed is still pending replication.
+     *
+     * @param docId Document id
+     * @return true if the document is pending
+     */
+    private boolean isDocPending(@NonNull String docId, @NonNull String scope, @NonNull String coll)
+        throws CouchbaseLiteException {
+        Preconditions.assertNotNull(docId, "document ID");
+
+        if (config.getType().equals(ReplicatorType.PULL)) {
+            throw new CouchbaseLiteException(
+                "PullOnlyPendingDocIDs",
+                CBLError.Domain.CBLITE,
+                CBLError.Code.UNSUPPORTED);
+        }
+
+        verifyCollection(scope, coll);
+
+        try { return getOrCreateC4Replicator().isDocumentPending(docId, scope, coll); }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(e, "Failed getting document pending status");
+        }
+    }
+
+    private void verifyCollection(String scope, String name) {
+        if (null == Fn.firstOrNull(
+            config.getCollectionConfigs().keySet(),
+            (coll) -> scope.equals(coll.getScope().getName()) && name.equals((coll.getName()))
+        )) {
+            throw new IllegalArgumentException(
+                "This replicator is not replicating the collection " + scope + "." + name);
+        }
+    }
+
+    @NonNull
     private C4Replicator getOrCreateC4Replicator() {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
         synchronized (getDatabase().getDbLock()) {
             C4Replicator c4Repl = getC4Replicator();
 
             if (c4Repl != null) {
-                // !!! Does this work with Collections?
                 c4Repl.setOptions(FLEncoder.encodeMap(config.getConnectionOptions()));
-                // !!! This is probably a bug.  SetOptions should not clear the progress level
+                // ??? This may be a bug.  Why should setOptions clear the progress level
                 synchronized (getReplicatorLock()) { setProgressLevel(); }
                 return c4Repl;
             }

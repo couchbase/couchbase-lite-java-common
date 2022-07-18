@@ -20,13 +20,13 @@ import androidx.annotation.Nullable;
 
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.couchbase.lite.Authenticator;
 import com.couchbase.lite.Collection;
 import com.couchbase.lite.CollectionConfiguration;
-import com.couchbase.lite.ConflictResolver;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Endpoint;
 import com.couchbase.lite.LogDomain;
@@ -75,14 +75,14 @@ public class BaseImmutableReplicatorConfiguration {
     // Constructors
     //-------------------------------------------------------------------------
 
-    // The management of CollectionConfigurations is a bit subtle:
-    // Although they are mutable, an AbstractReplicatorConfiguration holds
-    // the only reference to its copies (they are copied in and copied out)
-    // They are, therefore, effectively immutable
     protected BaseImmutableReplicatorConfiguration(@NonNull ReplicatorConfiguration config) {
-        this.configs = config.getCollectionConfigurations();
-        this.target = config.getTarget();
-        this.type = config.getType();
+        final Map<Collection, CollectionConfiguration> collectionConfigs = config.getCollectionConfigurations();
+        if (collectionConfigs.isEmpty()) {
+            throw new IllegalArgumentException("Attempt to configure a replicator with no source collections");
+        }
+        this.configs = Collections.unmodifiableMap(new HashMap<>(collectionConfigs));
+        this.target = Preconditions.assertNotNull(config.getTarget(), "replication target");
+        this.type = Preconditions.assertNotNull(config.getType(), "replicator type");
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
         this.headers = config.getHeaders();
@@ -91,25 +91,12 @@ public class BaseImmutableReplicatorConfiguration {
         this.maxAttemptWaitTime = config.getMaxAttemptWaitTime();
         this.heartbeat = config.getHeartbeat();
         this.enableAutoPurge = config.isAutoPurgeEnabled();
-        this.database = config.getDatabase();
-
-        if ((configs == null) || (configs.isEmpty())) {
-            throw new IllegalArgumentException("Attempt to configure a replicator with no collections");
-        }
-        Preconditions.assertNotNull(target, "replication target");
-        Preconditions.assertNotNull(type, "replicator type");
-        Preconditions.assertNotNull(database, "replications source database");
+        this.database = Preconditions.assertNotNull(config.getDatabase(), "replications source database");
     }
 
     //-------------------------------------------------------------------------
     // Properties
     //-------------------------------------------------------------------------
-
-    // !!! Temporary hack!
-    @Nullable
-    public ConflictResolver getDefaultConflictResolver() {
-        return configs.values().iterator().next().getConflictResolver();
-    }
 
     @NonNull
     public final Map<Collection, CollectionConfiguration> getCollectionConfigs() { return configs; }

@@ -93,7 +93,7 @@ public interface Fn {
     }
 
     @Nullable
-    static <T> T first(@NonNull Collection<? extends T> c, @NonNull Predicate<T> pred) {
+    static <T> T firstOrNull(@NonNull Collection<? extends T> c, @NonNull Predicate<T> pred) {
         for (T e: c) {
             if (pred.test(e)) { return e; }
         }
