@@ -31,11 +31,11 @@ val CollectionConfigurationFactory: CollectionConfiguration? = null
  * @see com.couchbase.lite.CollectionConfiguration
  */
 fun CollectionConfiguration?.create(
-    channels: List<String>?,
-    documentIDs: List<String>?,
-    pullFilter: ReplicationFilter?,
-    pushFilter: ReplicationFilter?,
-    conflictResolver: ConflictResolver?
+    channels: List<String>? = null,
+    documentIDs: List<String>? = null,
+    pullFilter: ReplicationFilter? = null,
+    pushFilter: ReplicationFilter? = null,
+    conflictResolver: ConflictResolver? = null
 ): CollectionConfiguration {
     return CollectionConfiguration(
         channels ?: this?.channels,
@@ -68,10 +68,10 @@ fun FullTextIndexConfiguration?.create(
     language: String? = null,
     ignoreAccents: Boolean? = null
 ) = FullTextIndexConfiguration(
-    language ?: this?.language ?: Locale.getDefault().getLanguage(),
-    ignoreAccents ?: this?.isIgnoringAccents() ?: false,
-    if (!expressions.isEmpty()) expressions.asList() else this?.expressions
-        ?: error("Must specify an expression")
+    language ?: this?.language ?: Locale.getDefault().language,
+    ignoreAccents ?: this?.isIgnoringAccents ?: false,
+    if (expressions.isNotEmpty()) expressions.asList() else this?.expressions
+        ?: throw IllegalArgumentException("Must specify an expression")
 )
 
 /**
@@ -94,8 +94,8 @@ val ValueIndexConfigurationFactory: ValueIndexConfiguration? = null
 fun ValueIndexConfiguration?.create(
     vararg expressions: String = emptyArray()
 ) = ValueIndexConfiguration(
-    if (!expressions.isEmpty()) expressions.asList() else this?.expressions
-        ?: error("Must specify an expression")
+    if (expressions.isNotEmpty()) expressions.asList() else this?.expressions
+        ?: throw IllegalArgumentException("Must specify an expression")
 )
 
 /**
