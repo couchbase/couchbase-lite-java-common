@@ -124,7 +124,7 @@ fun LogFileConfiguration?.create(
     maxRotateCount: Int? = null,
     usePlainText: Boolean? = null
 ) = LogFileConfiguration(
-    directory ?: this?.directory ?: error("Must specify a db directory"),
+    directory ?: this?.directory ?: throw IllegalArgumentException("Must specify a db directory"),
     maxSize ?: this?.maxSize,
     maxRotateCount ?: this?.maxRotateCount,
     usePlainText ?: this?.usesPlaintext(),

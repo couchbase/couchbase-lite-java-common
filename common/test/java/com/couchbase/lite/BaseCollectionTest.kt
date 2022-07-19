@@ -39,7 +39,7 @@ open class BaseCollectionTest : BaseDbTest() {
 
     @After
     fun tearDownBaseCollectionTest() {
-        val collectionName = if (testCollection == null) Collection.DEFAULT_NAME else testCollection!!.name
+        val collectionName = testCollection.name
         // don't delete the default collection
         if (Collection.DEFAULT_NAME != collectionName) {
             baseTestDb.deleteCollection(collectionName)
@@ -49,19 +49,19 @@ open class BaseCollectionTest : BaseDbTest() {
 
     @Throws(CouchbaseLiteException::class)
     protected fun createSingleDocInCollectionWithId(docID: String?): Document {
-        val n = testCollection!!.count
+        val n = testCollection.count
         val doc = MutableDocument(docID)
         doc.setValue("key", 1)
         val savedDoc = saveDocInBaseCollectionTest(doc)
-        Assert.assertEquals(n + 1, testCollection!!.count)
+        Assert.assertEquals(n + 1, testCollection.count)
         Assert.assertEquals(1, savedDoc.sequence)
         return savedDoc
     }
 
     @Throws(CouchbaseLiteException::class)
     protected fun saveDocInBaseCollectionTest(doc: MutableDocument): Document {
-        testCollection!!.save(doc)
-        val savedDoc = testCollection!!.getDocument(doc.id)
+        testCollection.save(doc)
+        val savedDoc = testCollection.getDocument(doc.id)
         Assert.assertNotNull(savedDoc)
         Assert.assertEquals(doc.id, savedDoc!!.id)
         return savedDoc
@@ -74,7 +74,7 @@ open class BaseCollectionTest : BaseDbTest() {
             doc.setValue("key", i)
             saveDocInBaseCollectionTest(doc)
         }
-        Assert.assertEquals(n.toLong(), testCollection!!.count)
+        Assert.assertEquals(n.toLong(), testCollection.count)
     }
 }
 
