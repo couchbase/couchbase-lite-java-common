@@ -81,9 +81,20 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         }
 
         final Map<Collection, CollectionConfiguration> collections = new HashMap<>();
-
         collections.put(defaultCollection, new CollectionConfiguration());
+
         return collections;
+    }
+
+    @Nullable
+    private static Map<Collection, CollectionConfiguration> copyConfigs(
+        @Nullable Map<Collection, CollectionConfiguration> configs) {
+        if (configs == null) { return null; }
+        final Map<Collection, CollectionConfiguration> configsCopy = new HashMap<>();
+        for (Map.Entry<Collection, CollectionConfiguration> config: configs.entrySet()) {
+            configsCopy.put(config.getKey(), new CollectionConfiguration(config.getValue()));
+        }
+        return configsCopy;
     }
 
     //---------------------------------------------
@@ -183,7 +194,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         int heartbeat,
         boolean enableAutoPurge,
         @Nullable Database database) {
-        super(collections);
+        super(copyConfigs(collections));
         this.target = target;
         this.type = type;
         this.continuous = continuous;
@@ -628,7 +639,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     @Deprecated
     @Nullable
-    public final List<String> getDocumentIDs() { return getDefaultConfig().getDocumentIDs(); }
+    public final List<String> getDocumentIDs() {
+        final List<String> docIds = getDefaultConfig().getDocumentIDs();
+        return (docIds == null) ? null : new ArrayList<>(docIds);
+    }
 
     /**
      * A set of Sync Gateway channel names to pull from. Ignored for push replication.
@@ -639,7 +653,10 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     @Deprecated
     @Nullable
-    public final List<String> getChannels() { return getDefaultConfig().getChannels(); }
+    public final List<String> getChannels() {
+        final List<String> channels = getDefaultConfig().getChannels();
+        return (channels == null) ? null : new ArrayList<>(channels);
+    }
 
     /**
      * Return the conflict resolver.

@@ -34,7 +34,6 @@ public class BaseReplicatorConfiguration {
     @NonNull
     protected final Map<Collection, CollectionConfiguration> collectionConfigurations;
 
-    // Contract: caller must provide a safe collection
     protected BaseReplicatorConfiguration(@Nullable Map<Collection, CollectionConfiguration> configs) {
         internalCollectionConfigurations = (configs != null) ? configs : new HashMap<>();
         collectionConfigurations = Collections.unmodifiableMap(internalCollectionConfigurations);
