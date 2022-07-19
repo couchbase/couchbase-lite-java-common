@@ -61,7 +61,7 @@ public final class URLEndpoint implements Endpoint {
         }
 
         final String userInfo = url.getUserInfo();
-        if (userInfo != null && userInfo.split(":").length == 2) {
+        if ((userInfo != null) && userInfo.split(":").length == 2) {
             throw new IllegalArgumentException(Log.lookupStandardMessage("InvalidEmbeddedCredentialsInURL"));
         }
 

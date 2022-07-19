@@ -21,7 +21,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+
 public class ErrorCaseTest extends BaseDbTest {
+    static class CustomClass {
+        public String text = "custom";
+    }
+
     // -- DatabaseTest
 
     @Test
@@ -51,7 +56,8 @@ public class ErrorCaseTest extends BaseDbTest {
         try {
             baseTestDb.delete(doc);
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             if (e.getCode() != CBLError.Code.NOT_FOUND) { fail(); }
         }
         assertEquals("Scott Tiger", doc.getValue("name"));
@@ -90,7 +96,8 @@ public class ErrorCaseTest extends BaseDbTest {
         try {
             baseTestDb.delete(saved);
             fail();
-        } catch (CouchbaseLiteException e) {
+        }
+        catch (CouchbaseLiteException e) {
             if (e.getCode() != CBLError.Code.NOT_FOUND) { fail(); }
         }
     }
@@ -141,30 +148,15 @@ public class ErrorCaseTest extends BaseDbTest {
 
     // -- ArrayTest
 
-    static class CustomClass {
-        public String text = "custom";
-    }
-
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testAddValueUnExpectedObject() {
-        MutableArray mArray = new MutableArray();
-        try {
-            mArray.addValue(new CustomClass());
-            fail();
-        } catch (IllegalArgumentException ex) {
-            // ok!!
-        }
+        new MutableArray().addValue(new CustomClass());
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testSetValueUnExpectedObject() {
         MutableArray mArray = new MutableArray();
         mArray.addValue(0);
-        try {
-            mArray.setValue(0, new CustomClass());
-            fail();
-        } catch (IllegalArgumentException ex) {
-            // ok!!
-        }
+        mArray.setValue(0, new CustomClass());
     }
 }

@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Report;
@@ -99,33 +98,34 @@ public class QueryTest extends BaseQueryTest {
             + "                `13`,`14`,`15`,`16`,`17`,`18`,`19`,`20`,`21`,`22`,`23`,`24`,\n"
             + "                `25`,`26`,`27`,`28`,`29`,`30`,`31`,`32`, `key` from _ limit 1";
 
-        Query queryBuild = QueryBuilder.createQuery(query,baseTestDb);
+        Query queryBuild = QueryBuilder.createQuery(query, baseTestDb);
         Result result;
 
         //expected results
         String key = "key";
         String value = "value";
 
-        List<String> arrayResult = new ArrayList();
-        for (int i = 0; i < 32; i++){
+        List<String> arrayResult = new ArrayList<>();
+        for (int i = 0; i < 32; i++) {
             arrayResult.add(null);
         }
         arrayResult.add(value);
 
-        Map<String,String> mapResult = new HashMap();
-        mapResult.put(key,value);
+        Map<String, String> mapResult = new HashMap<>();
+        mapResult.put(key, value);
 
         try (ResultSet rs = queryBuild.execute()) {
             while ((result = rs.next()) != null) {
                 assertEquals("{\"key\":\"value\"}", result.toJSON());
                 assertEquals(arrayResult, result.toList());
                 assertEquals(mapResult, result.toMap());
-                assertEquals(value,result.getValue("key").toString());
+                assertEquals(value, result.getValue("key").toString());
                 assertEquals(value, result.getString("key"));
                 assertEquals(value, result.getString(32));
             }
         }
     }
+
     @Test
     public void testQueryDocumentExpiration() throws CouchbaseLiteException, InterruptedException {
         long now = System.currentTimeMillis();
@@ -338,7 +338,7 @@ public class QueryTest extends BaseQueryTest {
             int numRows = verifyQuery(
                 QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).where(testCase.expr),
                 (n, result) -> {
-                    if (n < testCase.docIds.size()) {
+                    if (n <= testCase.docIds.size()) {
                         assertEquals(testCase.docIds.get(n - 1), result.getString(0));
                     }
                 });
@@ -368,7 +368,7 @@ public class QueryTest extends BaseQueryTest {
             new TestCase(name.isNotValued()),
             new TestCase(name.isValued(), 1, 2),
             new TestCase(address.isNotValued(), 1),
-            new TestCase(address.isNotValued(), 2),
+            new TestCase(address.isValued(), 2),
             new TestCase(age.isNotValued(), 1),
             new TestCase(age.isValued(), 2),
             new TestCase(work.isNotValued(), 1, 2),
@@ -379,7 +379,7 @@ public class QueryTest extends BaseQueryTest {
             int numRows = verifyQuery(
                 QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).where(testCase.expr),
                 (n, result) -> {
-                    if (n < testCase.docIds.size()) {
+                    if (n <= testCase.docIds.size()) {
                         assertEquals(testCase.docIds.get(n - 1), result.getString(0));
                     }
                 });
@@ -606,9 +606,9 @@ public class QueryTest extends BaseQueryTest {
 
         // Don't replace this with Comparator.naturalOrder.
         // it doesn't exist on older versions of Android
-        //noinspection Convert2MethodRef,ComparatorCombinators
-        testOrdered(order.ascending(), (c1, c2) -> c1.compareTo(c2));
-        testOrdered(order.descending(), String::compareTo);
+        testOrdered(order.ascending(), String::compareTo);
+        //noinspection ComparatorCombinators
+        testOrdered(order.descending(), (c1, c2) -> c2.compareTo(c1));
     }
 
     // https://github.com/couchbase/couchbase-lite-ios/issues/1669
@@ -3159,8 +3159,6 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testN1QLSelectStarFromDefault() throws CouchbaseLiteException {
         loadNumberedDocs(100);
-        final String dbName = baseTestDb.getName();
-
         int numRows = verifyQuery(
             baseTestDb.createQuery("SELECT * FROM _default"),
             (n, result) -> {
@@ -3199,7 +3197,6 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testN1QLSelectStarFromUnderscore() throws CouchbaseLiteException {
         loadNumberedDocs(100);
-        final String dbName = baseTestDb.getName();
         int numRows = verifyQuery(
             baseTestDb.createQuery("SELECT * FROM _"),
             (n, result) -> {
@@ -3273,13 +3270,6 @@ public class QueryTest extends BaseQueryTest {
         return df.format(date).replace(".000", "");
     }
 
-    private String toLocal(long timestamp) {
-        TimeZone tz = TimeZone.getDefault();
-        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-        df.setTimeZone(tz);
-        return df.format(new Date(timestamp)).replace(".000", "");
-    }
-
     private Document createTaskDocument(String title, boolean complete) throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument();
         doc.setString("type", "task");
@@ -3292,6 +3282,7 @@ public class QueryTest extends BaseQueryTest {
         final List<String> firstNames = new ArrayList<>();
         int numRows = verifyQuery(
             QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).orderBy(ordering),
+            false,
             (n, result) -> {
                 String docID = result.getString(0);
                 Document doc = baseTestDb.getDocument(docID);
@@ -3300,11 +3291,10 @@ public class QueryTest extends BaseQueryTest {
                 firstNames.add(firstName);
             });
         assertEquals(100, numRows);
+        assertEquals(100, firstNames.size());
 
         List<String> sorted = new ArrayList<>(firstNames);
         Collections.sort(sorted, cmp);
-        String[] array1 = firstNames.toArray(new String[0]);
-        String[] array2 = firstNames.toArray(new String[sorted.size()]);
-        assertArrayEquals(array1, array2);
+        assertArrayEquals(sorted.toArray(new String[0]), firstNames.toArray(new String[0]));
     }
 }

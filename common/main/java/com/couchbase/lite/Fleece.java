@@ -36,7 +36,7 @@ final class Fleece {
     private Fleece() {}
 
     private static final String SUPPORTED_TYPES
-        = "MutableDictionary, Dictionary, MutableArray, Array, Map, List, Date, String, Number, Boolean, Blob or null";
+        = "MutableDictionary, Dictionary, MutableArray, Array, Map, List, Date, String, Number, Boolean, null";
 
     // Assume that array and dict values are always different to avoid expensive comparisons.
     static boolean willMutate(Object newValue, @NonNull MValue oldValue, MCollection container) {
@@ -71,7 +71,7 @@ final class Fleece {
 
         throw new IllegalArgumentException(
             Log.formatStandardMessage(
-                "InvalidValueToBeDeserialized",
+                "InvalidCouchbaseObjType",
                 value.getClass().getSimpleName(),
                 SUPPORTED_TYPES));
     }
