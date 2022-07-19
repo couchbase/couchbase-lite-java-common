@@ -64,10 +64,10 @@ public class FullTextIndex extends Index {
 
     @Nullable
     @Override
-    String getLanguage() { return language; }
+    public String getLanguage() { return language; }
 
     @Override
-    boolean isIgnoringAccents() { return ignoreDiacritics; }
+    public boolean isIgnoringAccents() { return ignoreDiacritics; }
 
     @NonNull
     @Override

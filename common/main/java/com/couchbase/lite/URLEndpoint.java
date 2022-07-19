@@ -60,8 +60,7 @@ public final class URLEndpoint implements Endpoint {
             throw new IllegalArgumentException(Log.formatStandardMessage("InvalidSchemeURLEndpoint", url.toString()));
         }
 
-        final String userInfo = url.getUserInfo();
-        if ((userInfo != null) && userInfo.split(":").length == 2) {
+        if (url.getUserInfo() != null) {
             throw new IllegalArgumentException(Log.lookupStandardMessage("InvalidEmbeddedCredentialsInURL"));
         }
 
