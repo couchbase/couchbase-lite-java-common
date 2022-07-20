@@ -17,6 +17,7 @@ package com.couchbase.lite.internal.core;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,14 +120,14 @@ public class C4QueryTest extends C4QueryBaseTest {
         params = new HashMap<>();
         params.put("offset", 0);
         params.put("limit", 4);
-        assertEquals(Arrays.asList(), run(params));
+        assertEquals(Collections.emptyList(), run(params));
     }
 
     // - DB Query LIKE
     @Test
     public void testDBQueryLIKE() throws LiteCoreException {
         compile(json5("['LIKE', ['.name.first'], '%j%']"));
-        assertEquals(Arrays.asList("0000085"), run());
+        assertEquals(Collections.singletonList("0000085"), run());
 
         compile(json5("['LIKE', ['.name.first'], '%J%']"));
         assertEquals(
@@ -204,7 +205,7 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         // Changing the op to ANY AND EVERY returns no results
         compile(json5("['ANY AND EVERY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'taxes']]"));
-        assertEquals(Arrays.asList(), run());
+        assertEquals(Collections.emptyList(), run());
 
         // Look for people where every like contains an L:
         compile(json5("['ANY AND EVERY', 'like', ['.', 'likes'], ['LIKE', ['?', 'like'], '%l%']]"));
@@ -218,7 +219,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQueryANYofDict() throws LiteCoreException {
         compile(json5("['ANY', 'n', ['.', 'name'], ['=', ['?', 'n'], 'Arturo']]"));
-        assertEquals(Arrays.asList("0000090"), run());
+        assertEquals(Collections.singletonList("0000090"), run());
 
         compile(json5("['ANY', 'n', ['.', 'name'], ['contains()', ['?', 'n'], 'V']]"));
         assertEquals(Arrays.asList("0000044", "0000048", "0000053", "0000093"), run());
@@ -281,7 +282,7 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         // Now run a query that would have returned the deleted doc, if it weren't deleted:
         compile(json5("['=', ['length()', ['.name.first']], 9]"));
-        assertEquals(Arrays.asList("0000099"), run());
+        assertEquals(Collections.singletonList("0000099"), run());
     }
 
     // - Missing columns
@@ -314,11 +315,11 @@ public class C4QueryTest extends C4QueryBaseTest {
         compile(json5("['MATCH()', 'byStreet', 'Hwy']"));
         assertEquals(
             Arrays.asList(
-                Arrays.asList(Arrays.asList(13L, 0L, 0L, 10L, 3L)),
-                Arrays.asList(Arrays.asList(15L, 0L, 0L, 11L, 3L)),
-                Arrays.asList(Arrays.asList(43L, 0L, 0L, 12L, 3L)),
-                Arrays.asList(Arrays.asList(44L, 0L, 0L, 12L, 3L)),
-                Arrays.asList(Arrays.asList(52L, 0L, 0L, 11L, 3L))
+                Collections.singletonList(new C4FullTextMatch(13L, 0L, 0L, 10L, 3L)),
+                Collections.singletonList(new C4FullTextMatch(15L, 0L, 0L, 11L, 3L)),
+                Collections.singletonList(new C4FullTextMatch(43L, 0L, 0L, 12L, 3L)),
+                Collections.singletonList(new C4FullTextMatch(44L, 0L, 0L, 12L, 3L)),
+                Collections.singletonList(new C4FullTextMatch(52L, 0L, 0L, 11L, 3L))
             ),
             runFTS());
     }
@@ -338,10 +339,10 @@ public class C4QueryTest extends C4QueryBaseTest {
         compile(json5("['MATCH()', 'byAddress', 'Santa']"));
         assertEquals(
             Arrays.asList(
-                Arrays.asList(Arrays.asList(15L, 1L, 0L, 0L, 5L)),
-                Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
-                Arrays.asList(Arrays.asList(68L, 0L, 0L, 3L, 5L)),
-                Arrays.asList(Arrays.asList(72L, 1L, 0L, 0L, 5L))
+                Collections.singletonList(new C4FullTextMatch(15L, 1L, 0L, 0L, 5L)),
+                Collections.singletonList(new C4FullTextMatch(44L, 0L, 0L, 3L, 5L)),
+                Collections.singletonList(new C4FullTextMatch(68L, 0L, 0L, 3L, 5L)),
+                Collections.singletonList(new C4FullTextMatch(72L, 1L, 0L, 0L, 5L))
             ),
             runFTS());
 
@@ -349,18 +350,18 @@ public class C4QueryTest extends C4QueryBaseTest {
         compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa']"));
         assertEquals(
             Arrays.asList(
-                Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
-                Arrays.asList(Arrays.asList(68L, 0L, 0L, 3L, 5L))
+                Collections.singletonList(new C4FullTextMatch(44L, 0L, 0L, 3L, 5L)),
+                Collections.singletonList(new C4FullTextMatch(68L, 0L, 0L, 3L, 5L))
             ),
             runFTS());
 
         // Search for 'Santa' in the street name, and 'Saint' in either:
         compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa Saint']"));
         assertEquals(
-            Arrays.asList(
+            Collections.singletonList(
                 Arrays.asList(
-                    Arrays.asList(68L, 0L, 0L, 3L, 5L),
-                    Arrays.asList(68L, 1L, 1L, 0L, 5L))
+                    new C4FullTextMatch(68L, 0L, 0L, 3L, 5L),
+                    new C4FullTextMatch(68L, 1L, 1L, 0L, 5L))
             ),
             runFTS());
 
@@ -368,12 +369,12 @@ public class C4QueryTest extends C4QueryBaseTest {
         compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa OR Saint']"));
         assertEquals(
             Arrays.asList(
-                Arrays.asList(Arrays.asList(20L, 1L, 1L, 0L, 5L)),
-                Arrays.asList(Arrays.asList(44L, 0L, 0L, 3L, 5L)),
+                Collections.singletonList(new C4FullTextMatch(20L, 1L, 1L, 0L, 5L)),
+                Collections.singletonList(new C4FullTextMatch(44L, 0L, 0L, 3L, 5L)),
                 Arrays.asList(
-                    Arrays.asList(68L, 0L, 0L, 3L, 5L),
-                    Arrays.asList(68L, 1L, 1L, 0L, 5L)),
-                Arrays.asList(Arrays.asList(77L, 1L, 1L, 0L, 5L))
+                    new C4FullTextMatch(68L, 0L, 0L, 3L, 5L),
+                    new C4FullTextMatch(68L, 1L, 1L, 0L, 5L)),
+                Collections.singletonList(new C4FullTextMatch(77L, 1L, 1L, 0L, 5L))
             ),
             runFTS());
     }
@@ -397,8 +398,10 @@ public class C4QueryTest extends C4QueryBaseTest {
             null,
             true);
         compile(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]"));
-        assertEquals(Arrays.asList("0000015"), run());
-        assertEquals(Arrays.asList(Arrays.asList(Arrays.asList(15L, 0L, 0L, 11L, 3L))), runFTS());
+        assertEquals(Collections.singletonList("0000015"), run());
+        assertEquals(
+            Collections.singletonList(Collections.singletonList(new C4FullTextMatch(15L, 0L, 0L, 11L, 3L))),
+            runFTS());
     }
 
     // - Full-text query in multiple ANDs
@@ -420,8 +423,10 @@ public class C4QueryTest extends C4QueryBaseTest {
             true);
         compile(json5(
             "['AND',['AND',['=',['.gender'],'male'],['MATCH()','byCity','Santa']],['=',['.name.first'],'Cleveland']]"));
-        assertEquals(Arrays.asList("0000015"), run());
-        assertEquals(Arrays.asList(Arrays.asList(Arrays.asList(15L, 0L, 0L, 0L, 5L))), runFTS());
+        assertEquals(Collections.singletonList("0000015"), run());
+        assertEquals(
+            Collections.singletonList(Collections.singletonList(new C4FullTextMatch(15L, 0L, 0L, 0L, 5L))),
+            runFTS());
     }
 
     // - Multiple Full-text queries

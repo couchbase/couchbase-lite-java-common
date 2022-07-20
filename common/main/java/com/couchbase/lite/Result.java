@@ -475,11 +475,6 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
             enc.endDict();
             return enc.finishJSON();
         }
-        catch (LiteCoreException e) {
-            throw new IllegalStateException(
-                "Failed marshalling Document to JSON",
-                CouchbaseLiteException.convertException(e));
-        }
     }
 
     /**

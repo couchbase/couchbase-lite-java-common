@@ -190,7 +190,9 @@ public class C4Collection extends C4NativePeer {
         return withPeerOrDefault(0L, peer -> impl.nGetDocExpiration(peer, docID));
     }
 
-    public void purgeDocument(String docID) throws LiteCoreException { impl.nPurgeDoc(getPeer(), docID); }
+    public void purgeDocument(String docID) throws LiteCoreException {
+        withPeerThrows(peer -> impl.nPurgeDoc(peer, docID));
+    }
 
     // - Queries
 
@@ -208,12 +210,16 @@ public class C4Collection extends C4NativePeer {
 
     @NonNull
     public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) {
-        return C4CollectionObserver.newObserver(getPeer(), listener);
+        return Preconditions.assertNotNull(
+            withPeerOrNull(peer -> C4CollectionObserver.newObserver(peer, listener)),
+            "collection observer");
     }
 
     @NonNull
     public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
-        return C4DocumentObserver.newObserver(getPeer(), docID, listener);
+        return Preconditions.assertNotNull(
+            withPeerOrNull(peer -> C4DocumentObserver.newObserver(peer, docID, listener)),
+            "document observer");
     }
 
     // - Indexes

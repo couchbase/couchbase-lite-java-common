@@ -93,12 +93,13 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testAddNullChangeListener() throws Exception {
-        testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true)).addChangeListener(null);
+        ListenerToken token = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true))
+            .addChangeListener(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullChangeListenerWithExecutor() throws Exception {
-        testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true))
+        ListenerToken token = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true))
             .addChangeListener(testSerialExecutor, null);
     }
 }

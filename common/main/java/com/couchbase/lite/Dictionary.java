@@ -301,11 +301,6 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
             internalDict.encodeTo(encoder);
             return encoder.finishJSON();
         }
-        catch (LiteCoreException e) {
-            throw new IllegalStateException(
-                "Failed marshalling Dictionary to JSON",
-                CouchbaseLiteException.convertException(e));
-        }
     }
 
     /**

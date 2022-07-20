@@ -15,10 +15,9 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-
 import androidx.annotation.NonNull;
 
-import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public final class JSONEncoder extends FLEncoder.ManagedFLEncoder {
@@ -26,20 +25,24 @@ public final class JSONEncoder extends FLEncoder.ManagedFLEncoder {
     public JSONEncoder() { super(newJSONEncoder()); }
 
     @NonNull
-    public String finishJSON() throws LiteCoreException { return finishJSON(getPeer()); }
+    public String finishJSON() {
+        return Preconditions.assertNotNull(
+            withPeerOrNull(JSONEncoder::finishJSON),
+            "json");
+    }
 
     @NonNull
-    public byte[] finish() throws LiteCoreException {
+    public byte[] finish() {
         throw new UnsupportedOperationException("finish not supported for JSONEncoders");
     }
 
     @NonNull
-    public FLSliceResult finish2() throws LiteCoreException {
+    public FLSliceResult finish2() {
         throw new UnsupportedOperationException("finish2 not supported for JSONEncoders");
     }
 
     @NonNull
-    public FLSliceResult finish2Unmanaged() throws LiteCoreException {
+    public FLSliceResult finish2Unmanaged() {
         throw new UnsupportedOperationException("finish2Unmanaged not supported for JSONEncoders");
     }
 

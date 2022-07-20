@@ -627,9 +627,9 @@ public abstract class C4Replicator extends C4NativePeer {
     // Instance Methods
     //-------------------------------------------------------------------------
 
-    public void start(boolean restart) { impl.nStart(getPeer(), restart); }
+    public void start(boolean restart) { withPeerThrows(peer -> impl.nStart(peer, restart)); }
 
-    public void stop() { impl.nStop(getPeer()); }
+    public void stop() { withPeerThrows(impl::nStop); }
 
     @CallSuper
     @Override
@@ -638,28 +638,30 @@ public abstract class C4Replicator extends C4NativePeer {
         closePeer(null);
     }
 
-    public void setOptions(@Nullable byte[] options) { impl.nSetOptions(getPeer(), options); }
+    public void setOptions(@Nullable byte[] options) { withPeerThrows(peer -> impl.nSetOptions(peer, options)); }
 
     @Nullable
-    public C4ReplicatorStatus getStatus() { return impl.nGetStatus(getPeer()); }
+    public C4ReplicatorStatus getStatus() { return withPeerOrNull(impl::nGetStatus); }
 
     public boolean isDocumentPending(@NonNull String docId, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException {
-        return impl.nIsDocumentPending(getPeer(), docId, scope, collection);
+        return withPeerOrDefault(false, peer -> impl.nIsDocumentPending(peer, docId, scope, collection));
     }
 
     @NonNull
     public Set<String> getPendingDocIDs(@NonNull String scope, @NonNull String collection) throws LiteCoreException {
-        try (FLSliceResult result
-                 = FLSliceResult.getManagedSliceResult(impl.nGetPendingDocIds(getPeer(), scope, collection))) {
+        final long ids = withPeerOrDefault(0L, peer -> impl.nGetPendingDocIds(peer, scope, collection));
+        try (FLSliceResult result = FLSliceResult.getManagedSliceResult(ids)) {
             final FLValue slice = FLValue.fromData(result);
             return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray());
         }
     }
 
-    public void setProgressLevel(int level) throws LiteCoreException { impl.nSetProgressLevel(getPeer(), level); }
+    public void setProgressLevel(int level) throws LiteCoreException {
+        withPeerThrows(peer -> impl.nSetProgressLevel(peer, level));
+    }
 
-    public void setHostReachable(boolean reachable) { impl.nSetHostReachable(getPeer(), reachable); }
+    public void setHostReachable(boolean reachable) { withPeerThrows(peer -> impl.nSetHostReachable(peer, reachable)); }
 
     protected abstract void releaseResources();
 

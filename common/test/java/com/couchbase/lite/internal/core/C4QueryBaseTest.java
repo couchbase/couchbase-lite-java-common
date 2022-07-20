@@ -95,8 +95,8 @@ public class C4QueryBaseTest extends C4BaseTest {
         try (FLSliceResult params = FLSliceResult.getManagedSliceResult()) { return query.run(opts, params); }
     }
 
-    protected final List<List<List<Long>>> runFTS() throws LiteCoreException {
-        final List<List<List<Long>>> matches = new ArrayList<>();
+    protected final List<List<C4FullTextMatch>> runFTS() throws LiteCoreException {
+        final List<List<C4FullTextMatch>> matches = new ArrayList<>();
         final C4QueryOptions opts = new C4QueryOptions();
 
         final C4QueryEnumerator e;
@@ -105,8 +105,8 @@ public class C4QueryBaseTest extends C4BaseTest {
 
         try {
             while (e.next()) {
-                List<List<Long>> match = new ArrayList<>();
-                for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatches(i).toList()); }
+                List<C4FullTextMatch> match = new ArrayList<>();
+                for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatches(i).load()); }
                 matches.add(match);
             }
         }

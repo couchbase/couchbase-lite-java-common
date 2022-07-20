@@ -54,10 +54,7 @@ public class C4BlobKey extends C4NativePeer {
      */
     @NonNull
     @Override
-    public String toString() {
-        final String str = toString(getPeerUnchecked());
-        return (str != null) ? str : "unknown!!";
-    }
+    public String toString() { return withPeerOrDefault("unknown", C4BlobKey::toString); }
 
     //-------------------------------------------------------------------------
     // protected methods

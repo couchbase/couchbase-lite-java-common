@@ -38,17 +38,13 @@ public class C4QueryObserver extends C4NativePeer {
         long nGetEnumerator(long peer, boolean forget) throws LiteCoreException;
     }
 
+    @VisibleForTesting
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeC4QueryObserver();
+
     @NonNull
     @VisibleForTesting
     static final TaggedWeakPeerBinding<C4QueryObserver> QUERY_OBSERVER_CONTEXT = new TaggedWeakPeerBinding<>();
-
-    // Not final for testing.
-    @VisibleForTesting
-    @NonNull
-    static volatile NativeImpl nativeImpl = new NativeC4QueryObserver();
-
-    @NonNull
-    private static final Fn.Function<Long, C4QueryEnumerator> C4ENUM_FACTORY = C4QueryEnumerator::create;
 
     //-------------------------------------------------------------------------
     // Static Factory Methods
@@ -56,9 +52,22 @@ public class C4QueryObserver extends C4NativePeer {
 
     @NonNull
     public static C4QueryObserver create(@NonNull C4Query query, @NonNull QueryChangeCallback callback) {
+        return create(NATIVE_IMPL, C4QueryEnumerator::create, query, callback);
+    }
+
+    @NonNull
+    public static C4QueryObserver create(
+        @NonNull C4QueryObserver.NativeImpl impl,
+        @NonNull Fn.Function<Long, C4QueryEnumerator> queryEnumeratorFactory,
+        @NonNull C4Query query,
+        @NonNull QueryChangeCallback callback) {
         final long token = QUERY_OBSERVER_CONTEXT.reserveKey();
-        final C4QueryObserver observer = new C4QueryObserver(nativeImpl, C4ENUM_FACTORY, token, query, callback);
+
+        final long peer = impl.nCreate(token, query.getPeer());
+
+        final C4QueryObserver observer = new C4QueryObserver(impl, peer, queryEnumeratorFactory, token, callback);
         QUERY_OBSERVER_CONTEXT.bind(token, observer);
+
         return observer;
     }
 
@@ -88,15 +97,15 @@ public class C4QueryObserver extends C4NativePeer {
     @VisibleForTesting
     C4QueryObserver(
         @NonNull NativeImpl impl,
+        long peer,
         @NonNull Fn.Function<Long, C4QueryEnumerator> c4QueryEnumeratorFactory,
         long token,
-        @NonNull C4Query query,
         @NonNull QueryChangeCallback callback) {
+        super(peer);
         this.impl = impl;
         this.c4QueryEnumeratorFactory = c4QueryEnumeratorFactory;
         this.token = token;
         this.callback = callback;
-        setPeer(impl.nCreate(token, query.getPeer()));
     }
 
     @CallSuper

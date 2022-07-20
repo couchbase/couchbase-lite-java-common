@@ -47,27 +47,61 @@ public abstract class C4NativePeer implements AutoCloseable {
     private final Exception createdAt;
     private volatile Exception releasedAt;
 
+    //-------------------------------------------------------------------------
+    // Constructors
+    //-------------------------------------------------------------------------
+
     protected C4NativePeer(long peer) {
         this();
         this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME);
     }
 
-    // ??? questionable design
+    // See setPeer()
     protected C4NativePeer() { createdAt = (!CouchbaseLiteInternal.debugging()) ? null : new Exception("Created:"); }
+
+    //-------------------------------------------------------------------------
+    // Object methods
+    //-------------------------------------------------------------------------
 
     @NonNull
     @Override
     public String toString() { return "@x" + Long.toHexString(peer); }
 
-    @Nullable
-    protected final <T> T withPeer(@NonNull Fn.Function<Long, T> fn) {
+    //-------------------------------------------------------------------------
+    // Protected methods
+    //-------------------------------------------------------------------------
+
+    /**
+     * This method is necessitated by LiteCore calls that can cause immediate callbacks.
+     * We have to create our peer *before* we create the native peer.
+     */
+    protected final void setPeer(long peer) {
         synchronized (getPeerLock()) {
-            final long peer = get();
-            if (peer != 0L) { return fn.apply(peer); }
+            Preconditions.assertZero(this.peer, HANDLE_NAME);
+            this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME);
         }
+    }
+
+    protected final long getPeer() {
+        final long peer = get();
+        if (peer != 0L) { return peer; }
 
         logBadCall();
-        return null;
+        throw new IllegalStateException("Operation on closed native peer");
+    }
+
+    /**
+     * Get this object's lock.
+     * Enables subclasses to assure atomicity with this class' internal behavior.
+     * You *know* you gotta be careful with this, right?
+     *
+     * @return the lock used by this object
+     */
+    @NonNull
+    protected final Object getPeerLock() { return this; }
+
+    protected final void logPeerHistory(@NonNull LogDomain domain, @NonNull String message) {
+        Log.d(domain, message, (releasedAt != null) ? releasedAt : createdAt);
     }
 
     protected final <E extends Exception> void withPeerThrows(
@@ -82,6 +116,17 @@ public abstract class C4NativePeer implements AutoCloseable {
         }
 
         logBadCall();
+    }
+
+    @Nullable
+    protected final <T> T withPeer(@NonNull Fn.Function<Long, T> fn) {
+        synchronized (getPeerLock()) {
+            final long peer = get();
+            if (peer != 0L) { return fn.apply(peer); }
+        }
+
+        logBadCall();
+        return null;
     }
 
     @Nullable
@@ -159,42 +204,6 @@ public abstract class C4NativePeer implements AutoCloseable {
         }
     }
 
-    // !!! Delete this method
-    protected final void setPeer(long peer) {
-        synchronized (getPeerLock()) {
-            Preconditions.assertZero(this.peer, HANDLE_NAME);
-            this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME);
-        }
-    }
-
-    // !!! Delete this method
-    protected final long getPeerUnchecked() {
-        final long peer = get();
-        if (peer == 0L) { Log.v(LogDomain.DATABASE, "Unchecked peer is 0", new Exception("peer is 0")); }
-        return peer;
-    }
-
-    protected final long getPeer() {
-        final long peer = get();
-        if (peer != 0L) { return peer; }
-
-        logBadCall();
-        throw new IllegalStateException("Operation on closed native peer");
-    }
-
-    /**
-     * Get this object's lock.
-     * Enables subclasses to assure atomicity with this class' internal behavior.
-     * You *know* you gotta be careful with this, right?
-     *
-     * @return the lock used by this object
-     */
-    @NonNull
-    protected final Object getPeerLock() { return this; }
-
-    @Nullable
-    protected final Exception getHistory() { return (releasedAt != null) ? releasedAt : createdAt; }
-
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
@@ -212,7 +221,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     }
 
     private void logBadCall() {
-        if (CouchbaseLiteInternal.debugging()) { return; }
+        if (!CouchbaseLiteInternal.debugging()) { return; }
 
         Log.i(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
         final Exception closedLoc = releasedAt;

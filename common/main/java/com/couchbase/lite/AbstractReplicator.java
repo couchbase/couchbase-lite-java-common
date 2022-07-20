@@ -92,23 +92,23 @@ public abstract class AbstractReplicator extends BaseReplicator {
     //---------------------------------------------
     // member variables
     //---------------------------------------------
+
     @NonNull
     private final ImmutableReplicatorConfiguration config;
 
-    @GuardedBy("getReplicatorLock()")
-    private final Set<ReplicatorChangeListenerToken> changeListeners = new HashSet<>();
-    @GuardedBy("getReplicatorLock()")
-    private final Set<DocumentReplicationListenerToken> docEndedListeners = new HashSet<>();
-
-    @NonNull
-    private final Set<Fn.NullableConsumer<CouchbaseLiteException>> pendingResolutions = new HashSet<>();
-    @NonNull
-    private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
     @NonNull
     private final SocketFactory socketFactory;
 
     // Server certificates received from the server during the TLS handshake
     private final AtomicReference<List<Certificate>> serverCertificates = new AtomicReference<>();
+
+    // Listeners are reachable until they are closed or this replicator is freed.
+    @NonNull
+    @GuardedBy("getReplicatorLock()")
+    private final Set<ReplicatorChangeListenerToken> changeListeners = new HashSet<>();
+    @NonNull
+    @GuardedBy("getReplicatorLock()")
+    private final Set<DocumentReplicationListenerToken> docEndedListeners = new HashSet<>();
 
     @NonNull
     @GuardedBy("getReplicatorLock()")
@@ -118,6 +118,13 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @GuardedBy("getReplicatorLock()")
     @Nullable
     private CouchbaseLiteException lastError;
+
+    @GuardedBy("getReplicatorLock()")
+    @NonNull
+    private final Set<Fn.NullableConsumer<CouchbaseLiteException>> pendingResolutions = new HashSet<>();
+    @GuardedBy("getReplicatorLock()")
+    @NonNull
+    private final Deque<C4ReplicatorStatus> pendingStatusNotifications = new LinkedList<>();
 
     private volatile String desc;
 
@@ -297,16 +304,14 @@ public abstract class AbstractReplicator extends BaseReplicator {
     @NonNull
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull ReplicatorChangeListener listener) {
         Preconditions.assertNotNull(listener, "listener");
-        synchronized (getReplicatorLock()) {
-            final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(
-                executor,
-                listener,
-                this::removeReplicationListener);
-            changeListeners.add(token);
-            setProgressLevel();
-            return token;
-        }
+        final ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(
+            executor,
+            listener,
+            this::removeReplicationListener);
+        synchronized (getReplicatorLock()) { changeListeners.add(token); }
+        return token;
     }
+
 
     /**
      * Adds a listener for receiving the replication status of the specified document.
@@ -339,15 +344,15 @@ public abstract class AbstractReplicator extends BaseReplicator {
         @Nullable Executor executor,
         @NonNull DocumentReplicationListener listener) {
         Preconditions.assertNotNull(listener, "listener");
+        final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(
+            executor,
+            listener,
+            this::removeDocumentReplicationListener);
         synchronized (getReplicatorLock()) {
-            final DocumentReplicationListenerToken token = new DocumentReplicationListenerToken(
-                executor,
-                listener,
-                this::removeDocumentReplicationListener);
             docEndedListeners.add(token);
             setProgressLevel();
-            return token;
         }
+        return token;
     }
 
     /**
@@ -360,9 +365,17 @@ public abstract class AbstractReplicator extends BaseReplicator {
     public void removeChangeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
         synchronized (getReplicatorLock()) {
-            if (token instanceof ReplicatorChangeListenerToken) { removeReplicationListener(token); }
-            else if (token instanceof DocumentReplicationListenerToken) { removeDocumentReplicationListener(token); }
-            else { throw new IllegalArgumentException("unexpected token: " + token); }
+            if (token instanceof ReplicatorChangeListenerToken) {
+                removeReplicationListener(token);
+                return;
+            }
+
+            if (token instanceof DocumentReplicationListenerToken) {
+                removeDocumentReplicationListener(token);
+                return;
+            }
+
+            throw new IllegalArgumentException("unexpected token: " + token);
         }
     }
 
@@ -514,10 +527,10 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     void notifyDocumentEnded(boolean pushing, List<ReplicatedDocument> docs) {
         final DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
-        final List<DocumentReplicationListenerToken> tokens;
-        synchronized (getReplicatorLock()) { tokens = new ArrayList<>(docEndedListeners); }
-        for (DocumentReplicationListenerToken token: tokens) { token.postChange(update); }
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
+        final Set<DocumentReplicationListenerToken> listenerTokens;
+        synchronized (getReplicatorLock()) { listenerTokens = new HashSet<>(docEndedListeners); }
+        Fn.forAll(listenerTokens, token -> token.postChange(update));
     }
 
     @NonNull
@@ -606,7 +619,6 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
             if (c4Repl != null) {
                 c4Repl.setOptions(FLEncoder.encodeMap(config.getConnectionOptions()));
-                // ??? This may be a bug.  Why should setOptions clear the progress level
                 synchronized (getReplicatorLock()) { setProgressLevel(); }
                 return c4Repl;
             }
@@ -629,7 +641,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
 
     private void statusChanged(@NonNull C4ReplicatorStatus c4Status) {
         final ReplicatorChange change;
-        final List<ReplicatorChangeListenerToken> tokens;
+        final Set<ReplicatorChangeListenerToken> listenerTokens;
         synchronized (getReplicatorLock()) {
             Log.i(
                 DOMAIN,
@@ -647,13 +659,14 @@ public abstract class AbstractReplicator extends BaseReplicator {
             // Post notification
             // Replicator.getStatus() creates a copy of Status.
             change = new ReplicatorChange((Replicator) this, this.getStatus());
-            tokens = new ArrayList<>(changeListeners);
+
+            listenerTokens = new HashSet<>(changeListeners);
         }
 
         // this will probably make this instance eligible for garbage collection...
         if (isStopped(c4Status)) { getDatabase().removeActiveReplicator(this); }
 
-        for (ReplicatorChangeListenerToken token: tokens) { token.postChange(change); }
+        Fn.forAll(listenerTokens, token -> token.postChange(change));
     }
 
     private void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {

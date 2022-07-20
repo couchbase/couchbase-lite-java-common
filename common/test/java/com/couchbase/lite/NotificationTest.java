@@ -40,7 +40,7 @@ public class NotificationTest extends BaseDbTest {
         final CountDownLatch latch = new CountDownLatch(1);
 
         int[] n = {0};
-        baseTestDb.addChangeListener(
+        ListenerToken token = baseTestDb.addChangeListener(
             testSerialExecutor,
             change -> {
                 assertNotNull(change);

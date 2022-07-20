@@ -423,7 +423,7 @@ public class ConcurrencyTest extends BaseDbTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
-        baseTestDb.addChangeListener(testSerialExecutor, change -> latch2.countDown());
+        ListenerToken token = baseTestDb.addChangeListener(testSerialExecutor, change -> latch2.countDown());
 
         testOnNewThread(
             "testBlockDatabaseChange",

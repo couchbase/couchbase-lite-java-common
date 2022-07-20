@@ -43,19 +43,19 @@ public class C4BlobReadStream extends C4NativePeer {
      * @param maxBytesToRead The maximum number of bytes to read to the buffer
      */
     public int read(byte[] b, int offset, long maxBytesToRead) throws LiteCoreException {
-        return read(getPeer(), b, offset, maxBytesToRead);
+        return withPeerOrDefault(0, peer -> read(peer, b, offset, maxBytesToRead));
     }
 
     /**
      * Returns the exact length in bytes of the stream.
      */
-    public long getLength() throws LiteCoreException { return getLength(getPeer()); }
+    public long getLength() throws LiteCoreException { return withPeerOrDefault(0L, C4BlobReadStream::getLength); }
 
     /**
      * Moves to a random location in the stream; the next c4stream_read call will read from that
      * location.
      */
-    public void seek(long position) throws LiteCoreException { seek(getPeer(), position); }
+    public void seek(long position) throws LiteCoreException { withPeerThrows(peer -> seek(peer, position)); }
 
     /**
      * Closes a read-stream.

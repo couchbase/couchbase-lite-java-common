@@ -301,11 +301,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
             internalArray.encodeTo(encoder);
             return encoder.finishJSON();
         }
-        catch (LiteCoreException e) {
-            throw new IllegalStateException(
-                "Failed marshalling Array to JSON",
-                CouchbaseLiteException.convertException(e));
-        }
     }
 
     //---------------------------------------------

@@ -48,10 +48,13 @@ public class C4DocEnumerator extends C4NativePeer {
 
     @NonNull
     public C4Document getDocument() throws LiteCoreException {
-        return new C4Document(getDocument(getPeer()));
+        final long doc = withPeerOrDefault(0L, C4DocEnumerator::getDocument);
+        return new C4Document(doc);
     }
 
-    public boolean next() throws LiteCoreException { return next(getPeer()); }
+    public boolean next() throws LiteCoreException {
+        return withPeerOrDefault(false, C4DocEnumerator::next);
+    }
 
     @CallSuper
     @Override

@@ -92,6 +92,10 @@ public interface Fn {
         void run(@NonNull Runnable r);
     }
 
+    static <T> void forAll(@NonNull Collection<? extends T> c, @NonNull Consumer<T> op) {
+        for (T e: c) { op.accept(e); }
+    }
+
     @Nullable
     static <T> T firstOrNull(@NonNull Collection<? extends T> c, @NonNull Predicate<T> pred) {
         for (T e: c) {

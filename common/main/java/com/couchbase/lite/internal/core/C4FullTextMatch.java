@@ -15,36 +15,68 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.NonNull;
 
-import java.util.Arrays;
-import java.util.List;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
+import java.util.Objects;
 
 
-public class C4FullTextMatch extends C4NativePeer {
+// This class exists only for testing.
+// It is never used in production code
+
+@VisibleForTesting
+class C4FullTextMatch extends C4NativePeer {
+    private long dataSource;
+    private long property;
+    private long term;
+    private long start;
+    private long length;
 
     //-------------------------------------------------------------------------
-    // Constructor
+    // Constructors
     //-------------------------------------------------------------------------
+
     C4FullTextMatch(long peer) { super(peer); }
 
-    public long dataSource() { return dataSource(getPeerUnchecked()); }
+    C4FullTextMatch(long dataSource, long property, long term, long start, long length) {
+        this.dataSource = dataSource;
+        this.property = property;
+        this.term = term;
+        this.start = start;
+        this.length = length;
+    }
 
-    public long property() { return property(getPeerUnchecked()); }
-
-    public long term() { return term(getPeerUnchecked()); }
-
-    public long start() { return start(getPeerUnchecked()); }
-
-    public long length() { return length(getPeerUnchecked()); }
-
-    @NonNull
-    public List<Long> toList() { return Arrays.asList(dataSource(), property(), term(), start(), length()); }
+    @Nullable
+    public C4FullTextMatch load() {
+        return withPeer((peer) -> {
+            this.dataSource = dataSource(peer);
+            this.property = property(peer);
+            this.term = term(peer);
+            this.start = start(peer);
+            this.length = length(peer);
+            return this;
+        });
+    }
 
     @Override
     public void close() { }
 
-    //-------------------------------------------------------------------------
+    @Override
+    public int hashCode() { return Objects.hash(dataSource, property, term, start, length); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof C4FullTextMatch)) { return false; }
+        final C4FullTextMatch match = (C4FullTextMatch) o;
+        return (dataSource == match.dataSource)
+            && (property == match.property)
+            && (term == match.term)
+            && (start == match.start)
+            && (length == match.length);
+    }
+//-------------------------------------------------------------------------
     // Native methods
     //-------------------------------------------------------------------------
 

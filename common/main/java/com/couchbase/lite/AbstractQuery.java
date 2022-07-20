@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -29,7 +30,6 @@ import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryObserver;
 import com.couchbase.lite.internal.core.C4QueryOptions;
-import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.support.Log;
@@ -44,7 +44,9 @@ abstract class AbstractQuery implements Query {
     // member variables
     //---------------------------------------------
 
-    private final Map<ChangeListenerToken<QueryChange>, C4QueryObserver> listeners = new HashMap<>();
+    // Keep the C4QueryObserver safe from the GC until this Query is freed.
+    private final Map<ChangeListenerToken<QueryChange>, C4QueryObserver> listeners
+        = Collections.synchronizedMap(new HashMap<>());
 
     private final Object lock = new Object();
     // column names
@@ -65,7 +67,7 @@ abstract class AbstractQuery implements Query {
 
     /**
      * Set query parameters.
-     * Setting new parametera will re-execute a query if there is at least one listener listening for changes.
+     * Setting new parameters will re-execute a query if there is at least one listener listening for changes.
      *
      * @throws IllegalStateException    on failure to create the query (e.g., database closed)
      * @throws IllegalArgumentException on failure to encode the parameters (e.g., parameter value not supported)
@@ -184,13 +186,11 @@ abstract class AbstractQuery implements Query {
                 (results, err) -> onQueryChanged(token, results, err));
         }
         catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
+
         listeners.put(token, queryObserver);
 
-        final ExecutionService exec = CouchbaseLiteInternal.getExecutionService();
-        exec.postDelayedOnExecutor(
-            10, // !!! 10 ms delay. work around for CBL-2543. There won't be any delay after CBL-2543 is fixed
-            executor != null ? executor : exec.getDefaultExecutor(),
-            () -> queryObserver.setEnabled(true));
+        (executor != null ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor())
+            .execute(() -> queryObserver.setEnabled(true));
 
         return token;
     }
@@ -216,9 +216,6 @@ abstract class AbstractQuery implements Query {
     @NonNull
     protected abstract C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException;
 
-    /**
-     * Find out if a query has an observer
-     */
     @VisibleForTesting
     boolean isLive(ListenerToken token) { return listeners.get(token) != null; }
 
