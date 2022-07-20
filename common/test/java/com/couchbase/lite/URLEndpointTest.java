@@ -25,8 +25,8 @@ import static org.junit.Assert.assertTrue;
 
 
 public class URLEndpointTest extends BaseTest {
-    @Test
-    public void testEmbeddedUserAllowed() throws URISyntaxException {
+    @Test(expected = IllegalArgumentException.class)
+    public void testEmbeddedUserForbidden() throws URISyntaxException {
         new URLEndpoint(new URI("ws://user@couchbase.com/sg"));
     }
 
