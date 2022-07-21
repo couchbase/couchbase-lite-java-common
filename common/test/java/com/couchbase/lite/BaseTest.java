@@ -59,14 +59,14 @@ public abstract class BaseTest extends PlatformBaseTest {
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
     @BeforeClass
-    public static void setUpPlatformSuite() { Report.log(LogLevel.INFO, ">>>>>>>>>>>> Suite started"); }
+    public static void setUpPlatformSuite() { Report.log(">>>>>>>>>>>> Suite started"); }
 
     @AfterClass
     public static void tearDownBaseTestSuite() {
         for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
         SCRATCH_DIRS.clear();
 
-        Report.log(LogLevel.INFO, "<<<<<<<<<<<< Suite completed");
+        Report.log("<<<<<<<<<<<< Suite completed");
     }
 
 
@@ -81,7 +81,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @Before
     public final void setUpBaseTest() {
-        Report.log(LogLevel.INFO, ">>>>>>>> Test started: " + testName);
+        Report.log(">>>>>>>> Test started: " + testName);
         Log.initLogging();
 
         setupPlatform();
@@ -113,10 +113,9 @@ public abstract class BaseTest extends PlatformBaseTest {
     public final void tearDownBaseTest() {
         boolean succeeded = false;
         if (testSerialExecutor != null) { succeeded = testSerialExecutor.stop(2, TimeUnit.SECONDS); }
-        Report.log(LogLevel.DEBUG, "Executor stopped: " + succeeded);
+        Report.log("Executor stopped: " + succeeded);
 
         Report.log(
-            LogLevel.INFO,
             "<<<<<<<< Test completed(%s): %s",
             formatInterval(System.currentTimeMillis() - startTime),
             testName);
@@ -235,11 +234,11 @@ public abstract class BaseTest extends PlatformBaseTest {
     protected final boolean doSafely(@NonNull String taskDesc, @NonNull Fn.TaskThrows<CouchbaseLiteException> task) {
         try {
             task.run();
-            Report.log(LogLevel.DEBUG, taskDesc + " succeeded");
+            Report.log(taskDesc + " succeeded");
             return true;
         }
         catch (CouchbaseLiteException ex) {
-            Report.log(LogLevel.WARNING, taskDesc + " failed", ex);
+            Report.log(taskDesc + " failed", ex);
         }
         return false;
     }

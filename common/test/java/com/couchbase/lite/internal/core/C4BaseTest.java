@@ -241,7 +241,7 @@ public class C4BaseTest extends BaseTest {
 
                 numDocs++;
 
-                if (verbose && numDocs % 100000 == 0) { Report.log(LogLevel.VERBOSE, "...docs loaded: " + numDocs); }
+                if (verbose && numDocs % 100000 == 0) { Report.log("...docs loaded: " + numDocs); }
 
                 if (((numDocs % 1000) == 0) && (timer.getElapsedTimeSecs() >= timeout)) {
                     throw new IOException(String.format(

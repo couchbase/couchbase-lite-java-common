@@ -17,19 +17,13 @@ package com.couchbase.lite.internal.fleece;
 
 import androidx.annotation.NonNull;
 
-import com.couchbase.lite.internal.utils.Preconditions;
-
 
 public final class JSONEncoder extends FLEncoder.ManagedFLEncoder {
 
     public JSONEncoder() { super(newJSONEncoder()); }
 
     @NonNull
-    public String finishJSON() {
-        return Preconditions.assertNotNull(
-            withPeerOrNull(JSONEncoder::finishJSON),
-            "json");
-    }
+    public String finishJSON() { return withPeerOrThrow(JSONEncoder::finishJSON); }
 
     @NonNull
     public byte[] finish() {

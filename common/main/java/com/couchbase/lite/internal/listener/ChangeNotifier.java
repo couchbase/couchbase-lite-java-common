@@ -34,6 +34,7 @@ public abstract class ChangeNotifier<T> {
     @NonNull
     private final Set<ChangeListenerToken<T>> listeners = new HashSet<>();
 
+    @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public final ChangeListenerToken<T> addChangeListener(
         @Nullable Executor executor,

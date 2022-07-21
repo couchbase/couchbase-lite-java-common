@@ -237,7 +237,7 @@ public class C4BlobStoreTest extends C4BaseTest {
                     int line = increment;
                     for (int i = 0; i < 1000; i++) {
                         line = (line + increment) % 1000;
-                        Report.log(LogLevel.VERBOSE, "Reading line " + line + " at offset " + (18 * line));
+                        Report.log("Reading line " + line + " at offset " + (18 * line));
                         String buf = String.format(Locale.ENGLISH, "This is line %03d.\n", line);
                         reader.seek(18 * line);
                         byte[] readBuf = new byte[18];
@@ -260,7 +260,7 @@ public class C4BlobStoreTest extends C4BaseTest {
         List<Integer> kSizes = Arrays.asList(0, 1, 15, 16, 17, 4095, 4096, 4097,
             4096 + 15, 4096 + 16, 4096 + 17, 8191, 8192, 8193);
         for (int size: kSizes) {
-            Report.log(LogLevel.INFO, "Testing blob: %s bytes", size);
+            Report.log("Testing blob: %s bytes", size);
             // Write the blob:
             try (C4BlobWriteStream stream = blobStore.openWriteStream()) {
                 assertNotNull(stream);

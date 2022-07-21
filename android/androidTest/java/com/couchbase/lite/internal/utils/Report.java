@@ -15,9 +15,10 @@
 //
 package com.couchbase.lite.internal.utils;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import android.util.Log;
 
 import java.util.Locale;
 
@@ -28,7 +29,7 @@ import com.couchbase.lite.LogLevel;
  * Platform console logging utility for tests
  */
 public final class Report {
-    private Report() {}
+    private Report() { }
 
     private static final String DOMAIN = "CouchbaseLite/TEST";
 
@@ -41,23 +42,11 @@ public final class Report {
     }
 
     public static void log(@NonNull String template, Object... args) {
-        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args));
+        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args), null);
     }
 
     public static void log(@Nullable Throwable err, @NonNull String template, Object... args) {
         Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args), err);
-    }
-
-    public static void log(@NonNull LogLevel level, @NonNull String message) {
-        Report.log(level, message, (Throwable) null);
-    }
-
-    public static void log(@NonNull LogLevel level, @NonNull String template, Object... args) {
-        Report.log(level, String.format(Locale.ENGLISH, template, args));
-    }
-
-    public static void log(@NonNull LogLevel level, @Nullable Throwable err, @NonNull String template, Object... args) {
-        Report.log(level, String.format(Locale.ENGLISH, template, args), err);
     }
 
     public static void log(@NonNull LogLevel level, @NonNull String message, @Nullable Throwable err) {

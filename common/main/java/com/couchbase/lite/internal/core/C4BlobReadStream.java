@@ -55,7 +55,7 @@ public class C4BlobReadStream extends C4NativePeer {
      * Moves to a random location in the stream; the next c4stream_read call will read from that
      * location.
      */
-    public void seek(long position) throws LiteCoreException { withPeerThrows(peer -> seek(peer, position)); }
+    public void seek(long position) throws LiteCoreException { withPeer(peer -> seek(peer, position)); }
 
     /**
      * Closes a read-stream.

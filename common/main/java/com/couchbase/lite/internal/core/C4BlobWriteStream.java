@@ -60,7 +60,7 @@ public class C4BlobWriteStream extends C4NativePeer {
     public void write(@NonNull byte[] bytes, int len) throws LiteCoreException {
         Preconditions.assertNotNull(bytes, "bytes");
         if (len <= 0) { return; }
-        withPeerThrows(peer -> write(peer, bytes, len));
+        withPeer(peer -> write(peer, bytes, len));
     }
 
     /**
@@ -69,8 +69,7 @@ public class C4BlobWriteStream extends C4NativePeer {
      */
     @NonNull
     public C4BlobKey computeBlobKey() throws LiteCoreException {
-        final long blobKey = withPeerOrDefault(0L, C4BlobWriteStream::computeBlobKey);
-        return new C4BlobKey(blobKey);
+        return new C4BlobKey(this.<Long, LiteCoreException>withPeerOrThrow(C4BlobWriteStream::computeBlobKey));
     }
 
     /**
@@ -79,7 +78,7 @@ public class C4BlobWriteStream extends C4NativePeer {
      * were unable to receive all of the data from the network, or if you've called
      * c4stream_computeBlobKey and found that the data does not match the expected digest/key.)
      */
-    public void install() throws LiteCoreException { withPeerThrows(C4BlobWriteStream::install); }
+    public void install() throws LiteCoreException { withPeer(C4BlobWriteStream::install); }
 
     /**
      * Closes a blob write-stream. If c4stream_install was not already called, the temporary file

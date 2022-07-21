@@ -92,7 +92,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      * be up to 16 bytes larger than the actual size.
      */
     public long getSize(@NonNull C4BlobKey blobKey) {
-        return withPeerOrDefault(0L, peer -> getSize(peer, getBlobKeyPeer(blobKey)));
+        return withPeerOrDefault(-1L, peer -> getSize(peer, getBlobKeyPeer(blobKey)));
     }
 
     /**
@@ -100,8 +100,8 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public FLSliceResult getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        final long contents = withPeerOrDefault(0L, peer -> getContents(peer, getBlobKeyPeer(blobKey)));
-        return FLSliceResult.getManagedSliceResult(contents);
+        return FLSliceResult.getManagedSliceResult(
+            withPeerOrThrow(peer -> getContents(peer, getBlobKeyPeer(blobKey))));
     }
 
     /**
@@ -123,15 +123,14 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobKey create(@NonNull byte[] contents) throws LiteCoreException {
-        final long blobKey = withPeerOrDefault(0L, peer -> create(peer, contents));
-        return new C4BlobKey(blobKey);
+        return new C4BlobKey(this.<Long, LiteCoreException>withPeerOrThrow(peer -> create(peer, contents)));
     }
 
     /**
      * Deletes a blob from the store given its key.
      */
     public void delete(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        withPeerThrows(peer -> delete(peer, getBlobKeyPeer(blobKey)));
+        withPeer(peer -> delete(peer, getBlobKeyPeer(blobKey)));
     }
 
     /**
@@ -139,8 +138,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobReadStream openReadStream(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        final long stream = withPeerOrDefault(0L, peer -> openReadStream(peer, getBlobKeyPeer(blobKey)));
-        return new C4BlobReadStream(stream);
+        return new C4BlobReadStream(withPeerOrThrow(peer -> openReadStream(peer, getBlobKeyPeer(blobKey))));
     }
 
     /**
@@ -150,8 +148,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobWriteStream openWriteStream() throws LiteCoreException {
-        final long stream = withPeerOrDefault(0L, C4BlobStore::openWriteStream);
-        return new C4BlobWriteStream(stream);
+        return new C4BlobWriteStream(withPeerOrThrow(C4BlobStore::openWriteStream));
     }
 
     @Override

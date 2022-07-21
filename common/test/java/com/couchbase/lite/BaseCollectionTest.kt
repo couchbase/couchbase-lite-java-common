@@ -34,7 +34,7 @@ open class BaseCollectionTest : BaseDbTest() {
         testColName = getUniqueName("test_collection")
         testScopeName = getUniqueName("test_scope")
         testCollection = baseTestDb.createCollection(testColName, testScopeName)
-        Report.log(LogLevel.INFO, "Created base test Collection: $testCollection")
+        Report.log("Created base test Collection: $testCollection")
     }
 
     @After
@@ -43,7 +43,7 @@ open class BaseCollectionTest : BaseDbTest() {
         // don't delete the default collection
         if (Collection.DEFAULT_NAME != collectionName) {
             baseTestDb.deleteCollection(collectionName)
-            Report.log(LogLevel.INFO, "Deleted testCollection: $testCollection")
+            Report.log("Deleted testCollection: $testCollection")
         }
     }
 

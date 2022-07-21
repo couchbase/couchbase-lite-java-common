@@ -68,7 +68,7 @@ public abstract class BaseDbTest extends BaseTest {
     @Before
     public final void setUpBaseDbTest() throws CouchbaseLiteException {
         baseTestDb = createDb("base_db");
-        Report.log(LogLevel.INFO, "Created base test DB: " + baseTestDb);
+        Report.log("Created base test DB: " + baseTestDb);
         assertNotNull(baseTestDb);
         synchronized (baseTestDb.getDbLock()) { assertTrue(baseTestDb.isOpen()); }
     }
@@ -76,7 +76,7 @@ public abstract class BaseDbTest extends BaseTest {
     @After
     public final void tearDownBaseDbTest() {
         deleteDb(baseTestDb);
-        Report.log(LogLevel.INFO, "Deleted baseTestDb: " + baseTestDb);
+        Report.log("Deleted baseTestDb: " + baseTestDb);
     }
 
     protected final Document createSingleDocInBaseTestDb(String docID) throws CouchbaseLiteException {

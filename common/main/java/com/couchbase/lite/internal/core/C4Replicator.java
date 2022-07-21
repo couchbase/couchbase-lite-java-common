@@ -627,9 +627,9 @@ public abstract class C4Replicator extends C4NativePeer {
     // Instance Methods
     //-------------------------------------------------------------------------
 
-    public void start(boolean restart) { withPeerThrows(peer -> impl.nStart(peer, restart)); }
+    public void start(boolean restart) { withPeer(peer -> impl.nStart(peer, restart)); }
 
-    public void stop() { withPeerThrows(impl::nStop); }
+    public void stop() { withPeer(impl::nStop); }
 
     @CallSuper
     @Override
@@ -638,7 +638,7 @@ public abstract class C4Replicator extends C4NativePeer {
         closePeer(null);
     }
 
-    public void setOptions(@Nullable byte[] options) { withPeerThrows(peer -> impl.nSetOptions(peer, options)); }
+    public void setOptions(@Nullable byte[] options) { withPeer(peer -> impl.nSetOptions(peer, options)); }
 
     @Nullable
     public C4ReplicatorStatus getStatus() { return withPeerOrNull(impl::nGetStatus); }
@@ -658,10 +658,10 @@ public abstract class C4Replicator extends C4NativePeer {
     }
 
     public void setProgressLevel(int level) throws LiteCoreException {
-        withPeerThrows(peer -> impl.nSetProgressLevel(peer, level));
+        withPeer(peer -> impl.nSetProgressLevel(peer, level));
     }
 
-    public void setHostReachable(boolean reachable) { withPeerThrows(peer -> impl.nSetHostReachable(peer, reachable)); }
+    public void setHostReachable(boolean reachable) { withPeer(peer -> impl.nSetHostReachable(peer, reachable)); }
 
     protected abstract void releaseResources();
 

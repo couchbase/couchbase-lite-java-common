@@ -1666,7 +1666,7 @@ public class QueryTest extends BaseQueryTest {
             .join(join)
             .where(typeExpr.equalTo(Expression.string("bookmark")));
 
-        verifyQuery(query, (n, result) -> Report.log(LogLevel.INFO, "RESULT: " + result.toMap()));
+        verifyQuery(query, (n, result) -> Report.log("RESULT: " + result.toMap()));
     }
 
     @Test

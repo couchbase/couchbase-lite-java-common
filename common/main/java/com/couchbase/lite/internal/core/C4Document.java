@@ -147,7 +147,7 @@ public final class C4Document extends C4NativePeer {
 
     @Nullable
     public FLDict getSelectedBody2() {
-        final long value = withPeerOrDefault(0L, C4Document::getSelectedBody2);
+        final long value = withPeerOrThrow(C4Document::getSelectedBody2);
         return value == 0 ? null : FLDict.create(value);
     }
 
@@ -164,8 +164,7 @@ public final class C4Document extends C4NativePeer {
 
     @Nullable
     public C4Document update(@Nullable FLSliceResult body, int flags) throws LiteCoreException {
-        final long bodyHandle = (body != null) ? body.getHandle() : 0;
-        final long newDoc = withPeerOrDefault(0L, h -> update2(h, bodyHandle, flags));
+        final long newDoc = withPeerOrDefault(0L, h -> update2(h, (body == null) ? 0 : body.getHandle(), flags));
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
 

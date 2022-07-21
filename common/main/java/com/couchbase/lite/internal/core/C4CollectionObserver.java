@@ -24,7 +24,6 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4CollectionObserver;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
 import com.couchbase.lite.internal.support.Log;
-import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public final class C4CollectionObserver extends C4NativePeer {
@@ -97,7 +96,7 @@ public final class C4CollectionObserver extends C4NativePeer {
 
     @NonNull
     public C4DocumentChange[] getChanges(int maxChanges) {
-        return Preconditions.assertNotNull(withPeer((peer) -> impl.nGetChanges(peer, maxChanges)), "changes");
+        return withPeerOrThrow((peer) -> impl.nGetChanges(peer, maxChanges));
     }
 
     @CallSuper

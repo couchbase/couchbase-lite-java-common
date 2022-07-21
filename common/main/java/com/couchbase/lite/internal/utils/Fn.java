@@ -28,8 +28,14 @@ import java.util.Set;
 
 public interface Fn {
     @FunctionalInterface
-    interface FunctionThrows<T, R, E extends Exception> {
+    interface NullableFunctionThrows<T, R, E extends Exception> {
         @Nullable
+        R apply(@NonNull T x) throws E;
+    }
+
+    @FunctionalInterface
+    interface FunctionThrows<T, R, E extends Exception> {
+        @NonNull
         R apply(@NonNull T x) throws E;
     }
 

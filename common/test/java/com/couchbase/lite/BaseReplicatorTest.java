@@ -45,7 +45,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     @Before
     public final void setUpBaseReplicatorTest() throws CouchbaseLiteException {
         otherDB = createDb("replicator_db");
-        Report.log(LogLevel.INFO, "Create other DB: " + otherDB);
+        Report.log("Create other DB: " + otherDB);
         assertNotNull(otherDB);
         synchronized (otherDB.getDbLock()) { assertTrue(otherDB.isOpen()); }
     }
@@ -53,7 +53,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     @After
     public final void tearDownBaseReplicatorTest() {
         deleteDb(otherDB);
-        Report.log(LogLevel.INFO, "Deleted other DB: " + otherDB);
+        Report.log("Deleted other DB: " + otherDB);
     }
 
     protected final URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {

@@ -52,12 +52,9 @@ public abstract class C4NativePeer implements AutoCloseable {
     //-------------------------------------------------------------------------
 
     protected C4NativePeer(long peer) {
-        this();
         this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME);
+        createdAt = (!CouchbaseLiteInternal.debugging()) ? null : new Exception("Created:");
     }
-
-    // See setPeer()
-    protected C4NativePeer() { createdAt = (!CouchbaseLiteInternal.debugging()) ? null : new Exception("Created:"); }
 
     //-------------------------------------------------------------------------
     // Object methods
@@ -70,25 +67,6 @@ public abstract class C4NativePeer implements AutoCloseable {
     //-------------------------------------------------------------------------
     // Protected methods
     //-------------------------------------------------------------------------
-
-    /**
-     * This method is necessitated by LiteCore calls that can cause immediate callbacks.
-     * We have to create our peer *before* we create the native peer.
-     */
-    protected final void setPeer(long peer) {
-        synchronized (getPeerLock()) {
-            Preconditions.assertZero(this.peer, HANDLE_NAME);
-            this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME);
-        }
-    }
-
-    protected final long getPeer() {
-        final long peer = get();
-        if (peer != 0L) { return peer; }
-
-        logBadCall();
-        throw new IllegalStateException("Operation on closed native peer");
-    }
 
     /**
      * Get this object's lock.
@@ -104,9 +82,21 @@ public abstract class C4NativePeer implements AutoCloseable {
         Log.d(domain, message, (releasedAt != null) ? releasedAt : createdAt);
     }
 
-    protected final <E extends Exception> void withPeerThrows(
-        @NonNull Fn.ConsumerThrows<Long, E> fn)
-        throws E {
+    /**
+     * This method is incredibly dangerous.  A client that gets the peer reference
+     * can use it after the peer has been disposed.
+     *
+     * @return the handle to the native peer.
+     */
+    protected final long getPeer() {
+        final long peer = get();
+        if (peer != 0L) { return peer; }
+
+        logBadCall();
+        throw new IllegalStateException("Operation on closed native peer");
+    }
+
+    protected final <E extends Exception> void withPeer(@NonNull Fn.ConsumerThrows<Long, E> fn) throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
             if (peer != 0L) {
@@ -119,19 +109,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     }
 
     @Nullable
-    protected final <T> T withPeer(@NonNull Fn.Function<Long, T> fn) {
-        synchronized (getPeerLock()) {
-            final long peer = get();
-            if (peer != 0L) { return fn.apply(peer); }
-        }
-
-        logBadCall();
-        return null;
-    }
-
-    @Nullable
-    protected final <T, E extends Exception> T withPeerOrNull(
-        @NonNull Fn.FunctionThrows<Long, T, E> fn)
+    protected final <R, E extends Exception> R withPeerOrNull(@NonNull Fn.NullableFunctionThrows<Long, R, E> fn)
         throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
@@ -143,20 +121,31 @@ public abstract class C4NativePeer implements AutoCloseable {
     }
 
     @NonNull
-    protected final <T, E extends Exception> T withPeerOrDefault(
-        @NonNull T def,
-        @NonNull Fn.FunctionThrows<Long, T, E> fn)
+    protected final <R, E extends Exception> R withPeerOrDefault(
+        @NonNull R def,
+        @NonNull Fn.NullableFunctionThrows<Long, R, E> fn)
         throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
             if (peer != 0L) {
-                final T val = fn.apply(peer);
+                final R val = fn.apply(peer);
                 return (val != null) ? val : def;
             }
         }
 
         logBadCall();
         return def;
+    }
+
+    @NonNull
+    protected final <R, E extends Exception> R withPeerOrThrow(@NonNull Fn.FunctionThrows<Long, R, E> fn) throws E {
+        synchronized (getPeerLock()) {
+            final long peer = get();
+            if (peer != 0L) {return fn.apply(peer); }
+        }
+
+        logBadCall();
+        throw new IllegalStateException("Operation on closed peer", (releasedAt != null) ? releasedAt : createdAt);
     }
 
     /**
@@ -223,8 +212,8 @@ public abstract class C4NativePeer implements AutoCloseable {
     private void logBadCall() {
         if (!CouchbaseLiteInternal.debugging()) { return; }
 
-        Log.i(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
+        Log.w(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
         final Exception closedLoc = releasedAt;
-        if (closedLoc != null) { Log.e(LogDomain.DATABASE, "Closed at", closedLoc); }
+        if (closedLoc != null) { Log.d(LogDomain.DATABASE, "Closed at", closedLoc); }
     }
 }

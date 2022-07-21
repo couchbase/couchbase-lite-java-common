@@ -97,9 +97,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         assertEquals(DOC_NUM, i);
 
         double elapsed = timer.getElapsedTimeMillis();
-        Report.log(
-            LogLevel.INFO,
-            String.format("Enumerating %d docs took %.3f ms (%.3f ms/doc)", i, elapsed, elapsed / i));
+        Report.log("Enumerating %d docs took %.3f ms (%.3f ms/doc)", i, elapsed, elapsed / i);
     }
 
     private C4Document nextDocument(C4DocEnumerator e) throws LiteCoreException {

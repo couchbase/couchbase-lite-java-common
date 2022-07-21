@@ -182,16 +182,15 @@ public class C4Collection extends C4NativePeer {
     }
 
     public void setDocumentExpiration(String docID, long timeStamp) throws LiteCoreException {
-        withPeerThrows(peer -> impl.nSetDocExpiration(peer, docID, timeStamp));
+        withPeer(peer -> impl.nSetDocExpiration(peer, docID, timeStamp));
     }
 
-    // ??? Is this ok?  Can it actually ever return 0?
     public long getDocumentExpiration(String docID) throws LiteCoreException {
         return withPeerOrDefault(0L, peer -> impl.nGetDocExpiration(peer, docID));
     }
 
     public void purgeDocument(String docID) throws LiteCoreException {
-        withPeerThrows(peer -> impl.nPurgeDoc(peer, docID));
+        withPeer(peer -> impl.nPurgeDoc(peer, docID));
     }
 
     // - Queries
@@ -210,16 +209,12 @@ public class C4Collection extends C4NativePeer {
 
     @NonNull
     public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) {
-        return Preconditions.assertNotNull(
-            withPeerOrNull(peer -> C4CollectionObserver.newObserver(peer, listener)),
-            "collection observer");
+        return withPeerOrThrow(peer -> C4CollectionObserver.newObserver(peer, listener));
     }
 
     @NonNull
     public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
-        return Preconditions.assertNotNull(
-            withPeerOrNull(peer -> C4DocumentObserver.newObserver(peer, docID, listener)),
-            "document observer");
+        return withPeerOrThrow(peer -> C4DocumentObserver.newObserver(peer, docID, listener));
     }
 
     // - Indexes
@@ -232,7 +227,7 @@ public class C4Collection extends C4NativePeer {
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        withPeerThrows(peer ->
+        withPeer(peer ->
             impl.nCreateIndex(
                 peer,
                 name,
@@ -246,12 +241,11 @@ public class C4Collection extends C4NativePeer {
 
     @NonNull
     public FLValue getIndexesInfo() throws LiteCoreException {
-        final FLValue info = withPeerOrNull((peer) -> new FLValue(impl.nGetIndexesInfo(peer)));
-        return Preconditions.assertNotNull(info, "index info");
+        return new FLValue(withPeerOrThrow(impl::nGetIndexesInfo));
     }
 
     public void deleteIndex(String name) throws LiteCoreException {
-        withPeerThrows(peer -> impl.nDeleteIndex(peer, name));
+        withPeer(peer -> impl.nDeleteIndex(peer, name));
     }
 
     @NonNull
