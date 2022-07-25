@@ -39,7 +39,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_createQuery(
         jstring jexpr) {
     jstringSlice expr(env, jexpr);
     int errorLoc = -1;
-    C4Error error = {};
+    C4Error error{};
 
     C4Query *query = c4query_new2(
             (C4Database *) db,
@@ -100,7 +100,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
         jlong jparameters) {
     C4QueryOptions options = {(bool) jrankFullText};
     auto params = (FLSliceResult *) jparameters;
-    C4Error error = {};
+    C4Error error{};
     C4Slice s = {params->buf, params->size};
     C4QueryEnumerator *e = c4query_run((C4Query *) jquery, &options, s, &error);
     if (!e) {
@@ -125,13 +125,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_columnCount(JNIEnv *env
  * Method:    columnName
  * Signature: (JI)Ljava/lang/String;
  *
- * ??? Check this to see how expensive it is...
+ * ??? Check this to see how expensive this is...
  * Might want to replace it with a function that creates
  * the entire map of column names to indices in one fell swoop...
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Query_columnName(JNIEnv *env, jclass ignore, jlong jquery,
-                                                                    jint colIdx) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_columnName(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jquery,
+        jint colIdx) {
     return toJString(env, c4query_columnTitle((C4Query *) jquery, colIdx));
 }
 

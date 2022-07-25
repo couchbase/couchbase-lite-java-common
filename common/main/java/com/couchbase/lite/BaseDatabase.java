@@ -44,27 +44,47 @@ public abstract class BaseDatabase {
     @Nullable
     private String path;
 
-    @GuardedBy("dbLock")
-    protected void setC4DatabaseLocked(@Nullable C4Database c4Database) {
-        this.c4Database = c4Database;
-        if (c4Database != null) { this.path = c4Database.getDbPath(); }
+    // When seizing multiple locks, always seize this lock first.
+    @NonNull
+    protected Object getDbLock() { return dbLock; }
+
+    // This is the conical path to the db directory: /foo/bar.cblite/
+    @Nullable
+    protected String getDbPath() {
+        synchronized (getDbLock()) { return path; }
+    }
+
+    @NonNull
+    protected C4BlobStore getBlobStore() throws LiteCoreException {
+        synchronized (getDbLock()) { return getOpenC4DbLocked().getBlobStore(); }
+    }
+
+    protected boolean isOpen() {
+        synchronized (dbLock) { return isOpenLocked(); }
     }
 
     @GuardedBy("dbLock")
-    protected boolean isOpen() { return c4Database != null; }
+    protected boolean isOpenLocked() { return c4Database != null; }
 
     @GuardedBy("dbLock")
     protected void assertOpenUnchecked() {
-        if (!isOpen()) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
+        if (!isOpenLocked()) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
     }
 
+    @GuardedBy("dbLock")
     protected void assertOpenChecked() throws CouchbaseLiteException {
-        if (!isOpen()) {
+        if (!isOpenLocked()) {
             throw new CouchbaseLiteException(
                 Log.lookupStandardMessage("DBClosed"),
                 CBLError.Domain.CBLITE,
                 CBLError.Code.NOT_OPEN);
         }
+    }
+
+    @GuardedBy("dbLock")
+    protected void setC4DatabaseLocked(@Nullable C4Database c4Database) {
+        this.c4Database = c4Database;
+        if (c4Database != null) { this.path = c4Database.getDbPath(); }
     }
 
     @GuardedBy("dbLock")
@@ -79,20 +99,6 @@ public abstract class BaseDatabase {
     protected C4Database getC4DbOrThrowLocked() throws CouchbaseLiteException {
         assertOpenChecked();
         return Preconditions.assertNotNull(c4Database, "c4db");
-    }
-
-    // When seizing multiple locks, always seize this lock first.
-    @NonNull
-    protected Object getDbLock() { return dbLock; }
-
-    @Nullable
-    protected String getDbPath() {
-        synchronized (getDbLock()) { return path; }
-    }
-
-    @NonNull
-    protected C4BlobStore getBlobStore() throws LiteCoreException {
-        synchronized (getDbLock()) { return getOpenC4DbLocked().getBlobStore(); }
     }
 
     @VisibleForTesting

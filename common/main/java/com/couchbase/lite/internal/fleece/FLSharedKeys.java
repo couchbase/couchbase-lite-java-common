@@ -15,21 +15,13 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import com.couchbase.lite.internal.utils.Preconditions;
+
+
 public class FLSharedKeys {
     private final long handle; // hold pointer to FLSharedKeys
 
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
-    public FLSharedKeys(long handle) {
-        if (handle == 0L) { throw new IllegalStateException(); }
-        this.handle = handle;
-    }
+    public FLSharedKeys(long handle) { this.handle = Preconditions.assertNotZero(handle, "handle"); }
 
-    //-------------------------------------------------------------------------
-    // package level access
-    //-------------------------------------------------------------------------
-    public long getHandle() {
-        return handle;
-    }
+    public long getHandle() { return handle; }
 }

@@ -43,7 +43,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_next(
     if (e == nullptr)
         return false;
 
-    C4Error error = {};
+    C4Error error{};
     jboolean result = c4queryenum_next(e, &error);
     if (!result && (error.code != 0)) {
         throwError(env, error);

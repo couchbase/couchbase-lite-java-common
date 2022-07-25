@@ -110,8 +110,7 @@ public class C4DocumentObserver extends C4NativePeer {
         finally { super.finalize(); }
     }
 
-    // !!!  CRASH HERE
-    private void closePeer(@Nullable LogDomain domain) {
+     private void closePeer(@Nullable LogDomain domain) {
         releasePeer(
             domain,
             (peer) -> {

@@ -206,7 +206,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     protected final boolean closeDb(@Nullable Database db) {
         if (db == null) { return true; }
         synchronized (db.getDbLock()) {
-            if ((db == null) || (!db.isOpen())) { return true; }
+            if ((db == null) || (!db.isOpenLocked())) { return true; }
         }
         return doSafely("Close db " + db.getName(), db::close);
     }
@@ -214,7 +214,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     protected final boolean deleteDb(@Nullable Database db) {
         if (db == null) { return true; }
         final boolean isOpen;
-        synchronized (db.getDbLock()) { isOpen = db.isOpen(); }
+        synchronized (db.getDbLock()) { isOpen = db.isOpenLocked(); }
         // there is a race here... probably small.
         return (isOpen)
             ? doSafely("Delete db " + db.getName(), db::delete)

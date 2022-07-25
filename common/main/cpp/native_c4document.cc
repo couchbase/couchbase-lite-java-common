@@ -35,7 +35,8 @@ extern "C" {
  * Method:    getFromCollection
  * Signature: (JLjava/lang/String;Z)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
         JNIEnv *env,
         jclass ignore,
         jlong coll,
@@ -43,7 +44,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFrom
         jboolean mustExist) {
     jstringSlice docId(env, jDocId);
 
-    C4Error error;
+    C4Error error{};
     C4Document *doc = c4coll_getDoc((C4Collection *) coll, docId, mustExist == JNI_TRUE, kDocGetAll, &error);
     if (doc == nullptr) {
         throwError(env, error);
@@ -58,7 +59,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFrom
  * Method:    createFromSLice
  * Signature: (JLjava/lang/String;JI)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createFromSlice(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Document_createFromSlice(
         JNIEnv *env,
         jclass ignore,
         jlong jcollection,
@@ -67,7 +69,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createF
         jint flags) {
     jstringSlice docID(env, jdocID);
     C4Slice body = (jbody == 0) ? kC4SliceNull : *(C4Slice *) jbody;
-    C4Error error;
+    C4Error error{};
     C4Document *doc = c4coll_createDoc((C4Collection *) jcollection, docID, body, (unsigned) flags, &error);
     if (!doc) {
         throwError(env, error);
@@ -177,7 +179,7 @@ Java_com_couchbase_lite_internal_core_C4Document_selectNextLeafRevision(
         jlong jdoc,
         jboolean jincludeDeleted,
         jboolean jwithBody) {
-    C4Error error;
+    C4Error error{};
     if (!c4doc_selectNextLeafRevision((C4Document *) jdoc, jincludeDeleted, jwithBody, &error))
         throwError(env, error);
 }
@@ -187,7 +189,8 @@ Java_com_couchbase_lite_internal_core_C4Document_selectNextLeafRevision(
  * Method:    resolveConflict
  * Signature: (JLjava/lang/String;Ljava/lang/String;[BI)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Document_resolveConflict(
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4Document_resolveConflict(
         JNIEnv *env,
         jclass ignore,
         jlong jdoc,
@@ -199,7 +202,7 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Document_resolveC
     jstringSlice losingRevID(env, jLosingRevID);
     jbyteArraySlice mergedBody(env, jMergedBody, false);
     auto revisionFlag = (C4RevisionFlags) jMergedFlags;
-    C4Error error = {};
+    C4Error error{};
     if (!c4doc_resolveConflict((C4Document *) jdoc, winningRevID, losingRevID, mergedBody, revisionFlag, &error))
         throwError(env, error);
 }
@@ -209,7 +212,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Document_resolveC
  * Method:    update2
  * Signature: (JJI)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_update2(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Document_update2(
         JNIEnv *env,
         jclass ignore,
         jlong jdoc,
@@ -227,7 +231,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_update2
     else
         body = kC4SliceNull;
 
-    C4Error error;
+    C4Error error{};
     C4Document *newDoc = c4doc_update((C4Document *) jdoc, body, (unsigned) flags, &error);
     if (!newDoc) {
         throwError(env, error);
@@ -248,7 +252,7 @@ Java_com_couchbase_lite_internal_core_C4Document_save(
         jclass ignore,
         jlong jdoc,
         jint maxRevTreeDepth) {
-    C4Error error;
+    C4Error error{};
     if (!c4doc_save((C4Document *) jdoc, (uint16_t) maxRevTreeDepth, &error))
         throwError(env, error);
 }
@@ -266,7 +270,7 @@ Java_com_couchbase_lite_internal_core_C4Document_bodyAsJSON(
         jclass ignore,
         jlong jdoc,
         jboolean canonical) {
-    C4Error error = {};
+    C4Error error{};
     C4StringResult result = c4doc_bodyAsJSON((C4Document *) jdoc, canonical, &error);
     if (error.code != 0) {
         throwError(env, error);
@@ -328,7 +332,7 @@ Java_com_couchbase_lite_internal_core_C4Document_create(
         jint flags) {
     jstringSlice docID(env, jdocID);
     jbyteArraySlice body(env, jbody, false);
-    C4Error error;
+    C4Error error{};
     C4Document *doc = c4doc_create((C4Database *) jdb, docID, body, (unsigned) flags, &error);
     if (!doc) {
         throwError(env, error);
@@ -362,7 +366,7 @@ Java_com_couchbase_lite_internal_core_C4Document_put(
     jstringSlice docID(env, jdocID);
     jbyteArraySlice body(env, jbody, false);
 
-    C4DocPutRequest rq = {};
+    C4DocPutRequest rq{};
     rq.body = body;                         ///< Revision's body
     rq.docID = docID;                       ///< Document ID
     rq.revFlags = revFlags;                 ///< Revision flags (deletion, attachments, keepBody)
@@ -391,7 +395,7 @@ Java_com_couchbase_lite_internal_core_C4Document_put(
     rq.historyCount = history.size();
 
     size_t commonAncestorIndex;
-    C4Error error;
+    C4Error error{};
     C4Document *doc = c4doc_put(db, &rq, &commonAncestorIndex, &error);
 
     // release memory
@@ -411,7 +415,8 @@ Java_com_couchbase_lite_internal_core_C4Document_put(
  * Method:    put2
  * Signature: (JJLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Document_put2(
         JNIEnv *env,
         jclass ignore,
         jlong jdb,
@@ -429,7 +434,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2(
     jstringSlice docID(env, jdocID);
 
     // Parameters for adding a revision using c4doc_put.
-    C4DocPutRequest rq = {};
+    C4DocPutRequest rq{};
     rq.body = *pBody;                       ///< Revision's body
     rq.docID = docID;                       ///< Document ID
     rq.revFlags = revFlags;                 ///< Revision flags (deletion, attachments, keepBody)
@@ -460,7 +465,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2(
     }
 
     size_t commonAncestorIndex;
-    C4Error error;
+    C4Error error{};
     C4Document *doc = c4doc_put(db, &rq, &commonAncestorIndex, &error);
 
     // release memory
@@ -551,7 +556,7 @@ Java_com_couchbase_lite_internal_core_C4Document_getSelectedBody(JNIEnv *env, jc
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_loadRevisionBody(JNIEnv *env, jclass ignore, jlong jdoc) {
-    C4Error error;
+    C4Error error{};
     if (!c4doc_loadRevisionBody((C4Document *) jdoc, &error))
         throwError(env, error);
 }
@@ -569,7 +574,7 @@ Java_com_couchbase_lite_internal_core_C4Document_update(
         jbyteArray jbody,
         jint flags) {
     jbyteArraySlice body(env, jbody, false);
-    C4Error error;
+    C4Error error{};
     C4Document *doc = c4doc_update((C4Document *) jdoc, body, (unsigned) flags, &error);
     if (!doc) {
         throwError(env, error);
@@ -590,7 +595,7 @@ Java_com_couchbase_lite_internal_core_C4Document_purgeRevision(
         jlong jdoc,
         jstring jrevID) {
     jstringSlice revID(env, jrevID);
-    C4Error error;
+    C4Error error{};
     int num = c4doc_purgeRevision((C4Document *) jdoc, revID, &error);
     if (num == -1) {
         throwError(env, error);

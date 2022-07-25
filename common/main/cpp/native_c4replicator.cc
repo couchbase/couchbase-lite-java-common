@@ -667,11 +667,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
     jstringSlice collection(env, jcollection);
     C4CollectionSpec collSpec = {collection, scope};
 
-    C4Error c4Error{};
+    C4Error error{};
 
-    C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, collSpec, &c4Error);
-    if (c4Error.domain != 0 && c4Error.code != 0) {
-        throwError(env, c4Error);
+    C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, collSpec, &error);
+    if (error.domain != 0 && error.code != 0) {
+        throwError(env, error);
         return 0L;
     }
 

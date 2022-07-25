@@ -456,7 +456,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         final Database db = getDatabase();
         final Database otherDb = doc.getDatabase();
         // Step 1: Check Database
-        if ((db == null) ? otherDb != null : !db.equalsWithPath(otherDb)) { return false; }
+        if (!((db == null) ? otherDb == null : db.equals(otherDb))) { return false; }
 
         // Step 2: Check document ID
         // NOTE id never null?
@@ -608,10 +608,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
     private void updateC4DocumentLocked(@Nullable C4Document c4Doc) {
         if (c4Document == c4Doc) { return; }
 
-        // !!! This seems like a great place to close the old
-        // document.  It appears, though that it may, sometimes,
-        // belong to somebody else as well: closing it leads to
-        // native crashes.  J'accuse Database.saveInTransaction...
+        // !!! This seems like a great place to close the old document.
+        //  It appears, though that it may, occasionally, belong to
+        //  somebody else as well: closing it leads to native crashes.
+        //  J'accuse Database.saveInTransaction...
         c4Document = c4Doc;
 
         if (c4Doc != null) { revId = null; }

@@ -77,7 +77,7 @@ public abstract class AbstractReplicator extends BaseReplicator {
         @Nullable
         @Override
         public String getCookies(@NonNull URI uri) {
-            synchronized (db.getDbLock()) { return (!db.isOpen()) ? null : db.getCookies(uri); }
+            synchronized (db.getDbLock()) { return (!db.isOpenLocked()) ? null : db.getCookies(uri); }
         }
     }
 
@@ -725,7 +725,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
         final ExecutionService.CloseableExecutor executor
             = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
         final Database db = getDatabase();
-        final Fn.NullableConsumer<CouchbaseLiteException> task = new Fn.NullableConsumer<CouchbaseLiteException>() {
+        final Fn.NullableConsumer<CouchbaseLiteException> continuation
+            = new Fn.NullableConsumer<CouchbaseLiteException>() {
             public void accept(CouchbaseLiteException err) {
                 rDoc.setError(err);
                 onConflictResolved(this, rDoc);
@@ -733,8 +734,8 @@ public abstract class AbstractReplicator extends BaseReplicator {
         };
 
         synchronized (getReplicatorLock()) {
-            executor.execute(() -> db.resolveReplicationConflict(resolver, rDoc.getID(), task));
-            pendingResolutions.add(task);
+            executor.execute(() -> db.resolveReplicationConflict(resolver, rDoc.getID(), continuation));
+            pendingResolutions.add(continuation);
         }
     }
 

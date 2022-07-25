@@ -50,16 +50,9 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
     @Override
     public void close() {
         synchronized (collection.getDbLock()) {
-            closeObserver(c4Observer);
+            if (c4Observer != null) { c4Observer.close(); }
             c4Observer = null;
         }
-    }
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { closeObserver(c4Observer); }
-        finally { super.finalize(); }
     }
 
     void start(@NonNull Fn.Consumer<Runnable> onChange) {
@@ -111,9 +104,5 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
     private void postChanges(List<String> docIds) {
         if (docIds.isEmpty()) { return; }
         postChange(new CollectionChange(collection, docIds));
-    }
-
-    private void closeObserver(@Nullable C4CollectionObserver observer) {
-        if (observer != null) { observer.close(); }
     }
 }

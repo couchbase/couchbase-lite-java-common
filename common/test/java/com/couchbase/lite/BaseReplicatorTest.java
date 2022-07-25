@@ -47,7 +47,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         otherDB = createDb("replicator_db");
         Report.log("Create other DB: " + otherDB);
         assertNotNull(otherDB);
-        synchronized (otherDB.getDbLock()) { assertTrue(otherDB.isOpen()); }
+        synchronized (otherDB.getDbLock()) { assertTrue(otherDB.isOpenLocked()); }
     }
 
     @After

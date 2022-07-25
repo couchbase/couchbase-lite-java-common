@@ -24,10 +24,13 @@ import java.util.Objects;
 
 // This class exists only for testing.
 // It is never used in production code
+// It is here to make JNI generation/use easier.
 
 @VisibleForTesting
 class C4FullTextMatch extends C4NativePeer {
-    private final boolean loadable;
+    private static final long MOCK_PEER = 0x0cab00d1eL;
+
+
     private long dataSource;
     private long property;
     private long term;
@@ -38,14 +41,10 @@ class C4FullTextMatch extends C4NativePeer {
     // Constructors
     //-------------------------------------------------------------------------
 
-    C4FullTextMatch(long peer) {
-        super(peer);
-        loadable = true;
-    }
+    C4FullTextMatch(long peer) { super(peer); }
 
     C4FullTextMatch(long dataSource, long property, long term, long start, long length) {
-        super(0x0cab00d1eL);
-        loadable = false;
+        super(MOCK_PEER);
         this.dataSource = dataSource;
         this.property = property;
         this.term = term;
@@ -55,15 +54,14 @@ class C4FullTextMatch extends C4NativePeer {
 
     @Nullable
     public C4FullTextMatch load() {
-        if (loadable) {
-            withPeer(peer -> {
-                this.dataSource = dataSource(peer);
-                this.property = property(peer);
-                this.term = term(peer);
-                this.start = start(peer);
-                this.length = length(peer);
-            });
-        }
+        withPeer(peer -> {
+            if (peer == MOCK_PEER) { return; }
+            this.dataSource = dataSource(peer);
+            this.property = property(peer);
+            this.term = term(peer);
+            this.start = start(peer);
+            this.length = length(peer);
+        });
         return this;
     }
 

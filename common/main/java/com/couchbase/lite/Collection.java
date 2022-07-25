@@ -45,6 +45,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  *
  */
+// A considerable amount of code depends on this class being immutable!
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public final class Collection extends BaseCollection implements AutoCloseable {
     public static final String DEFAULT_NAME = "_default";
@@ -99,12 +100,14 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     @NonNull
     private final C4Collection c4Collection;
 
-    // !!! This leaks notifiers that go out of scope without being (explicitly) closed
+
+    // These notifiers will be retained until they are either explicitly released,
+    // or this Collection or until this Collection goes out of scope.
+    // While the database does not keep a reference to its collection,
+    // a replicator does.  Notifiers should be safe for the life of the replicator.
     @GuardedBy("getDbLock()")
     private CollectionChangeNotifier collectionChangeNotifier;
-
     // A map of doc ids to the groups of listeners listening for changes to that doc
-    // !!! This leaks notifiers that go out of scope without being (explicitly) closed
     @GuardedBy("getDbLock()")
     private final Map<String, DocumentChangeNotifier> docChangeNotifiers = new HashMap<>();
 
@@ -147,7 +150,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
      */
     long getCount() throws CouchbaseLiteException {
         return Preconditions.assertNotNull(
-            withLock(() -> (!db.isOpen()) ? 0L : c4Collection.getDocumentCount()),
+            withLock(() -> (!db.isOpenLocked()) ? 0L : c4Collection.getDocumentCount()),
             "token");
     }
 
@@ -155,7 +158,6 @@ public final class Collection extends BaseCollection implements AutoCloseable {
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
      * exist in the collection, the value returned will be null.
      * <p>
-     *
      */
     @Nullable
     public Document getDocument(@NonNull String id) throws CouchbaseLiteException {
@@ -474,7 +476,8 @@ public final class Collection extends BaseCollection implements AutoCloseable {
 
     boolean isValid() { return c4Collection.isValid(); }
 
-    boolean isOpen() { return db.isOpen(); }
+    @GuardedBy("getDbLock()")
+    boolean isOpen() { return db.isOpenLocked(); }
 
     boolean isDefault() {
         return Scope.DEFAULT_NAME.equals(getScope().getName()) && Collection.DEFAULT_NAME.equals(getName());
@@ -690,7 +693,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
 
     @GuardedBy("dbLock")
     private void assertOpen() throws CouchbaseLiteException {
-        if (!db.isOpen()) {
+        if (!db.isOpenLocked()) {
             throw new CouchbaseLiteException(
                 Log.lookupStandardMessage("DBClosed"),
                 CBLError.Domain.CBLITE,

@@ -22,7 +22,7 @@ import java.util.Objects;
 import java.util.Set;
 
 
-// This is still assuming that we can cache the collections...
+//
 public class Scope {
     public static final String DEFAULT_NAME = "_default";
 

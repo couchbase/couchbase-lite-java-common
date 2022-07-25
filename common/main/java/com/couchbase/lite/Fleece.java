@@ -36,7 +36,7 @@ final class Fleece {
     private Fleece() {}
 
     private static final String SUPPORTED_TYPES
-        = "MutableDictionary, Dictionary, MutableArray, Array, Map, List, Date, String, Number, Boolean, null";
+        = "MutableDictionary, Dictionary, Map, MutableArray, Array, List, Blob, Date, String, Number, Boolean and null";
 
     // Assume that array and dict values are always different to avoid expensive comparisons.
     static boolean willMutate(Object newValue, @NonNull MValue oldValue, MCollection container) {

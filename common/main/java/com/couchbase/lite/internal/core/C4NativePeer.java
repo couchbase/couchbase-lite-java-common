@@ -78,8 +78,9 @@ public abstract class C4NativePeer implements AutoCloseable {
     @NonNull
     protected final Object getPeerLock() { return this; }
 
-    protected final void logPeerHistory(@NonNull LogDomain domain, @NonNull String message) {
-        Log.d(domain, message, (releasedAt != null) ? releasedAt : createdAt);
+    protected final void logCall(@NonNull LogDomain domain, @NonNull String message) {
+        if (!CouchbaseLiteInternal.debugging()) { return; }
+        Log.d(domain, message, new Exception("Called at:", (releasedAt != null) ? releasedAt : createdAt));
     }
 
     /**
@@ -93,7 +94,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         if (peer != 0L) { return peer; }
 
         logBadCall();
-        throw new IllegalStateException("Operation on closed native peer");
+        throw new IllegalStateException("Closed peer");
     }
 
     protected final <E extends Exception> void withPeer(@NonNull Fn.ConsumerThrows<Long, E> fn) throws E {
@@ -141,11 +142,11 @@ public abstract class C4NativePeer implements AutoCloseable {
     protected final <R, E extends Exception> R withPeerOrThrow(@NonNull Fn.FunctionThrows<Long, R, E> fn) throws E {
         synchronized (getPeerLock()) {
             final long peer = get();
-            if (peer != 0L) {return fn.apply(peer); }
+            if (peer != 0L) { return fn.apply(peer); }
         }
 
         logBadCall();
-        throw new IllegalStateException("Operation on closed peer", (releasedAt != null) ? releasedAt : createdAt);
+        throw new IllegalStateException("Closed peer");
     }
 
     /**
@@ -181,16 +182,15 @@ public abstract class C4NativePeer implements AutoCloseable {
 
         if (!CouchbaseLiteInternal.debugging()) { return; }
 
+        // domain == null means we don't expect the peer to have been closed
         if (domain == null) {
-            // here if we don't expect the peer to have been closed
+            // if it was closed, log this call
             if (peer == 0L) { logBadCall(); }
             return;
         }
 
-        // here if we expected the peer to have been closed
-        if (peer != 0L) {
-            Log.d(domain, "%s@0x%x not closed", getClass().getSimpleName(), peer);
-        }
+        // here if we expected the peer to have been closed, and it wasn't
+        if (peer != 0L) { Log.d(domain, "%s@0x%x not closed", getClass().getSimpleName(), peer); }
     }
 
     //-------------------------------------------------------------------------
@@ -209,11 +209,5 @@ public abstract class C4NativePeer implements AutoCloseable {
         return peer;
     }
 
-    private void logBadCall() {
-        if (!CouchbaseLiteInternal.debugging()) { return; }
-
-        Log.w(LogDomain.DATABASE, "Operation on closed native peer", new Exception());
-        final Exception closedLoc = releasedAt;
-        if (closedLoc != null) { Log.d(LogDomain.DATABASE, "Closed at", closedLoc); }
-    }
+    private void logBadCall() { logCall(LogDomain.DATABASE, "Operation on closed native peer"); }
 }

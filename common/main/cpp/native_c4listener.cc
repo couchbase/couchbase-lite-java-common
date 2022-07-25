@@ -386,7 +386,7 @@ static C4Listener *startListener(
     jstringSlice iFace(env, networkInterface);
     jstringSlice path(env, dbPath);
 
-    C4ListenerConfig config = {};
+    C4ListenerConfig config{};
     config.port = (uint16_t) port;
     config.networkInterface = iFace;
     config.apis = (unsigned) apis;
@@ -403,9 +403,9 @@ static C4Listener *startListener(
         config.callbackContext = (void *) context;
     }
 
-    C4Error error;
+    C4Error error{};
     auto listener = c4listener_start(&config, &error);
-    if (!listener) {
+    if (!listener && error.code != 0) {
         throwError(env, error);
         return nullptr;
     }
@@ -434,7 +434,7 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert, bool &didThrow) {
     jbyte *certData = env->GetByteArrayElements(cert, nullptr);
     FLSlice certSlice = {certData, (size_t) certSize};
 
-    C4Error error;
+    C4Error error{};
     auto c4cert = c4cert_fromData(certSlice, &error);
 
     env->ReleaseByteArrayElements(cert, certData, 0);
@@ -460,8 +460,7 @@ static jbyteArray getCertData(JNIEnv *env, C4Cert *cert) {
 }
 
 static C4KeyPair *createKeyPair(JNIEnv *env, jbyte algorithm, jint keySizeInBits, jlong context) {
-    C4Error error;
-
+    C4Error error{};
     auto keyPair = c4keypair_fromExternal((C4KeyPairAlgorithm) algorithm,
                                           (size_t) keySizeInBits,
                                           (void *) context,
@@ -533,7 +532,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         jboolean allowPull,
         jboolean enableDeltaSync,
         jboolean requirePasswordAuth) {
-    C4TLSConfig tlsConfig = {};
+    C4TLSConfig tlsConfig{};
     tlsConfig.privateKeyRepresentation = kC4PrivateKeyFromKey;
     tlsConfig.key = (C4KeyPair *) keyPair;
 
@@ -613,14 +612,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb(
         jlong c4Database) {
     jstringSlice name(env, dbName);
 
-    C4Error error;
-    if (!c4listener_shareDB(
+    C4Error error{};
+    auto ok = c4listener_shareDB(
             reinterpret_cast<C4Listener *>(c4Listener),
             name,
             reinterpret_cast<C4Database *>(c4Database),
-            &error)) {
+            &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
-    }
 }
 
 JNIEXPORT void JNICALL
@@ -629,13 +628,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareDb(
         jclass ignore,
         jlong c4Listener,
         jlong c4Database) {
-    C4Error error;
-    if (!c4listener_unshareDB(
+    C4Error error{};
+    auto ok = !c4listener_unshareDB(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
-            &error)) {
+            &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
-    }
 }
 
 JNIEXPORT jobject JNICALL
@@ -644,7 +643,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
         jclass ignore,
         jlong c4Listener,
         jlong c4Database) {
-    C4Error error;
+    C4Error error{};
     auto urls = c4listener_getURLs(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
@@ -737,7 +736,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
         subjectName[i] = {*keySlice, *valueSlice};
     }
 
-    C4Error error;
+    C4Error error{};
     auto csr = c4cert_createRequest(subjectName, size, usage, keys, &error);
     delete[] subjectName;
     if (!csr) {

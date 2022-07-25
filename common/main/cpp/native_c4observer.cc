@@ -341,7 +341,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_getEnumerator(
         JNIEnv *env, jclass clazz,
         jlong handle,
         jboolean forget) {
-    C4Error error = {};
+    C4Error error{};
     C4QueryEnumerator *results = c4queryobs_getEnumerator((C4QueryObserver *) handle, (bool) forget, &error);
     if (!results) {
         throwError(env, error);

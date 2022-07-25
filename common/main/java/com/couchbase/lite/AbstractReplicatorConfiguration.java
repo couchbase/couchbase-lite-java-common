@@ -738,6 +738,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
                 throw new IllegalArgumentException(
                     "Attempt to add a collection from the wrong database: " + db + " != " + database);
             }
+
             if (!database.isOpen()) {
                 throw new IllegalArgumentException("Cannot use a collection from a closed database");
             }

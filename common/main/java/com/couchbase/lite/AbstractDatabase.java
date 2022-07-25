@@ -61,6 +61,16 @@ import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
+// It seems obvious that the Database should cache collections.
+// Unfortunately collections can be created and deleted by other processes.
+// An Architect-level decision asserted that an explicit synchronization call
+// would embarrass the whole API.  As a result all collection interactions
+// have to go through LiteCore.
+// Actually, while deferring to LiteCore is necessary, it is not sufficient.
+// In order to guarantee that a collection is valid while it is in use, client
+// code must hold a database lock from the time it acquires a collection
+// reference (or calls its isValid method) until it is done with it.
+
 /**
  * AbstractDatabase is a base class of A Couchbase Lite Database.
  */
@@ -70,7 +80,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.TooManyMethods",
     "PMD.CouplingBetweenObjects"})
 abstract class AbstractDatabase extends BaseDatabase {
-
     //---------------------------------------------
     // Constants
     //---------------------------------------------
@@ -197,25 +206,12 @@ abstract class AbstractDatabase extends BaseDatabase {
         throw err;
     }
 
-    @NonNull
-    static Set<Collection> getDefaultCollectionAsSet(@NonNull Database database) {
-        final Collection collection;
-        try { collection = Collection.getDefaultCollection(database); }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException("Can't get default collection", e); }
-        if (collection == null) { throw new IllegalStateException("Default collection was deleted"); }
-        final HashSet<Collection> collections = new HashSet<>();
-        collections.add(collection);
-        return collections;
-    }
-
     @Nullable
-    static Database getDbForCollection(@Nullable Set<Collection> collections) {
+    static Database getDbForCollections(@Nullable Set<Collection> collections) {
         if ((collections == null) || collections.isEmpty()) { return null; }
 
         final Database db = collections.iterator().next().getDatabase();
-        if (!db.verifyCollections(collections)) {
-            throw new IllegalArgumentException("All collections must belong to the same database");
-        }
+        db.verifyCollections(collections);
 
         return db;
     }
@@ -310,7 +306,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     @Nullable
     public String getPath() {
-        synchronized (getDbLock()) { return (!isOpen()) ? null : getDbPath(); }
+        synchronized (getDbLock()) { return (!isOpenLocked()) ? null : getDbPath(); }
     }
 
     public boolean performMaintenance(MaintenanceType type) throws CouchbaseLiteException {
@@ -488,7 +484,7 @@ abstract class AbstractDatabase extends BaseDatabase {
     }
 
     /**
-     * Get the default collection. If the default collection is deleted, null will be returned.
+     * Get the default collection. If the default collection has been deleted the function will return null.
      *
      * @return the default collection or null if it does not exist.
      */
@@ -613,18 +609,17 @@ abstract class AbstractDatabase extends BaseDatabase {
 
     @NonNull
     @Override
-    public String toString() { return "Database{" + ClassUtils.objId(this) + ", name='" + name + "'}"; }
+    public String toString() { return "Database{@" + ClassUtils.objId(this) + ": '" + name + "'}"; }
 
     @Override
     public int hashCode() { return Objects.hash(name); }
 
-    // !!! This should check the path.
     @Override
     public boolean equals(Object o) {
         if (this == o) { return true; }
         if (!(o instanceof AbstractDatabase)) { return false; }
         final AbstractDatabase other = (AbstractDatabase) o;
-        return name.equals(other.name);
+        return Objects.equals(getPath(), other.getPath()) && name.equals(other.name);
     }
 
     //---------------------------------------------
@@ -989,17 +984,13 @@ abstract class AbstractDatabase extends BaseDatabase {
         return (path == null) ? null : new File(path);
     }
 
-    boolean equalsWithPath(@Nullable Database other) {
-        return (other != null) && Objects.equals(getFilePath(), other.getFilePath());
-    }
-
     @Nullable
     String getUuid() {
         byte[] uuid = null;
         LiteCoreException err = null;
 
         synchronized (getDbLock()) {
-            if (!isOpen()) { return null; }
+            if (!isOpenLocked()) { return null; }
 
             try { uuid = getOpenC4DbLocked().getPublicUUID(); }
             catch (LiteCoreException e) { err = e; }
@@ -1014,6 +1005,31 @@ abstract class AbstractDatabase extends BaseDatabase {
     FLSharedKeys getSharedKeys() { return sharedKeys; }
 
     // - Collections:
+
+    void verifyCollections(@NonNull Set<Collection> collections) {
+        for (Collection collection: collections) {
+            if (collection == null) {
+                throw new IllegalArgumentException("Collection may not be null");
+            }
+            if (!equals(collection.getDatabase())) {
+                throw new IllegalArgumentException(
+                    "Collection " + collection + " does not belong to databse " + getName());
+            }
+        }
+    }
+
+    @NonNull
+    Set<Collection> getDefaultCollectionAsSet() {
+        final Collection defaultCollection;
+        try { defaultCollection = Collection.getDefaultCollection(this.getDatabase()); }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException("Can't get default collection", e); }
+        if (defaultCollection == null) {
+            throw new IllegalArgumentException("Database " + getName() + "has no default collection");
+        }
+        final HashSet<Collection> collections = new HashSet<>();
+        collections.add(defaultCollection);
+        return collections;
+    }
 
     @NonNull
     C4Collection addC4Collection(@NonNull String scopeName, @NonNull String collectionName)
@@ -1030,14 +1046,6 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Nullable
     C4Collection getDefaultC4Collection() throws LiteCoreException {
         synchronized (getDbLock()) { return getOpenC4DbLocked().getDefaultCollection(); }
-    }
-
-    boolean verifyCollections(@Nullable Set<Collection> collections) {
-        if (collections == null) { return true; }
-        for (Collection collection: collections) {
-            if (collection.getDatabase() != this) { return false; }
-        }
-        return true;
     }
 
     // - Documents:
@@ -1442,6 +1450,8 @@ abstract class AbstractDatabase extends BaseDatabase {
         int mergedFlags = 0x00;
         if (resolvedDoc != null) {
             // !!! This will have to change before Collection Replication will work
+            // I can't see, actually, that this information is ever used.
+            // Perhaps it can just be deleted?
             if (resolvedDoc != localDoc) { resolvedDoc.setCollection(getDefaultCollection()); }
 
             final C4Document c4Doc = resolvedDoc.getC4doc();
@@ -1519,7 +1529,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         throws CouchbaseLiteException {
         final C4Database c4Db;
         synchronized (getDbLock()) {
-            final boolean open = isOpen();
+            final boolean open = isOpenLocked();
             Log.d(DOMAIN, "Shutdown (%b, %b)", failIfClosed, open);
             if (!(failIfClosed || open)) { return; }
 

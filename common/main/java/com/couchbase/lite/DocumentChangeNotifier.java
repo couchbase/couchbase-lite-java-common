@@ -41,16 +41,9 @@ final class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> implem
     @Override
     public void close() {
         synchronized (collection.getDbLock()) {
-            closeObserver(c4Observer);
+            if (c4Observer != null) { c4Observer.close(); }
             c4Observer = null;
         }
-    }
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { closeObserver(c4Observer); }
-        finally { super.finalize(); }
     }
 
     void start(@NonNull Fn.Consumer<Runnable> onChange) {
@@ -62,8 +55,4 @@ final class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> implem
     }
 
     private void documentChanged() { postChange(new DocumentChange(collection, docID)); }
-
-    private void closeObserver(C4DocumentObserver observer) {
-        if (observer != null) { observer.close(); }
-    }
 }

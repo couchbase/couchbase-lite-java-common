@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -70,7 +69,7 @@ public abstract class BaseDbTest extends BaseTest {
         baseTestDb = createDb("base_db");
         Report.log("Created base test DB: " + baseTestDb);
         assertNotNull(baseTestDb);
-        synchronized (baseTestDb.getDbLock()) { assertTrue(baseTestDb.isOpen()); }
+        synchronized (baseTestDb.getDbLock()) { assertTrue(baseTestDb.isOpenLocked()); }
     }
 
     @After

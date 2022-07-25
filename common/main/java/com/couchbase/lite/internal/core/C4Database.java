@@ -320,7 +320,7 @@ public abstract class C4Database extends C4NativePeer {
 
     // - File System
 
-    // this is the full name of the database directory, e.g., /foo/bar.cblite
+    // this is the conical name of the database directory, e.g., /foo/bar.cblite/
     @Nullable
     public String getDbPath() {
         final File file = getDbFile();

@@ -58,7 +58,7 @@ public final class C4CollectionObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public static C4CollectionObserver newObserver(long c4Coll, @NonNull Runnable listener) {
+    static C4CollectionObserver newObserver(long c4Coll, @NonNull Runnable listener) {
         return newObserver(NATIVE_IMPL, c4Coll, listener);
     }
 

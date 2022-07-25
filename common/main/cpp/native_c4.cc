@@ -242,8 +242,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_getMessage(
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir(JNIEnv *env, jclass ignore, jstring jtempDir) {
     jstringSlice tempDir(env, jtempDir);
-    C4Error error = {};
-    if (!c4_setTempDir(tempDir, &error))
+    C4Error error{};
+    auto ok = c4_setTempDir(tempDir, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -349,9 +350,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_writeToBinaryFile(
             header
     };
 
-    C4Error err;
-    if (!c4log_writeToBinaryFile(options, &err))
-        throwError(env, err);
+    C4Error error{};
+    auto ok = c4log_writeToBinaryFile(options, &error);
+    if (!ok && error.code != 0)
+        throwError(env, error);
 }
 
 /*
