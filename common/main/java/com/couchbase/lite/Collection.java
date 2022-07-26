@@ -695,7 +695,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     private void assertOpen() throws CouchbaseLiteException {
         if (!db.isOpenLocked()) {
             throw new CouchbaseLiteException(
-                Log.lookupStandardMessage("DBClosed"),
+                Log.lookupStandardMessage("DBClosedOrCollectionDeleted"),
                 CBLError.Domain.CBLITE,
                 CBLError.Code.NOT_OPEN);
         }

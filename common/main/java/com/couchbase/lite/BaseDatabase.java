@@ -68,7 +68,9 @@ public abstract class BaseDatabase {
 
     @GuardedBy("dbLock")
     protected void assertOpenUnchecked() {
-        if (!isOpenLocked()) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed")); }
+        if (!isOpenLocked()) {
+            throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"));
+        }
     }
 
     @GuardedBy("dbLock")

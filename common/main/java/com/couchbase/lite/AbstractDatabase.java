@@ -635,7 +635,9 @@ abstract class AbstractDatabase extends BaseDatabase {
     @Deprecated
     public long getCount() {
         try { return getDefaultCollectionOrThrow().getCount(); }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
+        catch (CouchbaseLiteException e) {
+            throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e);
+        }
     }
 
     /**
@@ -721,7 +723,7 @@ abstract class AbstractDatabase extends BaseDatabase {
         try { return getDefaultCollectionOrThrow().save(document, conflictHandler); }
         catch (CouchbaseLiteException e) {
             if (!(CBLError.Domain.CBLITE.equals(e.getDomain()) && (CBLError.Code.NOT_OPEN == e.getCode()))) { throw e; }
-            else { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
+            else { throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e); }
         }
     }
 
@@ -837,7 +839,9 @@ abstract class AbstractDatabase extends BaseDatabase {
     @NonNull
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener) {
         try { return getDefaultCollectionOrThrow().addChangeListener(executor, listener::changed); }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
+        catch (CouchbaseLiteException e) {
+            throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e);
+        }
     }
 
     /**
@@ -871,7 +875,9 @@ abstract class AbstractDatabase extends BaseDatabase {
         @Nullable Executor executor,
         @NonNull DocumentChangeListener listener) {
         try { return getDefaultCollectionOrThrow().addDocumentChangeListener(docId, executor, listener); }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException(Log.lookupStandardMessage("DBClosed"), e); }
+        catch (CouchbaseLiteException e) {
+            throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e);
+        }
     }
 
     /**
