@@ -27,6 +27,11 @@
 #include "fleece/FLExpert.h"
 #include "fleece/FLValue.h"
 
+
+// For printing jstringSlices
+// like this: logError("A jstringSlice: %.*s", SPLAT(aJStringSlice));
+#define SPLAT(S)    (int)(S).size, (char *)(S).buf
+
 namespace litecore {
     namespace jni {
 

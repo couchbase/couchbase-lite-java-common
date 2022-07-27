@@ -30,20 +30,20 @@ using namespace litecore::jni;
 // -------------------------------------------------------------------------------------------------
 
 // C4CollectionObserver
-static jclass cls_C4CollObs;              // global reference
-static jmethodID m_C4CollObs_callback;    // callback method
+static jclass cls_C4CollObs;              // global class reference
+static jmethodID m_C4CollObs_callback;    // collection observer callback
 
 // C4DocumentObserver
-static jclass cls_C4DocObs;               // global reference
-static jmethodID m_C4DocObs_callback;     // callback method
+static jclass cls_C4DocObs;               // global class reference
+static jmethodID m_C4DocObs_callback;     // document observer callback
 
 // C4DocumentChange
-static jclass cls_C4DocChange;            // global reference
-static jmethodID m_C4DocChange_create;    // static constructor
+static jclass cls_C4DocChange;            // global class reference
+static jmethodID m_C4DocChange_create;    // C4DocumentChange static constructor
 
 // C4QueryObserver
-static jclass cls_C4QueryObs;             // global reference
-static jmethodID m_C4QueryObs_callback;   // callback method
+static jclass cls_C4QueryObs;             // global class reference
+static jmethodID m_C4QueryObs_callback;   // query observer callback
 
 bool litecore::jni::initC4Observer(JNIEnv *env) {
     // C4CollectionObserver.callback

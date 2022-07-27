@@ -185,7 +185,7 @@ static jobject toJavaDocumentEnded(JNIEnv *env, const C4DocumentEnded *document)
     return env->NewObject(
             cls_C4DocEnded,
             m_C4DocEnded_init,
-            (jlong) 0L, // document->collectionContext
+            (jlong) document->collectionContext,
             scope,
             name,
             docID,
@@ -208,24 +208,33 @@ static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C
     return ds;
 }
 
+// I am so sorry.  IANAC++P.
+// The second vector, here (the 4th argument), is just around to
+// keep the jstringSlices from going out of scope.  All it does
+// is hold on to them, so that the C4ReplicationCollections in
+// colls can point to them, until the end of the caller's scope.
 static int fromJavaReplColls(
         JNIEnv *env,
         jobjectArray jColls,
         std::vector<C4ReplicationCollection> &colls,
+        std::vector<std::shared_ptr<jstringSlice>> &collNames,
         C4ReplicatorMode pushMode,
         C4ReplicatorMode pullMode) {
     int nColls = env->GetArrayLength(jColls);
     colls.resize(nColls);
+
     for (jsize i = 0; i < nColls; i++) {
         jobject replColl = env->GetObjectArrayElement(jColls, i);
 
         jobject jscope = env->GetObjectField(replColl, f_ReplColl_scope);
-        jstringSlice scope(env, (jstring) jscope);
-        colls[i].collection.scope = scope;
+        auto pScope = std::make_shared<jstringSlice>(env, (jstring) jscope);
+        collNames.push_back(pScope);
+        colls[i].collection.scope = *pScope;
 
         jobject jname = env->GetObjectField(replColl, f_ReplColl_name);
-        jstringSlice name(env, (jstring) jname);
-        colls[i].collection.name = name;
+        auto pName = std::make_shared<jstringSlice>(env, (jstring) jname);
+        collNames.push_back(pName);
+        colls[i].collection.name = *pName;
 
         colls[i].push = pushMode;
         colls[i].pull = pullMode;
@@ -462,10 +471,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
     C4ReplicatorMode mode = (continuous) ? kC4Continuous : kC4OneShot;
 
     std::vector<C4ReplicationCollection> collectionDescs;
+    std::vector<std::shared_ptr<jstringSlice>> collectionNames;
     int nColls = fromJavaReplColls(
             env,
             jCollDescs,
             collectionDescs,
+            collectionNames,
             (push == JNI_TRUE) ? mode : kC4Disabled,
             (pull == JNI_TRUE) ? mode : kC4Disabled);
     if (nColls < 0) {
@@ -519,10 +530,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
     C4ReplicatorMode mode = (continuous) ? kC4Continuous : kC4OneShot;
 
     std::vector<C4ReplicationCollection> collectionDescs;
+    std::vector<std::shared_ptr<jstringSlice>> collectionNames;
     int nColls = fromJavaReplColls(
             env,
             jCollDescs,
             collectionDescs,
+            collectionNames,
             (push == JNI_TRUE) ? mode : kC4Disabled,
             (pull == JNI_TRUE) ? mode : kC4Disabled);
     if (nColls < 0) {
@@ -568,7 +581,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
     params.callbackContext = (void *) replicatorToken;
 
     std::vector<C4ReplicationCollection> collectionDescs;
-    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, kC4Passive, kC4Passive);
+    std::vector<std::shared_ptr<jstringSlice>> collectionNames;
+    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, collectionNames, kC4Passive, kC4Passive);
     if (nColls < 0) {
         C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
         throwError(env, error);

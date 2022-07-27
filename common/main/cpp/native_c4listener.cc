@@ -31,8 +31,8 @@ static jmethodID m_ConnectionStatus_init;          // constructor
 
 // Java C4Listener class
 static jclass cls_C4Listener;                      // global reference
-static jmethodID m_C4Listener_certAuthCallback;    // statusChangedCallback method
-static jmethodID m_C4Listener_httpAuthCallback;    // documentEndedCallback method
+static jmethodID m_C4Listener_certAuthCallback;    // TLS authentication callback
+static jmethodID m_C4Listener_httpAuthCallback;    // HTTP authentiication callback
 
 // Java KeyManager class
 static jclass cls_C4KeyPair;                      // global reference

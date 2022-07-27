@@ -265,7 +265,7 @@ public final class ReplicationCollection implements AutoCloseable {
 
     @NonNull
     @Override
-    public String toString() { return "ReplicationCollection {" + scope + "." + name + "}"; }
+    public String toString() { return "ReplicationCollection{" + scope + "." + name + "}"; }
 
     @SuppressWarnings("NoFinalizer")
     @Override
