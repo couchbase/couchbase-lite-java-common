@@ -15,8 +15,6 @@
 //
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.utils.Report
-import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotSame
@@ -126,7 +124,7 @@ class DbCollectionsTest : BaseCollectionTest() {
         var scope = scopes.first { it.name == Scope.DEFAULT_NAME }
         assertNotNull(scope.getCollection(Scope.DEFAULT_NAME))
 
-        scope = scopes.first { it.name == testScopeName}
+        scope = scopes.first { it.name == testScopeName }
         assertNotNull(scope.getCollection(testColName))
     }
 
@@ -186,8 +184,7 @@ class DbCollectionsTest : BaseCollectionTest() {
             baseTestDb.createCollection("testColl")
             val collectionRecreated = otherDb.getCollection("testColl")
             assertNotSame(collectionRecreated, collection)
-        }
-        finally {
+        } finally {
             deleteDb(otherDb)
         }
     }
@@ -197,10 +194,10 @@ class DbCollectionsTest : BaseCollectionTest() {
         //open a new db
         val newDB = openDatabase()
         try {
-            assertNull(newDB.getCollection(testColName,testScopeName))
+            assertNull(newDB.getCollection(testColName, testScopeName))
         } finally {
             // delete otherDb
-            deleteDb(newDB);
+            deleteDb(newDB)
         }
     }
 }
