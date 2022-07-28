@@ -752,8 +752,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         final Collection defaultCollection = Fn.firstOrNull(collectionConfigurations.keySet(), Collection::isDefault);
         final CollectionConfiguration config = collectionConfigurations.get(defaultCollection);
         if ((defaultCollection == null) || (config == null)) {
-            throw new IllegalArgumentException("Cannot use legacy parameter without a default collection "
-                + "configuration");
+            throw new IllegalArgumentException(
+                "Cannot use legacy parameter without a default collection configuration");
         }
         return config;
     }
