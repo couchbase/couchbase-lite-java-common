@@ -15,10 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <errno.h>
-#include "com_couchbase_lite_internal_core_C4DocEnumerator.h"
-#include "c4DocEnumerator.h"
 #include "native_glue.hh"
+#include "com_couchbase_lite_internal_core_C4DocEnumerator.h"
 
 using namespace litecore;
 using namespace litecore::jni;

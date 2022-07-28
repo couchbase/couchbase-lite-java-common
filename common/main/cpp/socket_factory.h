@@ -5,7 +5,7 @@
 #ifndef SOCKET_FACTORY_H
 #define SOCKET_FACTORY_H
 
-#include <c4Socket.h>
+#include "c4Socket.h"
 
 const C4SocketFactory socket_factory();
 

@@ -19,10 +19,10 @@
 #include <sys/time.h>
 #endif
 
+#include "native_glue.hh"
 #include "com_couchbase_lite_internal_core_impl_NativeC4.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Log.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Key.h"
-#include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;

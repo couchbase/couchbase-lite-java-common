@@ -15,9 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <c4.h>
-#include "com_couchbase_lite_internal_core_C4FullTextMatch.h"
 #include "native_glue.hh"
+#include "com_couchbase_lite_internal_core_C4FullTextMatch.h"
 
 using namespace litecore;
 using namespace litecore::jni;

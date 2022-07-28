@@ -16,12 +16,10 @@
 // limitations under the License.
 //
 #include <algorithm>
-#include <c4Document.h>
-#include <c4.h>
-#include <c4Document+Fleece.h>
-#include <c4Base.h>
-#include "com_couchbase_lite_internal_core_C4Document.h"
+#include <vector>
+#include "c4Base.h"
 #include "native_glue.hh"
+#include "com_couchbase_lite_internal_core_C4Document.h"
 
 using namespace litecore;
 using namespace litecore::jni;

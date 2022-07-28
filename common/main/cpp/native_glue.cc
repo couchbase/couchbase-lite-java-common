@@ -16,12 +16,12 @@
 // limitations under the License.
 //
 
-#include "native_glue.hh"
-#include <assert.h>
 #include <queue>
 #include <new>
 #include <codecvt>
 #include <locale>
+#include <assert.h>
+#include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;

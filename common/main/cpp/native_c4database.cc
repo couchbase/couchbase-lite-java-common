@@ -15,11 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <errno.h>
-#include "c4.h"
-#include "c4Document+Fleece.h"
-#include "com_couchbase_lite_internal_core_impl_NativeC4Database.h"
 #include "native_glue.hh"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Database.h"
 
 using namespace litecore;
 using namespace litecore::jni;

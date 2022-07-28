@@ -13,10 +13,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include "com_couchbase_lite_internal_core_impl_NativeC4Collection.h"
-#include "c4DatabaseTypes.h"
-#include "c4Collection.h"
 #include "native_glue.hh"
+#include "c4DatabaseTypes.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Collection.h"
 
 using namespace litecore;
 using namespace litecore::jni;

@@ -16,12 +16,10 @@
 // limitations under the License.
 //
 
-#include <c4.h>
-#include <c4Base.h>
-#include <c4Socket.h>
-#include "com_couchbase_lite_internal_core_impl_NativeC4Socket.h"
-#include "socket_factory.h"
+#include "c4Base.h"
 #include "native_glue.hh"
+#include "socket_factory.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Socket.h"
 
 using namespace litecore;
 using namespace litecore::jni;

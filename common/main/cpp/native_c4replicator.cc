@@ -15,13 +15,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <c4.h>
-#include <c4Replicator.h>
-#include <c4Base.h>
-#include <c4Socket.h>
+#include <memory>
+#include <vector>
+#include "c4Base.h"
+#include "native_glue.hh"
 #include "socket_factory.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Replicator.h"
-#include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;

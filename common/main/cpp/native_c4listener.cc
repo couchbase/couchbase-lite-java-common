@@ -17,10 +17,10 @@
 //
 #ifdef COUCHBASE_ENTERPRISE
 
-#include "c4Listener.h"
+#include <vector>
+#include "native_glue.hh"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Listener.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4KeyPair.h"
-#include "native_glue.hh"
 
 using namespace litecore;
 using namespace litecore::jni;

@@ -20,9 +20,9 @@
 #define native_glue_hpp
 
 #include <jni.h>
+#include <cerrno>
 #include <string>
-#include <vector>
-#include <c4.h>
+#include "c4.h"
 #include "fleece/Fleece.h"
 #include "fleece/FLExpert.h"
 #include "fleece/FLValue.h"
