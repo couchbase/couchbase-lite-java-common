@@ -433,7 +433,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
-        getDefaultConfigForLegacyAPI().setDocumentIDs((documentIDs == null) ? null : new ArrayList<>(documentIDs));
+        getValidDefaultConfigOrThrow().setDocumentIDs((documentIDs == null) ? null : new ArrayList<>(documentIDs));
         return getReplicatorConfiguration();
     }
 
@@ -450,7 +450,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
-        getDefaultConfigForLegacyAPI().setChannels((channels == null) ? null : new ArrayList<>(channels));
+        getValidDefaultConfigOrThrow().setChannels((channels == null) ? null : new ArrayList<>(channels));
         return getReplicatorConfiguration();
     }
 
@@ -464,7 +464,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
-        getDefaultConfigForLegacyAPI().setConflictResolver(conflictResolver);
+        getValidDefaultConfigOrThrow().setConflictResolver(conflictResolver);
         return getReplicatorConfiguration();
     }
 
@@ -479,7 +479,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
-        getDefaultConfigForLegacyAPI().setPullFilter(pullFilter);
+        getValidDefaultConfigOrThrow().setPullFilter(pullFilter);
         return getReplicatorConfiguration();
     }
 
@@ -494,7 +494,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
-        getDefaultConfigForLegacyAPI().setPushFilter(pushFilter);
+        getValidDefaultConfigOrThrow().setPushFilter(pushFilter);
         return getReplicatorConfiguration();
     }
 
@@ -640,7 +640,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @Nullable
     public final List<String> getDocumentIDs() {
-        final List<String> docIds = getDefaultConfigForLegacyAPI().getDocumentIDs();
+        final List<String> docIds = getValidDefaultConfigOrThrow().getDocumentIDs();
         return (docIds == null) ? null : new ArrayList<>(docIds);
     }
 
@@ -654,7 +654,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @Nullable
     public final List<String> getChannels() {
-        final List<String> channels = getDefaultConfigForLegacyAPI().getChannels();
+        final List<String> channels = getValidDefaultConfigOrThrow().getChannels();
         return (channels == null) ? null : new ArrayList<>(channels);
     }
 
@@ -665,7 +665,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     @Deprecated
     @Nullable
-    public final ConflictResolver getConflictResolver() { return getDefaultConfigForLegacyAPI().getConflictResolver(); }
+    public final ConflictResolver getConflictResolver() { return getValidDefaultConfigOrThrow().getConflictResolver(); }
 
     /**
      * Gets the filter used to determine whether a document will be pulled
@@ -675,7 +675,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     @Deprecated
     @Nullable
-    public final ReplicationFilter getPullFilter() { return getDefaultConfigForLegacyAPI().getPullFilter(); }
+    public final ReplicationFilter getPullFilter() { return getValidDefaultConfigOrThrow().getPullFilter(); }
 
     /**
      * Gets a filter used to determine whether a document will be pushed
@@ -685,7 +685,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     @Deprecated
     @Nullable
-    public final ReplicationFilter getPushFilter() { return getDefaultConfigForLegacyAPI().getPushFilter(); }
+    public final ReplicationFilter getPushFilter() { return getValidDefaultConfigOrThrow().getPushFilter(); }
 
     @SuppressWarnings("PMD.NPathComplexity")
     @NonNull
@@ -748,9 +748,13 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     @NonNull
-    private CollectionConfiguration getDefaultConfigForLegacyAPI() {
-        return Preconditions.assertNotNull(
-            collectionConfigurations.get(Fn.firstOrNull(collectionConfigurations.keySet(), Collection::isDefault)),
-            "The default collection", "when specifying legacy parameters for a replicator");
+    private CollectionConfiguration getValidDefaultConfigOrThrow() {
+        final Collection defaultCollection = Fn.firstOrNull(collectionConfigurations.keySet(), Collection::isDefault);
+        final CollectionConfiguration config = collectionConfigurations.get(defaultCollection);
+        if ((defaultCollection == null) || (config == null)) {
+            throw new IllegalArgumentException("Cannot use legacy parameter without a default collection "
+                + "configuration");
+        }
+        return config;
     }
 }
