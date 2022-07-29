@@ -62,13 +62,11 @@ class C4CollectionObserverTest : C4BaseTest() {
                 assertEquals(2, i)
 
                 checkChanges(obs, arrayListOf("B", "C"), arrayListOf("2-bbbb", "1-cc"), false)
-
-                obs.close()
-
-                //no call back if observer is closed
-                createRev(c4Database, "A", "2-aaaa", fleeceBody)
-                assertEquals(2, i)
             }
+
+            //no call back if observer is closed
+            createRev(c4Database, "A", "2-aaaa", fleeceBody)
+            assertEquals(2, i)
         }
     }
 

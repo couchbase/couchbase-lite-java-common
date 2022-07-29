@@ -146,7 +146,7 @@ public abstract class C4Database extends C4NativePeer {
         UnmanagedC4Database(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
 
         @Override
-        public void close() { releasePeer(); }
+        public void close() { releasePeer(null, null); }
     }
 
     // managed: Java code is responsible for freeing it

@@ -44,7 +44,7 @@ public abstract class FLSliceResult extends C4NativePeer {
         UnmanagedFLSliceResult(long peer) { super(peer); }
 
         @Override
-        public void close() { releasePeer(); }
+        public void close() { releasePeer(null, null); }
     }
 
     // managed: Java code is responsible for freeing it

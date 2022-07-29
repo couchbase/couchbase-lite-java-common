@@ -98,12 +98,8 @@ public final class Blob implements FLEncodable {
 
 
         BlobInputStream(@NonNull C4BlobKey key, @NonNull C4BlobStore store) throws LiteCoreException {
-            Preconditions.assertNotNull(key, "key");
-            Preconditions.assertNotNull(store, "store");
-
-            this.key = key;
-            this.store = store;
-
+            this.key = Preconditions.assertNotNull(key, "key");
+            this.store = Preconditions.assertNotNull(store, "store");
             this.blobStream = store.openReadStream(key);
         }
 
@@ -646,7 +642,7 @@ public final class Blob implements FLEncodable {
 
     @NonNull
     private InputStream getStreamFromDatabase(@NonNull BaseDatabase db) {
-        try (C4BlobKey key = new C4BlobKey(blobDigest)) { return new BlobInputStream(key, db.getBlobStore()); }
+        try { return new BlobInputStream(new C4BlobKey(blobDigest), db.getBlobStore()); }
         catch (IllegalArgumentException | LiteCoreException e) {
             throw new IllegalStateException("Failed opening blobContent stream.", e);
         }

@@ -28,7 +28,6 @@ import org.junit.Test;
 
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
@@ -65,8 +64,11 @@ public class C4BlobStoreTest extends C4BaseTest {
 
         if (store != null) {
             try { store.delete(); }
-            catch (LiteCoreException e) { throw new IllegalStateException("Failed deleting blob store", e); }
-            finally { store.close(); }
+            catch (LiteCoreException e) {
+                try { store.close(); }
+                catch (Exception ignore) { }
+                throw new IllegalStateException("Failed deleting blob store", e);
+            }
         }
 
         if (blobDir != null) { FileUtils.eraseFileOrDir(blobDir); }
@@ -210,46 +212,55 @@ public class C4BlobStoreTest extends C4BaseTest {
     // - write blob with stream
     @Test
     public void testWriteBlobWithStream() throws LiteCoreException {
-        try (C4BlobWriteStream stream = blobStore.openWriteStream()) {
-            assertNotNull(stream);
+        C4BlobKey key = null;
+        try {
+            try (C4BlobWriteStream stream = blobStore.openWriteStream()) {
+                assertNotNull(stream);
 
-            for (int i = 0; i < 1000; i++) {
-                stream.write(String.format(Locale.ENGLISH, "This is line %03d.\n", i).getBytes(StandardCharsets.UTF_8));
-            }
-
-            // Get the blob key, and install it:
-            try (C4BlobKey key = stream.computeBlobKey()) {
-                assertNotNull(key);
-                stream.install();
-                stream.close();
-
-                // Read it back using the key:
-                try (FLSliceResult contents = blobStore.getContents(key)) {
-                    assertNotNull(contents);
-                    assertEquals(18000, contents.getSize());
-                    assertEquals(18000, contents.getBuf().length);
+                for (int i = 0; i < 1000; i++) {
+                    stream.write(String.format(Locale.ENGLISH, "This is line %03d.\n", i)
+                        .getBytes(StandardCharsets.UTF_8));
                 }
 
-                // Read it back random-access:
-                try (C4BlobReadStream reader = blobStore.openReadStream(key)) {
-                    assertNotNull(reader);
-                    final int increment = 3 * 3 * 3 * 3;
-                    int line = increment;
-                    for (int i = 0; i < 1000; i++) {
-                        line = (line + increment) % 1000;
-                        Report.log("Reading line " + line + " at offset " + (18 * line));
-                        String buf = String.format(Locale.ENGLISH, "This is line %03d.\n", line);
-                        reader.seek(18 * line);
-                        byte[] readBuf = new byte[18];
-                        reader.read(readBuf, 0, 18);
-                        assertNotNull(readBuf);
-                        assertEquals(18, readBuf.length);
-                        assertArrayEquals(readBuf, buf.getBytes(StandardCharsets.UTF_8));
-                    }
+                // Get the blob key, and install it:
+                key = stream.computeBlobKey();
+                assertNotNull(key);
+                stream.install();
+            }
+
+            // Read it back using the key:
+            try (FLSliceResult contents = blobStore.getContents(key)) {
+                assertNotNull(contents);
+                assertEquals(18000, contents.getSize());
+                assertEquals(18000, contents.getBuf().length);
+            }
+
+            // Read it back random-access:
+            try (C4BlobReadStream reader = blobStore.openReadStream(key)) {
+                assertNotNull(reader);
+                final int increment = 3 * 3 * 3 * 3;
+                int line = increment;
+                for (int i = 0; i < 1000; i++) {
+                    line = (line + increment) % 1000;
+                    Report.log("Reading line " + line + " at offset " + (18 * line));
+                    String buf = String.format(Locale.ENGLISH, "This is line %03d.\n", line);
+                    reader.seek(18 * line);
+                    byte[] readBuf = new byte[18];
+                    reader.read(readBuf, 0, 18);
+                    assertNotNull(readBuf);
+                    assertEquals(18, readBuf.length);
+                    assertArrayEquals(readBuf, buf.getBytes(StandardCharsets.UTF_8));
                 }
             }
         }
+        finally {
+            if (key != null) {
+                try { key.close(); }
+                catch (Exception ignore) { }
+            }
+        }
     }
+
 
     // - write blobs of many sizes
     @Test

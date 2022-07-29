@@ -36,7 +36,7 @@ public abstract class C4BlobStore extends C4NativePeer {
         UnmanagedC4BlobStore(long peer) throws LiteCoreException { super(getBlobStore(peer)); }
 
         @Override
-        public void close() { releasePeer(); }
+        public void close() { releasePeer(null, null); }
     }
 
     // managed: Java code is responsible for freeing it
@@ -92,7 +92,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      * be up to 16 bytes larger than the actual size.
      */
     public long getSize(@NonNull C4BlobKey blobKey) {
-        return withPeerOrDefault(-1L, peer -> getSize(peer, getBlobKeyPeer(blobKey)));
+        return withPeerOrDefault(-1L, peer -> getSize(peer, blobKey.getHandle()));
     }
 
     /**
@@ -101,7 +101,7 @@ public abstract class C4BlobStore extends C4NativePeer {
     @NonNull
     public FLSliceResult getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
         return FLSliceResult.getManagedSliceResult(
-            withPeerOrThrow(peer -> getContents(peer, getBlobKeyPeer(blobKey))));
+            withPeerOrThrow(peer -> getContents(peer, blobKey.getHandle())));
     }
 
     /**
@@ -115,7 +115,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @Nullable
     public String getFilePath(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return withPeerOrNull(peer -> getFilePath(peer, getBlobKeyPeer(blobKey)));
+        return withPeerOrNull(peer -> getFilePath(peer, blobKey.getHandle()));
     }
 
     /**
@@ -130,7 +130,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      * Deletes a blob from the store given its key.
      */
     public void delete(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        withPeer(peer -> delete(peer, getBlobKeyPeer(blobKey)));
+        withPeer(peer -> delete(peer, blobKey.getHandle()));
     }
 
     /**
@@ -138,7 +138,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobReadStream openReadStream(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return new C4BlobReadStream(withPeerOrThrow(peer -> openReadStream(peer, getBlobKeyPeer(blobKey))));
+        return new C4BlobReadStream(withPeerOrThrow(peer -> openReadStream(peer, blobKey.getHandle())));
     }
 
     /**
@@ -156,13 +156,6 @@ public abstract class C4BlobStore extends C4NativePeer {
 
     @VisibleForTesting
     public void delete() throws LiteCoreException { releasePeer(null, C4BlobStore::deleteStore); }
-
-    //-------------------------------------------------------------------------
-    // private methods
-    //-------------------------------------------------------------------------
-
-    // !!! Really shouldn't be grabbing other objects by their handles...
-    private long getBlobKeyPeer(@NonNull C4BlobKey blobKey) { return blobKey.getHandle(); }
 
     //-------------------------------------------------------------------------
     // native methods

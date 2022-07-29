@@ -213,9 +213,7 @@ public final class C4Document extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        // ??? These things are practically never closed.
-        // No point is spamming the log
-        try { closePeer(null); }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
     }
 

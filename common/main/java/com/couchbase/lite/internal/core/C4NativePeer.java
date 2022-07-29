@@ -38,22 +38,20 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * java.lang.NullPointerException: Null reference used for synchronization (monitor-enter)
  */
 public abstract class C4NativePeer implements AutoCloseable {
-    private static final String HANDLE_NAME = "peer handle";
-
     @GuardedBy("this")
-    private volatile long peer;
+    private final long peer;
+    @GuardedBy("this")
+    private volatile boolean open = true;
 
-    // Instrumentation
-    private final Exception createdAt;
-    private volatile Exception releasedAt;
+    private volatile Exception history;
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
     protected C4NativePeer(long peer) {
-        this.peer = Preconditions.assertNotZero(peer, HANDLE_NAME);
-        createdAt = (!CouchbaseLiteInternal.debugging()) ? null : new Exception("Created:");
+        this.peer = Preconditions.assertNotZero(peer, "peer handle");
+        updateHistory(peer, "Created at:");
     }
 
     //-------------------------------------------------------------------------
@@ -80,28 +78,35 @@ public abstract class C4NativePeer implements AutoCloseable {
 
     protected final void logCall(@NonNull LogDomain domain, @NonNull String message) {
         if (!CouchbaseLiteInternal.debugging()) { return; }
-        Log.d(domain, message, new Exception("Called at:", (releasedAt != null) ? releasedAt : createdAt));
+        final long peer = this.peer;
+        Log.d(
+            domain,
+            "%s@0x%x: " + message,
+            new Exception("At: ", history),
+            getClass().getSimpleName(),
+            peer);
     }
 
     /**
-     * This method is incredibly dangerous.  A client that gets the peer reference
+     * This method is very dangerous.  A client that gets the peer reference
      * can use it after the peer has been disposed.
      *
      * @return the handle to the native peer.
+     * @throws IllegalStateException if the peer has been closed.
      */
     protected final long getPeer() {
-        final long peer = get();
-        if (peer != 0L) { return peer; }
+        synchronized (getPeerLock()) {
+            if (open) { return this.peer; }
+        }
 
         logBadCall();
-        throw new IllegalStateException("Closed peer");
+        throw new IllegalStateException("Operation on closed peer");
     }
 
     protected final <E extends Exception> void withPeer(@NonNull Fn.ConsumerThrows<Long, E> fn) throws E {
         synchronized (getPeerLock()) {
-            final long peer = get();
-            if (peer != 0L) {
-                fn.accept(peer);
+            if (open) {
+                fn.accept(this.peer);
                 return;
             }
         }
@@ -113,8 +118,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     protected final <R, E extends Exception> R withPeerOrNull(@NonNull Fn.NullableFunctionThrows<Long, R, E> fn)
         throws E {
         synchronized (getPeerLock()) {
-            final long peer = get();
-            if (peer != 0L) { return fn.apply(peer); }
+            if (open) { return fn.apply(this.peer); }
         }
 
         logBadCall();
@@ -127,9 +131,8 @@ public abstract class C4NativePeer implements AutoCloseable {
         @NonNull Fn.NullableFunctionThrows<Long, R, E> fn)
         throws E {
         synchronized (getPeerLock()) {
-            final long peer = get();
-            if (peer != 0L) {
-                final R val = fn.apply(peer);
+            if (open) {
+                final R val = fn.apply(this.peer);
                 return (val != null) ? val : def;
             }
         }
@@ -141,8 +144,7 @@ public abstract class C4NativePeer implements AutoCloseable {
     @NonNull
     protected final <R, E extends Exception> R withPeerOrThrow(@NonNull Fn.FunctionThrows<Long, R, E> fn) throws E {
         synchronized (getPeerLock()) {
-            final long peer = get();
-            if (peer != 0L) { return fn.apply(peer); }
+            if (open) { return fn.apply(this.peer); }
         }
 
         logBadCall();
@@ -150,18 +152,12 @@ public abstract class C4NativePeer implements AutoCloseable {
     }
 
     /**
-     * Convenience method: release peer with no message or goodbye-kiss.
-     * Useful from close() methods.
-     */
-    protected final void releasePeer() { releasePeer(null, null); }
-
-    /**
      * Release the native peer, giving it the passed goodbye-kiss.
-     * When this method is used to release a peer that should already have been released
-     * (say, in a finalizer for an [Auto]Closable object) pass a non-null domain to produce
-     * an error message if the peer has not already been freed.
-     * If this method is expecting to free the object (e.g., from the close() method)
-     * passing a null domain will prevent it from logging an error.
+     * When this method is used to release a peer that should already have
+     * been released (say, in a finalizer for an [Auto]Closable object) pass a non-null
+     * domain to produce a log message if the peer has not already bee freed.
+     * If this method is expecting to free the object (e.g., from a close() method)
+     * passing a null domain will prevent it from logging.
      * <p>
      * Be careful about passing functions that seize locks: it would be easy to cause deadlocks.
      *
@@ -182,31 +178,37 @@ public abstract class C4NativePeer implements AutoCloseable {
 
         if (!CouchbaseLiteInternal.debugging()) { return; }
 
-        // domain == null means we don't expect the peer to have been closed
         if (domain == null) {
-            // if it was closed, log this call
+            // here (domain == null) if we don't expect the peer to have been closed
+
+            // it was: this is bad: log the call
             if (peer == 0L) { logBadCall(); }
-            return;
+        }
+        else {
+            // here (domain != null) if we expect the peer to have been closed
+
+            // it wasn't: this probably happens a lot (object is being finalized)
+            if (peer != 0L) { logCall(domain, "Not closed"); }
         }
 
-        // here if we expected the peer to have been closed, and it wasn't
-        if (peer != 0L) { Log.d(domain, "%s@0x%x not closed", getClass().getSimpleName(), peer); }
+        updateHistory(peer, "Released at:");
     }
 
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
 
-    private long get() {
-        synchronized (getPeerLock()) { return peer; }
-    }
-
     @GuardedBy("lock")
     private long releasePeerLocked() {
-        final long peer = this.peer;
-        this.peer = 0L;
-        if ((peer != 0L) && CouchbaseLiteInternal.debugging()) { releasedAt = new Exception("Released:", createdAt); }
-        return peer;
+        final boolean open = this.open;
+        this.open = false;
+        return (!open) ? 0L : this.peer;
+    }
+
+     @SuppressWarnings("NonAtomicOperationOnVolatileField")
+     private void updateHistory(long peer, @NonNull String msg) {
+        if ((peer == 0) || !CouchbaseLiteInternal.debugging()) { return; }
+        history = new Exception(msg, history);
     }
 
     private void logBadCall() { logCall(LogDomain.DATABASE, "Operation on closed native peer"); }

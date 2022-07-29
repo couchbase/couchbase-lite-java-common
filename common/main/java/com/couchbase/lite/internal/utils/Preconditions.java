@@ -82,12 +82,6 @@ public final class Preconditions {
     }
 
     @NonNull
-    public static <T> T assertNotNull(@Nullable T obj, @NonNull String name, @NonNull String context) {
-        if (obj == null) { throw new IllegalArgumentException(name + " must not be null " + context); }
-        return obj;
-    }
-
-    @NonNull
     public static String assertNotEmpty(@Nullable String str, @NonNull String name) {
         if (StringUtils.isEmpty(str)) { throw new IllegalArgumentException(name + " must not be empty"); }
         return str;

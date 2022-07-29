@@ -17,10 +17,8 @@ class C4CollectionDocObserverTest : C4BaseTest() {
     @Test
     fun testCreateC4CollectionDocObserver() {
         C4Collection.create(c4Database, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
-            C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "test", {}).use {
-                assertNotNull(it)
-                it.close()
-            }
+            C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "test", {})
+                .use { assertNotNull(it) }
         }
     }
 

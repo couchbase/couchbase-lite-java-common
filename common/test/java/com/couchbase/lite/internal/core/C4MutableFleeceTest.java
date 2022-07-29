@@ -35,10 +35,10 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.fleece.TestDictionary;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.fleece.TestDictionary;
 import com.couchbase.lite.internal.fleece.TestMValueDelegate;
 
 import static org.junit.Assert.assertEquals;
@@ -433,14 +433,9 @@ public class C4MutableFleeceTest extends C4BaseTest {
     }
 
     private String fleece2JSON(FLSliceResult fleece) {
-        try {
-            FLValue v = FLValue.fromData(fleece);
-            if (v == null) { return "INVALID_FLEECE"; }
-            return v.toJSON5();
-        }
-        finally {
-            if (fleece != null) { fleece.close(); }
-        }
+        FLValue v = FLValue.fromData(fleece);
+        if (v == null) { return "INVALID_FLEECE"; }
+        return v.toJSON5();
     }
 
     private MRoot getMRoot(FLSliceResult data) {

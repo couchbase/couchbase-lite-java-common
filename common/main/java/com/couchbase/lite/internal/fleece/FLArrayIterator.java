@@ -29,7 +29,7 @@ public abstract class FLArrayIterator extends C4NativePeer {
         UnmanagedFLArrayIterator(long peer) { super(peer); }
 
         @Override
-        public void close() { releasePeer(); }
+        public void close() { releasePeer(null, null); }
     }
 
     // managed: Java code is responsible for freeing it
