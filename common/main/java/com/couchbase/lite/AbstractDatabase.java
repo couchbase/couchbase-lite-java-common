@@ -79,7 +79,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.CyclomaticComplexity",
     "PMD.TooManyMethods",
     "PMD.CouplingBetweenObjects"})
-abstract class AbstractDatabase extends BaseDatabase {
+abstract class AbstractDatabase extends BaseDatabase implements AutoCloseable {
     //---------------------------------------------
     // Constants
     //---------------------------------------------
