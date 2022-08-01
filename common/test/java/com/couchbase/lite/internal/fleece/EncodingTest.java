@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.fleece;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -21,9 +21,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
-import com.couchbase.lite.internal.fleece.FLEncoder;
-import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.BaseTest;
+import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.utils.Report;
 
 import static org.junit.Assert.assertEquals;
