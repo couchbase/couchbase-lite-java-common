@@ -1019,7 +1019,7 @@ abstract class AbstractDatabase extends BaseDatabase implements AutoCloseable {
             }
             if (!equals(collection.getDatabase())) {
                 throw new IllegalArgumentException(
-                    "Collection " + collection + " does not belong to databse " + getName());
+                    "Collection " + collection + " does not belong to database " + getName());
             }
         }
     }

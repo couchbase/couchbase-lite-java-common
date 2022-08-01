@@ -51,7 +51,7 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("ConstantConditions")
 public abstract class BaseTest extends PlatformBaseTest {
     public static final long STD_TIMEOUT_SEC = 10;
-    public static final long LONG_TIMEOUT_SEC = 30;
+    public static final long LONG_TIMEOUT_SEC = 60;
 
     public static final long STD_TIMEOUT_MS = STD_TIMEOUT_SEC * 1000L;
     public static final long LONG_TIMEOUT_MS = LONG_TIMEOUT_SEC * 1000L;

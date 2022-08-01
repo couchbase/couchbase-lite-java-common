@@ -74,7 +74,7 @@ class LoadTest : BaseDbTest() {
     @LoadIntegrationTest
     @Test
     fun testDelete() {
-        timeTest("testDelete", 15 * 1000L) {
+        timeTest("testDelete", 20 * 1000L) {
             // create & delete doc ITERATIONS times
             for (i in 0 until ITERATIONS) {
                 val docID = String.format(Locale.ENGLISH, "doc-%010d", i)
@@ -110,7 +110,7 @@ class LoadTest : BaseDbTest() {
     @LoadIntegrationTest
     @Test
     fun testSaveManyDocs() {
-        timeTest("testSaveManyDocs", 15 * 1000L) {
+        timeTest("testSaveManyDocs", 20 * 1000L) {
             // Without Batch
             for (i in 0 until ITERATIONS) {
                 val doc = MutableDocument(String.format(Locale.ENGLISH, "doc-%05d", i))
