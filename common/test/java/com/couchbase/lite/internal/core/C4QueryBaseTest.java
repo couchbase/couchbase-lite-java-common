@@ -80,7 +80,8 @@ public class C4QueryBaseTest extends C4BaseTest {
         C4QueryOptions opts = new C4QueryOptions();
 
         final C4QueryEnumerator e;
-        try (FLSliceResult encodedParams = encodeParameters(params)) { e = query.run(opts, encodedParams); }
+        FLSliceResult encodedParams = encodeParameters(params);
+        e = query.run(opts, encodedParams);
         assertNotNull(e);
 
         try {
@@ -92,7 +93,7 @@ public class C4QueryBaseTest extends C4BaseTest {
 
     protected final C4QueryEnumerator runQuery(@NonNull C4Query query, @NonNull C4QueryOptions opts)
         throws LiteCoreException {
-        try (FLSliceResult params = FLSliceResult.getManagedSliceResult()) { return query.run(opts, params); }
+        return query.run(opts, new FLSliceResult(0, 0));
     }
 
     protected final List<List<C4FullTextMatch>> runFTS() throws LiteCoreException {
@@ -100,7 +101,8 @@ public class C4QueryBaseTest extends C4BaseTest {
         final C4QueryOptions opts = new C4QueryOptions();
 
         final C4QueryEnumerator e;
-        try (FLSliceResult encodedParams = encodeParameters(null)) { e = query.run(opts, encodedParams); }
+        FLSliceResult encodedParams = encodeParameters(null);
+        e = query.run(opts, encodedParams);
         assertNotNull(e);
 
         try {

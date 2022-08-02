@@ -50,6 +50,7 @@ namespace litecore {
         bool initC4Socket(JNIEnv *);     // Implemented in native_c4socket.cc
 
 #ifdef COUCHBASE_ENTERPRISE
+
         bool initC4Prediction(JNIEnv *); // Implemented in native_c4prediction.cc
         bool initC4Listener(JNIEnv *);   // Implemented in native_c4listener.cc
 #endif
@@ -132,8 +133,11 @@ namespace litecore {
         // Copy a FLMutableArray of strings to a Java HashSet<String>
         jobject toStringSet(JNIEnv *env, FLMutableArray array);
 
-        // !!! We need to get rid of this.
-        C4SliceResult *copyToHeap(const C4SliceResult &sr);
+        // Copy a native FLSliceResult to a Java FLSliceResult
+        jobject toJavaFLSliceResult(JNIEnv *const env, const FLSliceResult &sr);
+
+        // Copy a Java FLSliceResult to a native FLSliceResult
+        FLSliceResult fromJavaFLSliceResult(JNIEnv *const env, jobject jsr);
     }
 }
 

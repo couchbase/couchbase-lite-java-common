@@ -667,9 +667,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getStatus(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    getPendingDocIDs
- * Signature: (JLjava/lang/String;Ljava/lang/String;)J
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */
-JNIEXPORT jlong JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
         JNIEnv *env,
         jclass ignored,
@@ -685,15 +685,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds(
     C4SliceResult res = c4repl_getPendingDocIDs((C4Replicator *) repl, collSpec, &error);
     if (error.domain != 0 && error.code != 0) {
         throwError(env, error);
-        return 0L;
+        return nullptr;
     }
 
-    auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
-
-    sliceResult->buf = res.buf;
-    sliceResult->size = res.size;
-
-    return (jlong) copyToHeap(res);
+    return toJavaFLSliceResult(env, res);
 }
 
 /*

@@ -114,6 +114,12 @@ static jclass cls_HashSet;                       // global reference
 static jmethodID m_HashSet_init;                 // constructor
 static jmethodID m_HashSet_add;                  // add
 
+// Java FLSliceResult class
+static jclass cls_FLSliceResult;                 // global reference
+static jmethodID m_FLSliceResult_init;           // constructor
+static jfieldID f_FLSliceResult_base;            // field: base
+static jfieldID f_FLSliceResult_size;            // field: size
+
 
 static bool initC4Glue(JNIEnv *env) {
     {
@@ -149,6 +155,28 @@ static bool initC4Glue(JNIEnv *env) {
         m_HashSet_add = env->GetMethodID(cls_HashSet, "add", "(Ljava/lang/Object;)Z");
         if (!m_HashSet_add)
             return false;
+    }
+    {
+        jclass localClass = env->FindClass("com/couchbase/lite/internal/fleece/FLSliceResult");
+        if (!localClass)
+            return false;
+
+        cls_FLSliceResult = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_FLSliceResult)
+            return false;
+
+        m_FLSliceResult_init = env->GetMethodID(cls_FLSliceResult, "<init>", "(JJ)V");
+        if (!m_FLSliceResult_init)
+            return false;
+
+        f_FLSliceResult_base = env->GetFieldID(cls_FLSliceResult, "base", "J");
+        if (!f_FLSliceResult_base)
+            return false;
+
+        f_FLSliceResult_size = env->GetFieldID(cls_FLSliceResult, "size", "J");
+        if (!f_FLSliceResult_size)
+            return false;
+
     }
 
     return true;
@@ -214,6 +242,7 @@ namespace litecore {
 
         // ATTN: In critical, should not call any other JNI methods.
         // http://docs.oracle.com/javase/6/docs/technotes/guides/jni/spec/functions.html
+        // Just don't set it true.
         jbyteArraySlice::jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, bool critical)
                 : jbyteArraySlice(env, jbytes, (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)), critical) {}
 
@@ -308,7 +337,7 @@ namespace litecore {
             return true;
         }
 
-        jobject toStringList(JNIEnv *env, FLMutableArray array) {
+        jobject toStringList(JNIEnv *env, const FLMutableArray array) {
             uint32_t n = FLArray_Count(array);
             jobject result = env->NewObject(cls_ArrayList, m_ArrayList_init, (jint) n);
 
@@ -336,7 +365,7 @@ namespace litecore {
             return result;
         }
 
-        jobject toStringSet(JNIEnv *env, FLMutableArray array) {
+        jobject toStringSet(JNIEnv *env, const FLMutableArray array) {
             uint32_t n = FLArray_Count(array);
             jobject result = env->NewObject(cls_HashSet, m_HashSet_init, (jint) n);
 
@@ -364,13 +393,14 @@ namespace litecore {
             return result;
         }
 
-        // !!! This is just a terrible idea
-        // Allocating space on heap, just to contain a pointer
-        // to a block of memory is totally dumb.
-        C4SliceResult *copyToHeap(const C4SliceResult &sr) {
-            auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
-            sliceResult->buf = sr.buf;
-            sliceResult->size = sr.size;
+        jobject toJavaFLSliceResult(JNIEnv *const env, const FLSliceResult &sr) {
+            return env->NewObject(cls_FLSliceResult, m_FLSliceResult_init, (jlong) sr.buf, (jlong) sr.size);
+        }
+
+        FLSliceResult fromJavaFLSliceResult(JNIEnv *const env, jobject jsr) {
+            auto base = (const void *) env->GetLongField(jsr, f_FLSliceResult_base);
+            auto size = (size_t) env->GetLongField(jsr, f_FLSliceResult_size);
+            C4SliceResult sliceResult{base, size};
             return sliceResult;
         }
     }

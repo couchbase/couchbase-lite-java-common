@@ -7,6 +7,7 @@ import java.util.Set;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Database;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
 @SuppressWarnings("PMD.TooManyMethods")
@@ -74,8 +75,11 @@ public class NativeC4Database implements C4Database.NativeImpl {
     @Override
     public long nGetSharedFleeceEncoder(long db) { return getSharedFleeceEncoder(db); }
 
+    @NonNull
     @Override
-    public long nEncodeJSON(long db, byte[] jsonData) throws LiteCoreException { return encodeJSON(db, jsonData); }
+    public FLSliceResult nEncodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException {
+        return encodeJSON(db, jsonData);
+    }
 
     @Override
     public long nGetFLSharedKeys(long db) { return getFLSharedKeys(db); }
@@ -169,7 +173,8 @@ public class NativeC4Database implements C4Database.NativeImpl {
 
     private static native long getFLSharedKeys(long db);
 
-    private static native long encodeJSON(long db, byte[] jsonData) throws LiteCoreException;
+    @NonNull
+    private static native FLSliceResult encodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
 
     // - Scopes and Collections
 

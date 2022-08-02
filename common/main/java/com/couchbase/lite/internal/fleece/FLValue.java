@@ -37,7 +37,7 @@ public class FLValue {
     @Nullable
     public static FLValue fromData(@Nullable FLSliceResult slice) {
         if (slice == null) { return null; }
-        final long value = fromData(slice.getHandle());
+        final long value = fromData(slice.getBase(), slice.getSize());
         return value == 0 ? null : new FLValue(value);
     }
 
@@ -183,7 +183,7 @@ public class FLValue {
 
     /**
      * Returns the exact contents of a string value, or null for all other types.
-     * !!! If we are out of memory or the string cannot be decoded, we just lose it
+     * ??? If we are out of memory or the string cannot be decoded, we just drop it on the floor
      *
      * @return String
      */
@@ -259,7 +259,7 @@ public class FLValue {
      */
     private static native long fromTrustedData(byte[] data);
 
-    private static native long fromData(long slice);
+    private static native long fromData(long ptr, long size);
 
     private static native int getType(long value);
 

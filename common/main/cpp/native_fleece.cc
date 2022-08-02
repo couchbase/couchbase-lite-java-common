@@ -243,9 +243,9 @@ Java_com_couchbase_lite_internal_fleece_FLDictIterator_free(JNIEnv *env, jclass 
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLValue_fromData(JNIEnv *env, jclass ignore, jlong jflslice) {
-    auto s = (FLSliceResult *) jflslice;
-    return (jlong) FLValue_FromData({s->buf, s->size}, kFLUntrusted);
+Java_com_couchbase_lite_internal_fleece_FLValue_fromData(JNIEnv *env, jclass ignore, jlong ptr, jlong size) {
+    FLSlice slice {(const void *) ptr, (size_t) size};
+    return (jlong) FLValue_FromData(slice, kFLUntrusted);
 }
 
 /*
@@ -453,47 +453,12 @@ Java_com_couchbase_lite_internal_fleece_FLValue_toJSON5(JNIEnv *env, jclass igno
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
- * Method:    init
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLSliceResult_init(JNIEnv *env, jclass ignore) {
-    auto *sliceResult = (C4SliceResult *) ::malloc(sizeof(C4SliceResult));
-    sliceResult->buf = nullptr;
-    sliceResult->size = 0;
-    return (jlong) sliceResult;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
- * Method:    free
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_FLSliceResult_free(JNIEnv *env, jclass ignore, jlong jslice) {
-    FLSliceResult_Release(*(FLSliceResult *) jslice);
-    ::free(reinterpret_cast<void *>(jslice));
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
  * Method:    getBuf
- * Signature: (J)[B
+ * Signature: (JJ)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_fleece_FLSliceResult_getBuf(JNIEnv *env, jclass ignore, jlong jslice) {
-    auto *res = (FLSliceResult *) jslice;
-    C4Slice s = {res->buf, res->size};
+Java_com_couchbase_lite_internal_fleece_FLSliceResult_getBuf(JNIEnv *env, jclass ignore, jlong base, jlong size) {
+    C4Slice s = {(const void*) base, (size_t) size};
     return toJByteArray(env, s);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
- * Method:    getSize
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLSliceResult_getSize(JNIEnv *env, jclass ignore, jlong jslice) {
-    return (jlong) ((FLSliceResult *) jslice)->size;
 }
 }

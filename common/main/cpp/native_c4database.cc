@@ -370,9 +370,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getFLSharedKeys(JNIE
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    encodeJSON
- * Signature: (J[B)J
+ * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */
-JNIEXPORT jlong JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON(
         JNIEnv *env,
         jclass ignore,
@@ -384,10 +384,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON(
     C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
     if (!res && error.code != 0) {
         throwError(env, error);
-        return 0;
+        return nullptr;
     }
 
-    return (jlong) copyToHeap(res);
+    return toJavaFLSliceResult(env, res);
 }
 
 // - Scopes and Collections

@@ -20,6 +20,7 @@ import com.couchbase.lite.internal.core.C4BaseTest
 import com.couchbase.lite.internal.core.C4Replicator
 import com.couchbase.lite.internal.core.C4ReplicatorStatus
 import com.couchbase.lite.internal.core.C4Socket
+import com.couchbase.lite.internal.fleece.FLSliceResult
 
 open class MockNativeSocket : C4Socket.NativeImpl {
     override fun nRetain(peer: Long) = Unit
@@ -81,7 +82,7 @@ open class MockNativeReplicator : C4Replicator.NativeImpl {
     override fun nStart(peer: Long, restart: Boolean) = Unit
     override fun nStop(peer: Long) = Unit
     override fun nSetOptions(peer: Long, options: ByteArray?) = Unit
-    override fun nGetPendingDocIds(peer: Long, scope: String, collection: String) = C4BaseTest.MOCK_PEER
+    override fun nGetPendingDocIds(peer: Long, scope: String, collection: String) = FLSliceResult(0, 0)
     override fun nIsDocumentPending(peer: Long, id: String, scope: String, collection: String) = true
     override fun nSetProgressLevel(peer: Long, progressLevel: Int) = Unit
     override fun nSetHostReachable(peer: Long, reachable: Boolean) = Unit

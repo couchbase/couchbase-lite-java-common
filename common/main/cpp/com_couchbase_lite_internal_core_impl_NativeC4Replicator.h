@@ -75,9 +75,9 @@ JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Rep
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    getPendingDocIds
- * Signature: (JLjava/lang/String;Ljava/lang/String;)J
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds
+JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_getPendingDocIds
   (JNIEnv *, jclass, jlong, jstring, jstring);
 
 /*

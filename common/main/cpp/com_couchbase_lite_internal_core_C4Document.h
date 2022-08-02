@@ -11,10 +11,10 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    createFromSlice
- * Signature: (JLjava/lang/String;JI)J
+ * Signature: (JLjava/lang/String;JJI)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createFromSlice
-        (JNIEnv *, jclass, jlong, jstring, jlong, jint);
+        (JNIEnv *, jclass, jlong, jstring, jlong, jlong, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
@@ -45,8 +45,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put
  * Method:    put2
  * Signature: (JJLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2
-        (JNIEnv *, jclass, jlong, jlong, jstring, jint, jboolean, jboolean, jobjectArray, jboolean, jint, jint);
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_put2(
+        JNIEnv *, jclass, jlong, jlong, jlong, jstring, jint, jboolean, jboolean, jobjectArray, jboolean, jint, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
@@ -211,10 +211,10 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_update
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    update2
- * Signature: (JJI)J
+ * Signature: (JJJI)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_update2
-        (JNIEnv *, jclass, jlong, jlong, jint);
+        (JNIEnv *, jclass, jlong, jlong, jlong, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
@@ -227,10 +227,10 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_C4Document_bodyA
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    dictContainsBlobs
- * Signature: (JJ)Z
+ * Signature: (JJJ)Z
  */
 JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Document_dictContainsBlobs
-        (JNIEnv *, jclass, jlong, jlong);
+        (JNIEnv *, jclass, jlong, jlong, jlong);
 
 #ifdef __cplusplus
 }

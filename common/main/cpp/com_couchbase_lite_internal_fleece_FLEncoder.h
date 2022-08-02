@@ -146,9 +146,9 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_fleece_FLEncoder_f
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLEncoder
  * Method:    finish2
- * Signature: (J)J
+ * Signature: (J)Lcom/couchbase/lite/internal/fleece/FLSliceResult
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLEncoder_finish2
+JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_fleece_FLEncoder_finish2
   (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus

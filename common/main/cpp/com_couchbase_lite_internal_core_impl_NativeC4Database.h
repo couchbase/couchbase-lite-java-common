@@ -146,9 +146,9 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Datab
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    encodeJSON
- * Signature: (J[B)J
+ * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON
+JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON
         (JNIEnv *, jclass, jlong, jbyteArray);
 
 /*

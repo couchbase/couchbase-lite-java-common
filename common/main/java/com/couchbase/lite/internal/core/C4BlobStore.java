@@ -100,8 +100,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public FLSliceResult getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return FLSliceResult.getManagedSliceResult(
-            withPeerOrThrow(peer -> getContents(peer, blobKey.getHandle())));
+        return withPeerOrThrow(peer -> getContents(peer, blobKey.getHandle()));
     }
 
     /**
@@ -165,7 +164,8 @@ public abstract class C4BlobStore extends C4NativePeer {
 
     private static native long getSize(long peer, long blobKey);
 
-    private static native long getContents(long peer, long blobKey) throws LiteCoreException;
+    @NonNull
+    private static native FLSliceResult getContents(long peer, long blobKey) throws LiteCoreException;
 
     @NonNull
     private static native String getFilePath(long peer, long blobKey) throws LiteCoreException;

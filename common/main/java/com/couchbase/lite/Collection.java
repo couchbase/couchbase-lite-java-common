@@ -793,9 +793,6 @@ public final class Collection extends BaseCollection implements AutoCloseable {
         catch (LiteCoreException e) {
             throw CouchbaseLiteException.convertException(e);
         }
-        finally {
-            if (body != null) { body.close(); }
-        }
     }
 
     private void closeCollectionChangNotifierLocked() {

@@ -230,7 +230,9 @@ public abstract class C4Replicator extends C4NativePeer {
         void nStart(long peer, boolean restart);
         void nStop(long peer);
         void nSetOptions(long peer, @Nullable byte[] options);
-        long nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection) throws LiteCoreException;
+        @NonNull
+        FLSliceResult nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
+            throws LiteCoreException;
         boolean nIsDocumentPending(long peer, @NonNull String id, @NonNull String scope, @NonNull String collection)
             throws LiteCoreException;
         void nSetProgressLevel(long peer, int progressLevel) throws LiteCoreException;
@@ -650,11 +652,9 @@ public abstract class C4Replicator extends C4NativePeer {
 
     @NonNull
     public Set<String> getPendingDocIDs(@NonNull String scope, @NonNull String collection) throws LiteCoreException {
-        final long ids = withPeerOrDefault(0L, peer -> impl.nGetPendingDocIds(peer, scope, collection));
-        try (FLSliceResult result = FLSliceResult.getManagedSliceResult(ids)) {
-            final FLValue slice = FLValue.fromData(result);
-            return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray());
-        }
+        final FLSliceResult result = withPeerOrNull(peer -> impl.nGetPendingDocIds(peer, scope, collection));
+        final FLValue slice = FLValue.fromData(result);
+        return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray());
     }
 
     public void setProgressLevel(int level) throws LiteCoreException {

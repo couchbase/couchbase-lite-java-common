@@ -18,10 +18,10 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Query
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    setParameters
- * Signature: (JJ)V
+ * Signature: (JJJ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Query_setParameters(JNIEnv *, jclass, jlong, jlong);
+Java_com_couchbase_lite_internal_core_impl_NativeC4Query_setParameters(JNIEnv *, jclass, jlong, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
@@ -58,10 +58,10 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Que
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    run
- * Signature: (JZJ)J
+ * Signature: (JZJJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run
-  (JNIEnv *, jclass, jlong, jboolean, jlong);
+  (JNIEnv *, jclass, jlong, jboolean, jlong, jlong);
 
 #ifdef __cplusplus
 }

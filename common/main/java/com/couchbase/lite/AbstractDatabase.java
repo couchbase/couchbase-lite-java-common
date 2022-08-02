@@ -656,8 +656,6 @@ abstract class AbstractDatabase extends BaseDatabase implements AutoCloseable {
      * @param id the document ID
      * @return the Document object
      * @deprecated Use getDefaultCollection().getCount()
-     *
-     *
      */
     @SuppressWarnings("PMD.PreserveStackTrace")
     @Deprecated
@@ -1483,17 +1481,17 @@ abstract class AbstractDatabase extends BaseDatabase implements AutoCloseable {
                 mergedFlags |= C4Constants.RevisionFlags.DELETED;
                 try (FLEncoder enc = getSharedFleeceEncoder()) {
                     enc.writeValue(Collections.emptyMap());
-                    try (FLSliceResult mergedBody = enc.finish2()) { mergedBodyBytes = mergedBody.getBuf(); }
+                    final FLSliceResult mergedBody = enc.finish2();
+                    mergedBodyBytes = mergedBody.getContent();
                 }
             }
             else {
-                try (FLSliceResult mergedBody = resolvedDoc.encode()) {
-                    // if the resolved doc has attachments, be sure has the flag
-                    if (C4Document.dictContainsBlobs(mergedBody, sharedKeys)) {
-                        mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
-                    }
-                    mergedBodyBytes = mergedBody.getBuf();
+                final FLSliceResult mergedBody = resolvedDoc.encode();
+                // if the resolved doc has attachments, be sure has the flag
+                if (C4Document.dictContainsBlobs(mergedBody, sharedKeys)) {
+                    mergedFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
                 }
+                mergedBodyBytes = mergedBody.getContent();
             }
         }
 

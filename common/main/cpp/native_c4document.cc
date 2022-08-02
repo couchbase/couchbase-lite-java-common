@@ -55,7 +55,7 @@ Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    createFromSLice
- * Signature: (JLjava/lang/String;JI)J
+ * Signature: (JLjava/lang/String;JJI)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_createFromSlice(
@@ -63,10 +63,11 @@ Java_com_couchbase_lite_internal_core_C4Document_createFromSlice(
         jclass ignore,
         jlong jcollection,
         jstring jdocID,
-        jlong jbody,
+        jlong jbodyPtr,
+        jlong jbodySize,
         jint flags) {
     jstringSlice docID(env, jdocID);
-    C4Slice body = (jbody == 0) ? kC4SliceNull : *(C4Slice *) jbody;
+    C4Slice body{(const void *) jbodyPtr, (size_t) jbodySize};
     C4Error error{};
     C4Document *doc = c4coll_createDoc((C4Collection *) jcollection, docID, body, (unsigned) flags, &error);
     if (!doc) {
@@ -208,14 +209,15 @@ Java_com_couchbase_lite_internal_core_C4Document_resolveConflict(
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    update2
- * Signature: (JJI)J
+ * Signature: (JJJI)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_update2(
         JNIEnv *env,
         jclass ignore,
         jlong jdoc,
-        jlong jbody,
+        jlong jbodyPtr,
+        jlong jbodySize,
         jint flags) {
     auto doc = (C4Document *) jdoc;
     if (doc == nullptr) {
@@ -223,11 +225,7 @@ Java_com_couchbase_lite_internal_core_C4Document_update2(
         return 0;
     }
 
-    C4Slice body;
-    if (jbody != 0)
-        body = *(C4Slice *) jbody;
-    else
-        body = kC4SliceNull;
+    C4Slice body {(const void *) jbodyPtr, (size_t) jbodySize};
 
     C4Error error{};
     C4Document *newDoc = c4doc_update((C4Document *) jdoc, body, (unsigned) flags, &error);
@@ -297,15 +295,17 @@ Java_com_couchbase_lite_internal_core_C4Document_free(JNIEnv *env, jclass ignore
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    dictContainsBlobs
- * Signature: (JJ)Z
+ * Signature: (JJJ)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_dictContainsBlobs(
         JNIEnv *env,
         jclass ignore,
-        jlong jbody,
+        jlong jbodyPtr,
+        jlong jbodySize,
         jlong jsk) {
-    FLDoc doc = FLDoc_FromResultData(*(FLSliceResult *) jbody, kFLTrusted, (FLSharedKeys) jsk, kFLSliceNull);
+    FLSliceResult body {(const void *) jbodyPtr, (size_t) jbodySize};
+    FLDoc doc = FLDoc_FromResultData(body, kFLTrusted, (FLSharedKeys) jsk, kFLSliceNull);
     auto dict = (FLDict) FLDoc_GetRoot(doc);
     bool containsBlobs = c4doc_dictContainsBlobs(dict);
     FLDoc_Release(doc);
@@ -411,14 +411,15 @@ Java_com_couchbase_lite_internal_core_C4Document_put(
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    put2
- * Signature: (JJLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
+ * Signature: (JJJLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_put2(
         JNIEnv *env,
         jclass ignore,
         jlong jdb,
-        jlong jbody,
+        jlong jbodyPtr,
+        jlong jbodySize,
         jstring jdocID,
         jint revFlags,
         jboolean existingRevision,
@@ -428,12 +429,12 @@ Java_com_couchbase_lite_internal_core_C4Document_put2(
         jint maxRevTreeDepth,
         jint remoteDBID) {
     auto db = (C4Database *) jdb;
-    auto pBody = (C4Slice *) jbody;
     jstringSlice docID(env, jdocID);
 
     // Parameters for adding a revision using c4doc_put.
     C4DocPutRequest rq{};
-    rq.body = *pBody;                       ///< Revision's body
+    rq.body.buf = (const void *) jbodyPtr;  ///< Revision's body
+    rq.body.size = (size_t) jbodySize;      ///< Revision's body
     rq.docID = docID;                       ///< Document ID
     rq.revFlags = revFlags;                 ///< Revision flags (deletion, attachments, keepBody)
     rq.existingRevision = existingRevision; ///< Is this an already-existing rev coming from replication?

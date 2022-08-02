@@ -20,6 +20,7 @@ import com.couchbase.lite.Collection
 import com.couchbase.lite.LiteCoreException
 import com.couchbase.lite.MaintenanceType
 import com.couchbase.lite.Scope
+import com.couchbase.lite.internal.fleece.FLSliceResult
 import com.couchbase.lite.internal.utils.FileUtils
 import com.couchbase.lite.internal.utils.SlowTest
 import org.junit.Assert.assertArrayEquals
@@ -73,7 +74,7 @@ class C4DatabaseTest : C4BaseTest() {
         override fun nSetCookie(db: Long, url: String?, setCookieHeader: String?) = Unit
         override fun nGetCookies(db: Long, url: String): String = "test_cookies"
         override fun nGetSharedFleeceEncoder(db: Long): Long = 1L
-        override fun nEncodeJSON(db: Long, jsonData: ByteArray?): Long = 0L
+        override fun nEncodeJSON(db: Long, jsonData: ByteArray): FLSliceResult = FLSliceResult(0, 0)
         override fun nGetFLSharedKeys(db: Long): Long = 1L
         override fun nGetScopeNames(peer: Long): MutableSet<String> = mutableSetOf()
         override fun nHasScope(peer: Long, scope: String): Boolean = true
@@ -679,21 +680,20 @@ class C4DatabaseTest : C4BaseTest() {
         }
         json.append("]}")
         val jsonStr = json5(json.toString())
-        val doc: C4Document
-        c4Database.encodeJSON(jsonStr).use { body ->
-            // Save document:
-            doc = C4Document.create(
-                c4Database,
-                body,
-                docID,
-                C4Constants.RevisionFlags.HAS_ATTACHMENTS,
-                false,
-                false, arrayOfNulls(0),
-                true,
-                0,
-                0
-            )
-        }
+        val body = c4Database.encodeJSON(jsonStr)
+        // Save document:
+        val doc = C4Document.create(
+            c4Database,
+            body,
+            docID,
+            C4Constants.RevisionFlags.HAS_ATTACHMENTS,
+            false,
+            false, arrayOfNulls(0),
+            true,
+            0,
+            0
+        )
+
         assertNotNull(doc)
         doc.close()
         return keys

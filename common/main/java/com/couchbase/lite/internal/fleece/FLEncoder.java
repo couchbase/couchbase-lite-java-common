@@ -249,14 +249,7 @@ public abstract class FLEncoder extends C4NativePeer {
     public byte[] finish() throws LiteCoreException { return finish(getPeer()); }
 
     @NonNull
-    public FLSliceResult finish2() throws LiteCoreException {
-        return FLSliceResult.getManagedSliceResult(finish2(getPeer()));
-    }
-
-    @NonNull
-    public FLSliceResult finish2Unmanaged() throws LiteCoreException {
-        return FLSliceResult.getUnmanagedSliceResult(finish2(getPeer()));
-    }
+    public FLSliceResult finish2() throws LiteCoreException { return finish2(getPeer()); }
 
 
     //-------------------------------------------------------------------------
@@ -298,5 +291,6 @@ public abstract class FLEncoder extends C4NativePeer {
     @NonNull
     private static native byte[] finish(long encoder) throws LiteCoreException;
 
-    private static native long finish2(long encoder) throws LiteCoreException;
+    @NonNull
+    private static native FLSliceResult finish2(long encoder) throws LiteCoreException;
 }

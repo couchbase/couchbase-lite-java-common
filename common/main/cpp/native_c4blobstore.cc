@@ -108,9 +108,9 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_getSize(
 /*
  * Class:     com_couchbase_lite_internal_core_C4BlobStore
  * Method:    getContents
- * Signature: (JJ)J
+ * Signature: (JJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */
-JNIEXPORT jlong JNICALL
+JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_C4BlobStore_getContents(
         JNIEnv *env,
         jclass ignore,
@@ -122,9 +122,9 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_getContents(
     C4SliceResult res = c4blob_getContents((C4BlobStore *) jblobstore, *pBlobKey, &error);
     if (error.domain != 0 && error.code != 0) {
         throwError(env, error);
-        return 0;
+        return nullptr;
     }
-    return (jlong) copyToHeap(res);
+    return toJavaFLSliceResult(env, res);
 }
 
 /*
