@@ -679,12 +679,11 @@ class C4DatabaseTest : C4BaseTest() {
             json.append("'},")
         }
         json.append("]}")
-        val jsonStr = json5(json.toString())
-        val body = c4Database.encodeJSON(jsonStr)
+
         // Save document:
         val doc = C4Document.create(
             c4Database,
-            body,
+            c4Database.encodeJSON(json5(json.toString())),
             docID,
             C4Constants.RevisionFlags.HAS_ATTACHMENTS,
             false,

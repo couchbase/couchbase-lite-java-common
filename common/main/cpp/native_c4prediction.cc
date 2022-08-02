@@ -39,7 +39,10 @@ bool litecore::jni::initC4Prediction(JNIEnv *env) {
     if (!cls_C4Prediction)
         return false;
 
-    m_C4Prediction_prediction = env->GetStaticMethodID(cls_C4Prediction, "prediction", "(JJJ)J");
+    m_C4Prediction_prediction = env->GetStaticMethodID(
+            cls_C4Prediction,
+            "prediction",
+            "(JJJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;");
     if (!m_C4Prediction_prediction)
         return false;
 

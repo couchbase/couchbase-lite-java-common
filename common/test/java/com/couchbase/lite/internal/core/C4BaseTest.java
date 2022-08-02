@@ -222,11 +222,10 @@ public class C4BaseTest extends BaseTest {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String l;
             while ((l = br.readLine()) != null) {
-                FLSliceResult body = c4Database.encodeJSON(l);
                 String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
                 try (C4Document doc = C4Document.create(
                     c4Database,
-                    body,
+                    c4Database.encodeJSON(l),
                     docID,
                     0,
                     false,
@@ -237,16 +236,16 @@ public class C4BaseTest extends BaseTest {
                     0)) {
                     assertNotNull(doc);
                 }
-            }
 
-            numDocs++;
+                numDocs++;
 
-            if (verbose && numDocs % 100000 == 0) { Report.log("...docs loaded: " + numDocs); }
+                if (verbose && numDocs % 100000 == 0) { Report.log("...docs loaded: " + numDocs); }
 
-            if (((numDocs % 1000) == 0) && (timer.getElapsedTimeSecs() >= timeout)) {
-                throw new IOException(String.format(
-                    Locale.ENGLISH, "Stopping JSON import after %.3f sec",
-                    timer.getElapsedTimeSecs()));
+                if (((numDocs % 1000) == 0) && (timer.getElapsedTimeSecs() >= timeout)) {
+                    throw new IOException(String.format(
+                        Locale.ENGLISH, "Stopping JSON import after %.3f sec",
+                        timer.getElapsedTimeSecs()));
+                }
             }
 
             commit = true;
