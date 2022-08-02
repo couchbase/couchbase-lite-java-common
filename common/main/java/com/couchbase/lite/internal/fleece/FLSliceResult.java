@@ -20,20 +20,13 @@ import androidx.annotation.Nullable;
 
 
 /**
- * This is an interesting object.  In the C code it is a struct.  It is a little bit
- * clumsy to pass structs back adn forth across the JNI boundary, so, instead,
- * the JNI creates a C4SliceResult on the heap, copies the struct into it and the hands
- * the reference to it, to Java.  Similarly, when it comes time to pass the C4SliceResult
- * to C code, the JNI must copy the contents out of the heap into a struct.  It must also
- * <b>free the memory!</b>  The heap artifact is nothing that LiteCore knows anything about.
- * <p>
- * If LiteCore handed the C4SliceResult to the JNI (and the JNI allocated heap space for it)
- * then the Java code must free it.  That's a <code>ManageFLSliceResult</code>.  If, on the
- * other hand, this is a C4SliceResult that the Java is handing to core, then the JNI will
- * free it after it copies the contents: as Jim Borden says: "The bus has reached its last stop"
- * That is an <code>UnmanagedFLSliceResult</code>
+ * This is an interesting object. It frames a piece of mamory that LiteCore owns:
+ * it just passes us this view: `base` points at the start of the block, base + size is its end.
+ * Its C companion is a struct so there is no memory for Java to manage.
+ * The JNI just creates one of these whenever LiteCore returns a native FLSliceResult.
  */
 public class FLSliceResult {
+    // These fields are accessed by reflection.  Don't change them.
     final long base;
     final long size;
 
@@ -41,11 +34,11 @@ public class FLSliceResult {
     // Constructors
     //-------------------------------------------------------------------------
 
+    // This method is called by reflection.  Don't change its signature.
     public FLSliceResult(long base, long size) {
         this.base = base;
         this.size = size;
     }
-
 
     //-------------------------------------------------------------------------
     // Public methods
