@@ -19,9 +19,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
-
 
 class DbCollectionsTest : BaseCollectionTest() {
     private val invalidChars = charArrayOf(
@@ -52,12 +52,27 @@ class DbCollectionsTest : BaseCollectionTest() {
         '`',
         '~'
     )
+
     @Test
     fun testGetDefaultScope() {
         val scope = baseTestDb.defaultScope
+        assertNotNull(scope)
+        assertTrue(baseTestDb.scopes.contains(scope))
         assertEquals(Scope.DEFAULT_NAME, scope.name)
         assertEquals(1, scope.collectionCount)
         assertNotNull(scope.getCollection(Collection.DEFAULT_NAME))
+    }
+
+    @Test
+    fun testGetDefaultCollection() {
+        val col = baseTestDb.defaultCollection
+        assertNotNull(col)
+        assertEquals(Collection.DEFAULT_NAME, col!!.name)
+        assertEquals(col, baseTestDb.getCollection(Collection.DEFAULT_NAME))
+        assertTrue(baseTestDb.collections.contains(col))
+        assertNotNull(col.scope)
+        assertEquals(Scope.DEFAULT_NAME, col.scope.name)
+        assertEquals(0, col.count)
     }
 
     // Test that collections can be created and accessed from the default scope
@@ -217,7 +232,7 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertNotNull(recreateCol)
     }
 
-    @Test
+    @Test(expected = CouchbaseLiteException::class)
     fun testDeleteDefaultCollection() {
         var scopes = baseTestDb.scopes
 
@@ -236,6 +251,9 @@ class DbCollectionsTest : BaseCollectionTest() {
 
         scope = baseTestDb.defaultScope
         assertEquals(0, scope.collectionCount)
+
+        // default collection cannot be recreated
+        baseTestDb.createCollection(Collection.DEFAULT_NAME)
 
     }
 
