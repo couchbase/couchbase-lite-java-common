@@ -19,7 +19,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
-import org.junit.Ignore
 import org.junit.Test
 
 
@@ -32,7 +31,6 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertNotNull(scope.getCollection(Collection.DEFAULT_NAME))
     }
 
-    @Ignore("CBL-3195")
     @Test
     //create valid collections
     fun testCreateCollectionInDefaultScope() {
