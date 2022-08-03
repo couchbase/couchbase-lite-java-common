@@ -382,7 +382,8 @@ class CollectionTest : BaseCollectionTest() {
         }
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             testCollection.delete(
-                doc1b!!)
+                doc1b!!
+            )
         }
         assertEquals(0, testCollection.count)
         assertNull(testCollection.getDocument(doc1b!!.id))
@@ -503,7 +504,8 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(1, testCollection.indexes.size)
         testCollection.createIndex(
             "index2",
-            FullTextIndexConfiguration("detail").ignoreAccents(true).setLanguage("es"))
+            FullTextIndexConfiguration("detail").ignoreAccents(true).setLanguage("es")
+        )
         assertEquals(2, testCollection.indexes.size)
         assertTrue(testCollection.indexes.contains("index1"))
         assertTrue(testCollection.indexes.contains("index2"))
@@ -822,7 +824,8 @@ class CollectionTest : BaseCollectionTest() {
         verifyGetDocumentInCollection(
             testCollection,
             docID,
-            value)
+            value
+        )
     }
 
     // helper methods to verify getDoc
