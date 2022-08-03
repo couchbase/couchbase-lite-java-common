@@ -71,6 +71,10 @@ public class BaseImmutableReplicatorConfiguration {
     @Nullable
     private final Database database;
 
+    // PMD doesn't get weak references
+    @SuppressWarnings("PMD.SingularField")
+    private Map<String, Object> options;
+
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
@@ -181,6 +185,9 @@ public class BaseImmutableReplicatorConfiguration {
 
         options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
 
-        return options;
+        // need to hang on to the options, so that the GC doesn't get 'em.
+        this.options = options;
+
+        return this.options;
     }
 }

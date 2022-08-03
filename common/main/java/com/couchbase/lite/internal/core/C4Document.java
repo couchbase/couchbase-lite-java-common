@@ -274,7 +274,9 @@ public final class C4Document extends C4NativePeer {
     // private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4Document::free); }
+    // ??? There is just no way to explicitly close these things at this point.
+    //     Don't cry wolf.
+    private void closePeer(@Nullable LogDomain domain) { releasePeerSilently(C4Document::free); }
 
     //-------------------------------------------------------------------------
     // native methods

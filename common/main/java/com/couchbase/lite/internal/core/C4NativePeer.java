@@ -170,11 +170,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         @Nullable LogDomain domain,
         @Nullable Fn.ConsumerThrows<Long, E> fn)
         throws E {
-        final long peer;
-        synchronized (getPeerLock()) {
-            peer = releasePeerLocked();
-            if ((peer != 0L) && (fn != null)) { fn.accept(peer); }
-        }
+        final long peer = releasePeer(fn);
 
         if (!CouchbaseLiteInternal.debugging()) { return; }
 
@@ -194,9 +190,30 @@ public abstract class C4NativePeer implements AutoCloseable {
         updateHistory(peer, "Released at:");
     }
 
+    /**
+     * Same as the function above: use when you really just can't avoid the finalizer.
+     * @param fn     The goodbye-kiss.  Be careful if this function seizes locks
+     * @param <E>    The type of exception (typically none) thrown by the goodbye-kiss
+     * @throws E
+     */
+    protected final <E extends Exception> void releasePeerSilently(
+        @Nullable Fn.ConsumerThrows<Long, E> fn)
+        throws E {
+        releasePeer(fn);
+    }
+
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
+
+    private <E extends Exception> long releasePeer(@Nullable Fn.ConsumerThrows<Long, E> fn)
+        throws E {
+        synchronized (getPeerLock()) {
+            final long peer = releasePeerLocked();
+            if ((peer != 0L) && (fn != null)) { fn.accept(peer); }
+            return peer;
+        }
+    }
 
     @GuardedBy("lock")
     private long releasePeerLocked() {
