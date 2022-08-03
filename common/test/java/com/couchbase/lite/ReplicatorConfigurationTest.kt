@@ -499,4 +499,57 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionA, null)
         replConfig1.addCollection(collectionB, null)
     }
+
+    //     1: Create collection "colA" in the scope "scopeA" using database instance A.
+    //     2: Create collection "colB" in the scope "scopeA" using database instance B.
+    //     3: Delete collection colB
+    //     4: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //     5: Use addCollections() to add both colA and colB. This should cause an InvalidArgumentException.
+    @Test(expected = IllegalArgumentException::class)
+    fun testAddDeletedCollections1() {
+        val collectionA = baseTestDb.createCollection("colA", "scopeA")
+        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+
+        baseTestDb.deleteCollection("colB", "scopeA")
+
+        ReplicatorConfiguration(remoteTargetEndpoint)
+            .addCollections(setOf(collectionA, collectionB), null)
+    }
+
+    //     1: Create collection "colA" in the scope "scopeA" using database instance A.
+    //     2: Create collection "colB" in the scope "scopeA" using database instance B.
+    //     3: Delete collection colB
+    //     4: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //     6: Use addCollection() to add colA. Ensure that the colA has been added correctly.
+    fun testAddDeletedCollections2() {
+        val collectionA = baseTestDb.createCollection("colA", "scopeA")
+        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+
+        baseTestDb.deleteCollection("colB", "scopeA")
+
+        val replConfig1 = ReplicatorConfiguration(remoteTargetEndpoint)
+
+        replConfig1.addCollection(collectionA, null)
+
+        val collections = baseTestDb.collections
+        assertEquals(1, collections.size)
+        assertTrue(collections.contains(collectionA))
+    }
+
+
+    //     1: Create collection "colA" in the scope "scopeA" using database instance A.
+    //     2: Create collection "colB" in the scope "scopeA" using database instance B.
+    //     3: Delete collection colB
+    //     4: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //     7: Use addCollection() to add colB. This should cause an InvalidArgumentException.
+    @Test(expected = IllegalArgumentException::class)
+    fun testAddDeletedCollections3() {
+        val collectionA = baseTestDb.createCollection("colA", "scopeA")
+        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+
+        baseTestDb.deleteCollection("colB", "scopeA")
+
+        ReplicatorConfiguration(remoteTargetEndpoint)
+            .addCollection(collectionB, null)
+    }
 }

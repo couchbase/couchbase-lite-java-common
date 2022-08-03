@@ -732,17 +732,30 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     //---------------------------------------------
 
     private void addCollectionConfig(@NonNull Collection collection, @NonNull CollectionConfiguration config) {
+        final String name = collection.getName();
+        final String scope = collection.getScope().getName();
+
         final Database db = Preconditions.assertNotNull(collection, "collection").getDatabase();
         if (database == null) { database = db; }
         else {
-            if (!database.equals(db)) {
+             if (!database.equals(db)) {
                 throw new IllegalArgumentException(
-                    "Attempt to add a collection from the wrong database: " + db + " != " + database);
+                    "Collection " + scope + "." + name + " does not belong to database " + database.getName());
             }
+        }
 
-            if (!database.isOpen()) {
-                throw new IllegalArgumentException("Cannot use a collection from a closed database");
+        if (!database.isOpen()) {
+            throw new IllegalArgumentException(
+                "Collection " + scope + "." + name + " belongs to a closed database");
+        }
+
+        try {
+            if (database.getCollection(name, scope) == null) {
+                throw new IllegalArgumentException("Collection " + scope + "." + name + "has been deleted");
             }
+        }
+        catch (CouchbaseLiteException e) {
+            throw new IllegalArgumentException("Failed getting collection " + collection, e);
         }
 
         addCollectionInternal(collection, config);
