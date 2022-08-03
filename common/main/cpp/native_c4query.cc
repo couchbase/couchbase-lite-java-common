@@ -60,16 +60,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_createQuery(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    setParameters
- * Signature: (JJ)V;
+ * Signature: (JJJ)V;
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Query_setParameters(
         JNIEnv *env,
         jclass ignore,
         jlong jquery,
-        jlong jparameters) {
-    auto params = (FLSliceResult *) jparameters;
-    C4String s = {params->buf, params->size};
+        jlong jparamPtr,
+        jlong jparamSize) {
+    C4String s {(const void *) jparamPtr, (size_t) jparamSize};
     c4query_setParameters((C4Query *) jquery, s);
 }
 
@@ -89,7 +89,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_explain(JNIEnv *env, jc
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    run
- * Signature: (JZJ)J
+ * Signature: (JZJJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
@@ -97,11 +97,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
         jclass ignore,
         jlong jquery,
         jboolean jrankFullText,
-        jlong jparameters) {
+        jlong jparamPtr,
+        jlong jparamSize) {
     C4QueryOptions options = {(bool) jrankFullText};
-    auto params = (FLSliceResult *) jparameters;
     C4Error error{};
-    C4Slice s = {params->buf, params->size};
+    C4Slice s {(const void *)jparamPtr, (size_t) jparamSize};
     C4QueryEnumerator *e = c4query_run((C4Query *) jquery, &options, s, &error);
     if (!e) {
         throwError(env, error);

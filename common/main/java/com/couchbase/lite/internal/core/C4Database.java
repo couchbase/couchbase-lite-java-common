@@ -119,7 +119,8 @@ public abstract class C4Database extends C4NativePeer {
 
         long nGetSharedFleeceEncoder(long db);
 
-        long nEncodeJSON(long db, byte[] jsonData) throws LiteCoreException;
+        @NonNull
+        FLSliceResult nEncodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
 
         long nGetFLSharedKeys(long db);
 
@@ -534,14 +535,14 @@ public abstract class C4Database extends C4NativePeer {
     // ??? Exposes the peer handle
     long getHandle() { return getPeer(); }
 
-    @NonNull
     @VisibleForTesting
+    @NonNull
     byte[] getPrivateUUID() throws LiteCoreException { return impl.nGetPrivateUUID(getPeer()); }
 
     @VisibleForTesting
     @NonNull
     FLSliceResult encodeJSON(@NonNull String data) throws LiteCoreException {
-        return FLSliceResult.getManagedSliceResult(impl.nEncodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8)));
+        return impl.nEncodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8));
     }
 
     //-------------------------------------------------------------------------

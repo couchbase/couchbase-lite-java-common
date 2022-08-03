@@ -18,10 +18,10 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLValue_fromTrus
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLValue
  * Method:    fromData
- * Signature: (J)J
+ * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLValue_fromData
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLValue

@@ -9,35 +9,11 @@ extern "C" {
 #endif
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
- * Method:    free
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_fleece_FLSliceResult_free
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
- * Method:    init
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLSliceResult_init
-  (JNIEnv *, jclass);
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
  * Method:    getBuf
- * Signature: (J)[B
+ * Signature: (JJ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_fleece_FLSliceResult_getBuf
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
- * Method:    getSize
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLSliceResult_getSize
-  (JNIEnv *, jclass, jlong);
+  (JNIEnv *, jclass, jlong, jlong);
 
 #ifdef __cplusplus
 }

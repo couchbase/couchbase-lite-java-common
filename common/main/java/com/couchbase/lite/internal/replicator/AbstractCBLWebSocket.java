@@ -491,7 +491,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     @Override
     public void remoteFailed(@NonNull Throwable err) {
-        Log.d(LOG_DOMAIN, "%s.remoteFailed: %s", err, this);
+        Log.d(LOG_DOMAIN, "%s.remoteFailed", err, this);
         if (!changeState(SocketState.CLOSED)) { return; }
         toCore.closeCore(getStatusForError(err));
     }

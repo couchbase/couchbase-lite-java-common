@@ -107,14 +107,14 @@ abstract class AbstractQuery implements Query {
             if (parameters == null) { parameters = new Parameters(); }
             final C4QueryEnumerator c4enum;
             final Map<String, Integer> colNames;
-            try (FLSliceResult params = parameters.encode()) {
-                synchronized (getDbLock()) {
-                    synchronized (lock) {
-                        c4enum = getC4QueryLocked().run(options, params);
-                        colNames = columnNames;
-                    }
+            final FLSliceResult params = parameters.encode();
+            synchronized (getDbLock()) {
+                synchronized (lock) {
+                    c4enum = getC4QueryLocked().run(options, params);
+                    colNames = columnNames;
                 }
             }
+
             return new ResultSet(this, c4enum, new HashMap<>(colNames));
         }
         catch (LiteCoreException e) {

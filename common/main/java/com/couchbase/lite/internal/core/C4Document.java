@@ -43,7 +43,12 @@ public final class C4Document extends C4NativePeer {
     @NonNull
     static C4Document create(@NonNull C4Collection coll, @NonNull String docID, @Nullable FLSliceResult body, int flags)
         throws LiteCoreException {
-        return new C4Document(createFromSlice(coll.getPeer(), docID, (body == null) ? 0 : body.getHandle(), flags));
+        return new C4Document(createFromSlice(
+            coll.getPeer(),
+            docID,
+            (body == null) ? 0 : body.getBase(),
+            (body == null) ? 0 : body.getSize(),
+            flags));
     }
 
     // !!! Deprecated
@@ -99,7 +104,8 @@ public final class C4Document extends C4NativePeer {
         throws LiteCoreException {
         return new C4Document(put2(
             db.getPeer(),
-            body.getHandle(),
+            body.getBase(),
+            body.getSize(),
             docID,
             revFlags,
             existingRevision,
@@ -115,7 +121,7 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     public static boolean dictContainsBlobs(@NonNull FLSliceResult dict, @NonNull FLSharedKeys sk) {
-        return dictContainsBlobs(dict.getHandle(), sk.getHandle());
+        return dictContainsBlobs(dict.getBase(), dict.getSize(), sk.getHandle());
     }
 
 
@@ -164,7 +170,13 @@ public final class C4Document extends C4NativePeer {
 
     @Nullable
     public C4Document update(@Nullable FLSliceResult body, int flags) throws LiteCoreException {
-        final long newDoc = withPeerOrDefault(0L, h -> update2(h, (body == null) ? 0 : body.getHandle(), flags));
+        final long newDoc = withPeerOrDefault(
+            0L,
+            h -> update2(
+                h,
+                (body == null) ? 0 : body.getBase(),
+                (body == null) ? 0 : body.getSize(),
+                flags));
         return (newDoc == 0) ? null : new C4Document(newDoc);
     }
 
@@ -273,7 +285,7 @@ public final class C4Document extends C4NativePeer {
     private static native long getFromCollection(long coll, String docID, boolean mustExist)
         throws LiteCoreException;
 
-    private static native long createFromSlice(long coll, String docID, long body, int flags)
+    private static native long createFromSlice(long coll, String docID, long bodyPtr, long bodySize, int flags)
         throws LiteCoreException;
 
     // - Properties
@@ -313,7 +325,7 @@ public final class C4Document extends C4NativePeer {
         int mergedFlags)
         throws LiteCoreException;
 
-    private static native long update2(long doc, long body, int flags) throws LiteCoreException;
+    private static native long update2(long doc, long bodyPtr, long bodySize, int flags) throws LiteCoreException;
 
     private static native void save(long doc, int maxRevTreeDepth) throws LiteCoreException;
 
@@ -329,7 +341,7 @@ public final class C4Document extends C4NativePeer {
 
     // - Utility
 
-    private static native boolean dictContainsBlobs(long dict, long sk); // dict -> FLSliceResult
+    private static native boolean dictContainsBlobs(long dictPtr, long dictSize, long sk);
 
     // - Testing
     // None of these methods may be used in production code.
@@ -354,7 +366,8 @@ public final class C4Document extends C4NativePeer {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private static native long put2(
         long db,
-        long body, // C4Slice*
+        long bodyPtr,
+        long bodySize,
         String docID,
         int revFlags,
         boolean existingRevision,

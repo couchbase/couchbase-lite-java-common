@@ -30,10 +30,10 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 public final class C4Query extends C4NativePeer {
     public interface NativeImpl {
         long nCreateQuery(long db, int language, @NonNull String params) throws LiteCoreException;
-        void nSetParameters(long peer, long params);
+        void nSetParameters(long peer, long paramPtr, long paramSize);
         @NonNull
         String nExplain(long peer);
-        long nRun(long peer, boolean rankFullText, /*FLSliceResult*/ long parameters) throws LiteCoreException;
+        long nRun(long peer, boolean rankFullText, long paramPtr, long paramSize) throws LiteCoreException;
         int nColumnCount(long peer);
         @Nullable
         String nColumnName(long peer, int colIdx);
@@ -94,15 +94,17 @@ public final class C4Query extends C4NativePeer {
         closePeer(null);
     }
 
-    public void setParameters(@NonNull FLSliceResult params) { impl.nSetParameters(getPeer(), params.getPeer()); }
+    public void setParameters(@NonNull FLSliceResult params) {
+        impl.nSetParameters(getPeer(), params.getBase(), params.getSize());
+    }
 
     @Nullable
     public String explain() { return withPeerOrNull(impl::nExplain); }
 
     @Nullable
     public C4QueryEnumerator run(@NonNull C4QueryOptions opts, @NonNull FLSliceResult params) throws LiteCoreException {
-        return withPeerOrNull(h ->
-            C4QueryEnumerator.create(impl.nRun(h, opts.isRankFullText(), params.getHandle())));
+        return withPeerOrNull(h -> C4QueryEnumerator.create(
+            impl.nRun(h, opts.isRankFullText(), params.getBase(), params.getSize())));
     }
 
     public int getColumnCount() { return withPeerOrDefault(0, impl::nColumnCount); }

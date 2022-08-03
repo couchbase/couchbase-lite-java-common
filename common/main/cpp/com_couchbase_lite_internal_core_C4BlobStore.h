@@ -50,9 +50,9 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4BlobStore_getSiz
 /*
  * Class:     com_couchbase_lite_internal_core_C4BlobStore
  * Method:    getContents
- * Signature: (JJ)J
+ * Signature: (JJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4BlobStore_getContents
+JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_C4BlobStore_getContents
   (JNIEnv *, jclass, jlong, jlong);
 
 /*

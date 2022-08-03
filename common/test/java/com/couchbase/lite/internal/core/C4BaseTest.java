@@ -33,7 +33,6 @@ import org.junit.Before;
 import com.couchbase.lite.BaseTest;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -160,8 +159,9 @@ public class C4BaseTest extends BaseTest {
     protected byte[] json2fleece(String json) throws LiteCoreException {
         boolean commit = false;
         c4Database.beginTransaction();
-        try (FLSliceResult body = c4Database.encodeJSON(json5(json))) {
-            byte[] bytes = body.getBuf();
+        try {
+            FLSliceResult body = c4Database.encodeJSON(json5(json));
+            byte[] bytes = body.getContent();
             commit = true;
             return bytes;
         }
@@ -184,8 +184,8 @@ public class C4BaseTest extends BaseTest {
 
     /**
      * @param flags C4RevisionFlags
-     *
-     * !!! CONVERT TO BE COLLECTION SAVVY
+     *              <p>
+     *              !!! CONVERT TO BE COLLECTION SAVVY
      */
     private void createRev(C4Database db, String docID, String revID, byte[] body, int flags)
         throws LiteCoreException {
@@ -222,21 +222,19 @@ public class C4BaseTest extends BaseTest {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String l;
             while ((l = br.readLine()) != null) {
-                try (FLSliceResult body = c4Database.encodeJSON(l)) {
-                    String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
-                    try (C4Document doc = C4Document.create(
-                        c4Database,
-                        body,
-                        docID,
-                        0,
-                        false,
-                        false,
-                        new String[0],
-                        true,
-                        0,
-                        0)) {
-                        assertNotNull(doc);
-                    }
+                String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
+                try (C4Document doc = C4Document.create(
+                    c4Database,
+                    c4Database.encodeJSON(l),
+                    docID,
+                    0,
+                    false,
+                    false,
+                    new String[0],
+                    true,
+                    0,
+                    0)) {
+                    assertNotNull(doc);
                 }
 
                 numDocs++;

@@ -29,15 +29,15 @@ public class NativeC4Query implements C4Query.NativeImpl {
     }
 
     @Override
-    public void nSetParameters(long peer, long params) { setParameters(peer, params); }
+    public void nSetParameters(long peer, long paramPtr, long paramSize) { setParameters(peer, paramPtr, paramSize); }
 
     @NonNull
     @Override
     public String nExplain(long peer) { return explain(peer); }
 
     @Override
-    public long nRun(long peer, boolean rankFullText, long params) throws LiteCoreException {
-        return run(peer, rankFullText, params);
+    public long nRun(long peer, boolean rankFullText, long paramPtr, long paramSize) throws LiteCoreException {
+        return run(peer, rankFullText, paramPtr, paramSize);
     }
 
     @Override
@@ -57,12 +57,12 @@ public class NativeC4Query implements C4Query.NativeImpl {
 
     private static native long createQuery(long db, int language, @NonNull String params) throws LiteCoreException;
 
-    private static native void setParameters(long peer, long params);
+    private static native void setParameters(long peer, long paramPtr, long paramSize);
 
     @NonNull
     private static native String explain(long peer);
 
-    private static native long run(long peer, boolean rankFullText, /*FLSliceResult*/ long parameters)
+    private static native long run(long peer, boolean rankFullText, long paramPtr, long paramSize)
         throws LiteCoreException;
 
     private static native int columnCount(long peer);

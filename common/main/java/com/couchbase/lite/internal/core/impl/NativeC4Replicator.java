@@ -22,6 +22,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.ReplicationCollection;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
 public final class NativeC4Replicator implements C4Replicator.NativeImpl {
@@ -110,8 +111,9 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     @Override
     public C4ReplicatorStatus nGetStatus(long peer) { return getStatus(peer); }
 
+    @NonNull
     @Override
-    public long nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
+    public FLSliceResult nGetPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException {
         return getPendingDocIds(peer, scope, collection);
     }
@@ -211,7 +213,8 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     /**
      * Returns a list of string ids for pending documents.
      */
-    private static native long getPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
+    @NonNull
+    private static native FLSliceResult getPendingDocIds(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException;
 
     /**

@@ -39,7 +39,10 @@ bool litecore::jni::initC4Prediction(JNIEnv *env) {
     if (!cls_C4Prediction)
         return false;
 
-    m_C4Prediction_prediction = env->GetStaticMethodID(cls_C4Prediction, "prediction", "(JJJ)J");
+    m_C4Prediction_prediction = env->GetStaticMethodID(
+            cls_C4Prediction,
+            "prediction",
+            "(JJJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;");
     if (!m_C4Prediction_prediction)
         return false;
 
@@ -47,33 +50,30 @@ bool litecore::jni::initC4Prediction(JNIEnv *env) {
 }
 
 static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4Error *error) {
-    jlong result = 0;
-
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_EDETACHED)
         attachCurrentThread(&env);
 
-    // this call returns 0L when there is no prediction.
-    result = env->CallStaticLongMethod(
+    // this call returns null when there is no prediction.
+    jobject sliceResult = env->CallStaticObjectMethod(
             cls_C4Prediction,
             m_C4Prediction_prediction,
             (jlong) token,
             (jlong) input,
             (jlong) c4db);
 
+    // if the call returned a nullptr, just give the caller an empty result.
+    FLSliceResult result;
+    if (!sliceResult)
+        result = {nullptr, 0};
+    else
+        result = fromJavaFLSliceResult(env, sliceResult);
+
     if (getEnvStat == JNI_EDETACHED)
         gJVM->DetachCurrentThread();
 
-    // if the call returned a nullptr, just give the caller an empty result.
-    if (!result)
-        return {nullptr, 0};
-
-    // copy the heap result onto the stack and free the heap version
-    C4SliceResult resultSlice = *(C4SliceResult *) result;
-    ::free(reinterpret_cast<void *>(result));
-
-    return resultSlice;
+    return result;
 }
 
 #endif
