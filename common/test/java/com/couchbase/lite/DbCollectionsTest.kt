@@ -24,6 +24,34 @@ import org.junit.Test
 
 
 class DbCollectionsTest : BaseCollectionTest() {
+    private val invalidChars = charArrayOf(
+        '!',
+        '@',
+        '#',
+        '$',
+        '^',
+        '&',
+        '*',
+        '(',
+        ')',
+        '+',
+        '.',
+        '<',
+        '>',
+        '?',
+        '[',
+        ']',
+        '{',
+        '}',
+        '=',
+        '“',
+        '‘',
+        '|',
+        '\\',
+        '/',
+        '`',
+        '~'
+    )
     @Test
     fun testGetDefaultScope() {
         val scope = baseTestDb.defaultScope
@@ -69,42 +97,13 @@ class DbCollectionsTest : BaseCollectionTest() {
 
     @Test
     fun testCollectionNameContainingIllegalChars() {
-        val array = charArrayOf(
-            '!',
-            '@',
-            '#',
-            '$',
-            '^',
-            '&',
-            '*',
-            '(',
-            ')',
-            '+',
-            '.',
-            '<',
-            '>',
-            '?',
-            '[',
-            ']',
-            '{',
-            '}',
-            '=',
-            '“',
-            '‘',
-            '|',
-            '\\',
-            '/',
-            '`',
-            '~'
-        )
-        for (c in array) {
+        for (c in invalidChars) {
             val colName = "notval" + c + "d"
             try {
                 baseTestDb.createCollection(colName)
+                fail("Expect CBL Exception for collection : $colName")
             } catch (e: CouchbaseLiteException) {
-                continue
             }
-            fail("Expect CBL Exception for collection : $colName")
         }
     }
 
@@ -250,42 +249,13 @@ class DbCollectionsTest : BaseCollectionTest() {
 
     @Test
     fun testScopeNameContainingIllegalChars() {
-        val array = charArrayOf(
-            '!',
-            '@',
-            '#',
-            '$',
-            '^',
-            '&',
-            '*',
-            '(',
-            ')',
-            '+',
-            '.',
-            '<',
-            '>',
-            '?',
-            '[',
-            ']',
-            '{',
-            '}',
-            '=',
-            '“',
-            '‘',
-            '|',
-            '\\',
-            '/',
-            '`',
-            '~'
-        )
-        for (c in array) {
+        for (c in invalidChars) {
             val scopeName = "notval" + c + "d"
             try {
                 baseTestDb.createCollection("col", scopeName)
+                fail("Expect CBL Exception for scope : $scopeName")
             } catch (e: CouchbaseLiteException) {
-                continue
             }
-            fail("Expect CBL Exception for scope : $scopeName")
         }
     }
 

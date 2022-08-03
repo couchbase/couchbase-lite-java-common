@@ -381,9 +381,7 @@ class CollectionTest : BaseCollectionTest() {
             testCollection.delete(doc1a)
         }
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
-            testCollection.delete(
-                doc1b!!
-            )
+            testCollection.delete(doc1b!!)
         }
         assertEquals(0, testCollection.count)
         assertNull(testCollection.getDocument(doc1b!!.id))
