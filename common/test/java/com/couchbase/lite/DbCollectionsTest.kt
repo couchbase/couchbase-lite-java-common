@@ -19,10 +19,39 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
+import org.junit.Assert.fail
 import org.junit.Test
 
 
 class DbCollectionsTest : BaseCollectionTest() {
+    private val invalidChars = charArrayOf(
+        '!',
+        '@',
+        '#',
+        '$',
+        '^',
+        '&',
+        '*',
+        '(',
+        ')',
+        '+',
+        '.',
+        '<',
+        '>',
+        '?',
+        '[',
+        ']',
+        '{',
+        '}',
+        '=',
+        '“',
+        '‘',
+        '|',
+        '\\',
+        '/',
+        '`',
+        '~'
+    )
     @Test
     fun testGetDefaultScope() {
         val scope = baseTestDb.defaultScope
@@ -31,8 +60,8 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertNotNull(scope.getCollection(Collection.DEFAULT_NAME))
     }
 
+    // Test that collections can be created and accessed from the default scope
     @Test
-    //create valid collections
     fun testCreateCollectionInDefaultScope() {
         //name with valid characters
         baseTestDb.createCollection("chintz")
@@ -47,22 +76,42 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertNotNull(scope.getCollection("Chintz"))
         assertNotNull(scope.getCollection("6hintz"))
         assertNotNull(scope.getCollection("-Ch1ntz"))
+
+        // collections exists when calling from database
+        assertNotNull(baseTestDb.getCollection("chintz"))
+        assertNotNull(baseTestDb.getCollection("Chintz"))
+        assertNotNull(baseTestDb.getCollection("6hintz"))
+        assertNotNull(baseTestDb.getCollection("-Ch1ntz"))
     }
 
 
     @Test(expected = CouchbaseLiteException::class)
-    fun testCollectionNameStartWithIllegalChars1() {
+    fun testCollectionNameStartsWithIllegalChars1() {
         baseTestDb.createCollection("_notvalid")
     }
 
     @Test(expected = CouchbaseLiteException::class)
-    fun tesCollectionNameStartWithIllegalChars2() {
+    fun testCollectionNameStartsWithIllegalChars2() {
         baseTestDb.createCollection("%notvalid")
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCollectionNameContainingIllegalChars() {
-        baseTestDb.createCollection("notval!d")
+        for (c in invalidChars) {
+            val colName = "notval" + c + "d"
+            try {
+                baseTestDb.createCollection(colName)
+                fail("Expect CBL Exception for collection : $colName")
+            } catch (e: CouchbaseLiteException) {
+            }
+        }
+    }
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun testCreateCollectionNameLength252() {
+        val name =
+            "fhndlbjgjyggvvnreutzuzyzszqiqmbqbegudyvdzvenpybjuayxssmipnpjysyfldhjmyyjmzxhegjjqwfrgzkwbiepqbvwbijcifvqamanpmiqydqpcqgubyputmrjiulrjxbayzpxqbxsaszkdxdobhreeqorlmfeoukbspfocymiucffsvioqmvqpqnpvdhpbnenkppfogruvdrrhiaalcfijifapsjqpjuwmlkkrxohvgxoqumkktipsqpsgrqidtcdeadnanxlhbivyvqkdxprsjybvuhjolkpaswlkgtiz"
+        baseTestDb.createCollection(name)
     }
 
     @Test
@@ -73,7 +122,10 @@ class DbCollectionsTest : BaseCollectionTest() {
 
         var scope: Scope? = baseTestDb.defaultScope
         assertEquals(1, scope?.collectionCount)
+
+        // get non-existing collection returns null
         assertNull(scope?.getCollection("chintz"))
+        assertNull(baseTestDb.getCollection("chintz"))
 
         scope = baseTestDb.getScope("micro")
         assertEquals(1, scope?.collectionCount)
@@ -88,15 +140,40 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertEquals(1, scope?.collectionCount)
         assertNotNull(scope?.getCollection("chintz"))
 
+
+        // collections exists when calling from database
+        assertNotNull(baseTestDb.getCollection("chintz", "micro"))
+        assertNotNull(baseTestDb.getCollection("chintz", "3icro"))
+        assertNotNull(baseTestDb.getCollection("chintz", "-micro"))
     }
 
+    //Test that creating an existing collection returns an existing collection
+    @Test
+    fun testCreateAnExistingCollection() {
+        val docId = "doc1"
+
+        //save doc in testCollection
+        createSingleDocInCollectionWithId(docId)
+
+        val col = baseTestDb.createCollection(testColName, testScopeName)
+
+        // the copy collection has the same content as testCollection
+        assertEquals(col, testCollection)
+        assertNotNull(col.getDocument(docId))
+
+        // updating the copy col also update the original one
+        col.save(MutableDocument("doc2"))
+        assertNotNull(testCollection.getDocument("doc2"))
+    }
+
+
     @Test(expected = CouchbaseLiteException::class)
-    fun testScopeNameWithIllegalChar1() {
+    fun testScopeNameStartsWithIllegalChar1() {
         baseTestDb.createCollection("chintz", "_micro")
     }
 
     @Test(expected = CouchbaseLiteException::class)
-    fun testScopeNameWithIllegalChar2() {
+    fun testScopeNameStartsWithIllegalChar2() {
         baseTestDb.createCollection("chintz", "%micro")
     }
 
@@ -135,10 +212,10 @@ class DbCollectionsTest : BaseCollectionTest() {
 
         scopes = baseTestDb.scopes
         assertEquals(1, scopes.size)
+
+        val recreateCol = baseTestDb.createCollection(testColName, testScopeName)
+        assertNotNull(recreateCol)
     }
-
-
-    // !!! TESTS BELOW NEED TO BE MOVED TO CollectionTest
 
     @Test
     fun testDeleteDefaultCollection() {
@@ -152,13 +229,41 @@ class DbCollectionsTest : BaseCollectionTest() {
 
         baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
 
-        // The default collection should not go away when it is empty
+        // The default scope should not go away when it is empty
         scopes = baseTestDb.scopes
         assertEquals(2, scopes.size)
         assertNotNull(baseTestDb.defaultScope)
 
         scope = baseTestDb.defaultScope
         assertEquals(0, scope.collectionCount)
+
+    }
+
+    // When deleting all collections in non-default scope, the scope will be deleted
+    @Test
+    fun testDeleteAllCollectionsInNamedScope() {
+        baseTestDb.deleteCollection(testColName, testScopeName)
+        assertNull(baseTestDb.getScope(testScopeName))
+        assertEquals(setOf(baseTestDb.defaultScope), baseTestDb.scopes)
+    }
+
+    @Test
+    fun testScopeNameContainingIllegalChars() {
+        for (c in invalidChars) {
+            val scopeName = "notval" + c + "d"
+            try {
+                baseTestDb.createCollection("col", scopeName)
+                fail("Expect CBL Exception for scope : $scopeName")
+            } catch (e: CouchbaseLiteException) {
+            }
+        }
+    }
+
+    @Test(expected = CouchbaseLiteException::class)
+    fun testCreateScopeNameLength252() {
+        val name =
+            "fhndlbjgjyggvvnreutzuzyzszqiqmbqbegudyvdzvenpybjuayxssmipnpjysyfldhjmyyjmzxhegjjqwfrgzkwbiepqbvwbijcifvqamanpmiqydqpcqgubyputmrjiulrjxbayzpxqbxsaszkdxdobhreeqorlmfeoukbspfocymiucffsvioqmvqpqnpvdhpbnenkppfogruvdrrhiaalcfijifapsjqpjuwmlkkrxohvgxoqumkktipsqpsgrqidtcdeadnanxlhbivyvqkdxprsjybvuhjolkpaswlkgtiz"
+        baseTestDb.createCollection("col", name)
     }
 
     /**
