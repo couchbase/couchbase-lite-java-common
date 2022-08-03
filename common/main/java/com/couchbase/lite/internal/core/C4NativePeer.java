@@ -166,6 +166,7 @@ public abstract class C4NativePeer implements AutoCloseable {
      * @param <E>    The type of exception (typically none) thrown by the goodbye-kiss
      * @throws E the goodbye kiss failed.
      */
+    @SuppressWarnings("PMD.PrematureDeclaration")
     protected final <E extends Exception> void releasePeer(
         @Nullable LogDomain domain,
         @Nullable Fn.ConsumerThrows<Long, E> fn)
@@ -192,13 +193,12 @@ public abstract class C4NativePeer implements AutoCloseable {
 
     /**
      * Same as the function above: use when you really just can't avoid the finalizer.
-     * @param fn     The goodbye-kiss.  Be careful if this function seizes locks
-     * @param <E>    The type of exception (typically none) thrown by the goodbye-kiss
-     * @throws E
+     *
+     * @param fn  The goodbye-kiss.  Be careful if this function seizes locks
+     * @param <E> The type of exception (typically none) thrown by the goodbye-kiss
+     * @throws E the goodbye kiss failed.
      */
-    protected final <E extends Exception> void releasePeerSilently(
-        @Nullable Fn.ConsumerThrows<Long, E> fn)
-        throws E {
+    protected final <E extends Exception> void releasePeerSilently(@Nullable Fn.ConsumerThrows<Long, E> fn) throws E {
         releasePeer(fn);
     }
 
@@ -222,8 +222,8 @@ public abstract class C4NativePeer implements AutoCloseable {
         return (!open) ? 0L : this.peer;
     }
 
-     @SuppressWarnings("NonAtomicOperationOnVolatileField")
-     private void updateHistory(long peer, @NonNull String msg) {
+    @SuppressWarnings("NonAtomicOperationOnVolatileField")
+    private void updateHistory(long peer, @NonNull String msg) {
         if ((peer == 0) || !CouchbaseLiteInternal.debugging()) { return; }
         history = new Exception(msg, history);
     }
