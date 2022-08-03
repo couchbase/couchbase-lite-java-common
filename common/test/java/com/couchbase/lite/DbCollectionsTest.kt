@@ -252,7 +252,7 @@ class DbCollectionsTest : BaseCollectionTest() {
         scope = baseTestDb.defaultScope
         assertEquals(0, scope.collectionCount)
 
-        // default collection cannot be recreate
+        // default collection cannot be recreated
         baseTestDb.createCollection(Collection.DEFAULT_NAME)
 
     }
