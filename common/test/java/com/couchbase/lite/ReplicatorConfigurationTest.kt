@@ -508,7 +508,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     @Test(expected = IllegalArgumentException::class)
     fun testAddDeletedCollections1() {
         val collectionA = baseTestDb.createCollection("colA", "scopeA")
-        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+        val collectionB = otherDB.createCollection("colB", "scopeA")
 
         baseTestDb.deleteCollection("colB", "scopeA")
 
@@ -523,7 +523,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     //     6: Use addCollection() to add colA. Ensure that the colA has been added correctly.
     fun testAddDeletedCollections2() {
         val collectionA = baseTestDb.createCollection("colA", "scopeA")
-        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+        val collectionB = otherDB.createCollection("colB", "scopeA")
 
         baseTestDb.deleteCollection("colB", "scopeA")
 
@@ -545,9 +545,9 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     @Test(expected = IllegalArgumentException::class)
     fun testAddDeletedCollections3() {
         val collectionA = baseTestDb.createCollection("colA", "scopeA")
-        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+        val collectionB = otherDB.createCollection("colB", "scopeA")
 
-        baseTestDb.deleteCollection("colB", "scopeA")
+        otherDB.deleteCollection("colB", "scopeA")
 
         ReplicatorConfiguration(remoteTargetEndpoint)
             .addCollection(collectionB, null)

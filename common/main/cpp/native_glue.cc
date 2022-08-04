@@ -192,7 +192,7 @@ static bool initC4Glue(JNIEnv *env) {
  *  the pairing function JNI_OnUnload() will never get called at all.
  */
 JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM *jvm, void *reserved) {
+JNI_OnLoad(JavaVM *jvm, void *ignore) {
     JNIEnv *env;
     if ((jvm->GetEnv((void **) &env, JNI_VERSION_1_6) == JNI_OK)
         && initC4Logging(env)

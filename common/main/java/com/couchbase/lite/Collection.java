@@ -150,7 +150,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     /**
      * The number of documents in the collection.
      */
-    long getCount() throws CouchbaseLiteException {
+    long getCount() {
         return Preconditions.assertNotNull(
             withLock(() -> (!db.isOpenLocked()) ? 0L : c4Collection.getDocumentCount()),
             "token");
@@ -214,8 +214,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     /**
      * Save a document into the collection with a specified conflict handler. The specified conflict handler
      * will be called if there is conflict during save. If the conflict handler returns 'false', the save
-     * operation
-     * will be canceled with 'false' value returned.
+     * operation will be canceled with 'false' value returned.
      * <p>
      * When saving a document that already belongs to a collection, the collection instance of the
      * document and this collection instance must be the same, otherwise, the InvalidParameter error
@@ -358,14 +357,12 @@ public final class Collection extends BaseCollection implements AutoCloseable {
      * @return token used to cancel the listener
      * @throws IllegalStateException if the default collection doesn’t exist.
      */
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     @NonNull
-    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull CollectionChangeListener listener)
-        throws CouchbaseLiteException {
+    public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull CollectionChangeListener listener) {
+        Preconditions.assertNotNull(listener, "listener");
         return Preconditions.assertNotNull(
-            withLock(() ->
-                // this call cannot, in fact, return null
-                addCollectionChangeListenerLocked(executor, Preconditions.assertNotNull(listener, "listener"))),
+            // this call cannot, in fact, return null
+            withLock(() -> addCollectionChangeListenerLocked(executor, listener)),
             "token");
     }
 
@@ -390,8 +387,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     public ListenerToken addDocumentChangeListener(
         @NonNull String id,
         @Nullable Executor executor,
-        @NonNull DocumentChangeListener listener)
-        throws CouchbaseLiteException {
+        @NonNull DocumentChangeListener listener) {
         Preconditions.assertNotNull(id, "docId");
         Preconditions.assertNotNull(listener, "listener");
         return Preconditions.assertNotNull(

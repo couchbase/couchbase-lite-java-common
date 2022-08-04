@@ -46,7 +46,7 @@ public class ListenerToken extends AtomicBoolean implements AutoCloseable {
     public String toString() { return " on " + executor + " then " + onRemove; }
 
     @Override
-    public void close() throws Exception { remove(); }
+    public void close() { remove(); }
 
     public void remove() {
         if (getAndSet(false)) { onRemove.accept(this); }

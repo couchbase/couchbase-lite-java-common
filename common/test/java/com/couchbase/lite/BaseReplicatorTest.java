@@ -43,18 +43,10 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     protected Database otherDB;
 
     @Before
-    public final void setUpBaseReplicatorTest() throws CouchbaseLiteException {
-        otherDB = createDb("replicator_db");
-        Report.log("Create other DB: " + otherDB);
-        assertNotNull(otherDB);
-        synchronized (otherDB.getDbLock()) { assertTrue(otherDB.isOpenLocked()); }
-    }
+    public final void setUpBaseReplicatorTest() throws CouchbaseLiteException { otherDB = createDb("replicator_db"); }
 
     @After
-    public final void tearDownBaseReplicatorTest() {
-        deleteDb(otherDB);
-        Report.log("Deleted other DB: " + otherDB);
-    }
+    public final void tearDownBaseReplicatorTest() { deleteDb(otherDB); }
 
     protected final URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {
         return new URLEndpoint(new URI("ws://foo.couchbase.com/db"));

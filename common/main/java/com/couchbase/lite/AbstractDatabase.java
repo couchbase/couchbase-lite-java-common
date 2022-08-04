@@ -633,12 +633,7 @@ abstract class AbstractDatabase extends BaseDatabase implements AutoCloseable {
      * @deprecated Use getDefaultCollection().getCount()
      */
     @Deprecated
-    public long getCount() {
-        try { return getDefaultCollectionOrThrow().getCount(); }
-        catch (CouchbaseLiteException e) {
-            throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e);
-        }
-    }
+    public long getCount() { return getDefaultCollectionOrThrow().getCount(); }
 
     /**
      * Returns a copy of the database configuration.
@@ -836,10 +831,7 @@ abstract class AbstractDatabase extends BaseDatabase implements AutoCloseable {
     @Deprecated
     @NonNull
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull DatabaseChangeListener listener) {
-        try { return getDefaultCollectionOrThrow().addChangeListener(executor, listener::changed); }
-        catch (CouchbaseLiteException e) {
-            throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e);
-        }
+        return getDefaultCollectionOrThrow().addChangeListener(executor, listener::changed);
     }
 
     /**
@@ -872,10 +864,7 @@ abstract class AbstractDatabase extends BaseDatabase implements AutoCloseable {
         @NonNull String docId,
         @Nullable Executor executor,
         @NonNull DocumentChangeListener listener) {
-        try { return getDefaultCollectionOrThrow().addDocumentChangeListener(docId, executor, listener); }
-        catch (CouchbaseLiteException e) {
-            throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e);
-        }
+        return getDefaultCollectionOrThrow().addDocumentChangeListener(docId, executor, listener);
     }
 
     /**
