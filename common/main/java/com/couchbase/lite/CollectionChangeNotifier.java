@@ -57,8 +57,7 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
 
     void start(@NonNull Fn.Consumer<Runnable> onChange) {
         synchronized (collection.getDbLock()) {
-            c4Observer = collection.getC4Collection().createCollectionObserver(
-                () -> onChange.accept(this::collectionChanged));
+            c4Observer = collection.createCollectionObserver(() -> onChange.accept(this::collectionChanged));
         }
     }
 

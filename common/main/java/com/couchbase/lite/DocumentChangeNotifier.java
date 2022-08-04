@@ -48,9 +48,7 @@ final class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> implem
 
     void start(@NonNull Fn.Consumer<Runnable> onChange) {
         synchronized (collection.getDbLock()) {
-            c4Observer = collection.getC4Collection().createDocumentObserver(
-                docID,
-                () -> onChange.accept(this::documentChanged));
+            c4Observer = collection.createDocumentObserver(docID, () -> onChange.accept(this::documentChanged));
         }
     }
 

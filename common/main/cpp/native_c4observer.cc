@@ -70,7 +70,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
         if (!cls_C4DocObs)
             return false;
 
-        m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback", "(JLjava/lang/String;J)V");
+        m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback", "(JLjava/lang/String;)V");
         if (!m_C4DocObs_callback)
             return false;
     }
@@ -140,24 +140,14 @@ c4CollectionObsCallback(C4CollectionObserver *observer, void *ignore) {
  * @param seq
  */
 static void
-c4DocObsCallback(C4DocumentObserver *obs, C4Collection* ignore1, C4Slice docID, C4SequenceNumber seq, void *ignore2) {
+c4DocObsCallback(C4DocumentObserver *obs, C4Collection* ign1, C4Slice docID, C4SequenceNumber ign2, void *ign3) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(
-                cls_C4DocObs,
-                m_C4DocObs_callback,
-                (jlong) obs,
-                toJString(env, docID),
-                (jlong) seq);
+        env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs, toJString(env, docID));
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(
-                    cls_C4DocObs,
-                    m_C4DocObs_callback,
-                    (jlong) obs,
-                    toJString(env, docID),
-                    (jlong) seq);
+            env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs, toJString(env, docID));
             gJVM->DetachCurrentThread();
         }
     }

@@ -49,10 +49,10 @@ public class C4DocumentObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    static void callback(long peer, @Nullable String docID, long sequence) {
+    static void callback(long peer, @Nullable String docId) {
         Log.d(
             LogDomain.DATABASE,
-            "C4CollectionDocObserver.callback @0x%x (%s): %s", peer, sequence, docID);
+            "C4CollectionDocObserver.callback @0x%x: %s", peer, docId);
 
         final C4DocumentObserver observer = BOUND_OBSERVERS.getBinding(peer);
         if (observer == null) { return; }
@@ -74,9 +74,9 @@ public class C4DocumentObserver extends C4NativePeer {
     static C4DocumentObserver newObserver(
         @NonNull NativeImpl impl,
         long c4Coll,
-        @NonNull String id,
+        @NonNull String docId,
         @NonNull Runnable listener) {
-        final long peer = impl.nCreate(c4Coll, id);
+        final long peer = impl.nCreate(c4Coll, docId);
         final C4DocumentObserver observer = new C4DocumentObserver(impl, peer, listener);
         BOUND_OBSERVERS.bind(peer, observer);
         return observer;

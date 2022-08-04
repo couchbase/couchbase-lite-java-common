@@ -30,8 +30,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.couchbase.lite.internal.BaseCollection;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Collection;
+import com.couchbase.lite.internal.core.C4CollectionObserver;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Document;
+import com.couchbase.lite.internal.core.C4DocumentObserver;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -468,8 +470,16 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     // Package visibility
     //-------------------------------------------------------------------------
 
+
     @NonNull
-    C4Collection getC4Collection() { return c4Collection; }
+    public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) {
+        return c4Collection.createCollectionObserver(listener);
+    }
+
+    @NonNull
+    public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
+        return c4Collection.createDocumentObserver(docID, listener);
+    }
 
     @NonNull
     Database getDatabase() { return db; }

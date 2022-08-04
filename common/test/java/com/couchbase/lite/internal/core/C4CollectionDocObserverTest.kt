@@ -31,9 +31,9 @@ class C4CollectionDocObserverTest : C4BaseTest() {
             C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "A", { i++ }).use { obs ->
                 assertEquals(0, i)
 
-                C4CollectionDocObserver.callback(obs.peer, "A", 0L)
-                C4CollectionDocObserver.callback(obs.peer, "A", 0L)
-                C4CollectionDocObserver.callback(obs.peer, "A", 0L)
+                C4CollectionDocObserver.callback(obs.peer, "A")
+                C4CollectionDocObserver.callback(obs.peer, "A")
+                C4CollectionDocObserver.callback(obs.peer, "A")
 
                 assertEquals(3, i)
             }
