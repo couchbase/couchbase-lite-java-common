@@ -22,7 +22,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 
-public abstract class BaseQueryTest extends BaseDbTest {
+public abstract class BaseQueryTest extends BaseCollectionTest {
     @FunctionalInterface
     public interface QueryResult { void check(int n, Result result); }
 
