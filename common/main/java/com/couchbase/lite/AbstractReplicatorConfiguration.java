@@ -738,7 +738,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         final Database db = Preconditions.assertNotNull(collection, "collection").getDatabase();
         if (database == null) { database = db; }
         else {
-             if (!database.equals(db)) {
+            if (!database.equals(db)) {
                 throw new IllegalArgumentException(
                     "Collection " + scope + "." + name + " does not belong to database " + database.getName());
             }
@@ -750,9 +750,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         }
 
         try {
-            if (database.getCollection(name, scope) == null) {
-                throw new IllegalArgumentException("Collection " + scope + "." + name + "has been deleted");
-            }
+            final Collection coll = database.getCollection(name, scope);
+            if (coll != null) { coll.close(); }
+            else { throw new IllegalArgumentException("Collection " + scope + "." + name + " has been deleted"); }
         }
         catch (CouchbaseLiteException e) {
             throw new IllegalArgumentException("Failed getting collection " + collection, e);

@@ -802,8 +802,9 @@ public final class Collection extends BaseCollection implements AutoCloseable {
     }
 
     private void closeCollectionChangNotifierLocked() {
-        collectionChangeNotifier.close();
+        final CollectionChangeNotifier notifier = collectionChangeNotifier;
         collectionChangeNotifier = null;
+        if (notifier != null) { notifier.close(); }
     }
 
     private void scheduleImmediateOnPostExecutor(@NonNull Runnable task) {

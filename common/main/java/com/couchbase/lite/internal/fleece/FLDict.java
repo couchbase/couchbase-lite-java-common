@@ -71,16 +71,15 @@ public class FLDict {
     @NonNull
     public Map<String, Object> asDict() {
         final Map<String, Object> results = new HashMap<>();
-        final FLDictIterator itr = new FLDictIterator();
-
-        itr.begin(this);
-        String key;
-        while ((key = itr.getKeyString()) != null) {
-            final FLValue val = itr.getValue();
-            results.put(key, (val == null) ? null : val.asObject());
-            itr.next();
+        try (FLDictIterator itr = new FLDictIterator()) {
+            itr.begin(this);
+            String key;
+            while ((key = itr.getKeyString()) != null) {
+                final FLValue val = itr.getValue();
+                results.put(key, (val == null) ? null : val.asObject());
+                itr.next();
+            }
         }
-
         return results;
     }
 

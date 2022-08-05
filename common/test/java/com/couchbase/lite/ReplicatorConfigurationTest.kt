@@ -536,7 +536,6 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertTrue(collections.contains(collectionA))
     }
 
-
     //     1: Create collection "colA" in the scope "scopeA" using database instance A.
     //     2: Create collection "colB" in the scope "scopeA" using database instance B.
     //     3: Delete collection colB

@@ -19,6 +19,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.After;
@@ -30,7 +31,6 @@ import com.couchbase.lite.mock.TestReplicatorChangeListener;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 
 public abstract class BaseReplicatorTest extends BaseDbTest {
@@ -100,11 +100,41 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
     }
 
     protected final ReplicatorConfiguration makeConfig(
+        Endpoint target,
+        Set<Collection> source,
+        ReplicatorType type,
+        boolean continuous,
+        Certificate pinnedServerCert) {
+        final ReplicatorConfiguration config = makeConfig(target, source, type, continuous);
+
+        final byte[] pin;
+        try { pin = (pinnedServerCert == null) ? null : pinnedServerCert.getEncoded(); }
+        catch (CertificateEncodingException e) {
+            throw new IllegalArgumentException("Invalid pinned server certificate", e);
+        }
+        config.setPinnedServerCertificate(pin);
+
+        return config;
+    }
+
+    protected final ReplicatorConfiguration makeConfig(
         Database source,
         Endpoint target,
         ReplicatorType type,
         boolean continuous) {
         return new ReplicatorConfiguration(source, target)
+            .setType(type)
+            .setContinuous(continuous)
+            .setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
+    }
+
+    protected final ReplicatorConfiguration makeConfig(
+        Endpoint target,
+        Set<Collection> source,
+        ReplicatorType type,
+        boolean continuous) {
+        return new ReplicatorConfiguration(target)
+            .addCollections(source, null)
             .setType(type)
             .setContinuous(continuous)
             .setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
@@ -155,19 +185,18 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         if (onReady != null) { onReady.accept(repl); }
 
         ListenerToken token = repl.addChangeListener(testSerialExecutor, listener);
-
-        Report.log("Test replicator starting: " + repl.getConfig());
-        boolean success;
+        boolean ok;
         try {
+            Report.log("Test replicator starting: " + repl.getConfig());
             repl.start(reset);
-            success = listener.awaitCompletion(STD_TIMEOUT_SEC, TimeUnit.SECONDS);
+            ok = listener.awaitCompletion(STD_TIMEOUT_SEC, TimeUnit.SECONDS);
         }
         finally {
-            repl.removeChangeListener(token);
+            token.remove();
         }
 
         Throwable err = listener.getError();
-        Report.log(err, "Test replicator finished: " + success);
+        Report.log(err, "Test replicator finished %ssuccessfully", (ok) ? "" : "un");
 
         if ((expectedErrorCode == 0) && (expectedErrorDomain == null)) {
             if (err != null) { throw new RuntimeException(err); }

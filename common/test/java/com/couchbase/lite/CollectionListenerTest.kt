@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.utils.Report
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -76,6 +77,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         val doc2Id = "doc_2"
         val doc3Id = "doc_3"
 
+        var t = 0L
+
         val token1 = collectionA.addChangeListener(exec) { c ->
             changes1?.addAll(c.documentIDs)
             thread1 = Thread.currentThread()
@@ -97,11 +100,14 @@ class CollectionListenerTest : BaseCollectionTest() {
         changes1 = mutableListOf()
         changes2 = mutableListOf()
 
+        t -= System.currentTimeMillis()
         collectionB.save(MutableDocument(doc3Id))
         collectionA.save(MutableDocument(doc2Id))
         collectionA.save(MutableDocument(doc1Id))
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        t += System.currentTimeMillis()
+
         assertEquals(2, changes1.size)
         assertTrue(changes1.contains(doc1Id))
         assertTrue(changes1.contains(doc2Id))
@@ -118,6 +124,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         changes1 = mutableListOf()
         changes2 = mutableListOf()
 
+        t -= System.currentTimeMillis()
         collectionB.save(
             collectionB.getDocument(doc3Id)?.toMutable()?.setString("Lucky", "Radiohead")!!
         )
@@ -129,6 +136,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         )
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        t += System.currentTimeMillis()
+
         assertEquals(2, changes1.size)
         assertTrue(changes1.contains(doc1Id))
         assertTrue(changes1.contains(doc2Id))
@@ -145,11 +154,14 @@ class CollectionListenerTest : BaseCollectionTest() {
         changes1 = mutableListOf()
         changes2 = mutableListOf()
 
+        t -= System.currentTimeMillis()
         collectionB.delete(collectionB.getDocument(doc3Id)!!)
         collectionA.delete(collectionA.getDocument(doc1Id)!!)
         collectionA.delete(collectionA.getDocument(doc2Id)!!)
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        t += System.currentTimeMillis()
+
         assertEquals(2, changes1.size)
         assertTrue(changes1.contains(doc1Id))
         assertTrue(changes1.contains(doc2Id))
@@ -173,7 +185,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         collectionA.save(MutableDocument(doc2Id))
         collectionA.save(MutableDocument(doc1Id))
 
-        assertFalse(latch.await(2, TimeUnit.SECONDS))
+        // wait twice the average time to notify
+        assertFalse(latch.await((t * 2) / 3, TimeUnit.MILLISECONDS))
         assertTrue(changes1.isEmpty())
         assertTrue(changes2.isEmpty())
     }
@@ -199,6 +212,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         val doc2Id = "doc_2"
         val doc3Id = "doc_3"
 
+        var t = 0L
+
         val token1 = collectionA.addDocumentChangeListener(doc1Id, exec) { c ->
             changes1?.add(c.documentID)
             thread1 = Thread.currentThread()
@@ -216,11 +231,14 @@ class CollectionListenerTest : BaseCollectionTest() {
         changes1 = mutableListOf()
         changes2 = mutableListOf()
 
+        t -= System.currentTimeMillis()
         collectionB.save(MutableDocument(doc3Id))
         collectionA.save(MutableDocument(doc2Id))
         collectionA.save(MutableDocument(doc1Id))
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        t += System.currentTimeMillis()
+
         assertEquals(1, changes1.size)
         assertTrue(changes1.contains(doc1Id))
         assertEquals(1, changes2.size)
@@ -235,6 +253,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         changes1 = mutableListOf()
         changes2 = mutableListOf()
 
+        t -= System.currentTimeMillis()
         collectionB.save(
             collectionB.getDocument(doc3Id)?.toMutable()?.setString("Lucky", "Radiohead")!!
         )
@@ -246,6 +265,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         )
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        t += System.currentTimeMillis()
+
         assertEquals(1, changes1.size)
         assertTrue(changes1.contains(doc1Id))
         assertEquals(1, changes2.size)
@@ -260,11 +281,14 @@ class CollectionListenerTest : BaseCollectionTest() {
         changes1 = mutableListOf()
         changes2 = mutableListOf()
 
+        t -= System.currentTimeMillis()
         collectionB.delete(collectionB.getDocument(doc3Id)!!)
         collectionA.delete(collectionA.getDocument(doc2Id)!!)
         collectionA.delete(collectionA.getDocument(doc1Id)!!)
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        t += System.currentTimeMillis()
+
         assertEquals(1, changes1.size)
         assertTrue(changes1.contains(doc1Id))
         assertEquals(1, changes2.size)
@@ -286,7 +310,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         collectionA.save(MutableDocument(doc2Id))
         collectionA.save(MutableDocument(doc1Id))
 
-        assertFalse(latch.await(2, TimeUnit.SECONDS))
+        // wait twice the average time to notify
+        assertFalse(latch.await((t * 2) / 3, TimeUnit.MILLISECONDS))
         assertTrue(changes1.isEmpty())
         assertTrue(changes2.isEmpty())
     }
