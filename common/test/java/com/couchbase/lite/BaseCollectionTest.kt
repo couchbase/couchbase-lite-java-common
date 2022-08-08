@@ -49,7 +49,7 @@ open class BaseCollectionTest : BaseDbTest() {
     fun tearDownBaseCollectionTest() {
         val collectionName = testCollection.name
         // don't delete the default collection
-        if (Collection.DEFAULT_NAME != collectionName) {
+        if (Collection.DEFAULT_NAME != collectionName && baseTestDb.isOpen) {
             baseTestDb.deleteCollection(collectionName)
             Report.log("Deleted testCollection: $testCollection")
         }
