@@ -93,7 +93,6 @@ open class BaseCollectionTest : BaseDbTest() {
         assertEquals(n.toLong(), testCollection.count)
     }
 
-    // load JSON object in default collection
     @Throws(IOException::class, JSONException::class)
     protected fun loadJSONResourceInCollection(name: String, collection: Collection) {
         BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use { `in` ->

@@ -3100,7 +3100,7 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
-    /******** Collection Tessts ********/
+    /******** Collection Tests ********/
 
     @Test
     public void testQueryDefaultCollection() throws CouchbaseLiteException, JSONException, IOException {
@@ -3145,9 +3145,10 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows2, 1);
     }
 
-    @Ignore("CBL-3528: Create query with _default scope throws exception")
+
+    @Ignore("CBL-3563")
     @Test
-    public void testQueryDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
+    public void testQueryBuilderDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");
         loadJSONResourceInCollection("names_100.json", collection);
 
@@ -3163,7 +3164,12 @@ public class QueryTest extends BaseQueryTest {
             assertEquals(result.getValue(0), result.getValue("first"));
         });
         assertEquals(1, numRows);
+    }
 
+    @Test
+    public void testStringQueryDefaultScope1() throws CouchbaseLiteException, JSONException, IOException {
+        Collection collection = baseTestDb.createCollection("names");
+        loadJSONResourceInCollection("names_100.json", collection);
         String queryString1 = "select name.first from names order by name.first limit 1";
         Query query1 = QueryBuilder.createQuery(queryString1, baseTestDb);
         int numRows1 = verifyQuery(query1, (n, result) -> {
@@ -3173,7 +3179,13 @@ public class QueryTest extends BaseQueryTest {
             assertEquals(result.getValue(0), result.getValue("first"));
         });
         assertEquals(numRows1, 1);
+    }
 
+    @Ignore("CBL-3528: Create query with _default scope throws exception")
+    @Test
+    public void testStringQueryDefaultScope2() throws CouchbaseLiteException, JSONException, IOException {
+        Collection collection = baseTestDb.createCollection("names");
+        loadJSONResourceInCollection("names_100.json", collection);
         String queryString2 = "select name.first from _default.names order by name.first limit 1";
         Query query2 = QueryBuilder.createQuery(queryString2, baseTestDb);
         int numRows2 = verifyQuery(query2, (n, result) -> {
@@ -3185,7 +3197,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows2, 1);
     }
 
-    @Ignore("Query created with QueryBuilder returns empty Result")
+    @Ignore("CBL-3563")
     @Test
     public void testBuilderQueryNonDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names", "people");
@@ -3204,7 +3216,7 @@ public class QueryTest extends BaseQueryTest {
             assertEquals("Abe", result.getValue("first"));
             assertEquals(result.getValue(0), result.getValue("first"));
         });
-        assertEquals(1, numRows); // !!! fails
+        assertEquals(1, numRows);
     }
 
     @Test
@@ -3235,7 +3247,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
 
-    @Ignore("Empty Result")
+    @Ignore("CBL-3563")
     @Test
     public void testBuilderQueryJoinWithCollections() throws CouchbaseLiteException {
         Collection flowerCol = baseTestDb.createCollection("flowers", "test");
@@ -3346,7 +3358,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(2, numRows);
     }
 
-    @Ignore("Result doesn't have correct number of items")
+    @Ignore("CBL-3564")
     @Test
     public void testStringQueryJoinWithAliasWithCollections() throws CouchbaseLiteException {
         Collection flowerCol = baseTestDb.createCollection("flowers", "test");
