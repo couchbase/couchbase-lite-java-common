@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONException;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Report;
@@ -219,7 +220,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testNoWhereQuery() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("names_100.json");
+        loadJSONResourceInDatabase("names_100.json");
         int numRows = verifyQuery(
             QueryBuilder.select(SR_DOCID, SR_SEQUENCE).from(DataSource.database(baseTestDb)),
             (n, result) -> {
@@ -439,7 +440,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereIn() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("names_100.json");
+        loadJSONResourceInDatabase("names_100.json");
 
         final Expression[] expected = {
             Expression.string("Marcy"),
@@ -464,7 +465,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereLike() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("names_100.json");
+        loadJSONResourceInDatabase("names_100.json");
 
         Expression w = Expression.property("name.first").like(Expression.string("%Mar%"));
         Query query = QueryBuilder
@@ -490,7 +491,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereRegex() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("names_100.json");
+        loadJSONResourceInDatabase("names_100.json");
 
         Query query = QueryBuilder
             .select(SR_DOCID)
@@ -515,7 +516,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereIndexMatch() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("sentences.json");
+        loadJSONResourceInDatabase("sentences.json");
 
         baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
 
@@ -536,7 +537,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereMatch() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("sentences.json");
+        loadJSONResourceInDatabase("sentences.json");
 
         baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
 
@@ -557,7 +558,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testFullTextIndexConfig() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("sentences.json");
+        loadJSONResourceInDatabase("sentences.json");
 
         final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense");
         assertFalse(idxConfig.isIgnoringAccents());
@@ -587,7 +588,7 @@ public class QueryTest extends BaseQueryTest {
     // Test courtesy of Jayahari Vavachan
     @Test
     public void testN1QLFTSQuery() throws IOException, CouchbaseLiteException, JSONException {
-        loadJSONResource("sentences.json");
+        loadJSONResourceInDatabase("sentences.json");
 
         baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
 
@@ -600,7 +601,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testOrderBy() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("names_100.json");
+        loadJSONResourceInDatabase("names_100.json");
 
         Ordering.SortOrder order = Ordering.expression(Expression.property("name.first"));
 
@@ -711,7 +712,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testGroupBy() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("names_100.json");
+        loadJSONResourceInDatabase("names_100.json");
 
         final List<String> expectedStates = Arrays.asList("AL", "CA", "CO", "FL", "IA");
         final List<Integer> expectedCounts = Arrays.asList(1, 6, 1, 1, 3);
@@ -1004,7 +1005,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testQueryResult() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("names_100.json");
+        loadJSONResourceInDatabase("names_100.json");
         Query query = QueryBuilder.select(
                 SelectResult.property("name.first").as("firstname"),
                 SelectResult.property("name.last").as("lastname"),
@@ -1051,7 +1052,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testQuantifiedOperators() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResource("names_100.json");
+        loadJSONResourceInDatabase("names_100.json");
 
         DataSource ds = DataSource.database(baseTestDb);
 
@@ -3097,6 +3098,311 @@ public class QueryTest extends BaseQueryTest {
             assertEquals(2, books);
             assertEquals(1, cheapBooks);
         }
+    }
+
+    /******** Collection Tests ********/
+
+    @Test
+    public void testQueryDefaultCollection() throws CouchbaseLiteException, JSONException, IOException {
+        Collection defaultCollection = baseTestDb.getDefaultCollection();
+        assertNotNull(defaultCollection);
+        loadJSONResourceInCollection("names_100.json", defaultCollection);
+
+        // create with default collection
+        Query query = QueryBuilder.select(SelectResult.property("name.first"))
+            .from(DataSource.collection(defaultCollection))
+            .orderBy(Ordering.property("name.first"))
+            .limit(Expression.intValue(1));
+
+        int numRows = verifyQuery(query, (n, result) -> {
+            assertEquals(1, result.count());
+            assertEquals("{\"first\":\"Abe\"}", result.toJSON());
+            assertEquals("Abe", result.getValue("first"));
+            assertEquals(result.getValue(0), result.getValue("first"));
+        });
+        assertEquals(numRows, 1);
+
+        // create with _
+        String queryString1 = "select name.first from _ order by name.first limit 1";
+        Query query1 = QueryBuilder.createQuery(queryString1, baseTestDb);
+        int numRows1 = verifyQuery(query1, (n, result) -> {
+            assertEquals(1, result.count());
+            assertEquals("{\"first\":\"Abe\"}", result.toJSON());
+            assertEquals("Abe", result.getValue("first"));
+            assertEquals(result.getValue(0), result.getValue("first"));
+        });
+        assertEquals(numRows1, 1);
+
+        // create with _default
+        String queryString2 = "select name.first from _default order by name.first limit 1";
+        Query query2 = QueryBuilder.createQuery(queryString2, baseTestDb);
+        int numRows2 = verifyQuery(query2, (n, result) -> {
+            assertEquals(1, result.count());
+            assertEquals("{\"first\":\"Abe\"}", result.toJSON());
+            assertEquals("Abe", result.getValue("first"));
+            assertEquals(result.getValue(0), result.getValue("first"));
+        });
+        assertEquals(numRows2, 1);
+    }
+
+
+    @Ignore("CBL-3563")
+    @Test
+    public void testQueryBuilderDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
+        Collection collection = baseTestDb.createCollection("names");
+        loadJSONResourceInCollection("names_100.json", collection);
+
+        Query query = QueryBuilder.select(SelectResult.property("name.first"))
+            .from(DataSource.collection(collection))
+            .orderBy(Ordering.property("name.first"))
+            .limit(Expression.intValue(1));
+
+        int numRows = verifyQuery(query, (n, result) -> {
+            assertEquals(1, result.count());
+            assertEquals("{\"first\":\"Abe\"}", result.toJSON());
+            assertEquals("Abe", result.getValue("first"));
+            assertEquals(result.getValue(0), result.getValue("first"));
+        });
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testStringQueryDefaultScope1() throws CouchbaseLiteException, JSONException, IOException {
+        Collection collection = baseTestDb.createCollection("names");
+        loadJSONResourceInCollection("names_100.json", collection);
+        String queryString1 = "select name.first from names order by name.first limit 1";
+        Query query1 = QueryBuilder.createQuery(queryString1, baseTestDb);
+        int numRows1 = verifyQuery(query1, (n, result) -> {
+            assertEquals(1, result.count());
+            assertEquals("{\"first\":\"Abe\"}", result.toJSON());
+            assertEquals("Abe", result.getValue("first"));
+            assertEquals(result.getValue(0), result.getValue("first"));
+        });
+        assertEquals(numRows1, 1);
+    }
+
+    @Ignore("CBL-3528: Create query with _default scope throws exception")
+    @Test
+    public void testStringQueryDefaultScope2() throws CouchbaseLiteException, JSONException, IOException {
+        Collection collection = baseTestDb.createCollection("names");
+        loadJSONResourceInCollection("names_100.json", collection);
+        String queryString2 = "select name.first from _default.names order by name.first limit 1";
+        Query query2 = QueryBuilder.createQuery(queryString2, baseTestDb);
+        int numRows2 = verifyQuery(query2, (n, result) -> {
+            assertEquals(1, result.count());
+            assertEquals("{\"first\":\"Abe\"}", result.toJSON());
+            assertEquals("Abe", result.getValue("first"));
+            assertEquals(result.getValue(0), result.getValue("first"));
+        });
+        assertEquals(numRows2, 1);
+    }
+
+    @Ignore("CBL-3563")
+    @Test
+    public void testBuilderQueryNonDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
+        Collection collection = baseTestDb.createCollection("names", "people");
+        loadJSONResourceInCollection("names_100.json", collection);
+
+        Query query = QueryBuilder.select(SelectResult.property("name.first"))
+            .from(DataSource.collection(collection))
+            .orderBy(Ordering.property("name.first"))
+            .limit(Expression.intValue(1));
+
+        // !!! Result set is empty, thus the checks inside query results are never called
+        int numRows = verifyQuery(query, (n, result) -> {
+            Report.log("Result with QueryBuilder: " + result.toJSON());
+            assertEquals(1, result.count());
+            assertEquals("{\"first\":\"Abe\"}", result.toJSON());
+            assertEquals("Abe", result.getValue("first"));
+            assertEquals(result.getValue(0), result.getValue("first"));
+        });
+        assertEquals(1, numRows);
+    }
+
+    @Test
+    public void testStringQueryNonDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
+        Collection collection = baseTestDb.createCollection("names", "people");
+        loadJSONResourceInCollection("names_100.json", collection);
+
+        String queryString = "SELECT name.first FROM people.names ORDER BY name.first LIMIT 1";
+        Query query = QueryBuilder.createQuery(queryString, baseTestDb);
+        int numRows1 = verifyQuery(query, (n, result) -> {
+            Report.log("Result with createQuery: " + result.toJSON());
+            assertEquals(1, result.count());
+            assertEquals("{\"first\":\"Abe\"}", result.toJSON());
+            assertEquals("Abe", result.getValue("first"));
+            assertEquals(result.getValue(0), result.getValue("first"));
+        });
+        assertEquals(1, numRows1);
+    }
+
+    @Test(expected = CouchbaseLiteException.class)
+    public void testQueryNonExistingCollection() throws CouchbaseLiteException, JSONException, IOException {
+        Collection collection = baseTestDb.createCollection("names", "people");
+        loadJSONResourceInCollection("names_100.json", collection);
+
+        String queryString = "SELECT name.first FROM person.names ORDER BY name.first LIMIT 1";
+        Query query = QueryBuilder.createQuery(queryString, baseTestDb);
+        query.execute();
+    }
+
+
+    @Ignore("CBL-3563")
+    @Test
+    public void testBuilderQueryJoinWithCollections() throws CouchbaseLiteException {
+        Collection flowerCol = baseTestDb.createCollection("flowers", "test");
+        Collection colorCol = baseTestDb.createCollection("colors", "test");
+
+        MutableDocument flowerDoc1 = new MutableDocument();
+        flowerDoc1.setValue("name", "rose");
+        flowerDoc1.setValue("cid", "c1");
+
+        MutableDocument flowerDoc2 = new MutableDocument();
+        flowerDoc2.setValue("name", "hydrangea");
+        flowerDoc2.setValue("cid", "c2");
+
+        saveDocInCollection(flowerDoc1, flowerCol);
+        saveDocInCollection(flowerDoc2, flowerCol);
+
+        MutableDocument colorDoc1 = new MutableDocument();
+        colorDoc1.setValue("cid", "c1");
+        colorDoc1.setValue("color", "red");
+
+        MutableDocument colorDoc2 = new MutableDocument();
+        colorDoc2.setValue("cid", "c2");
+        colorDoc2.setValue("color", "blue");
+
+        MutableDocument colorDoc3 = new MutableDocument();
+        colorDoc3.setValue("cid", "c3");
+        colorDoc3.setValue("color", "white");
+
+        saveDocInCollection(colorDoc1, colorCol);
+        saveDocInCollection(colorDoc2, colorCol);
+        saveDocInCollection(colorDoc3, colorCol);
+
+        // set up aliases
+        DataSource flowerDS = DataSource.collection(flowerCol).as("f");
+        DataSource colorDS = DataSource.collection(colorCol).as("c");
+
+        Expression flowerCID = Expression.property("cid").from("f");
+        Expression colorCID = Expression.property("cid").from("c");
+
+        //join clause: join flower and color where the cid field of color is equal to the cid field of flower
+        Expression joinExpr = flowerCID.equalTo(colorCID);
+        Join join = Join.join(colorDS).on(joinExpr);
+
+        Query query = QueryBuilder.select(
+                SelectResult.expression(Expression.property("test.flowers.name").from("f")),
+                SelectResult.expression(Expression.property("test.colors.color").from("c")))
+            .from(flowerDS)
+            .join(join)
+            .orderBy(Ordering.expression(Expression.property("f.name")));
+
+        int numRows = verifyQuery(query, (n, result) -> {
+            assertEquals(2, result.count());
+            Report.log("Result with QueryBuilder: " + result.toJSON());
+
+            assertEquals(
+                "{\"color\":\"blue\",\"name\":\"hydrangea\"}, {\"color\":\"red\",\"name\":\"rose\"}",
+                result.toJSON());
+        });
+
+        assertEquals(2, numRows);
+    }
+
+    @Ignore("CBL-3558")
+    @Test
+    public void testStringQueryJoinWithCollections() throws CouchbaseLiteException {
+        Collection flowerCol = baseTestDb.createCollection("flowers", "test");
+        Collection colorCol = baseTestDb.createCollection("colors", "test");
+
+        MutableDocument flowerDoc1 = new MutableDocument();
+        flowerDoc1.setValue("name", "rose");
+        flowerDoc1.setValue("cid", "c1");
+
+        MutableDocument flowerDoc2 = new MutableDocument();
+        flowerDoc2.setValue("name", "hydrangea");
+        flowerDoc2.setValue("cid", "c2");
+
+        saveDocInCollection(flowerDoc1, flowerCol);
+        saveDocInCollection(flowerDoc2, flowerCol);
+
+        MutableDocument colorDoc1 = new MutableDocument();
+        colorDoc1.setValue("cid", "c1");
+        colorDoc1.setValue("color", "red");
+
+        MutableDocument colorDoc2 = new MutableDocument();
+        colorDoc2.setValue("cid", "c2");
+        colorDoc2.setValue("color", "blue");
+
+        MutableDocument colorDoc3 = new MutableDocument();
+        colorDoc3.setValue("cid", "c3");
+        colorDoc3.setValue("color", "white");
+
+        saveDocInCollection(colorDoc1, colorCol);
+        saveDocInCollection(colorDoc2, colorCol);
+        saveDocInCollection(colorDoc3, colorCol);
+
+        // create with query string
+        String queryString1 = "Select test.flowers.name, test.colors.color FROM test.flowers JOIN test.colors ON "
+            + "test.flowers.cid = test.colors.cid ORDER BY test.flowers.name";
+        Query query1 = QueryBuilder.createQuery(queryString1, baseTestDb);
+
+        int numRows = verifyQuery(query1, (n, result) -> {
+            assertEquals(2, result.count());
+            assertEquals(
+                "{\"color\":\"blue\",\"name\":\"hydrangea\"}, {\"color\":\"red\",\"name\":\"rose\"}",
+                result.toJSON());
+        });
+
+        assertEquals(2, numRows);
+    }
+
+    @Ignore("CBL-3564")
+    @Test
+    public void testStringQueryJoinWithAliasWithCollections() throws CouchbaseLiteException {
+        Collection flowerCol = baseTestDb.createCollection("flowers", "test");
+        Collection colorCol = baseTestDb.createCollection("colors", "test");
+
+        MutableDocument flowerDoc1 = new MutableDocument();
+        flowerDoc1.setValue("name", "rose");
+        flowerDoc1.setValue("cid", "c1");
+
+        MutableDocument flowerDoc2 = new MutableDocument();
+        flowerDoc2.setValue("name", "hydrangea");
+        flowerDoc2.setValue("cid", "c2");
+
+        saveDocInCollection(flowerDoc1, flowerCol);
+        saveDocInCollection(flowerDoc2, flowerCol);
+
+        MutableDocument colorDoc1 = new MutableDocument();
+        colorDoc1.setValue("cid", "c1");
+        colorDoc1.setValue("color", "red");
+
+        MutableDocument colorDoc2 = new MutableDocument();
+        colorDoc2.setValue("cid", "c2");
+        colorDoc2.setValue("color", "blue");
+
+        MutableDocument colorDoc3 = new MutableDocument();
+        colorDoc3.setValue("cid", "c3");
+        colorDoc3.setValue("color", "white");
+
+        saveDocInCollection(colorDoc1, colorCol);
+        saveDocInCollection(colorDoc2, colorCol);
+        saveDocInCollection(colorDoc3, colorCol);
+
+        /// !!! Result only has one item instead of 2
+        String queryString2 = "SELECT f.name, c.color FROM test.flowers as f JOIN test.colors as c ON f.cid = c.cid "
+            + "ORDER BY f.name";
+        Query query2 = QueryBuilder.createQuery(queryString2, baseTestDb);
+        int numRows = verifyQuery(query2, (n, result) -> {
+            Report.log("Result with createQuery: " + result.toJSON());
+            assertEquals(2, result.count());
+            assertEquals(
+                "{\"color\":\"blue\",\"name\":\"hydrangea\"}, {\"color\":\"red\",\"name\":\"rose\"}",
+                result.toJSON());
+        });
+        assertEquals(2, numRows);
     }
 
     // ??? This is a ridiculously expensive test

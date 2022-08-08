@@ -15,16 +15,24 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.utils.JSONUtils
+import com.couchbase.lite.internal.utils.PlatformUtils
 import com.couchbase.lite.internal.utils.Report
+import org.json.JSONException
+import org.json.JSONObject
 import org.junit.After
-import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
 import java.util.*
 
 open class BaseCollectionTest : BaseDbTest() {
     protected lateinit var testCollection: Collection
-    protected lateinit var testColName : String
-    protected lateinit var testScopeName : String
+    protected lateinit var testColName: String
+    protected lateinit var testScopeName: String
 
     protected val Scope.collectionCount
         get() = this.collections.size
@@ -41,10 +49,18 @@ open class BaseCollectionTest : BaseDbTest() {
     fun tearDownBaseCollectionTest() {
         val collectionName = testCollection.name
         // don't delete the default collection
-        if (Collection.DEFAULT_NAME != collectionName) {
+        if (Collection.DEFAULT_NAME != collectionName && baseTestDb.isOpen) {
             baseTestDb.deleteCollection(collectionName)
             Report.log("Deleted testCollection: $testCollection")
         }
+    }
+
+    protected fun saveDocInCollection(doc: MutableDocument, collection: Collection): Document {
+        collection.save(doc)
+        val savedDoc = collection.getDocument(doc.id)
+        assertNotNull(savedDoc)
+        assertEquals(doc.id, savedDoc!!.id)
+        return savedDoc
     }
 
     @Throws(CouchbaseLiteException::class)
@@ -53,8 +69,8 @@ open class BaseCollectionTest : BaseDbTest() {
         val doc = MutableDocument(docID)
         doc.setValue("key", 1)
         val savedDoc = saveDocInBaseCollectionTest(doc)
-        Assert.assertEquals(n + 1, testCollection.count)
-        Assert.assertEquals(1, savedDoc.sequence)
+        assertEquals(n + 1, testCollection.count)
+        assertEquals(1, savedDoc.sequence)
         return savedDoc
     }
 
@@ -62,8 +78,8 @@ open class BaseCollectionTest : BaseDbTest() {
     protected fun saveDocInBaseCollectionTest(doc: MutableDocument): Document {
         testCollection.save(doc)
         val savedDoc = testCollection.getDocument(doc.id)
-        Assert.assertNotNull(savedDoc)
-        Assert.assertEquals(doc.id, savedDoc!!.id)
+        assertNotNull(savedDoc)
+        assertEquals(doc.id, savedDoc!!.id)
         return savedDoc
     }
 
@@ -74,7 +90,23 @@ open class BaseCollectionTest : BaseDbTest() {
             doc.setValue("key", i)
             saveDocInBaseCollectionTest(doc)
         }
-        Assert.assertEquals(n.toLong(), testCollection.count)
+        assertEquals(n.toLong(), testCollection.count)
+    }
+
+    @Throws(IOException::class, JSONException::class)
+    protected fun loadJSONResourceInCollection(name: String, collection: Collection) {
+        BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use { `in` ->
+            var n = 1
+            `in`.lineSequence().forEach {
+                if (it.trim().isEmpty()) {
+                    return
+                }
+                val doc = MutableDocument(String.format(Locale.ENGLISH, "doc-%03d", n++))
+                doc.setData(JSONUtils.fromJSON(JSONObject(it)))
+
+                saveDocInCollection(doc, collection)
+            }
+        }
     }
 }
 
