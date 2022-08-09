@@ -321,5 +321,19 @@ class DbCollectionsTest : BaseCollectionTest() {
             deleteDb(newDB)
         }
     }
+
+    /* Use APIs on Collection when collection is deleted */
+    @Test
+    fun testGetScopeFromDeletedCollection() {
+        baseTestDb.deleteCollection(testColName, testScopeName)
+        assertEquals(testScopeName, testCollection.scope.name)
+    }
+
+    @Test
+    fun testGetColNameFromDeletedCollection() {
+        baseTestDb.deleteCollection(testColName, testScopeName)
+        assertEquals(testColName, testCollection.name)
+    }
+
 }
 
