@@ -1763,9 +1763,9 @@ public class DocumentTest extends BaseCollectionTest {
         waitUntil(1000L, () -> 1 == baseTestDb.getCount());
     }
 
-    @Ignore("Exception not thrown")
+    @Ignore("CBL-3574")
     @Test
-    public void testSetExpirationOnDeletedDoc() throws CouchbaseLiteException, InterruptedException {
+    public void testSetExpirationOnDeletedDoc() throws CouchbaseLiteException {
         Date dto30 = new Date(System.currentTimeMillis() + 30000L);
         MutableDocument doc1a = new MutableDocument("deleted_doc");
         doc1a.setInt("answer", 12);
@@ -1824,7 +1824,7 @@ public class DocumentTest extends BaseCollectionTest {
         }
     }
 
-    @Ignore("document expiration is not null when collection is deleted")
+    @Ignore("CBL-3575")
     @Test
     public void testGetExpirationOnDocInDeletedCollection() throws CouchbaseLiteException {
         Date expiration = new Date(System.currentTimeMillis() + 30000L);
@@ -1835,7 +1835,13 @@ public class DocumentTest extends BaseCollectionTest {
         testCollection.setDocumentExpiration(id, expiration);
         baseTestDb.deleteCollection(testColName, testScopeName);
 
-        assertNull(testCollection.getDocumentExpiration(id));
+        try{
+            testCollection.getDocumentExpiration(id);
+            fail("Expect CouchbaseLiteException");
+        }
+        catch (CouchbaseLiteException e){
+            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
+        }
     }
 
     @Test
