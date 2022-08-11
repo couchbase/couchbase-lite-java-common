@@ -1775,7 +1775,6 @@ public class DocumentTest extends BaseCollectionTest {
         try {
             baseTestDb.setDocumentExpiration("deleted_doc", dto30);
             fail("Expect CouchbaseLiteException");
-
         }
         catch (CouchbaseLiteException e) { assertEquals(e.getCode(), CBLError.Code.NOT_FOUND); }
     }
@@ -1835,11 +1834,11 @@ public class DocumentTest extends BaseCollectionTest {
         testCollection.setDocumentExpiration(id, expiration);
         baseTestDb.deleteCollection(testColName, testScopeName);
 
-        try{
+        try {
             testCollection.getDocumentExpiration(id);
             fail("Expect CouchbaseLiteException");
         }
-        catch (CouchbaseLiteException e){
+        catch (CouchbaseLiteException e) {
             assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
         }
     }
