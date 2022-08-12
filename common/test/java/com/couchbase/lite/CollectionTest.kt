@@ -25,7 +25,7 @@ import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.Locale
+import java.util.*
 
 class CollectionTest : BaseCollectionTest() {
     //---------------------------------------------
@@ -66,9 +66,7 @@ class CollectionTest : BaseCollectionTest() {
         }
     }
 
-    /**
-     * Test get doc from deleted collection
-     */
+    // Test get doc from deleted collection
     @Test(expected = CouchbaseLiteException::class)
     fun testGetDocFromDeletedCollection() {
         //store doc
@@ -81,6 +79,19 @@ class CollectionTest : BaseCollectionTest() {
         //should fail
         testCollection.getDocument("doc1")
     }
+
+    // Test get doc count from deleted collection
+    @Test
+    fun testGetDocCountFromDeletedCollection() {
+        // store doc
+        createDocsInCollectionTest(10)
+
+        // delete col
+        baseTestDb.deleteCollection(testColName, testScopeName)
+
+        assertEquals(0, testCollection.count)
+    }
+
 
     //---------------------------------------------
     //  Save Document
@@ -430,6 +441,19 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(0, testCollection.count)
     }
 
+    // Purge document from a deleted collection
+    @Test(expected = CouchbaseLiteException::class)
+    fun testPurgeDocInDeletedCollection() {
+        // Store doc
+        val docID = "doc1"
+        val doc = createSingleDocInCollectionWithId(docID)
+
+        // delete collection
+        baseTestDb.deleteCollection(testColName, testScopeName)
+
+        testCollection.purge(docID)
+    }
+
     @Test
     fun testPurgeDocInDifferentDBCollectionInstance() {
         // Store doc:
@@ -562,6 +586,36 @@ class CollectionTest : BaseCollectionTest() {
         testCollection.deleteIndex("index1")
     }
 
+    // Test get index from a deleted collection
+    @Test(expected = CouchbaseLiteException::class)
+    fun testGetIndexFromDeletedCollection() {
+        testCreateIndexInCollection()
+
+        // Delete collection
+        baseTestDb.deleteCollection(testColName, testScopeName)
+        testCollection.indexes
+    }
+
+    // Test create index from a deleted collection
+    @Test(expected = CouchbaseLiteException::class)
+    fun testCreateIndexFromDeletedCollection(){
+        // Delete collection
+        baseTestDb.deleteCollection(testColName, testScopeName)
+        testCreateIndexInCollection()
+    }
+
+    // Test delete index from a deletedCollection
+    @Test(expected = CouchbaseLiteException::class)
+    fun testDeleteIndexFromDeletedCollection(){
+        testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
+        assertEquals(1, testCollection.indexes.size)
+
+        // Delete collection
+        baseTestDb.deleteCollection(testColName, testScopeName)
+
+        // delete index
+        testCollection.deleteIndex("index1")
+    }
 
     //---------------------------------------------
     //  Operations with Conflict

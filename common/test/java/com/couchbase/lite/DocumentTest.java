@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.JSONUtils;
@@ -47,9 +48,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
-public class DocumentTest extends BaseDbTest {
+public class DocumentTest extends BaseCollectionTest {
 
     @Test
     public void testCreateDoc() throws CouchbaseLiteException {
@@ -1761,6 +1763,7 @@ public class DocumentTest extends BaseDbTest {
         waitUntil(1000L, () -> 1 == baseTestDb.getCount());
     }
 
+    @Ignore("CBL-3574")
     @Test
     public void testSetExpirationOnDeletedDoc() throws CouchbaseLiteException {
         Date dto30 = new Date(System.currentTimeMillis() + 30000L);
@@ -1769,7 +1772,10 @@ public class DocumentTest extends BaseDbTest {
         doc1a.setValue("question", "What is six plus six?");
         saveDocInBaseTestDb(doc1a);
         baseTestDb.delete(doc1a);
-        try { baseTestDb.setDocumentExpiration("deleted_doc", dto30); }
+        try {
+            baseTestDb.setDocumentExpiration("deleted_doc", dto30);
+            fail("Expect CouchbaseLiteException");
+        }
         catch (CouchbaseLiteException e) { assertEquals(e.getCode(), CBLError.Code.NOT_FOUND); }
     }
 
@@ -1780,21 +1786,61 @@ public class DocumentTest extends BaseDbTest {
         doc1a.setValue("question", "What is six plus six?");
         saveDocInBaseTestDb(doc1a);
         baseTestDb.delete(doc1a);
-        try { baseTestDb.getDocumentExpiration("deleted_doc"); }
-        catch (CouchbaseLiteException e) { assertEquals(e.getCode(), CBLError.Code.NOT_FOUND); }
+        assertNull(baseTestDb.getDocumentExpiration("deleted_doc"));
     }
 
     @Test
     public void testSetExpirationOnNoneExistDoc() {
         Date dto30 = new Date(System.currentTimeMillis() + 30000L);
-        try { baseTestDb.setDocumentExpiration("not_exist", dto30); }
+        try {
+            baseTestDb.setDocumentExpiration("not_exist", dto30);
+            fail("Expect CouchbaseLiteException");
+        }
         catch (CouchbaseLiteException e) { assertEquals(e.getCode(), CBLError.Code.NOT_FOUND); }
     }
 
     @Test
-    public void testGetExpirationFromNoneExistDoc() {
-        try { baseTestDb.getDocumentExpiration("not_exist"); }
-        catch (CouchbaseLiteException e) { assertEquals(e.getCode(), CBLError.Code.NOT_FOUND); }
+    public void testGetExpirationFromNoneExistDoc() throws CouchbaseLiteException {
+        assertNull(baseTestDb.getDocumentExpiration("not_exist"));
+    }
+
+    @Test
+    public void testSetExpirationOnDocInDeletedCollection() {
+        Date expiration = new Date(System.currentTimeMillis() + 30000L);
+        try {
+            // add doc in collection
+            String id = "test_doc";
+            MutableDocument document = new MutableDocument(id);
+            saveDocInBaseCollectionTest(document);
+
+            baseTestDb.deleteCollection(testColName, testScopeName);
+            testCollection.setDocumentExpiration(id, expiration);
+
+            fail("Expect CouchbaseLiteException"); // fail test if no exception is caught
+        }
+        catch (CouchbaseLiteException e) {
+            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
+        }
+    }
+
+    @Ignore("CBL-3575")
+    @Test
+    public void testGetExpirationOnDocInDeletedCollection() throws CouchbaseLiteException {
+        Date expiration = new Date(System.currentTimeMillis() + 30000L);
+        // add doc in collection
+        String id = "test_doc";
+        MutableDocument document = new MutableDocument(id);
+        saveDocInBaseCollectionTest(document);
+        testCollection.setDocumentExpiration(id, expiration);
+        baseTestDb.deleteCollection(testColName, testScopeName);
+
+        try {
+            testCollection.getDocumentExpiration(id);
+            fail("Expect CouchbaseLiteException");
+        }
+        catch (CouchbaseLiteException e) {
+            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
+        }
     }
 
     @Test
