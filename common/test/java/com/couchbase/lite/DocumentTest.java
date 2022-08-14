@@ -1843,6 +1843,49 @@ public class DocumentTest extends BaseCollectionTest {
         }
     }
 
+    @Ignore("CBL-3575")
+    @Test
+    public void testSetExpirationDocInCollectionDeletedInDifferentDBInstance() {
+        Date expiration = new Date(System.currentTimeMillis() + 30000L);
+        try {
+            // add doc in collection
+            String id = "test_doc";
+            MutableDocument document = new MutableDocument(id);
+            saveDocInBaseCollectionTest(document);
+
+            Database otherDb = duplicateBaseTestDb();
+            otherDb.deleteCollection(testColName, testScopeName);
+            testCollection.setDocumentExpiration(id, expiration);
+
+            fail("Expect CouchbaseLiteException"); // fail test if no exception is caught
+        }
+        catch (CouchbaseLiteException e) {
+            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
+        }
+    }
+
+    @Ignore("CBL-3575")
+    @Test
+    public void testGetExpirationOnDocInCollectionDeletedInDifferentDBInstance() throws CouchbaseLiteException {
+        Date expiration = new Date(System.currentTimeMillis() + 30000L);
+        // add doc in collection
+        String id = "test_doc";
+        MutableDocument document = new MutableDocument(id);
+        saveDocInBaseCollectionTest(document);
+        testCollection.setDocumentExpiration(id, expiration);
+
+        Database otherDb = duplicateBaseTestDb();
+        otherDb.deleteCollection(testColName, testScopeName);
+
+        try {
+            testCollection.getDocumentExpiration(id);
+            fail("Expect CouchbaseLiteException");
+        }
+        catch (CouchbaseLiteException e) {
+            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
+        }
+    }
+
     @Test
     public void testLongExpiration() throws Exception {
         Date now = new Date(System.currentTimeMillis());

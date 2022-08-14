@@ -18,7 +18,9 @@ package com.couchbase.lite
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
@@ -51,6 +53,114 @@ class CollectionListenerTest : BaseCollectionTest() {
     @Test
     fun testCollectionDocumentChangeListenerWithExecutor() {
         testCollectionChangeListener(testSerialExecutor)
+    }
+
+    // Test that addChangeListener to a deleted collection get a warning message and doesn't throw exception
+    @Ignore("Native crash")
+    @Test
+    fun testAddChangeListenerToDeletedCollection() {
+        baseTestDb.deleteCollection(testColName, testScopeName)
+        testCollection.addChangeListener(testSerialExecutor) {}
+    }
+
+
+    // Test that addChangeListener to a collection deleted from a different db instance get a warning message and doesn't throw exception
+    @Ignore("Native crash")
+    @Test
+    fun testAddChangeListenerToCollectionDeletedInDifferentDBInstance() {
+        val otherDb = duplicateBaseTestDb()
+        otherDb.deleteCollection(testColName, testScopeName)
+        testCollection.addChangeListener(testSerialExecutor) {}
+    }
+
+    // Test addDocumentChangeListener from a deleted collection get warning message and doesn't throw exception
+    @Ignore("Throw exception instead of warning message")
+    @Test
+    fun testAddDocumentChangeListenerToDeletedCollection() {
+        val docID = "testDoc"
+        val doc = MutableDocument(docID)
+        testCollection.save(doc)
+        baseTestDb.deleteCollection(testColName, testScopeName)
+        testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
+    }
+
+    // Test addDocumentChangeListener from a deleted collection get warning message and doesn't throw exception
+    @Ignore("Throw exception instead of warning message")
+    @Test
+    fun testAddDocumentChangeListenerToCollectionDeletedInADifferentDBInstance() {
+        val docID = "testDoc"
+        val doc = MutableDocument(docID)
+        testCollection.save(doc)
+
+        val otherDb = duplicateBaseTestDb()
+        otherDb.deleteCollection(testColName, testScopeName)
+        testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
+    }
+
+    // Test removeChangeListener from a deleted collection doesn't throw exception
+    @Ignore("Native crash")
+    @Test
+    fun testRemoveChangeListenerToDeletedCollection() {
+        val doc1Id = "doc_1"
+        val doc2Id = "doc_2"
+
+        var changes: MutableList<String>? = null
+        var latch: CountDownLatch? = null
+
+        val token = testCollection.addChangeListener() { c ->
+            changes?.addAll(c.documentIDs)
+            if ((changes?.size ?: 0) >= 2) {
+                latch?.countDown()
+            }
+        }
+
+        latch = CountDownLatch(1)
+        changes = mutableListOf()
+
+        testCollection.save(MutableDocument(doc1Id))
+        testCollection.save(MutableDocument(doc2Id))
+        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        assertEquals(2, changes.size)
+        assertTrue(changes.contains(doc1Id))
+        assertTrue(changes.contains(doc2Id))
+
+        baseTestDb.deleteCollection(testColName, testScopeName)
+        assertNull(baseTestDb.getCollection(testColName, testScopeName))
+        testCollection.removeCollectionChangeListener(token)
+    }
+
+    // Test removeChangeListener from a collection deleted in a different db doesn't throw exception
+    @Ignore("Native crash")
+    @Test
+    fun testRemoveChangeListenerToCollectionDeletedInADifferentDBInstance() {
+        val otherDb = duplicateBaseTestDb()
+        val doc1Id = "doc_1"
+        val doc2Id = "doc_2"
+
+        var changes: MutableList<String>? = null
+        var latch: CountDownLatch? = null
+
+        val token = testCollection.addChangeListener() { c ->
+            changes?.addAll(c.documentIDs)
+            if ((changes?.size ?: 0) >= 2) {
+                latch?.countDown()
+            }
+        }
+
+        // Create documents
+        latch = CountDownLatch(1)
+        changes = mutableListOf()
+
+        testCollection.save(MutableDocument(doc1Id))
+        testCollection.save(MutableDocument(doc2Id))
+        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        assertEquals(2, changes.size)
+        assertTrue(changes.contains(doc1Id))
+        assertTrue(changes.contains(doc2Id))
+
+        otherDb.deleteCollection(testColName, testScopeName)
+        assertNull(baseTestDb.getCollection(testColName, testScopeName))
+        testCollection.removeCollectionChangeListener(token)
     }
 
     // These tests tests are incredibly finicky.
