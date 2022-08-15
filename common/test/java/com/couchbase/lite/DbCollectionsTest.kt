@@ -335,5 +335,19 @@ class DbCollectionsTest : BaseCollectionTest() {
         assertEquals(testColName, testCollection.name)
     }
 
+    // Test get scope from a collection that is deleted from a different database instance
+    @Test
+    fun testGetScopeAndNameFromCollectionFromDifferentDBInstance() {
+        val otherDb = duplicateDb(baseTestDb)
+        val collection = otherDb.getCollection(testColName, testScopeName)
+        assertNotNull(collection)
+
+        otherDb.deleteCollection(testColName, testScopeName)
+        assertNull(otherDb.getCollection(testColName, testScopeName))
+
+        //get from original collection
+        assertNotNull(testCollection.scope)
+        assertEquals(testColName, testCollection.name)
+    }
 }
 

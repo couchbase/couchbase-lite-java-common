@@ -217,6 +217,7 @@ static int fromJavaReplColls(
         jobjectArray jColls,
         std::vector<C4ReplicationCollection> &colls,
         std::vector<std::shared_ptr<jstringSlice>> &collNames,
+        std::vector<std::shared_ptr<jbyteArraySlice>> &collOptions,
         C4ReplicatorMode pushMode,
         C4ReplicatorMode pullMode) {
     int nColls = env->GetArrayLength(jColls);
@@ -239,8 +240,9 @@ static int fromJavaReplColls(
         colls[i].pull = pullMode;
 
         jobject joptions = env->GetObjectField(replColl, f_ReplColl_options);
-        jbyteArraySlice options(env, (jbyteArray) joptions, false);
-        colls[i].optionsDictFleece = options;
+        auto pOptions = std::make_shared<jbyteArraySlice>(env, (jbyteArray) joptions, false);
+        collOptions.push_back(pOptions);
+        colls[i].optionsDictFleece = *pOptions;
 
         if (env->GetObjectField(replColl, f_ReplColl_pushFilter) != nullptr)
             colls[i].pushFilter = &pushFilterFunction;
@@ -471,11 +473,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
 
     std::vector<C4ReplicationCollection> collectionDescs;
     std::vector<std::shared_ptr<jstringSlice>> collectionNames;
+    std::vector<std::shared_ptr<jbyteArraySlice>> collectionOptions;
     int nColls = fromJavaReplColls(
             env,
             jCollDescs,
             collectionDescs,
             collectionNames,
+            collectionOptions,
             (push == JNI_TRUE) ? mode : kC4Disabled,
             (pull == JNI_TRUE) ? mode : kC4Disabled);
     if (nColls < 0) {
@@ -530,11 +534,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
 
     std::vector<C4ReplicationCollection> collectionDescs;
     std::vector<std::shared_ptr<jstringSlice>> collectionNames;
+    std::vector<std::shared_ptr<jbyteArraySlice>> collectionOptions;
     int nColls = fromJavaReplColls(
             env,
             jCollDescs,
             collectionDescs,
             collectionNames,
+            collectionOptions,
             (push == JNI_TRUE) ? mode : kC4Disabled,
             (pull == JNI_TRUE) ? mode : kC4Disabled);
     if (nColls < 0) {
@@ -581,7 +587,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
 
     std::vector<C4ReplicationCollection> collectionDescs;
     std::vector<std::shared_ptr<jstringSlice>> collectionNames;
-    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, collectionNames, kC4Passive, kC4Passive);
+    std::vector<std::shared_ptr<jbyteArraySlice>> collectionOptions;
+    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, collectionNames, collectionOptions, kC4Passive,
+                                   kC4Passive);
     if (nColls < 0) {
         C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
         throwError(env, error);
