@@ -55,8 +55,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         testCollectionChangeListener(testSerialExecutor)
     }
 
-    // Test that addChangeListener to a deleted collection get a warning message and doesn't throw exception
-    @Ignore("Native crash")
+    // Test that addChangeListener to a deleted collection gets a warning message and doesn't throw exception
+    @Ignore("CBL-3582")
     @Test
     fun testAddChangeListenerToDeletedCollection() {
         baseTestDb.deleteCollection(testColName, testScopeName)
@@ -64,8 +64,8 @@ class CollectionListenerTest : BaseCollectionTest() {
     }
 
 
-    // Test that addChangeListener to a collection deleted from a different db instance get a warning message and doesn't throw exception
-    @Ignore("Native crash")
+    // Test that addChangeListener to a collection deleted from a different db instance gets a warning message and doesn't throw exception
+    @Ignore("CBL-3582")
     @Test
     fun testAddChangeListenerToCollectionDeletedInDifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()
@@ -73,8 +73,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         testCollection.addChangeListener(testSerialExecutor) {}
     }
 
-    // Test addDocumentChangeListener from a deleted collection get warning message and doesn't throw exception
-    @Ignore("Throw exception instead of warning message")
+    // Test that addDocumentChangeListener to a deleted collection gets warning message and doesn't throw exception
+    @Ignore("CBL-3583")
     @Test
     fun testAddDocumentChangeListenerToDeletedCollection() {
         val docID = "testDoc"
@@ -84,8 +84,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
     }
 
-    // Test addDocumentChangeListener from a deleted collection get warning message and doesn't throw exception
-    @Ignore("Throw exception instead of warning message")
+    // Test that addDocumentChangeListener to a deleted collection gets warning message and doesn't throw exception
+    @Ignore("CBL-3583")
     @Test
     fun testAddDocumentChangeListenerToCollectionDeletedInADifferentDBInstance() {
         val docID = "testDoc"
@@ -97,8 +97,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
     }
 
-    // Test removeChangeListener from a deleted collection doesn't throw exception
-    @Ignore("Native crash")
+    // Test that removeChangeListener from a deleted collection gets a warning message and doesn't throw exception
+    @Ignore("CBL-3584")
     @Test
     fun testRemoveChangeListenerToDeletedCollection() {
         val doc1Id = "doc_1"
@@ -130,7 +130,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     }
 
     // Test removeChangeListener from a collection deleted in a different db doesn't throw exception
-    @Ignore("Native crash")
+    @Ignore("CBL-3584")
     @Test
     fun testRemoveChangeListenerToCollectionDeletedInADifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()

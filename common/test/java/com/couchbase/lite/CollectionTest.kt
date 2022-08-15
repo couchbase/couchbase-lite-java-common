@@ -66,7 +66,7 @@ class CollectionTest : BaseCollectionTest() {
         }
     }
 
-    // Test get doc from collection that is deleted in a different database instance
+    // Test getting doc from collection that is deleted in a different database instance causes CBL exception
     @Test(expected = CouchbaseLiteException::class)
     fun testGetDocFromCollectionDeletedInDifferentDBInstance() {
         val otherDatabase = duplicateDb(baseTestDb)
@@ -80,7 +80,7 @@ class CollectionTest : BaseCollectionTest() {
 
     }
 
-    // Test get doc from deleted collection
+    // Test getting doc from deleted collection causes CBL exception
     @Test(expected = CouchbaseLiteException::class)
     fun testGetDocFromDeletedCollection() {
         //store doc
@@ -94,7 +94,7 @@ class CollectionTest : BaseCollectionTest() {
         testCollection.getDocument("doc1")
     }
 
-    // Test get doc count from deleted collection
+    // Test getting doc count from deleted collection returns 0
     @Test
     fun testGetDocCountFromDeletedCollection() {
         // store doc
@@ -106,7 +106,7 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(0, testCollection.count)
     }
 
-    // Test get doc count from a collection deleted in a different database instance
+    // Test getting doc count from a collection deleted in a different database instance returns 0
     @Test
     fun testGetDocFromCollectionDeletedInADifferentDBInstance() {
         val otherDatabase = duplicateDb(baseTestDb)
@@ -381,6 +381,7 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(0, collection4.count)
     }
 
+    // Test deleting doc on a deleted collection causes CBL exception
     @Test(expected = CouchbaseLiteException::class)
     fun testDeleteDocOnDeletedCollection() {
         val doc = createSingleDocInCollectionWithId("doc1")
@@ -388,7 +389,7 @@ class CollectionTest : BaseCollectionTest() {
         testCollection.delete(doc)
     }
 
-    // test delete doc on a collection that is deleted from a different db instance
+    // Test deleting doc on a collection that is deleted from a different db instance causes CBL exception
     @Test(expected = CouchbaseLiteException::class)
     fun testDeleteDocOnCollectionDeletedInDifferentDBInstance() {
         val otherDb = duplicateDb(baseTestDb)
@@ -558,6 +559,7 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(0, collection4.count)
     }
 
+    // Test purging doc on a deleted collection causes CBL exception
     @Test(expected = CouchbaseLiteException::class)
     fun testPurgeDocOnDeletedCollection() {
         //store doc
@@ -641,7 +643,7 @@ class CollectionTest : BaseCollectionTest() {
         testCollection.deleteIndex("index1")
     }
 
-    // Test get index from a deleted collection
+    // Test getting index from a deleted collection causes CBL exception
     @Test(expected = CouchbaseLiteException::class)
     fun testGetIndexFromDeletedCollection() {
         testCreateIndexInCollection()
@@ -651,7 +653,7 @@ class CollectionTest : BaseCollectionTest() {
         testCollection.indexes
     }
 
-    // Test get index from a collection deleted from another DB instance
+    // Test getting index from a collection deleted from another DB instance causes CBL exception
     @Test(expected = CouchbaseLiteException::class)
     fun testGetIndexFromCollectionDeletedFromADifferentDBInstance() {
         testCreateIndexInCollection()
