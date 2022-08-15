@@ -128,22 +128,22 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
 
+    // Check a test every `waitMs` until it it true
+    // If it is not true within `maxWaitMs` fail.
     @SuppressWarnings("BusyWait")
-    protected final void waitUntil(long maxTime, Fn.Provider<Boolean> test) {
-        final long delay = 100;
-        if (maxTime <= delay) { assertTrue(test.get()); }
-
-        final long endTimes = System.currentTimeMillis() + maxTime - delay;
-        do {
-            try { Thread.sleep(delay); }
-            catch (InterruptedException e) { break; }
+    protected final void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {
+        final long waitMs = 100L;
+        final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;
+        while (true) {
             if (test.get()) { return; }
+            if (System.currentTimeMillis() > endTime) {
+                // assertTrue() provides a more relevant message than fail()
+                //noinspection SimplifiableAssertion
+                assertTrue(false);
+            }
+            try { Thread.sleep(waitMs); }
+            catch (InterruptedException e) { break; }
         }
-        while (System.currentTimeMillis() < endTimes);
-
-        // assertTrue() provides a more relevant message than fail()
-        //noinspection SimplifiableAssertion
-        assertTrue(false);
     }
 
     protected final String getScratchDirectoryPath(@NonNull String name) {

@@ -45,16 +45,6 @@ open class BaseCollectionTest : BaseDbTest() {
         Report.log("Created base test Collection: $testCollection")
     }
 
-    @After
-    fun tearDownBaseCollectionTest() {
-        val collectionName = testCollection.name
-        // don't delete the default collection
-        if (Collection.DEFAULT_NAME != collectionName && baseTestDb.isOpen) {
-            baseTestDb.deleteCollection(collectionName)
-            Report.log("Deleted testCollection: $testCollection")
-        }
-    }
-
     protected fun saveDocInCollection(doc: MutableDocument, collection: Collection): Document {
         collection.save(doc)
         val savedDoc = collection.getDocument(doc.id)
@@ -68,14 +58,14 @@ open class BaseCollectionTest : BaseDbTest() {
         val n = testCollection.count
         val doc = MutableDocument(docID)
         doc.setValue("key", 1)
-        val savedDoc = saveDocInBaseCollectionTest(doc)
+        val savedDoc = saveDocInTestCollection(doc)
         assertEquals(n + 1, testCollection.count)
         assertEquals(1, savedDoc.sequence)
         return savedDoc
     }
 
     @Throws(CouchbaseLiteException::class)
-    protected fun saveDocInBaseCollectionTest(doc: MutableDocument): Document {
+    protected fun saveDocInTestCollection(doc: MutableDocument): Document {
         testCollection.save(doc)
         val savedDoc = testCollection.getDocument(doc.id)
         assertNotNull(savedDoc)
@@ -84,25 +74,25 @@ open class BaseCollectionTest : BaseDbTest() {
     }
 
     @Throws(CouchbaseLiteException::class)
-    protected fun createDocsInCollectionTest(n: Int) {
+    protected fun createDocsInTestCollection(n: Int) {
         for (i in 0 until n) {
             val doc = MutableDocument(String.format(Locale.US, "doc_%03d", i))
             doc.setValue("key", i)
-            saveDocInBaseCollectionTest(doc)
+            saveDocInTestCollection(doc)
         }
         assertEquals(n.toLong(), testCollection.count)
     }
 
     @Throws(IOException::class, JSONException::class)
-    protected fun loadJSONResourceInCollection(name: String, collection: Collection) {
-        BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use { `in` ->
+    protected fun loadJSONResourceIntoCollection(name: String, collection: Collection) {
+        BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use {
             var n = 1
-            `in`.lineSequence().forEach {
-                if (it.trim().isEmpty()) {
+            it.lineSequence().forEach { l ->
+                if (l.trim().isEmpty()) {
                     return
                 }
                 val doc = MutableDocument(String.format(Locale.ENGLISH, "doc-%03d", n++))
-                doc.setData(JSONUtils.fromJSON(JSONObject(it)))
+                doc.setData(JSONUtils.fromJSON(JSONObject(l)))
 
                 saveDocInCollection(doc, collection)
             }

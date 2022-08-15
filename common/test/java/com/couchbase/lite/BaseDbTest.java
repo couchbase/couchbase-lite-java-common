@@ -182,7 +182,8 @@ public abstract class BaseDbTest extends BaseTest {
     }
 
     // file is one JSON object per line
-    protected final void loadJSONResourceInDatabase(String name) throws IOException, JSONException, CouchbaseLiteException {
+    protected final void loadJSONResourceIntoDatabase(String name)
+        throws IOException, JSONException, CouchbaseLiteException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(PlatformUtils.getAsset(name)))) {
             int n = 1;
             String line;

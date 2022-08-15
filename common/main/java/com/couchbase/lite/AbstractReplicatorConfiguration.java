@@ -326,6 +326,14 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         return getReplicatorConfiguration();
     }
 
+    /**
+     * Sets the certificate used to authenticate the target server.
+     * A server will be authenticated if it presents a chain of certificates (possibly of length 1)
+     * in which any one of the certificates matches the one passed here.
+     *
+     * @param pinnedCert the SSL certificate.
+     * @return this.
+     */
     @NonNull
     public final ReplicatorConfiguration setPinnedServerX509Certificate(@Nullable X509Certificate pinnedCert) {
         pinnedServerCertificate = pinnedCert;

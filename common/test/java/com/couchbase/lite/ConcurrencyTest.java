@@ -383,7 +383,7 @@ public class ConcurrencyTest extends BaseDbTest {
     @Test
     @ConcurrencyUnitTest
     public void testConcurrentCreateAndCreateIndexDB() throws Exception {
-        loadJSONResourceInDatabase("sentences.json");
+        loadJSONResourceIntoDatabase("sentences.json");
 
         final int kNDocs = 100;
 
@@ -467,7 +467,7 @@ public class ConcurrencyTest extends BaseDbTest {
     @Test
     @ConcurrencyUnitTest
     public void testQueryExecute() throws Exception {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
 
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.expression(Meta.sequence))

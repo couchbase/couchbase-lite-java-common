@@ -73,7 +73,7 @@ class CollectionTest : BaseCollectionTest() {
         val docID = "doc1"
         val doc = MutableDocument(docID)
 
-        saveDocInBaseCollectionTest(doc)
+        saveDocInTestCollection(doc)
         otherDatabase.deleteCollection(testColName, testScopeName)
 
         testCollection.getDocument(docID)
@@ -106,7 +106,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test
     fun testGetDocCountFromDeletedCollection() {
         // store doc
-        createDocsInCollectionTest(10)
+        createDocsInTestCollection(10)
 
         // delete col
         baseTestDb.deleteCollection(testColName, testScopeName)
@@ -120,7 +120,7 @@ class CollectionTest : BaseCollectionTest() {
         val otherDatabase = duplicateDb(baseTestDb)
         val docID = "doc1"
         val doc = MutableDocument(docID)
-        saveDocInBaseCollectionTest(doc)
+        saveDocInTestCollection(doc)
 
         otherDatabase.deleteCollection(testColName, testScopeName)
         assertEquals(0, testCollection.count)
@@ -159,7 +159,7 @@ class CollectionTest : BaseCollectionTest() {
         for (i in 0 until nDocs) {
             val doc = MutableDocument(String.format(Locale.US, "doc_%03d", i))
             doc.setValue("key", i)
-            saveDocInBaseCollectionTest(doc)
+            saveDocInTestCollection(doc)
         }
         assertEquals(nDocs.toLong(), testCollection.count)
         verifyDocuments(nDocs)
@@ -198,7 +198,7 @@ class CollectionTest : BaseCollectionTest() {
 
         // update doc
         doc.setValue("key", 2)
-        saveDocInBaseCollectionTest(doc)
+        saveDocInTestCollection(doc)
         assertEquals(1, testCollection.count)
 
         // validate document by getDocument
@@ -210,7 +210,7 @@ class CollectionTest : BaseCollectionTest() {
     fun testSaveSameDocTwice() {
         val docID = "doc1"
         val doc = createSingleDocInCollectionWithId(docID).toMutable()
-        assertEquals(docID, saveDocInBaseCollectionTest(doc).id)
+        assertEquals(docID, saveDocInTestCollection(doc).id)
         assertEquals(1, testCollection.count)
     }
 
@@ -341,7 +341,7 @@ class CollectionTest : BaseCollectionTest() {
         val nDocs = 10
 
         // Save 10 docs:
-        createDocsInCollectionTest(nDocs)
+        createDocsInTestCollection(nDocs)
         for (i in 0 until nDocs) {
             val docID = String.format(Locale.US, "doc_%03d", i)
             val doc = testCollection.getDocument(docID)

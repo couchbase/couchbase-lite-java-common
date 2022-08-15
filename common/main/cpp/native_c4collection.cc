@@ -169,7 +169,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocExpiration(
 
     C4Error error{};
     C4Timestamp exp = c4coll_getDocExpiration((C4Collection *) coll, docID, &error);
-    if (!exp && error.code != 0) {
+    // -1 is C4Timestamp.Error
+    if (exp == -1 && error.code != 0) {
         throwError(env, error);
         return 0;
     }

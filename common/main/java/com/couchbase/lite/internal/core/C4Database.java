@@ -434,8 +434,7 @@ public abstract class C4Database extends C4NativePeer {
         return C4Collection.getDefault(this);
     }
 
-    public void deleteCollection(@NonNull String scopeName, @NonNull String collectionName)
-        throws LiteCoreException {
+    public void deleteCollection(@NonNull String scopeName, @NonNull String collectionName) throws LiteCoreException {
         impl.nDeleteCollection(getPeer(), scopeName, collectionName);
     }
 

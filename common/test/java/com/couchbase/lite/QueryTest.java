@@ -220,7 +220,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testNoWhereQuery() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
         int numRows = verifyQuery(
             QueryBuilder.select(SR_DOCID, SR_SEQUENCE).from(DataSource.database(baseTestDb)),
             (n, result) -> {
@@ -440,7 +440,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereIn() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
 
         final Expression[] expected = {
             Expression.string("Marcy"),
@@ -465,7 +465,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereLike() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
 
         Expression w = Expression.property("name.first").like(Expression.string("%Mar%"));
         Query query = QueryBuilder
@@ -491,7 +491,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereRegex() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
 
         Query query = QueryBuilder
             .select(SR_DOCID)
@@ -516,7 +516,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereIndexMatch() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("sentences.json");
+        loadJSONResourceIntoDatabase("sentences.json");
 
         baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
 
@@ -537,7 +537,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testWhereMatch() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("sentences.json");
+        loadJSONResourceIntoDatabase("sentences.json");
 
         baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
 
@@ -558,7 +558,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testFullTextIndexConfig() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("sentences.json");
+        loadJSONResourceIntoDatabase("sentences.json");
 
         final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense");
         assertFalse(idxConfig.isIgnoringAccents());
@@ -588,7 +588,7 @@ public class QueryTest extends BaseQueryTest {
     // Test courtesy of Jayahari Vavachan
     @Test
     public void testN1QLFTSQuery() throws IOException, CouchbaseLiteException, JSONException {
-        loadJSONResourceInDatabase("sentences.json");
+        loadJSONResourceIntoDatabase("sentences.json");
 
         baseTestDb.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
 
@@ -601,7 +601,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testOrderBy() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
 
         Ordering.SortOrder order = Ordering.expression(Expression.property("name.first"));
 
@@ -712,7 +712,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testGroupBy() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
 
         final List<String> expectedStates = Arrays.asList("AL", "CA", "CO", "FL", "IA");
         final List<Integer> expectedCounts = Arrays.asList(1, 6, 1, 1, 3);
@@ -1005,7 +1005,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testQueryResult() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
         Query query = QueryBuilder.select(
                 SelectResult.property("name.first").as("firstname"),
                 SelectResult.property("name.last").as("lastname"),
@@ -1052,7 +1052,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testQuantifiedOperators() throws JSONException, IOException, CouchbaseLiteException {
-        loadJSONResourceInDatabase("names_100.json");
+        loadJSONResourceIntoDatabase("names_100.json");
 
         DataSource ds = DataSource.database(baseTestDb);
 
@@ -3106,7 +3106,7 @@ public class QueryTest extends BaseQueryTest {
     public void testQueryDefaultCollection() throws CouchbaseLiteException, JSONException, IOException {
         Collection defaultCollection = baseTestDb.getDefaultCollection();
         assertNotNull(defaultCollection);
-        loadJSONResourceInCollection("names_100.json", defaultCollection);
+        loadJSONResourceIntoCollection("names_100.json", defaultCollection);
 
         // create with default collection
         Query query = QueryBuilder.select(SelectResult.property("name.first"))
@@ -3150,7 +3150,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testQueryBuilderDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");
-        loadJSONResourceInCollection("names_100.json", collection);
+        loadJSONResourceIntoCollection("names_100.json", collection);
 
         Query query = QueryBuilder.select(SelectResult.property("name.first"))
             .from(DataSource.collection(collection))
@@ -3169,7 +3169,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testStringQueryDefaultScope1() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");
-        loadJSONResourceInCollection("names_100.json", collection);
+        loadJSONResourceIntoCollection("names_100.json", collection);
         String queryString1 = "select name.first from names order by name.first limit 1";
         Query query1 = QueryBuilder.createQuery(queryString1, baseTestDb);
         int numRows1 = verifyQuery(query1, (n, result) -> {
@@ -3185,7 +3185,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testStringQueryDefaultScope2() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");
-        loadJSONResourceInCollection("names_100.json", collection);
+        loadJSONResourceIntoCollection("names_100.json", collection);
         String queryString2 = "select name.first from _default.names order by name.first limit 1";
         Query query2 = QueryBuilder.createQuery(queryString2, baseTestDb);
         int numRows2 = verifyQuery(query2, (n, result) -> {
@@ -3201,7 +3201,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testBuilderQueryNonDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names", "people");
-        loadJSONResourceInCollection("names_100.json", collection);
+        loadJSONResourceIntoCollection("names_100.json", collection);
 
         Query query = QueryBuilder.select(SelectResult.property("name.first"))
             .from(DataSource.collection(collection))
@@ -3222,7 +3222,7 @@ public class QueryTest extends BaseQueryTest {
     @Test
     public void testStringQueryNonDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names", "people");
-        loadJSONResourceInCollection("names_100.json", collection);
+        loadJSONResourceIntoCollection("names_100.json", collection);
 
         String queryString = "SELECT name.first FROM people.names ORDER BY name.first LIMIT 1";
         Query query = QueryBuilder.createQuery(queryString, baseTestDb);
@@ -3239,7 +3239,7 @@ public class QueryTest extends BaseQueryTest {
     @Test(expected = CouchbaseLiteException.class)
     public void testQueryNonExistingCollection() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names", "people");
-        loadJSONResourceInCollection("names_100.json", collection);
+        loadJSONResourceIntoCollection("names_100.json", collection);
 
         String queryString = "SELECT name.first FROM person.names ORDER BY name.first LIMIT 1";
         Query query = QueryBuilder.createQuery(queryString, baseTestDb);

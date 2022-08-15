@@ -588,8 +588,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
     std::vector<C4ReplicationCollection> collectionDescs;
     std::vector<std::shared_ptr<jstringSlice>> collectionNames;
     std::vector<std::shared_ptr<jbyteArraySlice>> collectionOptions;
-    int nColls = fromJavaReplColls(env, jCollDescs, collectionDescs, collectionNames, collectionOptions, kC4Passive,
-                                   kC4Passive);
+    int nColls = fromJavaReplColls(
+            env,
+            jCollDescs,
+            collectionDescs,
+            collectionNames,
+            collectionOptions,
+            kC4Passive,
+            kC4Passive);
     if (nColls < 0) {
         C4Error error = {LiteCoreDomain, kC4ErrorInvalidParameter};
         throwError(env, error);

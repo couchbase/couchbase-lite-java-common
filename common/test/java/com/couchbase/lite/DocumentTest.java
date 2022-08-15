@@ -33,10 +33,10 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.JSONUtils;
+import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.lite.internal.utils.TestUtils;
 
@@ -1756,27 +1756,46 @@ public class DocumentTest extends BaseCollectionTest {
         doc2.setValue("question", "What is six plus six?");
         saveDocInBaseTestDb(doc2);
 
+        assertEquals(2, baseTestDb.getCount());
+
         baseTestDb.setDocumentExpiration("doc1", new Date(now + 100));
         baseTestDb.setDocumentExpiration("doc2", new Date(now + LONG_TIMEOUT_MS));
         assertEquals(2, baseTestDb.getCount());
 
-        waitUntil(1000L, () -> 1 == baseTestDb.getCount());
+        waitUntil(STD_TIMEOUT_MS, () -> 1 == baseTestDb.getCount());
     }
 
-    @Ignore("CBL-3574")
     @Test
     public void testSetExpirationOnDeletedDoc() throws CouchbaseLiteException {
-        Date dto30 = new Date(System.currentTimeMillis() + 30000L);
-        MutableDocument doc1a = new MutableDocument("deleted_doc");
+        final String id = "test_doc";
+        final Query queryDeleted = QueryBuilder.select(SelectResult.expression(Meta.id))
+            .from(DataSource.database(baseTestDb))
+            .where(Meta.deleted);
+
+        MutableDocument doc1a = new MutableDocument(id);
         doc1a.setInt("answer", 12);
         doc1a.setValue("question", "What is six plus six?");
-        saveDocInBaseTestDb(doc1a);
+        baseTestDb.save(doc1a);
+
+        assertEquals(1, baseTestDb.getCount());
+        assertEquals(0, queryDeleted.execute().allResults().size());
+
         baseTestDb.delete(doc1a);
-        try {
-            baseTestDb.setDocumentExpiration("deleted_doc", dto30);
-            fail("Expect CouchbaseLiteException");
-        }
-        catch (CouchbaseLiteException e) { assertEquals(e.getCode(), CBLError.Code.NOT_FOUND); }
+
+        assertEquals(0, baseTestDb.getCount());
+        assertEquals(1, queryDeleted.execute().allResults().size());
+
+        baseTestDb.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 100L));
+
+        waitUntil(
+            STD_TIMEOUT_MS,
+            () -> {
+                try { return (0 == baseTestDb.getCount()) && (0 == queryDeleted.execute().allResults().size()); }
+                catch (CouchbaseLiteException e) {
+                    Report.log("Unexpected exception", e);
+                    return false;
+                }
+            });
     }
 
     @Test
@@ -1785,15 +1804,16 @@ public class DocumentTest extends BaseCollectionTest {
         doc1a.setInt("answer", 12);
         doc1a.setValue("question", "What is six plus six?");
         saveDocInBaseTestDb(doc1a);
+
         baseTestDb.delete(doc1a);
+
         assertNull(baseTestDb.getDocumentExpiration("deleted_doc"));
     }
 
     @Test
     public void testSetExpirationOnNoneExistDoc() {
-        Date dto30 = new Date(System.currentTimeMillis() + 30000L);
         try {
-            baseTestDb.setDocumentExpiration("not_exist", dto30);
+            baseTestDb.setDocumentExpiration("not_exist", new Date(System.currentTimeMillis() + 30000L));
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) { assertEquals(e.getCode(), CBLError.Code.NOT_FOUND); }
@@ -1805,85 +1825,69 @@ public class DocumentTest extends BaseCollectionTest {
     }
 
     @Test
-    public void testSetExpirationOnDocInDeletedCollection() {
-        Date expiration = new Date(System.currentTimeMillis() + 30000L);
-        try {
-            // add doc in collection
-            String id = "test_doc";
-            MutableDocument document = new MutableDocument(id);
-            saveDocInBaseCollectionTest(document);
-
-            baseTestDb.deleteCollection(testColName, testScopeName);
-            testCollection.setDocumentExpiration(id, expiration);
-
-            fail("Expect CouchbaseLiteException"); // fail test if no exception is caught
-        }
-        catch (CouchbaseLiteException e) {
-            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
-        }
-    }
-
-    @Ignore("CBL-3575")
-    @Test
-    public void testGetExpirationOnDocInDeletedCollection() throws CouchbaseLiteException {
-        Date expiration = new Date(System.currentTimeMillis() + 30000L);
+    public void testSetExpirationOnDocInDeletedCollection() throws CouchbaseLiteException {
         // add doc in collection
         String id = "test_doc";
-        MutableDocument document = new MutableDocument(id);
-        saveDocInBaseCollectionTest(document);
-        testCollection.setDocumentExpiration(id, expiration);
-        baseTestDb.deleteCollection(testColName, testScopeName);
+        saveDocInTestCollection(new MutableDocument(id));
+
+        baseTestDb.deleteCollection(testCollection.getName(), testCollection.getScope().getName());
+
+        try {
+            testCollection.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
+            fail("Expect CouchbaseLiteException");
+        }
+        catch (CouchbaseLiteException e) { assertEquals(CBLError.Code.NOT_OPEN, e.getCode()); }
+    }
+
+    @Test
+    public void testGetExpirationOnDocInDeletedCollection() throws CouchbaseLiteException {
+        String id = "test_doc";
+        saveDocInTestCollection(new MutableDocument(id));
+
+        testCollection.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
+
+        testCollection.getDatabase().deleteCollection(testCollection.getName(), testCollection.getScope().getName());
 
         try {
             testCollection.getDocumentExpiration(id);
             fail("Expect CouchbaseLiteException");
         }
-        catch (CouchbaseLiteException e) {
-            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
-        }
+        catch (CouchbaseLiteException e) { assertEquals(CBLError.Code.NOT_OPEN, e.getCode()); }
     }
 
-    @Ignore("CBL-3575")
     @Test
-    public void testSetExpirationDocInCollectionDeletedInDifferentDBInstance() {
-        Date expiration = new Date(System.currentTimeMillis() + 30000L);
+    public void testSetExpirationDocInCollectionDeletedInDifferentDBInstance() throws CouchbaseLiteException {
+        // add doc in collection
+        String id = "test_doc";
+        saveDocInTestCollection(new MutableDocument(id));
+
+        Database otherDb = duplicateBaseTestDb();
+        otherDb.deleteCollection(testCollection.getName(), testCollection.getScope().getName());
+
         try {
-            // add doc in collection
-            String id = "test_doc";
-            MutableDocument document = new MutableDocument(id);
-            saveDocInBaseCollectionTest(document);
-
-            Database otherDb = duplicateBaseTestDb();
-            otherDb.deleteCollection(testColName, testScopeName);
-            testCollection.setDocumentExpiration(id, expiration);
-
-            fail("Expect CouchbaseLiteException"); // fail test if no exception is caught
+            testCollection.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
+            fail("Expect CouchbaseLiteException");
         }
-        catch (CouchbaseLiteException e) {
-            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
-        }
+        catch (CouchbaseLiteException e) { assertEquals(CBLError.Code.NOT_OPEN, e.getCode()); }
     }
 
-    @Ignore("CBL-3575")
     @Test
     public void testGetExpirationOnDocInCollectionDeletedInDifferentDBInstance() throws CouchbaseLiteException {
         Date expiration = new Date(System.currentTimeMillis() + 30000L);
         // add doc in collection
         String id = "test_doc";
         MutableDocument document = new MutableDocument(id);
-        saveDocInBaseCollectionTest(document);
+        saveDocInTestCollection(document);
         testCollection.setDocumentExpiration(id, expiration);
 
         Database otherDb = duplicateBaseTestDb();
-        otherDb.deleteCollection(testColName, testScopeName);
+        otherDb.deleteCollection(testCollection.getName(), testCollection.getScope().getName());
 
         try {
             testCollection.getDocumentExpiration(id);
             fail("Expect CouchbaseLiteException");
         }
-        catch (CouchbaseLiteException e) {
-            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
-        }
+        catch (CouchbaseLiteException e) { assertEquals(CBLError.Code.NOT_OPEN, e.getCode()); }
     }
 
     // Test setting expiration on doc in a collection of closed database throws CBLException
