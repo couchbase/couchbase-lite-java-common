@@ -94,6 +94,14 @@ class CollectionTest : BaseCollectionTest() {
         testCollection.getDocument("doc1")
     }
 
+    // Test getting doc from collection in a closed db causes CBL Exception
+    @Test(expected = CouchbaseLiteException::class)
+    fun testGetDocFromCollectionInClosedDB() {
+        createSingleDocInCollectionWithId("doc_id")
+        baseTestDb.close()
+        testCollection.getDocument("doc_id")
+    }
+
     // Test getting doc count from deleted collection returns 0
     @Test
     fun testGetDocCountFromDeletedCollection() {
@@ -118,6 +126,16 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(0, testCollection.count)
     }
 
+    // Test getting doc count from a collection in a closed database returns 0
+    @Test
+    fun testGetDocCountFromCollectionInClosedDatabase() {
+        val docID = "doc_id"
+        val doc = MutableDocument(docID)
+        saveDocInBaseCollectionTest(doc)
+        assertEquals(1, testCollection.count)
+        baseTestDb.close()
+        assertEquals(0, testCollection.count)
+    }
     //---------------------------------------------
     //  Save Document
     //---------------------------------------------
@@ -212,6 +230,13 @@ class CollectionTest : BaseCollectionTest() {
         val docID = "doc1"
         val doc = MutableDocument(docID)
         testCollection.save(doc)
+    }
+
+    // Test saving document in a collection of a closed database causes CBLException
+    @Test(expected = CouchbaseLiteException::class)
+    fun testSaveDocToCollectionInClosedDB() {
+        baseTestDb.close()
+        saveDocInBaseCollectionTest(MutableDocument("invalid"))
     }
 
     @Test
@@ -400,6 +425,14 @@ class CollectionTest : BaseCollectionTest() {
         testCollection.delete(doc)
     }
 
+    // Test deleting doc on a collection in a closed db causes CBLException
+    @Test(expected = CouchbaseLiteException::class)
+    fun testDeleteDocOnCollectionInClosedDB() {
+        val doc = createSingleDocInCollectionWithId("doc_id")
+        baseTestDb.close()
+        testCollection.delete(doc)
+    }
+
     @Test
     @Throws(CouchbaseLiteException::class)
     fun testDeleteAlreadyDeletedDoc() {
@@ -572,6 +605,14 @@ class CollectionTest : BaseCollectionTest() {
         testCollection.purge(doc)
     }
 
+    // Test purging doc from a collection in a closed database causes CBL exception
+    @Test(expected = CouchbaseLiteException::class)
+    fun testPurgeDocFromCollectionInClosedDB() {
+        val doc = createSingleDocInCollectionWithId("doc_id")
+        baseTestDb.close()
+        testCollection.purge(doc)
+    }
+
     //---------------------------------------------
     //  Index functionalities
     //---------------------------------------------
@@ -705,6 +746,32 @@ class CollectionTest : BaseCollectionTest() {
 
         // delete index
         testCollection.deleteIndex("index1")
+    }
+
+    // Test that getIndexes from collection in closed database causes CBLException
+    @Test(expected = CouchbaseLiteException::class)
+    fun testGetIndexesFromCollectionInClosedDatabase() {
+        testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
+        assertEquals(1, testCollection.indexes.size)
+        baseTestDb.close()
+        testCollection.indexes
+    }
+
+    // Test that createIndex in collection in closed database causes CBLException
+    @Test(expected = CouchbaseLiteException::class)
+    fun testCreateIndexInCollectionInClosedDatabase() {
+        baseTestDb.close()
+        testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
+    }
+
+    // Test that deletedIndex in collection in closed database causes CBLException
+    @Test(expected = CouchbaseLiteException::class)
+    fun testDeleteIndexInCollectionInClosedDatabase(){
+        val name = "test_index"
+        testCollection.createIndex(name, ValueIndexConfiguration("firstName", "lastName"))
+        assertEquals(1, testCollection.indexes.size)
+        baseTestDb.close()
+        testCollection.deleteIndex(name)
     }
 
     //---------------------------------------------
