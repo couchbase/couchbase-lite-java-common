@@ -353,9 +353,18 @@ class DbCollectionsTest : BaseCollectionTest() {
     // Test getting scope, and collection name from a collection when database is closed returns the scope and name
     @Test
     fun testGetScopeAndCollectionNameFromAClosedDatabase() {
-        baseTestDb.close()
+        closeDb(baseTestDb)
         assertNotNull(testCollection.scope)
         assertEquals(testColName, testCollection.name)
     }
+
+    // Test getting scope, and collection name from a collection when database is deleted returns the scope and name
+    @Test
+    fun testGetScopeAndCollectionNameFromADeletedDatabase(){
+        baseTestDb.delete()
+        assertNotNull(testCollection.scope)
+        assertEquals(testColName, testCollection.name)
+    }
+
 }
 
