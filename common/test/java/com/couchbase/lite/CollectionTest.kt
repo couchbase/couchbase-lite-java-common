@@ -131,7 +131,7 @@ class CollectionTest : BaseCollectionTest() {
     fun testGetDocCountFromCollectionInClosedDatabase() {
         val docID = "doc_id"
         val doc = MutableDocument(docID)
-        saveDocInBaseCollectionTest(doc)
+        saveDocInTestCollection(doc)
         assertEquals(1, testCollection.count)
         baseTestDb.close()
         assertEquals(0, testCollection.count)
@@ -236,7 +236,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testSaveDocToCollectionInClosedDB() {
         baseTestDb.close()
-        saveDocInBaseCollectionTest(MutableDocument("invalid"))
+        saveDocInTestCollection(MutableDocument("invalid"))
     }
 
     @Test
@@ -310,7 +310,7 @@ class CollectionTest : BaseCollectionTest() {
         // NOTE: doc is reserved.
         val v = mDoc.getValue("name")
         assertEquals("Scott Tiger", v)
-        val expected: MutableMap<String, Any> = java.util.HashMap()
+        val expected: MutableMap<String, Any> = HashMap()
         expected["name"] = "Scott Tiger"
         assertEquals(expected, mDoc.toMap())
     }

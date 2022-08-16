@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.JSONUtils;
@@ -1914,7 +1915,7 @@ public class DocumentTest extends BaseCollectionTest {
         // add doc in collection
         String id = "test_doc";
         MutableDocument document = new MutableDocument(id);
-        saveDocInBaseCollectionTest(document);
+        saveDocInTestCollection(document);
         testCollection.setDocumentExpiration(id, expiration);
         baseTestDb.deleteCollection(testColName, testScopeName);
 
