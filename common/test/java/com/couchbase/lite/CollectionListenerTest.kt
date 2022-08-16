@@ -163,6 +163,55 @@ class CollectionListenerTest : BaseCollectionTest() {
         testCollection.removeCollectionChangeListener(token)
     }
 
+    // Test that addChangeListener to a collection in a closed database doesn't throw an exception
+    @Test
+    fun testAddChangeListenerToCollectionInClosedDatabase() {
+        baseTestDb.close()
+        testCollection.addChangeListener(testSerialExecutor) {}
+    }
+
+    // Test that addDocumentChangeListener to a collection in a closed database doesn't throw an exception
+    @Test
+    fun testAddDocumentChangeListenerToCollectionInClosedDatabase() {
+        val docID = "testDoc"
+        val doc = MutableDocument(docID)
+        testCollection.save(doc)
+
+        baseTestDb.close()
+        testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
+    }
+
+    // Test that removeChangeListener from a collection in a closed database doesn't throw exception
+    @Test
+    fun testRemoveChangeListenerFromCollectionInClosedDatabase(){
+        val doc1Id = "doc_1"
+        val doc2Id = "doc_2"
+
+        var changes: MutableList<String>? = null
+        var latch: CountDownLatch? = null
+
+        val token = testCollection.addChangeListener() { c ->
+            changes?.addAll(c.documentIDs)
+            if ((changes?.size ?: 0) >= 2) {
+                latch?.countDown()
+            }
+        }
+
+        latch = CountDownLatch(1)
+        changes = mutableListOf()
+
+        testCollection.save(MutableDocument(doc1Id))
+        testCollection.save(MutableDocument(doc2Id))
+        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+        assertEquals(2, changes.size)
+        assertTrue(changes.contains(doc1Id))
+        assertTrue(changes.contains(doc2Id))
+
+        baseTestDb.close()
+        testCollection.removeCollectionChangeListener(token)
+    }
+
+
     // These tests tests are incredibly finicky.
 
     // Create two collections, A and B.

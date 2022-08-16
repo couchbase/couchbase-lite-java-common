@@ -1886,6 +1886,43 @@ public class DocumentTest extends BaseCollectionTest {
         }
     }
 
+    // Test setting expiration on doc in a collection of closed database throws CBLException
+    @Test
+    public void testSetExpirationOnDocInCollectionOfClosedDB() {
+        Date expiration = new Date(System.currentTimeMillis() + 30000L);
+        try {
+            String id = "doc_id";
+            MutableDocument document = new MutableDocument(id);
+            baseTestDb.close();
+            testCollection.setDocumentExpiration(id, expiration);
+            fail("Expect CouchbaseLiteException");
+        }
+        catch (CouchbaseLiteException e) {
+            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
+        }
+    }
+
+    // Test getting expiration on doc in a collection of closed database throws CBLException
+    @Ignore("CBL-3575")
+    @Test
+    public void testGetExpirationOnDocInACollectionOfClosedDatabase() throws CouchbaseLiteException {
+        Date expiration = new Date(System.currentTimeMillis() + 30000L);
+        // add doc in collection
+        String id = "test_doc";
+        MutableDocument document = new MutableDocument(id);
+        saveDocInBaseCollectionTest(document);
+        testCollection.setDocumentExpiration(id, expiration);
+        baseTestDb.deleteCollection(testColName, testScopeName);
+
+        try {
+            testCollection.getDocumentExpiration(id);
+            fail("Expect CouchbaseLiteException");
+        }
+        catch (CouchbaseLiteException e) {
+            assertEquals(CBLError.Code.NOT_OPEN, e.getCode());
+        }
+    }
+
     @Test
     public void testLongExpiration() throws Exception {
         Date now = new Date(System.currentTimeMillis());
