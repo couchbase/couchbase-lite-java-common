@@ -59,7 +59,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     @Ignore("CBL-3582")
     @Test
     fun testAddChangeListenerToDeletedCollection() {
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.addChangeListener(testSerialExecutor) {}
     }
 
@@ -69,7 +69,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     @Test
     fun testAddChangeListenerToCollectionDeletedInDifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()
-        otherDb.deleteCollection(testColName, testScopeName)
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.addChangeListener(testSerialExecutor) {}
     }
 
@@ -80,7 +80,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         val docID = "testDoc"
         val doc = MutableDocument(docID)
         testCollection.save(doc)
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
     }
 
@@ -93,7 +93,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         testCollection.save(doc)
 
         val otherDb = duplicateBaseTestDb()
-        otherDb.deleteCollection(testColName, testScopeName)
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
     }
 
@@ -124,9 +124,9 @@ class CollectionListenerTest : BaseCollectionTest() {
         assertTrue(changes.contains(doc1Id))
         assertTrue(changes.contains(doc2Id))
 
-        baseTestDb.deleteCollection(testColName, testScopeName)
-        assertNull(baseTestDb.getCollection(testColName, testScopeName))
-        testCollection.removeCollectionChangeListener(token)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
+        assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+        token.remove()
     }
 
     // Test removeChangeListener from a collection deleted in a different db doesn't throw exception
@@ -158,9 +158,9 @@ class CollectionListenerTest : BaseCollectionTest() {
         assertTrue(changes.contains(doc1Id))
         assertTrue(changes.contains(doc2Id))
 
-        otherDb.deleteCollection(testColName, testScopeName)
-        assertNull(baseTestDb.getCollection(testColName, testScopeName))
-        testCollection.removeCollectionChangeListener(token)
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
+        assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+        token.remove()
     }
 
     // Test that addChangeListener to a collection in a closed database doesn't throw an exception
@@ -183,7 +183,7 @@ class CollectionListenerTest : BaseCollectionTest() {
 
     // Test that removeChangeListener from a collection in a closed database doesn't throw exception
     @Test
-    fun testRemoveChangeListenerFromCollectionInClosedDatabase(){
+    fun testRemoveChangeListenerFromCollectionInClosedDatabase() {
         val doc1Id = "doc_1"
         val doc2Id = "doc_2"
 
@@ -208,7 +208,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         assertTrue(changes.contains(doc2Id))
 
         closeDb(baseTestDb)
-        testCollection.removeCollectionChangeListener(token)
+        token.remove()
     }
 
     // Test that addChangeListener to a collection in a deleted database doesn't throw an exception
@@ -231,7 +231,7 @@ class CollectionListenerTest : BaseCollectionTest() {
 
     // Test that removeChangeListener from a collection in a deleted database doesn't throw exception
     @Test
-    fun testRemoveChangeListenerFromCollectionInDeletedDatabase(){
+    fun testRemoveChangeListenerFromCollectionInDeletedDatabase() {
         val doc1Id = "doc_1"
         val doc2Id = "doc_2"
 
@@ -256,7 +256,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         assertTrue(changes.contains(doc2Id))
 
         deleteDb(baseTestDb)
-        testCollection.removeCollectionChangeListener(token)
+        token.remove()
     }
 
 
