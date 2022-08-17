@@ -18,8 +18,8 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
+import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4DocumentObserver;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
@@ -30,7 +30,7 @@ import com.couchbase.lite.internal.support.Log;
 @SuppressWarnings("PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal")
 public class C4DocumentObserver extends C4NativePeer {
     public interface NativeImpl {
-        long nCreate(long coll, String docId);
+        long nCreate(long coll, String docId) throws LiteCoreException;
         void nFree(long peer);
     }
 
@@ -61,28 +61,6 @@ public class C4DocumentObserver extends C4NativePeer {
     }
 
     //-------------------------------------------------------------------------
-    // Static factory methods
-    //-------------------------------------------------------------------------
-
-    @NonNull
-    public static C4DocumentObserver newObserver(long c4Coll, @NonNull String docId, @NonNull Runnable listener) {
-        return newObserver(NATIVE_IMPL, c4Coll, docId, listener);
-    }
-
-    @VisibleForTesting
-    @NonNull
-    static C4DocumentObserver newObserver(
-        @NonNull NativeImpl impl,
-        long c4Coll,
-        @NonNull String docId,
-        @NonNull Runnable listener) {
-        final long peer = impl.nCreate(c4Coll, docId);
-        final C4DocumentObserver observer = new C4DocumentObserver(impl, peer, listener);
-        BOUND_OBSERVERS.bind(peer, observer);
-        return observer;
-    }
-
-    //-------------------------------------------------------------------------
     // Member Variables
     //-------------------------------------------------------------------------
 
@@ -110,7 +88,7 @@ public class C4DocumentObserver extends C4NativePeer {
         finally { super.finalize(); }
     }
 
-     private void closePeer(@Nullable LogDomain domain) {
+    private void closePeer(@Nullable LogDomain domain) {
         releasePeer(
             domain,
             (peer) -> {

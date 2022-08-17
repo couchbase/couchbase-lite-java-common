@@ -189,7 +189,6 @@ class C4DatabaseTest : C4BaseTest() {
 
     // - "Database OpenBundle"
     @Test
-    @Throws(LiteCoreException::class)
     fun testDatabaseOpenBundle() {
         val bundleDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
         val bundleName = getUniqueName("bundle")
@@ -252,7 +251,6 @@ class C4DatabaseTest : C4BaseTest() {
 
     // - "Database Compact"
     @Test
-    @Throws(LiteCoreException::class)
     fun testDatabaseCompact() {
         val doc1ID = "doc001"
         val doc2ID = "doc002"
@@ -462,7 +460,6 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     @Test
-    @Throws(LiteCoreException::class)
     fun testDatabaseCopySucceeds() {
         val doc1ID = "doc001"
         val doc2ID = "doc002"
@@ -492,7 +489,6 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     @Test
-    @Throws(LiteCoreException::class)
     fun testDatabaseCopyToExistingDBFails() {
         createRev("doc001", REV_ID_1, fleeceBody)
         createRev("doc002", REV_ID_1, fleeceBody)
@@ -534,7 +530,6 @@ class C4DatabaseTest : C4BaseTest() {
 
     // - "Database AllDocsInfo"
     @Test
-    @Throws(LiteCoreException::class)
     fun testAllDocsInfo() {
         setupAllDocs()
 
@@ -560,7 +555,6 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     @Test
-    @Throws(LiteCoreException::class)
     fun testPurgeExpiredDocs() {
         val now = System.currentTimeMillis()
         val shortExpire = now + 1000
@@ -591,7 +585,6 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     @Test
-    @Throws(LiteCoreException::class)
     fun testDatabaseCancelExpire() {
         val expire = System.currentTimeMillis() + 100
         val docID1 = "expire_me"
@@ -607,7 +600,6 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     @Test
-    @Throws(LiteCoreException::class)
     fun testPurgeDoc() {
         val docID = "purge_me"
         createRev(docID, REV_ID_1, fleeceBody)
@@ -625,7 +617,6 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     @Test
-    @Throws(LiteCoreException::class)
     fun testDatabaseBlobStore() {
         val blobs = c4Database.blobStore
         assertNotNull(blobs)
@@ -633,12 +624,10 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     // - Utility methods
-    @Throws(LiteCoreException::class)
     fun nextDocument(e: C4DocEnumerator): C4Document? {
         return if (e.next()) e.document else null
     }
 
-    @Throws(LiteCoreException::class)
     private fun setupAllDocs() {
         for (i in 1..99) {
             val docID = String.format(Locale.ENGLISH, "doc-%03d", i)
@@ -655,7 +644,6 @@ class C4DatabaseTest : C4BaseTest() {
         }
     }
 
-    @Throws(LiteCoreException::class)
     private fun addDocWithAttachments(docID: String, attachments: List<String>): List<C4BlobKey> {
         val keys: MutableList<C4BlobKey> = ArrayList()
         val json = StringBuilder()

@@ -55,7 +55,7 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
         }
     }
 
-    void start(@NonNull Fn.Consumer<Runnable> onChange) {
+    void start(@NonNull Fn.Consumer<Runnable> onChange) throws CouchbaseLiteException {
         synchronized (collection.getDbLock()) {
             c4Observer = collection.createCollectionObserver(() -> onChange.accept(this::collectionChanged));
         }

@@ -3181,7 +3181,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows1, 1);
     }
 
-    @Ignore("CBL-3528: Create query with _default scope throws exception")
+    @Ignore("CBL-3528")
     @Test
     public void testStringQueryDefaultScope2() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");

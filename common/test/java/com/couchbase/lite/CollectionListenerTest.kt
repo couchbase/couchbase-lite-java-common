@@ -31,184 +31,182 @@ class CollectionListenerTest : BaseCollectionTest() {
 
     // Test that change listeners can be added to a collection and that they receive changes correctly.
     @Test
-    fun testCollectionChangeListener() {
-        testCollectionChangeListener(null)
-    }
+    fun testCollectionChangeListener() = testCollectionChangeListener(null)
 
     // Test that change listeners can be added to a collection with a custom executor
     //   and that they receive changes correctly.
     @Test
-    fun testCollectionChangeListenerWithExecutor() {
-        testCollectionChangeListener(testSerialExecutor)
-    }
+    fun testCollectionChangeListenerWithExecutor() = testCollectionChangeListener(testSerialExecutor)
 
     // Test that document change listeners can be added to a collection and that they receive changes correctly.
     @Test
-    fun testCollectionDocumentChangeListener() {
-        testCollectionDocumentChangeListener(null)
-    }
+    fun testCollectionDocumentChangeListener() = testCollectionDocumentChangeListener(null)
 
     // Test that document change listeners can be added to a collection with a custom executor
     //   and that they receive changes correctly.
     @Test
-    fun testCollectionDocumentChangeListenerWithExecutor() {
-        testCollectionChangeListener(testSerialExecutor)
-    }
+    fun testCollectionDocumentChangeListenerWithExecutor() = testCollectionDocumentChangeListener(testSerialExecutor)
 
-    // Test that addChangeListener to a deleted collection gets a warning message and doesn't throw exception
-    @Ignore("CBL-3582")
+    // Test that adding a change listener to a deleted collection doesn't throw exception
     @Test
     fun testAddChangeListenerToDeletedCollection() {
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.addChangeListener(testSerialExecutor) {}
     }
 
 
-    // Test that addChangeListener to a collection deleted from a different db instance gets a warning message and doesn't throw exception
-    @Ignore("CBL-3582")
+    // Test that addChangeListener to a collection deleted from a different db instance doesn't throw exception
     @Test
     fun testAddChangeListenerToCollectionDeletedInDifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()
-        otherDb.deleteCollection(testColName, testScopeName)
-        testCollection.addChangeListener(testSerialExecutor) {}
+        try {
+            otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
+            testCollection.addChangeListener(testSerialExecutor) {}
+        } finally {
+            closeDb(otherDb)
+        }
     }
 
-    // Test that addDocumentChangeListener to a deleted collection gets warning message and doesn't throw exception
-    @Ignore("CBL-3583")
+    // Test that adding a document change listener to a deleted collection
+    // doesn't throw exception
     @Test
     fun testAddDocumentChangeListenerToDeletedCollection() {
         val docID = "testDoc"
-        val doc = MutableDocument(docID)
-        testCollection.save(doc)
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        testCollection.save(MutableDocument(docID))
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
     }
 
-    // Test that addDocumentChangeListener to a deleted collection gets warning message and doesn't throw exception
-    @Ignore("CBL-3583")
+    // Test that adding a document change listener to a deleted collection gets warning message
+    // and doesn't throw exception
     @Test
     fun testAddDocumentChangeListenerToCollectionDeletedInADifferentDBInstance() {
         val docID = "testDoc"
-        val doc = MutableDocument(docID)
-        testCollection.save(doc)
+        testCollection.save(MutableDocument(docID))
 
         val otherDb = duplicateBaseTestDb()
-        otherDb.deleteCollection(testColName, testScopeName)
-        testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
-    }
-
-    // Test that removeChangeListener from a deleted collection gets a warning message and doesn't throw exception
-    @Ignore("CBL-3584")
-    @Test
-    fun testRemoveChangeListenerToDeletedCollection() {
-        val doc1Id = "doc_1"
-        val doc2Id = "doc_2"
-
-        var changes: MutableList<String>? = null
-        var latch: CountDownLatch? = null
-
-        val token = testCollection.addChangeListener() { c ->
-            changes?.addAll(c.documentIDs)
-            if ((changes?.size ?: 0) >= 2) {
-                latch?.countDown()
-            }
+        try {
+            otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
+            testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
+        } finally {
+            closeDb(otherDb)
         }
-
-        latch = CountDownLatch(1)
-        changes = mutableListOf()
-
-        testCollection.save(MutableDocument(doc1Id))
-        testCollection.save(MutableDocument(doc2Id))
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        assertEquals(2, changes.size)
-        assertTrue(changes.contains(doc1Id))
-        assertTrue(changes.contains(doc2Id))
-
-        baseTestDb.deleteCollection(testColName, testScopeName)
-        assertNull(baseTestDb.getCollection(testColName, testScopeName))
-        testCollection.removeCollectionChangeListener(token)
     }
 
-    // Test removeChangeListener from a collection deleted in a different db doesn't throw exception
-    @Ignore("CBL-3584")
+    // Test that removing a listener from a deleted collection doesn't throw exception
+    @Ignore("CBL-3602")
     @Test
-    fun testRemoveChangeListenerToCollectionDeletedInADifferentDBInstance() {
+    fun testRemoveChangeListenerFromDeletedCollection() {
+        val token = testCollection.addChangeListener { _ -> }
+        try {
+            baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
+            assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+
+        } finally {
+            token.remove()
+        }
+    }
+
+    // Test that removing a listener from a collection deleted in a different db doesn't throw exception
+    @Ignore("CBL-3602")
+    @Test
+    fun testRemoveChangeListenerFromCollectionDeletedInADifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()
-        val doc1Id = "doc_1"
-        val doc2Id = "doc_2"
+        val token = testCollection.addChangeListener { _ -> }
 
-        var changes: MutableList<String>? = null
-        var latch: CountDownLatch? = null
+        try {
+            otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
+            assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+        } finally {
+            token.remove()
 
-        val token = testCollection.addChangeListener() { c ->
-            changes?.addAll(c.documentIDs)
-            if ((changes?.size ?: 0) >= 2) {
-                latch?.countDown()
-            }
+            deleteDb(otherDb)
         }
-
-        // Create documents
-        latch = CountDownLatch(1)
-        changes = mutableListOf()
-
-        testCollection.save(MutableDocument(doc1Id))
-        testCollection.save(MutableDocument(doc2Id))
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        assertEquals(2, changes.size)
-        assertTrue(changes.contains(doc1Id))
-        assertTrue(changes.contains(doc2Id))
-
-        otherDb.deleteCollection(testColName, testScopeName)
-        assertNull(baseTestDb.getCollection(testColName, testScopeName))
-        testCollection.removeCollectionChangeListener(token)
     }
 
-    // Test that addChangeListener to a collection in a closed database doesn't throw an exception
+    // Test that removing a listener from a deleted collection doesn't throw exception
+    @Ignore("CBL-3602")
+    @Test
+    fun testRemoveDocChangeListenerFromDeletedCollection() {
+        val docId = "doc_1"
+        testCollection.save(MutableDocument(docId))
+
+        val otherDb = duplicateBaseTestDb()
+        val token = testCollection.addDocumentChangeListener(docId) { _ -> }
+
+        try {
+            baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
+            assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+
+        } finally {
+            token.remove()
+        }
+    }
+
+    // Test that removing a listener from a collection deleted in a different db doesn't throw exception
+    @Ignore("CBL-3602")
+    @Test
+    fun testRemoveDocChangeListenerFromCollectionDeletedInADifferentDBInstance() {
+        val otherDb = duplicateBaseTestDb()
+        val token = testCollection.addChangeListener { _ -> }
+
+        try {
+            otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
+            assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+        } finally {
+            token.remove()
+
+            deleteDb(otherDb)
+        }
+    }
+
+    // Test that adding a change listener to a collection in a closed database doesn't throw an exception
     @Test
     fun testAddChangeListenerToCollectionInClosedDatabase() {
         baseTestDb.close()
-        testCollection.addChangeListener(testSerialExecutor) {}
+        testCollection.addChangeListener(null) {}
     }
 
-    // Test that addDocumentChangeListener to a collection in a closed database doesn't throw an exception
+    // Test that adding a document change listener  to a collection in a closed database doesn't throw an exception
     @Test
     fun testAddDocumentChangeListenerToCollectionInClosedDatabase() {
         val docID = "testDoc"
-        val doc = MutableDocument(docID)
-        testCollection.save(doc)
+        testCollection.save(MutableDocument(docID))
 
-        baseTestDb.close()
-        testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
+        closeDb(baseTestDb)
+
+        testCollection.addDocumentChangeListener(docID, null) {}
     }
 
-    // Test that removeChangeListener from a collection in a closed database doesn't throw exception
+    // Test that removing a listener from a collection in a closed database doesn't throw exception
     @Test
-    fun testRemoveChangeListenerFromCollectionInClosedDatabase(){
+    fun testRemoveChangeListenerFromCollectionInClosedDatabase() {
         val doc1Id = "doc_1"
         val doc2Id = "doc_2"
 
-        var changes: MutableList<String>? = null
-        var latch: CountDownLatch? = null
+        val changes = mutableListOf<String>()
+        val latch = CountDownLatch(1)
 
-        val token = testCollection.addChangeListener() { c ->
-            changes?.addAll(c.documentIDs)
-            if ((changes?.size ?: 0) >= 2) {
-                latch?.countDown()
+        val token = testCollection.addChangeListener { c ->
+            changes.addAll(c.documentIDs)
+            if (changes.size >= 2) {
+                latch.countDown()
             }
         }
 
-        latch = CountDownLatch(1)
-        changes = mutableListOf()
+        try {
+            testCollection.save(MutableDocument(doc1Id))
+            testCollection.save(MutableDocument(doc2Id))
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
 
-        testCollection.save(MutableDocument(doc1Id))
-        testCollection.save(MutableDocument(doc2Id))
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        assertEquals(2, changes.size)
-        assertTrue(changes.contains(doc1Id))
-        assertTrue(changes.contains(doc2Id))
+            assertEquals(2, changes.size)
+            assertTrue(changes.contains(doc1Id))
+            assertTrue(changes.contains(doc2Id))
 
-        baseTestDb.close()
-        testCollection.removeCollectionChangeListener(token)
+            closeDb(baseTestDb)
+        } finally {
+            token.remove()
+        }
     }
 
 
@@ -222,41 +220,36 @@ class CollectionListenerTest : BaseCollectionTest() {
     // Update the documents on the collection A.
     // Ensure that the two listeners don’t receive any changes.
     private fun testCollectionChangeListener(exec: Executor?) {
-        val collectionA = baseTestDb.createCollection("colA", "scopeA")
-        val collectionB = baseTestDb.createCollection("colB", "scopeA")
-
-        var latch: CountDownLatch? = null
-        var changes1: MutableList<String>? = null
-        var changes2: MutableList<String>? = null
-        var thread1: Thread? = null
-        var thread2: Thread? = null
-
         val doc1Id = "doc_1"
         val doc2Id = "doc_2"
         val doc3Id = "doc_3"
 
+        val collectionA = baseTestDb.createCollection("colA", "scopeA")
+        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+
+        var latch = CountDownLatch(2)
+        var changes1 = mutableListOf<String>()
+        var changes2 = mutableListOf<String>()
+        var thread1: Thread? = null
+        var thread2: Thread? = null
+
         var t = 0L
 
         val token1 = collectionA.addChangeListener(exec) { c ->
-            changes1?.addAll(c.documentIDs)
+            changes1.addAll(c.documentIDs)
             thread1 = Thread.currentThread()
-            if ((changes1?.size ?: 0) >= 2) {
-                latch?.countDown()
+            if (changes1.size >= 2) {
+                latch.countDown()
             }
         }
 
         val token2 = collectionA.addChangeListener(exec) { c ->
-            changes2?.addAll(c.documentIDs)
+            changes2.addAll(c.documentIDs)
             thread2 = Thread.currentThread()
-            if ((changes2?.size ?: 0) >= 2) {
-                latch?.countDown()
+            if (changes2.size >= 2) {
+                latch.countDown()
             }
         }
-
-        // Create documents
-        latch = CountDownLatch(2)
-        changes1 = mutableListOf()
-        changes2 = mutableListOf()
 
         t -= System.currentTimeMillis()
         collectionB.save(MutableDocument(doc3Id))
@@ -283,12 +276,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         changes2 = mutableListOf()
 
         t -= System.currentTimeMillis()
-        collectionB.save(
-            collectionB.getDocument(doc3Id)?.toMutable()?.setString("Lucky", "Radiohead")!!
-        )
-        collectionA.save(
-            collectionA.getDocument(doc2Id)?.toMutable()?.setString("Dazzle", "Siouxsie & the Banshees")!!
-        )
+        collectionB.save(collectionB.getDocument(doc3Id)?.toMutable()?.setString("Lucky", "Radiohead")!!)
+        collectionA.save(collectionA.getDocument(doc2Id)?.toMutable()?.setString("Dazzle", "Siouxsie & the Banshees")!!)
         collectionA.save(
             collectionA.getDocument(doc1Id)?.toMutable()?.setString("Baroud", "Cheb Khaled & Safy Boutella")!!
         )
@@ -384,93 +373,96 @@ class CollectionListenerTest : BaseCollectionTest() {
             latch?.countDown()
         }
 
-        // Create documents
-        latch = CountDownLatch(2)
-        changes1 = mutableListOf()
-        changes2 = mutableListOf()
+        try {
+            // Create documents
+            latch = CountDownLatch(2)
+            changes1 = mutableListOf()
+            changes2 = mutableListOf()
 
-        t -= System.currentTimeMillis()
-        collectionB.save(MutableDocument(doc3Id))
-        collectionA.save(MutableDocument(doc2Id))
-        collectionA.save(MutableDocument(doc1Id))
+            t -= System.currentTimeMillis()
+            collectionB.save(MutableDocument(doc3Id))
+            collectionA.save(MutableDocument(doc2Id))
+            collectionA.save(MutableDocument(doc1Id))
 
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        t += System.currentTimeMillis()
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+            t += System.currentTimeMillis()
 
-        assertEquals(1, changes1.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertEquals(1, changes2.size)
-        assertTrue(changes2.contains(doc2Id))
-        if (exec != null) {
-            assertNotEquals(Thread.currentThread(), thread1)
-            assertNotEquals(Thread.currentThread(), thread2)
+            assertEquals(1, changes1.size)
+            assertTrue(changes1.contains(doc1Id))
+            assertEquals(1, changes2.size)
+            assertTrue(changes2.contains(doc2Id))
+            if (exec != null) {
+                assertNotEquals(Thread.currentThread(), thread1)
+                assertNotEquals(Thread.currentThread(), thread2)
+            }
+
+            // Update documents
+            latch = CountDownLatch(2)
+            changes1 = mutableListOf()
+            changes2 = mutableListOf()
+
+            t -= System.currentTimeMillis()
+            collectionB.save(
+                collectionB.getDocument(doc3Id)?.toMutable()?.setString("Lucky", "Radiohead")!!
+            )
+            collectionA.save(
+                collectionA.getDocument(doc2Id)?.toMutable()?.setString("Dazzle", "Siouxsie & the Banshees")!!
+            )
+            collectionA.save(
+                collectionA.getDocument(doc1Id)?.toMutable()?.setString("Baroud", "Cheb Khaled & Safy Boutella")!!
+            )
+
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+            t += System.currentTimeMillis()
+
+            assertEquals(1, changes1.size)
+            assertTrue(changes1.contains(doc1Id))
+            assertEquals(1, changes2.size)
+            assertTrue(changes2.contains(doc2Id))
+            if (exec != null) {
+                assertNotEquals(Thread.currentThread(), thread1)
+                assertNotEquals(Thread.currentThread(), thread2)
+            }
+
+            // Delete documents
+            latch = CountDownLatch(2)
+            changes1 = mutableListOf()
+            changes2 = mutableListOf()
+
+            t -= System.currentTimeMillis()
+            collectionB.delete(collectionB.getDocument(doc3Id)!!)
+            collectionA.delete(collectionA.getDocument(doc2Id)!!)
+            collectionA.delete(collectionA.getDocument(doc1Id)!!)
+
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+            t += System.currentTimeMillis()
+
+            assertEquals(1, changes1.size)
+            assertTrue(changes1.contains(doc1Id))
+            assertEquals(1, changes2.size)
+            assertTrue(changes2.contains(doc2Id))
+            if (exec != null) {
+                assertNotEquals(Thread.currentThread(), thread1)
+                assertNotEquals(Thread.currentThread(), thread2)
+            }
+
+            // Remove the change listeners
+            latch = CountDownLatch(2)
+            changes1 = mutableListOf()
+            changes2 = mutableListOf()
+
+        } finally {
+            token1.remove()
+            token2.remove()
         }
-
-        // Update documents
-        latch = CountDownLatch(2)
-        changes1 = mutableListOf()
-        changes2 = mutableListOf()
-
-        t -= System.currentTimeMillis()
-        collectionB.save(
-            collectionB.getDocument(doc3Id)?.toMutable()?.setString("Lucky", "Radiohead")!!
-        )
-        collectionA.save(
-            collectionA.getDocument(doc2Id)?.toMutable()?.setString("Dazzle", "Siouxsie & the Banshees")!!
-        )
-        collectionA.save(
-            collectionA.getDocument(doc1Id)?.toMutable()?.setString("Baroud", "Cheb Khaled & Safy Boutella")!!
-        )
-
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        t += System.currentTimeMillis()
-
-        assertEquals(1, changes1.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertEquals(1, changes2.size)
-        assertTrue(changes2.contains(doc2Id))
-        if (exec != null) {
-            assertNotEquals(Thread.currentThread(), thread1)
-            assertNotEquals(Thread.currentThread(), thread2)
-        }
-
-        // Delete documents
-        latch = CountDownLatch(2)
-        changes1 = mutableListOf()
-        changes2 = mutableListOf()
-
-        t -= System.currentTimeMillis()
-        collectionB.delete(collectionB.getDocument(doc3Id)!!)
-        collectionA.delete(collectionA.getDocument(doc2Id)!!)
-        collectionA.delete(collectionA.getDocument(doc1Id)!!)
-
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        t += System.currentTimeMillis()
-
-        assertEquals(1, changes1.size)
-        assertTrue(changes1.contains(doc1Id))
-        assertEquals(1, changes2.size)
-        assertTrue(changes2.contains(doc2Id))
-        if (exec != null) {
-            assertNotEquals(Thread.currentThread(), thread1)
-            assertNotEquals(Thread.currentThread(), thread2)
-        }
-
-        // Remove the change listeners
-        latch = CountDownLatch(2)
-        changes1 = mutableListOf()
-        changes2 = mutableListOf()
-
-        token1.remove()
-        token2.remove()
 
         collectionB.save(MutableDocument(doc3Id))
         collectionA.save(MutableDocument(doc2Id))
         collectionA.save(MutableDocument(doc1Id))
 
         // wait twice the average time to notify
-        assertFalse(latch.await((t * 2) / 3, TimeUnit.MILLISECONDS))
-        assertTrue(changes1.isEmpty())
-        assertTrue(changes2.isEmpty())
+        assertFalse(latch?.await((t * 2) / 3, TimeUnit.MILLISECONDS) ?: false)
+        assertTrue(changes1?.isEmpty() ?: false)
+        assertTrue(changes2?.isEmpty() ?: false)
     }
 }

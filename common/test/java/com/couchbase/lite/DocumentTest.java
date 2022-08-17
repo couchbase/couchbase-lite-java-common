@@ -1908,7 +1908,6 @@ public class DocumentTest extends BaseCollectionTest {
     }
 
     // Test getting expiration on doc in a collection of closed database throws CBLException
-    @Ignore("CBL-3575")
     @Test
     public void testGetExpirationOnDocInACollectionOfClosedDatabase() throws CouchbaseLiteException {
         Date expiration = new Date(System.currentTimeMillis() + 30000L);
@@ -1917,7 +1916,7 @@ public class DocumentTest extends BaseCollectionTest {
         MutableDocument document = new MutableDocument(id);
         saveDocInTestCollection(document);
         testCollection.setDocumentExpiration(id, expiration);
-        baseTestDb.deleteCollection(testColName, testScopeName);
+        baseTestDb.deleteCollection(testCollection.getName(), testCollection.getScope().getName());
 
         try {
             testCollection.getDocumentExpiration(id);

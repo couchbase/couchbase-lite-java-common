@@ -3,11 +3,14 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
+import com.couchbase.lite.LiteCoreException;
+
 
 public final class C4CollectionDocObserver extends C4DocumentObserver {
 
     @NonNull
-    public static C4CollectionDocObserver newObserver(long c4Coll, @NonNull String id, @NonNull Runnable listener) {
+    public static C4CollectionDocObserver newObserver(long c4Coll, @NonNull String id, @NonNull Runnable listener)
+        throws LiteCoreException {
         return newObserver(NATIVE_IMPL, c4Coll, id, listener);
     }
 
@@ -17,8 +20,8 @@ public final class C4CollectionDocObserver extends C4DocumentObserver {
         @NonNull NativeImpl impl,
         long c4Coll,
         @NonNull String id,
-        @NonNull Runnable listener
-    ) {
+        @NonNull Runnable listener)
+    throws LiteCoreException {
         final long peer = impl.nCreate(c4Coll, id);
         final C4CollectionDocObserver observer = new C4CollectionDocObserver(impl, peer, listener);
         BOUND_OBSERVERS.bind(peer, observer);

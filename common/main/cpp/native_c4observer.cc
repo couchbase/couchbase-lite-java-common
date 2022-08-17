@@ -140,7 +140,7 @@ c4CollectionObsCallback(C4CollectionObserver *observer, void *ignore) {
  * @param seq
  */
 static void
-c4DocObsCallback(C4DocumentObserver *obs, C4Collection* ign1, C4Slice docID, C4SequenceNumber ign2, void *ign3) {
+c4DocObsCallback(C4DocumentObserver *obs, C4Collection *ign1, C4Slice docID, C4SequenceNumber ign2, void *ign3) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
@@ -218,8 +218,26 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
         JNIEnv *env,
         jclass ignore,
-        jlong coll) {
-    return (jlong) c4dbobs_createOnCollection((C4Collection *) coll, c4CollectionObsCallback, nullptr);
+        jlong jcollection) {
+
+    C4Error error{};
+
+    // !!! Workaround for CBL-3599
+    auto coll = (C4Collection *) jcollection;
+    if (!c4coll_isValid(coll)) {
+        error.domain = LiteCoreDomain;
+        error.code = kC4ErrorNotOpen;
+        throwError(env, error);
+        return 0;
+    }
+
+    auto res = (jlong) c4dbobs_createOnCollection(coll, c4CollectionObsCallback, &error);
+    if (!res && error.code != 0) {
+        throwError(env, error);
+        return 0;
+    }
+
+    return res;
 }
 
 /*
@@ -250,7 +268,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_getChanges
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_free(JNIEnv *, jclass, jlong observer) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_free(
+        JNIEnv *,
+        jclass,
+        jlong observer) {
     if (observer != 0)
         c4dbobs_free((C4CollectionObserver *) observer);
 }
@@ -268,10 +289,28 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create(
         JNIEnv *env,
         jclass ignore,
-        jlong coll,
+        jlong jcollection,
         jstring jdocID) {
     jstringSlice docID(env, jdocID);
-    return (jlong) c4docobs_createWithCollection((C4Collection *) coll, docID, c4DocObsCallback, nullptr);
+
+    C4Error error{};
+
+    // !!! Workaround for CBL-3599
+    auto coll = (C4Collection *) jcollection;
+    if (!c4coll_isValid(coll)) {
+        error.domain = LiteCoreDomain;
+        error.code = kC4ErrorNotOpen;
+        throwError(env, error);
+        return 0;
+    }
+
+    auto res = (jlong) c4docobs_createWithCollection(coll, docID, c4DocObsCallback, &error);
+    if (!res && error.code != 0) {
+        throwError(env, error);
+        return 0;
+    }
+
+    return res;
 }
 
 /*

@@ -469,10 +469,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection(
     jstringSlice scope(env, jscope);
     jstringSlice collection(env, jcollection);
     C4CollectionSpec collSpec = {collection, scope};
-
     C4Error error{};
-    bool res = c4db_deleteCollection((C4Database *) db, collSpec, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_deleteCollection((C4Database *) db, collSpec, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 }

@@ -373,8 +373,7 @@ public final class Collection extends BaseCollection implements AutoCloseable {
      * To remove the listener, call remove() function on the returned listener token.
      */
     @NonNull
-    public ListenerToken addDocumentChangeListener(@NonNull String id, @NonNull DocumentChangeListener listener)
-        throws CouchbaseLiteException {
+    public ListenerToken addDocumentChangeListener(@NonNull String id, @NonNull DocumentChangeListener listener) {
         return addDocumentChangeListener(id, null, listener);
     }
 
@@ -468,13 +467,25 @@ public final class Collection extends BaseCollection implements AutoCloseable {
 
 
     @NonNull
-    public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) {
-        return c4Collection.createCollectionObserver(listener);
+    public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener)
+        throws CouchbaseLiteException {
+        try { return c4Collection.createCollectionObserver(listener); }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(
+                e,
+                "Invalid collection: it has either been deleted or its database closed");
+        }
     }
 
     @NonNull
-    public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener) {
-        return c4Collection.createDocumentObserver(docID, listener);
+    public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener)
+        throws CouchbaseLiteException {
+        try { return c4Collection.createDocumentObserver(docID, listener); }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(
+                e,
+                "Invalid collection: it has either been deleted or its database closed");
+        }
     }
 
     @NonNull
@@ -604,7 +615,15 @@ public final class Collection extends BaseCollection implements AutoCloseable {
         @NonNull CollectionChangeListener listener) {
         if (collectionChangeNotifier == null) {
             collectionChangeNotifier = new CollectionChangeNotifier(this);
-            if (isOpen()) { collectionChangeNotifier.start(this::scheduleImmediateOnPostExecutor); }
+            if (isOpen()) {
+                try { collectionChangeNotifier.start(this::scheduleImmediateOnPostExecutor); }
+                // ??? Revisit this: there is no programatic way for client code
+                // to know that the listener has failed.
+                catch (CouchbaseLiteException e) {
+                    Log.d(LogDomain.LISTENER, e.getMessage());
+                    return ChangeListenerToken.DUMMY;
+                }
+            }
         }
         return collectionChangeNotifier.addChangeListener(executor, listener, this::removeCollectionChangeListener);
     }
@@ -634,7 +653,15 @@ public final class Collection extends BaseCollection implements AutoCloseable {
         if (docNotifier == null) {
             docNotifier = new DocumentChangeNotifier(this, docID);
             docChangeNotifiers.put(docID, docNotifier);
-            if (isOpen()) { docNotifier.start(this::scheduleImmediateOnPostExecutor); }
+            if (isOpen()) {
+                try { docNotifier.start(this::scheduleImmediateOnPostExecutor); }
+                // ??? Revisit this: there is no programatic way for client code
+                // to know that the listener has failed.
+                catch (CouchbaseLiteException e) {
+                    Log.d(LogDomain.LISTENER, e.getMessage());
+                    return ChangeListenerToken.DUMMY;
+                }
+            }
         }
         final ChangeListenerToken<?> token
             = docNotifier.addChangeListener(executor, listener, this::removeDocumentChangeListener);

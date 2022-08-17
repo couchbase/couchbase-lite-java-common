@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4CollectionObserver;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
@@ -28,7 +29,7 @@ import com.couchbase.lite.internal.support.Log;
 
 public final class C4CollectionObserver extends C4NativePeer {
     public interface NativeImpl {
-        long nCreate(long coll);
+        long nCreate(long coll) throws LiteCoreException;
         @NonNull
         C4DocumentChange[] nGetChanges(long peer, int maxChanges);
         void nFree(long peer);
@@ -58,13 +59,14 @@ public final class C4CollectionObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    static C4CollectionObserver newObserver(long c4Coll, @NonNull Runnable listener) {
+    static C4CollectionObserver newObserver(long c4Coll, @NonNull Runnable listener) throws LiteCoreException {
         return newObserver(NATIVE_IMPL, c4Coll, listener);
     }
 
     @VisibleForTesting
     @NonNull
-    static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener) {
+    static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener)
+        throws LiteCoreException {
         final long peer = impl.nCreate(c4Coll);
         final C4CollectionObserver observer = new C4CollectionObserver(impl, peer, listener);
         BOUND_OBSERVERS.bind(peer, observer);

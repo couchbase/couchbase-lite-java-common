@@ -20,7 +20,6 @@ import com.couchbase.lite.internal.utils.PlatformUtils
 import com.couchbase.lite.internal.utils.Report
 import org.json.JSONException
 import org.json.JSONObject
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
@@ -31,17 +30,13 @@ import java.util.*
 
 open class BaseCollectionTest : BaseDbTest() {
     protected lateinit var testCollection: Collection
-    protected lateinit var testColName: String
-    protected lateinit var testScopeName: String
 
     protected val Scope.collectionCount
         get() = this.collections.size
 
     @Before
     fun setUpBaseCollectionTest() {
-        testColName = getUniqueName("test_collection")
-        testScopeName = getUniqueName("test_scope")
-        testCollection = baseTestDb.createCollection(testColName, testScopeName)
+        testCollection = baseTestDb.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
         Report.log("Created base test Collection: $testCollection")
     }
 

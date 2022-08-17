@@ -1,8 +1,8 @@
 package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.Collection
-import junit.framework.Assert.assertEquals
-import junit.framework.Assert.assertNotNull
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class C4CollectionObserverTest : C4BaseTest() {
@@ -48,10 +48,10 @@ class C4CollectionObserverTest : C4BaseTest() {
         var i = 0
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(coll.peer, { i++ }).use { obs ->
-                assertEquals(0, i);
+                assertEquals(0, i)
                 createRev(c4Database, "A", "1-aa", fleeceBody)
                 assertEquals(1, i)
-                createRev(c4Database, "B", "1-bb", fleeceBody);
+                createRev(c4Database, "B", "1-bb", fleeceBody)
                 assertEquals(1, i)
 
                 checkChanges(obs, arrayListOf("A", "B"), arrayListOf("1-aa", "1-bb"), false)

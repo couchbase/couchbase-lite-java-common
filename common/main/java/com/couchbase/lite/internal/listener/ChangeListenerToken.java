@@ -27,6 +27,14 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class ChangeListenerToken<T> extends ListenerToken {
+    public static final ChangeListenerToken<Void> DUMMY = new ChangeListenerToken<Void>(change -> {}, null, t -> {}) {
+        @NonNull
+        @Override
+        public String toString() { return "Dummy Token!!"; }
+        @Override
+        public void postChange(@NonNull Void change) { }
+    };
+
     @NonNull
     private final ChangeListener<T> listener;
     @Nullable

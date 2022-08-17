@@ -25,32 +25,7 @@ import org.junit.Test
 
 class DbCollectionsTest : BaseCollectionTest() {
     private val invalidChars = charArrayOf(
-        '!',
-        '@',
-        '#',
-        '$',
-        '^',
-        '&',
-        '*',
-        '(',
-        ')',
-        '+',
-        '.',
-        '<',
-        '>',
-        '?',
-        '[',
-        ']',
-        '{',
-        '}',
-        '=',
-        '“',
-        '‘',
-        '|',
-        '\\',
-        '/',
-        '`',
-        '~'
+        '!', '@', '#', '$', '^', '&', '*', '(', ')', '+', '.', '<', '>', '?', '[', ']', '{', '}', '=', '“', '‘', '|', '\\', '/', '`', '~'
     )
 
     @Test
@@ -170,7 +145,7 @@ class DbCollectionsTest : BaseCollectionTest() {
         //save doc in testCollection
         createSingleDocInCollectionWithId(docId)
 
-        val col = baseTestDb.createCollection(testColName, testScopeName)
+        val col = baseTestDb.createCollection(testCollection.name, testCollection.scope.name)
 
         // the copy collection has the same content as testCollection
         assertEquals(col, testCollection)
@@ -214,8 +189,8 @@ class DbCollectionsTest : BaseCollectionTest() {
         var scope = scopes.first { it.name == Scope.DEFAULT_NAME }
         assertNotNull(scope.getCollection(Scope.DEFAULT_NAME))
 
-        scope = scopes.first { it.name == testScopeName }
-        assertNotNull(scope.getCollection(testColName))
+        scope = scopes.first { it.name == testCollection.scope.name }
+        assertNotNull(scope.getCollection(testCollection.name))
     }
 
     @Test
@@ -223,12 +198,12 @@ class DbCollectionsTest : BaseCollectionTest() {
         var scopes = baseTestDb.scopes
         assertEquals(2, scopes.size)
 
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         scopes = baseTestDb.scopes
         assertEquals(1, scopes.size)
 
-        val recreateCol = baseTestDb.createCollection(testColName, testScopeName)
+        val recreateCol = baseTestDb.createCollection(testCollection.name, testCollection.scope.name)
         assertNotNull(recreateCol)
     }
 
@@ -260,8 +235,8 @@ class DbCollectionsTest : BaseCollectionTest() {
     // When deleting all collections in non-default scope, the scope will be deleted
     @Test
     fun testDeleteAllCollectionsInNamedScope() {
-        baseTestDb.deleteCollection(testColName, testScopeName)
-        assertNull(baseTestDb.getScope(testScopeName))
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
+        assertNull(baseTestDb.getScope(testCollection.name))
         assertEquals(setOf(baseTestDb.defaultScope), baseTestDb.scopes)
     }
 
@@ -315,7 +290,7 @@ class DbCollectionsTest : BaseCollectionTest() {
         //open a new db
         val newDB = openDatabase()
         try {
-            assertNull(newDB.getCollection(testColName, testScopeName))
+            assertNull(newDB.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             // delete otherDb
             deleteDb(newDB)
@@ -325,37 +300,41 @@ class DbCollectionsTest : BaseCollectionTest() {
     /* Use APIs on Collection when collection is deleted */
     @Test
     fun testGetScopeFromDeletedCollection() {
-        baseTestDb.deleteCollection(testColName, testScopeName)
-        assertEquals(testScopeName, testCollection.scope.name)
+        val scopeName = testCollection.scope.name
+        baseTestDb.deleteCollection(testCollection.name, scopeName)
+        assertEquals(scopeName, testCollection.scope.name)
     }
 
     @Test
     fun testGetColNameFromDeletedCollection() {
-        baseTestDb.deleteCollection(testColName, testScopeName)
-        assertEquals(testColName, testCollection.name)
+        val collectionName = testCollection.name
+        baseTestDb.deleteCollection(collectionName, testCollection.scope.name)
+        assertEquals(collectionName, testCollection.name)
     }
 
     // Test get scope from a collection that is deleted from a different database instance
     @Test
     fun testGetScopeAndNameFromCollectionFromDifferentDBInstance() {
+        val collectionName = testCollection.name
         val otherDb = duplicateDb(baseTestDb)
-        val collection = otherDb.getCollection(testColName, testScopeName)
+        val collection = otherDb.getCollection(collectionName, testCollection.scope.name)
         assertNotNull(collection)
 
-        otherDb.deleteCollection(testColName, testScopeName)
-        assertNull(otherDb.getCollection(testColName, testScopeName))
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
+        assertNull(otherDb.getCollection(testCollection.name, testCollection.scope.name))
 
         //get from original collection
         assertNotNull(testCollection.scope)
-        assertEquals(testColName, testCollection.name)
+        assertEquals(collectionName, testCollection.name)
     }
 
     // Test getting scope, and collection name from a collection when database is closed returns the scope and name
     @Test
     fun testGetScopeAndCollectionNameFromAClosedDatabase() {
+        val collectionName = testCollection.name
         baseTestDb.close()
         assertNotNull(testCollection.scope)
-        assertEquals(testColName, testCollection.name)
+        assertEquals(collectionName, testCollection.name)
     }
 }
 

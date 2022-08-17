@@ -17,6 +17,7 @@ package com.couchbase.lite.internal.core.impl;
 
 import androidx.annotation.NonNull;
 
+import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4CollectionObserver;
 import com.couchbase.lite.internal.core.C4DocumentChange;
 
@@ -24,7 +25,7 @@ import com.couchbase.lite.internal.core.C4DocumentChange;
 public class NativeC4CollectionObserver implements C4CollectionObserver.NativeImpl {
 
     @Override
-    public long nCreate(long coll) { return create(coll); }
+    public long nCreate(long coll) throws LiteCoreException { return create(coll); }
 
     @Override
     @NonNull
@@ -38,7 +39,7 @@ public class NativeC4CollectionObserver implements C4CollectionObserver.NativeIm
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native long create(long coll);
+    private static native long create(long coll) throws LiteCoreException;
 
     @NonNull
     private static native C4DocumentChange[] getChanges(long peer, int maxChanges);

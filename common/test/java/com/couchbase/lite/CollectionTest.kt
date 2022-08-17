@@ -74,7 +74,7 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument(docID)
 
         saveDocInTestCollection(doc)
-        otherDatabase.deleteCollection(testColName, testScopeName)
+        otherDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
 
         testCollection.getDocument(docID)
 
@@ -87,8 +87,7 @@ class CollectionTest : BaseCollectionTest() {
         createSingleDocInCollectionWithId("doc1")
 
         //delete col
-        Report.log("test scope name $testScopeName")
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         //should fail
         testCollection.getDocument("doc1")
@@ -109,7 +108,7 @@ class CollectionTest : BaseCollectionTest() {
         createDocsInTestCollection(10)
 
         // delete col
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         assertEquals(0, testCollection.count)
     }
@@ -122,7 +121,7 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument(docID)
         saveDocInTestCollection(doc)
 
-        otherDatabase.deleteCollection(testColName, testScopeName)
+        otherDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
         assertEquals(0, testCollection.count)
     }
 
@@ -172,7 +171,7 @@ class CollectionTest : BaseCollectionTest() {
         val doc = createSingleDocInCollectionWithId(docID).toMutable()
 
         val otherDB = duplicateDb(baseTestDb)
-        val collection = otherDB.getCollection(testColName, testScopeName)
+        val collection = otherDB.getCollection(testCollection.name, testCollection.scope.name)
         assertNotNull(collection)
 
         try {
@@ -216,7 +215,7 @@ class CollectionTest : BaseCollectionTest() {
 
     @Test(expected = CouchbaseLiteException::class)
     fun testSaveDocToDeletedCollection() {
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
         val doc = MutableDocument("doc1")
         doc.setValue("key", 1)
 
@@ -226,7 +225,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testSaveDocToCollectionDeletedInDifferentDBInstance() {
         val otherDb = duplicateDb(baseTestDb)
-        otherDb.deleteCollection(testColName, testScopeName)
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
         val docID = "doc1"
         val doc = MutableDocument(docID)
         testCollection.save(doc)
@@ -363,7 +362,7 @@ class CollectionTest : BaseCollectionTest() {
         // Create db with default
         val otherDb = duplicateBaseTestDb()
         try {
-            val collection = otherDb.getCollection(testColName, testScopeName)
+            val collection = otherDb.getCollection(testCollection.name, testCollection.scope.name)
             assertNotNull(collection)
             assertNotSame(collection, testCollection)
             assertEquals(1, collection!!.count)
@@ -410,7 +409,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testDeleteDocOnDeletedCollection() {
         val doc = createSingleDocInCollectionWithId("doc1")
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.delete(doc)
     }
 
@@ -420,7 +419,7 @@ class CollectionTest : BaseCollectionTest() {
         val otherDb = duplicateDb(baseTestDb)
 
         val doc = createSingleDocInCollectionWithId("doc")
-        otherDb.deleteCollection(testColName, testScopeName)
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         testCollection.delete(doc)
     }
@@ -527,7 +526,7 @@ class CollectionTest : BaseCollectionTest() {
         createSingleDocInCollectionWithId(docID)
 
         // delete collection
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         testCollection.purge(docID)
     }
@@ -539,7 +538,7 @@ class CollectionTest : BaseCollectionTest() {
         createSingleDocInCollectionWithId(docID)
 
         val otherDb = duplicateBaseTestDb()
-        otherDb.deleteCollection(testColName, testScopeName)
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.purge(docID)
     }
 
@@ -552,7 +551,7 @@ class CollectionTest : BaseCollectionTest() {
         //create db
         val otherDB = duplicateBaseTestDb()
         try {
-            val collection = otherDB.getCollection(testColName, testScopeName)
+            val collection = otherDB.getCollection(testCollection.name, testCollection.scope.name)
             assertNotNull(collection)
             assertEquals(1, collection!!.count)
 
@@ -599,7 +598,7 @@ class CollectionTest : BaseCollectionTest() {
         val doc = createSingleDocInCollectionWithId("doc1")
 
         //delete doc
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         //purge doc
         testCollection.purge(doc)
@@ -690,7 +689,7 @@ class CollectionTest : BaseCollectionTest() {
         testCreateIndexInCollection()
 
         // Delete collection
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.indexes
     }
 
@@ -699,9 +698,9 @@ class CollectionTest : BaseCollectionTest() {
     fun testGetIndexFromCollectionDeletedFromADifferentDBInstance() {
         testCreateIndexInCollection()
         val otherDB = duplicateBaseTestDb()
-        assertNotNull(otherDB.getCollection(testColName, testScopeName))
+        assertNotNull(otherDB.getCollection(testCollection.name, testCollection.scope.name))
         // Delete collection
-        otherDB.deleteCollection(testColName, testScopeName)
+        otherDB.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.indexes
     }
 
@@ -709,7 +708,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testCreateIndexFromDeletedCollection() {
         // Delete collection
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCreateIndexInCollection()
     }
 
@@ -717,7 +716,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testCreateIndexFromCollectionDeletedInDifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()
-        otherDb.deleteCollection(testColName, testScopeName)
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
         testCreateIndexInCollection()
     }
 
@@ -728,7 +727,7 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(1, testCollection.indexes.size)
 
         // Delete collection
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         // delete index
         testCollection.deleteIndex("index1")
@@ -742,7 +741,7 @@ class CollectionTest : BaseCollectionTest() {
         assertEquals(1, testCollection.indexes.size)
 
         // Delete collection
-        otherDb.deleteCollection(testColName, testScopeName)
+        otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         // delete index
         testCollection.deleteIndex("index1")
@@ -1012,7 +1011,7 @@ class CollectionTest : BaseCollectionTest() {
         val doc = createSingleDocInCollectionWithId(docID).toMutable()
 
         // Delete db
-        baseTestDb.deleteCollection(testColName, testScopeName)
+        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
 
         // Content should be accessible and modifiable without error
         assertEquals(docID, doc.id)
@@ -1023,8 +1022,9 @@ class CollectionTest : BaseCollectionTest() {
 
     @Test
     fun testDeleteThenGetCollectionName() {
-        baseTestDb.deleteCollection(testColName, testScopeName)
-        assertEquals(testColName, testCollection.name)
+        val collectionName = testCollection.name
+        baseTestDb.deleteCollection(collectionName, testCollection.scope.name)
+        assertEquals(collectionName, testCollection.name)
     }
 
 
