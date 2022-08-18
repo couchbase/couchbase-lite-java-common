@@ -131,7 +131,6 @@ class CollectionListenerTest : BaseCollectionTest() {
         val docId = "doc_1"
         testCollection.save(MutableDocument(docId))
 
-        val otherDb = duplicateBaseTestDb()
         val token = testCollection.addDocumentChangeListener(docId) { _ -> }
 
         try {
@@ -163,7 +162,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     // Test that adding a change listener to a collection in a closed database doesn't throw an exception
     @Test
     fun testAddChangeListenerToCollectionInClosedDatabase() {
-        baseTestDb.close()
+        closeDb(baseTestDb)
         testCollection.addChangeListener(null) {}
     }
 
@@ -209,6 +208,53 @@ class CollectionListenerTest : BaseCollectionTest() {
         }
     }
 
+    // Test that addChangeListener to a collection in a deleted database doesn't throw an exception
+    @Test
+    fun testAddChangeListenerToCollectionInDeletedDatabase() {
+        deleteDb(baseTestDb)
+        testCollection.addChangeListener(testSerialExecutor) {}
+    }
+
+    // Test that addDocumentChangeListener to a collection in a deleted database doesn't throw an exception
+    @Test
+    fun testAddDocumentChangeListenerToCollectionInDeletedDatabase() {
+        val docID = "testDoc"
+        val doc = MutableDocument(docID)
+        testCollection.save(doc)
+
+        deleteDb(baseTestDb)
+        testCollection.addDocumentChangeListener(docID, testSerialExecutor) {}
+    }
+
+    // Test that removeChangeListener from a collection in a deleted database doesn't throw exception
+    @Test
+    fun testRemoveChangeListenerFromCollectionInDeletedDatabase() {
+        val doc1Id = "doc_1"
+        val doc2Id = "doc_2"
+
+        val changes = mutableListOf<String>()
+        val latch = CountDownLatch(1)
+
+        val token = testCollection.addChangeListener() { c ->
+            changes.addAll(c.documentIDs)
+            if (changes.size >= 2) {
+                latch.countDown()
+            }
+        }
+
+        try {
+            testCollection.save(MutableDocument(doc1Id))
+            testCollection.save(MutableDocument(doc2Id))
+            assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+            assertEquals(2, changes.size)
+            assertTrue(changes.contains(doc1Id))
+            assertTrue(changes.contains(doc2Id))
+
+            deleteDb(baseTestDb)
+        } finally {
+            token.remove()
+        }
+    }
 
     // These tests tests are incredibly finicky.
 
