@@ -51,7 +51,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-@SuppressWarnings("ConstantConditions")
+@SuppressWarnings({"ConstantConditions", "deprecation"})
 public class QueryTest extends BaseQueryTest {
     private static final Expression EXPR_NUMBER1 = Expression.property("number1");
     private static final Expression EXPR_NUMBER2 = Expression.property("number2");
@@ -3181,7 +3181,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows1, 1);
     }
 
-    @Ignore("CBL-3528")
+    @Ignore("CBL-3558")
     @Test
     public void testStringQueryDefaultScope2() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");
