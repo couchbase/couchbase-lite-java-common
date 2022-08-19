@@ -133,7 +133,7 @@ class CollectionTest : BaseCollectionTest() {
 
     // Test getting doc count from a collection deleted in a different database instance returns 0
     @Test
-    fun testGetDocFromCollectionDeletedInADifferentDBInstance() {
+    fun testGetDocCountFromCollectionDeletedInADifferentDBInstance() {
         val docID = "doc1"
         val doc = MutableDocument(docID)
         saveDocInTestCollection(doc)
