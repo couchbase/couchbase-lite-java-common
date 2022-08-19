@@ -49,7 +49,7 @@ open class BaseCollectionTest : BaseDbTest() {
     }
 
     @Throws(CouchbaseLiteException::class)
-    protected fun createSingleDocInCollectionWithId(docID: String?): Document {
+    protected fun createSingleDocInTestCollectionWithId(docID: String?): Document {
         val n = testCollection.count
         val doc = MutableDocument(docID)
         doc.setValue("key", 1)

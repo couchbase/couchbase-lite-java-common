@@ -143,7 +143,7 @@ class DbCollectionsTest : BaseCollectionTest() {
         val docId = "doc1"
 
         //save doc in testCollection
-        createSingleDocInCollectionWithId(docId)
+        createSingleDocInTestCollectionWithId(docId)
 
         val col = baseTestDb.createCollection(testCollection.name, testCollection.scope.name)
 
