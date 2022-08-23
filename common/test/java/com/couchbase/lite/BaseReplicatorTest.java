@@ -187,7 +187,7 @@ public abstract class BaseReplicatorTest extends BaseDbTest {
         ListenerToken token = repl.addChangeListener(testSerialExecutor, listener);
         boolean ok;
         try {
-            Report.log("Test replicator starting: " + repl.getConfig());
+            Report.log("Test replicator starting: %s", repl.getConfig());
             repl.start(reset);
             ok = listener.awaitCompletion(STD_TIMEOUT_SEC, TimeUnit.SECONDS);
         }

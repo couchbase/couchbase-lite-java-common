@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.Listenable;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryObserver;
@@ -36,7 +37,7 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-abstract class AbstractQuery implements Query {
+abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListener>, Query {
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
 
 

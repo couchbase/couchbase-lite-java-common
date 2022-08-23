@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2022 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,20 +13,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal.replicator;
 
 import androidx.annotation.NonNull;
 
+import com.couchbase.lite.ReplicatorStatus;
 
-/**
- * The listener interface for receiving Replicator change events.
- */
-@FunctionalInterface
-public interface ReplicatorChangeListener extends ChangeListener<ReplicatorChange> {
+
+public class ReplicationStatusChange {
+    @NonNull
+    protected final ReplicatorStatus status;
+
+    public ReplicationStatusChange(@NonNull ReplicatorStatus status) { this.status = status; }
+
     /**
-     * The callback function from Replicator
+     * Return replicator status
      *
-     * @param change the Replicator change information
+     * @return status
      */
-    void changed(@NonNull ReplicatorChange change);
+    @NonNull
+    public ReplicatorStatus getStatus() { return status; }
 }

@@ -17,19 +17,19 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 
+import com.couchbase.lite.internal.replicator.ReplicationStatusChange;
+
 
 /**
  * ReplicatorChange contains the replicator status information.
  */
-public final class ReplicatorChange {
+public final class ReplicatorChange extends ReplicationStatusChange {
     @NonNull
     private final Replicator replicator;
-    @NonNull
-    private final ReplicatorStatus status;
 
     ReplicatorChange(@NonNull Replicator replicator, @NonNull ReplicatorStatus status) {
+        super(status);
         this.replicator = replicator;
-        this.status = status;
     }
 
     /**
@@ -37,12 +37,6 @@ public final class ReplicatorChange {
      */
     @NonNull
     public Replicator getReplicator() { return replicator; }
-
-    /**
-     * Return the replicator status.
-     */
-    @NonNull
-    public ReplicatorStatus getStatus() { return status; }
 
     @NonNull
     @Override

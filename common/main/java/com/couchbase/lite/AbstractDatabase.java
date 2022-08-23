@@ -36,6 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableDatabaseConfiguration;
+import com.couchbase.lite.internal.Listenable;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4Constants;
@@ -79,7 +80,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.CyclomaticComplexity",
     "PMD.TooManyMethods",
     "PMD.CouplingBetweenObjects"})
-abstract class AbstractDatabase extends BaseDatabase implements AutoCloseable {
+abstract class AbstractDatabase extends BaseDatabase
+    implements Listenable<DatabaseChange, DatabaseChangeListener>, AutoCloseable {
     //---------------------------------------------
     // Constants
     //---------------------------------------------

@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
+import com.couchbase.lite.internal.Listenable;
 import com.couchbase.lite.internal.ReplicationCollection;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Constants;
@@ -62,7 +63,8 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * be notified of progress.
  */
 @SuppressWarnings({"PMD.TooManyFields", "PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
-public abstract class AbstractReplicator extends BaseReplicator {
+public abstract class AbstractReplicator extends BaseReplicator
+    implements Listenable<ReplicatorChange, ReplicatorChangeListener> {
     private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
 
     static class ReplicatorCookieStore implements CBLCookieStore {

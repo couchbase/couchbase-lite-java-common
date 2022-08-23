@@ -29,6 +29,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.internal.BaseCollection;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.Listenable;
 import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4CollectionObserver;
 import com.couchbase.lite.internal.core.C4Constants;
@@ -49,7 +50,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 // A considerable amount of code depends on this class being immutable!
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
-public final class Collection extends BaseCollection implements AutoCloseable {
+public final class Collection extends BaseCollection
+    implements Listenable<CollectionChange, CollectionChangeListener>, AutoCloseable {
     public static final String DEFAULT_NAME = "_default";
 
     // A random but absurdly large number.

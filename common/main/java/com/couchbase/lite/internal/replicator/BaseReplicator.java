@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 
 
-public class BaseReplicator implements AutoCloseable {
+public abstract class BaseReplicator implements AutoCloseable {
     private final Object lock = new Object();
     protected final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
