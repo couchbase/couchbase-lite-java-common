@@ -231,7 +231,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
         return 0;
     }
 
-    auto res = (jlong) c4dbobs_createOnCollection(coll, c4CollectionObsCallback, &error);
+    auto res = (jlong) c4dbobs_createOnCollection(coll, c4CollectionObsCallback, (void *) 0L);
     if (!res && error.code != 0) {
         throwError(env, error);
         return 0;
@@ -304,7 +304,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create(
         return 0;
     }
 
-    auto res = (jlong) c4docobs_createWithCollection(coll, docID, c4DocObsCallback, &error);
+    auto res = (jlong) c4docobs_createWithCollection(coll, docID, c4DocObsCallback, (void *) 0L);
     if (!res && error.code != 0) {
         throwError(env, error);
         return 0;
