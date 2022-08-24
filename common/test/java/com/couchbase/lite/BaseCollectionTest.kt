@@ -78,6 +78,15 @@ open class BaseCollectionTest : BaseDbTest() {
         assertEquals(n.toLong(), testCollection.count)
     }
 
+    protected fun createDocsInCustomizedCollection(n: Int, col: Collection) {
+        for (i in 0 until n) {
+            val doc = MutableDocument(String.format(Locale.US, "%s_%s_doc_%03d", col.database.name, col.name, i))
+            doc.setValue("key", i)
+            saveDocInCollection(doc, col)
+        }
+        assertEquals(n.toLong(), col.count)
+    }
+
     @Throws(IOException::class, JSONException::class)
     protected fun loadJSONResourceIntoCollection(name: String, collection: Collection) {
         BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use {

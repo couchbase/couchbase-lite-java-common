@@ -72,7 +72,7 @@ class CompletionAwaiter {
     }
 }
 
-public abstract class BaseReplicatorTest extends BaseDbTest {
+public abstract class BaseReplicatorTest extends BaseCollectionTest {
 
     // Don't let the NetworkConnectivityManager confuse tests
     public static Replicator testReplicator(ReplicatorConfiguration config) { return new Replicator(null, config); }
