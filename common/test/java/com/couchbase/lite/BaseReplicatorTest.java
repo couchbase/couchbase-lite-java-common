@@ -15,23 +15,62 @@
 //
 package com.couchbase.lite;
 
+import androidx.annotation.NonNull;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.After;
 import org.junit.Before;
 
+import com.couchbase.lite.internal.replicator.ReplicationStatusChange;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.mock.TestReplicatorChangeListener;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+
+class CompletionAwaiter {
+    private final AtomicReference<Throwable> err = new AtomicReference<>(null);
+    private final CountDownLatch latch = new CountDownLatch(1);
+    private final ListenerToken token;
+
+    public CompletionAwaiter(ListenerToken token) { this.token = token; }
+
+    public void changed(ReplicationStatusChange change) {
+        final ReplicatorStatus status = change.getStatus();
+
+        final CouchbaseLiteException e = status.getError();
+        if (e != null) { err.compareAndSet(null, e); }
+
+        final ReplicatorActivityLevel level = status.getActivityLevel();
+        if (!((level == ReplicatorActivityLevel.STOPPED) || (level == ReplicatorActivityLevel.OFFLINE))) { return; }
+
+        latch.countDown();
+    }
+
+    public void awaitAndValidate() {
+        try {
+            final boolean ok = latch.await(BaseTest.LONG_TIMEOUT_SEC, TimeUnit.SECONDS);
+            final Throwable e = err.get();
+            if (e != null) { throw new IllegalStateException(e); }
+            assertTrue("timeout", ok);
+        }
+        catch (InterruptedException ignore) { }
+        finally {
+            token.remove();
+        }
+    }
+}
 
 public abstract class BaseReplicatorTest extends BaseDbTest {
 
