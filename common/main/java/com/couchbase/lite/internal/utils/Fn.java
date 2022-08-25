@@ -136,14 +136,20 @@ public interface Fn {
     }
 
     @NonNull
-    static <T, R> List<R> mapToList(@NonNull Collection<? extends T> l, @NonNull Function<T, R> fn) {
+    static <T, R, E extends Exception> List<R> mapToList(
+        @NonNull Collection<? extends T> l,
+        @NonNull FunctionThrows<T, R, E> fn)
+        throws E {
         final List<R> r = new ArrayList<>(l.size());
         for (T e: l) { r.add(fn.apply(e)); }
         return r;
     }
 
     @NonNull
-    static <T, R> Set<R> mapToSet(@NonNull Collection<? extends T> s, @NonNull Function<T, R> fn) {
+    static <T, R, E extends Exception> Set<R> mapToSet(
+        @NonNull Collection<? extends T> s,
+        @NonNull FunctionThrows<T, R, E> fn)
+        throws E {
         final Set<R> r = new HashSet<>(s.size());
         for (T e: s) { r.add(fn.apply(e)); }
         return r;

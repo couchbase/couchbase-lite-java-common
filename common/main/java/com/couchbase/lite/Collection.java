@@ -495,15 +495,32 @@ public final class Collection extends BaseCollection
 
     boolean isValid() { return c4Collection.isValid(); }
 
-    @GuardedBy("getDbLock()")
-    boolean isOpen() { return db.isOpenLocked(); }
-
     boolean isDefault() {
         return Scope.DEFAULT_NAME.equals(getScope().getName()) && Collection.DEFAULT_NAME.equals(getName());
     }
 
     @NonNull
     Object getDbLock() { return db.getDbLock(); }
+
+    @GuardedBy("getDbLock()")
+    boolean isOpen() { return db.isOpenLocked(); }
+
+    @GuardedBy("dbLock")
+    @NonNull
+    protected C4Collection getOpenC4CollectionLocked() throws CouchbaseLiteException {
+        assertOpenChecked();
+        return Preconditions.assertNotNull(c4Collection, "c4collection");
+    }
+
+    @GuardedBy("dbLock")
+    protected void assertOpenChecked() throws CouchbaseLiteException {
+        if (!db.isOpenLocked()) {
+            throw new CouchbaseLiteException(
+                Log.lookupStandardMessage("DBClosed"),
+                CBLError.Domain.CBLITE,
+                CBLError.Code.NOT_OPEN);
+        }
+    }
 
     // - Documents:
 

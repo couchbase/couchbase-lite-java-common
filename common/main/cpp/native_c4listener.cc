@@ -481,6 +481,11 @@ extern "C" {
 // com.couchbase.lite.internal.core.impl.NativeC4Listener
 //-------------------------------------------------------------------------
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
+ * Method:    startHttp
+ * Signature: (ILjava/lang/String;IJLjava/lang/String;ZZZZZZ)J
+ */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
         JNIEnv *env,
@@ -513,6 +518,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp(
             nullptr));
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
+ * Method:    startTls
+ * Signature: (ILjava/lang/String;IJJ[BZ[BLjava/lang/String;ZZZZZZ)J
+ */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         JNIEnv *env,
@@ -577,6 +587,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
     return listener;
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
+ * Method:    free
+ * Signature: (J)V
+ */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_free(
         JNIEnv *env,
@@ -585,24 +600,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_free(
     c4listener_free(reinterpret_cast<C4Listener *>(c4Listener));
 }
 
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareCollection(
-        JNIEnv *env,
-        jclass ignore,
-        jlong c4Listener,
-        jstring dbName,
-        jlong c4Database) {
-
-}
-
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareCollection(
-        JNIEnv *env,
-        jclass ignore,
-        jlong c4Listener,
-        jlong c4Database) {
-}
-
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
+ * Method:    shareDb
+ * Signature: (JLjava/lang/String;J)V
+ */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb(
         JNIEnv *env,
@@ -622,21 +624,55 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb(
         throwError(env, error);
 }
 
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_unshareDb(
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
+ * Method:    shareCollection
+ * Signature: (JLjava/lang/String;J[J)V
+ *
+ *
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDbCollections(
         JNIEnv *env,
         jclass ignore,
         jlong c4Listener,
-        jlong c4Database) {
+        jstring dbName,
+        jlong c4db,
+        jlongArray c4Collections) {
+    jstringSlice name(env, dbName);
+
     C4Error error{};
-    auto ok = !c4listener_unshareDB(
+    auto ok = c4listener_shareDB(
             reinterpret_cast<C4Listener *>(c4Listener),
-            reinterpret_cast<C4Database *>(c4Database),
+            name,
+            reinterpret_cast<C4Database *>(c4db),
             &error);
-    if (!ok && error.code != 0)
+    if (!ok && error.code != 0) {
         throwError(env, error);
+        return;
+    }
+
+    jsize n = env->GetArrayLength(c4Collections);
+    jlong *colls = env->GetLongArrayElements(c4Collections, 0);
+    for (int i = 0; i < n; i++) {
+        C4Error error{};
+        auto ok = c4listener_shareCollection(
+                reinterpret_cast<C4Listener *>(c4Listener),
+                name,
+                reinterpret_cast<C4Collection *>(colls[i]),
+                &error);
+        if (!ok && error.code != 0) {
+            throwError(env, error);
+            break;
+        }
+    }
+    env->ReleaseLongArrayElements(c4Collections, colls, 0);
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
+ * Method:    getUrls
+ * Signature: (JJ)Ljava/util/List;
+ */
 JNIEXPORT jobject JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
         JNIEnv *env,

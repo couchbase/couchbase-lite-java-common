@@ -262,6 +262,9 @@ public class C4Collection extends C4NativePeer {
     // package access
     //-------------------------------------------------------------------------
 
+    // ??? Exposes the peer handle
+    long getHandle() { return getPeer(); }
+
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
