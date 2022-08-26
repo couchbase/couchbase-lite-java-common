@@ -169,11 +169,13 @@ public class CollectionConfiguration {
     @Override
     @NonNull
     public String toString() {
-        return "CollectionConfiguration("
+        return "CollectionConfiguration{"
+            + "("
+            + ((pullFilter != null) ? "<" : "")
+            + ((conflictResolver != null) ? "!" : "")
+            + ((pushFilter != null) ? ">" : "")
+            + "): "
             + channels + ", "
-            + documentIDs + ", "
-            + pullFilter + ", "
-            + pushFilter + ", "
-            + conflictResolver + "}";
+            + documentIDs + "}";
     }
 }

@@ -147,7 +147,7 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
 
         f_ReplColl_pullFilter = env->GetFieldID(
                 cls_ReplColl,
-                "c4PushFilter",
+                "c4PullFilter",
                 "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
         if (!f_ReplColl_pullFilter)
             return false;
@@ -244,9 +244,9 @@ static int fromJavaReplColls(
         collOptions.push_back(pOptions);
         colls[i].optionsDictFleece = *pOptions;
 
-        if (env->GetObjectField(replColl, f_ReplColl_pushFilter) != nullptr)
+        if (env->GetObjectField(replColl, f_ReplColl_pushFilter) != NULL)
             colls[i].pushFilter = &pushFilterFunction;
-        if (env->GetObjectField(replColl, f_ReplColl_pullFilter) != nullptr)
+        if (env->GetObjectField(replColl, f_ReplColl_pullFilter) != NULL)
             colls[i].pullFilter = &pullFilterFunction;
 
         colls[i].callbackContext = (void *) env->GetLongField(replColl, f_ReplColl_token);

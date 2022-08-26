@@ -265,7 +265,15 @@ public final class ReplicationCollection implements AutoCloseable {
 
     @NonNull
     @Override
-    public String toString() { return "ReplicationCollection{" + scope + "." + name + "}"; }
+    public String toString() {
+        return "ReplicationCollection{@" + Long.toHexString(token)
+            + scope + "." + name
+            + "("
+            + ((c4PullFilter != null) ? "<" : "")
+            + ((resolver != null) ? "!" : "")
+            + ((c4PushFilter != null) ? ">" : "")
+            + ")}";
+    }
 
     @SuppressWarnings("NoFinalizer")
     @Override
