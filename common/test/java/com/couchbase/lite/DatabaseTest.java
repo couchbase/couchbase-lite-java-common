@@ -20,13 +20,14 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -1414,6 +1415,34 @@ public class DatabaseTest extends BaseDbTest {
                 if (db != null) { db.delete(); }
             }
             catch (Exception ignore) { }
+        }
+    }
+
+    @Ignore("CBL-3626")
+    @Test
+    // Test that setDocumentExpiration in batch does not hang
+    public void testSetDocumentExpirationHangInBatch() throws CouchbaseLiteException {
+        final int nDocs = 10;
+        // Save 10 docs:
+        createDocsInBaseTestDb(nDocs);
+
+        long now = new Date().getTime();
+        Date expiration = new Date(now + 86400000);
+        baseTestDb.inBatch(() -> {
+            for (int i = 0; i < nDocs; i++) {
+                String docID = String.format(Locale.US, "doc_%03d", i);
+                Document doc = baseTestDb.getDocument(docID);
+                MutableDocument mutableDocument = doc.toMutable();
+
+                mutableDocument.setString("type", "TrashBinModel");
+                mutableDocument.setString("dateOfDeletion", String.valueOf(now));
+                baseTestDb.save(mutableDocument);
+                baseTestDb.setDocumentExpiration(mutableDocument.getId(), expiration); // now + 1 day
+            }
+        });
+        for (int i = 0; i < nDocs; i++) {
+            String docID = String.format(Locale.US, "doc_%03d", i);
+            assertEquals(expiration, baseTestDb.getDocumentExpiration(docID));
         }
     }
 

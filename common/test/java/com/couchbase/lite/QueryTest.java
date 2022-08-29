@@ -3181,7 +3181,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows1, 1);
     }
 
-    @Ignore("CBL-3558")
+    @Ignore("CBL-3538")
     @Test
     public void testStringQueryDefaultScope2() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");
@@ -3310,7 +3310,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(2, numRows);
     }
 
-    @Ignore("CBL-3558")
+    @Ignore("CBL-3564")
     @Test
     public void testStringQueryJoinWithCollections() throws CouchbaseLiteException {
         Collection flowerCol = baseTestDb.createCollection("flowers", "test");
@@ -3326,7 +3326,7 @@ public class QueryTest extends BaseQueryTest {
 
         saveDocInCollection(flowerDoc1, flowerCol);
         saveDocInCollection(flowerDoc2, flowerCol);
-
+        
         MutableDocument colorDoc1 = new MutableDocument();
         colorDoc1.setValue("cid", "c1");
         colorDoc1.setValue("color", "red");
@@ -3344,8 +3344,8 @@ public class QueryTest extends BaseQueryTest {
         saveDocInCollection(colorDoc3, colorCol);
 
         // create with query string
-        String queryString1 = "Select test.flowers.name, test.colors.color FROM test.flowers JOIN test.colors ON "
-            + "test.flowers.cid = test.colors.cid ORDER BY test.flowers.name";
+        String queryString1 = "Select flowers.name, colors.color FROM test.flowers JOIN test.colors ON "
+            + "flowers.cid = colors.cid ORDER BY flowers.name";
         Query query1 = QueryBuilder.createQuery(queryString1, baseTestDb);
 
         int numRows = verifyQuery(query1, (n, result) -> {
@@ -3391,12 +3391,11 @@ public class QueryTest extends BaseQueryTest {
         saveDocInCollection(colorDoc2, colorCol);
         saveDocInCollection(colorDoc3, colorCol);
 
-        /// !!! Result only has one item instead of 2
-        String queryString2 = "SELECT f.name, c.color FROM test.flowers as f JOIN test.colors as c ON f.cid = c.cid "
+        String queryString2 = "SELECT f.name, c.color FROM test.flowers f JOIN test.colors c ON f.cid = c.cid "
             + "ORDER BY f.name";
         Query query2 = QueryBuilder.createQuery(queryString2, baseTestDb);
         int numRows = verifyQuery(query2, (n, result) -> {
-            Report.log("Result with createQuery: " + result.toJSON());
+            /// !!! Result has correct count but wrong actual result
             assertEquals(2, result.count());
             assertEquals(
                 "{\"color\":\"blue\",\"name\":\"hydrangea\"}, {\"color\":\"red\",\"name\":\"rose\"}",
