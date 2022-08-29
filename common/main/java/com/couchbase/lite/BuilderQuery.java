@@ -73,7 +73,7 @@ abstract class BuilderQuery extends AbstractQuery {
      */
     @NonNull
     @Override
-    protected final AbstractDatabase getDatabase() { return (AbstractDatabase) from.getSource(); }
+    protected final AbstractDatabase getDatabase() { return from.getDatabase(); }
 
     @GuardedBy("lock")
     @NonNull

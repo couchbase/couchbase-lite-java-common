@@ -70,8 +70,14 @@ public class DataSource {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public static As database(@NonNull Database database) {
         Preconditions.assertNotNull(database, "database");
-        try { return new As(Preconditions.assertNotNull(database.getDefaultCollection(), "default collection")); }
+
+        final Collection defaultCollection;
+        try { defaultCollection = Preconditions.assertNotNull(database.getDefaultCollection(), "default collection"); }
         catch (CouchbaseLiteException e) { throw new IllegalArgumentException("Database not open", e); }
+
+        final As source = new As(defaultCollection);
+        source.as(database.getName());
+        return source;
     }
 
     /**
@@ -105,16 +111,13 @@ public class DataSource {
     // Package level access
     //---------------------------------------------
     @NonNull
-    Object getSource() { return getDatabase(); }
+    AbstractDatabase getDatabase() { return source.getDatabase(); }
 
     @NonNull
     Map<String, Object> asJSON() {
         final Map<String, Object> json = new HashMap<>();
-        json.put("AS", (alias != null) ? alias : getDatabase().getName());
+        json.put("COLLECTION", source.getFQN());
+        if (alias != null) { json.put("AS", alias); }
         return json;
     }
-
-    // !!! Fix this after collection queries get plumbed through to LiteCore
-    @NonNull
-    private AbstractDatabase getDatabase() { return source.getDatabase(); }
 }

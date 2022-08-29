@@ -60,9 +60,8 @@ public class ResultTest extends BaseQueryTest {
             Query query = generateQuery(baseTestDb, docID);
 
             // run query
-            int rows = verifyQuery(
+            int rows = verifyQueryWithEnumerator(
                 query,
-                false,
                 (n, r) -> {
                     assertEquals(13, r.count());
 
@@ -97,7 +96,7 @@ public class ResultTest extends BaseQueryTest {
             Query query = generateQuery(baseTestDb, docID);
 
             // run query
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getValue(0));
@@ -129,7 +128,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getString("null"));
@@ -161,7 +160,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getString(0));
@@ -194,7 +193,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getNumber("null"));
@@ -226,7 +225,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getNumber(0));  // null
@@ -258,7 +257,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertEquals(0, r.getInt("null"));
@@ -290,7 +289,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertEquals(0, r.getInt(0));
@@ -322,7 +321,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertEquals(0, r.getLong("null"));
@@ -354,7 +353,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertEquals(0, r.getLong(0));
@@ -386,7 +385,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertEquals(0.0f, r.getFloat("null"), 0.0f);
@@ -417,7 +416,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertEquals(0.0f, r.getFloat(0), 0.0f);
@@ -449,7 +448,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertEquals(0.0, r.getDouble("null"), 0.0);
@@ -481,7 +480,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertEquals(0.0, r.getDouble(0), 0.0);
@@ -513,7 +512,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertFalse(r.getBoolean("null"));
@@ -545,7 +544,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertFalse(r.getBoolean(0));
@@ -577,7 +576,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getDate("null"));
@@ -609,7 +608,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getDate(0));
@@ -641,7 +640,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getBlob("null"));
@@ -674,7 +673,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getBlob(0));
@@ -707,7 +706,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getDictionary("null"));
@@ -744,7 +743,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getDictionary(0));
@@ -781,7 +780,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getArray("null"));
@@ -814,7 +813,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
 
                 assertNull(r.getArray(0));
@@ -847,7 +846,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 List<String> keys = r.getKeys();
                 assertNotNull(keys);
                 assertEquals(13, keys.size());
@@ -889,7 +888,7 @@ public class ResultTest extends BaseQueryTest {
             String docID = prepareData(i);
             Query query = generateQuery(baseTestDb, docID);
 
-            int rows = verifyQuery(query, false, (n, r) -> {
+            int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 // exists -> true
                 List<String> expected = Arrays.asList(
                     "null", "true", "false", "string", "zero", "one",

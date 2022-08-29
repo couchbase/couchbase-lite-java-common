@@ -445,9 +445,7 @@ public final class Collection extends BaseCollection
 
     @NonNull
     @Override
-    public String toString() {
-        return c4Collection.getDb() + "." + c4Collection.getScope() + "." + c4Collection.getName();
-    }
+    public String toString() { return c4Collection.getDb() + "." + getFQN(); }
 
     @Override
     public boolean equals(Object o) {
@@ -489,6 +487,9 @@ public final class Collection extends BaseCollection
                 "Invalid collection: it has either been deleted or its database closed");
         }
     }
+
+    @NonNull
+    String getFQN() { return c4Collection.getScope() + "." + c4Collection.getName(); }
 
     @NonNull
     Database getDatabase() { return db; }

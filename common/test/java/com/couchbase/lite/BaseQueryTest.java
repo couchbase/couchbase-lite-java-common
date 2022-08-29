@@ -33,11 +33,11 @@ public abstract class BaseQueryTest extends BaseCollectionTest {
         return saveDocInBaseTestDb(doc).getId();
     }
 
-    protected final List<Map<String, Object>> loadNumberedDocs(final int num) throws CouchbaseLiteException {
+    protected final List<Map<String, Object>> loadNumberedDocs(int num) throws CouchbaseLiteException {
         return loadNumberedDocs(1, num);
     }
 
-    protected final List<Map<String, Object>> loadNumberedDocs(final int from, final int to)
+    protected final List<Map<String, Object>> loadNumberedDocs(int from, int to)
         throws CouchbaseLiteException {
         final List<Map<String, Object>> numbers = new ArrayList<>();
 
@@ -51,19 +51,12 @@ public abstract class BaseQueryTest extends BaseCollectionTest {
     }
 
     protected final int verifyQuery(Query query, QueryResult result) throws CouchbaseLiteException {
-        return verifyQuery(query, true, result);
+        int n = verifyQueryWithEnumerator(query, result);
+        assertEquals(n, verifyQueryWithIterable(query, result));
+        return n;
     }
 
-    protected final int verifyQuery(Query query, boolean runBoth, QueryResult result) throws CouchbaseLiteException {
-        int counter1 = verifyQueryWithEnumerator(query, result);
-        if (runBoth) {
-            int counter2 = verifyQueryWithIterable(query, result);
-            assertEquals(counter1, counter2);
-        }
-        return counter1;
-    }
-
-    private int verifyQueryWithEnumerator(Query query, QueryResult queryResult) throws CouchbaseLiteException {
+    protected int verifyQueryWithEnumerator(Query query, QueryResult queryResult) throws CouchbaseLiteException {
         int n = 0;
         try (ResultSet rs = query.execute()) {
             Result result;
@@ -72,7 +65,7 @@ public abstract class BaseQueryTest extends BaseCollectionTest {
         return n;
     }
 
-    private int verifyQueryWithIterable(Query query, QueryResult queryResult) throws CouchbaseLiteException {
+    protected int verifyQueryWithIterable(Query query, QueryResult queryResult) throws CouchbaseLiteException {
         int n = 0;
         try (ResultSet rs = query.execute()) {
             for (Result result: rs) { queryResult.check(++n, result); }

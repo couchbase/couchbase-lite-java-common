@@ -49,6 +49,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 @SuppressWarnings({"ConstantConditions", "deprecation"})
@@ -175,7 +176,7 @@ public class QueryTest extends BaseQueryTest {
             .from(DataSource.database(baseTestDb))
             .where(Meta.expiration.lessThan(Expression.longValue(now + 6000L)));
 
-        int rows = verifyQuery(query, false, (n, result) -> { });
+        int rows = verifyQueryWithEnumerator(query, (n, result) -> { });
         assertEquals(3, rows);
     }
 
@@ -191,9 +192,8 @@ public class QueryTest extends BaseQueryTest {
             .where(Meta.id.equalTo(Expression.string("doc1"))
                 .and(Meta.deleted.equalTo(Expression.booleanValue(false))));
 
-        int rows = verifyQuery(
+        int rows = verifyQueryWithEnumerator(
             query,
-            false,
             (n, result) -> {
                 assertEquals(result.getString(0), "doc1");
                 assertFalse(result.getBoolean(1));
@@ -215,7 +215,7 @@ public class QueryTest extends BaseQueryTest {
             .where(Meta.deleted.equalTo(Expression.booleanValue(true))
                 .and(Meta.id.equalTo(Expression.string("doc1"))));
 
-        assertEquals(1, verifyQuery(query, false, (n, result) -> { }));
+        assertEquals(1, verifyQueryWithEnumerator(query, (n, result) -> { }));
     }
 
     @Test
@@ -475,9 +475,8 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property("name.first").ascending());
 
         final List<String> firstNames = new ArrayList<>();
-        int numRows = verifyQuery(
+        int numRows = verifyQueryWithEnumerator(
             query,
-            false,
             (n, result) -> {
                 String docID = result.getString(0);
                 Document doc = baseTestDb.getDocument(docID);
@@ -500,9 +499,8 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property("name.first").ascending());
 
         final List<String> firstNames = new ArrayList<>();
-        int numRows = verifyQuery(
+        int numRows = verifyQueryWithEnumerator(
             query,
-            false,
             (n, result) -> {
                 String docID = result.getString(0);
                 Document doc = baseTestDb.getDocument(docID);
@@ -1070,9 +1068,8 @@ public class QueryTest extends BaseQueryTest {
 
         final AtomicInteger i = new AtomicInteger(0);
         final String[] expected = {"doc-017", "doc-021", "doc-023", "doc-045", "doc-060"};
-        int numRows = verifyQuery(
+        int numRows = verifyQueryWithEnumerator(
             query,
-            false,
             (n, result) -> assertEquals(expected[i.getAndIncrement()], result.getString(0)));
         assertEquals(expected.length, numRows);
 
@@ -1085,9 +1082,8 @@ public class QueryTest extends BaseQueryTest {
                 .in(exprLikes)
                 .satisfies(exprVarLike.equalTo(Expression.string("taxes"))));
 
-        numRows = verifyQuery(
+        numRows = verifyQueryWithEnumerator(
             query,
-            false,
             (n, result) -> { if (n == 1) { assertEquals("doc-007", result.getString(0)); } }
         );
         assertEquals(42, numRows);
@@ -1101,7 +1097,7 @@ public class QueryTest extends BaseQueryTest {
                 .in(exprLikes)
                 .satisfies(exprVarLike.equalTo(Expression.string("taxes"))));
 
-        numRows = verifyQuery(query, false, (n, result) -> { });
+        numRows = verifyQueryWithEnumerator(query, (n, result) -> { });
         assertEquals(0, numRows);
     }
 
@@ -1666,8 +1662,6 @@ public class QueryTest extends BaseQueryTest {
             .from(mainDS)
             .join(join)
             .where(typeExpr.equalTo(Expression.string("bookmark")));
-
-        verifyQuery(query, (n, result) -> Report.log("RESULT: " + result.toMap()));
     }
 
     @Test
@@ -1803,9 +1797,8 @@ public class QueryTest extends BaseQueryTest {
             .where(exprType.equalTo(Expression.string("task"))
                 .and(exprComplete.equalTo(Expression.booleanValue(true))));
 
-        int numRows = verifyQuery(
+        int numRows = verifyQueryWithEnumerator(
             query,
-            false,
             (n, result) -> {
                 Dictionary dict = result.getDictionary(baseTestDb.getName());
                 assertTrue(dict.getBoolean("complete"));
@@ -1820,9 +1813,8 @@ public class QueryTest extends BaseQueryTest {
             .where(exprType.equalTo(Expression.string("task"))
                 .and(exprComplete.equalTo(Expression.booleanValue(false))));
 
-        numRows = verifyQuery(
+        numRows = verifyQueryWithEnumerator(
             query,
-            false,
             (n, result) -> {
                 Dictionary dict = result.getDictionary(baseTestDb.getName());
                 assertFalse(dict.getBoolean("complete"));
@@ -1837,7 +1829,7 @@ public class QueryTest extends BaseQueryTest {
             .where(exprType.equalTo(Expression.string("task"))
                 .and(exprComplete.equalTo(Expression.booleanValue(true))));
 
-        numRows = verifyQuery(query, false, (n, result) -> assertEquals(2, result.getInt(0)));
+        numRows = verifyQueryWithEnumerator(query, (n, result) -> assertEquals(2, result.getInt(0)));
         assertEquals(1, numRows);
 
         // aggregation query - false
@@ -1846,7 +1838,7 @@ public class QueryTest extends BaseQueryTest {
             .where(exprType.equalTo(Expression.string("task"))
                 .and(exprComplete.equalTo(Expression.booleanValue(false))));
 
-        numRows = verifyQuery(query, false, (n, result) -> assertEquals(1, result.getInt(0)));
+        numRows = verifyQueryWithEnumerator(query, (n, result) -> assertEquals(1, result.getInt(0)));
         assertEquals(1, numRows);
     }
 
@@ -2032,7 +2024,7 @@ public class QueryTest extends BaseQueryTest {
                 .orderBy(Ordering.expression(property.collate((Collation) data.get(1))));
 
             final List<String> list = new ArrayList<>();
-            verifyQuery(query, false, (n, result) -> list.add(result.getString(0)));
+            verifyQueryWithEnumerator(query, (n, result) -> list.add(result.getString(0)));
             assertEquals(data.get(2), list);
         }
     }
@@ -2936,7 +2928,7 @@ public class QueryTest extends BaseQueryTest {
         expectedUTC.add(499137690555L);
 
         long offset = new GregorianCalendar().getTimeZone().getOffset(499132800000L);
-        Report.log("Local offset: %d", offset);
+        Report.log("Local time offset: %d", offset);
         ArrayList<Number> expectedLocal = new ArrayList<>();
         expectedLocal.add(499132800000L - offset);
         boolean first = true;
@@ -3145,8 +3137,7 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows2, 1);
     }
 
-
-    @Ignore("CBL-3563")
+    @Ignore("CBL-3538")
     @Test
     public void testQueryBuilderDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");
@@ -3197,7 +3188,6 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows2, 1);
     }
 
-    @Ignore("CBL-3563")
     @Test
     public void testBuilderQueryNonDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names", "people");
@@ -3208,9 +3198,7 @@ public class QueryTest extends BaseQueryTest {
             .orderBy(Ordering.property("name.first"))
             .limit(Expression.intValue(1));
 
-        // !!! Result set is empty, thus the checks inside query results are never called
         int numRows = verifyQuery(query, (n, result) -> {
-            Report.log("Result with QueryBuilder: " + result.toJSON());
             assertEquals(1, result.count());
             assertEquals("{\"first\":\"Abe\"}", result.toJSON());
             assertEquals("Abe", result.getValue("first"));
@@ -3227,7 +3215,6 @@ public class QueryTest extends BaseQueryTest {
         String queryString = "SELECT name.first FROM people.names ORDER BY name.first LIMIT 1";
         Query query = QueryBuilder.createQuery(queryString, baseTestDb);
         int numRows1 = verifyQuery(query, (n, result) -> {
-            Report.log("Result with createQuery: " + result.toJSON());
             assertEquals(1, result.count());
             assertEquals("{\"first\":\"Abe\"}", result.toJSON());
             assertEquals("Abe", result.getValue("first"));
@@ -3246,162 +3233,233 @@ public class QueryTest extends BaseQueryTest {
         query.execute();
     }
 
-
-    @Ignore("CBL-3563")
     @Test
     public void testBuilderQueryJoinWithCollections() throws CouchbaseLiteException {
         Collection flowerCol = baseTestDb.createCollection("flowers", "test");
         Collection colorCol = baseTestDb.createCollection("colors", "test");
 
-        MutableDocument flowerDoc1 = new MutableDocument();
-        flowerDoc1.setValue("name", "rose");
-        flowerDoc1.setValue("cid", "c1");
+        MutableDocument doc = new MutableDocument("flower1");
+        doc.setValue("name", "rose");
+        doc.setValue("cid", "c1");
+        saveDocInCollection(doc, flowerCol);
 
-        MutableDocument flowerDoc2 = new MutableDocument();
-        flowerDoc2.setValue("name", "hydrangea");
-        flowerDoc2.setValue("cid", "c2");
+        doc = new MutableDocument("flower2");
+        doc.setValue("name", "hydrangea");
+        doc.setValue("cid", "c2");
+        saveDocInCollection(doc, flowerCol);
 
-        saveDocInCollection(flowerDoc1, flowerCol);
-        saveDocInCollection(flowerDoc2, flowerCol);
+        doc = new MutableDocument("color1");
+        doc.setValue("cid", "c1");
+        doc.setValue("color", "red");
+        saveDocInCollection(doc, colorCol);
 
-        MutableDocument colorDoc1 = new MutableDocument();
-        colorDoc1.setValue("cid", "c1");
-        colorDoc1.setValue("color", "red");
+        doc = new MutableDocument("color2");
+        doc.setValue("cid", "c2");
+        doc.setValue("color", "blue");
+        saveDocInCollection(doc, colorCol);
 
-        MutableDocument colorDoc2 = new MutableDocument();
-        colorDoc2.setValue("cid", "c2");
-        colorDoc2.setValue("color", "blue");
-
-        MutableDocument colorDoc3 = new MutableDocument();
-        colorDoc3.setValue("cid", "c3");
-        colorDoc3.setValue("color", "white");
-
-        saveDocInCollection(colorDoc1, colorCol);
-        saveDocInCollection(colorDoc2, colorCol);
-        saveDocInCollection(colorDoc3, colorCol);
-
-        // set up aliases
-        DataSource flowerDS = DataSource.collection(flowerCol).as("f");
-        DataSource colorDS = DataSource.collection(colorCol).as("c");
-
-        Expression flowerCID = Expression.property("cid").from("f");
-        Expression colorCID = Expression.property("cid").from("c");
-
-        //join clause: join flower and color where the cid field of color is equal to the cid field of flower
-        Expression joinExpr = flowerCID.equalTo(colorCID);
-        Join join = Join.join(colorDS).on(joinExpr);
+        doc = new MutableDocument("color3");
+        doc.setValue("cid", "c3");
+        doc.setValue("color", "white");
+        saveDocInCollection(doc, colorCol);
 
         Query query = QueryBuilder.select(
-                SelectResult.expression(Expression.property("test.flowers.name").from("f")),
-                SelectResult.expression(Expression.property("test.colors.color").from("c")))
-            .from(flowerDS)
-            .join(join)
-            .orderBy(Ordering.expression(Expression.property("f.name")));
+                SelectResult.expression(Expression.property("flowers.name")),
+                SelectResult.expression(Expression.property("colors.color")))
+            .from(DataSource.collection(flowerCol))
+            // join flower and color where the cid field of color is equal to the cid field of flower
+            .join(Join.join(DataSource.collection(colorCol))
+                .on(Expression.property("flowers.cid").equalTo(Expression.property("colors.cid"))))
+            .orderBy(Ordering.expression(Expression.property("flowers.name")));
 
-        int numRows = verifyQuery(query, (n, result) -> {
+
+        int rows = verifyQuery(query, (n, result) -> {
             assertEquals(2, result.count());
-            Report.log("Result with QueryBuilder: " + result.toJSON());
-
-            assertEquals(
-                "{\"color\":\"blue\",\"name\":\"hydrangea\"}, {\"color\":\"red\",\"name\":\"rose\"}",
-                result.toJSON());
+            String name = result.getString("name");
+            switch (name) {
+                case "hydrangea":
+                    assertEquals("blue", result.getString("color"));
+                    break;
+                case "rose":
+                    assertEquals("red", result.getString("color"));
+                    break;
+                default:
+                    fail("unexpected name: " + name);
+            }
         });
 
-        assertEquals(2, numRows);
+        assertEquals(2, rows);
     }
 
-    @Ignore("CBL-3564")
     @Test
     public void testStringQueryJoinWithCollections() throws CouchbaseLiteException {
         Collection flowerCol = baseTestDb.createCollection("flowers", "test");
         Collection colorCol = baseTestDb.createCollection("colors", "test");
 
-        MutableDocument flowerDoc1 = new MutableDocument();
-        flowerDoc1.setValue("name", "rose");
-        flowerDoc1.setValue("cid", "c1");
+        MutableDocument doc = new MutableDocument("flower1");
+        doc.setValue("name", "rose");
+        doc.setValue("cid", "c1");
+        saveDocInCollection(doc, flowerCol);
 
-        MutableDocument flowerDoc2 = new MutableDocument();
-        flowerDoc2.setValue("name", "hydrangea");
-        flowerDoc2.setValue("cid", "c2");
+        doc = new MutableDocument("flower2");
+        doc.setValue("name", "hydrangea");
+        doc.setValue("cid", "c2");
+        saveDocInCollection(doc, flowerCol);
 
-        saveDocInCollection(flowerDoc1, flowerCol);
-        saveDocInCollection(flowerDoc2, flowerCol);
-        
-        MutableDocument colorDoc1 = new MutableDocument();
-        colorDoc1.setValue("cid", "c1");
-        colorDoc1.setValue("color", "red");
+        doc = new MutableDocument("color1");
+        doc.setValue("cid", "c1");
+        doc.setValue("color", "red");
+        saveDocInCollection(doc, colorCol);
 
-        MutableDocument colorDoc2 = new MutableDocument();
-        colorDoc2.setValue("cid", "c2");
-        colorDoc2.setValue("color", "blue");
+        doc = new MutableDocument("color2");
+        doc.setValue("cid", "c2");
+        doc.setValue("color", "blue");
+        saveDocInCollection(doc, colorCol);
 
-        MutableDocument colorDoc3 = new MutableDocument();
-        colorDoc3.setValue("cid", "c3");
-        colorDoc3.setValue("color", "white");
-
-        saveDocInCollection(colorDoc1, colorCol);
-        saveDocInCollection(colorDoc2, colorCol);
-        saveDocInCollection(colorDoc3, colorCol);
+        doc = new MutableDocument("color3");
+        doc.setValue("cid", "c3");
+        doc.setValue("color", "white");
+        saveDocInCollection(doc, colorCol);
 
         // create with query string
-        String queryString1 = "Select flowers.name, colors.color FROM test.flowers JOIN test.colors ON "
-            + "flowers.cid = colors.cid ORDER BY flowers.name";
-        Query query1 = QueryBuilder.createQuery(queryString1, baseTestDb);
+        Query query = QueryBuilder.createQuery(
+            "SELECT flowers.name, colors.color"
+                + " FROM test.flowers"
+                + " JOIN test.colors"
+                + " ON flowers.cid = colors.cid"
+                + " ORDER BY flowers.name",
+            baseTestDb);
 
-        int numRows = verifyQuery(query1, (n, result) -> {
+        int rows = verifyQuery(query, (n, result) -> {
             assertEquals(2, result.count());
-            assertEquals(
-                "{\"color\":\"blue\",\"name\":\"hydrangea\"}, {\"color\":\"red\",\"name\":\"rose\"}",
-                result.toJSON());
+            String name = result.getString("name");
+            switch (name) {
+                case "hydrangea":
+                    assertEquals("blue", result.getString("color"));
+                    break;
+                case "rose":
+                    assertEquals("red", result.getString("color"));
+                    break;
+                default:
+                    fail("unexpected name: " + name);
+            }
         });
 
-        assertEquals(2, numRows);
+        assertEquals(2, rows);
     }
 
-    @Ignore("CBL-3564")
     @Test
-    public void testStringQueryJoinWithAliasWithCollections() throws CouchbaseLiteException {
+    public void testBuilderQueryJoinWithAliasedCollections() throws CouchbaseLiteException {
         Collection flowerCol = baseTestDb.createCollection("flowers", "test");
         Collection colorCol = baseTestDb.createCollection("colors", "test");
 
-        MutableDocument flowerDoc1 = new MutableDocument();
-        flowerDoc1.setValue("name", "rose");
-        flowerDoc1.setValue("cid", "c1");
+        MutableDocument doc = new MutableDocument("flower1");
+        doc.setValue("name", "rose");
+        doc.setValue("cid", "c1");
+        saveDocInCollection(doc, flowerCol);
 
-        MutableDocument flowerDoc2 = new MutableDocument();
-        flowerDoc2.setValue("name", "hydrangea");
-        flowerDoc2.setValue("cid", "c2");
+        doc = new MutableDocument("flower2");
+        doc.setValue("name", "hydrangea");
+        doc.setValue("cid", "c2");
+        saveDocInCollection(doc, flowerCol);
 
-        saveDocInCollection(flowerDoc1, flowerCol);
-        saveDocInCollection(flowerDoc2, flowerCol);
+        doc = new MutableDocument("color1");
+        doc.setValue("cid", "c1");
+        doc.setValue("color", "red");
+        saveDocInCollection(doc, colorCol);
 
-        MutableDocument colorDoc1 = new MutableDocument();
-        colorDoc1.setValue("cid", "c1");
-        colorDoc1.setValue("color", "red");
+        doc = new MutableDocument("color2");
+        doc.setValue("cid", "c2");
+        doc.setValue("color", "blue");
+        saveDocInCollection(doc, colorCol);
 
-        MutableDocument colorDoc2 = new MutableDocument();
-        colorDoc2.setValue("cid", "c2");
-        colorDoc2.setValue("color", "blue");
+        doc = new MutableDocument("color3");
+        doc.setValue("cid", "c3");
+        doc.setValue("color", "white");
+        saveDocInCollection(doc, colorCol);
 
-        MutableDocument colorDoc3 = new MutableDocument();
-        colorDoc3.setValue("cid", "c3");
-        colorDoc3.setValue("color", "white");
+        Query query = QueryBuilder.select(
+                SelectResult.expression(Expression.property("name").from("f")),
+                SelectResult.expression(Expression.property("color").from("c")))
+            .from(DataSource.collection(flowerCol).as("f"))
+            // join flower and color where the cid field of color is equal to the cid field of flower
+            .join(Join.join(DataSource.collection(colorCol).as("c"))
+                .on(Expression.property("cid").from("f").equalTo(Expression.property("cid").from("c"))))
+            .orderBy(Ordering.expression(Expression.property("f.name")));
 
-        saveDocInCollection(colorDoc1, colorCol);
-        saveDocInCollection(colorDoc2, colorCol);
-        saveDocInCollection(colorDoc3, colorCol);
-
-        String queryString2 = "SELECT f.name, c.color FROM test.flowers f JOIN test.colors c ON f.cid = c.cid "
-            + "ORDER BY f.name";
-        Query query2 = QueryBuilder.createQuery(queryString2, baseTestDb);
-        int numRows = verifyQuery(query2, (n, result) -> {
-            /// !!! Result has correct count but wrong actual result
+        int rows = verifyQuery(query, (n, result) -> {
             assertEquals(2, result.count());
-            assertEquals(
-                "{\"color\":\"blue\",\"name\":\"hydrangea\"}, {\"color\":\"red\",\"name\":\"rose\"}",
-                result.toJSON());
+            String name = result.getString("name");
+            switch (name) {
+                case "hydrangea":
+                    assertEquals("blue", result.getString("color"));
+                    break;
+                case "rose":
+                    assertEquals("red", result.getString("color"));
+                    break;
+                default:
+                    fail("unexpected name: " + name);
+            }
         });
-        assertEquals(2, numRows);
+
+        assertEquals(2, rows);
+    }
+
+    @Test
+    public void testStringQueryJoinWithAliasedCollections() throws CouchbaseLiteException {
+        Collection flowerCol = baseTestDb.createCollection("flowers", "test");
+        Collection colorCol = baseTestDb.createCollection("colors", "test");
+
+        MutableDocument doc = new MutableDocument("flower1");
+        doc.setValue("name", "rose");
+        doc.setValue("cid", "c1");
+        saveDocInCollection(doc, flowerCol);
+
+        doc = new MutableDocument("flower2");
+        doc.setValue("name", "hydrangea");
+        doc.setValue("cid", "c2");
+        saveDocInCollection(doc, flowerCol);
+
+        doc = new MutableDocument("color1");
+        doc.setValue("cid", "c1");
+        doc.setValue("color", "red");
+        saveDocInCollection(doc, colorCol);
+
+        doc = new MutableDocument("color2");
+        doc.setValue("cid", "c2");
+        doc.setValue("color", "blue");
+        saveDocInCollection(doc, colorCol);
+
+        doc = new MutableDocument("color3");
+        doc.setValue("cid", "c3");
+        doc.setValue("color", "white");
+        saveDocInCollection(doc, colorCol);
+
+        Query query = QueryBuilder.createQuery(
+            "SELECT f.name, c.color"
+                + " FROM test.flowers AS f"
+                + " JOIN test.colors AS c"
+                + " ON f.cid = c.cid "
+                + " ORDER BY f.name",
+            baseTestDb);
+
+
+        int rows = verifyQuery(query, (n, result) -> {
+            assertEquals(2, result.count());
+            String name = result.getString("name");
+            switch (name) {
+                case "hydrangea":
+                    assertEquals("blue", result.getString("color"));
+                    break;
+                case "rose":
+                    assertEquals("red", result.getString("color"));
+                    break;
+                default:
+                    fail("unexpected name: " + name);
+            }
+        });
+
+        assertEquals(2, rows);
     }
 
     // ??? This is a ridiculously expensive test
@@ -3585,9 +3643,8 @@ public class QueryTest extends BaseQueryTest {
 
     private void testOrdered(Ordering ordering, Comparator<String> cmp) throws CouchbaseLiteException {
         final List<String> firstNames = new ArrayList<>();
-        int numRows = verifyQuery(
+        int numRows = verifyQueryWithEnumerator(
             QueryBuilder.select(SR_DOCID).from(DataSource.database(baseTestDb)).orderBy(ordering),
-            false,
             (n, result) -> {
                 String docID = result.getString(0);
                 Document doc = baseTestDb.getDocument(docID);
