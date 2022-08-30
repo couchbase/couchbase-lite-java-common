@@ -1582,6 +1582,7 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
+    @SlowTest
     @Test
     public void testLiveQueryNoUpdate() throws CouchbaseLiteException, InterruptedException {
         testLiveQueryNoUpdate(false);
@@ -3137,7 +3138,6 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows2, 1);
     }
 
-    @Ignore("CBL-3538")
     @Test
     public void testQueryBuilderDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");
@@ -3172,7 +3172,6 @@ public class QueryTest extends BaseQueryTest {
         assertEquals(numRows1, 1);
     }
 
-    @Ignore("CBL-3538")
     @Test
     public void testStringQueryDefaultScope2() throws CouchbaseLiteException, JSONException, IOException {
         Collection collection = baseTestDb.createCollection("names");

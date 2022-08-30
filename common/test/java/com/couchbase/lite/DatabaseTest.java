@@ -25,6 +25,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -1428,18 +1432,29 @@ public class DatabaseTest extends BaseDbTest {
 
         long now = new Date().getTime();
         Date expiration = new Date(now + 86400000);
-        baseTestDb.inBatch(() -> {
-            for (int i = 0; i < nDocs; i++) {
-                String docID = String.format(Locale.US, "doc_%03d", i);
-                Document doc = baseTestDb.getDocument(docID);
-                MutableDocument mutableDocument = doc.toMutable();
 
-                mutableDocument.setString("type", "TrashBinModel");
-                mutableDocument.setString("dateOfDeletion", String.valueOf(now));
-                baseTestDb.save(mutableDocument);
-                baseTestDb.setDocumentExpiration(mutableDocument.getId(), expiration); // now + 1 day
-            }
+        final FutureTask<Void> future = new FutureTask<Void>(() -> {
+            baseTestDb.inBatch(() -> {
+                for (int i = 0; i < nDocs; i++) {
+                    String docID = String.format(Locale.US, "doc_%03d", i);
+                    Document doc = baseTestDb.getDocument(docID);
+                    MutableDocument mutableDocument = doc.toMutable();
+
+                    mutableDocument.setString("type", "TrashBinModel");
+                    mutableDocument.setString("dateOfDeletion", String.valueOf(now));
+                    baseTestDb.save(mutableDocument);
+                    baseTestDb.setDocumentExpiration(mutableDocument.getId(), expiration); // now + 1 day
+                }
+            });
+
+            return null;
         });
+
+        try { future.get(STD_TIMEOUT_SEC, TimeUnit.SECONDS); }
+        catch (InterruptedException ignore) { }
+        catch (TimeoutException e) { fail("Timeout"); }
+        catch (ExecutionException e) { throw new AssertionError(e); }
+
         for (int i = 0; i < nDocs; i++) {
             String docID = String.format(Locale.US, "doc_%03d", i);
             assertEquals(expiration, baseTestDb.getDocumentExpiration(docID));

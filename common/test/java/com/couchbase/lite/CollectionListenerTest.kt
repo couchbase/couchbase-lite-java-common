@@ -83,7 +83,6 @@ class CollectionListenerTest : BaseCollectionTest() {
     }
 
     // Test that removing a listener from a deleted collection doesn't throw exception
-    @Ignore("CBL-3602")
     @Test
     fun testRemoveChangeListenerFromDeletedCollection() {
         val token = testCollection.addChangeListener { }
@@ -96,7 +95,6 @@ class CollectionListenerTest : BaseCollectionTest() {
     }
 
     // Test that removing a listener from a collection deleted in a different db doesn't throw exception
-    @Ignore("CBL-3602")
     @Test
     fun testRemoveChangeListenerFromCollectionDeletedInADifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()
@@ -113,7 +111,6 @@ class CollectionListenerTest : BaseCollectionTest() {
     }
 
     // Test that removing a listener from a deleted collection doesn't throw exception
-    @Ignore("CBL-3602")
     @Test
     fun testRemoveDocChangeListenerFromDeletedCollection() {
         val docId = "doc_1"
@@ -130,7 +127,6 @@ class CollectionListenerTest : BaseCollectionTest() {
     }
 
     // Test that removing a listener from a collection deleted in a different db doesn't throw exception
-    @Ignore("CBL-3602")
     @Test
     fun testRemoveDocChangeListenerFromCollectionDeletedInADifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()

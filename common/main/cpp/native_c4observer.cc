@@ -218,20 +218,15 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
         JNIEnv *env,
         jclass ignore,
-        jlong jcollection) {
+        jlong coll) {
 
     C4Error error{};
-
-    // !!! Workaround for CBL-3599
-    auto coll = (C4Collection *) jcollection;
-    if (!c4coll_isValid(coll)) {
-        error.domain = LiteCoreDomain;
-        error.code = kC4ErrorNotOpen;
-        throwError(env, error);
-        return 0;
-    }
-
-    auto res = (jlong) c4dbobs_createOnCollection(coll, c4CollectionObsCallback, (void *) 0L);
+    auto res = (jlong) c4dbobs_createOnCollection(
+            (C4Collection *) coll,
+            c4CollectionObsCallback,
+            (void *)
+            0L,
+            &error);
     if (!res && error.code != 0) {
         throwError(env, error);
         return 0;
@@ -289,22 +284,17 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create(
         JNIEnv *env,
         jclass ignore,
-        jlong jcollection,
+        jlong coll,
         jstring jdocID) {
     jstringSlice docID(env, jdocID);
 
     C4Error error{};
-
-    // !!! Workaround for CBL-3599
-    auto coll = (C4Collection *) jcollection;
-    if (!c4coll_isValid(coll)) {
-        error.domain = LiteCoreDomain;
-        error.code = kC4ErrorNotOpen;
-        throwError(env, error);
-        return 0;
-    }
-
-    auto res = (jlong) c4docobs_createWithCollection(coll, docID, c4DocObsCallback, (void *) 0L);
+    auto res = (jlong) c4docobs_createWithCollection(
+            (C4Collection *) coll,
+            docID,
+            c4DocObsCallback,
+            (void *) 0L,
+            &error);
     if (!res && error.code != 0) {
         throwError(env, error);
         return 0;
