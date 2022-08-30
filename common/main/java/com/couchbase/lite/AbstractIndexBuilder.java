@@ -35,7 +35,7 @@ class AbstractIndexBuilder {
      */
     @NonNull
     public static ValueIndex valueIndex(@NonNull ValueIndexItem... items) {
-        Preconditions.assertNotNull(items, "items");
+        Preconditions.assertNotZero(items.length, "items");
         return new ValueIndex(items);
     }
 
@@ -48,7 +48,7 @@ class AbstractIndexBuilder {
      */
     @NonNull
     public static FullTextIndex fullTextIndex(@NonNull FullTextIndexItem... items) {
-        Preconditions.assertNotNull(items, "items");
+        Preconditions.assertNotZero(items.length, "items");
         return new FullTextIndex(items);
     }
 }

@@ -1662,14 +1662,19 @@ public abstract class BaseDbTest extends BaseTest {
         verifyBlob(doc.getBlob("doc-29"));
     }
 
-    protected Database openDatabase() throws CouchbaseLiteException { return verifyOrDeleteDb(createDb(getUniqueName("test_db"))); }
+    protected Database openDatabase() throws CouchbaseLiteException {
+        return verifyOrDeleteDb(createDb(getUniqueName("test_db")));
+    }
 
-    protected final void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
+    protected void baseTestDbExists(File dir) { Database.exists(baseTestDb.getName(), dir); }
 
-    protected final void recreateBastTestDb() throws CouchbaseLiteException { baseTestDb = recreateDb(baseTestDb); }
+    protected void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
 
-    protected Database duplicateBaseTestDb() throws CouchbaseLiteException { return verifyOrDeleteDb(duplicateDb(baseTestDb)); }
+    protected void recreateBastTestDb() throws CouchbaseLiteException { baseTestDb = recreateDb(baseTestDb); }
 
+    protected Database duplicateBaseTestDb() throws CouchbaseLiteException {
+        return verifyOrDeleteDb(duplicateDb(baseTestDb));
+    }
 
     // Some JSON encoding will promote a Float to a Double.
     protected final Float demoteToFloat(Object val) {
@@ -1677,6 +1682,7 @@ public abstract class BaseDbTest extends BaseTest {
         if (val instanceof Double) { return ((Double) val).floatValue(); }
         throw new IllegalArgumentException("expected a floating point value");
     }
+
     private Database verifyOrDeleteDb(Database db) {
         try {
             assertNotNull(db);
@@ -1693,7 +1699,4 @@ public abstract class BaseDbTest extends BaseTest {
             throw e;
         }
     }
-
-
-
 }

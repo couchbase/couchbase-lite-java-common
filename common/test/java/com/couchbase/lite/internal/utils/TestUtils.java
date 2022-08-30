@@ -38,7 +38,7 @@ public final class TestUtils {
     public static void assertThrowsCBL(String domain, int code, Fn.TaskThrows<CouchbaseLiteException> task) {
         try {
             task.run();
-            fail("Expected a CouchbaseLiteException");
+            fail("Expected CouchbaseLiteException{" + domain + ", " + code + "}");
         }
         catch (CouchbaseLiteException e) {
             assertEquals(code, e.getCode());
