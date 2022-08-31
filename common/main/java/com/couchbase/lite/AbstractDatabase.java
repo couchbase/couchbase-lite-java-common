@@ -571,6 +571,8 @@ abstract class AbstractDatabase extends BaseDatabase
     public Query createQuery(@NonNull String query) {
         synchronized (getDbLock()) {
             assertOpenUnchecked();
+            // ??? I don't think this makes sense
+            getDefaultCollectionOrThrow();
             return new N1qlQuery(this, query);
         }
     }
@@ -635,7 +637,17 @@ abstract class AbstractDatabase extends BaseDatabase
      * @deprecated Use getDefaultCollection().getCount()
      */
     @Deprecated
-    public long getCount() { return getDefaultCollectionOrThrow().getCount(); }
+    public long getCount() {
+        final Collection defaultCollection;
+        try {
+            synchronized (getDbLock()) { defaultCollection = getDefaultCollectionLocked(); }
+        }
+        catch (CouchbaseLiteException e) {
+            throw new IllegalStateException("Failed getting default collection", e);
+        }
+
+        return (defaultCollection == null) ? 0 : defaultCollection.getCount();
+    }
 
     /**
      * Returns a copy of the database configuration.
