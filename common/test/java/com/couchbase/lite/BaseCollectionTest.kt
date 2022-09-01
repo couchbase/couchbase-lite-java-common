@@ -79,11 +79,15 @@ open class BaseCollectionTest : BaseDbTest() {
 
     protected fun createDocsInCollection(n: Int, col: Collection) {
         for (i in 0 until n) {
-            val doc = MutableDocument("${col.database.name}_${col.name}_doc_${i}")
+            val doc = MutableDocument(generateDocID(col.database.name, col.name, i))
             doc.setValue("key", i)
             saveDocInCollection(doc, col)
         }
         assertEquals(n.toLong(), col.count)
+    }
+
+    protected fun generateDocID(dbName: String, colName: String, idNum: Int): String {
+        return "${dbName}_${colName}_doc_${idNum}"
     }
 
     @Throws(IOException::class, JSONException::class)
