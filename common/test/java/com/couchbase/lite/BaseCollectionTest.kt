@@ -26,7 +26,6 @@ import org.junit.Before
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-import java.util.*
 
 open class BaseCollectionTest : BaseDbTest() {
     protected lateinit var testCollection: Collection
@@ -71,11 +70,24 @@ open class BaseCollectionTest : BaseDbTest() {
     @Throws(CouchbaseLiteException::class)
     protected fun createDocsInTestCollection(n: Int) {
         for (i in 0 until n) {
-            val doc = MutableDocument(String.format(Locale.US, "doc_%03d", i))
+            val doc = MutableDocument("doc_${i}")
             doc.setValue("key", i)
             saveDocInTestCollection(doc)
         }
         assertEquals(n.toLong(), testCollection.count)
+    }
+
+    protected fun createDocsInCollection(n: Int, col: Collection) {
+        for (i in 0 until n) {
+            val doc = MutableDocument(generateDocID(col.database.name, col.name, i))
+            doc.setValue("key", i)
+            saveDocInCollection(doc, col)
+        }
+        assertEquals(n.toLong(), col.count)
+    }
+
+    protected fun generateDocID(dbName: String, colName: String, idNum: Int): String {
+        return "${dbName}_${colName}_doc_${idNum}"
     }
 
     @Throws(IOException::class, JSONException::class)
@@ -86,7 +98,7 @@ open class BaseCollectionTest : BaseDbTest() {
                 if (l.trim().isEmpty()) {
                     return
                 }
-                val doc = MutableDocument(String.format(Locale.ENGLISH, "doc-%03d", n++))
+                val doc = MutableDocument("doc-${n++}")
                 doc.setData(JSONUtils.fromJSON(JSONObject(l)))
 
                 saveDocInCollection(doc, collection)
