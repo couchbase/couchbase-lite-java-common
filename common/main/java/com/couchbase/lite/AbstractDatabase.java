@@ -571,8 +571,6 @@ abstract class AbstractDatabase extends BaseDatabase
     public Query createQuery(@NonNull String query) {
         synchronized (getDbLock()) {
             assertOpenUnchecked();
-            // ??? I don't think this makes sense
-            getDefaultCollectionOrThrow();
             return new N1qlQuery(this, query);
         }
     }

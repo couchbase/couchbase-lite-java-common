@@ -37,7 +37,6 @@ class CollectionTest : BaseCollectionTest() {
 
     // get doc in the collection
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testGetExistingDocInCollection() {
         val docId = "doc1"
         createSingleDocInTestCollectionWithId(docId)
@@ -157,19 +156,16 @@ class CollectionTest : BaseCollectionTest() {
     //---------------------------------------------
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun saveNewDocInCollectionWithIDTest() {
         saveNewDocInCollectionWithIDTest("doc1")
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testSaveNewDocInCollectionWithSpecialCharactersDocID() {
-        saveNewDocInCollectionWithIDTest("`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'")
+        saveNewDocInCollectionWithIDTest("!`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'")
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testSaveAndGetMultipleDocsInCollection() {
         val nDocs = 10 //1000;
         for (i in 0 until nDocs) {
@@ -206,7 +202,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testSaveDocAndUpdateInCollection() {
         // store doc
         val docID = "doc1"
@@ -222,7 +217,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testSaveSameDocTwice() {
         val docID = "doc1"
         val doc = createSingleDocInTestCollectionWithId(docID).toMutable()
@@ -317,7 +311,6 @@ class CollectionTest : BaseCollectionTest() {
 
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testDeleteDocument() {
         val docID = "doc1"
         val mDoc = MutableDocument(docID)
@@ -348,7 +341,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testDeleteDoc() {
         val docID = "doc1"
         val doc = createSingleDocInTestCollectionWithId(docID)
@@ -359,7 +351,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testDeleteMultipleDocs() {
         val nDocs = 10
 
@@ -376,7 +367,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testDeleteDocInCollectionFromDifferentDBInstance() {
         // Store doc:
         val docID = "doc1"
@@ -464,7 +454,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testDeleteAlreadyDeletedDoc() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
@@ -487,7 +476,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testDeleteNonExistingDoc() {
         val doc1a = createSingleDocInTestCollectionWithId("doc1")
         val doc1b = testCollection.getDocument("doc1")
@@ -520,7 +508,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testPurgeDoc() {
         val docID = "doc1"
         val doc = createSingleDocInTestCollectionWithId(docID)
@@ -531,7 +518,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testPurgeSameDocTwice() {
         // Store doc:
         val docID = "doc1"
@@ -655,7 +641,6 @@ class CollectionTest : BaseCollectionTest() {
     //  Index functionalities
     //---------------------------------------------
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testCreateIndexInCollection() {
         assertEquals(0, testCollection.indexes.size)
         testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
@@ -670,7 +655,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testCreateSameIndexTwice() {
         testCollection.createIndex("myindex", ValueIndexConfiguration("firstName", "lastName"))
 
@@ -681,7 +665,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testCreateSameNameIndexes() {
 
         // Create value index with first name:
@@ -703,7 +686,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     @Test
-    @Throws(CouchbaseLiteException::class)
     fun testDeleteIndex() {
         testCreateIndexInCollection()
 
@@ -1050,7 +1032,6 @@ class CollectionTest : BaseCollectionTest() {
         assertNull(testCollection.getDocument(doc.id))
     }
 
-    @Throws(CouchbaseLiteException::class)
     private fun saveNewDocInCollectionWithIDTest(docID: String) {
         // store doc
         createSingleDocInTestCollectionWithId(docID)
@@ -1112,7 +1093,6 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     // helper method to purge doc and verify doc.
-    @Throws(CouchbaseLiteException::class)
     private fun purgeDocInCollectionAndVerify(doc: Document?) {
         val docID = doc!!.id
         testCollection.purge(doc)

@@ -932,7 +932,7 @@ class DatabaseTest : BaseDbTest() {
         baseTestDb.getDocumentExpiration("BobaFet")
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testUseDatabaseCreateQueryWhenDefaultCollectionIsDeleted() {
         baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
         baseTestDb.createQuery("SELECT _id FROM .")
