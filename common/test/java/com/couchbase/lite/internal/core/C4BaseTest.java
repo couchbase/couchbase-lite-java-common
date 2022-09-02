@@ -100,10 +100,6 @@ public class C4BaseTest extends BaseTest {
 
     protected int getFlags() { return C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.SHARED_KEYS; }
 
-    protected C4DocEnumerator enumerateChanges(C4Database db, long since, int flags) throws LiteCoreException {
-        return new C4DocEnumerator(db.getPeer(), since, flags);
-    }
-
     protected C4DocEnumerator enumerateAllDocs(C4Database db, int flags) throws LiteCoreException {
         return new C4DocEnumerator(db.getPeer(), flags);
     }

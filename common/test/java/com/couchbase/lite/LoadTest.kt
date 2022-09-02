@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+@file:Suppress("DEPRECATION")
+
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.utils.LoadIntegrationTest
@@ -38,17 +40,18 @@ class LoadTest : BaseDbTest() {
     @LoadIntegrationTest
     @Test
     fun testAddRevisions() {
-        timeTest("testAddRevisions", 35 * 1000L) {
+        timeTest("testAddRevisions", 45 * 1000L) {
             addRevisions(1000, false)
             addRevisions(1000, true)
         }
     }
 
+    @SlowTest
     @LoadIntegrationTest
     @Test
     fun testCreate() {
         timeTest("testCreate", 10 * 1000L) {
-            createAndSaveDocument("Create", ITERATIONS)
+            createAndSaveDocuments("Create", ITERATIONS)
             verifyByTag("Create", ITERATIONS)
             Assert.assertEquals(ITERATIONS.toLong(), baseTestDb.count)
         }
@@ -63,7 +66,7 @@ class LoadTest : BaseDbTest() {
     fun testCreateMany() {
         timeTest("testCreateMany", 35 * 1000L) {
             for (i in 0..3) {
-                createAndSaveDocument("Create", ITERATIONS)
+                createAndSaveDocuments("Create", ITERATIONS)
                 verifyByTag("Create", ITERATIONS)
                 Assert.assertEquals(ITERATIONS.toLong(), baseTestDb.count)
             }
@@ -77,7 +80,7 @@ class LoadTest : BaseDbTest() {
         timeTest("testDelete", 20 * 1000L) {
             // create & delete doc ITERATIONS times
             for (i in 0 until ITERATIONS) {
-                val docID = String.format(Locale.ENGLISH, "doc-%010d", i)
+                val docID = "doc-${i}"
                 createAndSaveDocument(docID, "Delete")
                 Assert.assertEquals(1, baseTestDb.count)
                 val doc = baseTestDb.getDocument(docID)
@@ -113,7 +116,7 @@ class LoadTest : BaseDbTest() {
         timeTest("testSaveManyDocs", 20 * 1000L) {
             // Without Batch
             for (i in 0 until ITERATIONS) {
-                val doc = MutableDocument(String.format(Locale.ENGLISH, "doc-%05d", i))
+                val doc = MutableDocument("doc-${i}")
                 for (j in 0 until 100) {
                     doc.setInt(j.toString(), j); }
                 try {
@@ -133,24 +136,37 @@ class LoadTest : BaseDbTest() {
         timeTest("testUpdate", 25 * 1000L) {
             // create doc
             createAndSaveDocument("doc1", "Create")
+
             var doc = baseTestDb.getDocument("doc1")
             Assert.assertNotNull(doc)
             Assert.assertEquals("doc1", doc!!.id)
             Assert.assertEquals("Create", doc.getString("tag"))
 
             // update doc n times
-            updateDoc(doc, ITERATIONS, "Update")
-
+            for (i in 1..ITERATIONS) {
+                val mDoc = baseTestDb.getDocument("doc1")!!.toMutable()
+                mDoc.setValue("update", i)
+                mDoc.setValue("tag", "Update")
+                val address = mDoc.getDictionary("address")
+                Assert.assertNotNull(address)
+                address!!.setValue("street", "${i} street")
+                mDoc.setDictionary("address", address)
+                val phones = mDoc.getArray("phones")
+                Assert.assertNotNull(phones)
+                Assert.assertEquals(2, phones!!.count())
+                phones.setValue(0, "650-000-${i}")
+                mDoc.setArray("phones", phones)
+                mDoc.setValue("updated", Date())
+                saveDocInBaseTestDb(mDoc)
+            }
             // check document
             doc = baseTestDb.getDocument("doc1")
             Assert.assertNotNull(doc)
             Assert.assertEquals("doc1", doc!!.id)
             Assert.assertEquals("Update", doc.getString("tag"))
-            Assert.assertEquals(ITERATIONS.toLong(), doc.getInt("update").toLong())
-            val street = String.format(Locale.ENGLISH, "%d street.", ITERATIONS)
-            val phone = String.format(Locale.ENGLISH, "650-000-%04d", ITERATIONS)
-            Assert.assertEquals(street, doc.getDictionary("address")!!.getString("street"))
-            Assert.assertEquals(phone, doc.getArray("phones")!!.getString(0))
+            Assert.assertEquals(ITERATIONS, doc.getInt("update"))
+            Assert.assertEquals("${ITERATIONS} street", doc.getDictionary("address")!!.getString("street"))
+            Assert.assertEquals("650-000-${ITERATIONS}", doc.getArray("phones")!!.getString(0))
         }
     }
 
@@ -167,58 +183,45 @@ class LoadTest : BaseDbTest() {
             saveDocInBaseTestDb(mDoc)
             for (i in 0..1999) {
                 map["index"] = i
-                Assert.assertTrue(updateMap(map, i, i.toLong()))
+                val doc = baseTestDb.getDocument(map["ID"].toString()) ?: throw AssertionError("Failed fetching doc")
+                val newDoc = doc.toMutable()
+                newDoc.setValue("map", map)
+                newDoc.setInt("int", i)
+                newDoc.setLong("long", i.toLong())
+                baseTestDb.save(newDoc)
             }
         }
     }
 
+
     /// Utility methods
-    private fun updateMap(map: Map<String, *>, i: Int, l: Long): Boolean {
-        val doc = baseTestDb.getDocument(map["ID"].toString()) ?: return false
-        val newDoc = doc.toMutable()
-        newDoc.setValue("map", map)
-        newDoc.setInt("int", i)
-        newDoc.setLong("long", l)
-        try {
-            baseTestDb.save(newDoc)
-        } catch (e: CouchbaseLiteException) {
-            Report.log(LogLevel.ERROR, "DB is not responding", e)
-            return false
+
+    private fun createAndSaveDocument(id: String, tag: String) {
+        val doc = createDocumentWithTag(id, tag)
+        baseTestDb.save(doc)
+    }
+
+    private fun createAndSaveDocuments(tag: String, nDocs: Int) {
+        for (i in 0 until nDocs) {
+            createAndSaveDocument("doc-${i}", tag)
         }
-        return true
     }
 
     private fun addRevisions(revisions: Int, retrieveNewDoc: Boolean) {
         baseTestDb.inBatch<CouchbaseLiteException> {
-            val mDoc = MutableDocument("doc")
-            if (retrieveNewDoc) {
-                updateDocWithGetDocument(mDoc, revisions)
-            } else {
-                updateDoc(mDoc, revisions)
+            var mDoc = MutableDocument("doc")
+            for (i in 0 until revisions) {
+                mDoc.setValue("count", i)
+                baseTestDb.save(mDoc)
+                if (!retrieveNewDoc) {
+                    System.gc()
+                } else {
+                    mDoc = baseTestDb.getDocument("doc")!!.toMutable()
+                }
             }
         }
         val doc = baseTestDb.getDocument("doc")
-        Assert.assertEquals(
-            (revisions - 1).toLong(),
-            doc!!.getInt("count").toLong()
-        ) // start from 0.
-    }
-
-    private fun updateDoc(doc: MutableDocument, revisions: Int) {
-        for (i in 0 until revisions) {
-            doc.setValue("count", i)
-            baseTestDb.save(doc)
-            System.gc()
-        }
-    }
-
-    private fun updateDocWithGetDocument(document: MutableDocument, revisions: Int) {
-        var doc = document
-        for (i in 0 until revisions) {
-            doc.setValue("count", i)
-            baseTestDb.save(doc)
-            doc = baseTestDb.getDocument("doc")!!.toMutable()
-        }
+        Assert.assertEquals((revisions - 1), doc!!.getInt("count")) // start from 0.
     }
 
     private fun createDocumentWithTag(id: String?, tag: String): MutableDocument {
@@ -249,44 +252,6 @@ class LoadTest : BaseDbTest() {
         return doc
     }
 
-    @Throws(CouchbaseLiteException::class)
-    private fun createAndSaveDocument(id: String, tag: String) {
-        val doc = createDocumentWithTag(id, tag)
-        baseTestDb.save(doc)
-    }
-
-    @Throws(CouchbaseLiteException::class)
-    private fun createAndSaveDocument(tag: String, nDocs: Int) {
-        for (i in 0 until nDocs) {
-            val docID = String.format(Locale.ENGLISH, "doc-%010d", i)
-            createAndSaveDocument(docID, tag)
-        }
-    }
-
-    @Throws(CouchbaseLiteException::class)
-    private fun updateDoc(document: Document?, rounds: Int, tag: String) {
-        var doc = document
-        for (i in 1..rounds) {
-            val mDoc = doc!!.toMutable()
-            mDoc.setValue("update", i)
-            mDoc.setValue("tag", tag)
-            val address = mDoc.getDictionary("address")
-            Assert.assertNotNull(address)
-            val street = String.format(Locale.ENGLISH, "%d street.", i)
-            address!!.setValue("street", street)
-            mDoc.setDictionary("address", address)
-            val phones = mDoc.getArray("phones")
-            Assert.assertNotNull(phones)
-            Assert.assertEquals(2, phones!!.count().toLong())
-            val phone = String.format(Locale.ENGLISH, "650-000-%04d", i)
-            phones.setValue(0, phone)
-            mDoc.setArray("phones", phones)
-            mDoc.setValue("updated", Date())
-            doc = saveDocInBaseTestDb(mDoc)
-        }
-    }
-
-    @Throws(CouchbaseLiteException::class)
     private fun verifyByTag(tag: String, verifier: Verifier) {
         var n = 0
         QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -299,7 +264,6 @@ class LoadTest : BaseDbTest() {
             }
     }
 
-    @Throws(CouchbaseLiteException::class)
     private fun verifyByTag(tag: String, nRows: Int) {
         val count = AtomicInteger(0)
         verifyByTag(tag) { _, _ -> count.incrementAndGet() }
@@ -310,8 +274,7 @@ class LoadTest : BaseDbTest() {
         val t0 = System.currentTimeMillis()
         test.run()
         val elapsedTime = System.currentTimeMillis() - t0
-        Report.log("Test " + testName + " time: " + elapsedTime)
+        Report.log("Test ${testName} time: " + elapsedTime)
         assertTrue(elapsedTime < maxTimeMs)
     }
-
 }

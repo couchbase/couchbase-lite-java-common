@@ -83,7 +83,7 @@ public class QueryTest extends BaseQueryTest {
         public TestCase(Expression expr, int... documentIDs) {
             this.expr = expr;
             final List<String> docIds = new ArrayList<>();
-            for (int id: documentIDs) { docIds.add("doc" + id); }
+            for (int id: documentIDs) { docIds.add(docId(id)); }
             this.docIds = Collections.unmodifiableList(docIds);
         }
     }
@@ -224,7 +224,7 @@ public class QueryTest extends BaseQueryTest {
             QueryBuilder.select(SR_DOCID, SR_SEQUENCE).from(DataSource.database(baseTestDb)),
             (n, result) -> {
                 String docID = result.getString(0);
-                String expectedID = String.format(Locale.ENGLISH, "doc-%03d", n);
+                String expectedID = jsonDocId(n);
                 assertEquals(expectedID, docID);
 
                 int sequence = result.getInt(1);
@@ -2157,10 +2157,7 @@ public class QueryTest extends BaseQueryTest {
         int i = 0;
         Result result;
         try (ResultSet rs = query.execute()) {
-            while ((result = rs.next()) != null) {
-                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), result.getString(0));
-                i++;
-            }
+            while ((result = rs.next()) != null) { assertEquals(docId(++i), result.getString(0)); }
             assertEquals(5, i);
             assertNull(rs.next());
             assertEquals(0, rs.allResults().size());
@@ -2169,10 +2166,7 @@ public class QueryTest extends BaseQueryTest {
         // Type 2: Enumeration by ResultSet.iterator()
         i = 0;
         try (ResultSet rs = query.execute()) {
-            for (Result r: rs) {
-                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-                i++;
-            }
+            for (Result r: rs) { assertEquals(docId(++i), r.getString(0)); }
             assertEquals(5, i);
             assertNull(rs.next());
             assertEquals(0, rs.allResults().size());
@@ -2182,10 +2176,7 @@ public class QueryTest extends BaseQueryTest {
         i = 0;
         try (ResultSet rs = query.execute()) {
             List<Result> list = rs.allResults();
-            for (Result r: list) {
-                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-                i++;
-            }
+            for (Result r: list) { assertEquals(docId(++i), r.getString(0)); }
             assertEquals(5, i);
             assertNull(rs.next());
             assertEquals(0, rs.allResults().size());
@@ -2194,10 +2185,7 @@ public class QueryTest extends BaseQueryTest {
         // Type 4: Enumeration by ResultSet.allResults().iterator()
         i = 0;
         try (ResultSet rs = query.execute()) {
-            for (Result r: rs.allResults()) {
-                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-                i++;
-            }
+            for (Result r: rs.allResults()) { assertEquals(docId(++i), r.getString(0)); }
             assertEquals(5, i);
             assertNull(rs.next());
             assertEquals(0, rs.allResults().size());
@@ -2218,11 +2206,7 @@ public class QueryTest extends BaseQueryTest {
         int i = 0;
         try (ResultSet rs = query.execute()) {
             results = rs.allResults();
-            for (int j = 0; j < results.size(); j++) {
-                Result r = results.get(j);
-                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-                i++;
-            }
+            for (int j = 0; j < results.size(); j++) { assertEquals(docId(++i), results.get(j).getString(0)); }
             assertEquals(5, results.size());
             assertEquals(5, i);
             assertNull(rs.next());
@@ -2233,10 +2217,7 @@ public class QueryTest extends BaseQueryTest {
         i = 0;
         try (ResultSet rs = query.execute()) {
             results = rs.allResults();
-            for (Result r: results) {
-                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-                i++;
-            }
+            for (Result r: results) { assertEquals(docId(++i), r.getString(0)); }
             assertEquals(5, results.size());
             assertEquals(5, i);
             assertNull(rs.next());
@@ -2249,10 +2230,7 @@ public class QueryTest extends BaseQueryTest {
             assertNotNull(rs.next());
             results = rs.allResults();
             i = 2;
-            for (Result r: results) {
-                assertEquals(String.format(Locale.ENGLISH, "doc%d", i + 1), r.getString(0));
-                i++;
-            }
+            for (Result r: results) { assertEquals(docId(++i), r.getString(0)); }
             assertEquals(3, results.size());
             assertEquals(5, i);
             assertNull(rs.next());
@@ -2454,7 +2432,7 @@ public class QueryTest extends BaseQueryTest {
 
         int numRows = verifyQuery(
             query,
-            (n, result) -> assertEquals("doc" + n, result.getString(0)));
+            (n, result) -> assertEquals(docId(n), result.getString(0)));
         assertEquals(2, numRows);
 
         query = QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -2463,7 +2441,7 @@ public class QueryTest extends BaseQueryTest {
 
         numRows = verifyQuery(
             query,
-            (n, result) -> assertEquals("doc" + n, result.getString(0)));
+            (n, result) -> assertEquals(docId(n), result.getString(0)));
         assertEquals(1, numRows);
     }
 
@@ -3111,7 +3089,7 @@ public class QueryTest extends BaseQueryTest {
     // SELECT name.first FROM _ ORDER BY name.first LIMIT 1
     // Ensure that the result set has one result, and the data is { "first" : "Abe"}.
     @Test
-    public void testQueryDefaultCollectionA() throws CouchbaseLiteException, JSONException, IOException {
+    public void testQueryDefaultCollectionA() throws CouchbaseLiteException {
         Collection defaultCollection = baseTestDb.getDefaultCollection();
         assertNotNull(defaultCollection);
         loadJSONResourceIntoCollection("names_100.json", defaultCollection);
@@ -3134,7 +3112,7 @@ public class QueryTest extends BaseQueryTest {
     // SELECT name.first FROM _default ORDER BY limit 1
     // Ensure that the result set has one result, and the data is { "first" : "Abe"}.
     @Test
-    public void testQueryDefaultCollectionB() throws CouchbaseLiteException, JSONException, IOException {
+    public void testQueryDefaultCollectionB() throws CouchbaseLiteException {
         Collection defaultCollection = baseTestDb.getDefaultCollection();
         assertNotNull(defaultCollection);
         loadJSONResourceIntoCollection("names_100.json", defaultCollection);
@@ -3158,7 +3136,7 @@ public class QueryTest extends BaseQueryTest {
     // SELECT name.first FROM <DB-NAME> ORDER BY name.first limit 1
     // Ensure that the result set has one result, and the data is { "first" : "Abe"}.
     @Test
-    public void testQueryDefaultCollectionC() throws CouchbaseLiteException, JSONException, IOException {
+    public void testQueryDefaultCollectionC() throws CouchbaseLiteException {
         Collection defaultCollection = baseTestDb.getDefaultCollection();
         assertNotNull(defaultCollection);
         loadJSONResourceIntoCollection("names_100.json", defaultCollection);
@@ -3182,7 +3160,7 @@ public class QueryTest extends BaseQueryTest {
     // SELECT name.first FROM _default.names BY name.first LIMIT 1
     // Ensure that the result set has one result, and the data is { "first" : "Abe"}.
     @Test
-    public void testSQLPPQueryDefaultScopeA() throws CouchbaseLiteException, JSONException, IOException {
+    public void testSQLPPQueryDefaultScopeA() throws CouchbaseLiteException {
         Collection collection = baseTestDb.createCollection("names");
         loadJSONResourceIntoCollection("names_100.json", collection);
         Query query = QueryBuilder.createQuery(
@@ -3204,7 +3182,7 @@ public class QueryTest extends BaseQueryTest {
     // SELECT name.first FROM names BY name.first LIMIT 1
     // Ensure that the result set has one result, and the data is { "first" : "Abe"}.
     @Test
-    public void testSQLPPQueryDefaultScopeB() throws CouchbaseLiteException, JSONException, IOException {
+    public void testSQLPPQueryDefaultScopeB() throws CouchbaseLiteException {
         Collection collection = baseTestDb.createCollection("names");
         loadJSONResourceIntoCollection("names_100.json", collection);
         Query query = QueryBuilder.createQuery(
@@ -3226,7 +3204,7 @@ public class QueryTest extends BaseQueryTest {
     // SELECT name.first FROM people.names BY name.first LIMIT 1
     // Ensure that the result set has one result, and the data is { "first" : "Abe"}.
     @Test
-    public void testSQLPPQueryNamedCollection() throws CouchbaseLiteException, JSONException, IOException {
+    public void testSQLPPQueryNamedCollection() throws CouchbaseLiteException {
         Collection collection = baseTestDb.createCollection("names", "people");
         loadJSONResourceIntoCollection("names_100.json", collection);
 
@@ -3249,7 +3227,7 @@ public class QueryTest extends BaseQueryTest {
     // SELECT name.first FROM person.names BY name.first LIMIT 1
     // Ensure that an error is returned or thrown when executing the query.
     @Test(expected = CouchbaseLiteException.class)
-    public void testSQLPPQueryNonExistingCollection() throws CouchbaseLiteException, JSONException, IOException {
+    public void testSQLPPQueryNonExistingCollection() throws CouchbaseLiteException {
         Collection collection = baseTestDb.createCollection("names", "people");
         loadJSONResourceIntoCollection("names_100.json", collection);
 
@@ -3416,7 +3394,7 @@ public class QueryTest extends BaseQueryTest {
     // Section 8.12
 
     @Test
-    public void testQueryBuilderDefaultScope() throws CouchbaseLiteException, JSONException, IOException {
+    public void testQueryBuilderDefaultScope() throws CouchbaseLiteException {
         Collection collection = baseTestDb.createCollection("names");
         loadJSONResourceIntoCollection("names_100.json", collection);
 
@@ -3444,8 +3422,7 @@ public class QueryTest extends BaseQueryTest {
     //     .limit(Expression.intValue(1))
     // Ensure that the result set has one result, and the data is {"first" : "Abe"}.
     @Test
-    public void testQueryBuilderWithDefaultCollectionAsDataSource()
-        throws CouchbaseLiteException, JSONException, IOException {
+    public void testQueryBuilderWithDefaultCollectionAsDataSource() throws CouchbaseLiteException {
         Collection defaultCollection = baseTestDb.getDefaultCollection();
         assertNotNull(defaultCollection);
         loadJSONResourceIntoCollection("names_100.json", defaultCollection);

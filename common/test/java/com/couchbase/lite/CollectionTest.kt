@@ -169,11 +169,12 @@ class CollectionTest : BaseCollectionTest() {
     fun testSaveAndGetMultipleDocsInCollection() {
         val nDocs = 10 //1000;
         for (i in 0 until nDocs) {
-            val doc = MutableDocument(String.format(Locale.US, "doc_%03d", i))
+            val doc = MutableDocument(docId(i))
             doc.setValue("key", i)
             saveDocInTestCollection(doc)
         }
         assertEquals(nDocs.toLong(), testCollection.count)
+
         verifyDocuments(nDocs)
     }
 
@@ -357,7 +358,7 @@ class CollectionTest : BaseCollectionTest() {
         // Save 10 docs:
         createDocsInTestCollection(nDocs)
         for (i in 0 until nDocs) {
-            val docID = String.format(Locale.US, "doc_%03d", i)
+            val docID = docId(i)
             val doc = testCollection.getDocument(docID)
             testCollection.delete(doc!!)
             assertNull(testCollection.getDocument(docID))
@@ -1044,7 +1045,7 @@ class CollectionTest : BaseCollectionTest() {
     // helper method to verify n number of docs
     private fun verifyDocuments(n: Int) {
         for (i in 0 until n) {
-            verifyGetDocumentInCollection(String.format(Locale.US, "doc_%03d", i), i)
+            verifyGetDocumentInCollection(docId(i), i)
         }
     }
 
@@ -1073,7 +1074,6 @@ class CollectionTest : BaseCollectionTest() {
         baseTestDb.deleteCollection(collectionName, testCollection.scope.name)
         assertEquals(collectionName, testCollection.name)
     }
-
 
     // helper methods to verify getDoc
     private fun verifyGetDocumentInCollection(docID: String, value: Int = 1) {

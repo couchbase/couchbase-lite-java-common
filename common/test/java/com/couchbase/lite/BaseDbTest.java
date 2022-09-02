@@ -62,6 +62,14 @@ public abstract class BaseDbTest extends BaseTest {
         assertTrue(l1.containsAll(l2) && l2.containsAll(l1));
     }
 
+    // Attempt to standardize doc ids.
+    public static String docId(int i) { return "doc" + i; }
+
+    // There are tests that depend on dictionary ordering of documents:
+    // This version of docId will sort doc-001 before doc-009 and before doc-010.
+    public static String jsonDocId(int i) { return String.format(Locale.ENGLISH, "doc-%03d", i); }
+
+
     protected Database baseTestDb;
 
     @Before
@@ -94,7 +102,7 @@ public abstract class BaseDbTest extends BaseTest {
     protected final void createDocsInDb(int first, int count, Database db) throws CouchbaseLiteException {
         db.inBatch(() -> {
             for (int i = first; i < first + count; i++) {
-                final MutableDocument doc = new MutableDocument("doc-" + i);
+                final MutableDocument doc = new MutableDocument(docId(i));
                 doc.setNumber("count", i);
                 doc.setString("inverse", "minus-" + i);
                 db.save(doc);
@@ -190,7 +198,7 @@ public abstract class BaseDbTest extends BaseTest {
             while ((line = in.readLine()) != null) {
                 if (line.trim().isEmpty()) { continue; }
 
-                MutableDocument doc = new MutableDocument(String.format(Locale.ENGLISH, "doc-%03d", n++));
+                MutableDocument doc = new MutableDocument(jsonDocId(n++));
                 doc.setData(JSONUtils.fromJSON(new JSONObject(line)));
 
                 saveDocInBaseTestDb(doc);

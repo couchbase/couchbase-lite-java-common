@@ -18,13 +18,11 @@ package com.couchbase.lite
 import com.couchbase.lite.internal.utils.JSONUtils
 import com.couchbase.lite.internal.utils.PlatformUtils
 import com.couchbase.lite.internal.utils.Report
-import org.json.JSONException
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
 
 open class BaseCollectionTest : BaseDbTest() {
@@ -47,7 +45,6 @@ open class BaseCollectionTest : BaseDbTest() {
         return savedDoc
     }
 
-    @Throws(CouchbaseLiteException::class)
     protected fun createSingleDocInTestCollectionWithId(docID: String?): Document {
         val n = testCollection.count
         val doc = MutableDocument(docID)
@@ -58,7 +55,6 @@ open class BaseCollectionTest : BaseDbTest() {
         return savedDoc
     }
 
-    @Throws(CouchbaseLiteException::class)
     protected fun saveDocInTestCollection(doc: MutableDocument): Document {
         testCollection.save(doc)
         val savedDoc = testCollection.getDocument(doc.id)
@@ -67,10 +63,9 @@ open class BaseCollectionTest : BaseDbTest() {
         return savedDoc
     }
 
-    @Throws(CouchbaseLiteException::class)
     protected fun createDocsInTestCollection(n: Int) {
         for (i in 0 until n) {
-            val doc = MutableDocument("doc_${i}")
+            val doc = MutableDocument(docId(i))
             doc.setValue("key", i)
             saveDocInTestCollection(doc)
         }
@@ -90,7 +85,6 @@ open class BaseCollectionTest : BaseDbTest() {
         return "${dbName}_${colName}_doc_${idNum}"
     }
 
-    @Throws(IOException::class, JSONException::class)
     protected fun loadJSONResourceIntoCollection(name: String, collection: Collection) {
         BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use {
             var n = 1

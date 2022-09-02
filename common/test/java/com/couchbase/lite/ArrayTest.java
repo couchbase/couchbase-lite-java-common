@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import org.json.JSONArray;
@@ -186,8 +185,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
 
             // Save
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             doc.setValue("array", array);
             doc = saveDocInBaseTestDb(doc).toMutable();
 
@@ -294,8 +292,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
 
             // Save
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             doc.setArray("array", array);
             doc = saveDocInBaseTestDb(doc).toMutable();
             MutableArray gotArray = doc.getArray("array");
@@ -473,8 +470,7 @@ public class ArrayTest extends BaseDbTest {
                 array.remove(j);
             }
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertEquals(0, a.count());
                 assertEquals(new ArrayList<>(), a.toList());
@@ -489,8 +485,7 @@ public class ArrayTest extends BaseDbTest {
             if (i % 2 == 0) { populateData(array); }
             else { populateDataByType(array); }
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             doc.setValue("array", array);
             doc = saveDocInBaseTestDb(doc).toMutable();
             array = doc.getArray("array");
@@ -523,8 +518,7 @@ public class ArrayTest extends BaseDbTest {
             if (i % 2 == 0) { populateData(array); }
             else { populateDataByType(array); }
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> assertEquals(12, a.count()));
         }
     }
@@ -537,8 +531,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertNull(a.getString(0));
                 assertNull(a.getString(1));
@@ -565,8 +558,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertEquals(1, a.getNumber(0).intValue());
                 assertEquals(0, a.getNumber(1).intValue());
@@ -592,8 +584,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertEquals(1, a.getInt(0));
                 assertEquals(0, a.getInt(1));
@@ -619,8 +610,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertEquals(1, a.getLong(0));
                 assertEquals(0, a.getLong(1));
@@ -646,8 +636,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertEquals(1.0f, a.getFloat(0), 0.0f);
                 assertEquals(0.0f, a.getFloat(1), 0.0f);
@@ -673,8 +662,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertEquals(1.0, a.getDouble(0), 0.0);
                 assertEquals(0.0, a.getDouble(1), 0.0);
@@ -795,8 +783,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertTrue(a.getBoolean(0));
                 assertFalse(a.getBoolean(1));
@@ -822,8 +809,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertNull(a.getDate(0));
                 assertNull(a.getDate(1));
@@ -849,8 +835,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertNull(a.getDictionary(0));
                 assertNull(a.getDictionary(1));
@@ -878,8 +863,7 @@ public class ArrayTest extends BaseDbTest {
             else { populateDataByType(array); }
             assertEquals(12, array.count());
 
-            String docID = String.format(Locale.ENGLISH, "doc%d", i);
-            MutableDocument doc = new MutableDocument(docID);
+            MutableDocument doc = new MutableDocument(docId(i));
             save(doc, "array", array, a -> {
                 assertNull(a.getArray(0));
                 assertNull(a.getArray(1));

@@ -33,11 +33,8 @@ import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.util.*
 import kotlin.experimental.and
 
-
-// !!! SEVERAL OF THESE TESTS DEPEND ON USE OF THE DEFAULT COLLECTION
 
 class C4DatabaseTest : C4BaseTest() {
     private val POSIX_EEXIST = 17
@@ -428,36 +425,37 @@ class C4DatabaseTest : C4BaseTest() {
      */
 
     // - "Database AllDocs"
+    // This test depends on the fact that the enumerator will return
+    // the documents in dictionary order, doc-01 before doc-10, etc
     @Test
     fun testDatabaseAllDocs() {
         setupAllDocs()
         assertEquals(99L, c4Database.defaultCollection?.documentCount)
-        var i: Int
+        var i = 1
 
         // No start or end ID:
         var iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT
         iteratorFlags = iteratorFlags and C4Constants.EnumeratorFlags.INCLUDE_BODIES.inv()
-        enumerateAllDocs(c4Database, iteratorFlags).use { e ->
-            assertNotNull(e)
-            i = 1
-            while (e.next()) {
-                e.document.use { doc ->
-                    assertNotNull(doc)
-                    val docID = String.format(Locale.ENGLISH, "doc-%03d", i)
-                    assertEquals(docID, doc.docID)
-                    assertEquals(REV_ID_1, doc.revID)
-                    assertEquals(REV_ID_1, doc.selectedRevID)
-                    assertEquals(i.toLong(), doc.selectedSequence)
-                    assertNull(doc.selectedBody)
-                    // Doc was loaded without its body, but it should load on demand:
-                    doc.loadRevisionBody()
-                    assertArrayEquals(fleeceBody, doc.selectedBody)
-                    i++
-                }
-            }
-            assertEquals(100, i.toLong())
+        val allDocs = enumerateAllDocs(c4Database, iteratorFlags)
+        assertNotNull(allDocs)
+
+        while (allDocs.next()) {
+            val doc = allDocs.document
+            assertNotNull(doc)
+            assertEquals(docId(i), doc.docID)
+            assertEquals(REV_ID_1, doc.revID)
+            assertEquals(REV_ID_1, doc.selectedRevID)
+            assertEquals(i.toLong(), doc.selectedSequence)
+            assertNull(doc.selectedBody)
+            // Doc was loaded without its body, but it should load on demand:
+            doc.loadRevisionBody()
+            assertArrayEquals(fleeceBody, doc.selectedBody)
+            i++
         }
+
+        assertEquals(100, i)
     }
+
 
     @Test
     fun testDatabaseCopySucceeds() {
@@ -529,30 +527,30 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     // - "Database AllDocsInfo"
+    // This test depends on the fact that the enumerator will return
+    // the documents in dictionary order, doc-01 before doc-10, etc
     @Test
     fun testAllDocsInfo() {
         setupAllDocs()
+        var i = 1
 
         // No start or end ID:
         val iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT
-        enumerateAllDocs(c4Database, iteratorFlags).use { e ->
-            assertNotNull(e)
-            var i = 1
-            while (true) {
-                val doc = nextDocument(e) ?: break
-
-                val docID = String.format(Locale.ENGLISH, "doc-%03d", i)
-                assertEquals(docID, doc.docID)
-                assertEquals(REV_ID_1, doc.revID)
-                assertEquals(REV_ID_1, doc.selectedRevID)
-                assertEquals(i.toLong(), doc.sequence)
-                assertEquals(i.toLong(), doc.selectedSequence)
-                assertEquals(C4Constants.DocumentFlags.EXISTS.toLong(), doc.flags.toLong())
-                i++
-            }
-            assertEquals(100, i.toLong())
+        val allDocs = enumerateAllDocs(c4Database, iteratorFlags)
+        assertNotNull(allDocs)
+        while (allDocs.next()) {
+            val doc = allDocs.document
+            assertEquals(docId(i), doc.docID)
+            assertEquals(REV_ID_1, doc.revID)
+            assertEquals(REV_ID_1, doc.selectedRevID)
+            assertEquals(i.toLong(), doc.sequence)
+            assertEquals(i.toLong(), doc.selectedSequence)
+            assertEquals(C4Constants.DocumentFlags.EXISTS.toLong(), doc.flags.toLong())
+            i++
         }
+        assertEquals(100, i)
     }
+
 
     @Test
     fun testPurgeExpiredDocs() {
@@ -624,14 +622,12 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     // - Utility methods
-    fun nextDocument(e: C4DocEnumerator): C4Document? {
-        return if (e.next()) e.document else null
-    }
+
+    fun docId(i: Int) = i.toString().padStart(3, '0')
 
     private fun setupAllDocs() {
         for (i in 1..99) {
-            val docID = String.format(Locale.ENGLISH, "doc-%03d", i)
-            createRev(docID, REV_ID_1, fleeceBody)
+            createRev(docId(i), REV_ID_1, fleeceBody)
         }
 
         // Add a deleted doc to make sure it's skipped by default:
