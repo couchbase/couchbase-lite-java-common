@@ -114,10 +114,15 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
 
         @Override
         public void start() {
-            CouchbaseLiteInternal.getContext().registerReceiver(
-                connectivityReceiver,
-                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
-            Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            try {
+                CouchbaseLiteInternal.getContext().registerReceiver(
+                    connectivityReceiver,
+                    new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+                Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            }
+            catch (RuntimeException e) {
+                Log.w(LogDomain.NETWORK, "Start failed", e);
+            }
         }
 
         @Override
@@ -164,13 +169,13 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             if (connectivityMgr == null) { return; }
 
             final String msg = name + " network listener for " + getCblMgr() + ": " + this;
-            try { connectivityMgr.unregisterNetworkCallback(connectivityCallback); }
-            catch (RuntimeException e) {
-                Log.e(LogDomain.NETWORK, "Failed stopping " + msg, e);
-                return;
+            try {
+                connectivityMgr.unregisterNetworkCallback(connectivityCallback);
+                Log.v(LogDomain.NETWORK, "Stopped " + msg);
             }
-
-            Log.v(LogDomain.NETWORK, "Stopped " + msg);
+            catch (RuntimeException e) {
+                Log.w(LogDomain.NETWORK, "Failed stopping " + msg, e);
+            }
         }
     }
 
@@ -186,8 +191,13 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             final ConnectivityManager connectivityMgr = getSysMgr();
             if (connectivityMgr == null) { return; }
 
-            connectivityMgr.registerNetworkCallback(new NetworkRequest.Builder().build(), connectivityCallback);
-            Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            try {
+                connectivityMgr.registerNetworkCallback(new NetworkRequest.Builder().build(), connectivityCallback);
+                Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            }
+            catch (RuntimeException e) {
+                Log.w(LogDomain.NETWORK, "Start failed", e);
+            }
         }
 
         @Override
@@ -213,8 +223,13 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             final ConnectivityManager connectivityMgr = getSysMgr();
             if (connectivityMgr == null) { return; }
 
-            connectivityMgr.registerDefaultNetworkCallback(connectivityCallback);
-            Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            try {
+                connectivityMgr.registerDefaultNetworkCallback(connectivityCallback);
+                Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            }
+            catch (RuntimeException e) {
+                Log.w(LogDomain.NETWORK, "Start failed", e);
+            }
         }
 
         @Override
@@ -295,7 +310,7 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
 
     @Override
     public void registerObserver(@NonNull Observer observer) {
-        synchronized (observers) { observers.put(observer, Boolean.TRUE); }
+        if (Boolean.TRUE.equals(observers.put(observer, Boolean.TRUE))) { return; }
         start();
     }
 
