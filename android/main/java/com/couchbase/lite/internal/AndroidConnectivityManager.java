@@ -310,8 +310,12 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
 
     @Override
     public void registerObserver(@NonNull Observer observer) {
-        if (Boolean.TRUE.equals(observers.put(observer, Boolean.TRUE))) { return; }
-        start();
+        final boolean shouldStart;
+        synchronized (observers) {
+            shouldStart = observers.isEmpty();
+            observers.put(observer, Boolean.TRUE);
+        }
+        if (shouldStart) { start(); }
     }
 
     @Override
