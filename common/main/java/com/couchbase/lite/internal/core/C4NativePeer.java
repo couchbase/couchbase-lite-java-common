@@ -49,6 +49,10 @@ public abstract class C4NativePeer implements AutoCloseable {
     // Constructors
     //-------------------------------------------------------------------------
 
+    protected C4NativePeer(@Nullable Long peer) {
+        this(Preconditions.assertNotNull(peer, "peer handle").longValue());
+    }
+
     protected C4NativePeer(long peer) {
         this.peer = Preconditions.assertNotZero(peer, "peer handle");
         updateHistory(peer, "Created at:");

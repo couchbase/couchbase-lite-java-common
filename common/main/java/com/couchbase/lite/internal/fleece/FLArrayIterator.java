@@ -34,7 +34,14 @@ public abstract class FLArrayIterator extends C4NativePeer {
 
     // managed: Java code is responsible for freeing it
     static final class ManagedFLArrayIterator extends FLArrayIterator {
-        ManagedFLArrayIterator() { super(init()); }
+        // Hold a reference to the object over which we iterate.
+        @SuppressWarnings({"FieldCanBeLocal", "unused, PMD.SingularField", "PMD.UnusedPrivateField"})
+        private final FLArray array;
+
+        ManagedFLArrayIterator(@NonNull FLArray array) {
+            super(array.withContent(FLArrayIterator::init));
+            this.array = array;
+        }
 
         @Override
         public void close() { closePeer(null); }
@@ -59,15 +66,15 @@ public abstract class FLArrayIterator extends C4NativePeer {
     }
 
     @NonNull
-    public static FLArrayIterator getManagedArrayIterator() {
-        return new FLArrayIterator.ManagedFLArrayIterator();
+    public static FLArrayIterator getManagedArrayIterator(@NonNull FLArray flArray) {
+        return new FLArrayIterator.ManagedFLArrayIterator(flArray);
     }
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
-    public FLArrayIterator() { super(init()); }
+    public FLArrayIterator(@Nullable Long peer) { super(peer); }
 
     public FLArrayIterator(long peer) { super(peer); }
 
@@ -75,12 +82,10 @@ public abstract class FLArrayIterator extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    public void begin(@NonNull FLArray array) {
-        final long peer = getPeer();
-        array.withContent(hdl -> {
-            begin(hdl, peer);
-            return null;
-        });
+    @Nullable
+    public FLValue getValueAt(int index) {
+        final long hValue = getValueAt(getPeer(), index);
+        return hValue == 0L ? null : new FLValue(hValue);
     }
 
     public boolean next() { return next(getPeer()); }
@@ -88,12 +93,6 @@ public abstract class FLArrayIterator extends C4NativePeer {
     @Nullable
     public FLValue getValue() {
         final long hValue = getValue(getPeer());
-        return hValue == 0L ? null : new FLValue(hValue);
-    }
-
-    @Nullable
-    public FLValue getValueAt(int index) {
-        final long hValue = getValueAt(getPeer(), index);
         return hValue == 0L ? null : new FLValue(hValue);
     }
 
@@ -106,22 +105,7 @@ public abstract class FLArrayIterator extends C4NativePeer {
      *
      * @return long (FLArrayIterator *)
      */
-    static native long init();
-
-    /**
-     * Free FLArrayIterator instance
-     *
-     * @param peer (FLArrayIterator *)
-     */
-    static native void free(long peer);
-
-    /**
-     * Initializes a FLArrayIterator struct to iterate over an array.
-     *
-     * @param array (FLArray)
-     * @param peer  (FLArrayIterator *)
-     */
-    private static native void begin(long array, long peer);
+    static native long init(long array);
 
     /**
      * Returns the current value being iterated over.
@@ -144,4 +128,11 @@ public abstract class FLArrayIterator extends C4NativePeer {
      * @param peer (FLArrayIterator *)
      */
     private static native boolean next(long peer);
+
+    /**
+     * Free FLArrayIterator instance
+     *
+     * @param peer (FLArrayIterator *)
+     */
+    static native void free(long peer);
 }

@@ -63,31 +63,13 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_get(
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
  * Method:    init
- * Signature: ()J
+ * Signature: (j)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLArrayIterator_init(JNIEnv *env, jclass ignore) {
-    return (jlong) ::malloc(sizeof(FLArrayIterator));
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
- * Method:    begin
- * Signature: (JJ)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_FLArrayIterator_begin(JNIEnv *env, jclass ignore, jlong jarray, jlong jitr) {
-    FLArrayIterator_Begin((FLArray) jarray, (FLArrayIterator *) jitr);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
- * Method:    getValue
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValue(JNIEnv *env, jclass ignore, jlong jitr) {
-    return (jlong) FLArrayIterator_GetValue((FLArrayIterator *) jitr);
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_init(JNIEnv *env, jclass ignore, jlong jarray) {
+    auto itr = (FLArrayIterator *) ::malloc(sizeof(FLArrayIterator));
+    FLArrayIterator_Begin((FLArray) jarray,  itr);
+    return (jlong) itr;
 }
 
 /*
@@ -112,6 +94,16 @@ Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValueAt(
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_fleece_FLArrayIterator_next(JNIEnv *env, jclass ignore, jlong jitr) {
     return (jboolean) FLArrayIterator_Next((FLArrayIterator *) jitr);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
+ * Method:    getValue
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValue(JNIEnv *env, jclass ignore, jlong jitr) {
+    return (jlong) FLArrayIterator_GetValue((FLArrayIterator *) jitr);
 }
 
 /*
@@ -160,21 +152,33 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_get(
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
  * Method:    init
- * Signature: ()J
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDictIterator_init(JNIEnv *env, jclass ignore) {
-    return (jlong) ::malloc(sizeof(FLDictIterator));
+Java_com_couchbase_lite_internal_fleece_FLDictIterator_init(JNIEnv *env, jclass ignore, jlong jdict) {
+    auto itr = (FLDictIterator *)  ::malloc(sizeof(FLDictIterator));
+    FLDictIterator_Begin((FLDict) jdict, itr);
+    return (jlong) itr;
 }
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
- * Method:    begin
- * Signature: (JJ)V
+ * Method:    getCount
+ * Signature: (J)J
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDictIterator_begin(JNIEnv *env, jclass ignore, jlong jdict, jlong jitr) {
-    FLDictIterator_Begin((FLDict) jdict, (FLDictIterator *) jitr);
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_fleece_FLDictIterator_getCount(JNIEnv *env, jclass ignore, jlong jitr) {
+    return (jlong) FLDictIterator_GetCount((FLDictIterator *) jitr);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
+ * Method:    next
+ * Signature: (J)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_fleece_FLDictIterator_next(JNIEnv *env, jclass ignore, jlong jitr) {
+    return (jboolean) FLDictIterator_Next((FLDictIterator *) jitr);
 }
 
 /*
@@ -183,8 +187,8 @@ Java_com_couchbase_lite_internal_fleece_FLDictIterator_begin(JNIEnv *env, jclass
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDictIterator_getKeyString(JNIEnv *env, jclass ignore, jlong jitr) {
-    // This is necessary because, when the iterator is exhausted, calling GetKeyString
+Java_com_couchbase_lite_internal_fleece_FLDictIterator_getKey(JNIEnv *env, jclass ignore, jlong jitr) {
+    // This is necessary because, when the iterator is exhausted, calling GetKey
     // will fail with a pointer exception.  GetValue returns null instead.
     if (!FLDictIterator_GetValue((FLDictIterator *) jitr))
         return nullptr;
@@ -201,26 +205,6 @@ Java_com_couchbase_lite_internal_fleece_FLDictIterator_getKeyString(JNIEnv *env,
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_fleece_FLDictIterator_getValue(JNIEnv *env, jclass ignore, jlong jitr) {
     return (jlong) FLDictIterator_GetValue((FLDictIterator *) jitr);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
- * Method:    next
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDictIterator_next(JNIEnv *env, jclass ignore, jlong jitr) {
-    return (jboolean) FLDictIterator_Next((FLDictIterator *) jitr);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
- * Method:    getCount
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLDictIterator_getCount(JNIEnv *env, jclass ignore, jlong jitr) {
-    return (jlong) FLDictIterator_GetCount((FLDictIterator *) jitr);
 }
 
 /*

@@ -17,6 +17,7 @@ package com.couchbase.lite.internal.fleece;
 
 
 import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LogDomain;
@@ -24,12 +25,18 @@ import com.couchbase.lite.internal.core.C4NativePeer;
 
 
 public class FLDictIterator extends C4NativePeer {
+    // Hold a reference to the object over which we iterate.
+    @SuppressWarnings({"PMD.SingularField", "PMD.UnusedPrivateField", "FieldCanBeLocal", "unused"})
+    private final FLDict dict;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    public FLDictIterator() { super(init()); }
+    public FLDictIterator(@NonNull FLDict dict) {
+        super(dict.withContent(FLDictIterator::init));
+        this.dict = dict;
+    }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -37,21 +44,13 @@ public class FLDictIterator extends C4NativePeer {
 
     public long getCount() { return getCount(getPeer()); }
 
-    public void begin(FLDict dict) {
-        final long peer = getPeer();
-        dict.withContent(dictPeer -> {
-            begin(dictPeer, peer);
-            return null;
-        });
-    }
+    public boolean next() { return next(getPeer()); }
 
     @Nullable
-    public String getKeyString() { return getKeyString(getPeer()); }
+    public String getKey() { return getKey(getPeer()); }
 
     @Nullable
     public FLValue getValue() { return new FLValue(getValue(getPeer())); }
-
-    public boolean next() { return next(getPeer()); }
 
     @CallSuper
     @Override
@@ -79,11 +78,11 @@ public class FLDictIterator extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     /**
-     * Create FLDictIterator instance
+     * Initialize a FLDictIterator instance
      *
      * @return long (FLDictIterator *)
      */
-    private static native long init();
+    private static native long init(long dict);
 
     /**
      * Returns the number of items remaining to be iterated, including the current one.
@@ -93,12 +92,11 @@ public class FLDictIterator extends C4NativePeer {
     private static native long getCount(long itr);
 
     /**
-     * Initializes a FLDictIterator struct to iterate over a dictionary.
+     * Advances the iterator to the next value, or returns false if at the end.
      *
-     * @param dict (FLDict)
-     * @param itr  (FLDictIterator *)
+     * @param itr (FLDictIterator *)
      */
-    private static native void begin(long dict, long itr);
+    private static native boolean next(long itr);
 
     /**
      * Returns the key's string value.
@@ -107,7 +105,7 @@ public class FLDictIterator extends C4NativePeer {
      * @return key string
      */
     @Nullable
-    private static native String getKeyString(long itr);
+    private static native String getKey(long itr);
 
     /**
      * Returns the current value being iterated over.
@@ -116,13 +114,6 @@ public class FLDictIterator extends C4NativePeer {
      * @return long (FLValue)
      */
     private static native long getValue(long itr);
-
-    /**
-     * Advances the iterator to the next value, or returns false if at the end.
-     *
-     * @param itr (FLDictIterator *)
-     */
-    private static native boolean next(long itr);
 
     /**
      * Free FLDictIterator instance

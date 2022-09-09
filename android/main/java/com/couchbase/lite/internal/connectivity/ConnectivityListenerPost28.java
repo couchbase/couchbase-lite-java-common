@@ -38,8 +38,13 @@ final class ConnectivityListenerPost28 extends CallbackConnectivityWatcher {
         final ConnectivityManager connectivityMgr = getSysMgr();
         if (connectivityMgr == null) { return; }
 
-        connectivityMgr.registerDefaultNetworkCallback(connectivityCallback);
-        logStart();
+        try {
+            connectivityMgr.registerDefaultNetworkCallback(connectivityCallback);
+            logStart();
+        }
+        catch (RuntimeException e) {
+            startFailed(e);
+        }
     }
 
     @Override

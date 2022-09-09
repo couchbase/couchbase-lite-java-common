@@ -10,10 +10,10 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
  * Method:    init
- * Signature: ()J
+ * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator_init
-  (JNIEnv *, jclass);
+  (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
@@ -25,18 +25,18 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator_g
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
- * Method:    begin
- * Signature: (JJ)V
+ * Method:    next
+ * Signature: (J)Z
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator_begin
-  (JNIEnv *, jclass, jlong, jlong);
+JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator_next
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
- * Method:    getKeyString
+ * Method:    getKey
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator_getKeyString
+JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator_getKey
   (JNIEnv *, jclass, jlong);
 
 /*
@@ -45,14 +45,6 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator_getValue
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLDictIterator
- * Method:    next
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_FLDictIterator_next
   (JNIEnv *, jclass, jlong);
 
 /*

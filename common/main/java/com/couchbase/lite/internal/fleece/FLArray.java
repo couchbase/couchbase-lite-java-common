@@ -33,9 +33,10 @@ public class FLArray {
         long nGet(long array, long index);
     }
 
-    static volatile NativeImpl nativeImpl = new NativeFLArray();
+    private static final NativeImpl NATIVE_IMPL = new NativeFLArray();
+
     @NonNull
-    public static FLArray create(long peer) { return new FLArray(nativeImpl, peer); }
+    public static FLArray create(long peer) { return new FLArray(NATIVE_IMPL, peer); }
 
     private final long peer; // pointer to FLArray
     private final NativeImpl impl;
@@ -77,9 +78,7 @@ public class FLArray {
     @SuppressWarnings("unchecked")
     public <T> List<T> asTypedArray() {
         final List<T> results = new ArrayList<>();
-        final FLArrayIterator itr = FLArrayIterator.getManagedArrayIterator();
-
-        itr.begin(this);
+        final FLArrayIterator itr = FLArrayIterator.getManagedArrayIterator(this);
         FLValue value;
         while ((value = itr.getValue()) != null) {
             results.add((T) value.asObject());

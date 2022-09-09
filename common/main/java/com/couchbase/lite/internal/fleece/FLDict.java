@@ -33,10 +33,10 @@ public class FLDict {
         long nGet(long dict, byte[] keyString);
     }
 
-    static volatile NativeImpl nativeImpl = new NativeFLDict();
+    private static final NativeImpl NATIVE_IMPL = new NativeFLDict();
 
     @NonNull
-    public static FLDict create(long peer) { return new FLDict(nativeImpl, peer); }
+    public static FLDict create(long peer) { return new FLDict(NATIVE_IMPL, peer); }
 
     private final long peer; // hold pointer to FLDict
     private final NativeImpl impl;
@@ -71,10 +71,9 @@ public class FLDict {
     @NonNull
     public Map<String, Object> asDict() {
         final Map<String, Object> results = new HashMap<>();
-        try (FLDictIterator itr = new FLDictIterator()) {
-            itr.begin(this);
+        try (FLDictIterator itr = new FLDictIterator(this)) {
             String key;
-            while ((key = itr.getKeyString()) != null) {
+            while ((key = itr.getKey()) != null) {
                 final FLValue val = itr.getValue();
                 results.put(key, (val == null) ? null : val.asObject());
                 itr.next();

@@ -33,8 +33,13 @@ final class ConnectivityListener21to23 extends CallbackConnectivityWatcher {
         final ConnectivityManager connectivityMgr = getSysMgr();
         if (connectivityMgr == null) { return; }
 
-        connectivityMgr.registerNetworkCallback(new NetworkRequest.Builder().build(), connectivityCallback);
-        logStart();
+        try {
+            connectivityMgr.registerNetworkCallback(new NetworkRequest.Builder().build(), connectivityCallback);
+            logStart();
+        }
+        catch (RuntimeException e) {
+            startFailed(e);
+        }
     }
 
     @Override

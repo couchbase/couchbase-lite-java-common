@@ -28,8 +28,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class MDict extends MCollection implements Iterable<String> {
-    // ??? What is this for?
-    private final List<String> newKey = new ArrayList<>();
     @NonNull
     private Map<String, MValue> valueMap = new HashMap<>();
     @Nullable
@@ -41,7 +39,7 @@ public class MDict extends MCollection implements Iterable<String> {
     // Constructors
     //---------------------------------------------
 
-    public MDict() {}
+    public MDict() { }
 
     public MDict(@NonNull MValue mv, @Nullable MCollection parent) {
         initInSlot(mv, parent, parent != null && parent.hasMutableChildren());
@@ -67,7 +65,7 @@ public class MDict extends MCollection implements Iterable<String> {
         final MValue v = valueMap.get(key);
         if (v != null) { return v; }
 
-        final FLValue value = (flDict == null) ? null: flDict.get(key);
+        final FLValue value = (flDict == null) ? null : flDict.get(key);
         return (value == null) ? MValue.EMPTY : setInMap(key, new MValue(value));
     }
 
@@ -114,10 +112,9 @@ public class MDict extends MCollection implements Iterable<String> {
         }
 
         if ((flDict != null) && (flDict.count() > 0)) {
-            try (FLDictIterator itr = new FLDictIterator()) {
-                itr.begin(flDict);
+            try (FLDictIterator itr = new FLDictIterator(flDict)) {
                 String key;
-                while ((key = itr.getKeyString()) != null) {
+                while ((key = itr.getKey()) != null) {
                     if (!valueMap.containsKey(key)) { keys.add(key); }
                     itr.next();
                 }
@@ -138,10 +135,9 @@ public class MDict extends MCollection implements Iterable<String> {
         valueMap.clear();
 
         if ((flDict != null) && (flDict.count() > 0)) {
-            try (FLDictIterator itr = new FLDictIterator()) {
-                itr.begin(flDict);
+            try (FLDictIterator itr = new FLDictIterator(flDict)) {
                 String key;
-                while ((key = itr.getKeyString()) != null) {
+                while ((key = itr.getKey()) != null) {
                     valueMap.put(key, MValue.EMPTY);
                     itr.next();
                 }
@@ -182,10 +178,9 @@ public class MDict extends MCollection implements Iterable<String> {
             }
 
             if ((flDict != null) && (flDict.count() > 0)) {
-                try (FLDictIterator itr = new FLDictIterator()) {
-                    itr.begin(flDict);
+                try (FLDictIterator itr = new FLDictIterator(flDict)) {
                     String key;
-                    while ((key = itr.getKeyString()) != null) {
+                    while ((key = itr.getKey()) != null) {
                         if (!valueMap.containsKey(key)) {
                             enc.writeKey(key);
                             enc.writeValue(itr.getValue());
@@ -225,7 +220,6 @@ public class MDict extends MCollection implements Iterable<String> {
 
     @NonNull
     private MValue setInMap(@NonNull String key, @NonNull MValue value) {
-        newKey.add(key);
         valueMap.put(key, value);
         return value;
     }

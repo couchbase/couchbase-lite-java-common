@@ -75,4 +75,8 @@ abstract class ConnectivityWatcher {
     protected final void logStart() {
         Log.d(LogDomain.NETWORK, "Started %s network listener for %s: %s", name, getCblMgr(), this);
     }
+
+    protected final void startFailed(RuntimeException err) {
+        Log.w(LogDomain.NETWORK, "Failed starting %s network listener for %s: %s", err, name, getCblMgr(), this);
+    }
 }

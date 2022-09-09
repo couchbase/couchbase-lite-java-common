@@ -10,50 +10,42 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
  * Method:    init
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLArrayIterator_init
-  (JNIEnv *, jclass);
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
- * Method:    free
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_fleece_FLArrayIterator_free
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
- * Method:    begin
- * Signature: (JJ)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_fleece_FLArrayIterator_begin
-  (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
- * Method:    getValue
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValue
-  (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_init(JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
  * Method:    getValueAt
  * Signature: (JI)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValueAt
-  (JNIEnv *, jclass, jlong, jint);
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValueAt(JNIEnv *, jclass, jlong, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
  * Method:    next
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_FLArrayIterator_next
-  (JNIEnv *, jclass, jlong);
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_next(JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
+ * Method:    getValue
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_getValue(JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLArrayIterator
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_fleece_FLArrayIterator_free(JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }

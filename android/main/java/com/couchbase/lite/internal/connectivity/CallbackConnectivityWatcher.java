@@ -46,12 +46,12 @@ abstract class CallbackConnectivityWatcher extends ConnectivityWatcher {
         if (connectivityMgr == null) { return; }
 
         final String msg = name + " network listener for " + getCblMgr() + ": " + this;
-        try { connectivityMgr.unregisterNetworkCallback(connectivityCallback); }
+        try {
+            connectivityMgr.unregisterNetworkCallback(connectivityCallback);
+            Log.d(LogDomain.NETWORK, "Stopped: %s", msg);
+        }
         catch (RuntimeException e) {
             Log.w(LogDomain.NETWORK, "Failed stopping " + msg, e);
-            return;
         }
-
-        Log.d(LogDomain.NETWORK, "Stopped: %s", msg);
     }
 }
