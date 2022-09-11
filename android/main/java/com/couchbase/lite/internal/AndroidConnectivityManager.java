@@ -127,8 +127,14 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
 
         @Override
         public void stop() {
-            CouchbaseLiteInternal.getContext().unregisterReceiver(connectivityReceiver);
-            Log.v(LogDomain.NETWORK, getLogMessage("Stopped"));
+            final String msg = name + " network listener for " + getCblMgr() + ": " + this;
+            try {
+                CouchbaseLiteInternal.getContext().unregisterReceiver(connectivityReceiver);
+                Log.v(LogDomain.NETWORK, "Stopped " + msg);
+            }
+            catch (RuntimeException e) {
+                Log.w(LogDomain.NETWORK, "Failed stopping " + msg, e);
+            }
         }
 
         @Override
@@ -257,8 +263,13 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
             final ConnectivityManager connectivityMgr = getSysMgr();
             if (connectivityMgr == null) { return; }
 
-            connectivityMgr.registerDefaultNetworkCallback(connectivityCallback);
-            Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            try {
+                connectivityMgr.registerDefaultNetworkCallback(connectivityCallback);
+                Log.v(LogDomain.NETWORK, getLogMessage("Started"));
+            }
+            catch (RuntimeException e) {
+                Log.w(LogDomain.NETWORK, "Start failed", e);
+            }
         }
 
         @Override
