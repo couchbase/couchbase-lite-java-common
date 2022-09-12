@@ -30,7 +30,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
-import java.util.Stack
+import java.util.*
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.LinkedBlockingQueue
@@ -398,5 +398,43 @@ class ExecutionServiceTest : BaseTest() {
         barrier.await()
         assertNotNull(fail)
         throw fail!!
+    }
+
+    // If this test fails, it may down the entire test process
+    @Test
+    fun testExceptionDoesNotCauseCrashSerial() {
+        val executor = CouchbaseLiteInternal.getExecutionService().serialExecutor
+        val latch1 = CountDownLatch(1)
+        executor.execute {
+            try {
+                throw RuntimeException("BANG")
+            } finally {
+                latch1.countDown()
+            }
+        }
+        assertTrue(latch1.await(2, TimeUnit.SECONDS))
+
+        val latch2 = CountDownLatch(1)
+        executor.execute() { latch2.countDown() }
+        assertTrue(latch2.await(2, TimeUnit.SECONDS))
+    }
+
+    // If this test fails, it may down the entire test process
+    @Test
+    fun testExceptionDoesNotCauseCrashConcurrent() {
+        val executor = CouchbaseLiteInternal.getExecutionService().concurrentExecutor
+        val latch1 = CountDownLatch(1)
+        executor.execute {
+            try {
+                throw RuntimeException("BANG")
+            } finally {
+                latch1.countDown()
+            }
+        }
+        assertTrue(latch1.await(2, TimeUnit.SECONDS))
+
+        val latch2 = CountDownLatch(1)
+        executor.execute { latch2.countDown() }
+        assertTrue(latch2.await(2, TimeUnit.SECONDS))
     }
 }

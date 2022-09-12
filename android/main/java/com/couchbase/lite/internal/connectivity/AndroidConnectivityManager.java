@@ -104,6 +104,13 @@ public class AndroidConnectivityManager implements NetworkConnectivityManager {
     @VisibleForTesting
     public boolean isRunning() { return listener.get() != null; }
 
+    @VisibleForTesting
+    public void clear() {
+        final Set<Observer> obs;
+        synchronized (observers) { obs = new HashSet<>(observers.keySet()); }
+        for (Observer observer: obs) { unregisterObserver(observer); }
+    }
+
     @SuppressLint("NewApi")
     private void start() {
         ConnectivityWatcher connectivityListener = listener.get();

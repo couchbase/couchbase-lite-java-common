@@ -68,7 +68,7 @@ abstract class ConnectivityWatcher {
             return;
         }
 
-        Log.d(LogDomain.NETWORK, "Changed %s connectivity for %s: %s", name, getCblMgr(), this);
+        Log.d(LogDomain.NETWORK, "Changed %s connectivity to %s for %s: %s", name, networkState, getCblMgr(), this);
         cblConnectivityMgr.connectivityChanged(networkState);
     }
 
