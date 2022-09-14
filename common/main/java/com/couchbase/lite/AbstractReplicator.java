@@ -532,7 +532,7 @@ public abstract class AbstractReplicator extends BaseReplicator
         Log.i(DOMAIN, "notifyDocumentEnded: %s" + update);
         final Set<DocumentReplicationListenerToken> listenerTokens;
         synchronized (getReplicatorLock()) { listenerTokens = new HashSet<>(docEndedListeners); }
-        Fn.forAll(listenerTokens, token -> token.postChange(update));
+        for (DocumentReplicationListenerToken token: listenerTokens) { token.postChange(update); }
     }
 
     @NonNull

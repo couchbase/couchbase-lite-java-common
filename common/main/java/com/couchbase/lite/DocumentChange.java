@@ -47,7 +47,5 @@ public final class DocumentChange {
 
     @NonNull
     @Override
-    public String toString() {
-        return "DocumentChange{" + collection + ", " + documentID + "}";
-    }
+    public String toString() { return "DocumentChange{" + collection + ", " + documentID + "}"; }
 }

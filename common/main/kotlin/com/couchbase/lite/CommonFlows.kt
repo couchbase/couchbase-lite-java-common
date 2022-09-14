@@ -16,7 +16,10 @@
 package com.couchbase.lite
 
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.merge
+import java.lang.IllegalStateException
 import java.util.concurrent.Executor
 
 /**
@@ -25,11 +28,24 @@ import java.util.concurrent.Executor
  * @param executor Optional executor on which to run the change listener: default is the main executor
  * @deprecated Use getDefaultCollection().collectionChangeFlow
  * @see com.couchbase.lite.Database.addChangeListener
- * @deprecated Use Collection.collectionChangeFlow
  */
-fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow {
-    val token = this@databaseChangeFlow.addChangeListener(executor) { trySend(it) }
-    awaitClose { this@databaseChangeFlow.removeChangeListener(token) }
+@Deprecated(
+    "Use getDefaultCollection().collectionChangeFlow(executor",
+    replaceWith = ReplaceWith("getDefaultCollection().collectionChangeFlow(executor)"))
+fun Database.databaseChangeFlow(executor: Executor? = null) =
+    this@databaseChangeFlow.defaultCollection?.collectionChangeFlow(executor)
+        ?: throw IllegalStateException("Cannot get default collection for database ${this@databaseChangeFlow.name}")
+
+/**
+ * A Flow of Collection changes.
+ *
+ * @param executor The executor on which to run the change listener (Should be nullable?)
+ *
+ * @see com.couchbase.lite.Collection.addChangeListener
+ */
+fun Collection.collectionChangeFlow(executor: Executor?) = callbackFlow {
+    val token = this@collectionChangeFlow.addChangeListener(executor) { trySend(it) }
+    awaitClose { token.remove() }
 }
 
 /**
@@ -39,24 +55,12 @@ fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow {
  * @deprecated Use getDefaultCollection().documentChangeFlow
  * @see com.couchbase.lite.Database.addDocumentChangeListener
  */
-fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) = callbackFlow {
-    val token =
-        this@documentChangeFlow.addDocumentChangeListener(documentId, executor) { trySend(it) }
-    awaitClose { this@documentChangeFlow.removeChangeListener(token) }
-}
-
-/**
- * A Flow of Collection changes. DatabaseChange should be replaced with CollectionChange once the implementation is ready
- *
- * @param executor The executor on which to run the change listener (Should be nullable?)
- *
- * @see com.couchbase.lite.Collection.addChangeListener
- */
-fun Collection.collectionChangeFlow(executor: Executor) = callbackFlow {
-    val token = this@collectionChangeFlow.addChangeListener(executor) { trySend(it) }
-    awaitClose { token.remove() }
-}
-
+@Deprecated(
+    "Use getDefaultCollection().documentChangeFlow(documentId, executor)",
+    replaceWith = ReplaceWith("getDefaultCollection().documentChangeFlow(documentId, executor)"))
+fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) =
+    this@documentChangeFlow.defaultCollection?.documentChangeFlow(documentId, executor)
+        ?: throw IllegalStateException("Cannot get default collection for database ${this@documentChangeFlow.name}")
 
 /**
  * A Flow of document changes
@@ -89,8 +93,7 @@ fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow 
  * @see com.couchbase.lite.Replicator.addDocumentReplicationListener
  */
 fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlow {
-    val token =
-        this@documentReplicationFlow.addDocumentReplicationListener(executor) { trySend(it) }
+    val token = this@documentReplicationFlow.addDocumentReplicationListener(executor) { trySend(it) }
     awaitClose { token.remove() }
 }
 
@@ -104,5 +107,5 @@ fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlo
 
 fun Query.queryChangeFlow(executor: Executor? = null) = callbackFlow {
     val token = this@queryChangeFlow.addChangeListener(executor) { trySend(it) }
-    awaitClose { this@queryChangeFlow.removeChangeListener(token) }
+    awaitClose { token.remove() }
 }
