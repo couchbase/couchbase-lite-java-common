@@ -27,7 +27,6 @@ import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
-import org.junit.Ignore
 import org.junit.Test
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -1571,39 +1570,39 @@ class DatabaseTest : BaseDbTest() {
         }
     }
 
-    @Ignore("CBL-3626")
     @Test
     fun testSetDocumentExpirationHangInBatch() {
         val nDocs = 10
-        // Save 10 docs:
         createDocsInBaseTestDb(nDocs)
+
         val now = Date().time
-        val expiration = Date(now + 86400000)
-        val future = FutureTask<Void?> {
+        val tomorrow = Date(now + 1000L * 60 * 60 * 24) // now + 1 day
+
+        val future = FutureTask<Void> {
             baseTestDb.inBatch<CouchbaseLiteException> {
                 for (i in 0 until nDocs) {
-                    val docID = "doc_${i}"
-                    val doc = baseTestDb.getDocument(docID)
-                    val mutableDocument = doc!!.toMutable()
-                    mutableDocument.setString("type", "TrashBinModel")
-                    mutableDocument.setString("dateOfDeletion", now.toString())
-                    baseTestDb.save(mutableDocument)
-                    baseTestDb.setDocumentExpiration(mutableDocument.id, expiration) // now + 1 day
+                    val doc = baseTestDb.getDocument("doc_${i}")!!.toMutable()
+                    doc.setString("expiration", tomorrow.toString())
+                    baseTestDb.save(doc)
+                    baseTestDb.setDocumentExpiration(doc.id, tomorrow)
                 }
             }
             null
         }
+        testSerialExecutor.execute(future)
         try {
-            future[STD_TIMEOUT_SEC, TimeUnit.SECONDS]
+            future.get(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
         } catch (ignore: InterruptedException) {
         } catch (e: TimeoutException) {
             fail("Timeout")
         } catch (e: ExecutionException) {
             throw AssertionError(e)
         }
+
         for (i in 0 until nDocs) {
             val docID = "doc_${i}"
-            assertEquals(expiration, baseTestDb.getDocumentExpiration(docID))
+            assertEquals(tomorrow.toString(), baseTestDb.getDocument("doc_${i}")!!.getString("expiration"))
+            assertEquals(tomorrow, baseTestDb.getDocumentExpiration(docID))
         }
     }
 

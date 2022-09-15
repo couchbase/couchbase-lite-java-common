@@ -208,10 +208,10 @@ static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C
 }
 
 // I am so sorry.  IANAC++P.
-// The second vector, here (the 4th argument), is just around to
-// keep the jstringSlices from going out of scope.  All it does
-// is hold on to them, so that the C4ReplicationCollections in
-// colls can point to them, until the end of the caller's scope.
+// The second and third vectors here, the 4th & 5th arguments,
+// are just around to keep the slices they contain from going out of scope.
+// All they do is hold on to them, so that the C4ReplicationCollections
+// in colls can point to them, until the end of the *caller's* scope.
 static int fromJavaReplColls(
         JNIEnv *env,
         jobjectArray jColls,
@@ -452,7 +452,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
     jstringSlice remoteDBName(env, jremoteDBName);
     jbyteArraySlice options(env, joptions, false);
 
-    C4Address c4Address = {};
+    C4Address c4Address{};
     c4Address.scheme = scheme;
     c4Address.hostname = host;
     c4Address.port = (uint16_t) jport;
@@ -462,7 +462,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
     socketFactory.context = (void *) socketFactoryToken;
     socketFactory.framing = (C4SocketFraming) jframing;
 
-    C4ReplicatorParameters params = {};
+    C4ReplicatorParameters params{};
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.onDocumentsEnded = &documentEndedCallback;
@@ -524,7 +524,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
 #else
     jbyteArraySlice options(env, joptions, false);
 
-    C4ReplicatorParameters params = {};
+    C4ReplicatorParameters params{};
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.onDocumentsEnded = &documentEndedCallback;
@@ -580,7 +580,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
     auto *db = (C4Database *) jdb;
     auto openSocket = (C4Socket *) jopenSocket;
 
-    C4ReplicatorParameters params = {};
+    C4ReplicatorParameters params{};
     params.optionsDictFleece = options;
     params.onStatusChanged = &statusChangedCallback;
     params.callbackContext = (void *) replicatorToken;

@@ -221,8 +221,9 @@ public abstract class BaseReplicatorTest extends BaseCollectionTest {
 
         if (onReady != null) { onReady.accept(repl); }
 
-        ListenerToken token = repl.addChangeListener(testSerialExecutor, listener);
+
         boolean ok;
+        ListenerToken token = repl.addChangeListener(testSerialExecutor, listener);
         try {
             Report.log("Test replicator starting: %s", repl.getConfig());
             repl.start(reset);
