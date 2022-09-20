@@ -584,16 +584,21 @@ class C4DatabaseTest : C4BaseTest() {
 
     @Test
     fun testDatabaseCancelExpire() {
-        val expire = System.currentTimeMillis() + 100
         val docID1 = "expire_me"
         createRev(docID1, REV_ID_1, fleeceBody)
+
         val docID2 = "dont_expire_me"
         createRev(docID2, REV_ID_1, fleeceBody)
+
         assertEquals(2L, c4Database.defaultCollection?.documentCount)
+
+        val expire = System.currentTimeMillis() + 100
         c4Database.defaultCollection?.setDocumentExpiration(docID1, expire)
         c4Database.defaultCollection?.setDocumentExpiration(docID2, expire)
         c4Database.defaultCollection?.setDocumentExpiration(docID2, 0)
+
         waitUntil(STD_TIMEOUT_MS) { 1L == c4Database.defaultCollection?.documentCount }
+
         assertNotNull(c4Database.defaultCollection?.getDocument(docID2, true))
     }
 

@@ -31,10 +31,10 @@ import com.couchbase.lite.internal.utils.MathUtils;
  * would require the native code to manage LocalRefs.... with the distinct
  * possibility of running out.
  * <p>
- * !!! There should be a nanny thread cleaning out all the ref -> null
  *
  * @param <T> The type of the Java peer.
  */
+// ??? There should be a nanny thread cleaning out all the ref -> null
 public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
 
     /**

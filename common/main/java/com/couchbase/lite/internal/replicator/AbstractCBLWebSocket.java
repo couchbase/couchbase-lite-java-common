@@ -370,7 +370,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     //-------------------------------------------------------------------------
 
     // Core needs a connection to the remote
-    // !!! openRemote returns a boolean that this method doesn't check.  Why?
+    // ??? openRemote returns a boolean that this method doesn't check.  Why?
     @Override
     public final void coreRequestsOpen() {
         Log.d(LOG_DOMAIN, "%s.coreRequestedOpen", this);

@@ -66,7 +66,7 @@ public class ClientTask<T> {
         final FutureTask<T> future = new FutureTask<>(task);
         try { EXECUTOR.execute(new InstrumentedTask(future, null)); }
         catch (RuntimeException e) {
-            Log.w(LogDomain.DATABASE, "!!! Catastrophic executor failure (ClientTask)", e);
+            Log.w(LogDomain.DATABASE, "Catastrophic executor failure (ClientTask)!", e);
             if (!AbstractExecutionService.throttled()) { dumpState(); }
             throw e;
         }

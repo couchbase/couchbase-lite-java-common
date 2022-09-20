@@ -130,7 +130,7 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
             running++;
         }
         catch (RuntimeException e) {
-            Log.w(LogDomain.DATABASE, "!!! Catastrophic executor failure (Concurrent Executor)", e);
+            Log.w(LogDomain.DATABASE, "Catastrophic executor failure (Concurrent Executor)!", e);
             if (!AbstractExecutionService.throttled()) { dumpState(newTask); }
             throw e;
         }

@@ -106,7 +106,7 @@ public final class AndroidExecutionService extends AbstractExecutionService {
             }
             catch (RejectedExecutionException e) {
                 if (!throttled()) {
-                    Log.w(LogDomain.DATABASE, "!!! Execution rejected after delay: " + delayMs, e);
+                    Log.w(LogDomain.DATABASE, "Execution rejected after delay: " + delayMs, e);
                     dumpThreads();
                 }
             }

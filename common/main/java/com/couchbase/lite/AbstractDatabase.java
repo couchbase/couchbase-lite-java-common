@@ -87,10 +87,12 @@ abstract class AbstractDatabase extends BaseDatabase
     //---------------------------------------------
 
     private static final String ERROR_RESOLVER_FAILED = "Conflict resolution failed for document '%s': %s";
-    private static final String WARN_WRONG_DATABASE = "The database to which the document produced by"
-        + " conflict resolution for document '%s' belongs, '%s', is not the one in which it will be stored (%s)";
-    private static final String WARN_WRONG_ID = "The ID of the document produced by conflict resolution"
-        + " for document (%s) does not match the IDs of the conflicting documents (%s)";
+    private static final String WARN_WRONG_ID
+        = "A conflict resolution for document for document '%s' produced a new document whose id not match"
+        + " the ID of the conflicting documents (%s)";
+    private static final String WARN_WRONG_COLLECTION
+        = "A conflict resolution for document '%s' produced a new document that belongs to collection '%s',"
+        + " which is not the one in which it would be stored (%s)";
 
     private static final LogDomain DOMAIN = LogDomain.DATABASE;
 
@@ -1280,7 +1282,7 @@ abstract class AbstractDatabase extends BaseDatabase
     @Nullable
     abstract byte[] getEncryptionKey();
 
-    // !!! This method will be private, when conversion to Collections is complete
+    // !!! This method should become private when the deprecated pre-Collection methods are removed
     @NonNull
     Collection getDefaultCollectionOrThrow() {
         final Collection collection;
@@ -1399,9 +1401,6 @@ abstract class AbstractDatabase extends BaseDatabase
         @NonNull Document localDoc,
         @NonNull Document remoteDoc)
         throws CouchbaseLiteException {
-        final Conflict conflict
-            = new Conflict(localDoc.isDeleted() ? null : localDoc, remoteDoc.isDeleted() ? null : remoteDoc);
-
         Log.d(
             DOMAIN,
             "Resolving doc '%s' (local=%s and remote=%s) with resolver %s",
@@ -1409,6 +1408,43 @@ abstract class AbstractDatabase extends BaseDatabase
             localDoc.getRevisionID(),
             remoteDoc.getRevisionID(),
             resolver);
+
+        final Collection localCollection = localDoc.getCollection();
+        if (localCollection == null) {
+            throw new IllegalStateException("Local doc does not belong to any collection: " + docID);
+        }
+
+        final Document resolvedDoc = runClientResolver(resolver, docID, localDoc, remoteDoc);
+        if (resolvedDoc == null) { return null; }
+
+        Collection targetCollection = resolvedDoc.getCollection();
+        if (targetCollection == null) {
+            targetCollection = localCollection;
+            resolvedDoc.setCollection(targetCollection);
+        }
+
+        if (!localCollection.equals(targetCollection)) {
+            final String msg = String.format(WARN_WRONG_COLLECTION, docID, targetCollection, localCollection);
+            Log.w(DOMAIN, msg);
+            throw new CouchbaseLiteException(msg, CBLError.Domain.CBLITE, CBLError.Code.UNEXPECTED_ERROR);
+        }
+
+        if (!docID.equals(resolvedDoc.getId())) {
+            Log.w(DOMAIN, WARN_WRONG_ID, resolvedDoc.getId(), docID);
+            return new MutableDocument(docID, resolvedDoc);
+        }
+
+        return resolvedDoc;
+    }
+
+    @Nullable
+    private Document runClientResolver(
+        @NonNull ConflictResolver resolver,
+        @NonNull String docID,
+        @NonNull Document localDoc,
+        @NonNull Document remoteDoc) throws CouchbaseLiteException {
+        final Conflict conflict
+            = new Conflict(localDoc.isDeleted() ? null : localDoc, remoteDoc.isDeleted() ? null : remoteDoc);
 
         final ClientTask<Document> task = new ClientTask<>(() -> resolver.resolve(conflict));
         task.execute();
@@ -1420,26 +1456,7 @@ abstract class AbstractDatabase extends BaseDatabase
             throw new CouchbaseLiteException(msg, err, CBLError.Domain.CBLITE, CBLError.Code.UNEXPECTED_ERROR);
         }
 
-        final Document doc = task.getResult();
-        if (doc == null) { return null; }
-
-        final Database target = doc.getDatabase();
-        if (!this.equals(target)) {
-            // !!! This will have to change before Collection Replication will work
-            if (target == null) { doc.setCollection(getDefaultCollection()); }
-            else {
-                final String msg = String.format(WARN_WRONG_DATABASE, docID, target.getName(), getName());
-                Log.w(DOMAIN, msg);
-                throw new CouchbaseLiteException(msg, CBLError.Domain.CBLITE, CBLError.Code.UNEXPECTED_ERROR);
-            }
-        }
-
-        if (!docID.equals(doc.getId())) {
-            Log.w(DOMAIN, WARN_WRONG_ID, doc.getId(), docID);
-            return new MutableDocument(docID, doc);
-        }
-
-        return doc;
+        return task.getResult();
     }
 
     // Call in a transaction
@@ -1456,11 +1473,6 @@ abstract class AbstractDatabase extends BaseDatabase
 
         int mergedFlags = 0x00;
         if (resolvedDoc != null) {
-            // !!! This will have to change before Collection Replication will work
-            // I can't see, actually, that this information is ever used.
-            // Perhaps it can just be deleted?
-            if (resolvedDoc != localDoc) { resolvedDoc.setCollection(getDefaultCollection()); }
-
             final C4Document c4Doc = resolvedDoc.getC4doc();
             if (c4Doc != null) { mergedFlags = c4Doc.getSelectedFlags(); }
         }

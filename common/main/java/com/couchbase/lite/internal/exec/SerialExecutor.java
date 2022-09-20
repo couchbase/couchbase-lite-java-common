@@ -149,7 +149,7 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
 
         try { executor.execute(nextTask); }
         catch (RuntimeException e) {
-            Log.w(LogDomain.DATABASE, "!!! Catastrophic executor failure (Serial Executor)", e);
+            Log.w(LogDomain.DATABASE, "Catastrophic executor failure (Serial Executor)!", e);
             if (!AbstractExecutionService.throttled()) { dumpState(prevTask); }
             throw e;
         }

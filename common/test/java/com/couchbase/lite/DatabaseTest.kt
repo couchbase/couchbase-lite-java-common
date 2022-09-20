@@ -726,10 +726,6 @@ class DatabaseTest : BaseDbTest() {
         }
     }
 
-    // NOTE: Android/Java does not allow to use null as directory parameters
-    @Test(expected = IllegalArgumentException::class)
-    fun testDatabaseExistsWithDefaultDir() = baseTestDbExists(null)
-
     //---------------------------------------------
     //  Database Existing
     //---------------------------------------------

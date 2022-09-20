@@ -1674,8 +1674,6 @@ public abstract class BaseDbTest extends BaseTest {
         return verifyOrDeleteDb(createDb(getUniqueName("test_db")));
     }
 
-    protected void baseTestDbExists(File dir) { Database.exists(baseTestDb.getName(), dir); }
-
     protected void reopenBaseTestDb() throws CouchbaseLiteException { baseTestDb = reopenDb(baseTestDb); }
 
     protected void recreateBastTestDb() throws CouchbaseLiteException { baseTestDb = recreateDb(baseTestDb); }
