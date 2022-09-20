@@ -179,9 +179,11 @@ abstract class AbstractDatabase extends BaseDatabase
      * @param directory the path where the database is located.
      * @return true if exists, false otherwise.
      */
-    public static boolean exists(@NonNull String name, @NonNull File directory) {
+    public static boolean exists(@NonNull String name, @Nullable File directory) {
         Preconditions.assertNotNull(name, "name");
-        Preconditions.assertNotNull(directory, "directory");
+
+        if (directory == null) { directory = CouchbaseLiteInternal.getDefaultDbDir(); }
+
         return C4Database.getDatabaseFile(directory, name).exists();
     }
 
