@@ -127,7 +127,7 @@ public class MDict extends MCollection implements Iterable<String> {
     public boolean remove(String key) { return set(key, MValue.EMPTY); }
 
     public boolean clear() {
-        Preconditions.assertThat(this, "Cannot call set on a non-mutable MDict", MCollection::isMutable);
+        Preconditions.assertThat(this, "Cannot call clear() on an immutable MDict", MCollection::isMutable);
 
         if (valCount == 0) { return true; }
 

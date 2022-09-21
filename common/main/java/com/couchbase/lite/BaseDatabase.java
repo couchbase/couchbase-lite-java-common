@@ -77,7 +77,7 @@ public abstract class BaseDatabase {
     protected void assertOpenChecked() throws CouchbaseLiteException {
         if (!isOpenLocked()) {
             throw new CouchbaseLiteException(
-                Log.lookupStandardMessage("DBClosed"),
+                Log.lookupStandardMessage("DBClosedOrCollectionDeleted"),
                 CBLError.Domain.CBLITE,
                 CBLError.Code.NOT_OPEN);
         }

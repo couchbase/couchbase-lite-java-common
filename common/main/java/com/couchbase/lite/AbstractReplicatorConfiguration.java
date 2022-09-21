@@ -37,6 +37,7 @@ import okhttp3.internal.Util;
 
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -64,7 +65,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
 
     protected static int verifyHeartbeat(int heartbeat) {
-        Util.checkDuration("heartbeat", Preconditions.assertNotNegative(heartbeat, "heartbeat"), TimeUnit.SECONDS);
+        Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS);
         return heartbeat;
     }
 
@@ -74,10 +75,12 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
         final Collection defaultCollection;
         try { defaultCollection = db.getDefaultCollection(); }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed getting default collection", e); }
+        catch (CouchbaseLiteException e) {
+            throw new IllegalStateException(Log.lookupStandardMessage("NoDefaultCollectionInConfig"), e);
+        }
 
         if (defaultCollection == null) {
-            throw new IllegalStateException("Database " + db + " has no default collection");
+            throw new IllegalStateException(Log.lookupStandardMessage("NoDefaultCollectionInConfig"));
         }
 
         final Map<Collection, CollectionConfiguration> collections = new HashMap<>();
@@ -740,27 +743,27 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     //---------------------------------------------
 
     private void addCollectionConfig(@NonNull Collection collection, @NonNull CollectionConfiguration config) {
-        final String name = collection.getName();
-        final String scope = collection.getScope().getName();
-
         final Database db = Preconditions.assertNotNull(collection, "collection").getDatabase();
         if (database == null) { database = db; }
         else {
             if (!database.equals(db)) {
                 throw new IllegalArgumentException(
-                    "Collection " + scope + "." + name + " does not belong to database " + database.getName());
+                    Log.formatStandardMessage("AddCollectionFromAnotherDB", collection.toString(), database.getName()));
             }
         }
 
         if (!database.isOpen()) {
             throw new IllegalArgumentException(
-                "Collection " + scope + "." + name + " belongs to a closed database");
+                Log.formatStandardMessage("AddCollectionFromClosedDB", collection.toString(), database.getName()));
         }
 
         try {
-            final Collection coll = database.getCollection(name, scope);
+            final Collection coll = database.getCollection(collection.getName(), collection.getScope().getName());
             if (coll != null) { coll.close(); }
-            else { throw new IllegalArgumentException("Collection " + scope + "." + name + " has been deleted"); }
+            else {
+                throw new IllegalArgumentException(
+                    Log.formatStandardMessage("AddDeletedCollection", collection.toString()));
+            }
         }
         catch (CouchbaseLiteException e) {
             throw new IllegalArgumentException("Failed getting collection " + collection, e);

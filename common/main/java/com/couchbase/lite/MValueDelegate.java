@@ -26,6 +26,7 @@ import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
+import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -82,8 +83,11 @@ final class MValueDelegate implements MValue.Delegate {
 
     @NonNull
     private Object mValueToDictionary(@NonNull MValue mv, @NonNull MCollection parent) {
+        final MContext ctxt = parent.getContext();
+        if (!(ctxt instanceof DbContext)) { throw new IllegalStateException("Context is not DbContext: " + ctxt); }
+        final DbContext context = (DbContext) ctxt;
+
         final FLDict flDict = Preconditions.assertNotNull(mv.getValue(), "MValue").asFLDict();
-        final DbContext context = (DbContext) parent.getContext();
 
         final FLValue flType = flDict.get(Blob.META_PROP_TYPE);
         final String type = (flType == null) ? null : flType.asString();
