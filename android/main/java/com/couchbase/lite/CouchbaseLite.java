@@ -82,6 +82,6 @@ public final class CouchbaseLite {
      * @throws IllegalStateException on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
-        CouchbaseLiteInternal.init(new MValueDelegate(), debug, rootDir, scratchDir, ctxt);
+        CouchbaseLiteInternal.init(debug, rootDir, scratchDir, ctxt);
     }
 }

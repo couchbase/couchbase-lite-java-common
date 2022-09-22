@@ -587,7 +587,7 @@ abstract class AbstractDatabase extends BaseDatabase
      *
      * @param blob a blob
      */
-    @Internal("This method is not part of the public API: it is for internal use only")
+    @Internal("This method is not part of the public API")
     public void saveBlob(@NonNull Blob blob) {
         synchronized (getDbLock()) { assertOpenUnchecked(); }
         blob.installInDatabase((Database) this);
@@ -599,7 +599,7 @@ abstract class AbstractDatabase extends BaseDatabase
      *
      * @param props blob properties
      */
-    @Internal("This method is not part of the public API: it is for internal use only")
+    @Internal("This method is not part of the public API")
     @Nullable
     public Blob getBlob(@NonNull Map<String, Object> props) {
         synchronized (getDbLock()) { assertOpenUnchecked(); }

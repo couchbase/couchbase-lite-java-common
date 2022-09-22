@@ -58,7 +58,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      *
      * @param json the dictionary content as a JSON string.
      */
-     public MutableDictionary(@NonNull String json) { setJSON(json); }
+    public MutableDictionary(@NonNull String json) { setJSON(json); }
 
     // to create copy of dictionary
     MutableDictionary(@NonNull MDict mDict, boolean isMutable) { super(mDict, isMutable); }
@@ -85,14 +85,12 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
         synchronized (lock) {
             internalDict.clear();
             for (Map.Entry<String, Object> entry: data.entrySet()) {
-                final Object obj = entry.getValue();
-                checkSelf(obj);
                 internalDict.set(
                     Preconditions.assertNotNull(entry.getKey(), "data key"),
-                    new MValue(Fleece.toCBLObject(obj)));
+                    new MValue(Fleece.toCBLObject(checkSelf(entry.getValue()))));
             }
-            return this;
         }
+        return this;
     }
 
     /**
@@ -111,8 +109,8 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
             internalDict.clear();
             try { setData(JSONUtils.fromJSON(new JSONObject(json))); }
             catch (JSONException e) { throw new IllegalArgumentException("Failed parsing JSON", e); }
-            return this;
         }
+        return this;
     }
 
     /**
@@ -128,14 +126,11 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary setValue(@NonNull String key, @Nullable Object value) {
         Preconditions.assertNotNull(key, "key");
-        checkSelf(value);
+        final Object val = Fleece.toCBLObject(checkSelf(value));
         synchronized (lock) {
-            value = Fleece.toCBLObject(value);
-            if (Fleece.willMutate(value, internalDict.get(key), internalDict)) {
-                internalDict.set(key, new MValue(value));
-            }
-            return this;
+            if (Fleece.willMutate(val, internalDict.get(key), internalDict)) { internalDict.set(key, new MValue(val)); }
         }
+        return this;
     }
 
     /**
@@ -258,7 +253,6 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @NonNull
     @Override
     public MutableDictionary setDictionary(@NonNull String key, @Nullable Dictionary value) {
-        checkSelf(value);
         return setValue(key, value);
     }
 
@@ -272,10 +266,8 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary remove(@NonNull String key) {
         Preconditions.assertNotNull(key, "key");
-        synchronized (lock) {
-            internalDict.remove(key);
-            return this;
-        }
+        synchronized (lock) { internalDict.remove(key); }
+        return this;
     }
 
     /**
@@ -308,7 +300,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
         synchronized (lock) { return internalDict.isMutated(); }
     }
 
-    private void checkSelf(Object value) {
-        if (value == this) { throw new IllegalArgumentException("Dictionaries cannot ba added to themselves"); }
+    @Nullable
+    private Object checkSelf(@Nullable Object value) {
+        if (value != this) { return value; }
+        throw new IllegalArgumentException("Dictionaries cannot ba added to themselves");
     }
 }

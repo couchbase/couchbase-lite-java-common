@@ -18,11 +18,14 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Objects;
-
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
+/**
+ * Please see the comments in MValue
+ *
+ * ??? Why isn't this iterable?
+ */
 public abstract class MCollection implements Encodable {
     @Nullable
     private MContext context;
@@ -70,13 +73,6 @@ public abstract class MCollection implements Encodable {
     //---------------------------------------------
     // Protected Methods
     //---------------------------------------------
-
-    protected void setSlot(@Nullable MValue newSlot, @Nullable MValue oldSlot) {
-        if (Objects.equals(slot, oldSlot)) {
-            slot = newSlot;
-            if (newSlot == null) { parent = null; }
-        }
-    }
 
     protected void initInSlot(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
         this.slot = Preconditions.assertNotNull(slot, "slot");

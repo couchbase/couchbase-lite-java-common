@@ -242,5 +242,8 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
         return false;
     }
+
+    // Backing method is package protected
+    protected final boolean mDictHasChanged(MutableDictionary dict) { return dict.isChanged(); }
 }
 

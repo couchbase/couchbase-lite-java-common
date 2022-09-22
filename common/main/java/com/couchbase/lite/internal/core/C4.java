@@ -28,8 +28,6 @@ public final class C4 {
 
     public interface NativeImpl {
         void nSetenv(@NonNull String name, @NonNull String value, int overwrite);
-        @NonNull
-        String nGetenv(@NonNull String name);
         @Nullable
         String nGetBuildInfo();
         @Nullable
@@ -48,11 +46,8 @@ public final class C4 {
         nativeImpl.nSetenv(name, value, overwrite);
     }
 
-    @NonNull
-    public String getEnv(@NonNull String name){ return nativeImpl.nGetenv(name); }
-
     @Nullable
-    public static String getBuildInfo(){ return nativeImpl.nGetBuildInfo(); }
+    public static String getBuildInfo() { return nativeImpl.nGetBuildInfo(); }
 
     @Nullable
     public static String getVersion() { return nativeImpl.nGetVersion(); }

@@ -113,7 +113,7 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
         return;
     }
 
-    jstring message = UTF8ToJstring(env, const_cast<char *>(fmt), strlen(fmt));
+    jstring message = UTF8ToJstring(env, fmt, strlen(fmt));
     if (!message) {
         logError("logCallback(): Failed encoding error message");
         return;
@@ -126,8 +126,8 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    // If this method is on a thread that is was previously attached but was called
-    // from some long running method, we need to release the local refs.
+    // Because this method might run on a thread that was previously attached
+    // but was called from some long running method, we need to release the local refs.
     env->DeleteLocalRef(message);
     if (domainName)
         env->DeleteLocalRef(domainName);
@@ -164,17 +164,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_setenv(
 #else
     setenv(name.c_str(), value.c_str(), overwrite);
 #endif
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4
- * Method:    getenv
- * Signature: (Ljava/lang/String;)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4_getenv(JNIEnv *env, jclass ignore, jstring jname) {
-    jstringSlice name(env, jname);
-    return env->NewStringUTF(getenv(name.c_str()));
 }
 
 /*

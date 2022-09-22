@@ -58,9 +58,9 @@ public class CBLExecutor extends ThreadPoolExecutor {
 
                     final Thread thread = new Thread(r, threadName + id);
                     thread.setUncaughtExceptionHandler((t, e) ->
-                        Log.e(LogDomain.DATABASE, "Uncaught exception on thread " + thread.getName(), e));
+                        Log.e(LogDomain.DATABASE, "Uncaught exception on thread %s", e, thread.getName()));
 
-                    Log.i(LogDomain.DATABASE, "New thread: " + thread.getName());
+                    Log.i(LogDomain.DATABASE, "New thread: %s", thread.getName());
                     return thread;
                 }
             });

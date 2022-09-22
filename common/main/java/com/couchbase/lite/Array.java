@@ -32,6 +32,7 @@ import com.couchbase.lite.internal.fleece.MArray;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.JSONUtils;
 
 
@@ -59,6 +60,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //---------------------------------------------
     // Instance members
     //---------------------------------------------
+
     @NonNull
     protected final Object lock;
     @NonNull
@@ -67,24 +69,32 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    Array() {
-        internalArray = new MArray();
-        lock = getDbLock();
-    }
 
     Array(@NonNull MValue mv, @Nullable MCollection parent) {
-        internalArray = new MArray();
+        this();
         internalArray.initInSlot(mv, parent);
-        lock = getDbLock();
     }
 
     // to crete mutable copy
     Array(@NonNull MArray mArray, boolean isMutable) {
-        internalArray = new MArray();
+        this();
         internalArray.initAsCopyOf(mArray, isMutable);
-        lock = getDbLock();
     }
 
+    Array() {
+        internalArray = new MArray();
+
+        final MContext context = internalArray.getContext();
+        if (context instanceof DbContext) {
+            final BaseDatabase db = ((DbContext) context).getDatabase();
+            if (db != null) {
+                lock = db.getDbLock();
+                return;
+            }
+        }
+
+        lock = new Object();
+    }
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
@@ -306,6 +316,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //---------------------------------------------
     // Iterable implementation
     //---------------------------------------------
+
     @NonNull
     @Override
     public Iterator<Object> iterator() { return new ArrayIterator(count()); }
@@ -314,15 +325,14 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Implementation of FLEncodable
     //-------------------------------------------------------------------------
 
-    /**
-     * encodeTo(FlEncoder) is internal method. Please don't use this method.
-     */
+    @Internal("This method is not part of the public API")
     @Override
     public void encodeTo(@NonNull FLEncoder enc) { internalArray.encodeTo(enc); }
 
     //-------------------------------------------------------------------------
     // Object overrides
     //-------------------------------------------------------------------------
+
     @Override
     public boolean equals(@Nullable Object o) {
         if (this == o) { return true; }
@@ -346,6 +356,24 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         return h;
     }
 
+    @SuppressWarnings("PMD.ConsecutiveLiteralAppends")
+    @NonNull
+    @Override
+    public String toString() {
+        final StringBuilder buf = new StringBuilder("Array{(")
+            .append((internalArray.isMutable()) ? '+' : '.')
+            .append((internalArray.isMutated()) ? '!' : '.')
+            .append(')');
+
+        final int n = count();
+        for (int i = 0; i < n; i++) {
+            if (i > 0) { buf.append(','); }
+            buf.append(getValue(i));
+        }
+
+        return buf.append('}').toString();
+    }
+
     //-------------------------------------------------------------------------
     // Package protected
     //-------------------------------------------------------------------------
@@ -355,16 +383,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //-------------------------------------------------------------------------
     // Private
     //-------------------------------------------------------------------------
-
-    @NonNull
-    private Object getDbLock() {
-        final MContext context = internalArray.getContext();
-        if (context instanceof DbContext) {
-            final BaseDatabase db = ((DbContext) context).getDatabase();
-            if (db != null) { return db.getDbLock(); }
-        }
-        return new Object();
-    }
 
     @NonNull
     private MValue getMValue(@NonNull MArray array, int index) {

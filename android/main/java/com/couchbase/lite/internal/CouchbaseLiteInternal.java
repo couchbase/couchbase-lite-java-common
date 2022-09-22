@@ -39,7 +39,6 @@ import com.couchbase.lite.R;
 import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
@@ -78,7 +77,6 @@ public final class CouchbaseLiteInternal {
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      */
     public static void init(
-        @NonNull MValue.Delegate mValueDelegate,
         boolean debug,
         @NonNull File defaultDbDir,
         @NonNull File scratchDir,
@@ -90,8 +88,6 @@ public final class CouchbaseLiteInternal {
 
         CONTEXT.set(new SoftReference<>(Preconditions.assertNotNull(ctxt.getApplicationContext(), "context")));
 
-        Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
-
         CouchbaseLiteInternal.defaultDbDir = FileUtils.verifyDir(defaultDbDir);
 
         System.loadLibrary(LITECORE_JNI_LIBRARY);
@@ -101,8 +97,6 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(loadErrorMessages(ctxt));
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
-
-        MValue.registerDelegate(mValueDelegate);
     }
 
     @NonNull

@@ -17,62 +17,45 @@ package com.couchbase.lite.internal.fleece;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
+import com.couchbase.lite.MValueConverter;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public class MValue implements Encodable {
-
-    //-------------------------------------------------------------------------
-    // Constants
-    //-------------------------------------------------------------------------
-
-    static final MValue EMPTY = new MValue(null, null) {
-        public boolean isEmpty() { return true; }
-    };
-
-    //-------------------------------------------------------------------------
-    // Types
-    //-------------------------------------------------------------------------
-
-    public interface Delegate {
-        @Nullable
-        Object toNative(@NonNull MValue mv, @Nullable MCollection parent, @NonNull AtomicBoolean cacheIt);
-
-        @Nullable
-        MCollection collectionFromNative(@Nullable Object object);
-
-        void encodeNative(@NonNull FLEncoder encoder, @Nullable Object object);
-    }
+/**
+ * The Mutable Fleece implementations are different across the various platforms. Here's what
+ * I can figure out (though I really have only rumors to go by).  I think that Jens did two
+ * implementations, the second of which was an attempt to make life easier for the platforms.
+ * Word has it that it did not succeed in doing that.  iOS still uses the first
+ * implementation. Java tried to use the first implementation but, because of a problem with
+ * running out of LocalRefs, the original developer for this platform (Java/Android) chose,
+ * more or less, to port that first implementation into Java. I think that .NET did something
+ * similar. As I understand it both Jim and Sandy tried to update .NET to use Jens' second
+ * implementation somewhere in the 2.7 time-frame. They had, at most, partial success.
+ * <p>
+ * In 9/2020 (CBL-246), I tried to convert this code to use LiteCore's MutableFleece package
+ * (that's Jens' second implementations). Both Jim and Jens warned me, without specifics,
+ * that doing so might be more trouble than it was worth. Although the LiteCore
+ * implementation of Mutable Fleece is relatively clear, this Java code is just plain
+ * bizarre. It works, though. I don't think I have ever seen a problem that could be traced
+ * to it. I've cleaned it up just bit but other than that, I'm leaving it alone.  I suggest
+ * you do the same, unless something changes to make the benefit side of the C/B fraction
+ * more interesting.
+ * <p>
+ * The regrettable upside-down dependency on MValueConverter provides access to package
+ * visible symbols in com.couchbase.lite.
+ */
+public class MValue extends MValueConverter implements Encodable {
 
     //-------------------------------------------------------------------------
     // Static members
     //-------------------------------------------------------------------------
 
-
-    @SuppressFBWarnings("NP_NONNULL_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR")
-    @SuppressWarnings("NotNullFieldNotInitialized")
-    @NonNull
-    private static Delegate delegate;
-
-    //-------------------------------------------------------------------------
-    // Public static methods
-    //-------------------------------------------------------------------------
-
-    public static void registerDelegate(@NonNull Delegate delegate) {
-        Preconditions.assertNotNull(delegate, "delegate");
-        MValue.delegate = delegate;
-    }
-
-    @VisibleForTesting
-    @NonNull
-    public static Delegate getRegisteredDelegate() { return Preconditions.assertNotNull(delegate, "delegate"); }
-
+    static final MValue EMPTY = new MValue(null, null) {
+        public boolean isEmpty() { return true; }
+    };
 
     //-------------------------------------------------------------------------
     // Instance members
@@ -89,7 +72,7 @@ public class MValue implements Encodable {
 
     public MValue(@Nullable Object obj) { this(obj, null); }
 
-    public MValue(@Nullable FLValue val) { this(null, val); }
+    MValue(@Nullable FLValue val) { this(null, val); }
 
     private MValue(@Nullable Object obj, @Nullable FLValue val) {
         nativeObject = obj;
@@ -99,6 +82,14 @@ public class MValue implements Encodable {
     //-------------------------------------------------------------------------
     // Public methods
     //-------------------------------------------------------------------------
+
+    @Override
+    public void encodeTo(@NonNull FLEncoder enc) {
+        if (isEmpty()) { throw new IllegalStateException("MValue is empty."); }
+        if (value != null) { enc.writeValue(value); }
+        else if (nativeObject != null) { enc.writeValue(nativeObject); }
+        else { enc.writeNull(); }
+    }
 
     public boolean isEmpty() { return false; }
 
@@ -120,48 +111,5 @@ public class MValue implements Encodable {
         final Object obj = toNative(this, parent, cacheIt);
         if (cacheIt.get()) { nativeObject = obj; }
         return obj;
-    }
-
-    @Override
-    public void encodeTo(@NonNull FLEncoder enc) {
-        if (isEmpty()) { throw new IllegalStateException("MValue is empty."); }
-
-        if (value != null) { enc.writeValue(value); }
-        else { encodeNative(enc, nativeObject); }
-    }
-
-    //-------------------------------------------------------------------------
-    // Protected methods
-    //-------------------------------------------------------------------------
-
-    // !!! What the heck is this??
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { nativeChangeSlot(null); }
-        finally { super.finalize(); }
-    }
-
-    //-------------------------------------------------------------------------
-    // Private methods
-    //-------------------------------------------------------------------------
-
-    @Nullable
-    private Object toNative(@NonNull MValue mv, @Nullable MCollection parent, @NonNull AtomicBoolean cacheIt) {
-        return Preconditions.assertNotNull(delegate, "delegate").toNative(mv, parent, cacheIt);
-    }
-
-    @Nullable
-    private MCollection collectionFromNative(@Nullable Object obj) {
-        return Preconditions.assertNotNull(delegate, "delegate").collectionFromNative(obj);
-    }
-
-    private void nativeChangeSlot(@Nullable MValue newSlot) {
-        final MCollection collection = collectionFromNative(newSlot);
-        if (collection != null) { collection.setSlot(newSlot, this); }
-    }
-
-    private void encodeNative(@NonNull FLEncoder encoder, @Nullable Object object) {
-        Preconditions.assertNotNull(delegate, "delegate").encodeNative(encoder, object);
     }
 }

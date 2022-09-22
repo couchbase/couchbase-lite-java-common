@@ -16,14 +16,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_seten
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4
- * Method:    getenv
- * Signature: (Ljava/lang/String;)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_getenv
-  (JNIEnv *, jclass, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    getBuildInfo
  * Signature: ()Ljava/lang/String;
  */

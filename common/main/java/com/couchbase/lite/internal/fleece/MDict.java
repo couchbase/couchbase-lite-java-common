@@ -27,6 +27,11 @@ import java.util.Map;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
+/**
+ * Please see the comments in MValue
+ *
+ * ??? Why isn't this iterable?
+ */
 public class MDict extends MCollection implements Iterable<String> {
     @NonNull
     private Map<String, MValue> valueMap = new HashMap<>();

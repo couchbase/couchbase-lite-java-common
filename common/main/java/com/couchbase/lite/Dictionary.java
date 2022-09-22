@@ -32,6 +32,7 @@ import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MDict;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -60,7 +61,17 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
 
     private Dictionary(@NonNull MDict internalDict) {
         this.internalDict = internalDict;
-        lock = getDbLock();
+
+        final MContext context = internalDict.getContext();
+        if (context instanceof DbContext) {
+            final BaseDatabase db = ((DbContext) context).getDatabase();
+            if (db != null) {
+                lock = db.getDbLock();
+                return;
+            }
+        }
+
+        lock = new Object();
     }
 
     //-------------------------------------------------------------------------
@@ -77,8 +88,6 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         synchronized (lock) { return new MutableDictionary(internalDict, true); }
     }
 
-    //////// Implementation of ReadOnlyDictionaryInterface
-
     /**
      * Gets the number of the entries in the dictionary.
      *
@@ -87,6 +96,20 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @Override
     public int count() {
         synchronized (lock) { return (int) internalDict.count(); }
+    }
+
+    /**
+     * Tests whether a property exists or not.
+     * This can be less expensive than getValue(String), because it does not have to allocate an Object for the
+     * property value.
+     *
+     * @param key the key
+     * @return the boolean value representing whether a property exists or not.
+     */
+    @Override
+    public boolean contains(@NonNull String key) {
+        Preconditions.assertNotNull(key, "key");
+        synchronized (lock) { return !internalDict.get(key).isEmpty(); }
     }
 
     @NonNull
@@ -303,34 +326,25 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         }
     }
 
-    /**
-     * Tests whether a property exists or not.
-     * This can be less expensive than getValue(String), because it does not have to allocate an Object for the
-     * property value.
-     *
-     * @param key the key
-     * @return the boolean value representing whether a property exists or not.
-     */
-    @Override
-    public boolean contains(@NonNull String key) {
-        Preconditions.assertNotNull(key, "key");
-        synchronized (lock) { return !internalDict.get(key).isEmpty(); }
-    }
-
-    //////// Implementation of FLEncodable
-
-    /**
-     * Internal method: Do not use.
-     */
-    // Public because of the FLEncodable interface
-    @Override
-    public void encodeTo(@NonNull FLEncoder enc) { internalDict.encodeTo(enc); }
-
-    //////// Iterable implementation
+    //---------------------------------------------
+    // Iterable implementation
+    //---------------------------------------------
 
     @NonNull
     @Override
     public Iterator<String> iterator() { return getKeys().iterator(); }
+
+    //-------------------------------------------------------------------------
+    // Implementation of FLEncodable
+    //-------------------------------------------------------------------------
+
+    @Internal("This method is not part of the public API")
+    @Override
+    public void encodeTo(@NonNull FLEncoder enc) { internalDict.encodeTo(enc); }
+
+    //-------------------------------------------------------------------------
+    // Object overrides
+    //-------------------------------------------------------------------------
 
     @Override
     public boolean equals(@Nullable Object o) {
@@ -352,8 +366,6 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         return true;
     }
 
-    //////// Object
-
     @Override
     public int hashCode() {
         int h = 0;
@@ -372,12 +384,14 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
             .append((internalDict.isMutable()) ? '+' : '.')
             .append((internalDict.isMutated()) ? '!' : '.')
             .append(')');
+
         boolean first = true;
         for (String key: getKeys()) {
             if (first) { first = false; }
             else { buf.append(','); }
             buf.append(key).append("=>").append(getValue(key));
         }
+
         return buf.append('}').toString();
     }
 
@@ -393,18 +407,4 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
 
     @NonNull
     MCollection toMCollection() { return internalDict; }
-
-    //---------------------------------------------
-    // private
-    //---------------------------------------------
-
-    @NonNull
-    private Object getDbLock() {
-        final MContext context = internalDict.getContext();
-        if (context instanceof DbContext) {
-            final BaseDatabase db = ((DbContext) context).getDatabase();
-            if (db != null) { return db.getDbLock(); }
-        }
-        return new Object();
-    }
 }

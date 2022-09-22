@@ -22,7 +22,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-// ??? Why isn't this iterable?
+/**
+ * Please see the comments in MValue
+ *
+ * ??? Why isn't this iterable?
+ */
 public class MArray extends MCollection {
     @NonNull
     private List<MValue> values = new ArrayList<>();

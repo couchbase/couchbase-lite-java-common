@@ -12,10 +12,6 @@ public class NativeC4 implements C4.NativeImpl{
     public void nSetenv(@NonNull String name, @NonNull String value, int overwrite) { setenv(name, value, overwrite); }
 
     @Override
-    @NonNull
-    public String nGetenv(@NonNull String name) { return getenv(name); }
-
-    @Override
     @Nullable
     public String nGetBuildInfo() { return getBuildInfo(); }
 
@@ -45,9 +41,6 @@ public class NativeC4 implements C4.NativeImpl{
     private static native String getMessage(int domain, int code, int internalInfo);
 
     public static native void setenv(@NonNull String name, @NonNull String value, int overwrite);
-
-    @NonNull
-    public static native String getenv(@NonNull String name);
 
     @Nullable
     public static native String getBuildInfo();

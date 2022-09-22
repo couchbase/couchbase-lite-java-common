@@ -30,10 +30,8 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.fleece.MValue;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
-import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -62,7 +60,6 @@ public final class CouchbaseLiteInternal {
     private static volatile File defaultDbDir;
 
     public static void init(
-        @NonNull MValue.Delegate mValueDelegate,
         boolean debug,
         @NonNull File defaultDbDir,
         @NonNull File scratchDir) {
@@ -70,8 +67,6 @@ public final class CouchbaseLiteInternal {
 
         // set early to catch initialization errors
         debugging = debug;
-
-        Preconditions.assertNotNull(mValueDelegate, "mValueDelegate");
 
         CouchbaseLiteInternal.defaultDbDir = FileUtils.verifyDir(defaultDbDir);
         final File tmpDir = FileUtils.verifyDir(scratchDir);
@@ -83,8 +78,6 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(loadErrorMessages());
 
         setC4TmpDirPath(tmpDir);
-
-        MValue.registerDelegate(mValueDelegate);
     }
 
     public static boolean debugging() { return debugging; }

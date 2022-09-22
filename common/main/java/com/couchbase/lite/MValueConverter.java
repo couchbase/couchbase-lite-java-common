@@ -23,33 +23,36 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLDict;
-import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * Internal delegate class for MValue - Mutable Fleece Value
+ * This class exists to provide access to package visible symbols, to MValue
  */
-final class MValueDelegate implements MValue.Delegate {
+@Internal("This class is not part of the public API")
+public class MValueConverter {
+    protected MValueConverter() { }
 
     //-------------------------------------------------------------------------
-    // Public methods
+    // Protected methods
     //-------------------------------------------------------------------------
     @Nullable
-    @Override
-    public Object toNative(@NonNull MValue mv, @Nullable MCollection parent, @NonNull AtomicBoolean cacheIt) {
+    protected Object toNative(@NonNull MValue mv, @Nullable MCollection parent, @NonNull AtomicBoolean cacheIt) {
         final FLValue value = Preconditions.assertNotNull(mv.getValue(), "MValue");
         switch (value.getType()) {
-            case FLConstants.ValueType.ARRAY:
-                cacheIt.set(true);
-                return mValueToArray(mv, parent);
             case FLConstants.ValueType.DICT:
                 cacheIt.set(true);
                 return mValueToDictionary(mv, parent);
+            case FLConstants.ValueType.ARRAY:
+                cacheIt.set(true);
+                return ((parent == null) || !parent.hasMutableChildren())
+                    ? new Array(mv, parent)
+                    : new MutableArray(mv, parent);
             case FLConstants.ValueType.DATA:
                 return new Blob("application/octet-stream", value.asData());
             default:
@@ -57,29 +60,9 @@ final class MValueDelegate implements MValue.Delegate {
         }
     }
 
-    @Nullable
-    @Override
-    public MCollection collectionFromNative(@Nullable Object object) {
-        if (object instanceof Dictionary) { return ((Dictionary) object).toMCollection(); }
-        else if (object instanceof Array) { return ((Array) object).toMCollection(); }
-        else { return null; }
-    }
-
-    @Override
-    public void encodeNative(@NonNull FLEncoder enc, @Nullable Object object) {
-        if (object == null) { enc.writeNull(); }
-        else { enc.writeValue(object); }
-    }
-
     //-------------------------------------------------------------------------
     // Private methods
     //-------------------------------------------------------------------------
-    @NonNull
-    private Object mValueToArray(@NonNull MValue mv, @Nullable MCollection parent) {
-        return ((parent == null) || !parent.hasMutableChildren())
-            ? new Array(mv, parent)
-            : new MutableArray(mv, parent);
-    }
 
     @NonNull
     private Object mValueToDictionary(@NonNull MValue mv, @NonNull MCollection parent) {
@@ -91,26 +74,14 @@ final class MValueDelegate implements MValue.Delegate {
 
         final FLValue flType = flDict.get(Blob.META_PROP_TYPE);
         final String type = (flType == null) ? null : flType.asString();
-        if (type == null) {
-            if (isOldAttachment(parent, flDict)) { return createBlob(flDict, context); }
-        }
-        else {
-            final Object obj = createSpecialObjectOfType(type, flDict, context);
-            if (obj != null) { return obj; }
+
+        if (Blob.TYPE_BLOB.equals(type) || ((type == null) && isOldAttachment(parent, flDict))) {
+            return new Blob(Preconditions.assertNotNull(context.getDatabase(), "database"), flDict.asDict());
         }
 
-        if (parent.hasMutableChildren()) { return new MutableDictionary(mv, parent); }
-        else { return new Dictionary(mv, parent); }
-    }
-
-    @Nullable
-    private Object createSpecialObjectOfType(@Nullable String type, @NonNull FLDict props, @NonNull DbContext ctxt) {
-        return (!Blob.TYPE_BLOB.equals(type)) ? null : createBlob(props, ctxt);
-    }
-
-    @NonNull
-    private Object createBlob(@NonNull FLDict props, @NonNull DbContext ctxt) {
-        return new Blob(Preconditions.assertNotNull(ctxt.getDatabase(), "database"), props.asDict());
+        return (parent.hasMutableChildren())
+            ? new MutableDictionary(mv, parent)
+            : new Dictionary(mv, parent);
     }
 
     // At some point in the past, attachments were dictionaries in a top-level
