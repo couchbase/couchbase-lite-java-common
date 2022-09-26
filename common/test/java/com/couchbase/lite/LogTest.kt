@@ -46,9 +46,7 @@ class LogTest : BaseDbTest() {
 
         override fun log(level: LogLevel, domain: LogDomain, message: String) {
             // ignore extraneous logs
-            if ((prefix != null) && (!message.startsWith(Log.LOG_HEADER + prefix))) {
-                return
-            }
+            if ((prefix != null) && (!message.startsWith(Log.LOG_HEADER + prefix))) { return }
 
             this.level = level
             this.domain = domain
@@ -65,28 +63,20 @@ class LogTest : BaseDbTest() {
         val lineCount: Int
             get() {
                 var total = 0
-                for (level in LogLevel.values()) {
-                    total += getLineCount(level)
-                }
+                for (level in LogLevel.values()) { total += getLineCount(level) }
                 return total
             }
 
         override fun log(level: LogLevel, domain: LogDomain, message: String) {
-            if ((prefix != null) && (!message.startsWith(Log.LOG_HEADER + prefix))) {
-                return
-            }
-            if (level < this.level) {
-                return
-            }
+            if ((prefix != null) && (!message.startsWith(Log.LOG_HEADER + prefix))) { return }
+            if (level < this.level) { return }
             lineCounts[level] = getLineCount(level) + 1
             content.append(message)
         }
 
         override fun getLevel() = level!!
 
-        fun setLevel(level: LogLevel?) {
-            this.level = level
-        }
+        fun setLevel(level: LogLevel?) { this.level = level }
 
         fun getLineCount(level: LogLevel) = lineCounts[level] ?: 0
 
@@ -98,17 +88,11 @@ class LogTest : BaseDbTest() {
             private set
 
         public override fun logInternal(c4Domain: String, c4Level: Int, message: String) {
-            if (domainFilter != c4Domain) {
-                return
-            }
-            if (c4Level < minLevel) {
-                minLevel = c4Level
-            }
+            if (domainFilter != c4Domain) { return }
+            if (c4Level < minLevel) { minLevel = c4Level }
         }
 
-        fun reset() {
-            minLevel = C4Constants.LogLevel.NONE
-        }
+        fun reset() { minLevel = C4Constants.LogLevel.NONE }
     }
 
     companion object {
@@ -150,13 +134,12 @@ class LogTest : BaseDbTest() {
         for (level in LogLevel.values()) {
             customLogger.setLevel(level)
             Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
-            Log.v(LogDomain.DATABASE, "$$\$TEST VERBOSE")
             Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
             Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
             Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
         }
 
-        Assert.assertEquals(2, customLogger.getLineCount(LogLevel.VERBOSE).toLong())
+        Assert.assertEquals(0, customLogger.getLineCount(LogLevel.VERBOSE).toLong())
         Assert.assertEquals(3, customLogger.getLineCount(LogLevel.INFO).toLong())
         Assert.assertEquals(4, customLogger.getLineCount(LogLevel.WARNING).toLong())
         Assert.assertEquals(5, customLogger.getLineCount(LogLevel.ERROR).toLong())
@@ -169,7 +152,6 @@ class LogTest : BaseDbTest() {
 
         customLogger.setLevel(LogLevel.NONE)
         Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
-        Log.v(LogDomain.DATABASE, "$$\$TEST VERBOSE")
         Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
         Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
         Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
@@ -177,11 +159,10 @@ class LogTest : BaseDbTest() {
 
         customLogger.setLevel(LogLevel.VERBOSE)
         Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
-        Log.v(LogDomain.DATABASE, "$$\$TEST VERBOSE")
         Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
         Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
         Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
-        Assert.assertEquals(4, customLogger.lineCount.toLong())
+        Assert.assertEquals(3, customLogger.lineCount.toLong())
     }
 
     @Test
@@ -193,7 +174,6 @@ class LogTest : BaseDbTest() {
             for (level in LogLevel.values()) {
                 Database.log.file.level = level
                 Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
-                Log.v(LogDomain.DATABASE, "$$\$TEST VERBOSE")
                 Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
                 Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
                 Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
@@ -204,15 +184,13 @@ class LogTest : BaseDbTest() {
                 BufferedReader(FileReader(log)).use {
                     var l: String?
                     while (it.readLine().also { s -> l = s } != null) {
-                        if (l?.contains("$$\$TEST") == true) {
-                            lineCount++
-                        }
+                        if (l?.contains("$$\$TEST") == true) { lineCount++ }
                     }
                 }
 
                 val logPath = log.canonicalPath
                 if (logPath.contains("verbose")) {
-                    Assert.assertEquals(2, lineCount.toLong())
+                    Assert.assertEquals(0, lineCount.toLong())
                 } else if (logPath.contains("info")) {
                     Assert.assertEquals(3, lineCount.toLong())
                 } else if (logPath.contains("warning")) {
@@ -272,9 +250,7 @@ class LogTest : BaseDbTest() {
             Assert.assertTrue(files.size >= 4)
 
             val rex = Regex("cbl_(debug|verbose|info|warning|error)_\\d+\\.cbllog")
-            for (file in files) {
-                Assert.assertTrue(file.name.matches(rex))
-            }
+            for (file in files) { Assert.assertTrue(file.name.matches(rex)) }
         }
     }
 
@@ -294,9 +270,7 @@ class LogTest : BaseDbTest() {
 
         testWithConfiguration(LogLevel.NONE, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             writeAllLogs(uuidString)
-            for (log in logFiles) {
-                Assert.assertFalse(getLogContents(log).contains(uuidString))
-            }
+            for (log in logFiles) { Assert.assertFalse(getLogContents(log).contains(uuidString)) }
         }
     }
 
@@ -307,21 +281,21 @@ class LogTest : BaseDbTest() {
         testWithConfiguration(LogLevel.NONE, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             writeAllLogs(uuidString)
 
-            for (log in logFiles) {
-                Assert.assertFalse(getLogContents(log).contains(uuidString))
-            }
+            for (log in logFiles) { Assert.assertFalse(getLogContents(log).contains(uuidString)) }
 
-            Database.log.file.level = LogLevel.VERBOSE
+            Database.log.file.level = LogLevel.INFO
             writeAllLogs(uuidString)
 
-            val filesExceptDebug =
-                tempDir!!.listFiles { _: File?, name: String ->
-                    !name.lowercase(Locale.getDefault()).startsWith("cbl_debug_")
+            val logFiles = tempDir!!.listFiles()
+            Assert.assertNotNull(tempDir!!.listFiles())
+            for (log in logFiles!!) {
+                val fn = log.name.lowercase(Locale.getDefault())
+                if (fn.startsWith("cbl_debug_") || fn.startsWith("cbl_verbose_")) {
+                    Assert.assertFalse(getLogContents(log).contains(uuidString))
                 }
-
-            Assert.assertNotNull(filesExceptDebug)
-            for (log in filesExceptDebug!!) {
-                Assert.assertTrue(getLogContents(log).contains(uuidString))
+                else {
+                    Assert.assertTrue(getLogContents(log).contains(uuidString))
+                }
             }
         }
     }
@@ -380,13 +354,12 @@ class LogTest : BaseDbTest() {
 
         testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             Log.d(LogDomain.DATABASE, message, error)
-            Log.v(LogDomain.DATABASE, message, error)
             Log.i(LogDomain.DATABASE, message, error)
             Log.w(LogDomain.DATABASE, message, error)
             Log.e(LogDomain.DATABASE, message, error)
 
             for (log in logFiles) {
-                Assert.assertTrue(getLogContents(log).contains(uuid))
+                if (!log.name.contains("verbose")) { Assert.assertTrue(getLogContents(log).contains(uuid)) }
             }
         }
     }
@@ -400,15 +373,17 @@ class LogTest : BaseDbTest() {
 
         testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             Log.d(LogDomain.DATABASE, message, error, uuid2)
-            Log.v(LogDomain.DATABASE, message, error, uuid2)
+            Log.testLog(LogLevel.VERBOSE, LogDomain.DATABASE, message, error, uuid2)
             Log.i(LogDomain.DATABASE, message, error, uuid2)
             Log.w(LogDomain.DATABASE, message, error, uuid2)
             Log.e(LogDomain.DATABASE, message, error, uuid2)
 
             for (log in logFiles) {
-                val content = getLogContents(log)
-                Assert.assertTrue(content.contains(uuid1))
-                Assert.assertTrue(content.contains(uuid2))
+                if (!log.name.contains("verbose")) {
+                    val content = getLogContents(log)
+                    Assert.assertTrue(content.contains(uuid1))
+                    Assert.assertTrue(content.contains(uuid2))
+                }
             }
         }
     }
@@ -602,14 +577,12 @@ class LogTest : BaseDbTest() {
     private fun writeOneKiloByteOfLog() {
         val message = "11223344556677889900" // ~43 bytes
         // 24 * 43 = 1032
-        for (i in 0..23) {
-            writeAllLogs(message)
-        }
+        for (i in 0..23) {  writeAllLogs(message) }
     }
 
     private fun writeAllLogs(message: String) {
         Log.d(LogDomain.DATABASE, message)
-        Log.v(LogDomain.DATABASE, message)
+        Log.testLog(LogLevel.VERBOSE, LogDomain.DATABASE, message)
         Log.i(LogDomain.DATABASE, message)
         Log.w(LogDomain.DATABASE, message)
         Log.e(LogDomain.DATABASE, message)

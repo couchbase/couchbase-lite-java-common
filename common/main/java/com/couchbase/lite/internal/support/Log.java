@@ -124,39 +124,6 @@ public final class Log {
     }
 
     /**
-     * Send a VERBOSE message.
-     * Please do not use verbose level logging
-     *
-     * @param domain The log domain.
-     * @param msg    The message you would like logged.
-     */
-    public static void v(@NonNull LogDomain domain, @NonNull String msg) { log(LogLevel.VERBOSE, domain, null, msg); }
-
-    /**
-     * Send a VERBOSE message and log the exception.
-     * Please do not use verbose level logging
-     *
-     * @param domain The log domain.
-     * @param msg    The message you would like logged.
-     * @param err    An exception to log
-     */
-    public static void v(@NonNull LogDomain domain, @NonNull String msg, @Nullable Throwable err) {
-        log(LogLevel.VERBOSE, domain, err, msg);
-    }
-
-    /**
-     * Send a VERBOSE message.
-     * Please do not use verbose level logging
-     *
-     * @param domain The log domain.
-     * @param msg    The string you would like logged plus format specifiers.
-     * @param args   Variable number of Object args to be used as params to formatString.
-     */
-    public static void v(@NonNull LogDomain domain, @NonNull String msg, Object... args) {
-        log(LogLevel.VERBOSE, domain, null, msg, args);
-    }
-
-    /**
      * Send a VERBOSE message and log the exception.
      * Please do not use verbose level logging
      *
@@ -319,6 +286,15 @@ public final class Log {
             LogDomain.DATABASE,
             "Database.log.getFile().getConfig() is now null: logging is disabled.  "
                 + "Log files required for product support are not being generated.");
+    }
+
+    @VisibleForTesting
+    public static void testLog(
+        @NonNull LogLevel level,
+        @NonNull LogDomain domain,
+        @NonNull String msg,
+        @Nullable Object... args) {
+        log(level, domain, null, msg, args);
     }
 
     private static void log(
