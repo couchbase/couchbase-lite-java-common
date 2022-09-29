@@ -195,17 +195,6 @@ public abstract class C4NativePeer implements AutoCloseable {
         updateHistory(peer, "Released at:");
     }
 
-    /**
-     * Same as the function above: use when you really just can't avoid the finalizer.
-     *
-     * @param fn  The goodbye-kiss.  Be careful if this function seizes locks
-     * @param <E> The type of exception (typically none) thrown by the goodbye-kiss
-     * @throws E the goodbye kiss failed.
-     */
-    protected final <E extends Exception> void releasePeerSilently(@Nullable Fn.ConsumerThrows<Long, E> fn) throws E {
-        releasePeer(fn);
-    }
-
     //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------

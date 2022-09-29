@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -39,21 +40,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Readonly version of the Document.
  */
-// Should probably should be closeable or autoclosable.
 @SuppressWarnings("PMD.CyclomaticComplexity")
 public class Document implements DictionaryInterface, Iterable<String> {
-    // !!! This code is from v1.x. Replace with c4rev_getGeneration().
-    private static long generationFromRevID(String revID) {
-        long generation = 0;
-        final long length = Math.min(revID == null ? 0 : revID.length(), 9);
-        for (int i = 0; i < length; ++i) {
-            final char c = revID.charAt(i);
-            if (Character.isDigit(c)) { generation = 10 * generation + Character.getNumericValue(c); }
-            else if (c == '-') { return generation; }
-            else { break; }
-        }
-        return 0;
-    }
 
     /// Factory methods
 
@@ -456,7 +444,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         final Database db = getDatabase();
         final Database otherDb = doc.getDatabase();
         // Step 1: Check Database
-        if (!((db == null) ? otherDb == null : db.equals(otherDb))) { return false; }
+        if (!(Objects.equals(db, otherDb))) { return false; }
 
         // Step 2: Check document ID
         // NOTE id never null?
@@ -515,8 +503,13 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     final boolean isMutable() { return mutable; }
 
-    // ??? should use c4rev_getGeneration
-    long generation() { return generationFromRevID(getRevisionID()); }
+     long generation() {
+        final String revId = getRevisionID();
+        if (revId == null) { return 0; }
+        final C4Document c4Doc = getC4doc();
+        if (c4Doc == null) { return 0; }
+        return c4Doc.getGeneration(revId);
+    }
 
     final boolean isEmpty() { return getContent().isEmpty(); }
 
@@ -608,7 +601,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     private void updateC4DocumentLocked(@Nullable C4Document c4Doc) {
         if (c4Document == c4Doc) { return; }
 
-        // ??? This seems like a great place to close the old document.
+        // ??? This seems like a great place to close the old c4Document.
         //  It appears, though that it may, occasionally, belong to
         //  somebody else as well: closing it leads to native crashes.
         //  J'accuse Database.saveInTransaction...
@@ -622,8 +615,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
         this.data = data;
 
         if (data == null) {
-            root = null;
             internalDict = mutable ? new MutableDictionary() : new Dictionary();
+            root = null;
             return;
         }
 
@@ -631,9 +624,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         if (db == null) { throw new IllegalStateException("document has not been saved to a database"); }
 
         final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
-        final Dictionary dict = (Dictionary) Preconditions.assertNotNull(newRoot.asNative(), "root dictionary");
+        internalDict = (Dictionary) Preconditions.assertNotNull(newRoot.asNative(), "root dictionary");
         root = newRoot;
-
-        synchronized (db.getDbLock()) { internalDict = dict; }
     }
 }

@@ -114,6 +114,14 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Document_ge
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    getGenerationForId
+ * Signature: (Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getGenerationForId
+        (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    getSelectedBody2
  * Signature: (J)J
  */

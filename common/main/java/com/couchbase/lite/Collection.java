@@ -508,13 +508,13 @@ public final class Collection extends BaseCollection
 
     @GuardedBy("dbLock")
     @NonNull
-    protected C4Collection getOpenC4CollectionLocked() throws CouchbaseLiteException {
+    C4Collection getOpenC4CollectionLocked() throws CouchbaseLiteException {
         assertOpenChecked();
         return Preconditions.assertNotNull(c4Collection, "c4collection");
     }
 
     @GuardedBy("dbLock")
-    protected void assertOpenChecked() throws CouchbaseLiteException {
+    void assertOpenChecked() throws CouchbaseLiteException {
         if (!db.isOpenLocked()) {
             throw new CouchbaseLiteException(
                 Log.lookupStandardMessage("DBClosedOrCollectionDeleted"),
@@ -675,7 +675,7 @@ public final class Collection extends BaseCollection
             docChangeNotifiers.put(docID, docNotifier);
             if (isOpen()) {
                 try { docNotifier.start(this::scheduleImmediateOnPostExecutor); }
-                // ??? Revisit this: there is no programatic way for client code
+                // !!! Revisit this: there is no programatic way for client code
                 // to know that the listener has failed.
                 catch (CouchbaseLiteException e) {
                     Log.d(LogDomain.LISTENER, e.getMessage());

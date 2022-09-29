@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -25,6 +24,7 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.support.Log;
 
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
@@ -157,6 +157,8 @@ public final class C4Document extends C4NativePeer {
         return value == 0 ? null : FLDict.create(value);
     }
 
+    public long getGeneration(String id) { return getGenerationForId(id); }
+
     // - Conflict resolution
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
@@ -207,9 +209,12 @@ public final class C4Document extends C4NativePeer {
             C4Constants.RevisionFlags.IS_CONFLICT);
     }
 
-    @CallSuper
+    // ??? Multiple Document objects may hold references to a single C4Document:
+    // there is just no way to close them explicitly at this point.
     @Override
-    public void close() { closePeer(null); }
+    public void close() {
+        Log.w(LogDomain.DATABASE, "Unsafe call to C4Database.close()", new Exception("Unsafe call at:"));
+    }
 
     @NonNull
     @Override
@@ -225,7 +230,9 @@ public final class C4Document extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { closePeer(LogDomain.DATABASE); }
+        // Since there is no good way to free these suckers explicitly,
+        // we leave them to the finalizer and don't squawk about it.
+        try { releasePeer(null, C4Document::free); }
         finally { super.finalize(); }
     }
 
@@ -271,14 +278,6 @@ public final class C4Document extends C4NativePeer {
     }
 
     //-------------------------------------------------------------------------
-    // private methods
-    //-------------------------------------------------------------------------
-
-    // ??? There is just no way to explicitly close these things at this point.
-    //     Don't cry wolf.
-    private void closePeer(@Nullable LogDomain domain) { releasePeerSilently(C4Document::free); }
-
-    //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
@@ -307,6 +306,8 @@ public final class C4Document extends C4NativePeer {
     private static native String getSelectedRevID(long doc);
 
     private static native long getSelectedSequence(long doc);
+
+    private static native long getGenerationForId(@NonNull String doc);
 
     // return pointer to FLValue
     private static native long getSelectedBody2(long doc);

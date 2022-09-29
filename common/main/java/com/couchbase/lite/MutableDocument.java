@@ -96,7 +96,7 @@ public final class MutableDocument extends Document implements MutableDictionary
         setJSON(json);
     }
 
-    protected MutableDocument(@NonNull Document doc) {
+    MutableDocument(@NonNull Document doc) {
         this(doc.getCollection(), doc.getId(), doc.getC4doc());
         if (doc.isMutable()) { setContent(doc.getContent().toMutable()); }
     }

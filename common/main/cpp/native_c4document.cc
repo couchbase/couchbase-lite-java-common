@@ -149,6 +149,21 @@ Java_com_couchbase_lite_internal_core_C4Document_getSelectedSequence(JNIEnv *env
     return doc->selectedRev.sequence;
 }
 
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    getGenerationForId
+ * Signature: (Ljava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4Document_getGenerationForId(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jrevId) {
+    jstringSlice revId(env, jrevId);
+    return c4rev_getGeneration(revId);
+}
+
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    getSelectedBody2
@@ -225,7 +240,7 @@ Java_com_couchbase_lite_internal_core_C4Document_update2(
         return 0;
     }
 
-    C4Slice body {(const void *) jbodyPtr, (size_t) jbodySize};
+    C4Slice body{(const void *) jbodyPtr, (size_t) jbodySize};
 
     C4Error error{};
     C4Document *newDoc = c4doc_update((C4Document *) jdoc, body, (unsigned) flags, &error);
@@ -304,7 +319,7 @@ Java_com_couchbase_lite_internal_core_C4Document_dictContainsBlobs(
         jlong jbodyPtr,
         jlong jbodySize,
         jlong jsk) {
-    FLSliceResult body {(const void *) jbodyPtr, (size_t) jbodySize};
+    FLSliceResult body{(const void *) jbodyPtr, (size_t) jbodySize};
     FLDoc doc = FLDoc_FromResultData(body, kFLTrusted, (FLSharedKeys) jsk, kFLSliceNull);
     auto dict = (FLDict) FLDoc_GetRoot(doc);
     bool containsBlobs = c4doc_dictContainsBlobs(dict);
