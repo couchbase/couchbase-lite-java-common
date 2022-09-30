@@ -209,8 +209,9 @@ public final class C4Document extends C4NativePeer {
             C4Constants.RevisionFlags.IS_CONFLICT);
     }
 
-    // ??? Multiple Document objects may hold references to a single C4Document:
-    // there is just no way to close them explicitly at this point.
+    // Apparently, there may be multiple active references to a single C4Document,
+    // making it very hard to figure out when they can be closed, explicitely.
+    // See finalize() below.
     @Override
     public void close() {
         Log.w(LogDomain.DATABASE, "Unsafe call to C4Database.close()", new Exception("Unsafe call at:"));
@@ -227,6 +228,15 @@ public final class C4Document extends C4NativePeer {
     // protected methods
     //-------------------------------------------------------------------------
 
+    // As noted above (close()) and in Document.updateC4DocumentLocked it seems that there
+    // may be several live reference to a single C4Document (see MutableDocument.<init>).
+    // That means that it is pretty difficult to figure how to release them, explicitly.
+    // Attempts to close the C4Document, e.g. in Document.updateC4DocumentLocked resulted
+    // in many failed tests and even some native crashes in Database.saveInTransaction.
+    // That is just a huge shame, since it means that every single document created by
+    // client code, eventually ends up on the finalizer queue. A lot of code that seems
+    // to work -- some of it fairly mysterious -- would have to change.  I'm quite reluctant
+    // to make such big changes without a clear benefit from doing so.
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {

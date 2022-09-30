@@ -601,10 +601,10 @@ public class Document implements DictionaryInterface, Iterable<String> {
     private void updateC4DocumentLocked(@Nullable C4Document c4Doc) {
         if (c4Document == c4Doc) { return; }
 
-        // ??? This seems like a great place to close the old c4Document.
-        //  It appears, though that it may, occasionally, belong to
-        //  somebody else as well: closing it leads to native crashes.
-        //  J'accuse Database.saveInTransaction...
+        // This seems like a great place to close the old c4Document.
+        // It appears, though, that there may be other live references
+        // and that closing it here can cause failures.
+        // See C4Document.finalize()
         c4Document = c4Doc;
 
         if (c4Doc != null) { revId = null; }
