@@ -60,8 +60,8 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     public MutableDictionary(@NonNull String json) { setJSON(json); }
 
-    // to create copy of dictionary
-    MutableDictionary(@NonNull MDict mDict, boolean isMutable) { super(mDict, isMutable); }
+    // create copy of dictionary
+    MutableDictionary(@NonNull MDict mDict) { super(mDict); }
 
     MutableDictionary(@NonNull MValue mv, @Nullable MCollection parent) { super(mv, parent); }
 

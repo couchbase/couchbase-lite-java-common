@@ -57,9 +57,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
 
     Dictionary(@NonNull MValue mv, @Nullable MCollection parent) { this(new MDict(mv, parent)); }
 
-    Dictionary(@NonNull MDict mDict, boolean isMutable) { this(new MDict(mDict, isMutable)); }
-
-    private Dictionary(@NonNull MDict internalDict) {
+    Dictionary(@NonNull MDict internalDict) {
         this.internalDict = internalDict;
 
         final MContext context = internalDict.getContext();
@@ -85,7 +83,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @NonNull
     public MutableDictionary toMutable() {
-        synchronized (lock) { return new MutableDictionary(internalDict, true); }
+        synchronized (lock) { return new MutableDictionary(new MDict(internalDict, true)); }
     }
 
     /**
