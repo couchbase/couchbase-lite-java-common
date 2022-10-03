@@ -186,10 +186,11 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
                 getC4QueryLocked(),
                 (results, err) -> onQueryChanged(token, results, err));
         }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
+        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query listener", e); }
 
         listeners.put(token, queryObserver);
 
+        // start the observer after the client gets the token
         (executor != null ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor())
             .execute(() -> queryObserver.setEnabled(true));
 

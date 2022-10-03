@@ -742,6 +742,7 @@ public class DictionaryTest extends BaseDbTest {
 
 
     ///////////////  JSON tests
+    // https://docs.google.com/document/d/1H0mnutn-XXIADvGT_EjINAOVwt0Ea8vwW70v0i_PO54
 
     // JSON 3.3
     @Test
@@ -778,7 +779,5 @@ public class DictionaryTest extends BaseDbTest {
 
     // JSON 3.6.d
     @Test(expected = IllegalArgumentException.class)
-    public void testDictFromArray() throws IOException {
-        new MutableDocument("fromJSON", readJSONResource("array.json"));
-    }
+    public void testDictFromArray() throws IOException { new MutableDictionary("[1, a, 1.0]"); }
 }
