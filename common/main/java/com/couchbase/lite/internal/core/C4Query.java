@@ -25,6 +25,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4Query;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public final class C4Query extends C4NativePeer {
@@ -79,7 +80,7 @@ public final class C4Query extends C4NativePeer {
         @NonNull AbstractIndex.QueryLanguage language,
         @NonNull String expression)
         throws LiteCoreException {
-        super(impl.nCreateQuery(db, language.getValue(), expression));
+        super(impl.nCreateQuery(Preconditions.assertNotZero(db, "db peer ref"), language.getValue(), expression));
         this.impl = impl;
     }
 
