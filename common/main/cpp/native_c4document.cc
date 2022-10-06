@@ -149,7 +149,6 @@ Java_com_couchbase_lite_internal_core_C4Document_getSelectedSequence(JNIEnv *env
     return doc->selectedRev.sequence;
 }
 
-
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    getGenerationForId

@@ -40,7 +40,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     //---------------------------------------------
 
     /**
-     * Initialize a new empty Dictionary object.
+     * Construct a new empty Dictionary object.
      */
     public MutableDictionary() { }
 
@@ -60,10 +60,11 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     public MutableDictionary(@NonNull String json) { setJSON(json); }
 
-    // create copy of dictionary
-    MutableDictionary(@NonNull MDict mDict) { super(mDict); }
+    // create a mutable copy
+    MutableDictionary(@NonNull MDict dict) { super(dict); }
 
-    MutableDictionary(@NonNull MValue mv, @Nullable MCollection parent) { super(mv, parent); }
+    // Called from the MValueConverter.
+    MutableDictionary(@NonNull MValue val, @Nullable MCollection parent) { super(val, parent); }
 
     //---------------------------------------------
     // API - public methods
@@ -106,7 +107,6 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary setJSON(@NonNull String json) {
         synchronized (lock) {
-            internalDict.clear();
             try { setData(JSONUtils.fromJSON(new JSONObject(json))); }
             catch (JSONException e) { throw new IllegalArgumentException("Failed parsing JSON", e); }
         }
@@ -303,6 +303,6 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Nullable
     private Object checkSelf(@Nullable Object value) {
         if (value != this) { return value; }
-        throw new IllegalArgumentException("Dictionaries cannot ba added to themselves");
+        throw new IllegalArgumentException("Dictionaries cannot be added to themselves");
     }
 }

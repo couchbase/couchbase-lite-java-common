@@ -33,7 +33,7 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 
 
 final class Fleece {
-    private Fleece() {}
+    private Fleece() { }
 
     private static final String SUPPORTED_TYPES
         = "MutableDictionary, Dictionary, Map, MutableArray, Array, List, Blob, Date, String, Number, Boolean and null";
@@ -41,7 +41,6 @@ final class Fleece {
     // Assume that array and dict values are always different to avoid expensive comparisons.
     static boolean willMutate(Object newValue, @NonNull MValue oldValue, MCollection container) {
         final FLValue val = oldValue.getValue();
-
         final int oldType = (val != null) ? val.getType() : FLConstants.ValueType.UNDEFINED;
         return ((oldType == FLConstants.ValueType.UNDEFINED)
             || (oldType == FLConstants.ValueType.DICT)

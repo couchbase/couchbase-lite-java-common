@@ -18,33 +18,50 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.couchbase.lite.internal.utils.Preconditions;
-
 
 /**
  * Please see the comments in MValue
- *
- * ??? Why isn't this iterable?
  */
 public abstract class MCollection implements Encodable {
     @Nullable
-    private MContext context;
+    private final MValue slot;
     @Nullable
-    private MValue slot;
+    private final MContext context;
     @Nullable
-    private MCollection parent;
-    private boolean mutable;
-    private boolean mutated;
-    private boolean mutableChildren;
+    private final MCollection parent;
+    private final boolean mutable;
+    private final boolean mutableChildren;
+
+    private volatile boolean mutated;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
 
+    // Convenience constructor for sub-classes
     protected MCollection() { this(MContext.NULL, true); }
 
-    MCollection(@Nullable MContext context, boolean isMutable) {
+    protected MCollection(@Nullable MContext context, boolean isMutable) { this(null, null, context, isMutable); }
+
+    // Copy constructor
+    protected MCollection(@NonNull MCollection original, boolean isMutable) {
+        this(null, null, original.getContext(), isMutable);
+    }
+
+    // Slot constructor
+    protected MCollection(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
+        this(slot, parent, ((slot.getValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
+        this.mutated = slot.isMutated();
+    }
+
+    private MCollection(
+        @Nullable MValue slot,
+        @Nullable MCollection parent,
+        @Nullable MContext context,
+        boolean isMutable) {
+        this.slot = slot;
         this.context = context;
+        this.parent = parent;
         this.mutable = isMutable;
         mutableChildren = isMutable;
     }
@@ -53,43 +70,25 @@ public abstract class MCollection implements Encodable {
     // Public Methods
     //---------------------------------------------
 
-    public boolean isMutable() { return mutable; }
-
     public boolean isMutated() { return mutated; }
 
-    public boolean hasMutableChildren() { return mutableChildren; }
+    public final boolean isMutable() { return mutable; }
+
+    public final boolean hasMutableChildren() { return mutableChildren; }
 
     @Nullable
-    public MContext getContext() { return context; }
-
-    public void initAsCopyOf(@NonNull MCollection original, boolean isMutable) {
-        if (context != MContext.NULL) { throw new IllegalStateException("Current context is not null."); }
-
-        context = Preconditions.assertNotNull(original, "original MCollection").getContext();
-        this.mutable = isMutable;
-        mutableChildren = isMutable;
-    }
+    public final MContext getContext() { return context; }
 
     //---------------------------------------------
     // Protected Methods
     //---------------------------------------------
 
-    protected void initInSlot(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
-        this.slot = Preconditions.assertNotNull(slot, "slot");
-        if (context != MContext.NULL) { throw new IllegalStateException("Current context must be MContext.Null"); }
-        this.parent = parent;
-        this.mutable = isMutable;
-        mutableChildren = isMutable;
-        mutated = this.slot.isMutated();
-        if (this.slot.getValue() != null) { context = (parent == null) ? null : parent.getContext(); }
-    }
+    protected final void mutate() {
+        if (mutated) { return; }
 
-    protected void mutate() {
-        if (!mutable) { throw new IllegalStateException("The collection object is not mutable."); }
-        if (!mutated) {
-            mutated = true;
-            if (slot != null) { slot.mutate(); }
-            if (parent != null) { parent.mutate(); }
-        }
+        mutated = true;
+        if (slot != null) { slot.mutate(); }
+        if (parent != null) { parent.mutate(); }
     }
 }
+

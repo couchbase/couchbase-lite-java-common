@@ -42,7 +42,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     //---------------------------------------------
 
     /**
-     * Constructs a new empty Array object.
+     * Construct a new empty Array object.
      */
     public MutableArray() { }
 
@@ -51,7 +51,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * Allowed value types are List, Date, Map, Number, null, String, Array, Blob, and Dictionary.
      * If present, Lists, Maps and Dictionaries may contain only the above types.
      *
-     * @param data the document content list
+     * @param data the array content list
      */
     public MutableArray(@NonNull List<Object> data) { setData(data); }
 
@@ -62,11 +62,11 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     public MutableArray(@NonNull String json) { setJSON(json); }
 
-    // to create copy
-    MutableArray(@NonNull MArray mArray, boolean isMutable) { super(mArray, isMutable); }
+    // Create a mutable copy
+    MutableArray(@NonNull MArray array) { super(array); }
 
-    // Call from native method
-    MutableArray(@NonNull MValue mv, @Nullable MCollection parent) { super(mv, parent); }
+    // Called from the MValueConverter.
+    MutableArray(@NonNull MValue val, @Nullable MCollection parent) { super(val, parent); }
 
     //---------------------------------------------
     // API - public methods
@@ -107,7 +107,6 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray setJSON(@NonNull String json) {
         synchronized (lock) {
-            internalArray.clear();
             try { setData(JSONUtils.fromJSON(new JSONArray(json))); }
             catch (JSONException e) { throw new IllegalArgumentException("Failed parsing JSON", e); }
         }
@@ -527,7 +526,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray remove(int index) {
         synchronized (lock) {
-            if (!internalArray.remove(index)) {
+            if (!internalArray.remove(index, 1)) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
             return this;
@@ -561,7 +560,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Nullable
     private Object checkSelf(@Nullable Object value) {
         if (value != this) { return value; }
-        throw new IllegalArgumentException("Arrays cannot ba added to themselves");
+        throw new IllegalArgumentException("Arrays cannot be added to themselves");
     }
 }
 

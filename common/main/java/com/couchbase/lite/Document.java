@@ -399,7 +399,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
             }
         }
         catch (LiteCoreException e) {
-            Log.i(LogDomain.DATABASE, "Failed encoding document", CouchbaseLiteException.convertException(e));
+            Log.i(LogDomain.DATABASE, "Failed encoding document as JSON", CouchbaseLiteException.convertException(e));
         }
 
         return null;
@@ -583,7 +583,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
             return encoder.finish2();
         }
     }
-
 
     //---------------------------------------------
     // Private access

@@ -44,13 +44,10 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Types
     //---------------------------------------------
     private class ArrayIterator implements Iterator<Object> {
-        private final int count;
         private int index;
 
-        ArrayIterator(int count) { this.count = count; }
-
         @Override
-        public boolean hasNext() { return index < count; }
+        public boolean hasNext() { return index < Array.this.count(); }
 
         @Nullable
         @Override
@@ -70,21 +67,16 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Constructors
     //---------------------------------------------
 
-    Array(@NonNull MValue mv, @Nullable MCollection parent) {
-        this();
-        internalArray.initInSlot(mv, parent);
-    }
+    // Construct an empty mutable Array
+    protected Array() { this(new MArray()); }
 
-    // to crete mutable copy
-    Array(@NonNull MArray mArray, boolean isMutable) {
-        this();
-        internalArray.initAsCopyOf(mArray, isMutable);
-    }
+    // Slot(??) constructor
+    Array(@NonNull MValue val, @Nullable MCollection parent) { this(new MArray(val, parent)); }
 
-    Array() {
-        internalArray = new MArray();
-
-        final MContext context = internalArray.getContext();
+    // Copy constructor
+    protected Array(@NonNull MArray array) {
+        internalArray = array;
+        final MContext context = array.getContext();
         if (context instanceof DbContext) {
             final BaseDatabase db = ((DbContext) context).getDatabase();
             if (db != null) {
@@ -92,9 +84,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
                 return;
             }
         }
-
         lock = new Object();
     }
+
     //---------------------------------------------
     // API - public methods
     //---------------------------------------------
@@ -106,7 +98,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @NonNull
     public MutableArray toMutable() {
-        synchronized (lock) { return new MutableArray(internalArray, true); }
+        synchronized (lock) { return new MutableArray(new MArray(internalArray, true)); }
     }
 
     /**
@@ -317,9 +309,17 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Iterable implementation
     //---------------------------------------------
 
+    /**
+     * An iterator over N elements of this array, where N is the size of the array,
+     * at the time the method is called.  It does not support ConcurrentModificationExceptions.
+     * It will not include new elements added to the end of the array and will generate
+     * an IndexOutOfBounds exception if the array shrinks.
+     *
+     * @return an iterator over the array.
+     */
     @NonNull
     @Override
-    public Iterator<Object> iterator() { return new ArrayIterator(count()); }
+    public Iterator<Object> iterator() { return new ArrayIterator(); }
 
     //-------------------------------------------------------------------------
     // Implementation of FLEncodable
@@ -373,12 +373,6 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
 
         return buf.append('}').toString();
     }
-
-    //-------------------------------------------------------------------------
-    // Package protected
-    //-------------------------------------------------------------------------
-    @NonNull
-    MCollection toMCollection() { return internalArray; }
 
     //-------------------------------------------------------------------------
     // Private

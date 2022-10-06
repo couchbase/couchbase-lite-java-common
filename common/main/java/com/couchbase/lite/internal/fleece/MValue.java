@@ -54,6 +54,7 @@ public class MValue extends MValueConverter implements Encodable {
     //-------------------------------------------------------------------------
 
     static final MValue EMPTY = new MValue(null, null) {
+        @Override
         public boolean isEmpty() { return true; }
     };
 
@@ -62,9 +63,9 @@ public class MValue extends MValueConverter implements Encodable {
     //-------------------------------------------------------------------------
 
     @Nullable
-    private FLValue value;
+    private FLValue flValue;
     @Nullable
-    private Object nativeObject;
+    private Object value;
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -75,8 +76,8 @@ public class MValue extends MValueConverter implements Encodable {
     MValue(@Nullable FLValue val) { this(null, val); }
 
     private MValue(@Nullable Object obj, @Nullable FLValue val) {
-        nativeObject = obj;
-        this.value = val;
+        value = obj;
+        this.flValue = val;
     }
 
     //-------------------------------------------------------------------------
@@ -86,30 +87,31 @@ public class MValue extends MValueConverter implements Encodable {
     @Override
     public void encodeTo(@NonNull FLEncoder enc) {
         if (isEmpty()) { throw new IllegalStateException("MValue is empty."); }
-        if (value != null) { enc.writeValue(value); }
-        else if (nativeObject != null) { enc.writeValue(nativeObject); }
+
+        if (flValue != null) { enc.writeValue(flValue); }
+        else if (value != null) { enc.writeValue(value); }
         else { enc.writeNull(); }
     }
 
     public boolean isEmpty() { return false; }
 
-    public boolean isMutated() { return value == null; }
+    public boolean isMutated() { return flValue == null; }
 
     @Nullable
-    public FLValue getValue() { return value; }
+    public FLValue getValue() { return flValue; }
 
     public void mutate() {
-        Preconditions.assertNotNull(nativeObject, "Native object");
-        value = null;
+        Preconditions.assertNotNull(value, "Native object");
+        flValue = null;
     }
 
     @Nullable
     public Object asNative(@Nullable MCollection parent) {
-        if ((nativeObject != null) || (value == null)) { return nativeObject; }
+        if ((value != null) || (flValue == null)) { return value; }
 
         final AtomicBoolean cacheIt = new AtomicBoolean(false);
         final Object obj = toNative(this, parent, cacheIt);
-        if (cacheIt.get()) { nativeObject = obj; }
+        if (cacheIt.get()) { value = obj; }
         return obj;
     }
 }

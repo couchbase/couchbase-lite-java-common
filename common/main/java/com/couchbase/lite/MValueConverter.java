@@ -42,17 +42,17 @@ public class MValueConverter {
     // Protected methods
     //-------------------------------------------------------------------------
     @Nullable
-    protected Object toNative(@NonNull MValue mv, @Nullable MCollection parent, @NonNull AtomicBoolean cacheIt) {
-        final FLValue value = Preconditions.assertNotNull(mv.getValue(), "MValue");
+    protected Object toNative(@NonNull MValue val, @Nullable MCollection parent, @NonNull AtomicBoolean cacheIt) {
+        final FLValue value = Preconditions.assertNotNull(val.getValue(), "value");
         switch (value.getType()) {
             case FLConstants.ValueType.DICT:
                 cacheIt.set(true);
-                return mValueToDictionary(mv, parent);
+                return mValueToDictionary(val, Preconditions.assertNotNull(parent, "parent"));
             case FLConstants.ValueType.ARRAY:
                 cacheIt.set(true);
                 return ((parent == null) || !parent.hasMutableChildren())
-                    ? new Array(mv, parent)
-                    : new MutableArray(mv, parent);
+                    ? new Array(val, parent)
+                    : new MutableArray(val, parent);
             case FLConstants.ValueType.DATA:
                 return new Blob("application/octet-stream", value.asData());
             default:
@@ -75,7 +75,7 @@ public class MValueConverter {
         final FLValue flType = flDict.get(Blob.META_PROP_TYPE);
         final String type = (flType == null) ? null : flType.asString();
 
-        if (Blob.TYPE_BLOB.equals(type) || ((type == null) && isOldAttachment(parent, flDict))) {
+        if (Blob.TYPE_BLOB.equals(type) || ((type == null) && isOldAttachment(flDict))) {
             return new Blob(Preconditions.assertNotNull(context.getDatabase(), "database"), flDict.asDict());
         }
 
@@ -89,7 +89,7 @@ public class MValueConverter {
     // properties listed here.
     // Unfortunately, at this point, we don't know the name of the parent element.
     // Heuristically, we just look for the properties and cross our fingers.
-    private boolean isOldAttachment(@NonNull MCollection parent, @NonNull FLDict flDict) {
+    private boolean isOldAttachment(@NonNull FLDict flDict) {
         return (flDict.get(Blob.PROP_DIGEST) != null)
             && (flDict.get(Blob.PROP_LENGTH) != null)
             && (flDict.get(Blob.PROP_STUB) != null)

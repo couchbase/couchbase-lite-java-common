@@ -41,8 +41,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Dictionary provides readonly access to dictionary data.
  */
 public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<String> {
+
     //-------------------------------------------------------------------------
-    // member variables
+    // Instance members
     //-------------------------------------------------------------------------
     @NonNull
     protected final Object lock;
@@ -53,14 +54,17 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Constructors
     //-------------------------------------------------------------------------
 
+    // Construct an empty mutable Dictionary
     Dictionary() { this(new MDict()); }
 
-    Dictionary(@NonNull MValue mv, @Nullable MCollection parent) { this(new MDict(mv, parent)); }
+    // Slot(??) constructor
+    Dictionary(@NonNull MValue val, @Nullable MCollection parent) { this(new MDict(val, parent)); }
 
-    Dictionary(@NonNull MDict internalDict) {
-        this.internalDict = internalDict;
+    // Copy constructor
+    protected Dictionary(@NonNull MDict dict) {
+        internalDict = dict;
 
-        final MContext context = internalDict.getContext();
+        final MContext context = dict.getContext();
         if (context instanceof DbContext) {
             final BaseDatabase db = ((DbContext) context).getDatabase();
             if (db != null) {
@@ -276,7 +280,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         Preconditions.assertNotNull(key, "key");
         synchronized (lock) {
             final Object obj = internalDict.get(key).asNative(internalDict);
-            return obj instanceof Array ? (Array) obj : null;
+            return (obj instanceof Array) ? (Array) obj : null;
         }
     }
 
@@ -293,7 +297,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         Preconditions.assertNotNull(key, "key");
         synchronized (lock) {
             final Object obj = internalDict.get(key).asNative(internalDict);
-            return obj instanceof Dictionary ? (Dictionary) obj : null;
+            return (obj instanceof Dictionary) ? (Dictionary) obj : null;
         }
     }
 
@@ -308,7 +312,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     public Map<String, Object> toMap() {
         final Map<String, Object> result = new HashMap<>();
         synchronized (lock) {
-            for (String key: internalDict) {
+            for (String key: internalDict.getKeys()) {
                 result.put(key, Fleece.toObject(internalDict.get(key).asNative(internalDict)));
             }
         }
@@ -328,6 +332,14 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Iterable implementation
     //---------------------------------------------
 
+    /**
+     * An iterator over keys in this dictionary at the time this method is called.
+     * It does not support ConcurrentModificationExceptions. It will not include any
+     * new keys added to the dictionary and will return null for any keys that no longer
+     * have associated values.
+     *
+     * @return an iterator over the array.
+     */
     @NonNull
     @Override
     public Iterator<String> iterator() { return getKeys().iterator(); }
@@ -385,8 +397,11 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
 
         boolean first = true;
         for (String key: getKeys()) {
-            if (first) { first = false; }
-            else { buf.append(','); }
+            if (!first) { buf.append(", "); }
+            else {
+                first = false;
+                buf.append(' ');
+            }
             buf.append(key).append("=>").append(getValue(key));
         }
 
@@ -398,11 +413,4 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     //---------------------------------------------
 
     protected boolean isEmpty() { return count() == 0; }
-
-    //---------------------------------------------
-    // package level access
-    //---------------------------------------------
-
-    @NonNull
-    MCollection toMCollection() { return internalDict; }
 }

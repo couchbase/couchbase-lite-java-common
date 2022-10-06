@@ -80,8 +80,17 @@ public class C4DocumentTest extends C4BaseTest {
 
         boolean commit = false;
         c4Database.beginTransaction();
-        try (C4Document doc
-                 = C4Document.create(c4Database, fleeceBody, DOC_ID, 0, true, false, new String[] {REV_ID_1}, true, 0, 0)) {
+        try (C4Document doc = C4Document.create(
+            c4Database,
+            fleeceBody,
+            DOC_ID,
+            0,
+            true,
+            false,
+            new String[] {REV_ID_1},
+            true,
+            0,
+            0)) {
             assertNotNull(doc);
             assertEquals(REV_ID_1, doc.getRevID());
             assertEquals(REV_ID_1, doc.getSelectedRevID());
@@ -170,7 +179,17 @@ public class C4DocumentTest extends C4BaseTest {
         c4Database.beginTransaction();
         try {
             // Creating doc given ID:
-            C4Document doc = C4Document.create(c4Database, fleeceBody, DOC_ID, 0, false, false, new String[0], true, 0, 0);
+            C4Document doc = C4Document.create(
+                c4Database,
+                fleeceBody,
+                DOC_ID,
+                0,
+                false,
+                false,
+                new String[0],
+                true,
+                0,
+                0);
             assertNotNull(doc);
             assertEquals(DOC_ID, doc.getDocID());
             String kExpectedRevID = "1-042ca1d3a1d16fd5ab2f87efc7ebbf50b7498032";
@@ -182,7 +201,17 @@ public class C4DocumentTest extends C4BaseTest {
             // Update doc:
             String[] history = {kExpectedRevID};
 
-            doc = C4Document.create(c4Database, json2fleece("{'ok':'go'}"), DOC_ID, 0, false, false, history, true, 0, 0);
+            doc = C4Document.create(
+                c4Database,
+                json2fleece("{'ok':'go'}"),
+                DOC_ID,
+                0,
+                false,
+                false,
+                history,
+                true,
+                0,
+                0);
             assertNotNull(doc);
             // NOTE: With current JNI binding, unable to check commonAncestorIndex value
             String kExpectedRevID2 = "2-201796aeeaa6ddbb746d6cab141440f23412ac51";

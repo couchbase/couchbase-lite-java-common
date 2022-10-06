@@ -1014,7 +1014,7 @@ public class ArrayTest extends BaseDbTest {
         });
     }
 
-    // ??? Surprisingly, no conncurrent modification exception.
+    // ??? Surprisingly, no concurrent modification exception.
     @Test
     public void testArrayEnumerationWithDataModification1() {
         final MutableArray array = new MutableArray();
@@ -1032,7 +1032,7 @@ public class ArrayTest extends BaseDbTest {
         assertArrayEquals(new Object[] {0, 1, 2, 3}, array.toList().toArray());
     }
 
-    // ??? Surprisingly, no conncurrent modification exception.
+    // ??? Surprisingly, no concurrent modification exception.
     @Test
     public void testArrayEnumerationWithDataModification2() throws CouchbaseLiteException {
         MutableArray array = new MutableArray();

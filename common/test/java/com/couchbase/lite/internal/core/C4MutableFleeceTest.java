@@ -35,6 +35,7 @@ import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
+import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.fleece.MValue;
 
@@ -93,7 +94,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         assertEquals("hi", mDict.getString("greeting"));
         assertEquals(subMap, mDict.getDictionary("dict").toMap());
 
-        FLSliceResult encodedRoot1 = root.encode();
+        FLSliceResult encodedRoot1 = encode(root);
         assertEquals(
             "{array:[\"boo\",false],dict:{boil:212,melt:32},greeting:\"hi\"}",
             fleece2JSON(encodedRoot1));
@@ -102,7 +103,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         assertEquals(Arrays.asList("boo", false), mArray.toList());
         mDict.setArray("new", mArray);
         mArray.addBoolean(true);
-        FLSliceResult encodedRoot2 = root.encode();
+        FLSliceResult encodedRoot2 = encode(root);
         assertEquals(
             "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
             fleece2JSON(encodedRoot2));
@@ -124,7 +125,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
 
         assertEquals("hi", mDict.getString("greeting"));
 
-        FLSliceResult encodedRoot1 = root.encode();
+        FLSliceResult encodedRoot1 = encode(root);
         assertEquals("{greeting:\"hi\"}", fleece2JSON(encodedRoot1));
 
         FLSliceResult encodedRoot2 = encodeRoot(root);
@@ -137,7 +138,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
         String expected = "{greeting:\"hi\",hello:\"world\"}";
         assertEquals(expected, fleece2JSON(encodeObj(dict)));
         assertEquals(expected, fleece2JSON(encodeObj(root.asNative())));
-        assertEquals(expected, fleece2JSON(root.encode()));
+        assertEquals(expected, fleece2JSON(encode(root)));
         assertEquals(expected, fleece2JSON(encodeRoot(root)));
     }
 
@@ -292,7 +293,7 @@ public class C4MutableFleeceTest extends C4BaseTest {
             "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
             fleece2JSON(encodedRoot1));
 
-        FLSliceResult encodedRoot2 = root.encode();
+        FLSliceResult encodedRoot2 = encode(root);
         assertEquals(
             "{array:[\"boo\",false,true],dict:{boil:212,melt:32},greeting:\"hi\",new:[\"boo\",false,true]}",
             fleece2JSON(encodedRoot2));
@@ -358,5 +359,14 @@ public class C4MutableFleeceTest extends C4BaseTest {
         FLValue v = FLValue.fromData(fleece);
         if (v == null) { return "INVALID_FLEECE"; }
         return v.toJSON5();
+    }
+
+
+    @NonNull
+    private FLSliceResult encode(MCollection collection) throws LiteCoreException {
+        try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
+            collection.encodeTo(encoder);
+            return encoder.finish2();
+        }
     }
 }
