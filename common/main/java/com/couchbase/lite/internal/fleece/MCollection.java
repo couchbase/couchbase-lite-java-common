@@ -32,7 +32,7 @@ public abstract class MCollection implements Encodable {
     private final boolean mutable;
     private final boolean mutableChildren;
 
-    private volatile boolean mutated;
+    private long mutations;
 
     //---------------------------------------------
     // Constructors
@@ -51,7 +51,7 @@ public abstract class MCollection implements Encodable {
     // Slot constructor
     protected MCollection(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
         this(slot, parent, ((slot.getValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
-        this.mutated = slot.isMutated();
+        if (slot.isMutated()) { mutations = 1; }
     }
 
     private MCollection(
@@ -70,7 +70,9 @@ public abstract class MCollection implements Encodable {
     // Public Methods
     //---------------------------------------------
 
-    public boolean isMutated() { return mutated; }
+    public boolean isMutated() { return mutations > 0; }
+
+    public long getMutationCount() { return mutations; }
 
     public final boolean isMutable() { return mutable; }
 
@@ -84,9 +86,9 @@ public abstract class MCollection implements Encodable {
     //---------------------------------------------
 
     protected final void mutate() {
-        if (mutated) { return; }
+        mutations++;
+        if (mutations > 1) { return; }
 
-        mutated = true;
         if (slot != null) { slot.mutate(); }
         if (parent != null) { parent.mutate(); }
     }

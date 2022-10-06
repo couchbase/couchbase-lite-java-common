@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1014,8 +1015,7 @@ public class ArrayTest extends BaseDbTest {
         });
     }
 
-    // ??? Surprisingly, no concurrent modification exception.
-    @Test
+    @Test(expected = ConcurrentModificationException.class)
     public void testArrayEnumerationWithDataModification1() {
         final MutableArray array = new MutableArray();
         for (int i = 0; i <= 2; i++) { array.addValue(i); }
@@ -1027,13 +1027,9 @@ public class ArrayTest extends BaseDbTest {
         for (Iterator<Object> itr = array.iterator(); itr.hasNext(); itr.next()) {
             if (n++ == 1) { array.addValue(3); }
         }
-
-        assertEquals(4, array.count());
-        assertArrayEquals(new Object[] {0, 1, 2, 3}, array.toList().toArray());
     }
 
-    // ??? Surprisingly, no concurrent modification exception.
-    @Test
+    @Test(expected = ConcurrentModificationException.class)
     public void testArrayEnumerationWithDataModification2() throws CouchbaseLiteException {
         MutableArray array = new MutableArray();
         for (int i = 0; i <= 2; i++) { array.addValue(i); }
@@ -1049,11 +1045,6 @@ public class ArrayTest extends BaseDbTest {
         for (Iterator<Object> itr = array.iterator(); itr.hasNext(); itr.next()) {
             if (n++ == 1) { array.addValue(3); }
         }
-
-        assertEquals(4, array.count());
-        // this is friggin' bizarre:
-        // after a roundtrip through the db those integers turn into longs
-        assertArrayEquals(new Object[] {0L, 1L, 2L, 3}, array.toList().toArray());
     }
 
     @Test

@@ -17,6 +17,7 @@ package com.couchbase.lite;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -341,8 +342,7 @@ public class DictionaryTest extends BaseDbTest {
         });
     }
 
-    // ??? Surprisingly, no conncurrent modification exception.
-    @Test
+    @Test(expected = ConcurrentModificationException.class)
     public void testDictionaryEnumerationWithDataModification1() {
         MutableDictionary dict = new MutableDictionary();
         for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
@@ -353,12 +353,9 @@ public class DictionaryTest extends BaseDbTest {
         for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
             if (n++ == 1) { dict.setValue("key-3", 3); }
         }
-
-        assertEquals(4, dict.count());
     }
 
-    // ??? Surprisingly, no conncurrent modification exception.
-    @Test
+    @Test(expected = ConcurrentModificationException.class)
     public void testDictionaryEnumerationWithDataModification2() throws CouchbaseLiteException {
         MutableDictionary dict = new MutableDictionary();
         for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
@@ -372,8 +369,6 @@ public class DictionaryTest extends BaseDbTest {
         for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
             if (n++ == 1) { dict.setValue("key-3", 3); }
         }
-
-        assertEquals(4, dict.count());
     }
 
     // https://github.com/couchbase/couchbase-lite-core/issues/230

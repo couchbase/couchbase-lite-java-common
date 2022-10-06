@@ -40,10 +40,7 @@ public final class MDict extends MCollection {
     //---------------------------------------------
 
     // Dictionary constructor
-    public MDict() {
-        super();
-        baseDict = null;
-    }
+    public MDict() { baseDict = null; }
 
     // Copy constructor
     public MDict(@NonNull MDict dict, boolean isMutable) {

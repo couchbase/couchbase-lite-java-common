@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -44,14 +45,22 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Types
     //---------------------------------------------
     private class ArrayIterator implements Iterator<Object> {
+        private final long mutations;
         private int index;
+
+        ArrayIterator() { this.mutations = Array.this.internalArray.getMutationCount(); }
 
         @Override
         public boolean hasNext() { return index < Array.this.count(); }
 
         @Nullable
         @Override
-        public Object next() { return getValue(index++); }
+        public Object next() {
+            if (Array.this.internalArray.getMutationCount() != mutations) {
+                throw new ConcurrentModificationException("Array modifed during iteration");
+            }
+            return getValue(index++);
+        }
     }
 
     //---------------------------------------------
@@ -310,12 +319,12 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     //---------------------------------------------
 
     /**
-     * An iterator over N elements of this array, where N is the size of the array,
-     * at the time the method is called.  It does not support ConcurrentModificationExceptions.
-     * It will not include new elements added to the end of the array and will generate
-     * an IndexOutOfBounds exception if the array shrinks.
+     * An iterator over elements of this array.
+     * A call to the <code>next()</code> method of the returned iterator
+     * will throw a ConcurrentModificationException, if the MutableArray is
+     * modified while it is in use.
      *
-     * @return an iterator over the array.
+     * @return an iterator over the array's elements.
      */
     @NonNull
     @Override

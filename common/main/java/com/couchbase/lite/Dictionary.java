@@ -18,6 +18,7 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,6 +42,30 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * Dictionary provides readonly access to dictionary data.
  */
 public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<String> {
+    //---------------------------------------------
+    // Types
+    //---------------------------------------------
+    private class DictionaryIterator implements Iterator<String> {
+        private final long mutations;
+        private final Iterator<String> iterator;
+
+        DictionaryIterator() {
+            this.mutations = Dictionary.this.internalDict.getMutationCount();
+            this.iterator = Dictionary.this.getKeys().iterator();
+        }
+
+        @Override
+        public boolean hasNext() { return iterator.hasNext(); }
+
+        @Nullable
+        @Override
+        public String next() {
+            if (Dictionary.this.internalDict.getMutationCount() != mutations) {
+                throw new ConcurrentModificationException("Dictionary modified during iteration");
+            }
+            return iterator.next();
+        }
+    }
 
     //-------------------------------------------------------------------------
     // Instance members
@@ -332,17 +357,18 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Iterable implementation
     //---------------------------------------------
 
+
     /**
-     * An iterator over keys in this dictionary at the time this method is called.
-     * It does not support ConcurrentModificationExceptions. It will not include any
-     * new keys added to the dictionary and will return null for any keys that no longer
-     * have associated values.
-     *
-     * @return an iterator over the array.
+     * An iterator over keys of this Dictionary.
+     * A call to the <code>next()</code> method of the returned iterator
+     * will throw a ConcurrentModificationException, if the MutableDictionary is
+     * modified while it is in use.
+     *     *
+     * @return an iterator over the dictionary's keys.
      */
     @NonNull
     @Override
-    public Iterator<String> iterator() { return getKeys().iterator(); }
+    public Iterator<String> iterator() { return new DictionaryIterator(); }
 
     //-------------------------------------------------------------------------
     // Implementation of FLEncodable
