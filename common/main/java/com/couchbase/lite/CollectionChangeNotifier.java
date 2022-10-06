@@ -92,7 +92,7 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
                 }
 
                 // cache the new changes
-                for (C4DocumentChange change: changes) { docIDs.add(change.getDocID()); }
+                docIDs.addAll(Fn.mapToList(changes, C4DocumentChange::getDocID));
                 external = newExternal;
             }
         }

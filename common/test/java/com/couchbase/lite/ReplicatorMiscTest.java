@@ -398,16 +398,14 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         // user specified cookie should be removed from extra header
         HashMap<String, Object> httpHeaders
             = (HashMap<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
-        assertNotNull(httpHeaders); //httpHeaders must at least include a mapping for User-Agent
+        assertNotNull(httpHeaders); // httpHeaders must at least include a mapping for User-Agent
         assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
     @Test
     public void testReplicatorWithNoCookie() throws URISyntaxException {
-        ImmutableReplicatorConfiguration immutableConfiguration =
-            new ImmutableReplicatorConfiguration(new ReplicatorConfiguration(
-                baseTestDb,
-                getRemoteTargetEndpoint()));
+        ImmutableReplicatorConfiguration immutableConfiguration
+            = new ImmutableReplicatorConfiguration(new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()));
         HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
         assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_COOKIES));
     }
@@ -415,15 +413,13 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testReplicatorWithOnlyAuthenticationCookie() throws URISyntaxException {
         Authenticator authenticator = new SessionAuthenticator("mysessionid");
-        ReplicatorConfiguration configuration = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setAuthenticator(authenticator);
+        ReplicatorConfiguration configuration
+            = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setAuthenticator(authenticator);
 
         ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
         HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
 
-        assertEquals(
-            "SyncGatewaySession=mysessionid",
-            options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
+        assertEquals("SyncGatewaySession=mysessionid", options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
     }
 
     @Test

@@ -26,6 +26,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * copy and then use it to replace the loggers current configuration.
  */
 public final class LogFileConfiguration {
+    public static final long DEFAULT_MAX_LOG_SIZE = 1024 * 500;
+    public static final int DEFAULT_MAX_ROTATE_COUNT = 1;
+    public static final boolean DEFAULT_USE_PLAINTEXT = false;
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -91,9 +95,9 @@ public final class LogFileConfiguration {
         @Nullable Boolean usePlaintext,
         boolean readonly) {
         this.directory = Preconditions.assertNotNull(directory, "directory");
-        this.maxSize = (maxSize == null) ? 1024 * 500 : maxSize;
-        this.maxRotateCount = (maxRotateCount == null) ? 1 : maxRotateCount;
-        this.usePlaintext = (usePlaintext != null) && usePlaintext;
+        this.maxSize = (maxSize != null) ? maxSize : DEFAULT_MAX_LOG_SIZE;
+        this.maxRotateCount = (maxRotateCount != null) ? maxRotateCount : DEFAULT_MAX_ROTATE_COUNT;
+        this.usePlaintext = (usePlaintext != null) ? usePlaintext : DEFAULT_USE_PLAINTEXT;
         this.readonly = readonly;
     }
 
@@ -103,9 +107,43 @@ public final class LogFileConfiguration {
     //---------------------------------------------
 
     /**
-     * Sets whether or not to log in plaintext.  The default is
-     * to log in a binary encoded format that is more CPU and I/O friendly
-     * and enabling plaintext is not recommended in production.
+     * Sets the max size of the log file in bytes.  If a log file
+     * passes this size then a new log file will be started.  This
+     * number is a best effort and the actual size may go over slightly.
+     * The default size is 500Kb.
+     *
+     * @param maxSize The max size of the log file in bytes
+     * @return The self object
+     */
+    @NonNull
+    public LogFileConfiguration setMaxSize(long maxSize) {
+        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
+
+        this.maxSize = Preconditions.assertNotNegative(maxSize, "max size");
+        return this;
+    }
+
+    /**
+     * Sets the number of rotated logs that are saved.  For instance,
+     * if the value is 1 then 2 logs will be present: the 'current' log
+     * and the previous 'rotated' log.
+     * The default value is 1.
+     *
+     * @param maxRotateCount The number of rotated logs to be saved
+     * @return The self object
+     */
+    @NonNull
+    public LogFileConfiguration setMaxRotateCount(int maxRotateCount) {
+        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
+
+        this.maxRotateCount = Preconditions.assertNotNegative(maxRotateCount, "max rotation count");
+        return this;
+    }
+
+    /**
+     * Sets whether or not CBL logs in plaintext.  The default (false) is
+     * to log in a binary encoded format that is more CPU and I/O friendly.
+     * Enabling plaintext is not recommended in production.
      *
      * @param usePlaintext Whether or not to log in plaintext
      * @return The self object
@@ -118,68 +156,9 @@ public final class LogFileConfiguration {
         return this;
     }
 
-    /**
-     * Gets the number of rotated logs that are saved (i.e.
-     * if the value is 1, then 2 logs will be present:  the 'current'
-     * and the 'rotated')
-     *
-     * @return The number of rotated logs that are saved
-     */
-    public int getMaxRotateCount() { return maxRotateCount; }
-
-    /**
-     * Sets the number of rotated logs that are saved (i.e.
-     * if the value is 1, then 2 logs will be present:  the 'current'
-     * and the 'rotated')
-     *
-     * @param maxRotateCount The number of rotated logs to be saved
-     * @return The self object
-     */
-    @NonNull
-    public LogFileConfiguration setMaxRotateCount(int maxRotateCount) {
-        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
-
-        this.maxRotateCount = maxRotateCount;
-        return this;
-    }
-
     //---------------------------------------------
     // Getters
     //---------------------------------------------
-
-    /**
-     * Gets the max size of the log file in bytes.  If a log file
-     * passes this size then a new log file will be started.  This
-     * number is a best effort and the actual size may go over slightly.
-     *
-     * @return The max size of the log file in bytes
-     */
-    public long getMaxSize() { return maxSize; }
-
-    /**
-     * Sets the max size of the log file in bytes.  If a log file
-     * passes this size then a new log file will be started.  This
-     * number is a best effort and the actual size may go over slightly.
-     *
-     * @param maxSize The max size of the log file in bytes
-     * @return The self object
-     */
-    @NonNull
-    public LogFileConfiguration setMaxSize(long maxSize) {
-        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
-
-        this.maxSize = maxSize;
-        return this;
-    }
-
-    /**
-     * Gets whether or not CBL is logging in plaintext.  The default is
-     * to log in a binary encoded format that is more CPU and I/O friendly
-     * and enabling plaintext is not recommended in production.
-     *
-     * @return Whether or not CBL is logging in plaintext
-     */
-    public boolean usesPlaintext() { return usePlaintext; }
 
     /**
      * Gets the directory that the logs files are stored in.
@@ -188,6 +167,35 @@ public final class LogFileConfiguration {
      */
     @NonNull
     public String getDirectory() { return directory; }
+
+    /**
+     * Gets the max size of the log file in bytes.  If a log file
+     * passes this size then a new log file will be started.  This
+     * number is a best effort and the actual size may go over slightly.
+     * The default size is 500Kb.
+     *
+     * @return The max size of the log file in bytes
+     */
+    public long getMaxSize() { return maxSize; }
+
+    /**
+     * Gets the number of rotated logs that are saved.  For instance,
+     * if the value is 1 then 2 logs will be present: the 'current' log
+     * and the previous 'rotated' log.
+     * The default value is 1.
+     *
+     * @return The number of rotated logs that are saved
+     */
+    public int getMaxRotateCount() { return maxRotateCount; }
+
+    /**
+     * Gets whether or not CBL is logging in plaintext.  The default (false) is
+     * to log in a binary encoded format that is more CPU and I/O friendly.
+     * Enabling plaintext is not recommended in production.
+     *
+     * @return Whether or not CBL is logging in plaintext
+     */
+    public boolean usesPlaintext() { return usePlaintext; }
 
     //---------------------------------------------
     // Package level access

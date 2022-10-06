@@ -40,6 +40,11 @@ public interface ConflictResolver {
     Document resolve(@NonNull Conflict conflict);
 }
 
+/**
+ * The default conflict resolver.
+ * Deletion always wins.  A newer doc always beats an older one.  Otherwise
+ * one of the two document is chosen randomly but deterministically.
+ */
 class DefaultConflictResolver implements ConflictResolver {
     @Nullable
     @Override

@@ -47,6 +47,16 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 @SuppressWarnings({"PMD.TooManyFields", "PMD.UnnecessaryFullyQualifiedName", "PMD.CyclomaticComplexity"})
 public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConfiguration {
+    public static final com.couchbase.lite.ReplicatorType DEFAULT_TYPE
+        = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
+    public static final boolean DEFAULT_CONTINUOUS = false;
+    public static final int DEFAULT_CONTINUOUS_MAX_RETRIES = Integer.MAX_VALUE;
+    public static final int DEFAULT_1SHOT_MAX_RETRIES = 9;
+    public static final int DEFAULT_HEARTBEAT_SECS = 300;
+    public static final int DEFAULT_MAX_WAIT_SECS = 300;
+    public static final boolean DEFAULT_AUTO_PURGE = true;
+
+
     /**
      * This is a long time: just under 25 days.
      * This many seconds, however, is just less than Integer.MAX_INT millis and will fit in the heartbeat property.
@@ -267,7 +277,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Sets the replicator type indicating the direction of the replicator.
-     * The default value is .pushAndPull which is bi-directional.
+     * The default is ReplicatorType.PUSH_AND_PULL: bi-directional replication.
      *
      * @param type The replicator type.
      * @return this.
@@ -279,10 +289,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
-     * Sets whether the replicator stays active indefinitely to replicate
-     * changed documents. The default value is false, which means that the
-     * replicator will stop after it finishes replicating the changed
-     * documents.
+     * Sets whether the replicator stays active indefinitely to replicate changed documents.
+     * The default is false: the replicator will stop after it finishes replicating changed documents.
      *
      * @param continuous The continuous flag.
      * @return this.
@@ -295,7 +303,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Enable/disable auto-purge.
-     * Default is enabled.
+     * The default is auto-purge enabled.
      */
     @NonNull
     public final ReplicatorConfiguration setAutoPurgeEnabled(boolean enabled) {
@@ -305,6 +313,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Sets the extra HTTP headers to send in all requests to the remote target.
+     * The default is no extra headers.
      *
      * @param headers The HTTP Headers.
      * @return this.
@@ -319,6 +328,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Sets the authenticator to authenticate with a remote target server.
      * Currently there are two types of the authenticators,
      * BasicAuthenticator and SessionAuthenticator, supported.
+     * The default is no authenticator.
      *
      * @param authenticator The authenticator.
      * @return this.
@@ -333,6 +343,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Sets the certificate used to authenticate the target server.
      * A server will be authenticated if it presents a chain of certificates (possibly of length 1)
      * in which any one of the certificates matches the one passed here.
+     * The default is no pinned certificate.
      *
      * @param pinnedCert the SSL certificate.
      * @return this.
@@ -345,8 +356,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Set the max number of retry attempts made after a connection failure.
-     * Set to 0 for default values.
-     * Set to 1 for no retries.
+     * Set to 1 for no retries and to 0 to restore default behavior.
+     * The default is 10 total connection attempts (the initial attempt and up to 9 retries) for
+     * a one-shot replicator and a very, very large number of retries, for a continuous replicator.
      *
      * @param maxAttempts max retry attempts
      */
@@ -357,8 +369,12 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
-     * Set the max time between retry attempts (exponential backoff).
-     * Set to 0 for default values.
+     * Set the max time between retry attempts, in seconds.
+     * Time between retries is initially small but backs off exponentially up to this limit.
+     * Once the limit is reached the interval between subsequent attempts will be
+     * the value set here, until max-attempts attempts have been made.
+     * The minimum value legal value is 1 second.
+     * The default is 5 minutes (300 seconds).  Setting the parameter to 0 will restore the default
      *
      * @param maxAttemptWaitTime max attempt wait time
      */
@@ -370,7 +386,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Set the heartbeat interval, in seconds.
-     * Set to 0 for default values
+     * The default is 5 minutes (300 seconds).  Setting the parameter to 0 will restore the default
      * <p>
      * Must be non-negative and less than Integer.MAX_VALUE milliseconds
      */
@@ -411,6 +427,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Sets the target server's SSL certificate.
+     * The default is no pinned cert.
      *
      * @param pinnedCert the SSL certificate.
      * @return this.
@@ -434,8 +451,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
-     * Sets a set of document IDs to filter by: if given, only documents
-     * with these IDs will be pushed and/or pulled.
+     * A set of document IDs identifying documents to be replicated.
+     * If non-empty, only documents with IDs in this set will be pushed and/or pulled.
+     * Default is empty: do not filter documents.
      *
      * @param documentIDs The document IDs.
      * @return this.
@@ -453,6 +471,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * push replication. If unset, all accessible channels will be pulled.
      * Note: channels that are not accessible to the user will be ignored
      * by Sync Gateway.
+     * Default is empty: pull from all accessible channels.
      *
      * @param channels The Sync Gateway channel names.
      * @return this.
@@ -467,6 +486,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Sets the the conflict resolver.
+     * Default is <code>ConflictResolver.DEFAULT</code>
      *
      * @param conflictResolver A conflict resolver.
      * @return this.
@@ -482,6 +502,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Sets a filter object for validating whether the documents can be pulled from the
      * remote endpoint. Only documents for which the object returns true are replicated.
+     * Default is no filter.
      *
      * @param pullFilter The filter to filter the document to be pulled.
      * @return this.
@@ -497,6 +518,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Sets a filter object for validating whether the documents can be pushed
      * to the remote endpoint.
+     * Default is no filter.
      *
      * @param pushFilter The filter to filter the document to be pushed.
      * @return this.
@@ -579,6 +601,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
     /**
      * Return the max number of retry attempts made after connection failure.
+     * This method will return 0 when implicitly using the default:
+     * 10 total connection attempts (the inital attempt and up to 9 retries) for
+     * a one-shot replicator and a very, very large number of retries, for a continuous replicator.
      */
     public final int getMaxAttempts() { return maxAttempts; }
 

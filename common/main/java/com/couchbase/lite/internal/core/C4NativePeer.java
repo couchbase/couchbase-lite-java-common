@@ -38,9 +38,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * java.lang.NullPointerException: Null reference used for synchronization (monitor-enter)
  */
 public abstract class C4NativePeer implements AutoCloseable {
-    @GuardedBy("this")
+    @GuardedBy("getPeerLock()")
     private final long peer;
-    @GuardedBy("this")
+    @GuardedBy("getPeerLock()")
     private volatile boolean open = true;
 
     private volatile Exception history;
@@ -79,17 +79,6 @@ public abstract class C4NativePeer implements AutoCloseable {
      */
     @NonNull
     protected final Object getPeerLock() { return this; }
-
-    protected final void logCall(@NonNull LogDomain domain, @NonNull String message) {
-        if (!CouchbaseLiteInternal.debugging()) { return; }
-        final long peer = this.peer;
-        Log.d(
-            domain,
-            "%s@0x%x: " + message,
-            new Exception("At: ", history),
-            getClass().getSimpleName(),
-            peer);
-    }
 
     /**
      * This method is very dangerous.  A client that gets the peer reference
@@ -222,4 +211,15 @@ public abstract class C4NativePeer implements AutoCloseable {
     }
 
     private void logBadCall() { logCall(LogDomain.DATABASE, "Operation on closed native peer"); }
+
+    private void logCall(@NonNull LogDomain domain, @NonNull String message) {
+        if (!CouchbaseLiteInternal.debugging()) { return; }
+        final long peer = this.peer; // unsynchronized access: prolly ok for logging.
+        Log.d(
+            domain,
+            "%s@0x%x: " + message,
+            new Exception("At: ", history),
+            getClass().getSimpleName(),
+            peer);
+    }
 }

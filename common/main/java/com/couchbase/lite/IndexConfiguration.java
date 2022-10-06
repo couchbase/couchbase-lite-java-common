@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.StringUtils;
 
@@ -33,11 +34,11 @@ public class IndexConfiguration extends AbstractIndex {
         this(type, Arrays.asList(expressions));
     }
 
-    // ??? Check to see if the list contains a null?
-    // ??? This method depends on its callers providing a safe list
     IndexConfiguration(@NonNull IndexType type, @NonNull List<String> expressions) {
         super(type, QueryLanguage.N1QL);
-        this.expressions = Preconditions.assertNotEmpty(expressions, "expression list");
+        this.expressions = Preconditions.assertNotEmpty(
+            Fn.filterToList(expressions, i -> (i != null)),
+            "expression list");
     }
 
     @NonNull
