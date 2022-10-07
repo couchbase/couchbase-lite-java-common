@@ -334,15 +334,13 @@ public final class Blob implements FLEncodable {
         blobDigest = (String) properties.get(PROP_DIGEST);
 
         final Object len = properties.get(PROP_LENGTH);
-        if (len instanceof Number) {
-            blobLength = ((Number) len).longValue();
-            Log.w(LogDomain.DATABASE, "Blob length unspecified for blob %s.  Using 0", blobDigest);
-        }
+        if (len instanceof Number) { blobLength = ((Number) len).longValue(); }
+        else { Log.w(LogDomain.DATABASE, "Blob length unspecified for blob %s: using 0.", blobDigest); }
 
         String propType = (String) properties.get(PROP_CONTENT_TYPE);
         if (propType == null) {
             propType = MIME_UNKNOWN;
-            Log.w(LogDomain.DATABASE, "Blob type unspecified for blob %s.  Using '%s'", blobDigest, propType);
+            Log.w(LogDomain.DATABASE, "Blob type unspecified for blob %s: using '%s'", blobDigest, propType);
         }
         contentType = propType;
 
