@@ -118,7 +118,7 @@ abstract class AbstractDatabase extends BaseDatabase {
 
         public boolean isActive() { return true; }
 
-        public void stop() {}
+        public void stop() { }
 
         @NonNull
         @Override
@@ -1180,36 +1180,51 @@ abstract class AbstractDatabase extends BaseDatabase {
             if (!isOpen() || (c4DbObserver == null)) { return; }
 
             boolean external = false;
-            int nChanges;
             List<String> docIDs = new ArrayList<>();
-            do {
-                // Read changes in batches of MAX_CHANGES
-                final C4DatabaseChange[] c4DbChanges = c4DbObserver.getChanges(MAX_CHANGES);
+            while (true) {
+                final List<C4DatabaseChange> c4DbChanges = getDbChanges();
+                final int nChanges = c4DbChanges.size();
 
-                int i = 0;
-                nChanges = (c4DbChanges == null) ? 0 : c4DbChanges.length;
-                if (nChanges > 0) {
-                    while (c4DbChanges[i] == null) {
-                        i++;
-                        nChanges--;
-                    }
+                // if there are no more changes, we've gotten them all and we're done:
+                // post anything that hasn't been posted and get outta here.
+                if (nChanges <= 0) {
+                    postChanges(docIDs);
+                    return;
                 }
-                final boolean newExternal = (nChanges > 0) && c4DbChanges[i].isExternal();
 
-                if ((!docIDs.isEmpty()) && ((nChanges <= 0) || (external != newExternal) || (docIDs.size() > 1000))) {
-                    dbChangeNotifier.postChange(new DatabaseChange((Database) this, docIDs));
+                // Core seems to promise that all changes in a batch
+                // will have the same external flag.  :shrug:
+                final boolean newExternal = c4DbChanges.get(0).isExternal();
+
+                if ((docIDs.size() > 1000) || (external != newExternal) ) {
+                    postChanges(docIDs);
                     docIDs = new ArrayList<>();
                 }
 
+                for (C4DatabaseChange change: c4DbChanges) { docIDs.add(change.getDocID()); }
                 external = newExternal;
-
-                for (int j = i; j < nChanges; j++) {
-                    final C4DatabaseChange change = c4DbChanges[j];
-                    if (change != null) { docIDs.add(change.getDocID()); }
-                }
             }
-            while (nChanges > 0);
         }
+    }
+
+    // Read changes in batches of MAX_CHANGES
+    @NonNull
+    private List<C4DatabaseChange> getDbChanges() {
+        final List<C4DatabaseChange> changes = new ArrayList<>();
+        final C4DatabaseChange[] c4DbChanges = c4DbObserver.getChanges(MAX_CHANGES);
+        if (c4DbChanges != null) {
+            for (C4DatabaseChange change: c4DbChanges) {
+                if (change != null) { changes.add(change); }
+            }
+        }
+        return changes;
+    }
+
+    // postChange will queue the notifications for another thread:
+    // the client code will not receive the notification holding the db lock.
+    private void postChanges(List<String> docIds) {
+        if (docIds.isEmpty()) { return; }
+        dbChangeNotifier.postChange(new DatabaseChange((Database) this, docIds));
     }
 
     @GuardedBy("getDbLock()")
