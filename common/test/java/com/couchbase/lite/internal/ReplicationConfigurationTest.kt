@@ -30,20 +30,19 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
+// These two functions expose package private state to other tests
+
 fun boundCollectionCount() = ReplicationCollection.BOUND_COLLECTIONS.size()
 
 fun clearBoundCollections() = ReplicationCollection.BOUND_COLLECTIONS.clear()
 
+
 class ReplicationConfigurationTest : BaseDbTest() {
     @Before
-    fun setUpC4ReplicatorTest() {
-        clearBoundCollections()
-    }
+    fun setUpC4ReplicatorTest() = clearBoundCollections()
 
     @After
-    fun tearDownC4ReplicatorTest() {
-        clearBoundCollections()
-    }
+    fun tearDownC4ReplicatorTest() = clearBoundCollections()
 
     @Test
     fun testCreateAndCloseReplicationCollection() {

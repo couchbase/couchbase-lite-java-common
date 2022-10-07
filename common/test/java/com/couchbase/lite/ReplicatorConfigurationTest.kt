@@ -241,7 +241,6 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     @Test(expected = IllegalStateException::class)
     fun testCreateConfigWithEndpointOnly2() {
         val replConfig1 = ReplicatorConfiguration(remoteTargetEndpoint)
-
         replConfig1.database
     }
 
@@ -550,5 +549,37 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         ReplicatorConfiguration(remoteTargetEndpoint)
             .addCollection(collectionB, null)
+    }
+
+    // CBL-3736
+    // Attempting to configure a replicator with no collection
+    // should throw an illegal argument exception.
+    @Test(expected = IllegalArgumentException::class)
+    fun testCreateReplicatorWithNoCollections() {
+        Replicator(ReplicatorConfiguration(remoteTargetEndpoint))
+    }
+
+    // CBL-3736
+    // After the last collection from a scope is deleted,
+    // an attempt to get the scope should return null
+    @Test
+    fun testUseScopeAfterScopeDeleted() {
+        assertNotNull(baseTestDb.createCollection("colA", "scopeA"))
+
+        baseTestDb.deleteCollection("colA", "scopeA")
+
+        assertNull(baseTestDb.getScope("scopeA"))
+    }
+
+    // CBL-3736
+    // An attempt to get a collection from a closed database
+    // should throw a CouchbaseLiteException
+    @Test(expected = CouchbaseLiteException::class)
+    fun testUseScopeAfterDBClosed() {
+        assertNotNull(baseTestDb.createCollection("colA", "scopeA"))
+
+        baseTestDb.close()
+
+        baseTestDb.getCollection("colA", "scopeA")
     }
 }

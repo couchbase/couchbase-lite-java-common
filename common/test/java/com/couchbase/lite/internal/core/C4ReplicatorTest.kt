@@ -36,6 +36,7 @@ import org.junit.Before
 import org.junit.Test
 import java.net.URI
 
+
 class C4ReplicatorTest : BaseDbTest() {
     private lateinit var testReplicatorConfig: ReplicatorConfiguration
     private lateinit var testReplicator: Replicator
@@ -93,9 +94,8 @@ class C4ReplicatorTest : BaseDbTest() {
                 object : CBLCookieStore {
                     override fun setCookie(uri: URI, setCookieHeader: String) = Unit
                     override fun getCookies(uri: URI): String? = null
-                },
-                { }
-            )
+                })
+            { }
         )
 
         assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
@@ -170,9 +170,9 @@ class C4ReplicatorTest : BaseDbTest() {
             setOf(testCollection),
             C4BaseTest.MOCK_PEER,
             C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
-            null,
-            { _, _ -> }
+            null
         )
+        { _, _ -> }
 
         assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
         assertEquals(c4Repl, C4Replicator.BOUND_REPLICATORS.getBinding(c4Repl.token))
@@ -198,9 +198,9 @@ class C4ReplicatorTest : BaseDbTest() {
             setOf(testCollection),
             C4BaseTest.MOCK_PEER,
             C4Socket(MockNativeSocket(), C4BaseTest.MOCK_PEER),
-            null,
-            { _, _ -> calls++ }
+            null
         )
+        { _, _ -> calls++ }
 
         C4Replicator.statusChangedCallback(
             c4Repl.token,
