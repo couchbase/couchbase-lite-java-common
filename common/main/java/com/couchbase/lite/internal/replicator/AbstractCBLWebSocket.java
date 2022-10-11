@@ -191,7 +191,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
         @NonNull
         @Override
-        public Socket createSocket(@NonNull String remoteHost, int port) throws IOException, UnknownHostException {
+        public Socket createSocket(@NonNull String remoteHost, int port) throws IOException {
             return delegate.createSocket(remoteHost, port, localAddress, 0);
         }
 

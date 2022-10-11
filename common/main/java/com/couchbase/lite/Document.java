@@ -45,44 +45,46 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     /// Factory methods
 
-    @NonNull
-    static Document getDocument(@NonNull Database database, @NonNull String id) throws CouchbaseLiteException {
-        return getDocument(database, id, true);
-    }
-
-    @NonNull
-    static Document getDocument(@NonNull Database database, @NonNull String id, boolean includeDeleted)
+    @Nullable
+    static Document getDocumentOrNull(@NonNull Collection collection, @NonNull String id)
         throws CouchbaseLiteException {
-        Preconditions.assertNotNull(database, "database");
-
-        final C4Document c4Doc;
-        try { c4Doc = database.getC4Document(id); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-
-        final Collection collection = database.getDefaultCollectionOrThrow();
-
-        if (includeDeleted || (!c4Doc.isDocDeleted())) { return new Document(collection, id, c4Doc, false); }
-
-        throw new CouchbaseLiteException("DocumentNotFound", CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
+        Preconditions.assertNotEmpty(id, "id");
+        try {
+            final C4Document c4Doc = getC4Document(collection, id);
+            if (!c4Doc.isDocDeleted()) { return new Document(collection, id, c4Doc, false); }
+        }
+        catch (CouchbaseLiteException e) {
+            if ((!CBLError.Domain.CBLITE.equals(e.getDomain())) || (e.getCode() != CBLError.Code.NOT_FOUND)) {
+                throw e;
+            }
+        }
+        return null;
     }
 
     @NonNull
-    static Document getDocument(@NonNull Collection collection, @NonNull String id) throws CouchbaseLiteException {
-        return getDocument(collection, id, true);
+    static Document getDocumentWithDeleted(@NonNull Collection collection, @NonNull String id)
+        throws CouchbaseLiteException {
+        return new Document(collection, id, getC4Document(collection, id), false);
     }
 
     @NonNull
-    static Document getDocument(@NonNull Collection collection, @NonNull String id, boolean includeDeleted)
+    static Document getDocumentWithRevisions(@NonNull Collection collection, @NonNull String id)
         throws CouchbaseLiteException {
         Preconditions.assertNotNull(collection, "collection");
 
         final C4Document c4Doc;
-        try { c4Doc = collection.getC4Document(id); }
+        try { c4Doc = collection.getC4DocumentWithRevs(id); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
-        if (includeDeleted || (!c4Doc.isDocDeleted())) { return new Document(collection, id, c4Doc, false); }
+        return new Document(collection, id, c4Doc, false);
+    }
 
-        throw new CouchbaseLiteException("DocumentNotFound", CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
+
+    @NonNull
+    private static C4Document getC4Document(@NonNull Collection collection, @NonNull String id)
+        throws CouchbaseLiteException {
+        try { return Preconditions.assertNotNull(collection, "collection").getC4Document(id); }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
 
@@ -503,7 +505,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     final boolean isMutable() { return mutable; }
 
-     long generation() {
+    long generation() {
         final String revId = getRevisionID();
         if (revId == null) { return 0; }
         final C4Document c4Doc = getC4doc();

@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -54,13 +55,9 @@ final class NativeLibrary {
     private static final AtomicBoolean LOADED = new AtomicBoolean(false);
 
     @NonNull
-    private static final List<String> LIBRARIES;
-    static {
-        final List<String> l = new ArrayList<>();
-        l.add("LiteCore");
-        l.add("LiteCoreJNI");
-        LIBRARIES = Collections.unmodifiableList(l);
-    }
+    private static final List<String> LIBRARIES
+        = Collections.unmodifiableList(Arrays.asList("LiteCore", "LiteCoreJNI"));
+
     /**
      * Extracts and loads native libraries.
      */

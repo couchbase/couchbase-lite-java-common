@@ -72,7 +72,7 @@ public class BaseImmutableReplicatorConfiguration {
     private final Database database;
 
     // PMD doesn't get weak references
-    @SuppressWarnings("PMD.SingularField")
+    @SuppressWarnings({"PMD.SingularField", "FieldCanBeLocal"})
     private Map<String, Object> options;
 
     //-------------------------------------------------------------------------

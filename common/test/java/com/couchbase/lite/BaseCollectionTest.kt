@@ -39,7 +39,7 @@ open class BaseCollectionTest : BaseDbTest() {
 
     protected fun saveDocInCollection(doc: MutableDocument, collection: Collection): Document {
         collection.save(doc)
-        val savedDoc = collection.getDocument(doc.id)
+        val savedDoc = Document.getDocumentOrNull(collection, doc.id)
         assertNotNull(savedDoc)
         assertEquals(doc.id, savedDoc!!.id)
         return savedDoc
@@ -57,7 +57,7 @@ open class BaseCollectionTest : BaseDbTest() {
 
     protected fun saveDocInTestCollection(doc: MutableDocument): Document {
         testCollection.save(doc)
-        val savedDoc = testCollection.getDocument(doc.id)
+        val savedDoc = Document.getDocumentOrNull(testCollection, doc.id)
         assertNotNull(savedDoc)
         assertEquals(doc.id, savedDoc!!.id)
         return savedDoc

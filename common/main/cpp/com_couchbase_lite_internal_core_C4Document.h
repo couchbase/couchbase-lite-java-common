@@ -10,19 +10,19 @@ extern "C" {
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
+ * Method:    getFromCollection
+ * Signature: (JLjava/lang/String;ZZ)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFromCollection
+        (JNIEnv *, jclass, jlong, jstring, jboolean, jboolean);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    createFromSlice
  * Signature: (JLjava/lang/String;JJI)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createFromSlice
         (JNIEnv *, jclass, jlong, jstring, jlong, jlong, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    getFromCollection
- * Signature: (JLjava/lang/String;Z)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getFromCollection
-        (JNIEnv *, jclass, jlong, jstring, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
@@ -106,14 +106,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_getSele
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    getSelectedBody
- * Signature: (J)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4Document_getSelectedBody
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    getGenerationForId
  * Signature: (Ljava/lang/String;)J
  */
@@ -146,30 +138,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Document_free
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    selectCurrentRevision
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Document_selectCurrentRevision
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    loadRevisionBody
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Document_loadRevisionBody
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    hasRevisionBody
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Document_hasRevisionBody
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    selectParentRevision
  * Signature: (J)Z
  */
@@ -186,35 +154,11 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Document_selectNe
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    selectCommonAncestorRevision
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4Document_selectCommonAncestorRevision
-        (JNIEnv *, jclass, jlong, jstring, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    purgeRevision
- * Signature: (JLjava/lang/String;)I
- */
-JNIEXPORT jint JNICALL Java_com_couchbase_lite_internal_core_C4Document_purgeRevision
-        (JNIEnv *, jclass, jlong, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    resolveConflict
  * Signature: (JLjava/lang/String;Ljava/lang/String;[BI)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Document_resolveConflict
         (JNIEnv *, jclass, jlong, jstring, jstring, jbyteArray, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    update
- * Signature: (J[BI)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_update
-        (JNIEnv *, jclass, jlong, jbyteArray, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document

@@ -20,7 +20,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Ignore
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
@@ -213,9 +212,10 @@ class CollectionListenerTest : BaseCollectionTest() {
         val collectionA = baseTestDb.createCollection("colA", "scopeA")
         val collectionB = baseTestDb.createCollection("colB", "scopeA")
 
+        val changes1 = mutableListOf<String>()
+        val changes2 = mutableListOf<String>()
+
         var latch = CountDownLatch(2)
-        var changes1 = mutableListOf<String>()
-        var changes2 = mutableListOf<String>()
         var thread1: Thread? = null
         var thread2: Thread? = null
 
@@ -258,15 +258,17 @@ class CollectionListenerTest : BaseCollectionTest() {
 
         // Update documents
         latch = CountDownLatch(2)
-        changes1 = mutableListOf()
-        changes2 = mutableListOf()
+        changes1.clear()
+        changes2.clear()
 
         t -= System.currentTimeMillis()
-        collectionB.save(collectionB.getDocument(doc3Id)?.toMutable()?.setString("Lucky", "Radiohead")!!)
-        collectionA.save(collectionA.getDocument(doc2Id)?.toMutable()?.setString("Dazzle", "Siouxsie & the Banshees")!!)
+
+        collectionB.save(
+            collectionB.getDocument(doc3Id)!!.toMutable().setString("Lucky", "Radiohead"))
         collectionA.save(
-            collectionA.getDocument(doc1Id)?.toMutable()?.setString("Baroud", "Cheb Khaled & Safy Boutella")!!
-        )
+            collectionA.getDocument(doc2Id)!!.toMutable().setString("Dazzle", "Siouxsie & the Banshees"))
+        collectionA.save(
+            collectionA.getDocument(doc1Id)!!.toMutable().setString("Baroud", "Cheb Khaled & Safy Boutella"))
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         t += System.currentTimeMillis()
@@ -284,8 +286,8 @@ class CollectionListenerTest : BaseCollectionTest() {
 
         // Delete documents
         latch = CountDownLatch(2)
-        changes1 = mutableListOf()
-        changes2 = mutableListOf()
+        changes1.clear()
+        changes2.clear()
 
         t -= System.currentTimeMillis()
         collectionB.delete(collectionB.getDocument(doc3Id)!!)
@@ -306,11 +308,11 @@ class CollectionListenerTest : BaseCollectionTest() {
             assertNotEquals(Thread.currentThread(), thread2)
         }
 
-        // Remove the change listeners
         latch = CountDownLatch(2)
-        changes1 = mutableListOf()
-        changes2 = mutableListOf()
+        changes1.clear()
+        changes2.clear()
 
+        // Remove the change listeners
         token1.remove()
         token2.remove()
 
@@ -384,8 +386,8 @@ class CollectionListenerTest : BaseCollectionTest() {
 
             // Update documents
             latch = CountDownLatch(2)
-            changes1 = mutableListOf()
-            changes2 = mutableListOf()
+            changes1.clear()
+            changes2.clear()
 
             t -= System.currentTimeMillis()
             collectionB.save(
@@ -412,8 +414,8 @@ class CollectionListenerTest : BaseCollectionTest() {
 
             // Delete documents
             latch = CountDownLatch(2)
-            changes1 = mutableListOf()
-            changes2 = mutableListOf()
+            changes1.clear()
+            changes2.clear()
 
             t -= System.currentTimeMillis()
             collectionB.delete(collectionB.getDocument(doc3Id)!!)
@@ -434,8 +436,8 @@ class CollectionListenerTest : BaseCollectionTest() {
 
             // Remove the change listeners
             latch = CountDownLatch(2)
-            changes1 = mutableListOf()
-            changes2 = mutableListOf()
+            changes1.clear()
+            changes2.clear()
 
         } finally {
             token1.remove()

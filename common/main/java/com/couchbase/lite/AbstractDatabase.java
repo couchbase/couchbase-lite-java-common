@@ -662,25 +662,23 @@ abstract class AbstractDatabase extends BaseDatabase
     /**
      * Gets an existing Document with the given ID from the default collection.
      * If the document with the given ID doesn't exist in the default collection,
-     * the method will return null.
+     * the method will return null.  If the default collection does not exist or if
+     * the database is closed, the method will throw an IllegalStateException
      *
      * @param id the document ID
-     * @return the Document object
-     * @deprecated Use getDefaultCollection().getCount()
+     * @return the Document object or null
+     * @throws IllegalStateException when the database is closed or the default collection has been deleted
+     * @deprecated Use getDefaultCollection().getDocument()
      */
     @SuppressWarnings("PMD.PreserveStackTrace")
     @Deprecated
     @Nullable
     public Document getDocument(@NonNull String id) {
-        try { return getDefaultCollectionOrThrow().getDocument(id); }
-        catch (CouchbaseLiteException e) {
-            if (e.getDomain().equals(CBLError.Domain.CBLITE) && e.getCode() == CBLError.Code.NOT_OPEN) {
-                throw new IllegalStateException(
-                    Log.lookupStandardMessage("DBClosedOrCollectionDeleted"),
-                    e);
-            }
-            return null;
+        synchronized (getDbLock()) {
+            try { return getDefaultCollectionOrThrow().getDocument(id); }
+            catch (CouchbaseLiteException e) { Log.i(LogDomain.DATABASE, "Failed retrieving document: %s", e, id); }
         }
+        return null;
     }
 
     /**
@@ -1059,11 +1057,6 @@ abstract class AbstractDatabase extends BaseDatabase
 
     // - Documents:
 
-    @NonNull
-    C4Document getC4Document(@NonNull String id) throws LiteCoreException {
-        synchronized (getDbLock()) { return getDefaultCollectionOrThrow().getC4Document(id); }
-    }
-
     @GuardedBy("getDbLock()")
     void beginTransaction() throws CouchbaseLiteException {
         try { getOpenC4DbLocked().beginTransaction(); }
@@ -1178,7 +1171,7 @@ abstract class AbstractDatabase extends BaseDatabase
 
     void resolveReplicationConflict(
         @Nullable ConflictResolver resolver,
-        @NonNull String docId,
+        @NonNull ReplicatedDocument rDoc,
         @NonNull Fn.NullableConsumer<CouchbaseLiteException> callback) {
         int n = 0;
         CouchbaseLiteException err = null;
@@ -1192,8 +1185,19 @@ abstract class AbstractDatabase extends BaseDatabase
                     break;
                 }
 
+                final String scope = rDoc.getCollectionScope();
+                final String name = rDoc.getCollectionName();
                 try {
-                    resolveConflictOnce(resolver, docId);
+                    final Collection collection = Collection.getCollection(this.getDatabase(), scope, name);
+                    if (collection == null) {
+                        err = new CouchbaseLiteException(
+                            "Cannot find collection " + getName() + "." + scope + "." + name,
+                            CBLError.Domain.CBLITE,
+                            CBLError.Code.UNEXPECTED_ERROR);
+                        break;
+                    }
+
+                    resolveConflictOnce(resolver, collection, rDoc.getID());
                     callback.accept(null);
                     return;
                 }
@@ -1208,7 +1212,7 @@ abstract class AbstractDatabase extends BaseDatabase
                     // fixes the conflict before this one does.  When this one attempts
                     // to save, it gets a conflict error and retries.  During the retry,
                     // it cannot find a conflicting revision and throws this error.
-                    // The other resolver did the right thing, so there is no reason
+                    // The other resolver did the right thing so there is no reason
                     // to report an error.
                     Log.w(DOMAIN, "Conflict already resolved: %s", e.getMessage());
                     break;
@@ -1282,27 +1286,26 @@ abstract class AbstractDatabase extends BaseDatabase
     @Nullable
     abstract byte[] getEncryptionKey();
 
-    // !!! This method should become private when the deprecated pre-Collection methods are removed
-    @NonNull
-    Collection getDefaultCollectionOrThrow() {
-        final Collection collection;
-        try {
-            synchronized (getDbLock()) { collection = getDefaultCollectionLocked(); }
-        }
-        catch (CouchbaseLiteException e) {
-            throw new IllegalStateException("Failed getting default collection", e);
-        }
-
-        if (collection == null) { throw new IllegalStateException("No default collection"); }
-
-        return collection;
-    }
-
     //---------------------------------------------
     // Private (in class only)
     //---------------------------------------------
 
-    // - Database:
+    // - Collection:
+
+    @NonNull
+    private Collection getDefaultCollectionOrThrow() {
+        Exception err = null;
+        try {
+            synchronized (getDbLock()) {
+                assertOpenUnchecked();
+                final Collection collection = getDefaultCollectionLocked();
+                if (collection != null) { return collection; }
+            }
+        }
+        catch (CouchbaseLiteException e) { err = e; }
+
+        throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), err);
+    }
 
     @Nullable
     private Collection getDefaultCollectionLocked() throws CouchbaseLiteException {
@@ -1315,6 +1318,8 @@ abstract class AbstractDatabase extends BaseDatabase
 
         return defaultCollection;
     }
+
+    // - Database:
 
     @NonNull
     private C4Database openC4Db() throws CouchbaseLiteException {
@@ -1347,13 +1352,16 @@ abstract class AbstractDatabase extends BaseDatabase
 
     // - Replication: Conflict resolution
 
-    private void resolveConflictOnce(@Nullable ConflictResolver resolver, @NonNull String docID)
+    private void resolveConflictOnce(
+        @Nullable ConflictResolver resolver,
+        @NonNull Collection collection,
+        @NonNull String docID)
         throws CouchbaseLiteException, ConflictResolutionException {
         final Document localDoc;
         final Document remoteDoc;
         synchronized (getDbLock()) {
-            localDoc = Document.getDocument((Database) this, docID);
-            remoteDoc = getConflictingRevision(docID);
+            localDoc = Document.getDocumentWithDeleted(collection, docID);
+            remoteDoc = getConflictingRevision(collection, docID);
         }
 
         final Document resolvedDoc;
@@ -1380,11 +1388,11 @@ abstract class AbstractDatabase extends BaseDatabase
     }
 
     @NonNull
-    private Document getConflictingRevision(@NonNull String docID)
+    private Document getConflictingRevision(@NonNull Collection collection, @NonNull String docID)
         throws CouchbaseLiteException, ConflictResolutionException {
-        final Document remoteDoc = Document.getDocument((Database) this, docID);
+        final Document remoteDoc = Document.getDocumentWithRevisions(collection, docID);
         try {
-            if (!remoteDoc.selectConflictingRevision()) {
+            if ((remoteDoc == null) || !remoteDoc.selectConflictingRevision()) {
                 throw new ConflictResolutionException(
                     "Unable to select conflicting revision for doc '" + docID + "'. Skipping.");
             }

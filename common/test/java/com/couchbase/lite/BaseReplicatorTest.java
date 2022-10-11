@@ -221,7 +221,6 @@ public abstract class BaseReplicatorTest extends BaseCollectionTest {
 
         if (onReady != null) { onReady.accept(repl); }
 
-
         boolean ok;
         ListenerToken token = repl.addChangeListener(testSerialExecutor, listener);
         try {
@@ -231,6 +230,7 @@ public abstract class BaseReplicatorTest extends BaseCollectionTest {
         }
         finally {
             token.remove();
+            repl.stop();
         }
 
         Throwable err = listener.getError();

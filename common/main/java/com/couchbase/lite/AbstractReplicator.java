@@ -30,6 +30,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
@@ -385,7 +386,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     @Override
     public String toString() {
         if (desc == null) { desc = description(); }
-        return getC4Replicator() + "$" + desc;
+        return desc + "$" + getC4Replicator();
     }
 
     //---------------------------------------------
@@ -619,8 +620,11 @@ public abstract class AbstractReplicator extends BaseReplicator
         synchronized (getDatabase().getDbLock()) {
             C4Replicator c4Repl = getC4Replicator();
 
+            final Map<String, Object> options = config.getConnectionOptions();
+            Log.d(LogDomain.REPLICATOR, "Replication options: " + options);
+
             if (c4Repl != null) {
-                c4Repl.setOptions(FLEncoder.encodeMap(config.getConnectionOptions()));
+                c4Repl.setOptions(FLEncoder.encodeMap(options));
                 synchronized (getReplicatorLock()) { setProgressLevel(); }
                 return c4Repl;
             }
@@ -722,11 +726,14 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     private void queueConflictResolution(@NonNull ReplicatedDocument rDoc, @Nullable ConflictResolver resolver) {
-        Log.i(DOMAIN, "%s: pulled conflicting version of '%s'", this, rDoc.getID());
+        final Database db = getDatabase();
+        Log.i(
+            DOMAIN,
+            "%s: pulled conflicting version of '%s.%s.%s#%s'",
+            this, db.getName(), rDoc.getCollectionScope(), rDoc.getCollectionName(), rDoc.getID());
 
         final ExecutionService.CloseableExecutor executor
             = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
-        final Database db = getDatabase();
         final Fn.NullableConsumer<CouchbaseLiteException> continuation
             = new Fn.NullableConsumer<CouchbaseLiteException>() {
             public void accept(CouchbaseLiteException err) {
@@ -736,7 +743,7 @@ public abstract class AbstractReplicator extends BaseReplicator
         };
 
         synchronized (getReplicatorLock()) {
-            executor.execute(() -> db.resolveReplicationConflict(resolver, rDoc.getID(), continuation));
+            executor.execute(() -> db.resolveReplicationConflict(resolver, rDoc, continuation));
             pendingResolutions.add(continuation);
         }
     }

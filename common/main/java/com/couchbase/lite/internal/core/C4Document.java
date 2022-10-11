@@ -35,9 +35,15 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    static C4Document get(@NonNull C4Collection coll, @NonNull String docID, boolean mustExist)
+    static C4Document get(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        return new C4Document(getFromCollection(coll.getPeer(), docID, mustExist));
+        return new C4Document(getFromCollection(coll.getPeer(), docID, true, false));
+    }
+
+    @NonNull
+    static C4Document getWithRevs(@NonNull C4Collection coll, @NonNull String docID)
+        throws LiteCoreException {
+        return new C4Document(getFromCollection(coll.getPeer(), docID, true, true));
     }
 
     @NonNull
@@ -51,12 +57,10 @@ public final class C4Document extends C4NativePeer {
             flags));
     }
 
-    // !!! Deprecated
     @VisibleForTesting
     @NonNull
-    static C4Document create(@NonNull C4Database db, @NonNull String docID, @NonNull byte[] body, int flags)
-        throws LiteCoreException {
-        return new C4Document(create(db.getPeer(), docID, body, flags));
+    static C4Document getOrEmpty(@NonNull C4Collection coll, @NonNull String docID) throws LiteCoreException {
+        return new C4Document(getFromCollection(coll.getPeer(), docID, false, true));
     }
 
     @VisibleForTesting
@@ -198,19 +202,15 @@ public final class C4Document extends C4NativePeer {
     public boolean isDocDeleted() { return C4Constants.hasFlags(getFlags(), C4Constants.DocumentFlags.DELETED); }
 
     public boolean isRevDeleted() {
-        return C4Constants.hasFlags(
-            getSelectedFlags(),
-            C4Constants.RevisionFlags.DELETED);
+        return C4Constants.hasFlags(getSelectedFlags(), C4Constants.RevisionFlags.DELETED);
     }
 
     public boolean isRevConflicted() {
-        return C4Constants.hasFlags(
-            getSelectedFlags(),
-            C4Constants.RevisionFlags.IS_CONFLICT);
+        return C4Constants.hasFlags(getSelectedFlags(), C4Constants.RevisionFlags.IS_CONFLICT);
     }
 
     // Apparently, there may be multiple active references to a single C4Document,
-    // making it very hard to figure out when they can be closed, explicitely.
+    // making it very hard to figure out when they can be closed, explicitly.
     // See finalize() below.
     @Override
     public void close() {
@@ -254,46 +254,13 @@ public final class C4Document extends C4NativePeer {
     @Nullable
     public String getDocID() { return withPeerOrNull(C4Document::getDocID); }
 
-    @VisibleForTesting
-    boolean selectCurrentRevision() { return withPeerOrDefault(false, C4Document::selectCurrentRevision); }
-
-    @VisibleForTesting
-    boolean selectParentRevision() { return withPeerOrDefault(false, C4Document::selectParentRevision); }
-
-    @VisibleForTesting
-    boolean selectCommonAncestorRevision(String revID1, String revID2) {
-        return withPeerOrDefault(false, h -> selectCommonAncestorRevision(h, revID1, revID2));
-    }
-
-    @VisibleForTesting
-    boolean hasRevisionBody() { return withPeerOrDefault(false, C4Document::hasRevisionBody); }
-
-    @VisibleForTesting
-    @Nullable
-    byte[] getSelectedBody() { return withPeerOrNull(C4Document::getSelectedBody); }
-
-    @VisibleForTesting
-    void loadRevisionBody() throws LiteCoreException { loadRevisionBody(getPeer()); }
-
-    @VisibleForTesting
-    @Nullable
-    C4Document update(@NonNull byte[] body, int flags) throws LiteCoreException {
-        final long newDoc = withPeerOrDefault(0L, h -> update(h, body, flags));
-        return (newDoc == 0) ? null : new C4Document(newDoc);
-    }
-
-    @VisibleForTesting
-    int purgeRevision(String revID) throws LiteCoreException {
-        return withPeerOrDefault(0, h -> purgeRevision(h, revID));
-    }
-
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
     // - Creating and Updating Documents
 
-    private static native long getFromCollection(long coll, String docID, boolean mustExist)
+    private static native long getFromCollection(long coll, String docID, boolean mustExist, boolean getAllRevs)
         throws LiteCoreException;
 
     private static native long createFromSlice(long coll, String docID, long bodyPtr, long bodySize, int flags)
@@ -393,21 +360,4 @@ public final class C4Document extends C4NativePeer {
 
     @NonNull
     private static native String getDocID(long doc);
-
-    private static native boolean selectCurrentRevision(long doc);
-
-    private static native boolean selectParentRevision(long doc);
-
-    private static native boolean selectCommonAncestorRevision(long doc, String revID1, String revID2);
-
-    private static native boolean hasRevisionBody(long doc);
-
-    @NonNull
-    private static native byte[] getSelectedBody(long doc);
-
-    private static native void loadRevisionBody(long doc) throws LiteCoreException;
-
-    private static native long update(long doc, byte[] body, int flags) throws LiteCoreException;
-
-    private static native int purgeRevision(long doc, String revID) throws LiteCoreException;
 }

@@ -263,7 +263,8 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull
         @Override
         public String toString() {
-            return "C4MessageEndpointRepl{" + ClassUtils.objId(this) + "/" + super.toString() + statusListener + "'}";
+            return "C4MessageEndpointRepl{" + ClassUtils.objId(this) + "/" + super.toString()
+                + ", " + statusListener + "'}";
         }
     }
 
@@ -312,7 +313,7 @@ public abstract class C4Replicator extends C4NativePeer {
         @NonNull
         @Override
         public String toString() {
-            return "C4CommonRepl{" + ClassUtils.objId(this) + "/" + super.toString()
+            return "C4CommonRepl{" + ClassUtils.objId(this) + "/" + super.toString() + ", "
                 // don't try to stringify the replicator: it stringifies this
                 + ClassUtils.objId(replicator) + ", " + socketFactory + "'}";
         }

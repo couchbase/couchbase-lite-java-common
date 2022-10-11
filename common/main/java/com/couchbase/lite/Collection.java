@@ -162,19 +162,13 @@ public final class Collection extends BaseCollection
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
      * exist in the collection, the value returned will be null.
      * <p>
+     * @param id the document id
+     * @return the Document object or null
+     * @throws CouchbaseLiteException if the database is closed, the collection has been deleted, etc.
      */
     @Nullable
     public Document getDocument(@NonNull String id) throws CouchbaseLiteException {
-        Preconditions.assertNotEmpty(id, "id");
-        return withLockAndOpenDb(() -> {
-            try { return Document.getDocument(this, id, false); }
-            catch (CouchbaseLiteException e) {
-                if (e.getDomain().equals(CBLError.Domain.CBLITE) && e.getCode() == CBLError.Code.NOT_FOUND) {
-                    return null;
-                }
-                else { throw e; }
-            }
-        });
+        return withLockAndOpenDb(() -> Document.getDocumentOrNull(this, id));
     }
 
     /**
@@ -536,6 +530,11 @@ public final class Collection extends BaseCollection
         synchronized (getDbLock()) { return c4Collection.getDocument(id); }
     }
 
+    @NonNull
+    C4Document getC4DocumentWithRevs(@NonNull String id) throws LiteCoreException {
+        synchronized (getDbLock()) { return c4Collection.getDocumentWithRevs(id); }
+    }
+
     void saveWithConflictHandler(@NonNull MutableDocument document, @NonNull ConflictHandler handler)
         throws CouchbaseLiteException {
         Document oldDoc = null;
@@ -559,7 +558,7 @@ public final class Collection extends BaseCollection
                 }
 
                 // Conflict
-                oldDoc = Document.getDocument(this, document.getId());
+                oldDoc = Document.getDocumentWithDeleted(this, document.getId());
             }
 
             try {
@@ -640,7 +639,7 @@ public final class Collection extends BaseCollection
                 // ??? Revisit this: there is no programatic way for client code
                 // to know that the listener has failed.
                 catch (CouchbaseLiteException e) {
-                    Log.d(LogDomain.LISTENER, e.getMessage());
+                    Log.d(LogDomain.LISTENER, "Listener failed", e);
                     return ChangeListenerToken.DUMMY;
                 }
             }
@@ -678,7 +677,7 @@ public final class Collection extends BaseCollection
                 // !!! Revisit this: there is no programatic way for client code
                 // to know that the listener has failed.
                 catch (CouchbaseLiteException e) {
-                    Log.d(LogDomain.LISTENER, e.getMessage());
+                    Log.d(LogDomain.LISTENER, "Listener failed", e);
                     return ChangeListenerToken.DUMMY;
                 }
             }

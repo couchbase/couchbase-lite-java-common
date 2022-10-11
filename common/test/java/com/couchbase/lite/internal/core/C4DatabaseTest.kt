@@ -424,39 +424,6 @@ class C4DatabaseTest : C4BaseTest() {
      * Deprecated tests that should be in C4Collection instead of C4Database
      */
 
-    // - "Database AllDocs"
-    // This test depends on the fact that the enumerator will return
-    // the documents in dictionary order, doc-01 before doc-10, etc
-    @Test
-    fun testDatabaseAllDocs() {
-        setupAllDocs()
-        assertEquals(99L, c4Database.defaultCollection?.documentCount)
-        var i = 1
-
-        // No start or end ID:
-        var iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT
-        iteratorFlags = iteratorFlags and C4Constants.EnumeratorFlags.INCLUDE_BODIES.inv()
-        val allDocs = enumerateAllDocs(c4Database, iteratorFlags)
-        assertNotNull(allDocs)
-
-        while (allDocs.next()) {
-            val doc = allDocs.document
-            assertNotNull(doc)
-            assertEquals(docId(i), doc.docID)
-            assertEquals(REV_ID_1, doc.revID)
-            assertEquals(REV_ID_1, doc.selectedRevID)
-            assertEquals(i.toLong(), doc.selectedSequence)
-            assertNull(doc.selectedBody)
-            // Doc was loaded without its body, but it should load on demand:
-            doc.loadRevisionBody()
-            assertArrayEquals(fleeceBody, doc.selectedBody)
-            i++
-        }
-
-        assertEquals(100, i)
-    }
-
-
     @Test
     fun testDatabaseCopySucceeds() {
         val doc1ID = "doc001"
@@ -599,7 +566,7 @@ class C4DatabaseTest : C4BaseTest() {
 
         waitUntil(STD_TIMEOUT_MS) { 1L == c4Database.defaultCollection?.documentCount }
 
-        assertNotNull(c4Database.defaultCollection?.getDocument(docID2, true))
+        assertNotNull(c4Database.defaultCollection?.getDocument(docID2))
     }
 
     @Test
@@ -611,7 +578,7 @@ class C4DatabaseTest : C4BaseTest() {
         } catch (ignore: Exception) {
         }
         try {
-            c4Database.defaultCollection?.getDocument(docID, true)
+            c4Database.defaultCollection?.getDocument(docID)
         } catch (e: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE.toLong(), e.domain.toLong())
             assertEquals(C4Constants.LiteCoreError.NOT_FOUND.toLong(), e.code.toLong())

@@ -167,12 +167,13 @@ public class C4Collection extends C4NativePeer {
     public long getDocumentCount() { return withPeerOrDefault(0L, impl::nGetDocumentCount); }
 
     @NonNull
-    public C4Document getDocument(@NonNull String docId) throws LiteCoreException { return getDocument(docId, true); }
+    public C4Document getDocument(@NonNull String docId) throws LiteCoreException {
+        return C4Document.get(this, Preconditions.assertNotNull(docId, "doc ID"));
+    }
 
-    @VisibleForTesting
     @NonNull
-    public C4Document getDocument(@NonNull String docId, boolean mustExist) throws LiteCoreException {
-        return C4Document.get(this, Preconditions.assertNotNull(docId, "doc ID"), mustExist);
+    public C4Document getDocumentWithRevs(@NonNull String docId) throws LiteCoreException {
+        return C4Document.getWithRevs(this, Preconditions.assertNotNull(docId, "doc ID"));
     }
 
     @NonNull
@@ -191,18 +192,6 @@ public class C4Collection extends C4NativePeer {
 
     public void purgeDocument(String docID) throws LiteCoreException {
         withPeer(peer -> impl.nPurgeDoc(peer, docID));
-    }
-
-    // - Queries
-
-    @NonNull
-    public C4Query createJsonQuery(@NonNull String expression) throws LiteCoreException {
-        return C4Query.create(this, AbstractIndex.QueryLanguage.JSON, expression);
-    }
-
-    @NonNull
-    public C4Query createN1qlQuery(@NonNull String expression) throws LiteCoreException {
-        return C4Query.create(this, AbstractIndex.QueryLanguage.N1QL, expression);
     }
 
     // - Observers

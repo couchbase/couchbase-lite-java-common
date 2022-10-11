@@ -15,6 +15,9 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +57,12 @@ public class C4BaseTest extends BaseTest {
     public static final String REV_ID_1 = "1-abcd";
     public static final String REV_ID_2 = "2-c001d00d";
     public static final String REV_ID_3 = "3-deadbeef";
+
+    public static C4Document getDocumentOrEmpty(@Nullable C4Collection collection, @NonNull String docId)
+        throws LiteCoreException {
+        assertNotNull(collection);
+        return C4Document.getOrEmpty(collection, docId);
+    }
 
     protected C4Database c4Database;
 
@@ -188,7 +197,7 @@ public class C4BaseTest extends BaseTest {
         boolean commit = false;
         db.beginTransaction();
         try {
-            C4Document curDoc = db.getDefaultCollection().getDocument(docID, false);
+            C4Document curDoc = getDocumentOrEmpty(db.getDefaultCollection(), docID);
             assertNotNull(curDoc);
             List<String> revIDs = new ArrayList<>();
             revIDs.add(revID);

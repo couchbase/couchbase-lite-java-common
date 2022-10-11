@@ -104,7 +104,7 @@ public final class ReplicatedDocument {
     /**
      * Set the current document replication error.
      */
-    public void setError(CouchbaseLiteException error) { this.error = error; }
+    public void setError(@Nullable CouchbaseLiteException error) { this.error = error; }
 
     @NonNull
     @Override

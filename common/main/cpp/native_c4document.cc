@@ -31,7 +31,7 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    getFromCollection
- * Signature: (JLjava/lang/String;Z)J
+ * Signature: (JLjava/lang/String;ZZ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
@@ -39,11 +39,17 @@ Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
         jclass ignore,
         jlong coll,
         jstring jDocId,
-        jboolean mustExist) {
+        jboolean mustExist,
+        jboolean allRevs) {
     jstringSlice docId(env, jDocId);
 
     C4Error error{};
-    C4Document *doc = c4coll_getDoc((C4Collection *) coll, docId, mustExist == JNI_TRUE, kDocGetAll, &error);
+    C4Document *doc = c4coll_getDoc(
+            (C4Collection *) coll,
+            docId,
+            mustExist == JNI_TRUE,
+            (allRevs == JNI_TRUE) ? kDocGetAll : kDocGetCurrentRev,
+            &error);
     if (doc == nullptr) {
         throwError(env, error);
         return 0;
@@ -502,118 +508,5 @@ JNIEXPORT jstring JNICALL
 Java_com_couchbase_lite_internal_core_C4Document_getDocID(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return toJString(env, doc->docID);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    selectCurrentRevision
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_selectCurrentRevision(JNIEnv *env, jclass ignore, jlong jdoc) {
-    return (jboolean) c4doc_selectCurrentRevision((C4Document *) jdoc);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    selectParentRevision
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_selectParentRevision(JNIEnv *env, jclass ignore, jlong jdoc) {
-    return (jboolean) c4doc_selectParentRevision((C4Document *) jdoc);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    selectCommonAncestorRevision
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_selectCommonAncestorRevision(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdoc,
-        jstring jRev1,
-        jstring jRev2) {
-    jstringSlice rev1(env, jRev1);
-    jstringSlice rev2(env, jRev2);
-    return (jboolean) c4doc_selectCommonAncestorRevision((C4Document *) jdoc, rev1, rev2);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    hasRevisionBody
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_hasRevisionBody(JNIEnv *env, jclass ignore, jlong jdoc) {
-    return (jboolean) c4doc_hasRevisionBody((C4Document *) jdoc);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    getSelectedBody
- * Signature: (J)[B
- */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getSelectedBody(JNIEnv *env, jclass ignore, jlong jdoc) {
-    auto doc = (C4Document *) jdoc;
-    return toJByteArray(env, c4doc_getRevisionBody(doc));
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    loadRevisionBody
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_loadRevisionBody(JNIEnv *env, jclass ignore, jlong jdoc) {
-    C4Error error{};
-    if (!c4doc_loadRevisionBody((C4Document *) jdoc, &error))
-        throwError(env, error);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    update
- * Signature: (J[BI)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_update(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdoc,
-        jbyteArray jbody,
-        jint flags) {
-    jbyteArraySlice body(env, jbody, false);
-    C4Error error{};
-    C4Document *doc = c4doc_update((C4Document *) jdoc, body, (unsigned) flags, &error);
-    if (!doc) {
-        throwError(env, error);
-        return 0;
-    }
-    return (jlong) doc;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    purgeRevision
- * Signature: (JLjava/lang/String;)I
- */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_purgeRevision(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdoc,
-        jstring jrevID) {
-    jstringSlice revID(env, jrevID);
-    C4Error error{};
-    int num = c4doc_purgeRevision((C4Document *) jdoc, revID, &error);
-    if (num == -1) {
-        throwError(env, error);
-        return -1;
-    }
-    return num;
 }
 }
