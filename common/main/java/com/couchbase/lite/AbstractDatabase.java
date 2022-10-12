@@ -1149,20 +1149,20 @@ abstract class AbstractDatabase extends BaseDatabase
         }
     }
 
-    // ??? This method is *NOT* thread safe.
-    // Used wo/synchronization, there is a race on the open db
     void addActiveReplicator(AbstractReplicator replicator) {
-        synchronized (getDbLock()) { assertOpenUnchecked(); }
+        synchronized (getDbLock()) {
+            assertOpenUnchecked();
 
-        registerProcess(new ActiveProcess<AbstractReplicator>(replicator) {
-            @Override
-            public void stop() { replicator.stop(); }
+            registerProcess(new ActiveProcess<AbstractReplicator>(replicator) {
+                @Override
+                public void stop() { replicator.stop(); }
 
-            @Override
-            public boolean isActive() {
-                return !ReplicatorActivityLevel.STOPPED.equals(replicator.getState());
-            }
-        });
+                @Override
+                public boolean isActive() {
+                    return !ReplicatorActivityLevel.STOPPED.equals(replicator.getState());
+                }
+            });
+        }
     }
 
     void removeActiveReplicator(AbstractReplicator replicator) { unregisterProcess(replicator); }
@@ -1179,7 +1179,7 @@ abstract class AbstractDatabase extends BaseDatabase
             while (true) {
                 if (n++ > Collection.MAX_CONFLICT_RESOLUTION_RETRIES) {
                     err = new CouchbaseLiteException(
-                        "Too many attempts to resolve a conflicted document: " + n,
+                        "Too many attempts to resolve a conflicted document(" + n + "): " + rDoc,
                         CBLError.Domain.CBLITE,
                         CBLError.Code.UNEXPECTED_ERROR);
                     break;
@@ -1529,12 +1529,13 @@ abstract class AbstractDatabase extends BaseDatabase
     }
 
     private void verifyActiveProcesses() {
-        final Set<ActiveProcess<?>> processes;
-        final Set<ActiveProcess<?>> deadProcesses = new HashSet<>();
+        Set<ActiveProcess<?>> processes;
         synchronized (activeProcesses) { processes = new HashSet<>(activeProcesses); }
+
+        final Set<ActiveProcess<?>> deadProcesses = new HashSet<>();
         for (ActiveProcess<?> process: processes) {
             if (!process.isActive()) {
-                Log.w(DOMAIN, "Found dead process: " + process);
+                Log.i(DOMAIN, "Found dead process: " + process);
                 deadProcesses.add(process);
             }
         }
@@ -1545,10 +1546,12 @@ abstract class AbstractDatabase extends BaseDatabase
 
         if (closeLatch == null) { return; }
 
-        final int activeProcessCount;
-        synchronized (activeProcesses) { activeProcessCount = activeProcesses.size(); }
-        Log.d(DOMAIN, "Active processes(%s): %d", getName(), activeProcessCount);
-        if (activeProcessCount <= 0) { closeLatch.countDown(); }
+        synchronized (activeProcesses) { processes = new HashSet<>(activeProcesses); }
+
+        Log.d(DOMAIN, "Active processes %s", getName());
+        for (ActiveProcess<?> process: processes) { Log.d(DOMAIN, " processes: %s", process); }
+
+        if (processes.size() <= 0) { closeLatch.countDown(); }
     }
 
     @SuppressWarnings("PMD.NPathComplexity")
