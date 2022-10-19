@@ -35,11 +35,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public abstract class C4NativePeer implements AutoCloseable {
     private static final String HANDLE_NAME = "peer handle";
 
-    @GuardedBy("lock")
+    @GuardedBy("getPeerLock()")
     private volatile long peer;
 
     // Instrumentation
-    @GuardedBy("lock")
+    @GuardedBy("getPeerLock()")
     private Exception closedAt;
 
     // ??? questionable design
