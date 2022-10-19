@@ -201,12 +201,22 @@ public final class C4Document extends C4NativePeer {
 
     public boolean isDocDeleted() { return C4Constants.hasFlags(getFlags(), C4Constants.DocumentFlags.DELETED); }
 
+    public boolean isDocConflicted() { return C4Constants.hasFlags(getFlags(), C4Constants.DocumentFlags.CONFLICTED); }
+
+    public boolean hasDocAttachments() {
+        return C4Constants.hasFlags(getFlags(), C4Constants.DocumentFlags.HAS_ATTACHMENTS);
+    }
+
     public boolean isRevDeleted() {
         return C4Constants.hasFlags(getSelectedFlags(), C4Constants.RevisionFlags.DELETED);
     }
 
     public boolean isRevConflicted() {
         return C4Constants.hasFlags(getSelectedFlags(), C4Constants.RevisionFlags.IS_CONFLICT);
+    }
+
+    public boolean hasRevAttachments() {
+        return C4Constants.hasFlags(getFlags(), C4Constants.RevisionFlags.HAS_ATTACHMENTS);
     }
 
     // Apparently, there may be multiple active references to a single C4Document,
@@ -220,9 +230,6 @@ public final class C4Document extends C4NativePeer {
     @NonNull
     @Override
     public String toString() { return "C4Document@" + super.toString(); }
-
-    @VisibleForTesting
-    public int getFlags() { return withPeerOrDefault(0, C4Document::getFlags); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -252,7 +259,9 @@ public final class C4Document extends C4NativePeer {
 
     @VisibleForTesting
     @Nullable
-    public String getDocID() { return withPeerOrNull(C4Document::getDocID); }
+    String getDocID() { return withPeerOrNull(C4Document::getDocID); }
+
+    private int getFlags() { return withPeerOrDefault(0, C4Document::getFlags); }
 
     //-------------------------------------------------------------------------
     // native methods

@@ -146,7 +146,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             collections,
             target,
             com.couchbase.lite.ReplicatorType.PUSH_AND_PULL,
-            true,
+            false,
             null,
             null,
             null,

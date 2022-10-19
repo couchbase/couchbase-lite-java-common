@@ -512,7 +512,7 @@ class C4DatabaseTest : C4BaseTest() {
             assertEquals(REV_ID_1, doc.selectedRevID)
             assertEquals(i.toLong(), doc.sequence)
             assertEquals(i.toLong(), doc.selectedSequence)
-            assertEquals(C4Constants.DocumentFlags.EXISTS.toLong(), doc.flags.toLong())
+            assertTrue(doc.docExists())
             i++
         }
         assertEquals(100, i)

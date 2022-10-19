@@ -1548,10 +1548,14 @@ abstract class AbstractDatabase extends BaseDatabase
 
         synchronized (activeProcesses) { processes = new HashSet<>(activeProcesses); }
 
-        Log.d(DOMAIN, "Active processes %s", getName());
-        for (ActiveProcess<?> process: processes) { Log.d(DOMAIN, " processes: %s", process); }
+        final int n = processes.size();
+        Log.d(DOMAIN, "Active processes %s: %d", getName(), n);
+        if (n <= 0) {
+            closeLatch.countDown();
+            return;
+        }
 
-        if (processes.size() <= 0) { closeLatch.countDown(); }
+        for (ActiveProcess<?> process: processes) { Log.d(DOMAIN, " processes: %s", process); }
     }
 
     @SuppressWarnings("PMD.NPathComplexity")

@@ -259,7 +259,7 @@ public abstract class AbstractReplicator extends BaseReplicator
      *
      * @param docId Document id
      * @return true if the document is pending
-     * @deprecated Use isDocumentPending(String)
+     * @deprecated Use isDocumentPending(String, Collection)
      */
     @Deprecated
     public boolean isDocumentPending(@NonNull String docId)
