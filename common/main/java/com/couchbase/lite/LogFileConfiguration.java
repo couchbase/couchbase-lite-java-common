@@ -26,10 +26,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * copy and then use it to replace the loggers current configuration.
  */
 public final class LogFileConfiguration {
-    public static final long DEFAULT_MAX_LOG_SIZE = 1024 * 500;
-    public static final int DEFAULT_MAX_ROTATE_COUNT = 1;
-    public static final boolean DEFAULT_USE_PLAINTEXT = false;
-
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -37,8 +33,9 @@ public final class LogFileConfiguration {
 
     @NonNull
     private final String directory;
+
     private boolean usePlaintext;
-    private int maxRotateCount = 1;
+    private int maxRotateCount;
     private long maxSize;
 
     //---------------------------------------------
@@ -95,9 +92,9 @@ public final class LogFileConfiguration {
         @Nullable Boolean usePlaintext,
         boolean readonly) {
         this.directory = Preconditions.assertNotNull(directory, "directory");
-        this.maxSize = (maxSize != null) ? maxSize : DEFAULT_MAX_LOG_SIZE;
-        this.maxRotateCount = (maxRotateCount != null) ? maxRotateCount : DEFAULT_MAX_ROTATE_COUNT;
-        this.usePlaintext = (usePlaintext != null) ? usePlaintext : DEFAULT_USE_PLAINTEXT;
+        this.maxSize = (maxSize != null) ? maxSize : Defaults.LogFile.MAX_SIZE;
+        this.maxRotateCount = (maxRotateCount != null) ? maxRotateCount : Defaults.LogFile.MAX_ROTATE_COUNT;
+        this.usePlaintext = (usePlaintext != null) ? usePlaintext : Defaults.LogFile.USE_PLAIN_TEXT;
         this.readonly = readonly;
     }
 

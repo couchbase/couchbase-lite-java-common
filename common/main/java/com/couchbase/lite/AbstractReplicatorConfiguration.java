@@ -47,16 +47,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 @SuppressWarnings({"PMD.TooManyFields", "PMD.UnnecessaryFullyQualifiedName", "PMD.CyclomaticComplexity"})
 public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConfiguration {
-    public static final com.couchbase.lite.ReplicatorType DEFAULT_TYPE
-        = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
-    public static final boolean DEFAULT_CONTINUOUS = false;
-    public static final int DEFAULT_CONTINUOUS_MAX_RETRIES = Integer.MAX_VALUE;
-    public static final int DEFAULT_1SHOT_MAX_RETRIES = 9;
-    public static final int DEFAULT_HEARTBEAT_SECS = 300;
-    public static final int DEFAULT_MAX_WAIT_SECS = 300;
-    public static final boolean DEFAULT_AUTO_PURGE = true;
-
-
     /**
      * This is a long time: just under 25 days.
      * This many seconds, however, is just less than Integer.MAX_INT millis and will fit in the heartbeat property.
@@ -133,6 +123,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Nullable
     private Database database;
 
+    // Yuggg: what a kludge.
+    boolean maxAttemptsSet;
+
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
@@ -145,15 +138,15 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         this(
             collections,
             target,
-            com.couchbase.lite.ReplicatorType.PUSH_AND_PULL,
-            false,
+            Defaults.Replicator.TYPE,
+            Defaults.Replicator.CONTINUOUS,
             null,
             null,
             null,
-            0,
-            0,
-            0,
-            true,
+            Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT,
+            Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
+            Defaults.Replicator.HEARTBEAT,
+            Defaults.Replicator.ENABLE_AUTO_PURGE,
             db);
     }
 
@@ -298,6 +291,11 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     public final ReplicatorConfiguration setContinuous(boolean continuous) {
         this.continuous = continuous;
+        if (!maxAttemptsSet) {
+            maxAttempts = continuous
+                ? Defaults.Replicator.MAX_ATTEMPTS_CONTINUOUS
+                : Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT;
+        }
         return getReplicatorConfiguration();
     }
 
@@ -365,6 +363,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     public final ReplicatorConfiguration setMaxAttempts(int maxAttempts) {
         this.maxAttempts = Preconditions.assertNotNegative(maxAttempts, "max attempts");
+        maxAttemptsSet = true;
         return getReplicatorConfiguration();
     }
 
