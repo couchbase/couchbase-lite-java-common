@@ -31,6 +31,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.SlowTest;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -263,6 +264,7 @@ public class C4BlobStoreTest extends C4BaseTest {
 
 
     // - write blobs of many sizes
+    @SlowTest
     @Test
     public void testWriteBlobsOfManySizes() throws LiteCoreException {
         // The interesting sizes for encrypted blobs are right around the file block size (4096)

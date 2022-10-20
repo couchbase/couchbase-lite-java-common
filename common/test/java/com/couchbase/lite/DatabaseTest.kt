@@ -551,7 +551,6 @@ class DatabaseTest : BaseDbTest() {
     //---------------------------------------------
     //  Delete Database
     //---------------------------------------------
-    @SlowTest
     @Test
     fun testDelete() {
         baseTestDb.delete()
@@ -640,6 +639,7 @@ class DatabaseTest : BaseDbTest() {
         }
     }
 
+    @SlowTest
     @Test
     fun testDeleteDBOpenedByOtherInstance() {
         val otherDb = duplicateBaseTestDb()
@@ -671,6 +671,7 @@ class DatabaseTest : BaseDbTest() {
         assertFalse(path.exists())
     }
 
+    @SlowTest
     @Test
     fun testDeleteOpenDbWithDefaultDir() {
         val path = File(baseTestDb.path!!)
@@ -702,6 +703,7 @@ class DatabaseTest : BaseDbTest() {
         }
     }
 
+    @SlowTest
     @Test
     fun testDeleteOpeningDBByStaticMethod() {
         val db = duplicateBaseTestDb()
@@ -1008,6 +1010,7 @@ class DatabaseTest : BaseDbTest() {
     // 8.10.2 Test that after all collections in the scope are deleted from a different database instance,
     // calling the scope APIS returns the result as expected based on section 6.5.
     // To test this, get and retain the scope object before deleting all collections.
+    @SlowTest
     @Test
     fun testTestUseScopeAPIAfterDeletingAllCollectionsFromDifferentDBInstance1() {
         baseTestDb.createCollection("bobblehead", "horo")
@@ -1024,6 +1027,7 @@ class DatabaseTest : BaseDbTest() {
         assertEquals(0, collections.size)
     }
 
+    @SlowTest
     @Test
     fun testTestUseScopeAPIAfterDeletingAllCollectionsFromDifferentDBInstance2() {
         baseTestDb.createCollection("bobblehead", "horo")

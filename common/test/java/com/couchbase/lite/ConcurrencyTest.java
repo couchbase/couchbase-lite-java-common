@@ -28,8 +28,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.internal.utils.ConcurrencyUnitTest;
 import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.internal.utils.SlowTest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -55,7 +55,6 @@ public class ConcurrencyTest extends BaseDbTest {
 
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentCreate() throws CouchbaseLiteException {
         Database.log.getConsole().setLevel(LogLevel.DEBUG);
         final int kNDocs = 50;
@@ -78,7 +77,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentCreateInBatch() throws CouchbaseLiteException {
         final int kNDocs = 50;
         final int kNThreads = 4;
@@ -101,8 +99,8 @@ public class ConcurrencyTest extends BaseDbTest {
         for (int i = 0; i < kNThreads; i++) { verifyByTagName("tag-" + i, kNDocs); }
     }
 
+    @SlowTest
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentUpdate() throws CouchbaseLiteException {
         // ??? Increasing number of threads causes crashes
         final int nDocs = 5;
@@ -129,7 +127,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentRead() throws CouchbaseLiteException {
         final int kNDocs = 5;
         final int kNRounds = 50;
@@ -145,7 +142,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentReadInBatch() throws CouchbaseLiteException {
         final int kNDocs = 5;
         final int kNRounds = 50;
@@ -168,7 +164,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentReadAndUpdate() throws InterruptedException, CouchbaseLiteException {
         final int kNDocs = 5;
         final int kNRounds = 50;
@@ -194,7 +189,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentDelete() throws InterruptedException, CouchbaseLiteException {
         final int kNDocs = 100;
 
@@ -238,7 +232,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentPurge() throws InterruptedException, CouchbaseLiteException {
         final int nDocs = 100;
 
@@ -282,7 +275,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentCreateAndCloseDB() throws InterruptedException {
         final CountDownLatch latch1 = new CountDownLatch(1);
         testOnNewThread(
@@ -314,7 +306,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentCreateAndDeleteDB() throws InterruptedException {
         final int kNDocs = 100;
 
@@ -349,7 +340,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentCreateAndCompactDB() throws InterruptedException {
         final int kNDocs = 100;
 
@@ -381,7 +371,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testConcurrentCreateAndCreateIndexDB() throws Exception {
         loadJSONResourceIntoDatabase("sentences.json");
 
@@ -418,7 +407,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testBlockDatabaseChange() throws InterruptedException {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -439,7 +427,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     @Test
-    @ConcurrencyUnitTest
     public void testBlockDocumentChange() throws InterruptedException {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -465,7 +452,6 @@ public class ConcurrencyTest extends BaseDbTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1407
     @Test
-    @ConcurrencyUnitTest
     public void testQueryExecute() throws Exception {
         loadJSONResourceIntoDatabase("names_100.json");
 

@@ -17,9 +17,10 @@
 
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.utils.LoadIntegrationTest
+import com.couchbase.lite.internal.utils.LoadTest
 import com.couchbase.lite.internal.utils.Report
 import com.couchbase.lite.internal.utils.SlowTest
+import com.couchbase.lite.internal.utils.VerySlowTest
 import org.junit.Assert
 import org.junit.Assert.assertTrue
 import org.junit.Ignore
@@ -37,7 +38,7 @@ private fun interface Verifier {
 // Timings were chosen to allow a Nexus 6 running Android 7.0 to pass.
 class LoadTest : BaseDbTest() {
     @SlowTest
-    @LoadIntegrationTest
+    @LoadTest
     @Test
     fun testAddRevisions() {
         timeTest("testAddRevisions", 45 * 1000L) {
@@ -47,7 +48,7 @@ class LoadTest : BaseDbTest() {
     }
 
     @SlowTest
-    @LoadIntegrationTest
+    @LoadTest
     @Test
     fun testCreate() {
         timeTest("testCreate", 10 * 1000L) {
@@ -61,7 +62,7 @@ class LoadTest : BaseDbTest() {
     // to finalize what appears to have been an incompletely initialize
     // instance of C4Document.  It is, otherwise, not relevant.
     @Ignore("Same test as testCreate")
-    @LoadIntegrationTest
+    @LoadTest
     @Test
     fun testCreateMany() {
         timeTest("testCreateMany", 35 * 1000L) {
@@ -73,8 +74,8 @@ class LoadTest : BaseDbTest() {
         }
     }
 
-    @SlowTest
-    @LoadIntegrationTest
+    @VerySlowTest
+    @LoadTest
     @Test
     fun testDelete() {
         timeTest("testDelete", 20 * 1000L) {
@@ -93,7 +94,7 @@ class LoadTest : BaseDbTest() {
     }
 
     @Test
-    @LoadIntegrationTest
+    @LoadTest
     fun testRead() {
         timeTest("testRead", 5 * 1000L) {
             // create 1 doc
@@ -110,7 +111,7 @@ class LoadTest : BaseDbTest() {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1447
     @SlowTest
-    @LoadIntegrationTest
+    @LoadTest
     @Test
     fun testSaveManyDocs() {
         timeTest("testSaveManyDocs", 20 * 1000L) {
@@ -130,7 +131,7 @@ class LoadTest : BaseDbTest() {
     }
 
     @SlowTest
-    @LoadIntegrationTest
+    @LoadTest
     @Test
     fun testUpdate() {
         timeTest("testUpdate", 25 * 1000L) {
@@ -172,7 +173,7 @@ class LoadTest : BaseDbTest() {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1610
     @SlowTest
-    @LoadIntegrationTest
+    @LoadTest
     @Test
     fun testUpdate2() {
         timeTest("testUpdate2", 25 * 1000L) {
