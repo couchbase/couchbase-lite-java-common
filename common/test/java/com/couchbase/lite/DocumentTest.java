@@ -38,6 +38,7 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 import com.couchbase.lite.internal.utils.TestUtils;
+import com.couchbase.lite.internal.utils.VerySlowTest;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -2249,6 +2250,7 @@ public class DocumentTest extends BaseCollectionTest {
         assertNotEquals(sDoc2, sDoc1);
     }
 
+    @VerySlowTest
     @Test
     public void testEqualityDifferentDB() throws CouchbaseLiteException {
         Database sameDB = null;

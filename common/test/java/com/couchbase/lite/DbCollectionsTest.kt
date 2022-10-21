@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.utils.VerySlowTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotSame
@@ -92,7 +93,7 @@ class DbCollectionsTest : BaseCollectionTest() {
             try {
                 baseTestDb.createCollection(colName)
                 fail("Expect CBL Exception for collection : $colName")
-            } catch (e: CouchbaseLiteException) {
+            } catch (ignore: CouchbaseLiteException) {
             }
         }
     }
@@ -263,6 +264,7 @@ class DbCollectionsTest : BaseCollectionTest() {
      * Collections and Cross Database instance
      */
 
+    @VerySlowTest
     @Test
     fun testCreateThenGetCollectionFromDifferentDatabaseInstance() {
         val otherDb = duplicateDb(baseTestDb)
@@ -341,7 +343,7 @@ class DbCollectionsTest : BaseCollectionTest() {
 
     // Test getting scope, and collection name from a collection when database is deleted returns the scope and name
     @Test
-    fun testGetScopeAndCollectionNameFromADeletedDatabase(){
+    fun testGetScopeAndCollectionNameFromADeletedDatabase() {
         val collectionName = testCollection.name
         baseTestDb.delete()
         assertNotNull(testCollection.scope)

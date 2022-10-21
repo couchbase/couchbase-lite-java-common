@@ -24,7 +24,7 @@ import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.utils.Report;
-import com.couchbase.lite.internal.utils.SlowTest;
+import com.couchbase.lite.internal.utils.VerySlowTest;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,7 +36,7 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     }
 
     // @formatter:off
-    @SlowTest
+    @VerySlowTest
     @Test
     public void testDBQueryCollated() throws LiteCoreException {
         String json = "{WHAT: [ ['.Name'] ], "
@@ -49,7 +49,7 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     }
     // @formatter:on
 
-    @SlowTest
+    @VerySlowTest
     @Test
     public void testDBQueryAggregateCollated() throws LiteCoreException {
         String json = "{WHAT: [ ['COLLATE', {'unicode': true, 'case': false, 'diacritic': false}, ['.Artist']] ], "

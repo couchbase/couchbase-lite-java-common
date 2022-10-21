@@ -16,6 +16,7 @@
 
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.utils.SlowTest
 import com.couchbase.lite.internal.utils.TestUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -24,7 +25,6 @@ import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.*
 
 class CollectionTest : BaseCollectionTest() {
     //---------------------------------------------
@@ -65,6 +65,7 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     // Test getting doc from collection that is deleted in a different database instance causes CBL exception
+    @SlowTest
     @Test(expected = CouchbaseLiteException::class)
     fun testGetDocFromCollectionDeletedInDifferentDBInstance() {
         val otherDatabase = duplicateDb(baseTestDb)
@@ -550,6 +551,7 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     // Purge document from a collection deleted in a different DB Instance
+    @SlowTest
     @Test(expected = CouchbaseLiteException::class)
     fun testPurgeDocInCollectionDeletedInADifferentDBInstance() {
         val docID = "doc_id"

@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.utils.VerySlowTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -51,6 +52,7 @@ class CollectionCrossDbTest : BaseTest() {
     // Create a collection in a scope from the database instance A.
     // Ensure that the created collection is visible to the database instance B by using
     //   database.getCollection(name: "colA", scope: "scopeA") and database.getCollections(scope: "scopeA") API.
+    @VerySlowTest
     @Test
     fun testCreateThenGetCollectionFromDifferentDatabaseInstance() {
         dbA.createCollection("autographs", "polari")

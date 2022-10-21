@@ -22,7 +22,7 @@ import com.couchbase.lite.MaintenanceType
 import com.couchbase.lite.Scope
 import com.couchbase.lite.internal.fleece.FLSliceResult
 import com.couchbase.lite.internal.utils.FileUtils
-import com.couchbase.lite.internal.utils.SlowTest
+import com.couchbase.lite.internal.utils.VerySlowTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -147,7 +147,7 @@ class C4DatabaseTest : C4BaseTest() {
     }
 
     // - Database deletion lock
-    @SlowTest
+    @VerySlowTest
     @Test
     fun testDatabaseDeletionLock() {
         // Try it using the C4Db's idea of the location of the db

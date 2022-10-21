@@ -21,6 +21,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 
+/**
+ * A test that takes more than 10s to run on a Nexus 9
+ **/
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface LoadIntegrationTest {}
+public @interface VerySlowTest { }

@@ -16,7 +16,6 @@ import static org.junit.Assert.assertEquals;
 
 
 public class AuthenticatorTest extends BaseTest {
-
     @Test
     public void testBasicAuthenticatorInstance() {
         String username = "someUsername";

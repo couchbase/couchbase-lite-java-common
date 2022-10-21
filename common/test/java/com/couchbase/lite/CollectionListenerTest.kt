@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.utils.VerySlowTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -94,6 +95,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     }
 
     // Test that removing a listener from a collection deleted in a different db doesn't throw exception
+    @VerySlowTest
     @Test
     fun testRemoveChangeListenerFromCollectionDeletedInADifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()
@@ -126,6 +128,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     }
 
     // Test that removing a listener from a collection deleted in a different db doesn't throw exception
+    @VerySlowTest
     @Test
     fun testRemoveDocChangeListenerFromCollectionDeletedInADifferentDBInstance() {
         val otherDb = duplicateBaseTestDb()
@@ -263,12 +266,11 @@ class CollectionListenerTest : BaseCollectionTest() {
 
         t -= System.currentTimeMillis()
 
-        collectionB.save(
-            collectionB.getDocument(doc3Id)!!.toMutable().setString("Lucky", "Radiohead"))
+        collectionB.save(collectionB.getDocument(doc3Id)!!.toMutable().setString("Lucky", "Radiohead"))
+        collectionA.save(collectionA.getDocument(doc2Id)!!.toMutable().setString("Dazzle", "Siouxsie & the Banshees"))
         collectionA.save(
-            collectionA.getDocument(doc2Id)!!.toMutable().setString("Dazzle", "Siouxsie & the Banshees"))
-        collectionA.save(
-            collectionA.getDocument(doc1Id)!!.toMutable().setString("Baroud", "Cheb Khaled & Safy Boutella"))
+            collectionA.getDocument(doc1Id)!!.toMutable().setString("Baroud", "Cheb Khaled & Safy Boutella")
+        )
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         t += System.currentTimeMillis()
