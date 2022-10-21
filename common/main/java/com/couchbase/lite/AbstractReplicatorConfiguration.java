@@ -431,7 +431,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param pinnedCert the SSL certificate.
      * @return this.
-     * @deprecated Please use setPinnedServerCertificate(Certificate)
+     * @deprecated Please use setPinnedServerX509Certificate(Certificate)
      */
     @Deprecated
     @NonNull
@@ -457,7 +457,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param documentIDs The document IDs.
      * @return this.
-     * @deprecated Use Collection.setDocumentIDs
+     * @deprecated Use CollectionConfiguration.setDocumentIDs
      */
     @Deprecated
     @NonNull
@@ -475,7 +475,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param channels The Sync Gateway channel names.
      * @return this.
-     * @deprecated Use Collection.setChannels
+     * @deprecated Use CollectionConfiguration.setChannels
      */
     @Deprecated
     @NonNull
@@ -490,7 +490,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param conflictResolver A conflict resolver.
      * @return this.
-     * @deprecated Use Collection.setConflictResolver
+     * @deprecated Use CollectionConfiguration.setConflictResolver
      */
     @Deprecated
     @NonNull
@@ -506,7 +506,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param pullFilter The filter to filter the document to be pulled.
      * @return this.
-     * @deprecated Use Collection.setPullFilter
+     * @deprecated Use CollectionConfiguration.setPullFilter
      */
     @Deprecated
     @NonNull
@@ -522,7 +522,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @param pushFilter The filter to filter the document to be pushed.
      * @return this.
-     * @deprecated Use Collection.setPushFilter
+     * @deprecated Use CollectionConfiguration.setPushFilter
      */
     @Deprecated
     @NonNull
@@ -672,7 +672,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
      * and/or pulled.
      *
-     * @deprecated Use Collection.getDocumentIDs
+     * @deprecated Use CollectionConfiguration.getDocumentIDs
      */
     @Deprecated
     @Nullable
@@ -686,7 +686,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * The default value is null, meaning that all accessible channels will be pulled.
      * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
      *
-     * @deprecated Use Collection.getChannels
+     * @deprecated Use CollectionConfiguration.getChannels
      */
     @Deprecated
     @Nullable
@@ -698,7 +698,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Return the conflict resolver.
      *
-     * @deprecated Use Collection.getConflictResolver
+     * @deprecated Use CollectionConfiguration.getConflictResolver
      */
     @Deprecated
     @Nullable
@@ -708,7 +708,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Gets the filter used to determine whether a document will be pulled
      * from the remote endpoint.
      *
-     * @deprecated Use Collection.getPullFilter
+     * @deprecated Use CollectionConfiguration.getPullFilter
      */
     @Deprecated
     @Nullable
@@ -718,7 +718,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Gets a filter used to determine whether a document will be pushed
      * to the remote endpoint.
      *
-     * @deprecated Use Collection.getPushFilter
+     * @deprecated Use CollectionConfiguration.getPushFilter
      */
     @Deprecated
     @Nullable
