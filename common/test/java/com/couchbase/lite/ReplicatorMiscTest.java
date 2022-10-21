@@ -189,10 +189,18 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         run(repl, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST, CBLError.Domain.CBLITE);
 
         synchronized (options) {
-            assertNull(options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
-            assertFalse(options.containsKey(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
-            assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
-            assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
+            assertEquals(
+                Defaults.Replicator.ENABLE_AUTO_PURGE,
+                options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
+            assertEquals(
+                Defaults.Replicator.HEARTBEAT,
+                ((Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL)).intValue());
+            assertEquals(
+                Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
+                ((Number) options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL)).intValue());
+            assertEquals(
+                Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1,
+                ((Number) options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES)).intValue());
         }
     }
 

@@ -34,7 +34,7 @@ public class FullTextIndex extends Index {
     private final List<FullTextIndexItem> indexItems;
     @Nullable
     private String language = Locale.getDefault().getLanguage();
-    private boolean ignoreDiacritics;
+    private boolean ignoreDiacritics = Defaults.FullTextIndex.IGNORE_ACCENTS;
 
     FullTextIndex(@NonNull FullTextIndexItem... indexItems) {
         super(IndexType.FULL_TEXT);

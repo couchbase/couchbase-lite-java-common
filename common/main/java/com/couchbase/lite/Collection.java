@@ -418,6 +418,10 @@ public final class Collection extends BaseCollection
         createIndexInternal(name, config);
     }
 
+    public void createIndex(String name, Index config) throws CouchbaseLiteException {
+        createIndexInternal(name, config);
+    }
+
     public void deleteIndex(String name) throws CouchbaseLiteException {
         try { c4Collection.deleteIndex(name); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }

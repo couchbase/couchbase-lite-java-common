@@ -26,6 +26,8 @@ import androidx.annotation.Nullable;
 public interface ConflictResolver {
     /**
      * The default conflict resolution strategy.
+     * Deletion always wins.  A newer doc always beats an older one.
+     * Otherwise one of the two document is chosen randomly but deterministically.
      */
     ConflictResolver DEFAULT = new DefaultConflictResolver();
 
@@ -42,8 +44,6 @@ public interface ConflictResolver {
 
 /**
  * The default conflict resolver.
- * Deletion always wins.  A newer doc always beats an older one.  Otherwise
- * one of the two document is chosen randomly but deterministically.
  */
 class DefaultConflictResolver implements ConflictResolver {
     @Nullable

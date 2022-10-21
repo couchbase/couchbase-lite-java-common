@@ -21,11 +21,14 @@ import androidx.annotation.Nullable;
 import java.util.Date;
 import java.util.List;
 
+import com.couchbase.lite.internal.utils.Internal;
+
 
 /**
- * Note: ArrayInterface is an internal interface. This should not be public.
+ * Internal interface
  */
-interface ArrayInterface {
+@Internal
+public interface ArrayInterface {
     int count();
 
     int getInt(int index);

@@ -28,6 +28,7 @@ import com.couchbase.lite.Authenticator;
 import com.couchbase.lite.Collection;
 import com.couchbase.lite.CollectionConfiguration;
 import com.couchbase.lite.Database;
+import com.couchbase.lite.Defaults;
 import com.couchbase.lite.Endpoint;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.ReplicatorConfiguration;
@@ -160,13 +161,28 @@ public class BaseImmutableReplicatorConfiguration {
             }
         }
 
-        if (heartbeat > 0) { options.put(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL, heartbeat); }
-        if (maxAttempts > 0) { options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES, maxAttempts - 1); }
-        if (maxAttemptWaitTime > 0) {
-            options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxAttemptWaitTime);
-        }
+        // These three properties still support 0 -> default.
+        // The default, however, is set here.
 
-        if (!enableAutoPurge) { options.put(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE, Boolean.FALSE); }
+        options.put(
+            C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL,
+            (heartbeat > 0) ? heartbeat : Defaults.Replicator.HEARTBEAT);
+
+        options.put(
+            C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL,
+            (maxAttemptWaitTime > 0) ? maxAttemptWaitTime : Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME);
+
+        options.put(
+            C4Replicator.REPLICATOR_OPTION_MAX_RETRIES,
+            ((maxAttempts > 0)
+                ? maxAttempts
+                : (continuous
+                    ? Defaults.Replicator.MAX_ATTEMPTS_CONTINUOUS
+                    : (Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT)))
+            - 1); // subtract 1 from max attempts to get what LiteCore wants: number of retries.
+
+
+        options.put(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE, enableAutoPurge);
 
         final Map<String, Object> httpHeaders = new HashMap<>();
         httpHeaders.put("User-Agent", CBLVersion.getUserAgent());

@@ -65,7 +65,7 @@ public abstract class AbstractIndex {
     String getLanguage() { return null; }
 
     // Default value: may be overridden
-    boolean isIgnoringAccents() { return false; }
+    boolean isIgnoringAccents() { return Defaults.FullTextIndex.IGNORE_ACCENTS; }
 
     @NonNull
     @Override

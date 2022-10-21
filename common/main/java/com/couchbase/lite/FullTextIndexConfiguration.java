@@ -32,7 +32,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
 public class FullTextIndexConfiguration extends IndexConfiguration {
     @Nullable
     private String language = Locale.getDefault().getLanguage();
-    private boolean ignoreDiacrits;
+    private boolean ignoreDiacrits = Defaults.FullTextIndex.IGNORE_ACCENTS;
 
     public FullTextIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 

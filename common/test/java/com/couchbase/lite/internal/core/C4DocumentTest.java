@@ -79,7 +79,7 @@ public class C4DocumentTest extends C4BaseTest {
             assertEquals(DOC_ID, doc.getDocID());
             String kExpectedRevID = "1-042ca1d3a1d16fd5ab2f87efc7ebbf50b7498032";
             assertEquals(kExpectedRevID, doc.getRevID());
-            assertEquals(C4Constants.DocumentFlags.EXISTS, doc.getFlags());
+            assertTrue(doc.docExists());
             assertEquals(kExpectedRevID, doc.getSelectedRevID());
             doc.close();
 
@@ -101,7 +101,7 @@ public class C4DocumentTest extends C4BaseTest {
             // NOTE: With current JNI binding, unable to check commonAncestorIndex value
             String kExpectedRevID2 = "2-201796aeeaa6ddbb746d6cab141440f23412ac51";
             assertEquals(kExpectedRevID2, doc.getRevID());
-            assertEquals(C4Constants.DocumentFlags.EXISTS, doc.getFlags());
+            assertTrue(doc.docExists());
             assertEquals(kExpectedRevID2, doc.getSelectedRevID());
             doc.close();
 
@@ -122,7 +122,8 @@ public class C4DocumentTest extends C4BaseTest {
             assertNotNull(doc);
             // NOTE: With current JNI binding, unable to check commonAncestorIndex value
             assertEquals(kExpectedRevID2, doc.getRevID());
-            assertEquals(C4Constants.DocumentFlags.EXISTS | C4Constants.DocumentFlags.CONFLICTED, doc.getFlags());
+            assertTrue(doc.docExists());
+            assertTrue(doc.isDocConflicted());
             assertEquals(kConflictRevID, doc.getSelectedRevID());
             doc.close();
 

@@ -20,7 +20,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.couchbase.lite.internal.core.C4CollectionObserver;
@@ -70,9 +69,7 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
             List<String> docIDs = new ArrayList<>();
             while (true) {
                 // Read changes in batches of REQUESTED_CHANGES
-                final List<C4DocumentChange> changes = Fn.filterToList(
-                    Arrays.asList(observer.getChanges(REQUESTED_CHANGES)),
-                    change -> change != null);
+                final List<C4DocumentChange> changes = getChanges(observer);
 
                 // if core doesn't have anything more, we're done:
                 // post anything that's cached and get outta here.
@@ -83,10 +80,10 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
 
                 final boolean newExternal = changes.get(0).isExternal();
 
-                // if there are too many changes in the cache already
+                // if adding these changes would put the cache over its max size
                 // or if the next changes have a different external-ness
                 // post and clear the cache
-                if ((docIDs.size() > MAX_CHANGES) || ((external != newExternal))) {
+                if (((docIDs.size() + changes.size()) > MAX_CHANGES) || ((external != newExternal))) {
                     postChanges(docIDs);
                     docIDs = new ArrayList<>();
                 }
@@ -100,8 +97,21 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
 
     // postChange will queue the notification:
     // the client code will not execute while holding the db lock.
-    private void postChanges(List<String> docIds) {
+    private void postChanges(@NonNull List<String> docIds) {
         if (docIds.isEmpty()) { return; }
         postChange(new CollectionChange(collection, docIds));
+    }
+
+    // Read in a batch of changes.
+    @NonNull
+    private List<C4DocumentChange> getChanges(@NonNull C4CollectionObserver observer) {
+        final C4DocumentChange[] c4Changes = observer.getChanges(REQUESTED_CHANGES);
+
+        final List<C4DocumentChange> changes = new ArrayList<>();
+        for (C4DocumentChange change: c4Changes) {
+            if (change != null) { changes.add(change); }
+        }
+
+        return changes;
     }
 }
