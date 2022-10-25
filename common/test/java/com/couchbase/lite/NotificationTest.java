@@ -302,7 +302,7 @@ public class NotificationTest extends BaseDbTest {
             assertEquals(0, changeNotifier.getListenerCount());
         }
         finally {
-            deleteDb(db);
+            eraseDb(db);
         }
     }
 

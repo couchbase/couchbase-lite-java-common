@@ -18,7 +18,6 @@ package com.couchbase.lite
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -227,9 +226,9 @@ class SaveConflictResolutionTests : BaseDbTest() {
 
         assertNull(baseTestDb.getDocument(docID))
 
-        val c4doc = baseTestDb.getDefaultCollection()?.getC4Document(docID)
+        val c4doc = baseTestDb.defaultCollection?.getC4Document(docID)
         assertNotNull(c4doc)
-        assertTrue(c4doc!!.isRevDeleted())
+        assertTrue(c4doc!!.isRevDeleted)
     }
 
     /**

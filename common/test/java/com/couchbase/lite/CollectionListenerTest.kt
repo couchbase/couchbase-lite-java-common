@@ -107,7 +107,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         } finally {
             token.remove()
 
-            deleteDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
@@ -140,14 +140,14 @@ class CollectionListenerTest : BaseCollectionTest() {
         } finally {
             token.remove()
 
-            deleteDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
     // Test that adding a change listener to a collection in a closed database doesn't throw an exception
     @Test
     fun testAddChangeListenerToCollectionInClosedDatabase() {
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         testCollection.addChangeListener(null) {}
     }
 
@@ -157,7 +157,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         val docID = "testDoc"
         testCollection.save(MutableDocument(docID))
 
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
 
         testCollection.addDocumentChangeListener(docID, null) {}
     }
@@ -167,7 +167,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     fun testRemoveChangeListenerFromCollectionInClosedDatabase() {
         val token = testCollection.addChangeListener {}
         try {
-            closeDb(baseTestDb)
+            discardDb(baseTestDb)
         } finally {
             token.remove()
         }
@@ -176,14 +176,14 @@ class CollectionListenerTest : BaseCollectionTest() {
     // Test that addChangeListener to a collection in a deleted database doesn't throw an exception
     @Test
     fun testAddChangeListenerToCollectionInDeletedDatabase() {
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         testCollection.addChangeListener(null) {}
     }
 
     // Test that addDocumentChangeListener to a collection in a deleted database doesn't throw an exception
     @Test
     fun testAddDocumentChangeListenerToCollectionInDeletedDatabase() {
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         testCollection.addDocumentChangeListener("doc_id", null) {}
     }
 
@@ -192,7 +192,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     fun testRemoveChangeListenerFromCollectionInDeletedDatabase() {
         val token = testCollection.addChangeListener { }
         try {
-            deleteDb(baseTestDb)
+            eraseDb(baseTestDb)
         } finally {
             token.remove()
         }

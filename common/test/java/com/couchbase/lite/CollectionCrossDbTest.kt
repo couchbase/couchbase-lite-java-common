@@ -39,11 +39,11 @@ class CollectionCrossDbTest : BaseTest() {
     @After
     fun tearDownBaseReplicatorTest() {
         try {
-            closeDb(dbA)
-            closeDb(dbB)
+            discardDb(dbA)
+            discardDb(dbB)
         } finally {
-            deleteDb(dbA)
-            deleteDb(dbB)
+            eraseDb(dbA)
+            eraseDb(dbB)
         }
     }
 
