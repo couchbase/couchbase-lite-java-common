@@ -82,7 +82,7 @@ public abstract class BaseDbTest extends BaseTest {
 
     @After
     public final void tearDownBaseDbTest() {
-        deleteDb(baseTestDb);
+        eraseDb(baseTestDb);
         Report.log("Deleted baseTestDb: " + baseTestDb);
     }
 
@@ -1697,11 +1697,11 @@ public abstract class BaseDbTest extends BaseTest {
             return db;
         }
         catch (IOException e) {
-            deleteDb(db);
+            eraseDb(db);
             throw new AssertionError("Unable to get db path", e);
         }
         catch (AssertionError e) {
-            deleteDb(db);
+            eraseDb(db);
             throw e;
         }
     }

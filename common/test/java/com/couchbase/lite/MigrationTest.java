@@ -48,7 +48,7 @@ public class MigrationTest extends BaseTest {
 
     @After
     public final void tearDownMigrationTest() {
-        deleteDb(migrationTestDb);
+        eraseDb(migrationTestDb);
         FileUtils.eraseFileOrDir(dbDir);
     }
 

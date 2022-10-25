@@ -283,7 +283,7 @@ class DbCollectionsTest : BaseCollectionTest() {
             val collectionRecreated = otherDb.getCollection("testColl")
             assertNotSame(collectionRecreated, collection)
         } finally {
-            deleteDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
@@ -295,7 +295,7 @@ class DbCollectionsTest : BaseCollectionTest() {
             assertNull(newDB.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             // delete otherDb
-            deleteDb(newDB)
+            eraseDb(newDB)
         }
     }
 
@@ -336,7 +336,7 @@ class DbCollectionsTest : BaseCollectionTest() {
     @Test
     fun testGetScopeAndCollectionNameFromAClosedDatabase() {
         val collectionName = testCollection.name
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         assertNotNull(testCollection.scope)
         assertEquals(collectionName, testCollection.name)
     }

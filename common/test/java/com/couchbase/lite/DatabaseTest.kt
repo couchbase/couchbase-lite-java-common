@@ -72,7 +72,7 @@ class DatabaseTest : BaseDbTest() {
             assertEquals(1, otherDb.count)
             verifyGetDocument(otherDb, docID, 1)
         } finally {
-            closeDb(otherDb)
+            discardDb(otherDb)
         }
     }
 
@@ -165,7 +165,7 @@ class DatabaseTest : BaseDbTest() {
             doc.setValue("key", 2)
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
         } finally {
-            closeDb(otherDb)
+            discardDb(otherDb)
         }
     }
 
@@ -186,7 +186,7 @@ class DatabaseTest : BaseDbTest() {
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
         } finally {
             // delete otherDb
-            deleteDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
@@ -259,7 +259,7 @@ class DatabaseTest : BaseDbTest() {
             // Delete from the different db instance:
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
         } finally {
-            closeDb(otherDb)
+            discardDb(otherDb)
         }
     }
 
@@ -277,7 +277,7 @@ class DatabaseTest : BaseDbTest() {
             // Delete from the different db:
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
         } finally {
-            deleteDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
@@ -357,7 +357,7 @@ class DatabaseTest : BaseDbTest() {
             // purge document against other db instance:
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
         } finally {
-            closeDb(otherDb)
+            discardDb(otherDb)
         }
     }
 
@@ -376,7 +376,7 @@ class DatabaseTest : BaseDbTest() {
             // Purge document against other db:
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
         } finally {
-            deleteDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
@@ -650,7 +650,7 @@ class DatabaseTest : BaseDbTest() {
             // delete db
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { baseTestDb.delete() }
         } finally {
-            closeDb(otherDb)
+            discardDb(otherDb)
         }
     }
 
@@ -699,7 +699,7 @@ class DatabaseTest : BaseDbTest() {
             Database.delete(dbName, File(dbDirPath))
             assertFalse(dbPath.exists())
         } finally {
-            deleteDb(db)
+            eraseDb(db)
         }
     }
 
@@ -712,7 +712,7 @@ class DatabaseTest : BaseDbTest() {
         try {
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { Database.delete(dbName, dbDir) }
         } finally {
-            closeDb(db)
+            discardDb(db)
         }
     }
 
@@ -749,7 +749,7 @@ class DatabaseTest : BaseDbTest() {
             assertFalse(Database.exists(dirName, dbDir))
             assertFalse(File(dbPath).exists())
         } finally {
-            deleteDb(db)
+            eraseDb(db)
         }
     }
 
@@ -775,7 +775,7 @@ class DatabaseTest : BaseDbTest() {
         baseTestDb.createCollection("bobblehead", "horo")
         val scope = baseTestDb.getScope("horo")
         assertNotNull(scope)
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
     }
 
@@ -784,7 +784,7 @@ class DatabaseTest : BaseDbTest() {
         baseTestDb.createCollection("bobblehead", "horo")
         val scope = baseTestDb.getScope("horo")
         assertNotNull(scope)
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             scope!!.getCollection("bobblehead")
         }
@@ -797,7 +797,7 @@ class DatabaseTest : BaseDbTest() {
         baseTestDb.createCollection("bobblehead", "horo")
         val scope = baseTestDb.getScope("horo")
         assertNotNull(scope)
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
     }
 
@@ -806,7 +806,7 @@ class DatabaseTest : BaseDbTest() {
         baseTestDb.createCollection("bobblehead", "horo")
         val scope = baseTestDb.getScope("horo")
         assertNotNull(scope)
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             scope!!.getCollection("bobblehead")
         }
@@ -824,7 +824,7 @@ class DatabaseTest : BaseDbTest() {
 
         assertNotNull(baseTestDb.getScope("horo"))
 
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
 
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getScope("horo")
@@ -837,7 +837,7 @@ class DatabaseTest : BaseDbTest() {
 
         assertNotNull(baseTestDb.getCollection("bobblehead", "horo"))
 
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
 
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getCollection("bobblehead", "horo")
@@ -852,7 +852,7 @@ class DatabaseTest : BaseDbTest() {
 
         assertNotNull(baseTestDb.getScope("horo"))
 
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
 
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getScope("horo")
@@ -865,7 +865,7 @@ class DatabaseTest : BaseDbTest() {
 
         assertNotNull(baseTestDb.getCollection("bobblehead", "horo"))
 
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
 
         TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getCollection("bobblehead", "horo")
@@ -959,19 +959,19 @@ class DatabaseTest : BaseDbTest() {
     @Test(expected = IllegalStateException::class)
     fun testUseDatabaseAddChangeListenerWhenDefaultCollectionIsDeleted() {
         baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.addChangeListener() { c -> fail("Unexpected call to change listener") }
+        baseTestDb.addChangeListener { fail("Unexpected call to change listener") }
     }
 
     @Test(expected = IllegalStateException::class)
     fun testUseDatabaseAddDocumentChangeListenerWhenDefaultCollectionIsDeleted() {
         baseTestDb.save(MutableDocument("BobaFet"))
         baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.addDocumentChangeListener("BobaFet") { c -> fail("Unexpected call to change listener") }
+        baseTestDb.addDocumentChangeListener("BobaFet") { fail("Unexpected call to change listener") }
     }
 
     @Test(expected = IllegalStateException::class)
     fun testUseDatabaseRemoveChangeListenerWhenDefaultCollectionIsDeleted() {
-        val token = baseTestDb.addChangeListener() { c -> fail("Unexpected call to change listener") }
+        val token = baseTestDb.addChangeListener { fail("Unexpected call to change listener") }
         baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
         baseTestDb.removeChangeListener(token)
     }
@@ -1155,7 +1155,7 @@ class DatabaseTest : BaseDbTest() {
                     }
                 }
         } finally {
-            deleteDb(newDb)
+            eraseDb(newDb)
         }
     }
 
@@ -1325,8 +1325,8 @@ class DatabaseTest : BaseDbTest() {
             // close db again
             database2.close()
         } finally {
-            deleteDb(database1)
-            deleteDb(database2)
+            eraseDb(database1)
+            eraseDb(database2)
         }
     }
 
@@ -1472,7 +1472,7 @@ class DatabaseTest : BaseDbTest() {
             val doc = db.getDocument(mDoc.id)
             assertEquals("bar", doc!!.getString("foo"))
         } finally {
-            deleteDb(db)
+            eraseDb(db)
         }
     }
 
@@ -1499,7 +1499,7 @@ class DatabaseTest : BaseDbTest() {
         } finally {
 
             FileUtils.eraseFileOrDir(twoDot8DotOhDirPath)
-            deleteDb(db)
+            eraseDb(db)
         }
     }
 
@@ -1534,7 +1534,7 @@ class DatabaseTest : BaseDbTest() {
             assertFalse(C4Database.getDatabaseFile(CouchbaseLiteInternal.getDefaultDbDir(), dbName).exists())
         } finally {
             FileUtils.eraseFileOrDir(twoDot8DotOhDirPath)
-            deleteDb(db)
+            eraseDb(db)
         }
     }
 
@@ -1566,7 +1566,7 @@ class DatabaseTest : BaseDbTest() {
             assertEquals("bar", doc!!.getString("foo"))
         } finally {
             FileUtils.eraseFileOrDir(twoDot8DotOhDirPath)
-            deleteDb(db)
+            eraseDb(db)
         }
     }
 

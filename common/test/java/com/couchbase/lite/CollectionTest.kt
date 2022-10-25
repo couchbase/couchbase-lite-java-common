@@ -24,6 +24,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Ignore
 import org.junit.Test
 
 class CollectionTest : BaseCollectionTest() {
@@ -60,7 +61,7 @@ class CollectionTest : BaseCollectionTest() {
                 assertEquals(1, coll2.count)
             }
         } finally {
-            closeDb(otherDatabase)
+            discardDb(otherDatabase)
         }
     }
 
@@ -96,7 +97,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testGetDocFromCollectionInClosedDB() {
         createSingleDocInTestCollectionWithId("doc_id")
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         testCollection.getDocument("doc_id")
     }
 
@@ -104,7 +105,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testGetDocFromCollectionInDeletedDB() {
         createSingleDocInTestCollectionWithId("doc_id")
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         testCollection.getDocument("doc_id")
     }
 
@@ -125,7 +126,7 @@ class CollectionTest : BaseCollectionTest() {
     fun testGetDocCountFromCollectionInDeletedDatabase() {
         saveNewDocInCollectionWithIDTest()
         assertEquals(1, testCollection.count)
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         assertEquals(0, testCollection.count)
     }
 
@@ -149,7 +150,7 @@ class CollectionTest : BaseCollectionTest() {
         val doc = MutableDocument(docID)
         saveDocInTestCollection(doc)
         assertEquals(1, testCollection.count)
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         assertEquals(0, testCollection.count)
     }
     //---------------------------------------------
@@ -199,7 +200,7 @@ class CollectionTest : BaseCollectionTest() {
                 collection.save(doc)
             }
         } finally {
-            closeDb(otherDB)
+            discardDb(otherDB)
         }
     }
 
@@ -247,14 +248,14 @@ class CollectionTest : BaseCollectionTest() {
     // Test saving document in a collection of a closed database causes CBLException
     @Test(expected = CouchbaseLiteException::class)
     fun testSaveDocToCollectionInClosedDB() {
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         saveDocInTestCollection(MutableDocument("invalid"))
     }
 
     // Test saving document in a collection of a deleted database causes CBLException
     @Test(expected = CouchbaseLiteException::class)
     fun testSaveDocToCollectionInDeletedDB() {
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         saveDocInTestCollection(MutableDocument("invalid"))
     }
 
@@ -388,7 +389,7 @@ class CollectionTest : BaseCollectionTest() {
                 collection.delete(doc)
             }
         } finally {
-            closeDb(otherDb)
+            discardDb(otherDb)
         }
     }
 
@@ -443,7 +444,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testDeleteDocOnCollectionInClosedDB() {
         val doc = createSingleDocInTestCollectionWithId("doc_id")
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         testCollection.delete(doc)
     }
 
@@ -451,7 +452,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testDeleteDocOnCollectionInDeletedDB() {
         val doc = createSingleDocInTestCollectionWithId("doc_id")
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         testCollection.delete(doc)
     }
 
@@ -578,7 +579,7 @@ class CollectionTest : BaseCollectionTest() {
             //purge document against collection in the other db:
             TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { collection.purge(doc) }
         } finally {
-            closeDb(otherDB)
+            discardDb(otherDB)
         }
     }
 
@@ -628,7 +629,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testPurgeDocFromCollectionInClosedDB() {
         val doc = createSingleDocInTestCollectionWithId("doc_id")
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         testCollection.purge(doc)
     }
 
@@ -636,7 +637,7 @@ class CollectionTest : BaseCollectionTest() {
     @Test(expected = CouchbaseLiteException::class)
     fun testPurgeDocFromCollectionInDeletedDB() {
         val doc = createSingleDocInTestCollectionWithId("doc_id")
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         testCollection.purge(doc)
     }
 
@@ -718,10 +719,11 @@ class CollectionTest : BaseCollectionTest() {
     }
 
     // Test getting index from a collection deleted from another DB instance causes CBL exception
+    @Ignore("CBL-3824")
     @Test(expected = CouchbaseLiteException::class)
     fun testGetIndexFromCollectionDeletedFromADifferentDBInstance() {
         testCreateIndexInCollection()
-        duplicateBaseTestDb().use {
+        duplicateDb(baseTestDb).use {
             assertNotNull(it.getCollection(testCollection.name, testCollection.scope.name))
             // Delete collection
             it.deleteCollection(testCollection.name, testCollection.scope.name)
@@ -777,7 +779,7 @@ class CollectionTest : BaseCollectionTest() {
     fun testGetIndexesFromCollectionInClosedDatabase() {
         testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
         assertEquals(1, testCollection.indexes.size)
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         testCollection.indexes
     }
 
@@ -786,21 +788,21 @@ class CollectionTest : BaseCollectionTest() {
     fun testGetIndexesFromCollectionInDeletedDatabase() {
         testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
         assertEquals(1, testCollection.indexes.size)
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         testCollection.indexes
     }
 
     // Test that createIndex in collection in closed database causes CBLException
     @Test(expected = CouchbaseLiteException::class)
     fun testCreateIndexInCollectionInClosedDatabase() {
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
     }
 
     // Test that createIndex in collection in deleted database causes CBLException
     @Test(expected = CouchbaseLiteException::class)
     fun testCreateIndexInCollectionInDeletedDatabase() {
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
     }
 
@@ -810,7 +812,7 @@ class CollectionTest : BaseCollectionTest() {
         val name = "test_index"
         testCollection.createIndex(name, ValueIndexConfiguration("firstName", "lastName"))
         assertEquals(1, testCollection.indexes.size)
-        closeDb(baseTestDb)
+        discardDb(baseTestDb)
         testCollection.deleteIndex(name)
     }
 
@@ -820,7 +822,7 @@ class CollectionTest : BaseCollectionTest() {
         val name = "test_index"
         testCollection.createIndex(name, ValueIndexConfiguration("firstName", "lastName"))
         assertEquals(1, testCollection.indexes.size)
-        deleteDb(baseTestDb)
+        eraseDb(baseTestDb)
         testCollection.deleteIndex(name)
     }
 

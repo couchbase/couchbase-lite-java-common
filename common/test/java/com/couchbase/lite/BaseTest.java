@@ -36,6 +36,7 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
@@ -45,6 +46,7 @@ import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -58,6 +60,8 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
+    public static String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
+
     @BeforeClass
     public static void setUpPlatformSuite() { Report.log(">>>>>>>>>>>> Suite started"); }
 
@@ -68,7 +72,6 @@ public abstract class BaseTest extends PlatformBaseTest {
 
         Report.log("<<<<<<<<<<<< Suite completed");
     }
-
 
     protected ExecutionService.CloseableExecutor testSerialExecutor;
     private String testName;
@@ -126,16 +129,24 @@ public abstract class BaseTest extends PlatformBaseTest {
         if (exclusion != null) { Assume.assumeFalse(exclusion.msg, exclusion.test.get()); }
     }
 
-    protected final String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
+    protected final String formatInterval(long ms) {
+        final long min = TimeUnit.MILLISECONDS.toMinutes(ms);
+        ms -= TimeUnit.MINUTES.toMillis(min);
 
-    // Check a test every `waitMs` until it it true
+        final long sec = TimeUnit.MILLISECONDS.toSeconds(ms);
+        ms -= TimeUnit.SECONDS.toMillis(sec);
+
+        return String.format("%02d:%02d.%03d", min, sec, ms);
+    }
+
+    // Run a boolean function every `waitMs` until it it true
     // If it is not true within `maxWaitMs` fail.
     @SuppressWarnings("BusyWait")
     protected final void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {
         final long waitMs = 100L;
         final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;
         while (true) {
-            if (test.get()) { return; }
+            if (test.get()) { break; }
             if (System.currentTimeMillis() > endTime) {
                 // assertTrue() provides a more relevant message than fail()
                 //noinspection SimplifiableAssertion
@@ -152,95 +163,109 @@ public abstract class BaseTest extends PlatformBaseTest {
             SCRATCH_DIRS.add(path);
             return path;
         }
-        catch (IOException e) { throw new IllegalStateException("Failed creating scratch directory: " + name, e); }
+        catch (IOException e) { throw new AssertionError("Failed creating scratch directory: " + name, e); }
     }
 
     // Prefer this method to any other way of creating a new database
-    protected final Database createDb(@NonNull String name) throws CouchbaseLiteException {
+    protected final Database createDb(@NonNull String name) {
         return createDb(name, null);
     }
 
     // Prefer this method to any other way of creating a new database
-    protected final Database createDb(@NonNull String name, @Nullable DatabaseConfiguration config)
-        throws CouchbaseLiteException {
-        if (config == null) { config = new DatabaseConfiguration(); }
+    protected final Database createDb(@NonNull String name, @Nullable DatabaseConfiguration config) {
         final String dbName = getUniqueName(name);
-        final File dbDir = new File(config.getDirectory(), dbName + C4Database.DB_EXTENSION);
+        final File dbDir = new File(
+            (config != null) ? config.getDirectory() : CouchbaseLiteInternal.getDefaultDbDirPath(),
+            dbName + C4Database.DB_EXTENSION);
         assertFalse(dbDir.exists());
-        final Database db = new Database(dbName, config);
+        Database db;
+        try { db = (config == null) ? new Database(dbName) : new Database(dbName, config); }
+        catch (Exception e) { throw new AssertionError("Failed creating database " + name, e); }
         assertTrue(dbDir.exists());
         return db;
     }
 
-    protected final Database duplicateDb(@NonNull Database db) throws CouchbaseLiteException {
-        return duplicateDb(db, new DatabaseConfiguration());
+    protected final Database duplicateDb(@NonNull Database db) {
+        return duplicateDb(db, null);
     }
 
-    protected final Database duplicateDb(@NonNull Database db, @Nullable DatabaseConfiguration config)
-        throws CouchbaseLiteException {
-        return new Database(db.getName(), (config != null) ? config : new DatabaseConfiguration());
+    // Get a new instance of the db or fail.
+    protected final Database duplicateDb(@NonNull Database db, @Nullable DatabaseConfiguration config) {
+        final String dbName = db.getName();
+        try { return (config == null) ? new Database(dbName) : new Database(dbName, config); }
+        catch (Exception e) { throw new AssertionError("Failed duplicating database " + db, e); }
     }
 
-    protected final Database reopenDb(@NonNull Database db) throws CouchbaseLiteException {
+    protected final Database reopenDb(@NonNull Database db) {
         return reopenDb(db, null);
     }
 
-    protected final Database reopenDb(@NonNull Database db, @Nullable DatabaseConfiguration config)
-        throws CouchbaseLiteException {
+    // Close and reopen the db or fail.
+    protected final Database reopenDb(@NonNull Database db, @Nullable DatabaseConfiguration config) {
         final String dbName = db.getName();
-        assertTrue(closeDb(db));
-        return new Database(dbName, (config != null) ? config : new DatabaseConfiguration());
+        closeDb(db);
+        try {
+            return (config == null) ? new Database(dbName) : new Database(dbName, config);
+        }
+        catch (Exception e) { throw new AssertionError("Failed reopening database " + db, e); }
     }
 
-    protected final Database recreateDb(@NonNull Database db) throws CouchbaseLiteException {
+    protected final Database recreateDb(@NonNull Database db) {
         return recreateDb(db, null);
     }
 
-    protected final Database recreateDb(@NonNull Database db, @Nullable DatabaseConfiguration config)
-        throws CouchbaseLiteException {
+    // Delete and recreate the db or fail.
+    protected final Database recreateDb(@NonNull Database db, @Nullable DatabaseConfiguration config) {
         final String dbName = db.getName();
-        assertTrue(deleteDb(db));
-        return new Database(dbName, (config != null) ? config : new DatabaseConfiguration());
+        deleteDb(db);
+        try { return (config == null) ? new Database(dbName) : new Database(dbName, config); }
+        catch (Exception e) { throw new AssertionError("Failed recreating database " + db, e); }
     }
 
-    protected final boolean closeDb(@Nullable Database db) {
-        if (db == null) { return true; }
-        synchronized (db.getDbLock()) {
-            if ((db == null) || (!db.isOpenLocked())) { return true; }
-        }
-        return doSafely("Close db " + db.getName(), db::close);
+    // Close the db or fail.
+    protected final void closeDb(@NonNull Database db) {
+        assertNotNull(db);
+        try { db.close(); }
+        catch (Exception e) { throw new AssertionError("Failed closing database " + db, e); }
     }
 
-    protected final boolean deleteDb(@Nullable Database db) {
-        if (db == null) { return true; }
-        final boolean isOpen;
-        synchronized (db.getDbLock()) { isOpen = db.isOpenLocked(); }
-        // there is a race here... probably small.
-        return (isOpen)
-            ? doSafely("Delete db " + db.getName(), db::delete)
-            : FileUtils.eraseFileOrDir(db.getDbFile());
-    }
-
-    protected final String formatInterval(long ms) {
-        final long min = TimeUnit.MILLISECONDS.toMinutes(ms);
-        ms -= TimeUnit.MINUTES.toMillis(min);
-
-        final long sec = TimeUnit.MILLISECONDS.toSeconds(ms);
-        ms -= TimeUnit.SECONDS.toMillis(sec);
-
-        return String.format("%02d:%02d.%03d", min, sec, ms);
-    }
-
-    protected final boolean doSafely(@NonNull String taskDesc, @NonNull Fn.TaskThrows<CouchbaseLiteException> task) {
+    // Delete the db or fail.
+    protected final void deleteDb(@NonNull Database db) {
         try {
-            task.run();
-            Report.log(taskDesc + " succeeded");
-            return true;
+            // there is a race here but probably small.
+            if (db.isOpen()) {
+                db.delete();
+                return;
+            }
+
+            final File dbFile = db.getDbFile();
+            if ((dbFile != null) && (dbFile.exists())) { FileUtils.eraseFileOrDir(dbFile); }
         }
-        catch (CouchbaseLiteException ex) {
-            Report.log(taskDesc + " failed", ex);
+        catch (Exception e) { throw new AssertionError("Failed deleting database " + db, e); }
+    }
+
+    // Test cleanup: Best effort to close the db.
+    protected final void discardDb(@Nullable Database db) {
+        if ((db == null) || (!db.isOpen())) { return; }
+        try { db.close(); }
+        catch (Exception e) { Report.log("Failed to close database %s", e, db); }
+    }
+
+    // Test cleanup: Best effort to delete the db.
+    protected final void eraseDb(@Nullable Database db) {
+        if (db == null) { return; }
+
+        try {
+            // there is a race here but probably small.
+            if (db.isOpen()) {
+                db.delete();
+                return;
+            }
+
+            final File dbFile = db.getDbFile();
+            if ((dbFile != null) && (dbFile.exists())) { FileUtils.eraseFileOrDir(dbFile); }
         }
-        return false;
+        catch (Exception e) { Report.log("Failed to delete database %s", e, db); }
     }
 
     // Backing method is package protected

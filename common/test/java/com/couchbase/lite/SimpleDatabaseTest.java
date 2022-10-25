@@ -56,7 +56,7 @@ public class SimpleDatabaseTest extends BaseTest {
             assertNotNull(newConfig);
             assertEquals(config.getDirectory(), newConfig.getDirectory());
         }
-        finally { deleteDb(db); }
+        finally { eraseDb(db); }
     }
 
     @Test
@@ -69,7 +69,7 @@ public class SimpleDatabaseTest extends BaseTest {
             assertNotNull(db.getConfig());
             assertNotSame(db.getConfig(), config);
         }
-        finally { deleteDb(db); }
+        finally { eraseDb(db); }
     }
 
     @Test
@@ -91,7 +91,7 @@ public class SimpleDatabaseTest extends BaseTest {
             assertNotNull(db);
             assertEquals(0, db.getCount());
         }
-        finally { deleteDb(db); }
+        finally { eraseDb(db); }
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -101,7 +101,7 @@ public class SimpleDatabaseTest extends BaseTest {
     public void testCreateWithSpecialCharacterDBNames() throws CouchbaseLiteException {
         Database db = new Database(LEGAL_FILE_NAME_CHARS);
         try { assertEquals(LEGAL_FILE_NAME_CHARS, db.getName()); }
-        finally { deleteDb(db); }
+        finally { eraseDb(db); }
     }
 
     @Test
@@ -127,7 +127,7 @@ public class SimpleDatabaseTest extends BaseTest {
             assertEquals(0, db.getCount());
         }
         finally {
-            deleteDb(db);
+            eraseDb(db);
         }
     }
 }

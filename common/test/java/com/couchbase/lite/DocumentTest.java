@@ -1879,7 +1879,7 @@ public class DocumentTest extends BaseCollectionTest {
         try {
             String id = "doc_id";
             MutableDocument document = new MutableDocument(id);
-            closeDb(baseTestDb);
+            discardDb(baseTestDb);
             testCollection.setDocumentExpiration(id, expiration);
             fail("Expect CouchbaseLiteException");
         }
@@ -1915,7 +1915,7 @@ public class DocumentTest extends BaseCollectionTest {
         String id = "doc_id";
         MutableDocument document = new MutableDocument(id);
         saveDocInTestCollection(document);
-        deleteDb(baseTestDb);
+        eraseDb(baseTestDb);
         try {
             testCollection.setDocumentExpiration(id, expiration);
             fail("Expect CouchbaseLiteException");
@@ -1934,7 +1934,7 @@ public class DocumentTest extends BaseCollectionTest {
         MutableDocument document = new MutableDocument(id);
         saveDocInTestCollection(document);
         testCollection.setDocumentExpiration(id, expiration);
-        deleteDb(baseTestDb);
+        eraseDb(baseTestDb);
         try {
             testCollection.getDocumentExpiration(id);
             fail("Expect CouchbaseLiteException");
@@ -2284,8 +2284,8 @@ public class DocumentTest extends BaseCollectionTest {
             assertEquals(sDoc1a, anotherDoc1a);
         }
         finally {
-            deleteDb(sameDB);
-            deleteDb(otherDB);
+            eraseDb(sameDB);
+            eraseDb(otherDB);
         }
     }
 

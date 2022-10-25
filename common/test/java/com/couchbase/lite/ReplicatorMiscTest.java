@@ -24,7 +24,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -290,7 +289,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             null,
             null));
 
-        closeDb(baseTestDb);
+        discardDb(baseTestDb);
 
         replicator.start(false);
     }
@@ -306,7 +305,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             null,
             null));
 
-        closeDb(baseTestDb);
+        discardDb(baseTestDb);
 
         replicator.getPendingDocumentIds();
     }
@@ -326,7 +325,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
                 null,
                 null));
 
-        closeDb(baseTestDb);
+        discardDb(baseTestDb);
 
         replicator.isDocumentPending(doc.getId());
     }

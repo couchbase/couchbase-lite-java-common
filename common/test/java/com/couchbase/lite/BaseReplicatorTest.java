@@ -83,7 +83,7 @@ public abstract class BaseReplicatorTest extends BaseCollectionTest {
     public final void setUpBaseReplicatorTest() throws CouchbaseLiteException { otherDB = createDb("replicator_db"); }
 
     @After
-    public final void tearDownBaseReplicatorTest() { deleteDb(otherDB); }
+    public final void tearDownBaseReplicatorTest() { eraseDb(otherDB); }
 
     protected final URLEndpoint getRemoteTargetEndpoint() throws URISyntaxException {
         return new URLEndpoint(new URI("ws://foo.couchbase.com/db"));
