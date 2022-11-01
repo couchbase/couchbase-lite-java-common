@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite.internal
 
-import com.couchbase.lite.BaseDbTest
+import com.couchbase.lite.LegacyBaseDbTest
 import com.couchbase.lite.CollectionConfiguration
 import com.couchbase.lite.MutableDocument
 import com.couchbase.lite.ReplicationFilter
@@ -37,7 +37,7 @@ fun boundCollectionCount() = ReplicationCollection.BOUND_COLLECTIONS.size()
 fun clearBoundCollections() = ReplicationCollection.BOUND_COLLECTIONS.clear()
 
 
-class ReplicationConfigurationTest : BaseDbTest() {
+class ReplicationConfigurationTest : LegacyBaseDbTest() {
     @Before
     fun setUpC4ReplicatorTest() = clearBoundCollections()
 

@@ -27,6 +27,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.TestUtils;
 
@@ -38,27 +39,13 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class ResultTest extends BaseQueryTest {
-    private static final SelectResult SR_NULL = SelectResult.property("null");
-    private static final SelectResult SR_TRUE = SelectResult.property("true");
-    private static final SelectResult SR_FALSE = SelectResult.property("false");
-    private static final SelectResult SR_STRING = SelectResult.property("string");
-    private static final SelectResult SR_ZERO = SelectResult.property("zero");
-    private static final SelectResult SR_ONE = SelectResult.property("one");
-    private static final SelectResult SR_MINUS_ONE = SelectResult.property("minus_one");
-    private static final SelectResult SR_ONE_DOT_ONE = SelectResult.property("one_dot_one");
-    private static final SelectResult SR_DATE = SelectResult.property("date");
-    private static final SelectResult SR_DICT = SelectResult.property("dict");
-    private static final SelectResult SR_ARRAY = SelectResult.property("array");
-    private static final SelectResult SR_BLOB = SelectResult.property("blob");
-    private static final SelectResult SR_NO_KEY = SelectResult.property("non_existing_key");
+
 
     @Test
-    public void testGetValueByKey() throws CouchbaseLiteException {
-        for (int i = 1; i <= 2; i++) {
-            String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
-
+    public void testGetValueByKey() {
+        runTest((query) -> {
             // run query
             int rows = verifyQueryWithEnumerator(
                 query,
@@ -73,7 +60,7 @@ public class ResultTest extends BaseQueryTest {
                     assertEquals(1L, r.getValue("one"));
                     assertEquals(-1L, r.getValue("minus_one"));
                     assertEquals(1.1, r.getValue("one_dot_one"));
-                    assertEquals(TEST_DATE, r.getValue("date"));
+                    assertEquals(BaseDbTestKt.TEST_DATE, r.getValue("date"));
                     assertTrue(r.getValue("dict") instanceof Dictionary);
                     assertTrue(r.getValue("array") instanceof Array);
                     assertTrue(r.getValue("blob") instanceof Blob);
@@ -85,15 +72,24 @@ public class ResultTest extends BaseQueryTest {
                 });
 
             assertEquals(1, rows);
+        });
+    }
+
+
+    private void runTest(Fn.Consumer<Query> test) {
+        for (int i = 1; i <= 2; i++) {
+            String docID = prepareData(i);
+            Query query = generateQuery(docID);
+            test.accept(query);
         }
     }
 
 
     @Test
-    public void testGetValue() throws CouchbaseLiteException {
+    public void testGetValue() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             // run query
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
@@ -107,7 +103,7 @@ public class ResultTest extends BaseQueryTest {
                 assertEquals(1L, r.getValue(5));
                 assertEquals(-1L, r.getValue(6));
                 assertEquals(1.1, r.getValue(7));
-                assertEquals(TEST_DATE, r.getValue(8));
+                assertEquals(BaseDbTestKt.TEST_DATE, r.getValue(8));
                 assertTrue(r.getValue(9) instanceof Dictionary);
                 assertTrue(r.getValue(10) instanceof Array);
                 assertTrue(r.getValue(11) instanceof Blob);
@@ -123,10 +119,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetStringByKey() throws CouchbaseLiteException {
+    public void testGetStringByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -139,7 +135,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getString("one"));
                 assertNull(r.getString("minus_one"));
                 assertNull(r.getString("one_dot_one"));
-                assertEquals(TEST_DATE, r.getString("date"));
+                assertEquals(BaseDbTestKt.TEST_DATE, r.getString("date"));
                 assertNull(r.getString("dict"));
                 assertNull(r.getString("array"));
                 assertNull(r.getString("blob"));
@@ -155,10 +151,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetString() throws CouchbaseLiteException {
+    public void testGetString() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -171,7 +167,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getString(5));
                 assertNull(r.getString(6));
                 assertNull(r.getString(7));
-                assertEquals(TEST_DATE, r.getString(8));
+                assertEquals(BaseDbTestKt.TEST_DATE, r.getString(8));
                 assertNull(r.getString(9));
                 assertNull(r.getString(10));
                 assertNull(r.getString(11));
@@ -188,10 +184,10 @@ public class ResultTest extends BaseQueryTest {
 
 
     @Test
-    public void testGetNumberByKey() throws CouchbaseLiteException {
+    public void testGetNumberByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -220,10 +216,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetNumber() throws CouchbaseLiteException {
+    public void testGetNumber() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -252,10 +248,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetIntegerByKey() throws CouchbaseLiteException {
+    public void testGetIntegerByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -284,10 +280,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetInteger() throws CouchbaseLiteException {
+    public void testGetInteger() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -316,10 +312,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetLongByKey() throws CouchbaseLiteException {
+    public void testGetLongByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -348,10 +344,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetLong() throws CouchbaseLiteException {
+    public void testGetLong() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -380,10 +376,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetFloatByKey() throws CouchbaseLiteException {
+    public void testGetFloatByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -411,10 +407,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetFloat() throws CouchbaseLiteException {
+    public void testGetFloat() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -443,10 +439,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDoubleByKey() throws CouchbaseLiteException {
+    public void testGetDoubleByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -475,10 +471,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDouble() throws CouchbaseLiteException {
+    public void testGetDouble() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -507,10 +503,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetBooleanByKey() throws CouchbaseLiteException {
+    public void testGetBooleanByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -539,10 +535,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetBoolean() throws CouchbaseLiteException {
+    public void testGetBoolean() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -571,10 +567,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDateByKey() throws CouchbaseLiteException {
+    public void testGetDateByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -587,7 +583,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getDate("one"));
                 assertNull(r.getDate("minus_one"));
                 assertNull(r.getDate("one_dot_one"));
-                assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate("date")));
+                assertEquals(BaseDbTestKt.TEST_DATE, JSONUtils.toJSONString(r.getDate("date")));
                 assertNull(r.getDate("dict"));
                 assertNull(r.getDate("array"));
                 assertNull(r.getDate("blob"));
@@ -603,10 +599,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDate() throws CouchbaseLiteException {
+    public void testGetDate() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -619,7 +615,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getDate(5));
                 assertNull(r.getDate(6));
                 assertNull(r.getDate(7));
-                assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate(8)));
+                assertEquals(BaseDbTestKt.TEST_DATE, JSONUtils.toJSONString(r.getDate(8)));
                 assertNull(r.getDate(9));
                 assertNull(r.getDate(10));
                 assertNull(r.getDate(11));
@@ -635,10 +631,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetBlobByKey() throws CouchbaseLiteException {
+    public void testGetBlobByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -654,8 +650,10 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getBlob("date"));
                 assertNull(r.getBlob("dict"));
                 assertNull(r.getBlob("array"));
-                assertEquals(BLOB_CONTENT, new String(r.getBlob("blob").getContent()));
-                assertArrayEquals(BLOB_CONTENT.getBytes(StandardCharsets.UTF_8), r.getBlob("blob").getContent());
+                assertEquals(BaseDbTestKt.BLOB_CONTENT, new String(r.getBlob("blob").getContent()));
+                assertArrayEquals(
+                    BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
+                    r.getBlob("blob").getContent());
                 assertNull(r.getBlob("non_existing_key"));
 
                 TestUtils.assertThrows(IllegalArgumentException.class, () -> r.getBlob(null));
@@ -668,10 +666,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetBlob() throws CouchbaseLiteException {
+    public void testGetBlob() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -687,8 +685,10 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getBlob(8));
                 assertNull(r.getBlob(9));
                 assertNull(r.getBlob(10));
-                assertEquals(BLOB_CONTENT, new String(r.getBlob(11).getContent()));
-                assertArrayEquals(BLOB_CONTENT.getBytes(StandardCharsets.UTF_8), r.getBlob(11).getContent());
+                assertEquals(BaseDbTestKt.BLOB_CONTENT, new String(r.getBlob(11).getContent()));
+                assertArrayEquals(
+                    BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
+                    r.getBlob(11).getContent());
                 assertNull(r.getBlob(12));
 
                 TestUtils.assertThrows(ArrayIndexOutOfBoundsException.class, () -> r.getBlob(-1));
@@ -701,10 +701,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDictionaryByKey() throws CouchbaseLiteException {
+    public void testGetDictionaryByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -738,10 +738,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetDictionary() throws CouchbaseLiteException {
+    public void testGetDictionary() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -775,10 +775,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetArrayByKey() throws CouchbaseLiteException {
+    public void testGetArrayByKey() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -808,10 +808,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetArray() throws CouchbaseLiteException {
+    public void testGetArray() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 assertEquals(13, r.count());
@@ -841,10 +841,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testGetKeys() throws CouchbaseLiteException {
+    public void testGetKeys() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 List<String> keys = r.getKeys();
@@ -883,10 +883,10 @@ public class ResultTest extends BaseQueryTest {
     }
 
     @Test
-    public void testContains() throws CouchbaseLiteException {
+    public void testContains() {
         for (int i = 1; i <= 2; i++) {
             String docID = prepareData(i);
-            Query query = generateQuery(baseTestDb, docID);
+            Query query = generateQuery(docID);
 
             int rows = verifyQueryWithEnumerator(query, (n, r) -> {
                 // exists -> true
@@ -911,23 +911,23 @@ public class ResultTest extends BaseQueryTest {
     // https://github.com/couchbase/couchbase-lite-android-ce/issues/27
     @Test
     public void testEmptyDict() throws CouchbaseLiteException {
-        String doc1 = "doc1";
-        String key1 = "emptyDict";
+        String docId = BaseDbTestKt.docId();
+        String key = getUniqueName("emptyDict");
 
-        MutableDocument mDoc = new MutableDocument(doc1);
-        mDoc.setDictionary(key1, new MutableDictionary());
-        saveDocInBaseTestDb(mDoc);
+        MutableDocument mDoc = new MutableDocument(docId);
+        mDoc.setDictionary(key, new MutableDictionary());
+        saveDocInTestCollection(mDoc);
 
-        final Query query = QueryBuilder.select(SelectResult.property(key1))
-            .from(DataSource.database(baseTestDb))
-            .where(Meta.id.equalTo(Expression.string(doc1)));
+        final Query query = QueryBuilder.select(SelectResult.property(key))
+            .from(DataSource.collection(testCollection))
+            .where(Meta.id.equalTo(Expression.string(docId)));
 
         try (ResultSet results = query.execute()) {
             assertNotNull(results);
             for (Result result: results.allResults()) {
                 assertNotNull(result);
                 assertEquals(1, result.toMap().size());
-                Dictionary emptyDict = result.getDictionary(key1);
+                Dictionary emptyDict = result.getDictionary(key);
                 assertNotNull(emptyDict);
                 assertTrue(emptyDict.isEmpty());
             }
@@ -942,7 +942,7 @@ public class ResultTest extends BaseQueryTest {
         for (int i = 0; i < 5; i++) {
             MutableDocument mDoc = makeDocument();
             mDoc.setString("id", "jsonQuery-" + i);
-            saveDocInBaseTestDb(mDoc);
+            saveDocInTestCollection(mDoc);
         }
 
         SelectResult[] projection = new SelectResult[29];
@@ -950,7 +950,7 @@ public class ResultTest extends BaseQueryTest {
         for (int i = 1; i <= 29; i++) { projection[i - 1] = SelectResult.property("doc-" + i); }
 
         try (ResultSet results = QueryBuilder.select(projection)
-            .from(DataSource.database(baseTestDb))
+            .from(DataSource.collection(testCollection))
             .where(Expression.property("id").equalTo(Expression.string("jsonQuery-4")))
             .execute()) {
 
@@ -966,31 +966,88 @@ public class ResultTest extends BaseQueryTest {
 
     ///////////////  Tooling
 
-    private Query generateQuery(Database db, String docID) {
-        Expression exDocID = Expression.string(docID);
-        return QueryBuilder.select(
-            SR_NULL,
-            SR_TRUE,
-            SR_FALSE,
-            SR_STRING,
-            SR_ZERO,
-            SR_ONE,
-            SR_MINUS_ONE,
-            SR_ONE_DOT_ONE,
-            SR_DATE,
-            SR_DICT,
-            SR_ARRAY,
-            SR_BLOB,
-            SR_NO_KEY)
-            .from(DataSource.database(db))
-            .where(Meta.id.equalTo(exDocID));
-    }
-
-    private String prepareData(int i) throws CouchbaseLiteException {
-        MutableDocument mDoc = new MutableDocument("doc" + i);
+    private String prepareData(int i) {
+        MutableDocument mDoc = new MutableDocument(BaseDbTestKt.jsonDocId(i));
         if (i % 2 == 1) { populateData(mDoc); }
         else { populateDataByTypedSetter(mDoc); }
-        saveDocInBaseTestDb(mDoc);
+        saveDocInTestCollection(mDoc);
         return mDoc.getId();
+    }
+
+    private void populateData(MutableDocument doc) {
+        doc.setValue("true", true);
+        doc.setValue("false", false);
+        doc.setValue("string", "string");
+        doc.setValue("zero", 0);
+        doc.setValue("one", 1);
+        doc.setValue("minus_one", -1);
+        doc.setValue("one_dot_one", 1.1);
+        doc.setValue("date", JSONUtils.toDate(BaseDbTestKt.TEST_DATE));
+        doc.setValue("null", null);
+
+        // Dictionary:
+        MutableDictionary dict = new MutableDictionary();
+        dict.setValue("street", "1 Main street");
+        dict.setValue("city", "Mountain View");
+        dict.setValue("state", "CA");
+        doc.setValue("dict", dict);
+
+        // Array:
+        MutableArray array = new MutableArray();
+        array.addValue("650-123-0001");
+        array.addValue("650-123-0002");
+        doc.setValue("array", array);
+
+        // Blob:
+        doc.setValue("blob", new Blob("text/plain", BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private void populateDataByTypedSetter(MutableDocument doc) {
+        doc.setBoolean("true", true);
+        doc.setBoolean("false", false);
+        doc.setString("string", "string");
+        doc.setNumber("zero", 0);
+        doc.setInt("one", 1);
+        doc.setLong("minus_one", -1);
+        doc.setDouble("one_dot_one", 1.1);
+        doc.setDate("date", JSONUtils.toDate(BaseDbTestKt.TEST_DATE));
+        doc.setString("null", null);
+
+        // Dictionary:
+        MutableDictionary dict = new MutableDictionary();
+        dict.setString("street", "1 Main street");
+        dict.setString("city", "Mountain View");
+        dict.setString("state", "CA");
+        doc.setDictionary("dict", dict);
+
+        // Array:
+        MutableArray array = new MutableArray();
+        array.addString("650-123-0001");
+        array.addString("650-123-0002");
+        doc.setArray("array", array);
+
+        // Blob:
+        doc.setValue("blob", new Blob("text/plain", BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    private Query generateQuery(String docID) { return generateQuery(docID, testCollection); }
+
+    private Query generateQuery(String docID, Collection collection) {
+        return QueryBuilder.select(
+                SelectResult.property("null"),
+                SelectResult.property("true"),
+                SelectResult.property("false"),
+                SelectResult.property("string"),
+                SelectResult.property("zero"),
+                SelectResult.property("one"),
+                SelectResult.property("minus_one"),
+                SelectResult.property("one_dot_one"),
+                SelectResult.property("date"),
+                SelectResult.property("dict"),
+                SelectResult.property("array"),
+                SelectResult.property("blob"),
+                SelectResult.property("non_existing_key"))
+            .from(DataSource.collection(collection))
+            .where(Meta.id.equalTo(Expression.string(docID)));
     }
 }

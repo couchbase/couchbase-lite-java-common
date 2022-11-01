@@ -27,7 +27,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
 
 
-class CollectionListenerTest : BaseCollectionTest() {
+class CollectionListenerTest : BaseDbTest() {
 
     // Test that change listeners can be added to a collection and that they receive changes correctly.
     @Test
@@ -50,7 +50,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     // Test that adding a change listener to a deleted collection doesn't throw exception
     @Test
     fun testAddChangeListenerToDeletedCollection() {
-        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
+        testDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.addChangeListener(testSerialExecutor) {}
     }
 
@@ -58,7 +58,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     // Test that addChangeListener to a collection deleted from a different db instance doesn't throw exception
     @Test
     fun testAddChangeListenerToCollectionDeletedInDifferentDBInstance() {
-        duplicateBaseTestDb().use {
+        duplicateDb(testDatabase).use {
             it.deleteCollection(testCollection.name, testCollection.scope.name)
             testCollection.addChangeListener(testSerialExecutor) {}
         }
@@ -68,7 +68,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     // doesn't throw exception
     @Test
     fun testAddDocumentChangeListenerToDeletedCollection() {
-        baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
+        testDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
         testCollection.addDocumentChangeListener("doc_id", testSerialExecutor) {}
     }
 
@@ -76,7 +76,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     // and doesn't throw exception
     @Test
     fun testAddDocumentChangeListenerToCollectionDeletedInADifferentDBInstance() {
-        duplicateBaseTestDb().use {
+        duplicateDb(testDatabase).use {
             it.deleteCollection(testCollection.name, testCollection.scope.name)
             testCollection.addDocumentChangeListener("doc_id", testSerialExecutor) {}
         }
@@ -87,8 +87,8 @@ class CollectionListenerTest : BaseCollectionTest() {
     fun testRemoveChangeListenerFromDeletedCollection() {
         val token = testCollection.addChangeListener { }
         try {
-            baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+            testDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
+            assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             token.remove()
         }
@@ -98,12 +98,12 @@ class CollectionListenerTest : BaseCollectionTest() {
     @VerySlowTest
     @Test
     fun testRemoveChangeListenerFromCollectionDeletedInADifferentDBInstance() {
-        val otherDb = duplicateBaseTestDb()
+        val otherDb = duplicateDb(testDatabase)
         val token = testCollection.addChangeListener { }
 
         try {
             otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+            assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             token.remove()
 
@@ -119,8 +119,8 @@ class CollectionListenerTest : BaseCollectionTest() {
 
         val token = testCollection.addDocumentChangeListener(docId) { }
         try {
-            baseTestDb.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+            testDatabase.deleteCollection(testCollection.name, testCollection.scope.name)
+            assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
 
         } finally {
             token.remove()
@@ -131,12 +131,12 @@ class CollectionListenerTest : BaseCollectionTest() {
     @VerySlowTest
     @Test
     fun testRemoveDocChangeListenerFromCollectionDeletedInADifferentDBInstance() {
-        val otherDb = duplicateBaseTestDb()
+        val otherDb = duplicateDb(testDatabase)
         val token = testCollection.addChangeListener { }
 
         try {
             otherDb.deleteCollection(testCollection.name, testCollection.scope.name)
-            assertNull(baseTestDb.getCollection(testCollection.name, testCollection.scope.name))
+            assertNull(testDatabase.getCollection(testCollection.name, testCollection.scope.name))
         } finally {
             token.remove()
 
@@ -147,7 +147,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     // Test that adding a change listener to a collection in a closed database doesn't throw an exception
     @Test
     fun testAddChangeListenerToCollectionInClosedDatabase() {
-        discardDb(baseTestDb)
+        discardDb(testDatabase)
         testCollection.addChangeListener(null) {}
     }
 
@@ -157,7 +157,7 @@ class CollectionListenerTest : BaseCollectionTest() {
         val docID = "testDoc"
         testCollection.save(MutableDocument(docID))
 
-        discardDb(baseTestDb)
+        discardDb(testDatabase)
 
         testCollection.addDocumentChangeListener(docID, null) {}
     }
@@ -167,7 +167,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     fun testRemoveChangeListenerFromCollectionInClosedDatabase() {
         val token = testCollection.addChangeListener {}
         try {
-            discardDb(baseTestDb)
+            discardDb(testDatabase)
         } finally {
             token.remove()
         }
@@ -176,14 +176,14 @@ class CollectionListenerTest : BaseCollectionTest() {
     // Test that addChangeListener to a collection in a deleted database doesn't throw an exception
     @Test
     fun testAddChangeListenerToCollectionInDeletedDatabase() {
-        eraseDb(baseTestDb)
+        eraseDb(testDatabase)
         testCollection.addChangeListener(null) {}
     }
 
     // Test that addDocumentChangeListener to a collection in a deleted database doesn't throw an exception
     @Test
     fun testAddDocumentChangeListenerToCollectionInDeletedDatabase() {
-        eraseDb(baseTestDb)
+        eraseDb(testDatabase)
         testCollection.addDocumentChangeListener("doc_id", null) {}
     }
 
@@ -192,7 +192,7 @@ class CollectionListenerTest : BaseCollectionTest() {
     fun testRemoveChangeListenerFromCollectionInDeletedDatabase() {
         val token = testCollection.addChangeListener { }
         try {
-            eraseDb(baseTestDb)
+            eraseDb(testDatabase)
         } finally {
             token.remove()
         }
@@ -212,8 +212,8 @@ class CollectionListenerTest : BaseCollectionTest() {
         val doc2Id = "doc_2"
         val doc3Id = "doc_3"
 
-        val collectionA = baseTestDb.createCollection("colA", "scopeA")
-        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+        val collectionA = testDatabase.createCollection("colA", "scopeA")
+        val collectionB = testDatabase.createCollection("colB", "scopeA")
 
         val changes1 = mutableListOf<String>()
         val changes2 = mutableListOf<String>()
@@ -336,8 +336,8 @@ class CollectionListenerTest : BaseCollectionTest() {
     // Update the documents on the collection A.
     // Ensure that the two listeners don’t receive any changes.
     private fun testCollectionDocumentChangeListener(exec: Executor?) {
-        val collectionA = baseTestDb.createCollection("colA", "scopeA")
-        val collectionB = baseTestDb.createCollection("colB", "scopeA")
+        val collectionA = testDatabase.createCollection("colA", "scopeA")
+        val collectionB = testDatabase.createCollection("colB", "scopeA")
 
         var latch: CountDownLatch? = null
         var changes1: MutableList<String>? = null

@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 
 // !!! ADD COLLECTION NOTIFICATION TESTS
 
-public class NotificationTest extends BaseDbTest {
+public class NotificationTest extends LegacyBaseDbTest {
     @Test
     public void testDatabaseChange() throws InterruptedException, CouchbaseLiteException {
         final CountDownLatch latch = new CountDownLatch(1);

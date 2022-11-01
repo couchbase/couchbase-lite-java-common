@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite;
 
-import java.net.URISyntaxException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -25,81 +24,116 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     @Test
-    public void testStopReplicatorAfterOffline() throws URISyntaxException, InterruptedException {
+    public void testStopReplicatorAfterOffline() throws InterruptedException {
         // this test crashes the test suite on Android <21
         skipTestWhen("android<21");
 
-        Endpoint target = getRemoteTargetEndpoint();
-        ReplicatorConfiguration config = makeConfig(baseTestDb, target, ReplicatorType.PULL, true);
-        Replicator repl = testReplicator(config);
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
+
+        Replicator repl = makeRepl(makeConfig().setType(ReplicatorType.PULL));
         ListenerToken token = repl.addChangeListener(
             testSerialExecutor,
             change -> {
-                ReplicatorStatus status = change.getStatus();
-                if (status.getActivityLevel() == ReplicatorActivityLevel.OFFLINE) {
-                    change.getReplicator().stop();
-                    offline.countDown();
+                switch(change.getStatus().getActivityLevel()) {
+                    case STOPPED:
+                        stopped.countDown();
+                        break;
+                    case OFFLINE:
+                        offline.countDown();
+                        break;
+                    default:
                 }
-                if (status.getActivityLevel() == ReplicatorActivityLevel.STOPPED) { stopped.countDown(); }
             });
-        repl.start(false);
-        assertTrue(offline.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-        assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-        repl.removeChangeListener(token);
+
+        try {
+            repl.start();
+            assertTrue(offline.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+            repl.stop();
+            assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
+        finally { token.remove(); }
     }
 
     @Test
-    public void testStartSingleShotReplicatorInOffline() throws URISyntaxException, InterruptedException {
+    public void testStartSingleShotReplicatorInOffline() throws InterruptedException {
         // this test crashes the test suite on Android <21
         skipTestWhen("android<21");
 
-        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false));
         final CountDownLatch stopped = new CountDownLatch(1);
+        Replicator repl = makeRepl(makeConfig().setContinuous(false));
         ListenerToken token = repl.addChangeListener(
             testSerialExecutor,
             change -> {
-                ReplicatorStatus status = change.getStatus();
-                if (status.getActivityLevel() == ReplicatorActivityLevel.STOPPED) { stopped.countDown(); }
+                if (change.getStatus().getActivityLevel() == ReplicatorActivityLevel.STOPPED) { stopped.countDown(); }
             });
-        repl.start(false);
-        assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-        repl.removeChangeListener(token);
+
+        try {
+            repl.start();
+            assertTrue(stopped.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
+        finally { token.remove(); }
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAddNullDocumentReplicationListener() throws URISyntaxException {
-        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true));
+    public void testAddNullDocumentReplicationListener() {
+        Replicator repl = makeRepl();
 
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
         assertNotNull(token);
+        token.remove();
 
         repl.addDocumentReplicationListener(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAddNullDocumentReplicationListenerWithExecutor() throws URISyntaxException {
-        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true));
+    public void testAddNullDocumentReplicationListenerWithExecutor() {
+        Replicator repl = makeRepl();
 
         ListenerToken token = repl.addDocumentReplicationListener(replication -> { });
         assertNotNull(token);
+        token.remove();
 
         repl.addDocumentReplicationListener(testSerialExecutor, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testAddNullChangeListener() throws Exception {
-        ListenerToken token = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true))
-            .addChangeListener(null);
+    public void testAddNullChangeListener() {
+        ListenerToken token = null;
+        try { token = makeRepl().addChangeListener(null); }
+        finally {
+            if (token != null) { token.remove(); }
+        }
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testNullChangeListenerWithExecutor() throws Exception {
-        ListenerToken token = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, true))
-            .addChangeListener(testSerialExecutor, null);
+    public void testNullChangeListenerWithExecutor() {
+        ListenerToken token = null;
+        try { token = makeRepl().addChangeListener(testSerialExecutor, null); }
+        finally {
+            if (token != null) { token.remove(); }
+        }
     }
+
+    private ReplicatorConfiguration makeDefaultConfig() {
+        return new ReplicatorConfiguration(BaseReplicatorTestKt.getMockURLEndpoint())
+            .addCollection(testCollection, null);
+    }
+
+    private ReplicatorConfiguration makeConfig() {
+        return makeDefaultConfig()
+            .setType(ReplicatorType.PUSH)
+            .setContinuous(true)
+            .setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
+    }
+
+    // Kotlin shim functions
+
+    private Replicator makeRepl() { return makeRepl(makeConfig()); }
+
+    private Replicator makeRepl(ReplicatorConfiguration config) { return BaseReplicatorTestKt.testReplicator(config); }
 }

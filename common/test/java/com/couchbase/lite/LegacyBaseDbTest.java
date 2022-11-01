@@ -48,7 +48,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-public abstract class BaseDbTest extends BaseTest {
+public abstract class LegacyBaseDbTest extends BaseTest {
     @FunctionalInterface
     public interface DocValidator extends Fn.ConsumerThrows<Document, CouchbaseLiteException> { }
 

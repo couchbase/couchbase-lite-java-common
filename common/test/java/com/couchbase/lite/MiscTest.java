@@ -23,6 +23,7 @@ import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 
+@SuppressWarnings("ConstantConditions")
 public class MiscTest {
     // Verify that round trip String -> Date -> String doesn't alter the string (#1611)
     @Test

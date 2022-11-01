@@ -47,14 +47,14 @@ public class LiveQueryTest extends BaseDbTest {
     public void testCreateBasicListener() throws InterruptedException {
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb))
+            .from(DataSource.collection(testCollection))
             .where(Expression.property(KEY).greaterThanOrEqualTo(Expression.intValue(0)))
             .orderBy(Ordering.property(KEY).ascending());
 
         final CountDownLatch latch = new CountDownLatch(1);
         ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
         try { assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
-        finally { query.removeChangeListener(token); }
+        finally { token.remove(); }
     }
 
     /**
@@ -67,7 +67,7 @@ public class LiveQueryTest extends BaseDbTest {
         ListenerToken token1 = null;
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb))
+            .from(DataSource.collection(testCollection))
             .where(Expression.property(KEY).greaterThanOrEqualTo(Expression.intValue(0)))
             .orderBy(Ordering.property(KEY).ascending());
         final CountDownLatch[] latch1 = new CountDownLatch[2];
@@ -102,9 +102,9 @@ public class LiveQueryTest extends BaseDbTest {
                 assertTrue(latch1[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
                 assertTrue(latch2[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
             }
-            finally { query.removeChangeListener(token2); }
+            finally { token2.remove(); }
         }
-        finally { query.removeChangeListener(token1); }
+        finally { token1.remove(); }
     }
 
 
@@ -113,7 +113,7 @@ public class LiveQueryTest extends BaseDbTest {
     public void testCloseResultsInLiveQueryListener() throws CouchbaseLiteException, InterruptedException {
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb));
+            .from(DataSource.collection(testCollection));
 
         final AtomicIntegerArray atmCount = new AtomicIntegerArray(1);
         final CountDownLatch[] latches = new CountDownLatch[2];
@@ -132,7 +132,7 @@ public class LiveQueryTest extends BaseDbTest {
             createDocNumbered(11);
             assertTrue(latches[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
-        finally { query.removeChangeListener(token); }
+        finally { token.remove(); }
     }
 
     /**
@@ -144,7 +144,7 @@ public class LiveQueryTest extends BaseDbTest {
     public void testIterateRSWith2Listeners() throws InterruptedException, CouchbaseLiteException {
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb));
+            .from(DataSource.collection(testCollection));
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
@@ -177,8 +177,8 @@ public class LiveQueryTest extends BaseDbTest {
             assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         finally {
-            query.removeChangeListener(token);
-            query.removeChangeListener(token1);
+            token.remove();
+            token1.remove();
         }
     }
 
@@ -191,7 +191,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb))
+            .from(DataSource.collection(testCollection))
             .where(Expression.property(KEY).greaterThanOrEqualTo(Expression.parameter("VALUE")))
             .orderBy(Ordering.property(KEY).ascending());
 
@@ -233,7 +233,7 @@ public class LiveQueryTest extends BaseDbTest {
             createDocNumbered(0);
             assertFalse(latch[2].await(APPROXIMATE_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
         }
-        finally { query.removeChangeListener(token); }
+        finally { token.remove(); }
     }
 
     // CBL-2344: Live query may stop refreshing
@@ -246,7 +246,7 @@ public class LiveQueryTest extends BaseDbTest {
 
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb))
+            .from(DataSource.collection(testCollection))
             .where(Expression.property(KEY).greaterThan(Expression.intValue(0)));
 
         latchHolder.set(new CountDownLatch(1));
@@ -277,15 +277,16 @@ public class LiveQueryTest extends BaseDbTest {
             assertEquals(2, resultsHolder.get().size());
         }
         finally {
-            query.removeChangeListener(token);
+            token.remove();
         }
     }
 
     // create test docs
+    // !!! Replace with standard save routine
     private void createDocNumbered(int i) throws CouchbaseLiteException {
         String docID = "doc-" + i;
         MutableDocument doc = new MutableDocument(docID);
         doc.setValue(KEY, i);
-        saveDocInBaseTestDb(doc);
+        testCollection.save(doc);
     }
 }

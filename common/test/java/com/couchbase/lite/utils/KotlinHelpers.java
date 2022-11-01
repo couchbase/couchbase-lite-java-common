@@ -16,6 +16,10 @@
 package com.couchbase.lite.utils;
 
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import com.couchbase.lite.Collection;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LogFileConfiguration;
 import com.couchbase.lite.Replicator;
@@ -26,8 +30,9 @@ public final class KotlinHelpers {
     private KotlinHelpers() { }
 
     // Kotlin will not allow a the call isDocumentPending(null)
-    public static boolean callIsDocumentPendingWithNullId(Replicator repl) throws CouchbaseLiteException {
-        return repl.isDocumentPending(null);
+    public static boolean callIsDocumentPendingWithNullId(@NonNull Replicator repl, @Nullable Collection collection)
+        throws CouchbaseLiteException {
+        return repl.isDocumentPending(null, collection);
     }
 
     // Kotlin will not allow a the call LogFileConfiguration.<init>((String) null)

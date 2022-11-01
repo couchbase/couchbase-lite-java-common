@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite;
 
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,10 +35,10 @@ import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
@@ -71,80 +70,51 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             errorCode,
             0
         );
-        ReplicatorStatus status = new ReplicatorStatus(c4ReplicatorStatus);
-        ReplicatorChange repChange = new ReplicatorChange(baseTestReplicator, status);
 
-        assertEquals(repChange.getReplicator(), baseTestReplicator);
-        assertEquals(repChange.getStatus(), status);
-        assertEquals(repChange.getStatus().getActivityLevel(), status.getActivityLevel());
-        assertEquals(repChange.getStatus().getProgress().getCompleted(), completed);
-        assertEquals(repChange.getStatus().getProgress().getTotal(), total);
-        assertEquals(repChange.getStatus().getError().getCode(), errorCode);
-        assertEquals(repChange.getStatus().getError().getDomain(), CBLError.Domain.CBLITE);
+        Replicator repl = makeRepl();
+        ReplicatorStatus replStatus = new ReplicatorStatus(c4ReplicatorStatus);
+        ReplicatorChange repChange = new ReplicatorChange(repl, replStatus);
+
+        assertEquals(repChange.getReplicator(), repl);
+
+        ReplicatorStatus status = repChange.getStatus();
+        assertNotNull(status);
+        assertEquals(status.getActivityLevel(), status.getActivityLevel());
+
+        ReplicatorProgress progress = status.getProgress();
+        assertNotNull(progress);
+        assertEquals(progress.getCompleted(), completed);
+        assertEquals(progress.getTotal(), total);
+
+        CouchbaseLiteException error = status.getError();
+        assertNotNull(error);
+        assertEquals(error.getCode(), errorCode);
+        assertEquals(error.getDomain(), CBLError.Domain.CBLITE);
     }
 
     @Test
     public void testDocumentReplication() {
-        final boolean isPush = true;
         List<ReplicatedDocument> docs = new ArrayList<>();
-        DocumentReplication doc = new DocumentReplication(baseTestReplicator, isPush, docs);
-        assertEquals(doc.isPush(), isPush);
-        assertEquals(doc.getReplicator(), baseTestReplicator);
+        Replicator repl = BaseReplicatorTestKt.testReplicator(makeConfig());
+        DocumentReplication doc = new DocumentReplication(repl, true, docs);
+        assertTrue(doc.isPush());
+        assertEquals(doc.getReplicator(), repl);
         assertEquals(doc.getDocuments(), docs);
     }
 
     // https://issues.couchbase.com/browse/CBL-89
     // Thanks to @James Flather for the ready-made test code
     @Test
-    public void testStopBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false)).stop();
-    }
+    public void testStopBeforeStart() { BaseReplicatorTestKt.testReplicator(makeConfig()).stop(); }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
-    public void testStatusBeforeStart() throws URISyntaxException {
-        testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false)).getStatus();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalMaxAttempts() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttempts(-1);
-    }
+    public void testStatusBeforeStart() { BaseReplicatorTestKt.testReplicator(makeConfig()).getStatus(); }
 
     @Test
-    public void testMaxAttemptsZero() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttempts(0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalAttemptsWaitTime() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttemptWaitTime(-1);
-    }
-
-    @Test
-    public void testMaxAttemptsWaitTimeZero() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setMaxAttemptWaitTime(0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalHeartbeatMin() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(-1);
-    }
-
-    @Test
-    public void testHeartbeatZero() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testIllegalHeartbeatMax() throws URISyntaxException {
-        new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setHeartbeat(2147484);
-    }
-
-    @Test
-    public void testDocumentEndListenerTokenRemove() throws URISyntaxException {
-        final Replicator repl = testReplicator(new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()));
+    public void testDocumentEndListenerTokenRemove() {
+        final Replicator repl = makeRepl();
         assertEquals(0, repl.getDocEndListenerCount());
         ListenerToken token = repl.addDocumentReplicationListener(r -> { });
         assertEquals(1, repl.getDocEndListenerCount());
@@ -155,8 +125,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void tesReplicationListenerTokenRemove() throws URISyntaxException {
-        final Replicator repl = testReplicator(new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()));
+    public void testReplicationListenerTokenRemove() {
+        final Replicator repl = makeRepl();
         assertEquals(0, repl.getReplicatorListenerCount());
         ListenerToken token = repl.addChangeListener(r -> { });
         assertEquals(1, repl.getReplicatorListenerCount());
@@ -167,13 +137,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testDefaultConnectionOptions() throws URISyntaxException {
-        // Don't use makeConfig: it sets the heartbeat
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setType(ReplicatorType.PUSH)
-            .setContinuous(false);
-
-        final Replicator repl = testReplicator(config);
+    public void testDefaultConnectionOptions() {
+        final Replicator repl = makeRepl(makeDefaultConfig().setType(ReplicatorType.PUSH).setContinuous(false));
 
         Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setTestListener(c4Socket -> {
@@ -204,15 +169,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
-    public void testCustomConnectionOptions() throws URISyntaxException {
-        final ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setType(ReplicatorType.PUSH)
-            .setContinuous(false)
+    public void testCustomConnectionOptions() {
+        final Replicator repl = makeRepl(makeConfig()
             .setHeartbeat(33)
             .setMaxAttempts(78)
             .setMaxAttemptWaitTime(45)
-            .setAutoPurgeEnabled(false);
-        final Replicator repl = testReplicator(config);
+            .setAutoPurgeEnabled(false));
 
         Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setTestListener(delegate -> {
@@ -230,14 +192,14 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             assertEquals(Boolean.FALSE, options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
             assertEquals(33L, options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
             assertEquals(45L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
-            /* A friend once told me: Don't try to teach a pig to sing.  It won't work and it annoys the pig. */
-            assertEquals(78L - 1L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
+            // A friend once told me: Don't try to teach a pig to sing.  It won't work and it annoys the pig.
+            assertEquals(78L - 1, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRIES));
         }
     }
 
     @Test
-    public void testStopWhileConnecting() throws URISyntaxException {
-        Replicator repl = testReplicator(makeConfig(getRemoteTargetEndpoint(), ReplicatorType.PUSH, false));
+    public void testStopWhileConnecting() throws InterruptedException {
+        Replicator repl = makeRepl();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final ListenerToken token = repl.addChangeListener(status -> {
@@ -248,86 +210,67 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         repl.start();
-        try {
-            try { assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
-            catch (InterruptedException ignore) { }
-        }
+        try { assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
         finally {
+            token.remove();
             repl.stop();
         }
     }
 
     @Test
-    public void testReplicatedDocument() throws CouchbaseLiteException {
-        Collection collection = baseTestDb.getDefaultCollection();
-        String docID = "someDocumentID";
-        int flags = C4Constants.DocumentFlags.DELETED;
-        CouchbaseLiteException error = new CouchbaseLiteException(
-            "Replicator busy",
-            CBLError.Domain.CBLITE,
-            CBLError.Code.BUSY);
+    public void testReplicatedDocument() {
+        String docId = BaseDbTestKt.docId();
+        ReplicatedDocument replicatedDoc = new ReplicatedDocument(
+            targetCollection.getScope().getName(),
+            targetCollection.getName(),
+            docId,
+            C4Constants.DocumentFlags.DELETED,
+            new CouchbaseLiteException(
+                "Replicator busy",
+                CBLError.Domain.CBLITE,
+                CBLError.Code.BUSY));
 
-        ReplicatedDocument doc
-            = new ReplicatedDocument(collection.getScope().getName(), collection.getName(), docID, flags, error);
+        assertEquals(replicatedDoc.getID(), docId);
 
-        assertEquals(doc.getID(), docID);
-        assertTrue(doc.getFlags().contains(DocumentFlag.DELETED));
-        CouchbaseLiteException err = doc.getError();
+        assertEquals(targetCollection.getScope().getName(), replicatedDoc.getCollectionScope());
+        assertEquals(targetCollection.getName(), replicatedDoc.getCollectionName());
+
+        assertTrue(replicatedDoc.getFlags().contains(DocumentFlag.DELETED));
+
+        CouchbaseLiteException err = replicatedDoc.getError();
+        assertNotNull(err);
         assertEquals(CBLError.Domain.CBLITE, err.getDomain());
         assertEquals(CBLError.Code.BUSY, err.getCode());
-        assertEquals(Collection.DEFAULT_NAME, doc.getCollectionName());
     }
 
     // CBL-1218
     @Test(expected = IllegalStateException.class)
-    public void testStartReplicatorWithClosedDb() throws URISyntaxException {
-        Replicator replicator = testReplicator(makeConfig(
-            baseTestDb,
-            getRemoteTargetEndpoint(),
-            ReplicatorType.PUSH_AND_PULL,
-            false,
-            null,
-            null));
+    public void testStartReplicatorWithClosedDb() {
+        Replicator repl = makeRepl(makeConfig());
 
-        discardDb(baseTestDb);
+        closeDb(testDatabase);
 
-        replicator.start(false);
+        repl.start();
     }
 
     // CBL-1218
     @Test(expected = IllegalStateException.class)
-    public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
-        Replicator replicator = testReplicator(makeConfig(
-            baseTestDb,
-            getRemoteTargetEndpoint(),
-            ReplicatorType.PUSH_AND_PULL,
-            false,
-            null,
-            null));
+    public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException {
+        Replicator repl = makeRepl();
 
-        discardDb(baseTestDb);
+        deleteDb(testDatabase);
 
-        replicator.getPendingDocumentIds();
+        repl.getPendingDocumentIds(testCollection);
     }
 
     // CBL-1218
     @Test(expected = IllegalStateException.class)
-    public void testGetPendingDocIdsWithClosedDb() throws CouchbaseLiteException, URISyntaxException {
-        MutableDocument doc = new MutableDocument();
-        otherDB.save(doc);
+    public void testGetPendingDocIdsWithClosedDb() throws CouchbaseLiteException {
+        Replicator repl = makeRepl();
 
-        Replicator replicator = testReplicator(
-            makeConfig(
-                baseTestDb,
-                getRemoteTargetEndpoint(),
-                ReplicatorType.PUSH_AND_PULL,
-                false,
-                null,
-                null));
+        closeDb(testDatabase);
 
-        discardDb(baseTestDb);
-
-        replicator.isDocumentPending(doc.getId());
+        repl.isDocumentPending(BaseDbTestKt.docId(), testCollection);
     }
 
     // CBL-1441
@@ -357,9 +300,11 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     // Verify that deprecated and new ReplicatorTypes are interchangeable
+
+    @SuppressWarnings("deprecation")
     @Test
-    public void testDeprecatedReplicatorType() throws URISyntaxException {
-        ReplicatorConfiguration config = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint());
+    public void testDeprecatedReplicatorType() {
+        ReplicatorConfiguration config = makeDefaultConfig();
         assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, config.getReplicatorType());
         assertEquals(ReplicatorType.PUSH_AND_PULL, config.getType());
 
@@ -385,11 +330,11 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
      **/
 
     @Test
-    public void testReplicatorWithBothAuthenticationAndHeaderCookies() throws URISyntaxException {
+    public void testReplicatorWithBothAuthenticationAndHeaderCookies() {
         Authenticator authenticator = new SessionAuthenticator("mysessionid");
         HashMap<String, String> header = new HashMap<>();
         header.put(AbstractCBLWebSocket.HEADER_COOKIES, "region=nw; city=sf");
-        ReplicatorConfiguration configuration = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
+        ReplicatorConfiguration configuration = makeConfig()
             .setAuthenticator(authenticator)
             .setHeaders(header);
 
@@ -403,38 +348,34 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertTrue(cookies.contains("region=nw; city=sf"));
 
         // user specified cookie should be removed from extra header
-        HashMap<String, Object> httpHeaders
-            = (HashMap<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
-        assertNotNull(httpHeaders); // httpHeaders must at least include a mapping for User-Agent
-        assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
+        Object httpHeaders = options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+        assertTrue(httpHeaders instanceof Map);
+
+        // httpHeaders must at least include a mapping for User-Agent
+        assertFalse(((Map<?, ?>) httpHeaders).containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
     @Test
-    public void testReplicatorWithNoCookie() throws URISyntaxException {
-        ImmutableReplicatorConfiguration immutableConfiguration
-            = new ImmutableReplicatorConfiguration(new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()));
-        HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
+    public void testReplicatorWithNoCookie() {
+        ImmutableReplicatorConfiguration config = new ImmutableReplicatorConfiguration(makeDefaultConfig());
+        Map<?, ?> options = config.getConnectionOptions();
         assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_COOKIES));
     }
 
     @Test
-    public void testReplicatorWithOnlyAuthenticationCookie() throws URISyntaxException {
-        Authenticator authenticator = new SessionAuthenticator("mysessionid");
-        ReplicatorConfiguration configuration
-            = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint()).setAuthenticator(authenticator);
-
-        ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
-        HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
-
-        assertEquals("SyncGatewaySession=mysessionid", options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
+    public void testReplicatorWithOnlyAuthenticationCookie() {
+        assertEquals(
+            "SyncGatewaySession=mysessionid",
+            new ImmutableReplicatorConfiguration(makeConfig().setAuthenticator(new SessionAuthenticator("mysessionid")))
+                .getConnectionOptions()
+                .get(C4Replicator.REPLICATOR_OPTION_COOKIES));
     }
 
     @Test
-    public void testReplicatorWithOnlyHeaderCookie() throws URISyntaxException {
+    public void testReplicatorWithOnlyHeaderCookie() {
         HashMap<String, String> header = new HashMap<>();
         header.put(AbstractCBLWebSocket.HEADER_COOKIES, "region=nw; city=sf");
-        ReplicatorConfiguration configuration = new ReplicatorConfiguration(baseTestDb, getRemoteTargetEndpoint())
-            .setHeaders(header);
+        ReplicatorConfiguration configuration = makeConfig().setHeaders(header);
 
         ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
         HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
@@ -443,14 +384,34 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             "region=nw; city=sf",
             options.get(C4Replicator.REPLICATOR_OPTION_COOKIES));
 
-        HashMap<String, Object> httpHeaders
-            = (HashMap<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+        Object httpHeaders = options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
+        assertTrue(httpHeaders instanceof Map);
 
-        assertNotNull(httpHeaders);  // httpHeaders must at least include a mapping for User-Agent
-        assertFalse(httpHeaders.containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
+        // httpHeaders must at least include a mapping for User-Agent
+        assertFalse(((Map<?, ?>) httpHeaders).containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
     private ReplicatorActivityLevel getActivityLevelFor(int activityLevel) {
         return new ReplicatorStatus(new C4ReplicatorStatus(activityLevel, 0, 0, 0, 0, 0, 0)).getActivityLevel();
     }
+
+    private ReplicatorConfiguration makeDefaultConfig() {
+        return new ReplicatorConfiguration(BaseReplicatorTestKt.getMockURLEndpoint())
+            .addCollection(testCollection, null);
+    }
+
+    private ReplicatorConfiguration makeConfig() {
+        return makeDefaultConfig()
+            .setType(ReplicatorType.PUSH)
+            .setContinuous(false)
+            .setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
+    }
+
+    // Kotlin shim functions
+
+    private Replicator makeRepl() { return makeRepl(makeConfig()); }
+
+    private Replicator makeRepl(ReplicatorConfiguration config) { return BaseReplicatorTestKt.testReplicator(config); }
+
+    private void run(Replicator repl, int code, String domain) { run(repl, code, domain, false, null); }
 }
