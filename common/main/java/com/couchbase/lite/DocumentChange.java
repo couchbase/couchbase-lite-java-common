@@ -34,10 +34,10 @@ public final class DocumentChange {
     }
 
     /**
-     * Return the Database instance
+     * Return the Document's collection
      */
     @NonNull
-    public Database getDatabase() { return collection.getDatabase(); }
+    public Collection getCollection() { return collection; }
 
     /**
      * Returns the changed document ID
@@ -48,4 +48,13 @@ public final class DocumentChange {
     @NonNull
     @Override
     public String toString() { return "DocumentChange{" + collection + ", " + documentID + "}"; }
+
+    /**
+     * Return the Database instance
+     *
+     * @deprecated Use DocumentChange.getCollection()
+     */
+    @Deprecated
+    @NonNull
+    public Database getDatabase() { return collection.getDatabase(); }
 }

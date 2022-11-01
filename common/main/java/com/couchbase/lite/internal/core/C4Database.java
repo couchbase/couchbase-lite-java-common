@@ -144,7 +144,7 @@ public abstract class C4Database extends C4NativePeer {
 
     // unmanaged: the native code will free it
     static final class UnmanagedC4Database extends C4Database {
-        UnmanagedC4Database(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
+        UnmanagedC4Database(@NonNull NativeImpl impl, long peer) { super(impl, "shell", peer); }
 
         @Override
         public void close() { releasePeer(null, null); }
@@ -155,8 +155,8 @@ public abstract class C4Database extends C4NativePeer {
         @NonNull
         private final NativeImpl impl;
 
-        ManagedC4Database(@NonNull NativeImpl impl, long peer) {
-            super(impl, peer);
+        ManagedC4Database(@NonNull NativeImpl impl, @NonNull String name, long peer) {
+            super(impl, name, peer);
             this.impl = impl;
         }
 
@@ -238,6 +238,7 @@ public abstract class C4Database extends C4NativePeer {
 
         return new ManagedC4Database(
             impl,
+            name,
             impl.nOpen(
                 parentDirPath,
                 name,
@@ -280,14 +281,20 @@ public abstract class C4Database extends C4NativePeer {
     // Fields
     //-------------------------------------------------------------------------
 
-    final AtomicReference<File> dbFile = new AtomicReference<>();
+    @NonNull
     private final NativeImpl impl;
+    @NonNull
+    private final String name;
+
+    @NonNull
+    final AtomicReference<File> dbFile = new AtomicReference<>();
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
-    protected C4Database(@NonNull NativeImpl impl, long peer) {
+    protected C4Database(@NonNull NativeImpl impl, @NonNull String name, long peer) {
         super(peer);
+        this.name = name;
         this.impl = impl;
     }
 
@@ -297,7 +304,7 @@ public abstract class C4Database extends C4NativePeer {
 
     @NonNull
     @Override
-    public String toString() { return "C4Database" + super.toString(); }
+    public String toString() { return name + "@" + super.toString(); }
 
     // - Lifecycle
 
