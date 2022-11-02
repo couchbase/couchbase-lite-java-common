@@ -106,6 +106,8 @@ public interface Query {
      * Removes a change listener wih the given listener token.
      *
      * @param token The listener token.
+     * @deprecated Use ListenerToken.remove()
      */
+    @Deprecated
     void removeChangeListener(@NonNull ListenerToken token);
 }
