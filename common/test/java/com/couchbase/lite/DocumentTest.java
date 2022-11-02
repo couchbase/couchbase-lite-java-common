@@ -38,7 +38,6 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
-import com.couchbase.lite.internal.utils.TestUtils;
 import com.couchbase.lite.internal.utils.VerySlowTest;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -89,7 +88,7 @@ public class DocumentTest extends BaseDbTest {
     public void testCreateDocWithEmptyStringID() {
         final MutableDocument doc1a = new MutableDocument("");
         assertNotNull(doc1a);
-        TestUtils.assertThrowsCBL(
+        assertThrowsCBL(
             CBLError.Domain.CBLITE,
             CBLError.Code.BAD_DOC_ID,
             () -> testCollection.save(doc1a));
@@ -1568,7 +1567,7 @@ public class DocumentTest extends BaseDbTest {
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setString("name", "Scott Tiger");
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.delete(mDoc));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.delete(mDoc));
 
         assertEquals("Scott Tiger", mDoc.getString("name"));
     }
@@ -1672,7 +1671,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("name", "Scott");
 
         // Purge before save:
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(doc));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(doc));
 
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1693,7 +1692,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("name", "Scott");
 
         // Purge before save:
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(docID));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(docID));
 
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1818,7 +1817,7 @@ public class DocumentTest extends BaseDbTest {
     }
 
     @Test
-    public void testSetExpirationOnDocInDeletedCollection() throws CouchbaseLiteException {
+    public void testSetExpirationOnDocInDeletedCollection() {
         // add doc in collection
         String id = "test_doc";
         saveDocInTestCollection(new MutableDocument(id));
@@ -1977,8 +1976,7 @@ public class DocumentTest extends BaseDbTest {
         mDoc.setValue("string", "str");
         saveDocInTestCollection(mDoc);
 
-        testDatabase = reopenDb(testDatabase);
-        testCollection = BaseDbTestKt.getSimilarCollection(testDatabase, testCollection);
+        reopenTestDb();
 
         Document doc = testCollection.getDocument("doc1");
         assertEquals("str", doc.getString("string"));
@@ -2111,8 +2109,7 @@ public class DocumentTest extends BaseDbTest {
         data = (Blob) obj;
         assertArrayEquals(content, data.getContent());
 
-        testDatabase = reopenDb(testDatabase);
-        testCollection = BaseDbTestKt.getSimilarCollection(testDatabase, testCollection);
+        reopenTestDb();
 
         doc = testCollection.getDocument("doc1").toMutable();
         doc.setValue("foo", "bar");

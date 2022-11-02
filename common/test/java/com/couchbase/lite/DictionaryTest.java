@@ -28,7 +28,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 
-import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -774,5 +773,5 @@ public class DictionaryTest extends LegacyBaseDbTest {
 
     // JSON 3.6.d
     @Test(expected = IllegalArgumentException.class)
-    public void testDictFromArray() throws IOException { new MutableDictionary("[1, a, 1.0]"); }
+    public void testDictFromArray() { new MutableDictionary("[1, a, 1.0]"); }
 }

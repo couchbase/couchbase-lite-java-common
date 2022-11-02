@@ -39,7 +39,6 @@ import org.junit.Test;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.SlowTest;
 
-import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -584,7 +583,8 @@ public class QueryTest extends BaseQueryTest {
 
         int numRows = verifyQuery(
             testDatabase.createQuery(
-                "SELECT _id FROM " + BaseDbTestKt.getQualifiedName(testCollection) + " WHERE MATCH(sentence, 'Dummie woman')"),
+                "SELECT _id FROM " + BaseDbTestKt.getQualifiedName(testCollection) + " WHERE MATCH(sentence, 'Dummie "
+                    + "woman')"),
             (n, result) -> assertNotNull(result.getString(0)));
 
         assertEquals(2, numRows);
@@ -2026,7 +2026,7 @@ public class QueryTest extends BaseQueryTest {
 
         Query query = QueryBuilder
             .select(
-                SelectResult.expression( Function.count(EXPR_NUMBER1)),
+                SelectResult.expression(Function.count(EXPR_NUMBER1)),
                 SelectResult.expression(Function.count(Expression.intValue(1))),
                 SelectResult.expression(Function.count(Expression.string("*"))),
                 SelectResult.expression(Function.count(Expression.all())),

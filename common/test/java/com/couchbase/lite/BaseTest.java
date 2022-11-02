@@ -45,9 +45,11 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -73,6 +75,36 @@ public abstract class BaseTest extends PlatformBaseTest {
 
         Report.log("<<<<<<<<<<<< Suite completed");
     }
+
+    // Used to protect calls that should not fail,
+    // in tests that expect an exception
+    public static void failOnError(String msg, Fn.TaskThrows<Exception> task) {
+        try { task.run(); }
+        catch (Exception e) { throw new AssertionError(msg, e); }
+    }
+
+    public static <T extends Exception> void assertThrows(Class<T> ex, Fn.TaskThrows<Exception> test) {
+        try {
+            test.run();
+            fail("Expecting exception: " + ex);
+        }
+        catch (Throwable e) {
+            try { ex.cast(e); }
+            catch (ClassCastException e1) { fail("Expecting exception: " + ex + " but got " + e); }
+        }
+    }
+
+    public static void assertThrowsCBL(String domain, int code, Fn.TaskThrows<CouchbaseLiteException> task) {
+        try {
+            task.run();
+            fail("Expected CouchbaseLiteException{" + domain + ", " + code + "}");
+        }
+        catch (CouchbaseLiteException e) {
+            assertEquals(code, e.getCode());
+            assertEquals(domain, e.getDomain());
+        }
+    }
+
 
     protected ExecutionService.CloseableExecutor testSerialExecutor;
     private String testName;

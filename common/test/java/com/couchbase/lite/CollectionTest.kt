@@ -17,7 +17,6 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.utils.SlowTest
-import com.couchbase.lite.internal.utils.TestUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -203,7 +202,7 @@ class CollectionTest : BaseDbTest() {
             assertNotNull(dupCollection)
             assertEquals(1, dupCollection.count)
 
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
                 dupCollection.save(doc.toMutable())
             }
         }
@@ -328,7 +327,7 @@ class CollectionTest : BaseDbTest() {
     @Test
     fun testDeleteDocBeforeSave() {
         assertEquals(0, testCollection.count)
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             testCollection.delete(MutableDocument())
         }
     }
@@ -360,7 +359,7 @@ class CollectionTest : BaseDbTest() {
             assertEquals(1, dupColl.count)
 
             // Try to delete the doc from the duplicate db instance:
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { dupColl.delete(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { dupColl.delete(doc) }
         }
     }
 
@@ -450,8 +449,8 @@ class CollectionTest : BaseDbTest() {
         assertEquals(0, testCollection.count)
         assertNull(testCollection.getDocument(doc1a.id))
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1a) }
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1b) }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1a) }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1b) }
     }
 
     //---------------------------------------------
@@ -462,7 +461,7 @@ class CollectionTest : BaseDbTest() {
     fun testPurgeDocBeforeSaveDoc() {
         assertEquals(0, testCollection.count)
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             testCollection.purge(MutableDocument())
         }
     }
@@ -529,7 +528,7 @@ class CollectionTest : BaseDbTest() {
             val collection = it.getSimilarCollection(testCollection)
 
             // purge document against collection in the other db:
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
                 collection.purge(doc)
             }
         }

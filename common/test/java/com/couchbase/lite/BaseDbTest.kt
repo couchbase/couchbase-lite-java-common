@@ -130,11 +130,6 @@ fun assertSameContent(mDoc: MutableDocument, doc: Document?) {
     }
 }
 
-fun failOnError(msg: String, task: Fn.TaskThrows<Exception>) {
-    try { task.run() }
-    catch (e: Exception) { throw AssertionError(msg, e); }
-}
-
 fun readJSONResource(name: String?): String {
     val buf = StringBuilder()
     BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use { src ->
@@ -164,6 +159,16 @@ abstract class BaseDbTest : BaseTest() {
     fun tearDownBaseDbTest() {
         eraseDb(testDatabase)
         Report.log("Deleted baseTestDb: $testDatabase")
+    }
+
+    protected fun reopenTestDb() {
+        testDatabase = reopenDb(testDatabase)
+        testCollection = testDatabase.getSimilarCollection(testCollection)
+    }
+
+    protected fun recreateTestDb() {
+        testDatabase = recreateDb(testDatabase)
+        testCollection = testDatabase.getSimilarCollection(testCollection)
     }
 
     protected fun createDocInCollection(

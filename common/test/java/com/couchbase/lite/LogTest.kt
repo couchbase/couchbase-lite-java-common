@@ -20,7 +20,6 @@ import com.couchbase.lite.internal.core.C4Log
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.core.impl.NativeC4Log
 import com.couchbase.lite.internal.support.Log
-import com.couchbase.lite.internal.utils.TestUtils
 import com.couchbase.lite.utils.KotlinHelpers
 import org.junit.After
 import org.junit.AfterClass
@@ -96,6 +95,7 @@ class LogTest : LegacyBaseDbTest() {
     }
 
     companion object {
+        @JvmStatic
         @AfterClass
         fun tearDownLogTestClass() = Database.log.reset()
     }
@@ -394,10 +394,10 @@ class LogTest : LegacyBaseDbTest() {
         val maxSize: Long = 2048
         val usePlainText = true
 
-        TestUtils.assertThrows(IllegalArgumentException::class.java) {
+        assertThrows(IllegalArgumentException::class.java) {
             KotlinHelpers.createLogFileConfigWithNullConfig()
         }
-        TestUtils.assertThrows(IllegalArgumentException::class.java) {
+        assertThrows(IllegalArgumentException::class.java) {
             KotlinHelpers.createLogFileConfigWithNullDir()
         }
 
@@ -422,11 +422,9 @@ class LogTest : LegacyBaseDbTest() {
     @Test
     fun testEditReadOnlyLogFileConfiguration() {
         testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(scratchDirPath!!)) {
-            TestUtils.assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxSize = 1024 }
-            TestUtils.assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxRotateCount = 3 }
-            TestUtils.assertThrows(IllegalStateException::class.java) {
-                Database.log.file.config!!.setUsePlaintext(true)
-            }
+            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxSize = 1024 }
+            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxRotateCount = 3 }
+            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.setUsePlaintext(true) }
         }
     }
 

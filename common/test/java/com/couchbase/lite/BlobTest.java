@@ -36,7 +36,6 @@ import com.couchbase.lite.internal.utils.IOUtils;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.StringUtils;
 
-import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -46,6 +45,7 @@ import static org.junit.Assert.assertTrue;
 
 
 // There are other blob tests in test suites...
+@SuppressWarnings("ConstantConditions")
 public class BlobTest extends LegacyBaseDbTest {
     private String localBlobContent;
 

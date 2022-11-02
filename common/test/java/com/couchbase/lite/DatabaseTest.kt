@@ -19,7 +19,6 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal
 import com.couchbase.lite.internal.core.C4Database
 import com.couchbase.lite.internal.utils.FileUtils
 import com.couchbase.lite.internal.utils.SlowTest
-import com.couchbase.lite.internal.utils.TestUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -31,10 +30,8 @@ import org.junit.Test
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.*
-import java.util.concurrent.ExecutionException
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeoutException
 
 // The rules in this test are:
 // baseTestDb is managed by the superclass
@@ -163,7 +160,7 @@ class DatabaseTest : LegacyBaseDbTest() {
 
             // Update doc & store it into different instance
             doc.setValue("key", 2)
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
         } finally {
             discardDb(otherDb)
         }
@@ -183,7 +180,7 @@ class DatabaseTest : LegacyBaseDbTest() {
 
             // Update doc & store it into different instance
             doc.setValue("key", 2)
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
         } finally {
             // delete otherDb
             eraseDb(otherDb)
@@ -230,7 +227,7 @@ class DatabaseTest : LegacyBaseDbTest() {
     fun testDeletePreSaveDoc() {
         val doc = MutableDocument("doc1")
         doc.setValue("key", 1)
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc) }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc) }
     }
 
     @Test
@@ -257,7 +254,7 @@ class DatabaseTest : LegacyBaseDbTest() {
             assertEquals(1, otherDb.count)
 
             // Delete from the different db instance:
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
         } finally {
             discardDb(otherDb)
         }
@@ -275,7 +272,7 @@ class DatabaseTest : LegacyBaseDbTest() {
             assertNotSame(otherDb, baseTestDb)
 
             // Delete from the different db:
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -328,7 +325,7 @@ class DatabaseTest : LegacyBaseDbTest() {
     fun testPurgePreSaveDoc() {
         val doc = MutableDocument("doc1")
         assertEquals(0, baseTestDb.count)
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.purge(doc) }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.purge(doc) }
         assertEquals(0, baseTestDb.count)
     }
 
@@ -355,7 +352,7 @@ class DatabaseTest : LegacyBaseDbTest() {
             assertEquals(1, otherDb.count)
 
             // purge document against other db instance:
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
         } finally {
             discardDb(otherDb)
         }
@@ -374,7 +371,7 @@ class DatabaseTest : LegacyBaseDbTest() {
             assertEquals(0, otherDb.count)
 
             // Purge document against other db:
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -536,7 +533,7 @@ class DatabaseTest : LegacyBaseDbTest() {
     fun testCloseInInBatch() {
         baseTestDb.inBatch<RuntimeException> {
             // delete db
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) {
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) {
                 baseTestDb.close()
             }
         }
@@ -633,7 +630,7 @@ class DatabaseTest : LegacyBaseDbTest() {
     fun testDeleteInInBatch() {
         baseTestDb.inBatch<RuntimeException> {
             // delete db
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) {
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) {
                 baseTestDb.close()
             }
         }
@@ -648,7 +645,7 @@ class DatabaseTest : LegacyBaseDbTest() {
             assertNotSame(baseTestDb, otherDb)
 
             // delete db
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { baseTestDb.delete() }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { baseTestDb.delete() }
         } finally {
             discardDb(otherDb)
         }
@@ -678,7 +675,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         assertNotNull(path)
         assertTrue(path.exists())
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) {
             Database.delete(baseTestDb.name, null)
         }
     }
@@ -710,7 +707,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         val dbName = db.name
         val dbDir = db.filePath!!.parentFile
         try {
-            TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { Database.delete(dbName, dbDir) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { Database.delete(dbName, dbDir) }
         } finally {
             discardDb(db)
         }
@@ -723,7 +720,7 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testDeleteNonExistingDB() {
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             Database.delete(baseTestDb.name, File(getScratchDirectoryPath("nowhere")))
         }
     }
@@ -776,7 +773,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         val scope = baseTestDb.getScope("horo")
         assertNotNull(scope)
         discardDb(baseTestDb)
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
     }
 
     @Test
@@ -785,7 +782,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         val scope = baseTestDb.getScope("horo")
         assertNotNull(scope)
         discardDb(baseTestDb)
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             scope!!.getCollection("bobblehead")
         }
     }
@@ -798,7 +795,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         val scope = baseTestDb.getScope("horo")
         assertNotNull(scope)
         discardDb(baseTestDb)
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
     }
 
     @Test
@@ -807,7 +804,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         val scope = baseTestDb.getScope("horo")
         assertNotNull(scope)
         discardDb(baseTestDb)
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             scope!!.getCollection("bobblehead")
         }
     }
@@ -826,7 +823,7 @@ class DatabaseTest : LegacyBaseDbTest() {
 
         discardDb(baseTestDb)
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getScope("horo")
         }
     }
@@ -839,7 +836,7 @@ class DatabaseTest : LegacyBaseDbTest() {
 
         discardDb(baseTestDb)
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getCollection("bobblehead", "horo")
         }
     }
@@ -854,7 +851,7 @@ class DatabaseTest : LegacyBaseDbTest() {
 
         eraseDb(baseTestDb)
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getScope("horo")
         }
     }
@@ -867,7 +864,7 @@ class DatabaseTest : LegacyBaseDbTest() {
 
         eraseDb(baseTestDb)
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getCollection("bobblehead", "horo")
         }
     }
@@ -1425,8 +1422,8 @@ class DatabaseTest : LegacyBaseDbTest() {
         baseTestDb.purge(doc1a)
         assertEquals(0, baseTestDb.count)
         assertNull(baseTestDb.getDocument(doc1a.id))
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc1a) }
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc1b!!) }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc1a) }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc1b!!) }
         assertEquals(0, baseTestDb.count)
         assertNull(baseTestDb.getDocument(doc1b!!.id))
     }
