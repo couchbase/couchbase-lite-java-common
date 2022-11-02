@@ -37,7 +37,7 @@ import java.util.*
 import kotlin.Array
 
 
-class LogTest : BaseDbTest() {
+class LogTest : LegacyBaseDbTest() {
     private class SingleLineLogger(private val prefix: String?) : Logger {
         private var level: LogLevel? = null
         private var domain: LogDomain? = null

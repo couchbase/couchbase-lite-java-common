@@ -63,10 +63,8 @@ public abstract class PlatformBaseTest implements PlatformTest {
     static { CouchbaseLite.init(getAppContext(), true); }
 
     static {
-        try { Runtime.getRuntime().exec("logcat -P '" + android.os.Process.myPid() + "'").waitFor(); }
-        catch (InterruptedException | IOException e) {
-            android.util.Log.w("TEST", "Failed adding to chatty whitelist");
-        }
+        try { Runtime.getRuntime().exec("logcat --prune /" + android.os.Process.myPid()).waitFor(); }
+        catch (Exception e) { android.util.Log.w("TEST", "Failed adding to chatty whitelist", e); }
     }
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
 

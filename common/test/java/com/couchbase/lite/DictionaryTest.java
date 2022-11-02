@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
-public class DictionaryTest extends BaseDbTest {
+public class DictionaryTest extends LegacyBaseDbTest {
     @Test
     public void testCreateDictionary() throws CouchbaseLiteException {
         MutableDictionary address = new MutableDictionary();

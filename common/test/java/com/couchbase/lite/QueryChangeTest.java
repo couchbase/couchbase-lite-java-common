@@ -24,6 +24,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class QueryChangeTest extends BaseQueryTest {
 
     @Test
@@ -41,26 +42,28 @@ public class QueryChangeTest extends BaseQueryTest {
 
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
-            .from(DataSource.database(baseTestDb))
+            .from(DataSource.collection(testCollection))
             .where(Expression.property("number1").lessThan(Expression.intValue(5)));
 
         final ListenerToken[] token = new ListenerToken[1];
         final Object lock = new Object();
 
-        // Removing the listener while inside the listener itself needs be done carefully.
-        // The change handler might get called from the executor thread before query.addChangeListener() returns.
         final CountDownLatch latch = new CountDownLatch(1);
         final QueryChangeListener listener = change -> {
             ResultSet rs = change.getResults();
             if ((rs != null) && (rs.next() != null)) {
                 synchronized (lock) {
-                    query.removeChangeListener(token[0]);
+                    ListenerToken t = token[0];
                     token[0] = null;
+                    if (t != null) { t.remove(); }
                 }
             }
             latch.countDown();
         };
 
+        // Removing the listener while inside the listener itself needs be done carefully.
+        // The listener might get called before query.addChangeListener(), below, returns.
+        // Seizing a lock here guarantees that that can't happen.
         synchronized (lock) { token[0] = query.addChangeListener(testSerialExecutor, listener); }
 
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));

@@ -15,6 +15,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 
+@SuppressWarnings("ConstantConditions")
 public class AuthenticatorTest extends BaseTest {
     @Test
     public void testBasicAuthenticatorInstance() {

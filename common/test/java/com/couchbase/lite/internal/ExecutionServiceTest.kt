@@ -59,12 +59,9 @@ class ExecutionServiceTest : BaseTest() {
         val executor = cblService.serialExecutor
 
         executor.execute {
-            try {
-                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-                // second task is queued but should not pass us.
-                Thread.sleep(1000)
-            } catch (ignore: InterruptedException) {
-            }
+            startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+            // second task is queued but should not pass us.
+            Thread.sleep(1000)
 
             synchronized(stack) { stack.push("ONE") }
 
@@ -79,10 +76,7 @@ class ExecutionServiceTest : BaseTest() {
         // allow the first task to proceed.
         startLatch.countDown()
 
-        try {
-            finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-        } catch (ignore: InterruptedException) {
-        }
+        finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
         synchronized(stack) {
             assertEquals("TWO", stack.pop())
@@ -107,20 +101,12 @@ class ExecutionServiceTest : BaseTest() {
         val executor = cblService.serialExecutor
 
         executor.execute {
-            try {
-                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-            } catch (ignore: InterruptedException) {
-            }
-
+            startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
             finishLatch.countDown()
         }
 
         executor.execute {
-            try {
-                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-            } catch (ignore: InterruptedException) {
-            }
-
+            startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
             finishLatch.countDown()
         }
 
@@ -129,17 +115,13 @@ class ExecutionServiceTest : BaseTest() {
         try {
             executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
             fail("Stopped executor should not accept new tasks")
-        } catch (expected: RejectedExecutionException) {
+        } catch (ignore: RejectedExecutionException) {
         }
 
         // allow the tasks to proceed.
         startLatch.countDown()
 
-        try {
-            assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        } catch (ignore: InterruptedException) {
-        }
-
+        assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
         assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
 
@@ -156,11 +138,8 @@ class ExecutionServiceTest : BaseTest() {
         val executor = cblService.concurrentExecutor
 
         executor.execute {
-            try {
-                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-                Thread.sleep(1000)
-            } catch (ignore: InterruptedException) {
-            }
+            startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+            Thread.sleep(1000)
 
             synchronized(stack) { stack.push("ONE") }
 
@@ -175,10 +154,7 @@ class ExecutionServiceTest : BaseTest() {
         // allow the first task to proceed.
         startLatch.countDown()
 
-        try {
-            finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-        } catch (ignore: InterruptedException) {
-        }
+        finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
         // tasks should finish in reverse start order
         synchronized(stack) {
@@ -205,19 +181,13 @@ class ExecutionServiceTest : BaseTest() {
 
         // enqueue two tasks
         executor.execute {
-            try {
-                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-            } catch (ignore: InterruptedException) {
-            }
+            startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
             finishLatch.countDown()
         }
 
         executor.execute {
-            try {
-                startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-            } catch (ignore: InterruptedException) {
-            }
+            startLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
             finishLatch.countDown()
         }
@@ -227,16 +197,13 @@ class ExecutionServiceTest : BaseTest() {
         try {
             executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
             fail("Stopped executor should not accept new tasks")
-        } catch (expected: RejectedExecutionException) {
+        } catch (ignore: RejectedExecutionException) {
         }
 
         // allow the tasks to proceed.
         startLatch.countDown()
 
-        try {
-            assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        } catch (ignore: InterruptedException) {
-        }
+        assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
 
         assertTrue(executor.stop(5, TimeUnit.SECONDS)) // everything should be done shortly
     }
@@ -314,10 +281,7 @@ class ExecutionServiceTest : BaseTest() {
             latch.countDown()
         }
 
-        try {
-            latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-        } catch (ignore: InterruptedException) {
-        }
+        latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
         assertEquals(threads[0], threads[1])
     }
@@ -343,10 +307,7 @@ class ExecutionServiceTest : BaseTest() {
             finishLatch.countDown()
         }
 
-        try {
-            assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
-        } catch (ignore: InterruptedException) {
-        }
+        assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
 
         // within 10% is good enough
         assertEquals(0L, (t - delay) / (delay / 10))
@@ -366,10 +327,7 @@ class ExecutionServiceTest : BaseTest() {
 
         cblService.cancelDelayedTask(task)
 
-        try {
-            Thread.sleep(200)
-        } catch (ignore: InterruptedException) {
-        }
+        Thread.sleep(200)
 
         assertFalse(completed[0])
     }
@@ -382,9 +340,9 @@ class ExecutionServiceTest : BaseTest() {
         var fail: Exception? = null
         val runnable = Runnable {
             try {
-                task.run();
+                task.run()
             } catch (e: Exception) {
-                fail = e;
+                fail = e
             } finally {
                 barrier.await()
             }
@@ -415,7 +373,7 @@ class ExecutionServiceTest : BaseTest() {
         assertTrue(latch1.await(2, TimeUnit.SECONDS))
 
         val latch2 = CountDownLatch(1)
-        executor.execute() { latch2.countDown() }
+        executor.execute { latch2.countDown() }
         assertTrue(latch2.await(2, TimeUnit.SECONDS))
     }
 

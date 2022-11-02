@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 
 
 // There are other blob tests in test suites...
-public class BlobTest extends BaseDbTest {
+public class BlobTest extends LegacyBaseDbTest {
     private String localBlobContent;
 
     @Rule

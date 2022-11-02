@@ -15,61 +15,82 @@
 //
 package com.couchbase.lite;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 
 
-public abstract class BaseQueryTest extends BaseCollectionTest {
+public abstract class BaseQueryTest extends BaseDbTest {
     @FunctionalInterface
-    public interface QueryResult { void check(int n, Result result); }
+    public interface ResultVerifier {
+        void check(int n, Result result) throws CouchbaseLiteException;
+    }
 
-    protected final String createNumberedDocInBaseTestDb(int i, int num) throws CouchbaseLiteException {
-        MutableDocument doc = new MutableDocument("doc" + i);
+    protected static String docId(int i) { return BaseDbTestKt.jsonDocId(i); }
+
+
+    protected final void createNumberedDocInBaseTestCollection(int i, int num) {
+        createNumberedDocInBaseTestCollection(i, num, testCollection);
+    }
+
+    protected final void createNumberedDocInBaseTestCollection(int i, int num, Collection collection) {
+        MutableDocument doc = new MutableDocument(docId(i));
         doc.setValue("number1", i);
         doc.setValue("number2", num - i);
-        return saveDocInBaseTestDb(doc).getId();
+        saveDocInCollection(doc, collection, null);
     }
 
-    protected final List<Map<String, Object>> loadNumberedDocs(int num) throws CouchbaseLiteException {
-        return loadNumberedDocs(1, num);
+    protected final void loadNumberedDocs(int num) {
+        loadNumberedDocs(num, testCollection);
     }
 
-    protected final List<Map<String, Object>> loadNumberedDocs(int from, int to)
-        throws CouchbaseLiteException {
-        final List<Map<String, Object>> numbers = new ArrayList<>();
-
-        baseTestDb.inBatch(() -> {
-            for (int i = from; i <= to; i++) {
-                numbers.add(baseTestDb.getDocument(createNumberedDocInBaseTestDb(i, to)).toMap());
-            }
-        });
-
-        return numbers;
+    protected final void loadNumberedDocs(int num, Collection collection) {
+        loadNumberedDocs(1, num, collection);
     }
 
-    protected final int verifyQuery(Query query, QueryResult result) throws CouchbaseLiteException {
-        int n = verifyQueryWithEnumerator(query, result);
-        assertEquals(n, verifyQueryWithIterable(query, result));
-        return n;
+    protected final void loadNumberedDocs(int from, int to, Collection collection) {
+        try {
+            testDatabase.inBatch(() -> {
+                for (int i = from; i <= to; i++) { createNumberedDocInBaseTestCollection(i, to, collection); }
+            });
+        }
+        catch (Exception e) { throw new AssertionError("Failed loading numbered docs"); }
     }
 
-    protected int verifyQueryWithEnumerator(Query query, QueryResult queryResult) throws CouchbaseLiteException {
+    protected final int verifyQueryWithEnumerator(Query query, ResultVerifier verifier) {
         int n = 0;
         try (ResultSet rs = query.execute()) {
             Result result;
-            while ((result = rs.next()) != null) { queryResult.check(++n, result); }
+            while ((result = rs.next()) != null) { verifier.check(++n, result); }
         }
+        catch (Exception e) { throw new AssertionError("Failed verifying query (enumerator)"); }
         return n;
     }
 
-    protected int verifyQueryWithIterable(Query query, QueryResult queryResult) throws CouchbaseLiteException {
+    protected final int verifyQueryWithIterable(Query query, ResultVerifier verifier) {
         int n = 0;
         try (ResultSet rs = query.execute()) {
-            for (Result result: rs) { queryResult.check(++n, result); }
+            for (Result result: rs) { verifier.check(++n, result); }
         }
+        catch (Exception e) { throw new AssertionError("Failed verifying query (iterable)"); }
         return n;
+    }
+
+    protected final int verifyQuery(Query query, ResultVerifier verifier) {
+        int n = verifyQueryWithEnumerator(query, verifier);
+        assertEquals(n, verifyQueryWithIterable(query, verifier));
+        return n;
+    }
+
+    // Kotlin shim functions
+
+    protected final Document saveDocInTestCollection(MutableDocument doc) {
+        return saveDocInTestCollection(doc, testCollection);
+    }
+
+    protected final Document saveDocInTestCollection(MutableDocument doc, Collection collection) {
+        return saveDocInCollection(doc, collection, null);
+    }
+
+    protected final void loadJSONResourceIntoCollection(String resName) {
+        loadJSONResourceIntoCollection(resName, testCollection);
     }
 }

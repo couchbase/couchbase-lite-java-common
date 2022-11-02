@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
-public class ArrayTest extends BaseDbTest {
+public class ArrayTest extends LegacyBaseDbTest {
 
     @Test
     public void testCreate() throws CouchbaseLiteException {

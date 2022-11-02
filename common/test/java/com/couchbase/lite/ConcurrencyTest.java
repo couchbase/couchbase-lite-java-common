@@ -37,7 +37,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
-public class ConcurrencyTest extends BaseDbTest {
+public class ConcurrencyTest extends LegacyBaseDbTest {
     private static final long TIMEOUT = 180L;
 
     interface Callback {

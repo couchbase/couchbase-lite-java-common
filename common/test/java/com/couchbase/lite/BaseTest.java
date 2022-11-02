@@ -60,6 +60,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
+    @NonNull
     public static String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
 
     @BeforeClass
@@ -147,13 +148,9 @@ public abstract class BaseTest extends PlatformBaseTest {
         final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;
         while (true) {
             if (test.get()) { break; }
-            if (System.currentTimeMillis() > endTime) {
-                // assertTrue() provides a more relevant message than fail()
-                //noinspection SimplifiableAssertion
-                assertTrue(false);
-            }
+            if (System.currentTimeMillis() > endTime) { throw new AssertionError("Operation timed out"); }
             try { Thread.sleep(waitMs); }
-            catch (InterruptedException e) { break; }
+            catch (InterruptedException e) { throw new AssertionError("Operation interrupted", e); }
         }
     }
 
@@ -167,11 +164,11 @@ public abstract class BaseTest extends PlatformBaseTest {
     }
 
     // Prefer this method to any other way of creating a new database
-    protected final Database createDb(@NonNull String name) {
-        return createDb(name, null);
-    }
+    @NonNull
+    protected final Database createDb(@NonNull String name) { return createDb(name, null); }
 
     // Prefer this method to any other way of creating a new database
+    @NonNull
     protected final Database createDb(@NonNull String name, @Nullable DatabaseConfiguration config) {
         final String dbName = getUniqueName(name);
         final File dbDir = new File(
@@ -185,36 +182,34 @@ public abstract class BaseTest extends PlatformBaseTest {
         return db;
     }
 
-    protected final Database duplicateDb(@NonNull Database db) {
-        return duplicateDb(db, null);
-    }
+    @NonNull
+    protected final Database duplicateDb(@NonNull Database db) { return duplicateDb(db, null); }
 
     // Get a new instance of the db or fail.
+    @NonNull
     protected final Database duplicateDb(@NonNull Database db, @Nullable DatabaseConfiguration config) {
         final String dbName = db.getName();
         try { return (config == null) ? new Database(dbName) : new Database(dbName, config); }
         catch (Exception e) { throw new AssertionError("Failed duplicating database " + db, e); }
     }
 
-    protected final Database reopenDb(@NonNull Database db) {
-        return reopenDb(db, null);
-    }
+    @NonNull
+    protected final Database reopenDb(@NonNull Database db) { return reopenDb(db, null); }
 
     // Close and reopen the db or fail.
+    @NonNull
     protected final Database reopenDb(@NonNull Database db, @Nullable DatabaseConfiguration config) {
         final String dbName = db.getName();
         closeDb(db);
-        try {
-            return (config == null) ? new Database(dbName) : new Database(dbName, config);
-        }
+        try { return (config == null) ? new Database(dbName) : new Database(dbName, config); }
         catch (Exception e) { throw new AssertionError("Failed reopening database " + db, e); }
     }
 
-    protected final Database recreateDb(@NonNull Database db) {
-        return recreateDb(db, null);
-    }
+    @NonNull
+    protected final Database recreateDb(@NonNull Database db) { return recreateDb(db, null); }
 
     // Delete and recreate the db or fail.
+    @NonNull
     protected final Database recreateDb(@NonNull Database db, @Nullable DatabaseConfiguration config) {
         final String dbName = db.getName();
         deleteDb(db);

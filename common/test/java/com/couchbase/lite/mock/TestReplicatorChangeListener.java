@@ -11,6 +11,7 @@
 package com.couchbase.lite.mock;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +54,7 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
         }
     }
 
+    @Nullable
     public Throwable getError() { return observedError.get(); }
 }
 

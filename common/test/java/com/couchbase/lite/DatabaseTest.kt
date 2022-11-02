@@ -41,7 +41,7 @@ import java.util.concurrent.TimeoutException
 // If a test creates a new database it guarantees that it is deleted.
 // If a test opens a copy of the baseTestDb, it close (but does NOT delete) it
 @Suppress("DEPRECATION")
-class DatabaseTest : BaseDbTest() {
+class DatabaseTest : LegacyBaseDbTest() {
     //---------------------------------------------
     //  Get Document
     //---------------------------------------------
@@ -1592,11 +1592,8 @@ class DatabaseTest : BaseDbTest() {
         testSerialExecutor.execute(future)
         try {
             future.get(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-        } catch (ignore: InterruptedException) {
-        } catch (e: TimeoutException) {
-            fail("Timeout")
-        } catch (e: ExecutionException) {
-            throw AssertionError(e)
+        } catch (e: Exception) {
+            throw AssertionError("Batch execution failed", e)
         }
 
         for (i in 0 until nDocs) {

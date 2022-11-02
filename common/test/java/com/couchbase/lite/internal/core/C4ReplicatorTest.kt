@@ -15,10 +15,10 @@
 //
 package com.couchbase.lite.internal.core
 
-import com.couchbase.lite.BaseDbTest
 import com.couchbase.lite.BaseReplicatorTest
 import com.couchbase.lite.Collection
 import com.couchbase.lite.CollectionConfiguration
+import com.couchbase.lite.LegacyBaseDbTest
 import com.couchbase.lite.Replicator
 import com.couchbase.lite.ReplicatorConfiguration
 import com.couchbase.lite.ReplicatorType
@@ -30,6 +30,7 @@ import com.couchbase.lite.internal.replicator.CBLCookieStore
 import com.couchbase.lite.internal.sockets.MessageFraming
 import com.couchbase.lite.mock.MockNativeReplicator
 import com.couchbase.lite.mock.MockNativeSocket
+import com.couchbase.lite.testReplicator
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -37,7 +38,7 @@ import org.junit.Test
 import java.net.URI
 
 
-class C4ReplicatorTest : BaseDbTest() {
+class C4ReplicatorTest : LegacyBaseDbTest() {
     private lateinit var testReplicatorConfig: ReplicatorConfiguration
     private lateinit var testReplicator: Replicator
     private lateinit var testCollection: Collection
@@ -49,7 +50,7 @@ class C4ReplicatorTest : BaseDbTest() {
         testCollection = baseTestDb.createCollection(getUniqueName("stamps"))
         testReplicatorConfig = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
         testReplicatorConfig.addCollection(testCollection, CollectionConfiguration())
-        testReplicator = BaseReplicatorTest.testReplicator(testReplicatorConfig)
+        testReplicator =  testReplicator(testReplicatorConfig)
     }
 
     @After
