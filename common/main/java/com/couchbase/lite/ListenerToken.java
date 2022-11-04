@@ -30,13 +30,13 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * Base class for a removable subscription to an observable.
  */
-public class ListenerToken extends AtomicBoolean implements AutoCloseable {
+public abstract class ListenerToken implements AutoCloseable {
     @Nullable
     private final Executor executor;
     private final Fn.Consumer<ListenerToken> onRemove;
+    private final AtomicBoolean active = new AtomicBoolean(true);
 
     protected ListenerToken(@Nullable Executor executor, @NonNull Fn.Consumer<ListenerToken> onRemove) {
-        super(true);
         this.executor = executor;
         this.onRemove = Preconditions.assertNotNull(onRemove, "onRemove task");
     }
@@ -49,7 +49,7 @@ public class ListenerToken extends AtomicBoolean implements AutoCloseable {
     public void close() { remove(); }
 
     public void remove() {
-        if (getAndSet(false)) { onRemove.accept(this); }
+        if (active.getAndSet(false)) { onRemove.accept(this); }
     }
 
     protected void send(@NonNull Runnable notification) { getExecutor().execute(notification); }
