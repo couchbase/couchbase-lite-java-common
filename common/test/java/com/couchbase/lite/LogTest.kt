@@ -36,7 +36,7 @@ import java.util.*
 import kotlin.Array
 
 
-class LogTest : LegacyBaseDbTest() {
+class LogTest : BaseDbTest() {
     private class SingleLineLogger(private val prefix: String?) : Logger {
         private var level: LogLevel? = null
         private var domain: LogDomain? = null
@@ -456,9 +456,9 @@ class LogTest : LegacyBaseDbTest() {
 
         val doc = MutableDocument()
         doc.setString("hebrew", hebrew)
-        saveDocInBaseTestDb(doc)
+        saveDocInCollection(doc)
 
-        val query: Query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(baseTestDb))
+        val query: Query = QueryBuilder.select(SelectResult.all()).from(DataSource.collection(testCollection))
         query.execute().use { rs -> Assert.assertEquals(rs.allResults().size.toLong(), 1) }
 
         Assert.assertTrue(customLogger.getContent().contains("[{\"hebrew\":\"$hebrew\"}]"))
@@ -528,7 +528,7 @@ class LogTest : LegacyBaseDbTest() {
         try {
             testLogger.reset()
             QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(baseTestDb))
+                .from(DataSource.collection(testCollection))
                 .execute()
             val actualMinLevel = testLogger.minLevel
             Assert.assertTrue(actualMinLevel >= oldLogger.getLogLevel(c4Domain))
@@ -536,7 +536,7 @@ class LogTest : LegacyBaseDbTest() {
             testLogger.reset()
             testLogger.setLevels(actualMinLevel + 1, c4Domain)
             QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(baseTestDb))
+                .from(DataSource.collection(testCollection))
                 .execute()
             // If level > maxLevel, should be no logs
             Assert.assertEquals(C4Constants.LogLevel.NONE.toLong(), testLogger.minLevel.toLong())
@@ -544,7 +544,7 @@ class LogTest : LegacyBaseDbTest() {
             testLogger.reset()
             testLogger.setLevels(oldLogger.getLogLevel(c4Domain), c4Domain)
             QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(baseTestDb))
+                .from(DataSource.collection(testCollection))
                 .execute()
             Assert.assertEquals(actualMinLevel.toLong(), testLogger.minLevel.toLong())
         } finally {

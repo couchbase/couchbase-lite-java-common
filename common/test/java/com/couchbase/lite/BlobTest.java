@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue;
 
 // There are other blob tests in test suites...
 @SuppressWarnings("ConstantConditions")
-public class BlobTest extends LegacyBaseDbTest {
+public class BlobTest extends BaseDbTest {
     private String localBlobContent;
 
     @Rule
@@ -90,7 +90,7 @@ public class BlobTest extends LegacyBaseDbTest {
         mDoc.setBlob("blob1a", data1a);
         mDoc.setBlob("blob1b", data1b);
         mDoc.setBlob("blob2a", data2a);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         Blob blob1a = doc.getBlob("blob1a");
         Blob blob1b = doc.getBlob("blob1b");
@@ -108,7 +108,7 @@ public class BlobTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testHashCode() throws CouchbaseLiteException {
+    public void testHashCode() {
         byte[] content1a = BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
         byte[] content1b = BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
         byte[] content2a = localBlobContent.getBytes(StandardCharsets.UTF_8);
@@ -130,7 +130,7 @@ public class BlobTest extends LegacyBaseDbTest {
         mDoc.setBlob("blob1a", data1a);
         mDoc.setBlob("blob1b", data1b);
         mDoc.setBlob("blob2a", data2a);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         Blob blob1a = doc.getBlob("blob1a");
         Blob blob1b = doc.getBlob("blob1b");
@@ -148,14 +148,14 @@ public class BlobTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testBlobContentBytes() throws IOException, CouchbaseLiteException {
+    public void testBlobContentBytes() throws IOException {
         byte[] blobContent;
         try (InputStream is = PlatformUtils.getAsset("attachment.png")) { blobContent = IOUtils.toByteArray(is); }
 
         Blob blob = new Blob("image/png", blobContent);
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setBlob("blob", blob);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         Blob savedBlob = doc.getBlob("blob");
         assertNotNull(savedBlob);
@@ -175,10 +175,10 @@ public class BlobTest extends LegacyBaseDbTest {
             Blob blob = new Blob("image/png", is);
             MutableDocument mDoc = new MutableDocument("doc1");
             mDoc.setBlob("blob", blob);
-            baseTestDb.save(mDoc);
+            testCollection.save(mDoc);
         }
 
-        Document doc = baseTestDb.getDocument("doc1");
+        Document doc = testCollection.getDocument("doc1");
         Blob savedBlob = doc.getBlob("blob");
         assertNotNull(savedBlob);
 
@@ -202,7 +202,7 @@ public class BlobTest extends LegacyBaseDbTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1438
     @Test
-    public void testGetContent6MBFile() throws IOException, CouchbaseLiteException {
+    public void testGetContent6MBFile() throws IOException {
         byte[] bytes;
 
         try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) {
@@ -212,7 +212,7 @@ public class BlobTest extends LegacyBaseDbTest {
         Blob blob = new Blob("application/json", bytes);
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setBlob("blob", blob);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         Blob savedBlob = doc.getBlob("blob");
         assertNotNull(savedBlob);
         assertEquals("application/json", savedBlob.getContentType());
@@ -229,11 +229,11 @@ public class BlobTest extends LegacyBaseDbTest {
         Blob blob = new Blob("application/json", bytes);
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setBlob("blob", blob);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         // Reload the doc from the database to make sure to "bust the cache" for the blob
         // cached in the doc object
-        Document reloadedDoc = baseTestDb.getDocument(doc.getId());
+        Document reloadedDoc = testCollection.getDocument(doc.getId());
         Blob savedBlob = reloadedDoc.getBlob("blob");
         byte[] content = savedBlob.getContent();
         assertArrayEquals(content, bytes);
@@ -294,14 +294,14 @@ public class BlobTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testReadBlobStream() throws IOException, CouchbaseLiteException {
+    public void testReadBlobStream() throws IOException {
         byte[] bytes;
         try (InputStream is = PlatformUtils.getAsset("attachment.png")) { bytes = IOUtils.toByteArray(is); }
 
         Blob blob = new Blob("image/png", bytes);
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setBlob("blob", blob);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         Blob savedBlob = doc.getBlob("blob");
         assertNotNull(savedBlob);
@@ -326,7 +326,7 @@ public class BlobTest extends LegacyBaseDbTest {
     @Test
     public void testDbSaveBlob() throws JSONException {
         Blob blob = makeBlob();
-        baseTestDb.saveBlob(blob);
+        testDatabase.saveBlob(blob);
         verifyBlob(new JSONObject(blob.toJSON()));
     }
 
@@ -339,7 +339,7 @@ public class BlobTest extends LegacyBaseDbTest {
         fetchProps.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
         fetchProps.put(Blob.PROP_DIGEST, props.get(Blob.PROP_DIGEST));
         fetchProps.put(Blob.PROP_CONTENT_TYPE, props.get(Blob.PROP_CONTENT_TYPE));
-        Blob dbBlob = baseTestDb.getBlob(fetchProps);
+        Blob dbBlob = testDatabase.getBlob(fetchProps);
 
         verifyBlob(dbBlob);
         assertEquals(BLOB_CONTENT, new String(dbBlob.getContent()));
@@ -355,23 +355,23 @@ public class BlobTest extends LegacyBaseDbTest {
         Map<String, Object> props = new HashMap<>();
         props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
         props.put(Blob.PROP_DIGEST, "sha1-C+ThisIsTheWayWeMakeItFail=");
-        assertNull(baseTestDb.getBlob(props));
+        assertNull(testDatabase.getBlob(props));
     }
 
     // 3.1.e.0: null param
     @Test(expected = IllegalArgumentException.class)
     public void testDbGetNotBlob0() {
         Blob blob = makeBlob();
-        baseTestDb.saveBlob(blob);
-        assertNull(baseTestDb.getBlob(null));
+        testDatabase.saveBlob(blob);
+        assertNull(testDatabase.getBlob(null));
     }
 
     // 3.1.e.1: empty param
     @Test(expected = IllegalArgumentException.class)
     public void testDbGetNotBlob1() {
         Blob blob = makeBlob();
-        baseTestDb.saveBlob(blob);
-        assertNull(baseTestDb.getBlob(new HashMap<>()));
+        testDatabase.saveBlob(blob);
+        assertNull(testDatabase.getBlob(new HashMap<>()));
     }
 
     // 3.1.e.2: missing digest
@@ -379,7 +379,7 @@ public class BlobTest extends LegacyBaseDbTest {
     public void testDbGetNotBlob2() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.remove(Blob.PROP_DIGEST);
-        assertNull(baseTestDb.getBlob(props));
+        assertNull(testDatabase.getBlob(props));
     }
 
     // 3.1.e.3: missing meta-type
@@ -387,7 +387,7 @@ public class BlobTest extends LegacyBaseDbTest {
     public void testDbGetNotBlob3() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.remove(Blob.META_PROP_TYPE);
-        assertNull(baseTestDb.getBlob(props));
+        assertNull(testDatabase.getBlob(props));
     }
 
     // 3.1.e.4: length is not a number
@@ -395,7 +395,7 @@ public class BlobTest extends LegacyBaseDbTest {
     public void testDbGetNotBlob4() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put(Blob.PROP_LENGTH, "42");
-        assertNull(baseTestDb.getBlob(props));
+        assertNull(testDatabase.getBlob(props));
     }
 
     // 3.1.e.5: bad content type
@@ -403,7 +403,7 @@ public class BlobTest extends LegacyBaseDbTest {
     public void testDbGetNotBlob5() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put(Blob.PROP_CONTENT_TYPE, new Object());
-        assertNull(baseTestDb.getBlob(props));
+        assertNull(testDatabase.getBlob(props));
     }
 
     // 3.1.e.6: extra arg
@@ -411,16 +411,16 @@ public class BlobTest extends LegacyBaseDbTest {
     public void testDbGetNotBlob6() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put("foo", "bar");
-        assertNull(baseTestDb.getBlob(props));
+        assertNull(testDatabase.getBlob(props));
     }
 
     // 3.1.f
     @Test
-    public void testBlobInDocument() throws CouchbaseLiteException, JSONException {
+    public void testBlobInDocument() throws JSONException {
         MutableDocument mDoc = new MutableDocument();
         mDoc.setBlob("blob", makeBlob());
 
-        Blob dbBlob = saveDocInBaseTestDb(mDoc).getBlob("blob");
+        Blob dbBlob = saveDocInTestCollection(mDoc).getBlob("blob");
 
         verifyBlob(dbBlob);
 
@@ -431,15 +431,15 @@ public class BlobTest extends LegacyBaseDbTest {
     @Test
     public void testBlobGoneAfterCompact() throws CouchbaseLiteException {
         Blob blob = makeBlob();
-        baseTestDb.saveBlob(blob);
+        testDatabase.saveBlob(blob);
 
-        assertTrue(baseTestDb.performMaintenance(MaintenanceType.COMPACT));
+        assertTrue(testDatabase.performMaintenance(MaintenanceType.COMPACT));
 
         Map<String, Object> props = new HashMap<>();
         props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
         props.put(Blob.PROP_DIGEST, blob.digest());
 
-        assertNull(baseTestDb.getBlob(props));
+        assertNull(testDatabase.getBlob(props));
     }
 
     @Test
@@ -448,11 +448,11 @@ public class BlobTest extends LegacyBaseDbTest {
             Blob blob = new Blob("image/png", is);
             MutableDocument mDoc = new MutableDocument("doc1");
             mDoc.setBlob("blob", blob);
-            baseTestDb.save(mDoc);
+            testCollection.save(mDoc);
         }
 
         assertTrue(Blob.isBlob(
-            new MutableDictionary().setJSON(baseTestDb.getDocument("doc1").getBlob("blob").toJSON()).toMap()));
+            new MutableDictionary().setJSON(testCollection.getDocument("doc1").getBlob("blob").toJSON()).toMap()));
     }
 
     // https://issues.couchbase.com/browse/CBL-2320
@@ -462,9 +462,9 @@ public class BlobTest extends LegacyBaseDbTest {
         mDoc.setBlob(
             "blob",
             new Blob("application/octet-stream", new byte[] {-1, (byte) 255, (byte) 0xf0, (byte) 0xa0}));
-        saveDocInBaseTestDb(mDoc);
+        saveDocInTestCollection(mDoc);
 
-        InputStream blobStream = baseTestDb.getDocument("blobDoc").getBlob("blob").getContentStream();
+        InputStream blobStream = testCollection.getDocument("blobDoc").getBlob("blob").getContentStream();
 
         assertEquals(255, blobStream.read());
         assertEquals(255, blobStream.read());
@@ -474,7 +474,17 @@ public class BlobTest extends LegacyBaseDbTest {
 
     private Map<String, Object> getPropsForSavedBlob() {
         Blob blob = makeBlob();
-        baseTestDb.saveBlob(blob);
+        testDatabase.saveBlob(blob);
         return blob.getProperties();
+    }
+
+    // Kotlin shim functions
+
+    private Document saveDocInTestCollection(MutableDocument mDoc) {
+        return saveDocInTestCollection(mDoc, testCollection);
+    }
+
+    private Document saveDocInTestCollection(MutableDocument mDoc, Collection collection) {
+        return saveDocInCollection(mDoc, collection, null);
     }
 }

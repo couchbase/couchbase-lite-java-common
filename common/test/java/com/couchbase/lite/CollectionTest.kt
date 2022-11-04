@@ -37,7 +37,7 @@ class CollectionTest : BaseDbTest() {
     // get doc in the collection
     @Test
     fun testGetExistingDocInCollection() {
-        val mDoc = makeSimpleDoc()
+        val mDoc = createTestDoc()
 
         testCollection.save(mDoc)
 
@@ -150,7 +150,7 @@ class CollectionTest : BaseDbTest() {
 
     @Test
     fun saveNewDocInCollectionWithIdTest() {
-        val id = docId()
+        val id = getUniqueName("test_doc")
 
         val mDoc = MutableDocument(id)
         testCollection.save(mDoc)
@@ -172,17 +172,7 @@ class CollectionTest : BaseDbTest() {
 
     @Test
     fun testSaveAndGetMultipleDocsInCollection() {
-        val docs = mutableListOf<MutableDocument>()
-        testCollection.database.inBatch<CouchbaseLiteException> {
-            for (i in 1..10) {
-                val mDoc = MutableDocument(docId())
-                // be careful, here: Fleece changes the types of numeric values
-                mDoc.setLong("up", i.toLong())
-                mDoc.setString("down", "minus $i")
-                docs.add(mDoc)
-                testCollection.save(mDoc)
-            }
-        }
+        val docs = createDocsInCollection(10)
 
         assertEquals(docs.size, testCollection.count.toInt())
 
@@ -261,8 +251,11 @@ class CollectionTest : BaseDbTest() {
 
     @Test
     fun testSaveAndUpdateMutableDoc() {
-        val mDoc = createDocInCollection().toMutable()
-        val expected = mDoc.toMap()
+        val mDoc = MutableDocument()
+        mDoc.setString("firstName", "Robert")
+        mDoc.setString("lastName", "Bly")
+        testCollection.save(mDoc)
+        assertEquals(1, mDoc.sequence)
 
         mDoc.setString("firstName", "Daniel")
         testCollection.save(mDoc)
@@ -278,9 +271,9 @@ class CollectionTest : BaseDbTest() {
         testCollection.save(mDoc)
         assertEquals(4, mDoc.sequence)
 
-        expected.putAll(mapOf("firstName" to "Daniel", "lastName" to "Tiger", "age" to 20L))
+        val expected = mapOf("firstName" to "Daniel", "lastName" to "Tiger", "age" to 20L)
         assertEquals(expected, mDoc.toMap())
-        assertEquals(expected, testCollection.getDocument(mDoc.id)!!.toMap())
+        assertEquals(expected, testCollection.getDocument(mDoc.id)!!.content.toMap())
     }
 
     @Test

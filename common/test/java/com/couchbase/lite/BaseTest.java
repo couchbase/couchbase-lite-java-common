@@ -20,11 +20,14 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -42,6 +45,7 @@ import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 
@@ -60,10 +64,13 @@ public abstract class BaseTest extends PlatformBaseTest {
     public static final long STD_TIMEOUT_MS = STD_TIMEOUT_SEC * 1000L;
     public static final long LONG_TIMEOUT_MS = LONG_TIMEOUT_SEC * 1000L;
 
-    private static final List<String> SCRATCH_DIRS = new ArrayList<>();
+    public static final String TEST_DATE = "2019-02-21T05:37:22.014Z";
+    public static final String BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box.";
 
-    @NonNull
-    public static String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 12); }
+    public static final String TEST_DOC_SORT_KEY = "Sort";
+    public static final String TEST_DOC_REV_SORT_KEY = "ReverseSort";
+
+    private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
     @BeforeClass
     public static void setUpPlatformSuite() { Report.log(">>>>>>>>>>>> Suite started"); }
@@ -74,6 +81,26 @@ public abstract class BaseTest extends PlatformBaseTest {
         SCRATCH_DIRS.clear();
 
         Report.log("<<<<<<<<<<<< Suite completed");
+    }
+
+    // Make this package protected method visible
+    public static boolean mDictHasChanged(MutableDictionary dict) { return dict.isChanged(); }
+
+    @NonNull
+    public static String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 8); }
+
+    // Run a boolean function every `waitMs` until it it true
+    // If it is not true within `maxWaitMs` fail.
+    @SuppressWarnings("BusyWait")
+    protected static void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {
+        final long waitMs = 100L;
+        final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;
+        while (true) {
+            if (test.get()) { break; }
+            if (System.currentTimeMillis() > endTime) { throw new AssertionError("Operation timed out"); }
+            try { Thread.sleep(waitMs); }
+            catch (InterruptedException e) { throw new AssertionError("Operation interrupted", e); }
+        }
     }
 
     // Used to protect calls that should not fail,
@@ -123,7 +150,19 @@ public abstract class BaseTest extends PlatformBaseTest {
         setupPlatform();
 
         testSerialExecutor = new ExecutionService.CloseableExecutor() {
-            final ExecutorService executor = Executors.newSingleThreadExecutor();
+            final ExecutorService executor = Executors.newSingleThreadExecutor(
+                new ThreadFactory() {        // thread factory that gives our threads nice recognizable names
+                    private final AtomicInteger threadId = new AtomicInteger(0);
+
+                    @NonNull
+                    public Thread newThread(@NonNull Runnable r) {
+                        final Thread thread = new Thread(r, "TEST-THREAD #" + threadId.incrementAndGet());
+                        thread.setUncaughtExceptionHandler((t, e) ->
+                            Report.log(e, "Uncaught exception on test thread %s", thread.getName()));
+                        Report.log("New test thread: %s", thread.getName());
+                        return thread;
+                    }
+                });
 
             @Override
             public void execute(@NonNull Runnable task) {
@@ -162,37 +201,15 @@ public abstract class BaseTest extends PlatformBaseTest {
         if (exclusion != null) { Assume.assumeFalse(exclusion.msg, exclusion.test.get()); }
     }
 
-    protected final String formatInterval(long ms) {
-        final long min = TimeUnit.MILLISECONDS.toMinutes(ms);
-        ms -= TimeUnit.MINUTES.toMillis(min);
-
-        final long sec = TimeUnit.MILLISECONDS.toSeconds(ms);
-        ms -= TimeUnit.SECONDS.toMillis(sec);
-
-        return String.format("%02d:%02d.%03d", min, sec, ms);
-    }
-
-    // Run a boolean function every `waitMs` until it it true
-    // If it is not true within `maxWaitMs` fail.
-    @SuppressWarnings("BusyWait")
-    protected final void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {
-        final long waitMs = 100L;
-        final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;
-        while (true) {
-            if (test.get()) { break; }
-            if (System.currentTimeMillis() > endTime) { throw new AssertionError("Operation timed out"); }
-            try { Thread.sleep(waitMs); }
-            catch (InterruptedException e) { throw new AssertionError("Operation interrupted", e); }
-        }
-    }
-
     protected final String getScratchDirectoryPath(@NonNull String name) {
         try {
             String path = FileUtils.verifyDir(new File(getTmpDir(), name)).getCanonicalPath();
             SCRATCH_DIRS.add(path);
             return path;
         }
-        catch (IOException e) { throw new AssertionError("Failed creating scratch directory: " + name, e); }
+        catch (IOException e) {
+            throw new AssertionError("Failed creating scratch directory: " + name, e);
+        }
     }
 
     // Prefer this method to any other way of creating a new database
@@ -295,7 +312,50 @@ public abstract class BaseTest extends PlatformBaseTest {
         catch (Exception e) { Report.log("Failed to delete database %s", e, db); }
     }
 
-    // Backing method is package protected
-    protected final boolean mDictHasChanged(MutableDictionary dict) { return dict.isChanged(); }
+    protected final MutableDocument createTestDoc() { return createTestDoc(1, 1); }
+
+    protected final List<MutableDocument> createTestDocs(int first, int n) {
+        final List<MutableDocument> docs = new ArrayList<>();
+        final int last = first + n - 1;
+        for (int i = first; i <= last; i++) { docs.add(createTestDoc(i, last)); }
+        return docs;
+    }
+
+    // Comparing documents isn't trivial: Fleece
+    // will compress numeric values into the smallest
+    // type that can be used to represent them.
+    // This doc is sufficiently complex to make simple
+    // comparison interesting but uses only values/types
+    // that are seem to survive the Fleece round-trip, unchanged
+    private MutableDocument createTestDoc(int id, int top) {
+        MutableDocument mDoc = new MutableDocument();
+        mDoc.setValue("doc-1", null);
+        mDoc.setBoolean("doc-2", true);
+        mDoc.setBoolean("doc-3", false);
+        mDoc.setLong("doc-4", 0);
+        mDoc.setLong("doc-8", 4000000000L);
+        mDoc.setLong("doc-9", -4000000000L);
+        mDoc.setDouble("doc-14", 1.0E200);
+        mDoc.setDouble("doc-15", -1.0E200);
+        mDoc.setString("doc-20", null);
+        mDoc.setString("doc-21", "Jett");
+        mDoc.setDate("doc-22", null);
+        mDoc.setDate("doc-23", JSONUtils.toDate(TEST_DATE));
+        mDoc.setBlob("doc-28", null);
+        mDoc.setLong(TEST_DOC_SORT_KEY, id);
+        mDoc.setLong(TEST_DOC_REV_SORT_KEY, top - id);
+        mDoc.setValue("key", getUniqueName("value"));
+        return mDoc;
+    }
+
+    private String formatInterval(long ms) {
+        final long min = TimeUnit.MILLISECONDS.toMinutes(ms);
+        ms -= TimeUnit.MINUTES.toMillis(min);
+
+        final long sec = TimeUnit.MILLISECONDS.toSeconds(ms);
+        ms -= TimeUnit.SECONDS.toMillis(sec);
+
+        return String.format("%02d:%02d.%03d", min, sec, ms);
+    }
 }
 

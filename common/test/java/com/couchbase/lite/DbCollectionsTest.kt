@@ -141,8 +141,6 @@ class DbCollectionsTest : BaseDbTest() {
     //Test that creating an existing collection returns an existing collection
     @Test
     fun testCreateAnExistingCollection() {
-
-
         //save doc in testCollection
         val doc = createDocInCollection()
 

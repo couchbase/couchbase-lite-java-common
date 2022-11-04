@@ -15,14 +15,13 @@
 //
 package com.couchbase.lite.internal.core
 
-import com.couchbase.lite.BaseReplicatorTest
-import com.couchbase.lite.Collection
+import com.couchbase.lite.BaseDbTest
 import com.couchbase.lite.CollectionConfiguration
-import com.couchbase.lite.LegacyBaseDbTest
 import com.couchbase.lite.Replicator
 import com.couchbase.lite.ReplicatorConfiguration
 import com.couchbase.lite.ReplicatorType
 import com.couchbase.lite.URLEndpoint
+import com.couchbase.lite.getC4Db
 import com.couchbase.lite.internal.SocketFactory
 import com.couchbase.lite.internal.boundCollectionCount
 import com.couchbase.lite.internal.clearBoundCollections
@@ -38,16 +37,14 @@ import org.junit.Test
 import java.net.URI
 
 
-class C4ReplicatorTest : LegacyBaseDbTest() {
+class C4ReplicatorTest : BaseDbTest() {
     private lateinit var testReplicatorConfig: ReplicatorConfiguration
     private lateinit var testReplicator: Replicator
-    private lateinit var testCollection: Collection
 
     @Before
     fun setUpC4ReplicatorTest() {
         C4Replicator.BOUND_REPLICATORS.clear()
         clearBoundCollections()
-        testCollection = baseTestDb.createCollection(getUniqueName("stamps"))
         testReplicatorConfig = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
         testReplicatorConfig.addCollection(testCollection, CollectionConfiguration())
         testReplicator =  testReplicator(testReplicatorConfig)
@@ -131,7 +128,7 @@ class C4ReplicatorTest : LegacyBaseDbTest() {
             },
             mapOf(testCollection to CollectionConfiguration()),
             C4BaseTest.MOCK_PEER,
-            getC4Db(baseTestDb),
+            testDatabase.getC4Db,
             ReplicatorType.PUSH_AND_PULL,
             false,
             null,
@@ -227,7 +224,7 @@ class C4ReplicatorTest : LegacyBaseDbTest() {
             MockNativeReplicator(),
             mapOf(testCollection to CollectionConfiguration()),
             C4BaseTest.MOCK_PEER,
-            getC4Db(baseTestDb),
+            testDatabase.getC4Db,
             ReplicatorType.PUSH_AND_PULL,
             false,
             null,

@@ -17,6 +17,7 @@ package com.couchbase.lite;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
@@ -38,36 +39,37 @@ public class QueryChangeTest extends BaseQueryTest {
     // https://github.com/couchbase/couchbase-lite-android/issues/1615
     @Test
     public void testRemoveQueryChangeListenerInCallback() throws Exception {
-        loadNumberedDocs(10);
+        loadDocuments(10);
 
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
-            .where(Expression.property("number1").lessThan(Expression.intValue(5)));
+            .where(Expression.property(TEST_DOC_SORT_KEY).lessThan(Expression.intValue(5)));
 
-        final ListenerToken[] token = new ListenerToken[1];
-        final Object lock = new Object();
-
+        final AtomicReference<ListenerToken> token = new AtomicReference<>();
         final CountDownLatch latch = new CountDownLatch(1);
+        final Object lock = new Object();
         final QueryChangeListener listener = change -> {
             ResultSet rs = change.getResults();
-            if ((rs != null) && (rs.next() != null)) {
-                synchronized (lock) {
-                    ListenerToken t = token[0];
-                    token[0] = null;
-                    if (t != null) { t.remove(); }
-                }
+            if ((rs == null) || (rs.next() == null)) { return; }
+            synchronized (lock) {
+                ListenerToken t = token.getAndSet(null);
+                if (t != null) { t.remove(); }
             }
             latch.countDown();
         };
 
         // Removing the listener while inside the listener itself needs be done carefully.
         // The listener might get called before query.addChangeListener(), below, returns.
+        // If that happened "token" would not yet have been set and the test would not work.
         // Seizing a lock here guarantees that that can't happen.
-        synchronized (lock) { token[0] = query.addChangeListener(testSerialExecutor, listener); }
+        synchronized (lock) { token.set(query.addChangeListener(testSerialExecutor, listener)); }
+        try { assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+        finally {
+            ListenerToken t = token.get();
+            if (t != null) { t.remove(); }
+        }
 
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
-
-        synchronized (lock) { assertNull(token[0]); }
+        assertNull(token.get());
     }
 }

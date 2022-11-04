@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.json.JSONException;
@@ -59,7 +60,7 @@ public class ResultTest extends BaseQueryTest {
                     assertEquals(1L, r.getValue("one"));
                     assertEquals(-1L, r.getValue("minus_one"));
                     assertEquals(1.1, r.getValue("one_dot_one"));
-                    assertEquals(BaseDbTestKt.TEST_DATE, r.getValue("date"));
+                    assertEquals(TEST_DATE, r.getValue("date"));
                     assertTrue(r.getValue("dict") instanceof Dictionary);
                     assertTrue(r.getValue("array") instanceof Array);
                     assertTrue(r.getValue("blob") instanceof Blob);
@@ -102,7 +103,7 @@ public class ResultTest extends BaseQueryTest {
                 assertEquals(1L, r.getValue(5));
                 assertEquals(-1L, r.getValue(6));
                 assertEquals(1.1, r.getValue(7));
-                assertEquals(BaseDbTestKt.TEST_DATE, r.getValue(8));
+                assertEquals(TEST_DATE, r.getValue(8));
                 assertTrue(r.getValue(9) instanceof Dictionary);
                 assertTrue(r.getValue(10) instanceof Array);
                 assertTrue(r.getValue(11) instanceof Blob);
@@ -134,7 +135,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getString("one"));
                 assertNull(r.getString("minus_one"));
                 assertNull(r.getString("one_dot_one"));
-                assertEquals(BaseDbTestKt.TEST_DATE, r.getString("date"));
+                assertEquals(TEST_DATE, r.getString("date"));
                 assertNull(r.getString("dict"));
                 assertNull(r.getString("array"));
                 assertNull(r.getString("blob"));
@@ -166,7 +167,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getString(5));
                 assertNull(r.getString(6));
                 assertNull(r.getString(7));
-                assertEquals(BaseDbTestKt.TEST_DATE, r.getString(8));
+                assertEquals(TEST_DATE, r.getString(8));
                 assertNull(r.getString(9));
                 assertNull(r.getString(10));
                 assertNull(r.getString(11));
@@ -582,7 +583,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getDate("one"));
                 assertNull(r.getDate("minus_one"));
                 assertNull(r.getDate("one_dot_one"));
-                assertEquals(BaseDbTestKt.TEST_DATE, JSONUtils.toJSONString(r.getDate("date")));
+                assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate("date")));
                 assertNull(r.getDate("dict"));
                 assertNull(r.getDate("array"));
                 assertNull(r.getDate("blob"));
@@ -614,7 +615,7 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getDate(5));
                 assertNull(r.getDate(6));
                 assertNull(r.getDate(7));
-                assertEquals(BaseDbTestKt.TEST_DATE, JSONUtils.toJSONString(r.getDate(8)));
+                assertEquals(TEST_DATE, JSONUtils.toJSONString(r.getDate(8)));
                 assertNull(r.getDate(9));
                 assertNull(r.getDate(10));
                 assertNull(r.getDate(11));
@@ -649,9 +650,9 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getBlob("date"));
                 assertNull(r.getBlob("dict"));
                 assertNull(r.getBlob("array"));
-                assertEquals(BaseDbTestKt.BLOB_CONTENT, new String(r.getBlob("blob").getContent()));
+                assertEquals(BLOB_CONTENT, new String(r.getBlob("blob").getContent()));
                 assertArrayEquals(
-                    BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
+                    BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
                     r.getBlob("blob").getContent());
                 assertNull(r.getBlob("non_existing_key"));
 
@@ -684,9 +685,9 @@ public class ResultTest extends BaseQueryTest {
                 assertNull(r.getBlob(8));
                 assertNull(r.getBlob(9));
                 assertNull(r.getBlob(10));
-                assertEquals(BaseDbTestKt.BLOB_CONTENT, new String(r.getBlob(11).getContent()));
+                assertEquals(BLOB_CONTENT, new String(r.getBlob(11).getContent()));
                 assertArrayEquals(
-                    BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
+                    BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
                     r.getBlob(11).getContent());
                 assertNull(r.getBlob(12));
 
@@ -910,7 +911,7 @@ public class ResultTest extends BaseQueryTest {
     // https://github.com/couchbase/couchbase-lite-android-ce/issues/27
     @Test
     public void testEmptyDict() throws CouchbaseLiteException {
-        String docId = BaseDbTestKt.docId();
+        String docId = docId();
         String key = getUniqueName("emptyDict");
 
         MutableDocument mDoc = new MutableDocument(docId);
@@ -965,8 +966,14 @@ public class ResultTest extends BaseQueryTest {
 
     ///////////////  Tooling
 
+    // !!! Should be using the standard data tools
+
+    private String docId() { return BaseTest.getUniqueName("doc"); }
+
+    private String docId(int i) { return String.format(Locale.ENGLISH, "doc-%03d", i); }
+
     private String prepareData(int i) {
-        MutableDocument mDoc = new MutableDocument(BaseDbTestKt.jsonDocId(i));
+        MutableDocument mDoc = new MutableDocument(docId(i));
         if (i % 2 == 1) { populateData(mDoc); }
         else { populateDataByTypedSetter(mDoc); }
         saveDocInTestCollection(mDoc);
@@ -981,7 +988,7 @@ public class ResultTest extends BaseQueryTest {
         doc.setValue("one", 1);
         doc.setValue("minus_one", -1);
         doc.setValue("one_dot_one", 1.1);
-        doc.setValue("date", JSONUtils.toDate(BaseDbTestKt.TEST_DATE));
+        doc.setValue("date", JSONUtils.toDate(TEST_DATE));
         doc.setValue("null", null);
 
         // Dictionary:
@@ -998,7 +1005,7 @@ public class ResultTest extends BaseQueryTest {
         doc.setValue("array", array);
 
         // Blob:
-        doc.setValue("blob", new Blob("text/plain", BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
+        doc.setValue("blob", new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
     }
 
     private void populateDataByTypedSetter(MutableDocument doc) {
@@ -1009,7 +1016,7 @@ public class ResultTest extends BaseQueryTest {
         doc.setInt("one", 1);
         doc.setLong("minus_one", -1);
         doc.setDouble("one_dot_one", 1.1);
-        doc.setDate("date", JSONUtils.toDate(BaseDbTestKt.TEST_DATE));
+        doc.setDate("date", JSONUtils.toDate(TEST_DATE));
         doc.setString("null", null);
 
         // Dictionary:
@@ -1026,7 +1033,7 @@ public class ResultTest extends BaseQueryTest {
         doc.setArray("array", array);
 
         // Blob:
-        doc.setValue("blob", new Blob("text/plain", BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
+        doc.setValue("blob", new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
     }
 
     private Query generateQuery(String docID) { return generateQuery(docID, testCollection); }

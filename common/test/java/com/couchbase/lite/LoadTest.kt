@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-@file:Suppress("DEPRECATION")
-
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.utils.LoadTest
@@ -36,7 +34,7 @@ private fun interface Verifier {
 }
 
 // Timings were chosen to allow a Nexus 6 running Android 7.0 to pass.
-class LoadTest : LegacyBaseDbTest() {
+class LoadTest : BaseDbTest() {
     @SlowTest
     @LoadTest
     @Test

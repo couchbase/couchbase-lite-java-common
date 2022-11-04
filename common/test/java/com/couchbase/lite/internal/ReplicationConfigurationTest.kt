@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite.internal
 
-import com.couchbase.lite.LegacyBaseDbTest
+import com.couchbase.lite.BaseDbTest
 import com.couchbase.lite.CollectionConfiguration
 import com.couchbase.lite.MutableDocument
 import com.couchbase.lite.ReplicationFilter
@@ -37,7 +37,7 @@ fun boundCollectionCount() = ReplicationCollection.BOUND_COLLECTIONS.size()
 fun clearBoundCollections() = ReplicationCollection.BOUND_COLLECTIONS.clear()
 
 
-class ReplicationConfigurationTest : LegacyBaseDbTest() {
+class ReplicationConfigurationTest : BaseDbTest() {
     @Before
     fun setUpC4ReplicatorTest() = clearBoundCollections()
 
@@ -47,7 +47,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
     @Test
     fun testCreateAndCloseReplicationCollection() {
         assertEquals(0, boundCollectionCount())
-        val replColl = ReplicationCollection.create(baseTestDb.defaultCollection!!, null, null, null, null)
+        val replColl = ReplicationCollection.create(testDatabase.defaultCollection!!, null, null, null, null)
         assertEquals(1, boundCollectionCount())
         replColl.close()
         assertEquals(0, boundCollectionCount())
@@ -56,8 +56,8 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
     @Test
     fun testCreateAllReplicationCollection() {
         val colls = mapOf(
-            baseTestDb.defaultCollection!! to CollectionConfiguration(),
-            baseTestDb.createCollection("antique_clocks") to CollectionConfiguration()
+            testDatabase.defaultCollection!! to CollectionConfiguration(),
+            testDatabase.createCollection("antique_clocks") to CollectionConfiguration()
         )
 
         assertEquals(0, boundCollectionCount())
@@ -78,7 +78,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
     fun testReplicationCollectionChannels() {
         val config = CollectionConfiguration()
         config.channels = listOf("x", "y", "z")
-        val colls = mapOf(baseTestDb.createCollection("rockwell_plates") to config)
+        val colls = mapOf(testDatabase.createCollection("rockwell_plates") to config)
         val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!).asDict()
         assertEquals(1, opts.size)
         assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_CHANNELS])
@@ -88,7 +88,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
     fun testReplicationCollectionDocIds() {
         val config = CollectionConfiguration()
         config.documentIDs = listOf("x", "y", "z")
-        val colls = mapOf(baseTestDb.createCollection("porcelain_dolls") to config)
+        val colls = mapOf(testDatabase.createCollection("porcelain_dolls") to config)
         val opts = FLValue.fromData(ReplicationCollection.createAll(colls)[0].options!!).asDict()
         assertEquals(1, opts.size)
         assertEquals(listOf("x", "y", "z"), opts[C4Replicator.REPLICATOR_OPTION_DOC_IDS])
@@ -98,7 +98,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
     fun testReplicationCollectionPullFilter() {
         var calls = 0
 
-        val coll = baseTestDb.createCollection("pogs")
+        val coll = testDatabase.createCollection("pogs")
         val doc = MutableDocument("BorisTheSpider")
         coll.save(doc)
 
@@ -106,7 +106,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
 
         val config = CollectionConfiguration()
         config.pullFilter = ReplicationFilter { _, _ -> calls++; true }
-        val colls = mapOf(baseTestDb.createCollection("pogs") to config)
+        val colls = mapOf(testDatabase.createCollection("pogs") to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
         body.withContent {
@@ -121,7 +121,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
     fun testReplicationCollectionPushFilter() {
         var calls = 0
 
-        val coll = baseTestDb.createCollection("pogs")
+        val coll = testDatabase.createCollection("pogs")
         val doc = MutableDocument("BorisTheSpider")
         coll.save(doc)
 
@@ -129,7 +129,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
 
         val config = CollectionConfiguration()
         config.pushFilter = ReplicationFilter { _, _ -> calls++; true }
-        val colls = mapOf(baseTestDb.createCollection("pogs") to config)
+        val colls = mapOf(testDatabase.createCollection("pogs") to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
         body.withContent {
@@ -144,7 +144,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
     fun testReplicationCollectionPushPullFilter() {
         var calls = 0
 
-        val coll = baseTestDb.createCollection("pogs")
+        val coll = testDatabase.createCollection("pogs")
         val doc = MutableDocument("BorisTheSpider")
         coll.save(doc)
 
@@ -153,7 +153,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
         val config = CollectionConfiguration()
         config.pushFilter = ReplicationFilter { _, _ -> calls++; true }
         config.pullFilter = ReplicationFilter { _, _ -> calls++; true }
-        val colls = mapOf(baseTestDb.createCollection("pogs") to config)
+        val colls = mapOf(testDatabase.createCollection("pogs") to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
         body.withContent {
@@ -168,7 +168,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
     fun testReplicationCollectionPushPullFilterNoCallback() {
         var calls = 0
 
-        val coll = baseTestDb.createCollection("pogs")
+        val coll = testDatabase.createCollection("pogs")
         val doc = MutableDocument("BorisTheSpider")
         coll.save(doc)
 
@@ -177,7 +177,7 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
         val config = CollectionConfiguration()
         config.pushFilter = ReplicationFilter { _, _ -> calls++; true }
         config.pullFilter = ReplicationFilter { _, _ -> calls++; true }
-        val colls = mapOf(baseTestDb.createCollection("pogs") to config)
+        val colls = mapOf(testDatabase.createCollection("pogs") to config)
 
         // this token should be ignored.
         val token = ReplicationCollection.createAll(colls)[0].token + 1
@@ -189,6 +189,4 @@ class ReplicationConfigurationTest : LegacyBaseDbTest() {
 
         assertEquals(0, calls)
     }
-
-    // !!! Need tests for conflict resolution
 }
