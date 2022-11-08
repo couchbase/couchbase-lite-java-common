@@ -63,4 +63,8 @@ public final class QueryChange {
      */
     @Nullable
     public Throwable getError() { return error; }
+
+    @NonNull
+    @Override
+    public String toString() { return "QueryChange{" + error + ", " + query + ", " + rs + "}"; }
 }
