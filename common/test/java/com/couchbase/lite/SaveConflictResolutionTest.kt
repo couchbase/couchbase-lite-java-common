@@ -24,7 +24,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 
 
-// !!! WILL LIKELY CHANGE WITH COLLECTION SAVVY REPLICATION
+// !!! MOVE TO USE BaseDBTest
 
 private const val docID = "doc1"
 

@@ -189,23 +189,6 @@ public abstract class LegacyBaseDbTest extends BaseTest {
         doc.setValue("blob", new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
     }
 
-    // file is one JSON object per line
-    protected final void loadJSONResourceIntoDatabase(String name)
-        throws IOException, JSONException, CouchbaseLiteException {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(PlatformUtils.getAsset(name)))) {
-            int n = 1;
-            String line;
-            while ((line = in.readLine()) != null) {
-                if (line.trim().isEmpty()) { continue; }
-
-                MutableDocument doc = new MutableDocument(jsonDocId(n++));
-                doc.setData(JSONUtils.fromJSON(new JSONObject(line)));
-
-                saveDocInBaseTestDb(doc);
-            }
-        }
-    }
-
     protected final String readJSONResource(String name) throws IOException {
         StringBuilder buf = new StringBuilder();
         try (BufferedReader in = new BufferedReader(new InputStreamReader(PlatformUtils.getAsset(name)))) {

@@ -16,7 +16,6 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.core.C4BaseTest
-import com.couchbase.lite.internal.utils.Fn
 import com.couchbase.lite.internal.utils.Fn.ConsumerThrows
 import com.couchbase.lite.internal.utils.JSONUtils
 import com.couchbase.lite.internal.utils.PlatformUtils
@@ -38,16 +37,14 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 
-const val TEST_DATE = "2019-02-21T05:37:22.014Z"
-const val BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box."
-
+// Here to make it visible from other test packages
 val Database.getC4Db
     get() = this.openC4Database
 
 val Scope.collectionCount
     get() = this.collections.size
 
-fun CountDownLatch.stdWait()= this.await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+fun CountDownLatch.stdWait() = this.await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
 fun Database.createTestCollection(name: String = "coll_", scope: String = "scope_"): Collection {
     val uname = BaseTest.getUniqueName(name)
@@ -107,13 +104,6 @@ fun Document.delete() {
     }
 }
 
-// Attempt to standardize doc ids.
-fun docId() = BaseTest.getUniqueName("doc")
-
-// There are tests that depend on dictionary ordering of documents:
-// This version of docId will sort doc-001 before doc-009 and before doc-010.
-fun jsonDocId(i: Int) = String.format(Locale.ENGLISH, "doc-%03d", i)
-
 fun <T : Comparable<T>> assertContents(l1: List<T>, vararg contents: T) {
     assertEquals(l1.sorted(), listOf(*contents).sorted())
 }
@@ -125,14 +115,7 @@ fun <T : Comparable<T>> assertContents(l1: List<T>, vararg contents: T) {
 // complex objects: arrays and dictionaries.
 fun assertSameContent(mDoc: MutableDocument, doc: Document?) {
     doc ?: throw AssertionError("doc is null")
-    if (mDoc.content != doc.content) {
-        throw AssertionError("${mDoc.id} and ${doc.id} are not the same")
-    }
-}
-
-fun failOnError(msg: String, task: Fn.TaskThrows<Exception>) {
-    try { task.run() }
-    catch (e: Exception) { throw AssertionError(msg, e); }
+    assertEquals(mDoc.toMap(), doc.toMap())
 }
 
 fun readJSONResource(name: String?): String {
@@ -140,7 +123,8 @@ fun readJSONResource(name: String?): String {
     BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use { src ->
         while (true) {
             val l = src.readLine() ?: break
-            if (l.trim().isNotEmpty()) buf.append(l) }
+            if (l.trim().isNotEmpty()) buf.append(l)
+        }
     }
     return buf.toString()
 }
@@ -166,39 +150,14 @@ abstract class BaseDbTest : BaseTest() {
         Report.log("Deleted baseTestDb: $testDatabase")
     }
 
-    protected fun createDocInCollection(
-        docId: String = docId(),
-        collection: Collection = testCollection
-    ): Document {
-        val n = collection.count
-        val mDoc = MutableDocument(docId)
-        mDoc.setValue("key", getUniqueName("value"))
-        val doc = saveDocInCollection(mDoc, collection)
-        assertEquals(n + 1, collection.count)
-        assertEquals(1, doc.sequence)
-        return doc
+    protected fun reopenTestDb() {
+        testDatabase = reopenDb(testDatabase)
+        testCollection = testDatabase.getSimilarCollection(testCollection)
     }
 
-    protected fun createDocsInCollection(
-        count: Int = 1,
-        collection: Collection = testCollection,
-        first: Int = 1000
-    ): List<Document> {
-        val docs = mutableListOf<Document>()
-        try {
-            collection.database.inBatch<CouchbaseLiteException> {
-                for (i in first until first + count) {
-                    val doc = MutableDocument(docId())
-                    doc.setNumber("count", i)
-                    doc.setString("inverse", "minus-$i")
-                    collection.save(doc)
-                    docs.add(collection.getDocument(doc.id)!!)
-                }
-            }
-        } catch (e: Exception) {
-            throw AssertionError("Failed creating a document in collection ${collection}", e)
-        }
-        return docs.toList()
+    protected fun recreateTestDb() {
+        testDatabase = recreateDb(testDatabase)
+        testCollection = testDatabase.getSimilarCollection(testCollection)
     }
 
     protected fun saveDocInCollection(
@@ -207,32 +166,65 @@ abstract class BaseDbTest : BaseTest() {
         validator: ConsumerThrows<Document, CouchbaseLiteException>? = null
     ): Document {
         try {
-            validator?.accept(mDoc)
-            collection.save(mDoc)
-            val doc = collection.getDocument(mDoc.id)
-            assertNotNull(doc)
-            assertEquals(mDoc.id, doc!!.id)
-            validator?.accept(doc)
-            return doc
+            return saveDoc(mDoc, collection, validator)
         } catch (e: Exception) {
             throw AssertionError("Unexpected Exception saving document ${mDoc} in collection ${collection}", e)
         }
     }
 
+    protected fun saveDocsInCollection(
+        mDocs: List<MutableDocument>,
+        collection: Collection = testCollection,
+        validator: ConsumerThrows<Document, CouchbaseLiteException>? = null
+    ): List<Document> {
+        try {
+            val docs = mutableListOf<Document>()
+            collection.database.inBatch<CouchbaseLiteException> {
+                docs.addAll(mDocs.map { saveDoc(it, collection, validator) })
+            }
+            return docs
+        } catch (e: Exception) {
+            throw AssertionError("Failed creating a document in collection ${collection}", e)
+        }
+    }
+
+    protected fun createDocInCollection(collection: Collection = testCollection): MutableDocument {
+        val mDoc = createTestDoc()
+        val n = collection.count
+        val doc = saveDocInCollection(mDoc, collection)
+        assertEquals(n + 1, collection.count)
+        assertEquals(1, doc.sequence)
+        return mDoc
+    }
+
+    protected fun createDocsInCollection(
+        count: Int = 1,
+        collection: Collection = testCollection,
+        first: Int = 1
+    ): List<MutableDocument> {
+        val mDocs = createTestDocs(first, count)
+        saveDocsInCollection(mDocs, collection)
+        return mDocs
+    }
+
     // file is one JSON object per line
-    protected fun loadJSONResourceIntoCollection(resName: String?, collection: Collection = testCollection) {
+    protected fun loadJSONResourceIntoCollection(
+        resName: String,
+        idTemplate: String = "doc-%03d",
+        collection: Collection = testCollection
+    ) {
         try {
             BufferedReader(InputStreamReader(PlatformUtils.getAsset(resName))).use { src ->
                 var n = 1
                 while (true) {
                     val l = src.readLine() ?: break
-                    val doc = MutableDocument(jsonDocId(n++))
+                    val doc = MutableDocument(String.format(Locale.ENGLISH, idTemplate, n++))
                     doc.setData(JSONUtils.fromJSON(JSONObject(l)))
-                    saveDocInCollection(doc, collection)
+                    saveDocInCollection(doc, collection, null)
                 }
             }
-        } catch (e: Exception) {
-            throw AssertionError("Failed reading JSON resource ${resName} into collection ${collection}", e)
+        } catch (e: java.lang.Exception) {
+            throw java.lang.AssertionError("Failed reading JSON resource \${resName} into collection \${collection}", e)
         }
     }
 
@@ -1650,32 +1642,18 @@ abstract class BaseDbTest : BaseTest() {
         verifyBlob(doc.getBlob("doc-29"))
     }
 
-    // Comparing documents isn't trivial: Fleece
-    // will compress numeric values into the smallest
-    // type that can be used to represent them.
-    // This doc is sufficiently complex to make simple
-    // comparison interesting but uses only values/types
-    // that are seem to survive the Fleece round-trip, unchanged
-    protected fun makeSimpleDoc(): MutableDocument {
-        // Dictionary:
-        val mDoc = MutableDocument()
-        mDoc.setValue("doc-1", null)
-        mDoc.setBoolean("doc-2", true)
-        mDoc.setBoolean("doc-3", false)
-        mDoc.setLong("doc-4", 0)
-        mDoc.setLong("doc-8", 4000000000L)
-        mDoc.setLong("doc-9", -4000000000L)
-        mDoc.setFloat("doc-11", 100.0F)
-        mDoc.setFloat("doc-12", -100.0F)
-        mDoc.setDouble("doc-14", 1.0E200)
-        mDoc.setDouble("doc-15", -1.0E200)
-        mDoc.setString("doc-20", null)
-        mDoc.setString("doc-21", "Jett")
-        mDoc.setDate("doc-22", null)
-        mDoc.setDate("doc-23", JSONUtils.toDate(TEST_DATE))
-        mDoc.setBlob("doc-28", null)
-        mDoc.setBlob("doc-29", makeBlob())
-        return mDoc
+    private fun saveDoc(
+        mDoc: MutableDocument,
+        collection: Collection,
+        validator: ConsumerThrows<Document, CouchbaseLiteException>?
+    ): Document {
+        validator?.accept(mDoc)
+        collection.save(mDoc)
+        val doc = collection.getDocument(mDoc.id)
+        assertNotNull(doc)
+        assertEquals(mDoc.id, doc!!.id)
+        validator?.accept(doc)
+        return doc
     }
 
     // Some JSON encoding will promote a Float to a Double.
@@ -1684,6 +1662,7 @@ abstract class BaseDbTest : BaseTest() {
         is Double -> this.toFloat()
         else -> throw IllegalArgumentException("${this} cannot be converted to float")
     }
+
     private fun Any.promoteToDouble() = when (this) {
         is Float -> this.toDouble()
         is Double -> this

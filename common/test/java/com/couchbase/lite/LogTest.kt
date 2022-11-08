@@ -20,7 +20,6 @@ import com.couchbase.lite.internal.core.C4Log
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.core.impl.NativeC4Log
 import com.couchbase.lite.internal.support.Log
-import com.couchbase.lite.internal.utils.TestUtils
 import com.couchbase.lite.utils.KotlinHelpers
 import org.junit.After
 import org.junit.AfterClass
@@ -37,7 +36,7 @@ import java.util.*
 import kotlin.Array
 
 
-class LogTest : LegacyBaseDbTest() {
+class LogTest : BaseDbTest() {
     private class SingleLineLogger(private val prefix: String?) : Logger {
         private var level: LogLevel? = null
         private var domain: LogDomain? = null
@@ -96,6 +95,7 @@ class LogTest : LegacyBaseDbTest() {
     }
 
     companion object {
+        @JvmStatic
         @AfterClass
         fun tearDownLogTestClass() = Database.log.reset()
     }
@@ -394,10 +394,10 @@ class LogTest : LegacyBaseDbTest() {
         val maxSize: Long = 2048
         val usePlainText = true
 
-        TestUtils.assertThrows(IllegalArgumentException::class.java) {
+        assertThrows(IllegalArgumentException::class.java) {
             KotlinHelpers.createLogFileConfigWithNullConfig()
         }
-        TestUtils.assertThrows(IllegalArgumentException::class.java) {
+        assertThrows(IllegalArgumentException::class.java) {
             KotlinHelpers.createLogFileConfigWithNullDir()
         }
 
@@ -422,11 +422,9 @@ class LogTest : LegacyBaseDbTest() {
     @Test
     fun testEditReadOnlyLogFileConfiguration() {
         testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(scratchDirPath!!)) {
-            TestUtils.assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxSize = 1024 }
-            TestUtils.assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxRotateCount = 3 }
-            TestUtils.assertThrows(IllegalStateException::class.java) {
-                Database.log.file.config!!.setUsePlaintext(true)
-            }
+            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxSize = 1024 }
+            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxRotateCount = 3 }
+            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.setUsePlaintext(true) }
         }
     }
 
@@ -458,9 +456,9 @@ class LogTest : LegacyBaseDbTest() {
 
         val doc = MutableDocument()
         doc.setString("hebrew", hebrew)
-        saveDocInBaseTestDb(doc)
+        saveDocInCollection(doc)
 
-        val query: Query = QueryBuilder.select(SelectResult.all()).from(DataSource.database(baseTestDb))
+        val query: Query = QueryBuilder.select(SelectResult.all()).from(DataSource.collection(testCollection))
         query.execute().use { rs -> Assert.assertEquals(rs.allResults().size.toLong(), 1) }
 
         Assert.assertTrue(customLogger.getContent().contains("[{\"hebrew\":\"$hebrew\"}]"))
@@ -530,7 +528,7 @@ class LogTest : LegacyBaseDbTest() {
         try {
             testLogger.reset()
             QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(baseTestDb))
+                .from(DataSource.collection(testCollection))
                 .execute()
             val actualMinLevel = testLogger.minLevel
             Assert.assertTrue(actualMinLevel >= oldLogger.getLogLevel(c4Domain))
@@ -538,7 +536,7 @@ class LogTest : LegacyBaseDbTest() {
             testLogger.reset()
             testLogger.setLevels(actualMinLevel + 1, c4Domain)
             QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(baseTestDb))
+                .from(DataSource.collection(testCollection))
                 .execute()
             // If level > maxLevel, should be no logs
             Assert.assertEquals(C4Constants.LogLevel.NONE.toLong(), testLogger.minLevel.toLong())
@@ -546,7 +544,7 @@ class LogTest : LegacyBaseDbTest() {
             testLogger.reset()
             testLogger.setLevels(oldLogger.getLogLevel(c4Domain), c4Domain)
             QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(baseTestDb))
+                .from(DataSource.collection(testCollection))
                 .execute()
             Assert.assertEquals(actualMinLevel.toLong(), testLogger.minLevel.toLong())
         } finally {

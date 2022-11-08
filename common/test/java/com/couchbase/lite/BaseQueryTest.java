@@ -15,6 +15,10 @@
 //
 package com.couchbase.lite;
 
+import androidx.annotation.NonNull;
+
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 
@@ -24,59 +28,65 @@ public abstract class BaseQueryTest extends BaseDbTest {
         void check(int n, Result result) throws CouchbaseLiteException;
     }
 
-    protected static String docId(int i) { return BaseDbTestKt.jsonDocId(i); }
+    private class DocumentCreator implements UnitOfWork<Exception> {
+        private final int first;
+        private final int n;
+        private final Collection collection;
+        public List<MutableDocument> docs;
 
-
-    protected final void createNumberedDocInBaseTestCollection(int i, int num) {
-        createNumberedDocInBaseTestCollection(i, num, testCollection);
-    }
-
-    protected final void createNumberedDocInBaseTestCollection(int i, int num, Collection collection) {
-        MutableDocument doc = new MutableDocument(docId(i));
-        doc.setValue("number1", i);
-        doc.setValue("number2", num - i);
-        saveDocInCollection(doc, collection, null);
-    }
-
-    protected final void loadNumberedDocs(int num) {
-        loadNumberedDocs(num, testCollection);
-    }
-
-    protected final void loadNumberedDocs(int num, Collection collection) {
-        loadNumberedDocs(1, num, collection);
-    }
-
-    protected final void loadNumberedDocs(int from, int to, Collection collection) {
-        try {
-            testDatabase.inBatch(() -> {
-                for (int i = from; i <= to; i++) { createNumberedDocInBaseTestCollection(i, to, collection); }
-            });
+        public DocumentCreator(int first, int n, Collection collection) {
+            this.first = first;
+            this.n = n;
+            this. collection = collection;
         }
-        catch (Exception e) { throw new AssertionError("Failed loading numbered docs"); }
+
+        @Override
+        public void run() throws Exception {
+            docs = createTestDocs(first, n);
+            for (MutableDocument doc: docs) { saveDocInCollection(doc, collection, null); }
+        }
     }
 
-    protected final int verifyQueryWithEnumerator(Query query, ResultVerifier verifier) {
+    protected final List<MutableDocument> loadDocuments(int n) {
+        return loadDocuments(n, testCollection);
+    }
+
+    protected final List<MutableDocument> loadDocuments(int first,  int n) {
+        return loadDocuments(first, n, testCollection);
+    }
+
+    protected final List<MutableDocument> loadDocuments(int n, Collection collection) {
+        return loadDocuments(1, n, collection);
+    }
+
+    protected final List<MutableDocument> loadDocuments(int first, int n, Collection collection) {
+        DocumentCreator createDocs = new DocumentCreator(first, n, collection);
+        try { testDatabase.inBatch(createDocs); }
+        catch (Exception e) { throw new AssertionError("Failed loading numbered docs", e); }
+        return createDocs.docs;
+    }
+
+    protected final void verifyQuery(@NonNull Query query, int expected, @NonNull ResultVerifier verifier) {
+        assertEquals(expected, verifyQueryWithEnumerator(query, verifier));
+        assertEquals(expected, verifyQueryWithIterable(query, verifier));
+    }
+
+    protected final int verifyQueryWithEnumerator(@NonNull Query query, @NonNull ResultVerifier verifier) {
         int n = 0;
         try (ResultSet rs = query.execute()) {
             Result result;
             while ((result = rs.next()) != null) { verifier.check(++n, result); }
         }
-        catch (Exception e) { throw new AssertionError("Failed verifying query (enumerator)"); }
+        catch (Exception e) { throw new AssertionError("Failed verifying query (enumerator)", e); }
         return n;
     }
 
-    protected final int verifyQueryWithIterable(Query query, ResultVerifier verifier) {
+    protected final int verifyQueryWithIterable(@NonNull Query query, @NonNull ResultVerifier verifier) {
         int n = 0;
         try (ResultSet rs = query.execute()) {
             for (Result result: rs) { verifier.check(++n, result); }
         }
-        catch (Exception e) { throw new AssertionError("Failed verifying query (iterable)"); }
-        return n;
-    }
-
-    protected final int verifyQuery(Query query, ResultVerifier verifier) {
-        int n = verifyQueryWithEnumerator(query, verifier);
-        assertEquals(n, verifyQueryWithIterable(query, verifier));
+        catch (Exception e) { throw new AssertionError("Failed verifying query (iterable)", e); }
         return n;
     }
 
@@ -88,9 +98,5 @@ public abstract class BaseQueryTest extends BaseDbTest {
 
     protected final Document saveDocInTestCollection(MutableDocument doc, Collection collection) {
         return saveDocInCollection(doc, collection, null);
-    }
-
-    protected final void loadJSONResourceIntoCollection(String resName) {
-        loadJSONResourceIntoCollection(resName, testCollection);
     }
 }

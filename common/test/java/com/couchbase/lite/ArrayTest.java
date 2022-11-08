@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,7 +32,6 @@ import org.junit.Test;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
 
-import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -45,10 +43,10 @@ import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
-public class ArrayTest extends LegacyBaseDbTest {
+public class ArrayTest extends BaseDbTest {
 
     @Test
-    public void testCreate() throws CouchbaseLiteException {
+    public void testCreate() {
         MutableArray array = new MutableArray();
         assertEquals(0, array.count());
         assertEquals(new ArrayList<>(), array.toList());
@@ -57,12 +55,12 @@ public class ArrayTest extends LegacyBaseDbTest {
         doc.setValue("array", array);
         assertEquals(array, doc.getArray("array"));
 
-        Document updatedDoc = saveDocInBaseTestDb(doc);
+        Document updatedDoc = saveDocInTestCollection(doc);
         assertEquals(new ArrayList<>(), updatedDoc.getArray("array").toList());
     }
 
     @Test
-    public void testCreateWithList() throws CouchbaseLiteException {
+    public void testCreateWithList() {
         List<Object> data = new ArrayList<>();
         data.add("1");
         data.add("2");
@@ -75,7 +73,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         doc.setValue("array", array);
         assertEquals(array, doc.getArray("array"));
 
-        Document savedDoc = saveDocInBaseTestDb(doc);
+        Document savedDoc = saveDocInTestCollection(doc);
         assertEquals(data, savedDoc.getArray("array").toList());
     }
 
@@ -86,7 +84,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetList() throws CouchbaseLiteException {
+    public void testSetList() {
         List<Object> data = new ArrayList<>();
         data.add("1");
         data.add("2");
@@ -101,7 +99,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         assertEquals(array, doc.getArray("array"));
 
         // save
-        Document savedDoc = saveDocInBaseTestDb(doc);
+        Document savedDoc = saveDocInTestCollection(doc);
         assertEquals(data, savedDoc.getArray("array").toList());
 
         // update
@@ -117,7 +115,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddNull() throws CouchbaseLiteException {
+    public void testAddNull() {
         MutableArray array = new MutableArray();
         array.addValue(null);
         MutableDocument doc = new MutableDocument("doc1");
@@ -128,7 +126,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddObjects() throws CouchbaseLiteException {
+    public void testAddObjects() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
 
@@ -179,7 +177,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddObjectsToExistingArray() throws CouchbaseLiteException {
+    public void testAddObjectsToExistingArray() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -188,7 +186,7 @@ public class ArrayTest extends LegacyBaseDbTest {
             // Save
             MutableDocument doc = new MutableDocument(docId(i));
             doc.setValue("array", array);
-            doc = saveDocInBaseTestDb(doc).toMutable();
+            doc = saveDocInTestCollection(doc).toMutable();
 
             // Get an existing array:
             array = doc.getArray("array");
@@ -238,7 +236,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetObject() throws CouchbaseLiteException {
+    public void testSetObject() {
         List<Object> data = arrayOfAllTypes();
 
         // Prepare CBLArray with NSNull placeholders:
@@ -286,7 +284,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetObjectToExistingArray() throws CouchbaseLiteException {
+    public void testSetObjectToExistingArray() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -295,7 +293,7 @@ public class ArrayTest extends LegacyBaseDbTest {
             // Save
             MutableDocument doc = new MutableDocument(docId(i));
             doc.setArray("array", array);
-            doc = saveDocInBaseTestDb(doc).toMutable();
+            doc = saveDocInTestCollection(doc).toMutable();
             MutableArray gotArray = doc.getArray("array");
 
             List<Object> data = arrayOfAllTypes();
@@ -389,10 +387,10 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testInsertObjectToExistingArray() throws CouchbaseLiteException {
+    public void testInsertObjectToExistingArray() {
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setValue("array", new MutableArray());
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         mDoc = doc.toMutable();
 
         MutableArray mArray = mDoc.getArray("array");
@@ -461,7 +459,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testRemove() throws CouchbaseLiteException {
+    public void testRemove() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -480,7 +478,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testRemoveExistingArray() throws CouchbaseLiteException {
+    public void testRemoveExistingArray() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -488,7 +486,7 @@ public class ArrayTest extends LegacyBaseDbTest {
 
             MutableDocument doc = new MutableDocument(docId(i));
             doc.setValue("array", array);
-            doc = saveDocInBaseTestDb(doc).toMutable();
+            doc = saveDocInTestCollection(doc).toMutable();
             array = doc.getArray("array");
 
             for (int j = array.count() - 1; j >= 0; j--) {
@@ -525,7 +523,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetString() throws CouchbaseLiteException {
+    public void testGetString() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -552,7 +550,7 @@ public class ArrayTest extends LegacyBaseDbTest {
 
     // ??? Fails on Nexus 4
     @Test
-    public void testGetNumber() throws CouchbaseLiteException {
+    public void testGetNumber() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -578,7 +576,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetInteger() throws CouchbaseLiteException {
+    public void testGetInteger() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -604,7 +602,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetLong() throws CouchbaseLiteException {
+    public void testGetLong() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -630,7 +628,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetFloat() throws CouchbaseLiteException {
+    public void testGetFloat() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -656,7 +654,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetDouble() throws CouchbaseLiteException {
+    public void testGetDouble() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -682,7 +680,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetGetMinMaxNumbers() throws CouchbaseLiteException {
+    public void testSetGetMinMaxNumbers() {
         MutableArray array = new MutableArray();
         array.addValue(Integer.MIN_VALUE);
         array.addValue(Integer.MAX_VALUE);
@@ -726,7 +724,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetGetFloatNumbers() throws CouchbaseLiteException {
+    public void testSetGetFloatNumbers() {
         MutableArray array = new MutableArray();
         array.addValue(1.00);
         array.addValue(1.49);
@@ -777,7 +775,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetBoolean() throws CouchbaseLiteException {
+    public void testGetBoolean() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -803,7 +801,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetDate() throws CouchbaseLiteException {
+    public void testGetDate() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -829,7 +827,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetMap() throws CouchbaseLiteException {
+    public void testGetMap() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -857,7 +855,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetArray() throws CouchbaseLiteException {
+    public void testGetArray() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -882,7 +880,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetNestedArray() throws CouchbaseLiteException {
+    public void testSetNestedArray() {
         MutableArray array1 = new MutableArray();
         MutableArray array2 = new MutableArray();
         MutableArray array3 = new MutableArray();
@@ -907,7 +905,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testReplaceArray() throws CouchbaseLiteException {
+    public void testReplaceArray() {
         MutableDocument doc = new MutableDocument("doc1");
         MutableArray array1 = new MutableArray();
         array1.addValue("a");
@@ -937,7 +935,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         assertEquals(Arrays.asList("x", "y", "z"), array2.toList());
 
         // Save:
-        doc = saveDocInBaseTestDb(doc).toMutable();
+        doc = saveDocInTestCollection(doc).toMutable();
 
         // Check current array:
         assertNotSame(doc.getArray("array"), array2);
@@ -947,7 +945,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testReplaceArrayDifferentType() throws CouchbaseLiteException {
+    public void testReplaceArrayDifferentType() {
         MutableDocument doc = new MutableDocument("doc1");
         MutableArray array1 = new MutableArray();
         array1.addValue("a");
@@ -966,12 +964,12 @@ public class ArrayTest extends LegacyBaseDbTest {
         assertEquals(Arrays.asList("a", "b", "c", "d"), array1.toList());
 
         // Save:
-        doc = saveDocInBaseTestDb(doc).toMutable();
+        doc = saveDocInTestCollection(doc).toMutable();
         assertEquals("Daniel Tiger", doc.getString("array"));
     }
 
     @Test
-    public void testEnumeratingArray() throws CouchbaseLiteException {
+    public void testEnumeratingArray() {
         MutableArray array = new MutableArray();
         for (int i = 0; i < 20; i++) {
             array.addValue(i);
@@ -1030,7 +1028,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test(expected = ConcurrentModificationException.class)
-    public void testArrayEnumerationWithDataModification2() throws CouchbaseLiteException {
+    public void testArrayEnumerationWithDataModification2() {
         MutableArray array = new MutableArray();
         for (int i = 0; i <= 2; i++) { array.addValue(i); }
 
@@ -1038,7 +1036,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         assertArrayEquals(new Object[] {0, 1, 2}, array.toList().toArray());
 
         MutableDocument doc = new MutableDocument("doc1").setValue("array", array);
-        array = saveDocInBaseTestDb(doc).toMutable().getArray("array");
+        array = saveDocInTestCollection(doc).toMutable().getArray("array");
         assertNotNull(array);
 
         int n = 0;
@@ -1048,7 +1046,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetNull() throws CouchbaseLiteException {
+    public void testSetNull() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addValue(null);
@@ -1058,7 +1056,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.addArray(null);
         mArray.addDictionary(null);
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1110,7 +1108,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mDoc.setArray("array4", mArray4);
         mDoc.setArray("array5", mArray5);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         Array array1 = doc.getArray("array1");
         Array array2 = doc.getArray("array2");
         Array array3 = doc.getArray("array3");
@@ -1211,7 +1209,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testHashCode() throws CouchbaseLiteException {
+    public void testHashCode() {
         // mArray1 and mArray2 have exactly same data
         // mArray3 is different
         // mArray4 is different
@@ -1245,7 +1243,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mDoc.setArray("array4", mArray4);
         mDoc.setArray("array5", mArray5);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         Array array1 = doc.getArray("array1");
         Array array2 = doc.getArray("array2");
         Array array3 = doc.getArray("array3");
@@ -1298,7 +1296,7 @@ public class ArrayTest extends LegacyBaseDbTest {
 
 
     @Test
-    public void testGetDictionary() throws CouchbaseLiteException {
+    public void testGetDictionary() {
         MutableDictionary mNestedDict = new MutableDictionary();
         mNestedDict.setValue("key1", 1L);
         mNestedDict.setValue("key2", "Hello");
@@ -1313,7 +1311,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         MutableDocument mDoc = new MutableDocument("test");
         mDoc.setArray("array", mArray);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         Array array = doc.getArray("array");
 
         assertNotNull(array);
@@ -1330,7 +1328,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetArray2() throws CouchbaseLiteException {
+    public void testGetArray2() {
         MutableArray mNestedArray = new MutableArray();
         mNestedArray.addValue(1L);
         mNestedArray.addValue("Hello");
@@ -1345,7 +1343,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         MutableDocument mDoc = new MutableDocument("test");
         mDoc.setValue("array", mArray);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         Array array = doc.getArray("array");
 
         assertNotNull(array);
@@ -1362,14 +1360,14 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddInt() throws CouchbaseLiteException {
+    public void testAddInt() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addInt(0);
         mArray.addInt(Integer.MAX_VALUE);
         mArray.addInt(Integer.MIN_VALUE);
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1382,7 +1380,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetInt() throws CouchbaseLiteException {
+    public void testSetInt() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1395,7 +1393,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.setInt(2, 0);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1408,7 +1406,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testInsertInt() throws CouchbaseLiteException {
+    public void testInsertInt() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1418,7 +1416,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.insertInt(2, Integer.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1432,14 +1430,14 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddLong() throws CouchbaseLiteException {
+    public void testAddLong() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addLong(0);
         mArray.addLong(Long.MAX_VALUE);
         mArray.addLong(Long.MIN_VALUE);
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1452,7 +1450,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetLong() throws CouchbaseLiteException {
+    public void testSetLong() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addLong(0);
@@ -1462,7 +1460,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.setLong(1, Long.MIN_VALUE);
         mArray.setLong(2, 0);
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1475,7 +1473,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testInsertLong() throws CouchbaseLiteException {
+    public void testInsertLong() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1485,7 +1483,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.insertLong(2, Long.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1499,14 +1497,14 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddFloat() throws CouchbaseLiteException {
+    public void testAddFloat() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
         mArray.addFloat(0.0F);
         mArray.addFloat(Float.MAX_VALUE);
         mArray.addFloat(Float.MIN_VALUE);
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1519,7 +1517,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetFloat() throws CouchbaseLiteException {
+    public void testSetFloat() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1532,7 +1530,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.setFloat(2, 0);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1546,7 +1544,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testInsertFloat() throws CouchbaseLiteException {
+    public void testInsertFloat() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1556,7 +1554,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.insertFloat(2, Float.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1570,7 +1568,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddDouble() throws CouchbaseLiteException {
+    public void testAddDouble() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1579,7 +1577,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.addDouble(Double.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1592,7 +1590,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetDouble() throws CouchbaseLiteException {
+    public void testSetDouble() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1605,7 +1603,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.setDouble(2, 0.0);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1619,7 +1617,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testInsertDouble() throws CouchbaseLiteException {
+    public void testInsertDouble() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1629,7 +1627,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.insertDouble(2, Double.MIN_VALUE);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1643,7 +1641,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddNumber() throws CouchbaseLiteException {
+    public void testAddNumber() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1652,7 +1650,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.addNumber(Double.MAX_VALUE);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1666,7 +1664,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetNumber() throws CouchbaseLiteException {
+    public void testSetNumber() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1679,7 +1677,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.setNumber(2, Integer.MAX_VALUE);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1693,7 +1691,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testInsertNumber() throws CouchbaseLiteException {
+    public void testInsertNumber() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1703,7 +1701,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.insertNumber(2, Double.MAX_VALUE);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1717,7 +1715,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddString() throws CouchbaseLiteException {
+    public void testAddString() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1726,7 +1724,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.addString("World");
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1740,7 +1738,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetString() throws CouchbaseLiteException {
+    public void testSetString() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1753,7 +1751,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.setString(2, "");
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1767,7 +1765,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testInsertString() throws CouchbaseLiteException {
+    public void testInsertString() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1777,7 +1775,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.insertString(2, "!");
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1791,7 +1789,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testAddBoolean() throws CouchbaseLiteException {
+    public void testAddBoolean() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1799,7 +1797,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.addBoolean(false);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1812,7 +1810,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetBoolean() throws CouchbaseLiteException {
+    public void testSetBoolean() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1823,7 +1821,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.setBoolean(1, true);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1836,7 +1834,7 @@ public class ArrayTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testInsertBoolean() throws CouchbaseLiteException {
+    public void testInsertBoolean() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableArray mArray = new MutableArray();
 
@@ -1846,7 +1844,7 @@ public class ArrayTest extends LegacyBaseDbTest {
         mArray.insertBoolean(1, false);
 
         mDoc.setArray("array", mArray);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("array"));
             Array array = doc.getArray("array");
@@ -1863,9 +1861,9 @@ public class ArrayTest extends LegacyBaseDbTest {
 
     // JSON 3.4
     @Test
-    public void testArrayToJSON() throws CouchbaseLiteException, JSONException {
+    public void testArrayToJSON() throws JSONException {
         MutableDocument mDoc = new MutableDocument().setArray("array", makeArray());
-        verifyArray(new JSONArray(saveDocInBaseTestDb(mDoc).getArray("array").toJSON()));
+        verifyArray(new JSONArray(saveDocInTestCollection(mDoc).getArray("array").toJSON()));
     }
 
     // JSON 3.7.?
@@ -1874,10 +1872,10 @@ public class ArrayTest extends LegacyBaseDbTest {
 
     // JSON 3.7.a-b
     @Test
-    public void testArrayFromJSON() throws JSONException, IOException, CouchbaseLiteException {
-        MutableArray mArray = new MutableArray(readJSONResource("array.json"));
+    public void testArrayFromJSON() throws JSONException {
+        MutableArray mArray = new MutableArray(BaseDbTestKt.readJSONResource("array.json"));
         MutableDocument mDoc = new MutableDocument().setArray("array", mArray);
-        Array dbArray = saveDocInBaseTestDb(mDoc).getArray("array");
+        Array dbArray = saveDocInTestCollection(mDoc).getArray("array");
         verifyArray(dbArray);
         verifyArray(new JSONArray(dbArray.toJSON()));
     }
@@ -1892,8 +1890,8 @@ public class ArrayTest extends LegacyBaseDbTest {
 
     // JSON 3.7.d
     @Test(expected = IllegalArgumentException.class)
-    public void testDictFromArray() throws IOException {
-        new MutableArray(readJSONResource("dictionary.json"));
+    public void testDictFromArray() {
+        new MutableArray(BaseDbTestKt.readJSONResource("dictionary.json"));
     }
 
 
@@ -1954,11 +1952,10 @@ public class ArrayTest extends LegacyBaseDbTest {
         }
     }
 
-    private Document save(MutableDocument mDoc, String key, MutableArray mArray, Fn.Consumer<Array> validator)
-        throws CouchbaseLiteException {
+    private Document save(MutableDocument mDoc, String key, MutableArray mArray, Fn.Consumer<Array> validator) {
         validator.accept(mArray);
         mDoc.setValue(key, mArray);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         Array array = doc.getArray(key);
         validator.accept(array);
         return doc;
@@ -1972,5 +1969,23 @@ public class ArrayTest extends LegacyBaseDbTest {
         assertNotNull(contents);
         assertArrayEquals(BLOB_CONTENT.getBytes(StandardCharsets.UTF_8), contents);
         assertEquals(BLOB_CONTENT, new String(contents));
+    }
+
+    private String docId(int i) { return "doc-"  + i; }
+
+    // Kotlin shim functions
+
+    private Document saveDocInTestCollection(MutableDocument mDoc) {
+        return saveDocInTestCollection(mDoc, testCollection);
+    }
+
+    private Document saveDocInTestCollection(MutableDocument mDoc, Collection collection) {
+        return saveDocInCollection(mDoc, collection, null);
+    }
+
+    private void saveDocInTestCollection(
+        MutableDocument mDoc, Fn.ConsumerThrows<Document,
+        CouchbaseLiteException> validator) {
+        saveDocInCollection(mDoc, testCollection, validator);
     }
 }

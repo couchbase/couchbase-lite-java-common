@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -28,7 +27,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 
-import static com.couchbase.lite.internal.utils.TestUtils.assertThrows;
+import com.couchbase.lite.internal.utils.Fn;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -39,9 +39,9 @@ import static org.junit.Assert.assertTrue;
 
 
 @SuppressWarnings("ConstantConditions")
-public class DictionaryTest extends LegacyBaseDbTest {
+public class DictionaryTest extends BaseDbTest {
     @Test
-    public void testCreateDictionary() throws CouchbaseLiteException {
+    public void testCreateDictionary() {
         MutableDictionary address = new MutableDictionary();
         assertEquals(0, address.count());
         assertEquals(new HashMap<String, Object>(), address.toMap());
@@ -50,7 +50,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         mDoc.setValue("address", address);
         assertEquals(address, mDoc.getDictionary("address"));
 
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         assertEquals(new HashMap<String, Object>(), doc.getDictionary("address").toMap());
     }
 
@@ -61,7 +61,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testCreateDictionaryWithMap() throws CouchbaseLiteException {
+    public void testCreateDictionaryWithMap() {
         Map<String, Object> dict = new HashMap<>();
         dict.put("street", "1 Main street");
         dict.put("city", "Mountain View");
@@ -77,12 +77,12 @@ public class DictionaryTest extends LegacyBaseDbTest {
         mDoc1.setValue("address", address);
         assertEquals(address, mDoc1.getDictionary("address"));
 
-        Document doc1 = saveDocInBaseTestDb(mDoc1);
+        Document doc1 = saveDocInTestCollection(mDoc1);
         assertEquals(dict, doc1.getDictionary("address").toMap());
     }
 
     @Test
-    public void testGetValueFromNewEmptyDictionary() throws CouchbaseLiteException {
+    public void testGetValueFromNewEmptyDictionary() {
         MutableDictionary mDict = new MutableDictionary();
 
         assertEquals(0, mDict.getInt("key"));
@@ -101,7 +101,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setValue("dict", mDict);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         Dictionary dict = doc.getDictionary("dict");
 
@@ -120,7 +120,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testSetNestedDictionaries() throws CouchbaseLiteException {
+    public void testSetNestedDictionaries() {
         MutableDocument doc = new MutableDocument("doc1");
 
         MutableDictionary level1 = new MutableDictionary();
@@ -151,14 +151,14 @@ public class DictionaryTest extends LegacyBaseDbTest {
         dict.put("level3", l3);
         assertEquals(dict, doc.toMap());
 
-        Document savedDoc = saveDocInBaseTestDb(doc);
+        Document savedDoc = saveDocInTestCollection(doc);
 
         assertNotSame(level1, savedDoc.getDictionary("level1"));
         assertEquals(dict, savedDoc.toMap());
     }
 
     @Test
-    public void testDictionaryArray() throws CouchbaseLiteException {
+    public void testDictionaryArray() {
         MutableDocument mDoc = new MutableDocument("doc1");
 
         List<Object> data = new ArrayList<>();
@@ -193,7 +193,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         assertEquals("4", mDict4.getString("name"));
 
         // after save
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         Array array = doc.getArray("array");
         assertEquals(4, array.count());
@@ -210,7 +210,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testReplaceDictionary() throws CouchbaseLiteException {
+    public void testReplaceDictionary() {
         MutableDocument doc = new MutableDocument("doc1");
 
         MutableDictionary profile1 = new MutableDictionary();
@@ -233,7 +233,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         assertNull(profile2.getValue("age"));
 
         // Save:
-        Document savedDoc = saveDocInBaseTestDb(doc);
+        Document savedDoc = saveDocInTestCollection(doc);
 
         assertNotSame(profile2, savedDoc.getDictionary("profile"));
         Dictionary savedDict = savedDoc.getDictionary("profile");
@@ -241,7 +241,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testReplaceDictionaryDifferentType() throws CouchbaseLiteException {
+    public void testReplaceDictionaryDifferentType() {
         MutableDocument doc = new MutableDocument("doc1");
 
         MutableDictionary profile1 = new MutableDictionary();
@@ -262,12 +262,12 @@ public class DictionaryTest extends LegacyBaseDbTest {
         assertEquals("Daniel Tiger", doc.getValue("profile"));
 
         // Save
-        Document savedDoc = saveDocInBaseTestDb(doc);
+        Document savedDoc = saveDocInTestCollection(doc);
         assertEquals("Daniel Tiger", savedDoc.getValue("profile"));
     }
 
     @Test
-    public void testRemoveDictionary() throws CouchbaseLiteException {
+    public void testRemoveDictionary() {
         MutableDocument doc = new MutableDocument("doc1");
         MutableDictionary profile1 = new MutableDictionary();
         profile1.setValue("name", "Scott Tiger");
@@ -289,14 +289,14 @@ public class DictionaryTest extends LegacyBaseDbTest {
         assertNull(doc.getValue("profile"));
 
         // Save:
-        doc = saveDocInBaseTestDb(doc).toMutable();
+        doc = saveDocInTestCollection(doc).toMutable();
 
         assertNull(doc.getValue("profile"));
         assertFalse(doc.contains("profile"));
     }
 
     @Test
-    public void testEnumeratingKeys() throws CouchbaseLiteException {
+    public void testEnumeratingKeys() {
         final MutableDictionary dict = new MutableDictionary();
         for (int i = 0; i < 20; i++) { dict.setValue(String.format(Locale.ENGLISH, "key%d", i), i); }
         Map<String, Object> content = dict.toMap();
@@ -329,7 +329,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
 
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("dict", dict);
-        saveDocInBaseTestDb(doc, doc1 -> {
+        saveDocInTestCollection(doc, doc1 -> {
             Map<String, Object> result1 = new HashMap<>();
             int count1 = 0;
             Dictionary dictObj = doc1.getDictionary("dict");
@@ -356,14 +356,14 @@ public class DictionaryTest extends LegacyBaseDbTest {
     }
 
     @Test(expected = ConcurrentModificationException.class)
-    public void testDictionaryEnumerationWithDataModification2() throws CouchbaseLiteException {
+    public void testDictionaryEnumerationWithDataModification2() {
         MutableDictionary dict = new MutableDictionary();
         for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
 
         assertEquals(3, dict.count());
 
         MutableDocument doc = new MutableDocument("doc1").setValue("dict", dict);
-        dict = saveDocInBaseTestDb(doc).toMutable().getDictionary("dict");
+        dict = saveDocInTestCollection(doc).toMutable().getDictionary("dict");
 
         int n = 0;
         for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
@@ -373,7 +373,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
 
     // https://github.com/couchbase/couchbase-lite-core/issues/230
     @Test
-    public void testLargeLongValue() throws CouchbaseLiteException {
+    public void testLargeLongValue() {
         MutableDocument doc = new MutableDocument("test");
         long num1 = 1234567L;
         long num2 = 12345678L;
@@ -381,7 +381,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         doc.setValue("num1", num1);
         doc.setValue("num2", num2);
         doc.setValue("num3", num3);
-        doc = saveDocInBaseTestDb(doc).toMutable();
+        doc = saveDocInTestCollection(doc).toMutable();
         assertEquals(num1, doc.getLong("num1"));
         assertEquals(num2, doc.getLong("num2"));
         assertEquals(num3, doc.getLong("num3"));
@@ -389,19 +389,19 @@ public class DictionaryTest extends LegacyBaseDbTest {
 
     //https://forums.couchbase.com/t/long-value-on-document-changed-after-saved-to-db/14259/
     @Test
-    public void testLargeLongValue2() throws CouchbaseLiteException {
+    public void testLargeLongValue2() {
         MutableDocument doc = new MutableDocument("test");
         long num1 = 11989091L;
         long num2 = 231548688L;
         doc.setValue("num1", num1);
         doc.setValue("num2", num2);
-        doc = saveDocInBaseTestDb(doc).toMutable();
+        doc = saveDocInTestCollection(doc).toMutable();
         assertEquals(num1, doc.getLong("num1"));
         assertEquals(num2, doc.getLong("num2"));
     }
 
     @Test
-    public void testSetNull() throws CouchbaseLiteException {
+    public void testSetNull() {
         MutableDocument mDoc = new MutableDocument("test");
         MutableDictionary mDict = new MutableDictionary();
         mDict.setValue("obj-null", null);
@@ -411,7 +411,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         mDict.setArray("array-null", null);
         mDict.setDictionary("dict-null", null);
         mDoc.setDictionary("dict", mDict);
-        saveDocInBaseTestDb(mDoc, doc -> {
+        saveDocInTestCollection(mDoc, doc -> {
             assertEquals(1, doc.count());
             assertTrue(doc.contains("dict"));
             Dictionary d = doc.getDictionary("dict");
@@ -467,7 +467,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         mDoc.setDictionary("dict4", mDict4);
         mDoc.setDictionary("dict5", mDict5);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         Dictionary dict1 = doc.getDictionary("dict1");
         Dictionary dict2 = doc.getDictionary("dict2");
         Dictionary dict3 = doc.getDictionary("dict3");
@@ -560,7 +560,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testHashCode() throws CouchbaseLiteException {
+    public void testHashCode() {
 
         // mDict1 and mDict2 have exactly same data
         // mDict3 is different
@@ -594,7 +594,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         mDoc.setDictionary("dict4", mDict4);
         mDoc.setDictionary("dict5", mDict5);
 
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
         Dictionary dict1 = doc.getDictionary("dict1");
         Dictionary dict2 = doc.getDictionary("dict2");
         Dictionary dict3 = doc.getDictionary("dict3");
@@ -637,7 +637,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetDictionary() throws CouchbaseLiteException {
+    public void testGetDictionary() {
         MutableDictionary mNestedDict = new MutableDictionary();
         mNestedDict.setValue("key1", 1L);
         mNestedDict.setValue("key2", "Hello");
@@ -652,7 +652,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         MutableDocument mDoc = new MutableDocument("test");
         mDoc.setDictionary("dict", mDict);
 
-        Dictionary dict = saveDocInBaseTestDb(mDoc).getDictionary("dict");
+        Dictionary dict = saveDocInTestCollection(mDoc).getDictionary("dict");
 
         assertNotNull(dict);
         assertNull(dict.getDictionary("not-exists"));
@@ -664,7 +664,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
     }
 
     @Test
-    public void testGetArray() throws CouchbaseLiteException {
+    public void testGetArray() {
         MutableArray mNestedArray = new MutableArray();
         mNestedArray.addValue(1L);
         mNestedArray.addValue("Hello");
@@ -679,7 +679,7 @@ public class DictionaryTest extends LegacyBaseDbTest {
         MutableDocument mDoc = new MutableDocument("test");
         mDoc.setValue("array", mArray);
 
-        Array array = saveDocInBaseTestDb(mDoc).getArray("array");
+        Array array = saveDocInTestCollection(mDoc).getArray("array");
 
         assertNotNull(array);
         assertNull(array.getArray(0));
@@ -696,40 +696,40 @@ public class DictionaryTest extends LegacyBaseDbTest {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1518
     @Test
-    public void testSetValueWithDictionary() throws CouchbaseLiteException {
+    public void testSetValueWithDictionary() {
         MutableDictionary mDict = new MutableDictionary();
         mDict.setString("hello", "world");
 
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setValue("dict", mDict);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         Dictionary dict = doc.getDictionary("dict");
 
         mDoc = doc.toMutable();
         mDoc.setValue("dict2", dict);
 
-        dict = saveDocInBaseTestDb(mDoc).getDictionary("dict2");
+        dict = saveDocInTestCollection(mDoc).getDictionary("dict2");
         assertEquals(1, dict.count());
         assertEquals("world", dict.getString("hello"));
     }
 
     @Test
-    public void testSetValueWithArray() throws CouchbaseLiteException {
+    public void testSetValueWithArray() {
         MutableArray mArray = new MutableArray();
         mArray.addString("hello");
         mArray.addString("world");
 
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setValue("array", mArray);
-        Document doc = saveDocInBaseTestDb(mDoc);
+        Document doc = saveDocInTestCollection(mDoc);
 
         Array array = doc.getArray("array");
 
         mDoc = doc.toMutable();
         mDoc.setValue("array2", array);
 
-        array = saveDocInBaseTestDb(mDoc).getArray("array2");
+        array = saveDocInTestCollection(mDoc).getArray("array2");
         assertEquals(2, array.count());
         assertEquals("hello", array.getString(0));
         assertEquals("world", array.getString(1));
@@ -741,9 +741,9 @@ public class DictionaryTest extends LegacyBaseDbTest {
 
     // JSON 3.3
     @Test
-    public void testDictToJSON() throws CouchbaseLiteException, JSONException {
+    public void testDictToJSON() throws JSONException {
         MutableDocument mDoc = new MutableDocument().setDictionary("dict", makeDict());
-        verifyDict(new JSONObject(saveDocInBaseTestDb(mDoc).getDictionary("dict").toJSON()));
+        verifyDict(new JSONObject(saveDocInTestCollection(mDoc).getDictionary("dict").toJSON()));
     }
 
     // JSON 3.6.?
@@ -752,10 +752,10 @@ public class DictionaryTest extends LegacyBaseDbTest {
 
     // JSON 3.5.a-b
     @Test
-    public void testDictFromJSON() throws JSONException, IOException, CouchbaseLiteException {
-        MutableDictionary mDict = new MutableDictionary(readJSONResource("dictionary.json"));
+    public void testDictFromJSON() throws JSONException {
+        MutableDictionary mDict = new MutableDictionary(BaseDbTestKt.readJSONResource("dictionary.json"));
         MutableDocument mDoc = new MutableDocument().setDictionary("dict", mDict);
-        Dictionary dbDict = saveDocInBaseTestDb(mDoc).getDictionary("dict");
+        Dictionary dbDict = saveDocInTestCollection(mDoc).getDictionary("dict");
         verifyDict(dbDict);
         verifyDict(new JSONObject(dbDict.toJSON()));
     }
@@ -774,5 +774,22 @@ public class DictionaryTest extends LegacyBaseDbTest {
 
     // JSON 3.6.d
     @Test(expected = IllegalArgumentException.class)
-    public void testDictFromArray() throws IOException { new MutableDictionary("[1, a, 1.0]"); }
+    public void testDictFromArray() { new MutableDictionary("[1, a, 1.0]"); }
+
+
+    // Kotlin shim functions
+
+    private Document saveDocInTestCollection(MutableDocument mDoc) {
+        return saveDocInTestCollection(mDoc, testCollection);
+    }
+
+    private Document saveDocInTestCollection(MutableDocument mDoc, Collection collection) {
+        return saveDocInCollection(mDoc, collection, null);
+    }
+
+    private void saveDocInTestCollection(
+        MutableDocument mDoc,
+        Fn.ConsumerThrows<Document, CouchbaseLiteException> validator) {
+        saveDocInCollection(mDoc, testCollection, validator);
+    }
 }

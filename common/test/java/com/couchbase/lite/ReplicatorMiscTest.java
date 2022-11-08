@@ -219,7 +219,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testReplicatedDocument() {
-        String docId = BaseDbTestKt.docId();
+        String docId = getUniqueName("replicated-doc");
         ReplicatedDocument replicatedDoc = new ReplicatedDocument(
             targetCollection.getScope().getName(),
             targetCollection.getName(),
@@ -270,7 +270,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(testDatabase);
 
-        repl.isDocumentPending(BaseDbTestKt.docId(), testCollection);
+        repl.isDocumentPending("who-cares", testCollection);
     }
 
     // CBL-1441

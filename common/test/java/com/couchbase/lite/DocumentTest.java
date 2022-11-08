@@ -25,6 +25,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +39,6 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
-import com.couchbase.lite.internal.utils.TestUtils;
 import com.couchbase.lite.internal.utils.VerySlowTest;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -89,7 +89,7 @@ public class DocumentTest extends BaseDbTest {
     public void testCreateDocWithEmptyStringID() {
         final MutableDocument doc1a = new MutableDocument("");
         assertNotNull(doc1a);
-        TestUtils.assertThrowsCBL(
+        assertThrowsCBL(
             CBLError.Domain.CBLITE,
             CBLError.Code.BAD_DOC_ID,
             () -> testCollection.save(doc1a));
@@ -335,7 +335,7 @@ public class DocumentTest extends BaseDbTest {
                 assertNull(d.getString("one"));
                 assertNull(d.getString("minus_one"));
                 assertNull(d.getString("one_dot_one"));
-                assertEquals(BaseDbTestKt.TEST_DATE, d.getString("date"));
+                assertEquals(TEST_DATE, d.getString("date"));
                 assertNull(d.getString("dict"));
                 assertNull(d.getString("array"));
                 assertNull(d.getString("blob"));
@@ -819,7 +819,7 @@ public class DocumentTest extends BaseDbTest {
                 assertNull(d.getDate("one"));
                 assertNull(d.getDate("minus_one"));
                 assertNull(d.getDate("one_dot_one"));
-                assertEquals(BaseDbTestKt.TEST_DATE, JSONUtils.toJSONString(d.getDate("date")));
+                assertEquals(TEST_DATE, JSONUtils.toJSONString(d.getDate("date")));
                 assertNull(d.getDate("dict"));
                 assertNull(d.getDate("array"));
                 assertNull(d.getDate("blob"));
@@ -832,7 +832,7 @@ public class DocumentTest extends BaseDbTest {
     public void testSetBlob() {
         final String newBlobContent = StringUtils.randomString(100);
         final Blob newBlob = new Blob("text/plain", newBlobContent.getBytes(StandardCharsets.UTF_8));
-        final Blob blob = new Blob("text/plain", BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8));
+        final Blob blob = new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8));
 
         DocValidator validator4Save = d -> {
             assertEquals(blob.getProperties().get("length"), d.getBlob("blob").getProperties().get("length"));
@@ -849,9 +849,9 @@ public class DocumentTest extends BaseDbTest {
             assertEquals(
                 blob.getProperties().get("digest"),
                 ((Blob) d.getValue("blob")).getProperties().get("digest"));
-            assertEquals(BaseDbTestKt.BLOB_CONTENT, new String(d.getBlob("blob").getContent()));
+            assertEquals(BLOB_CONTENT, new String(d.getBlob("blob").getContent()));
             assertArrayEquals(
-                BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
+                BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
                 d.getBlob("blob").getContent());
         };
 
@@ -913,9 +913,9 @@ public class DocumentTest extends BaseDbTest {
                 assertNull(d.getBlob("date"));
                 assertNull(d.getBlob("dict"));
                 assertNull(d.getBlob("array"));
-                assertEquals(BaseDbTestKt.BLOB_CONTENT, new String(d.getBlob("blob").getContent()));
+                assertEquals(BLOB_CONTENT, new String(d.getBlob("blob").getContent()));
                 assertArrayEquals(
-                    BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
+                    BLOB_CONTENT.getBytes(StandardCharsets.UTF_8),
                     d.getBlob("blob").getContent());
                 assertNull(d.getBlob("non_existing_key"));
             });
@@ -1432,7 +1432,7 @@ public class DocumentTest extends BaseDbTest {
         expected.put("one", 1);
         expected.put("minus_one", -1);
         expected.put("one_dot_one", 1.1);
-        expected.put("date", BaseDbTestKt.TEST_DATE); // expect the stringified date
+        expected.put("date", TEST_DATE); // expect the stringified date
         expected.put("null", null);
 
         // Dictionary:
@@ -1568,7 +1568,7 @@ public class DocumentTest extends BaseDbTest {
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setString("name", "Scott Tiger");
 
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.delete(mDoc));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.delete(mDoc));
 
         assertEquals("Scott Tiger", mDoc.getString("name"));
     }
@@ -1672,7 +1672,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("name", "Scott");
 
         // Purge before save:
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(doc));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(doc));
 
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1693,7 +1693,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("name", "Scott");
 
         // Purge before save:
-        TestUtils.assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(docID));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(docID));
 
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1818,7 +1818,7 @@ public class DocumentTest extends BaseDbTest {
     }
 
     @Test
-    public void testSetExpirationOnDocInDeletedCollection() throws CouchbaseLiteException {
+    public void testSetExpirationOnDocInDeletedCollection() {
         // add doc in collection
         String id = "test_doc";
         saveDocInTestCollection(new MutableDocument(id));
@@ -1977,8 +1977,7 @@ public class DocumentTest extends BaseDbTest {
         mDoc.setValue("string", "str");
         saveDocInTestCollection(mDoc);
 
-        testDatabase = reopenDb(testDatabase);
-        testCollection = BaseDbTestKt.getSimilarCollection(testDatabase, testCollection);
+        reopenTestDb();
 
         Document doc = testCollection.getDocument("doc1");
         assertEquals("str", doc.getString("string"));
@@ -1989,7 +1988,7 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testBlob() throws IOException {
-        byte[] content = BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
+        byte[] content = BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
 
         // store blob
         Blob data = new Blob("text/plain", content);
@@ -2004,7 +2003,7 @@ public class DocumentTest extends BaseDbTest {
         assertEquals("Jim", doc.getValue("name"));
         assertTrue(doc.getValue("data") instanceof Blob);
         data = (Blob) doc.getValue("data");
-        assertEquals(BaseDbTestKt.BLOB_CONTENT.length(), data.length());
+        assertEquals(BLOB_CONTENT.length(), data.length());
         assertArrayEquals(content, data.getContent());
         try (InputStream is = data.getContentStream()) {
             assertNotNull(is);
@@ -2062,7 +2061,7 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testMultipleBlobRead() throws IOException {
-        byte[] content = BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
+        byte[] content = BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);
 
@@ -2097,7 +2096,7 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testReadExistingBlob() throws CouchbaseLiteException {
-        byte[] content = BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
+        byte[] content = BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
         Blob data = new Blob("text/plain", content);
         assertNotNull(data);
 
@@ -2111,8 +2110,7 @@ public class DocumentTest extends BaseDbTest {
         data = (Blob) obj;
         assertArrayEquals(content, data.getContent());
 
-        testDatabase = reopenDb(testDatabase);
-        testCollection = BaseDbTestKt.getSimilarCollection(testDatabase, testCollection);
+        reopenTestDb();
 
         doc = testCollection.getDocument("doc1").toMutable();
         doc.setValue("foo", "bar");
@@ -2157,7 +2155,7 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testToMutable() {
-        byte[] content = BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
+        byte[] content = BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
         Blob data = new Blob("text/plain", content);
         MutableDocument mDoc1 = new MutableDocument("doc1");
         mDoc1.setBlob("data", data);
@@ -2699,7 +2697,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("one", 1);
         doc.setValue("minus_one", -1);
         doc.setValue("one_dot_one", 1.1);
-        doc.setValue("date", JSONUtils.toDate(BaseDbTestKt.TEST_DATE));
+        doc.setValue("date", JSONUtils.toDate(TEST_DATE));
         doc.setValue("null", null);
 
         // Dictionary:
@@ -2716,7 +2714,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("array", array);
 
         // Blob:
-        doc.setValue("blob", new Blob("text/plain", BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
+        doc.setValue("blob", new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
     }
 
     // !!! Replace with BaseDbTest.makeDocument
@@ -2728,7 +2726,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setInt("one", 1);
         doc.setLong("minus_one", -1);
         doc.setDouble("one_dot_one", 1.1);
-        doc.setDate("date", JSONUtils.toDate(BaseDbTestKt.TEST_DATE));
+        doc.setDate("date", JSONUtils.toDate(TEST_DATE));
         doc.setString("null", null);
 
         // Dictionary:
@@ -2745,13 +2743,16 @@ public class DocumentTest extends BaseDbTest {
         doc.setArray("array", array);
 
         // Blob:
-        doc.setValue("blob", new Blob("text/plain", BaseDbTestKt.BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
+        doc.setValue("blob", new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
     }
 
-    // Kotlin shim functions
+    // !!! These smell bad...
 
-    // !!! This is probably a bad idea
-    private static String docId(int i) { return BaseDbTestKt.jsonDocId(i); }
+    private String docId() { return BaseTest.getUniqueName("doc"); }
+
+    private String docId(int i) { return String.format(Locale.ENGLISH, "doc-%03d", i); }
+
+    // Kotlin shim functions
 
     private Document saveDocInTestCollection(MutableDocument doc) { return saveDocInTestCollection(doc, null); }
 
