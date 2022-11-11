@@ -37,6 +37,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 
+@SuppressWarnings("ConstantConditions")
 public class ConcurrencyTest extends BaseDbTest {
 
     @Test
@@ -363,8 +364,12 @@ public class ConcurrencyTest extends BaseDbTest {
         return mDocs;
     }
 
+    // Do not remove the extraneous try-catch here!
+    // The Windows Java 11 compiler appears to infer that mapToList
+    // throws an Exception and gives a compiler error
     private List<String> saveDocs(List<MutableDocument> mDocs) {
-        return Collections.synchronizedList(Fn.mapToList(saveDocsInTestCollection(mDocs), Document::getId));
+        try { return Collections.synchronizedList(Fn.mapToList(saveDocsInTestCollection(mDocs), Document::getId)); }
+        catch (Exception e) { throw new AssertionError("Failed saving documents", e); }
     }
 
     private void updateDocs(List<String> docIds, int rounds, String tag) {
