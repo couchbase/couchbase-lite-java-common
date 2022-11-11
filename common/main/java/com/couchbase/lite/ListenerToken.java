@@ -55,6 +55,9 @@ public abstract class ListenerToken implements AutoCloseable {
     protected void send(@NonNull Runnable notification) { getExecutor().execute(notification); }
 
     @VisibleForTesting
+    boolean isActive() { return active.get(); }
+
+    @VisibleForTesting
     @NonNull
     Executor getExecutor() {
         return (executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor();
