@@ -36,6 +36,7 @@ import static org.junit.Assert.assertNotNull;
 
 public class MigrationTest extends BaseTest {
     private static final String DB_NAME = "android-sqlite";
+    private static final String TEST_KEY = "key";
 
 
     private File dbDir;
@@ -59,11 +60,13 @@ public class MigrationTest extends BaseTest {
         ZipUtils.unzip(PlatformUtils.getAsset("replacedb/android140-sqlite.cblite2.zip"), dbDir);
 
         migrationTestDb = openDatabase();
-        assertEquals(2, migrationTestDb.getCount());
+        Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
+        assertNotNull(migrationTestCollection);
+        assertEquals(2, migrationTestCollection.getCount());
         for (int i = 1; i <= 2; i++) {
-            Document doc = migrationTestDb.getDocument("doc" + i);
+            Document doc = migrationTestCollection.getDocument("doc" + i);
             assertNotNull(doc);
-            assertEquals(String.valueOf(i), doc.getString("key"));
+            assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
 
             Dictionary attachments = doc.getDictionary("_attachments");
             assertNotNull(attachments);
@@ -82,11 +85,14 @@ public class MigrationTest extends BaseTest {
         ZipUtils.unzip(PlatformUtils.getAsset("replacedb/android140-sqlite-noattachment.cblite2.zip"), dbDir);
 
         migrationTestDb = openDatabase();
-        assertEquals(2, migrationTestDb.getCount());
+        Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
+        assertNotNull(migrationTestCollection);
+
+        assertEquals(2, migrationTestCollection.getCount());
         for (int i = 1; i <= 2; i++) {
-            Document doc = migrationTestDb.getDocument("doc" + i);
+            Document doc = migrationTestCollection.getDocument("doc" + i);
             assertNotNull(doc);
-            assertEquals(String.valueOf(i), doc.getString("key"));
+            assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
         }
     }
 
@@ -95,18 +101,21 @@ public class MigrationTest extends BaseTest {
         ZipUtils.unzip(PlatformUtils.getAsset("replacedb/android200-sqlite.cblite2.zip"), dbDir);
 
         migrationTestDb = openDatabase();
-        assertEquals(2, migrationTestDb.getCount());
+        Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
+        assertNotNull(migrationTestCollection);
+
+        assertEquals(2, migrationTestCollection.getCount());
+
         for (int i = 1; i <= 2; i++) {
-            Document doc = migrationTestDb.getDocument("doc" + i);
+            Document doc = migrationTestCollection.getDocument("doc" + i);
             assertNotNull(doc);
-            assertEquals(String.valueOf(i), doc.getString("key"));
+            assertEquals(String.valueOf(i), doc.getString(TEST_KEY));
             Blob blob = doc.getBlob("attach" + i);
             assertNotNull(blob);
             byte[] attach = String.format(Locale.ENGLISH, "attach%d", i).getBytes(StandardCharsets.UTF_8);
             assertArrayEquals(attach, blob.getContent());
         }
     }
-
 
     private Database openDatabase() throws IOException, CouchbaseLiteException {
         final DatabaseConfiguration config = new DatabaseConfiguration();

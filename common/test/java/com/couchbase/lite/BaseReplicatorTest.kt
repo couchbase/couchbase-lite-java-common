@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.replicator.ReplicationStatusChange
 import com.couchbase.lite.internal.utils.Fn
 import com.couchbase.lite.internal.utils.Report
 import com.couchbase.lite.mock.TestReplicatorChangeListener
@@ -25,40 +24,7 @@ import org.junit.Before
 import java.net.URI
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
-import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
-
-internal class CompletionAwaiter(private val token: ListenerToken) {
-    private val err = AtomicReference<Throwable?>(null)
-    private val latch = CountDownLatch(1)
-    fun changed(change: ReplicationStatusChange) {
-        val status = change.status
-        val e = status.error
-        if (e != null) {
-            err.compareAndSet(null, e)
-        }
-        val level = status.activityLevel
-        if (!(level == ReplicatorActivityLevel.STOPPED || level == ReplicatorActivityLevel.OFFLINE)) {
-            return
-        }
-        latch.countDown()
-    }
-
-    fun awaitAndValidate() {
-        try {
-            val ok = latch.await(BaseTest.LONG_TIMEOUT_SEC, TimeUnit.SECONDS)
-            val e = err.get()
-            if (e != null) {
-                throw IllegalStateException(e)
-            }
-            Assert.assertTrue("timeout", ok)
-        } catch (ignore: InterruptedException) {
-        } finally {
-            token.remove()
-        }
-    }
-}
 
 val mockURLEndpoint: URLEndpoint
     get() = URLEndpoint(URI("ws://foo.couchbase.com/db"))
@@ -81,22 +47,6 @@ abstract class BaseReplicatorTest : BaseDbTest() {
     @After
     fun tearDownBaseReplicatorTest() {
         eraseDb(targetDatabase)
-    }
-
-    protected fun makeCollectionConfig(
-        channels: List<String>? = null,
-        documentIDs: List<String>? = null,
-        pullFilter: ReplicationFilter? = null,
-        pushFilter: ReplicationFilter? = null,
-        resolver: ConflictResolver? = null
-    ): CollectionConfiguration {
-        val config = CollectionConfiguration()
-        channels?.let { config.channels = it }
-        documentIDs?.let { config.documentIDs = it }
-        pullFilter?.let { config.pullFilter = it }
-        pushFilter?.let { config.pushFilter = it }
-        resolver?.let { config.conflictResolver = it }
-        return config
     }
 
     protected fun makeReplicatorConfig(
@@ -125,9 +75,6 @@ abstract class BaseReplicatorTest : BaseDbTest() {
         autoPurge.let { config.setAutoPurgeEnabled(it) }
         return config
     }
-
-    protected fun makeTestReplicator(config: ReplicatorConfiguration = makeReplicatorConfig()) =
-        testReplicator(config)
 
     protected fun run(
         config: ReplicatorConfiguration = makeReplicatorConfig(),

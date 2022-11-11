@@ -85,17 +85,17 @@ public class DictionaryTest extends BaseDbTest {
     public void testGetValueFromNewEmptyDictionary() {
         MutableDictionary mDict = new MutableDictionary();
 
-        assertEquals(0, mDict.getInt("key"));
-        assertEquals(0.0f, mDict.getFloat("key"), 0.0f);
-        assertEquals(0.0, mDict.getDouble("key"), 0.0);
-        assertFalse(mDict.getBoolean("key"));
-        assertNull(mDict.getBlob("key"));
-        assertNull(mDict.getDate("key"));
-        assertNull(mDict.getNumber("key"));
-        assertNull(mDict.getValue("key"));
-        assertNull(mDict.getString("key"));
-        assertNull(mDict.getDictionary("key"));
-        assertNull(mDict.getArray("key"));
+        assertEquals(0, mDict.getInt(TEST_DOC_TAG_KEY));
+        assertEquals(0.0f, mDict.getFloat(TEST_DOC_TAG_KEY), 0.0f);
+        assertEquals(0.0, mDict.getDouble(TEST_DOC_TAG_KEY), 0.0);
+        assertFalse(mDict.getBoolean(TEST_DOC_TAG_KEY));
+        assertNull(mDict.getBlob(TEST_DOC_TAG_KEY));
+        assertNull(mDict.getDate(TEST_DOC_TAG_KEY));
+        assertNull(mDict.getNumber(TEST_DOC_TAG_KEY));
+        assertNull(mDict.getValue(TEST_DOC_TAG_KEY));
+        assertNull(mDict.getString(TEST_DOC_TAG_KEY));
+        assertNull(mDict.getDictionary(TEST_DOC_TAG_KEY));
+        assertNull(mDict.getArray(TEST_DOC_TAG_KEY));
         assertEquals(new HashMap<String, Object>(), mDict.toMap());
 
         MutableDocument mDoc = new MutableDocument("doc1");
@@ -105,17 +105,17 @@ public class DictionaryTest extends BaseDbTest {
 
         Dictionary dict = doc.getDictionary("dict");
 
-        assertEquals(0, dict.getInt("key"));
-        assertEquals(0.0f, dict.getFloat("key"), 0.0f);
-        assertEquals(0.0, dict.getDouble("key"), 0.0);
-        assertFalse(dict.getBoolean("key"));
-        assertNull(dict.getBlob("key"));
-        assertNull(dict.getDate("key"));
-        assertNull(dict.getNumber("key"));
-        assertNull(dict.getValue("key"));
-        assertNull(dict.getString("key"));
-        assertNull(dict.getDictionary("key"));
-        assertNull(dict.getArray("key"));
+        assertEquals(0, dict.getInt(TEST_DOC_TAG_KEY));
+        assertEquals(0.0f, dict.getFloat(TEST_DOC_TAG_KEY), 0.0f);
+        assertEquals(0.0, dict.getDouble(TEST_DOC_TAG_KEY), 0.0);
+        assertFalse(dict.getBoolean(TEST_DOC_TAG_KEY));
+        assertNull(dict.getBlob(TEST_DOC_TAG_KEY));
+        assertNull(dict.getDate(TEST_DOC_TAG_KEY));
+        assertNull(dict.getNumber(TEST_DOC_TAG_KEY));
+        assertNull(dict.getValue(TEST_DOC_TAG_KEY));
+        assertNull(dict.getString(TEST_DOC_TAG_KEY));
+        assertNull(dict.getDictionary(TEST_DOC_TAG_KEY));
+        assertNull(dict.getArray(TEST_DOC_TAG_KEY));
         assertEquals(new HashMap<String, Object>(), dict.toMap());
     }
 
@@ -433,7 +433,7 @@ public class DictionaryTest extends BaseDbTest {
     }
 
     @Test
-    public void testEquals() throws CouchbaseLiteException {
+    public void testEquals() {
 
         // mDict1 and mDict2 have exactly same data
         // mDict3 is different

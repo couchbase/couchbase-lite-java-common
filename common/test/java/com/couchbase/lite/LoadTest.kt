@@ -1,254 +1,227 @@
-////
-//// Copyright (c) 2020 Couchbase, Inc.
-////
-//// Licensed under the Apache License, Version 2.0 (the "License");
-//// you may not use this file except in compliance with the License.
-//// You may obtain a copy of the License at
-////
-//// http://www.apache.org/licenses/LICENSE-2.0
-////
-//// Unless required by applicable law or agreed to in writing, software
-//// distributed under the License is distributed on an "AS IS" BASIS,
-//// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//// See the License for the specific language governing permissions and
-//// limitations under the License.
-////
-//package com.couchbase.lite
 //
-//import com.couchbase.lite.internal.utils.LoadTest
-//import com.couchbase.lite.internal.utils.Report
-//import com.couchbase.lite.internal.utils.SlowTest
-//import com.couchbase.lite.internal.utils.VerySlowTest
-//import org.junit.Assert
-//import org.junit.Assert.assertTrue
-//import org.junit.Ignore
-//import org.junit.Test
-//import java.util.*
+// Copyright (c) 2020 Couchbase, Inc.
 //
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//private const val ITERATIONS = 2000
+// http://www.apache.org/licenses/LICENSE-2.0
 //
-//private fun interface Verifier {
-//    fun verify(n: Int, result: Result?)
-//}
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
-//// Timings were chosen to allow a Nexus 6 running Android 7.0 to pass.
-//class LoadTest : BaseDbTest() {
-//    @SlowTest
-//    @LoadTest
-//    @Test
-//    fun testAddRevisions() {
-//        timeTest("testAddRevisions", 45 * 1000L) {
-//            addRevisions(1000, false)
-//            addRevisions(1000, true)
-//        }
-//    }
-//
-//    @SlowTest
-//    @LoadTest
-//    @Test
-//    fun testCreate() {
-//        timeTest("testCreate", 10 * 1000L) {
-//            createAndSaveDocuments("Create", ITERATIONS)
-//            verifyByTag("Create", ITERATIONS)
-//            Assert.assertEquals(ITERATIONS.toLong(), baseTestDb.count)
-//        }
-//    }
-//
-//    // This test reliably drove a bug that caused C4NativePeer
-//    // to finalize what appears to h ave been an incompletely initialize
-//    // instance of C4Document.  It is, otherwise, not relevant.
-//    @Ignore("Same test as testCreate")
-//    @LoadTest
-//    @Test
-//    fun testCreateMany() {
-//        timeTest("testCreateMany", 35 * 1000L) {
-//            for (i in 0..3) {
-//                createAndSaveDocuments("Create", ITERATIONS)
-//                verifyByTag("Create", ITERATIONS)
-//                Assert.assertEquals(ITERATIONS.toLong(), baseTestDb.count)
-//            }
-//        }
-//    }
-//
-//    @VerySlowTest
-//    @LoadTest
-//    @Test
-//    fun testDelete() {
-//        timeTest("testDelete", 20 * 1000L) {
-//            // create & delete doc ITERATIONS times
-//            for (i in 0 until ITERATIONS) {
-//                val docID = "doc-${i}"
-//                createAndSaveDocument(docID, "Delete")
-//                Assert.assertEquals(1, baseTestDb.count)
-//                val doc = baseTestDb.getDocument(docID)
-//                Assert.assertNotNull(doc)
-//                Assert.assertEquals("Delete", doc!!.getString("tag"))
-//                baseTestDb.delete(doc)
-//                Assert.assertEquals(0, baseTestDb.count)
-//            }
-//        }
-//    }
-//
-//    @Test
-//    @LoadTest
-//    fun testRead() {
-//        timeTest("testRead", 5 * 1000L) {
-//            // create 1 doc
-//            createAndSaveDocument("doc1", "Read")
-//            // read the doc n times
-//            for (i in 0 until ITERATIONS) {
-//                val doc = baseTestDb.getDocument("doc1")
-//                Assert.assertNotNull(doc)
-//                Assert.assertEquals("doc1", doc!!.id)
-//                Assert.assertEquals("Read", doc.getString("tag"))
-//            }
-//        }
-//    }
-//
-//    // https://github.com/couchbase/couchbase-lite-android/issues/1447
-//    @SlowTest
-//    @LoadTest
-//    @Test
-//    fun testSaveManyDocs() {
-//        timeTest("testSaveManyDocs", 20 * 1000L) {
-//            // Without Batch
-//            for (i in 0 until ITERATIONS) {
-//                val doc = MutableDocument("doc-${i}")
-//                for (j in 0 until 100) {
-//                    doc.setInt(j.toString(), j); }
-//                try {
-//                    baseTestDb.save(doc)
-//                } catch (e: CouchbaseLiteException) {
-//                    Report.log(LogLevel.ERROR, "Failed to save", e)
-//                }
-//            }
-//            Assert.assertEquals(ITERATIONS.toLong(), baseTestDb.count)
-//        }
-//    }
-//
-//    @SlowTest
-//    @LoadTest
-//    @Test
-//    fun testUpdate() {
-//        timeTest("testUpdate", 25 * 1000L) {
-//            // create doc
-//            createAndSaveDocument("doc1", "Create")
-//
-//            var doc = baseTestDb.getDocument("doc1")
-//            Assert.assertNotNull(doc)
-//            Assert.assertEquals("doc1", doc!!.id)
-//            Assert.assertEquals("Create", doc.getString("tag"))
-//
-//            // update doc n times
-//            for (i in 1..ITERATIONS) {
-//                val mDoc = baseTestDb.getDocument("doc1")!!.toMutable()
-//                mDoc.setValue("update", i)
-//                mDoc.setValue("tag", "Update")
-//                val address = mDoc.getDictionary("address")
-//                Assert.assertNotNull(address)
-//                address!!.setValue("street", "${i} street")
-//                mDoc.setDictionary("address", address)
-//                val phones = mDoc.getArray("phones")
-//                Assert.assertNotNull(phones)
-//                Assert.assertEquals(2, phones!!.count())
-//                phones.setValue(0, "650-000-${i}")
-//                mDoc.setArray("phones", phones)
-//                mDoc.setValue("updated", Date())
-//                saveDocInBaseTestDb(mDoc)
-//            }
-//            // check document
-//            doc = baseTestDb.getDocument("doc1")
-//            Assert.assertNotNull(doc)
-//            Assert.assertEquals("doc1", doc!!.id)
-//            Assert.assertEquals("Update", doc.getString("tag"))
-//            Assert.assertEquals(ITERATIONS, doc.getInt("update"))
-//            Assert.assertEquals("${ITERATIONS} street", doc.getDictionary("address")!!.getString("street"))
-//            Assert.assertEquals("650-000-${ITERATIONS}", doc.getArray("phones")!!.getString(0))
-//        }
-//    }
-//
-//    // https://github.com/couchbase/couchbase-lite-android/issues/1610
-//    @SlowTest
-//    @LoadTest
-//    @Test
-//    fun testUpdate2() {
-//        timeTest("testUpdate2", 25 * 1000L) {
-//            val mDoc = MutableDocument("doc1")
-//            val map: MutableMap<String, Any> = HashMap()
-//            map["ID"] = "doc1"
-//            mDoc.setValue("map", map)
-//            saveDocInBaseTestDb(mDoc)
-//            for (i in 0..1999) {
-//                map["index"] = i
-//                val doc = baseTestDb.getDocument(map["ID"].toString()) ?: throw AssertionError("Failed fetching doc")
-//                val newDoc = doc.toMutable()
-//                newDoc.setValue("map", map)
-//                newDoc.setInt("int", i)
-//                newDoc.setLong("long", i.toLong())
-//                baseTestDb.save(newDoc)
-//            }
-//        }
-//    }
-//
-//
-//    /// Utility methods
-//
-//    private fun createAndSaveDocument(id: String, tag: String) {
-//        val doc = createDocumentWithTag(id, tag)
-//        baseTestDb.save(doc)
-//    }
-//
-//    private fun createAndSaveDocuments(tag: String, nDocs: Int) {
-//        for (i in 0 until nDocs) {
-//            createAndSaveDocument("doc-${i}", tag)
-//        }
-//    }
-//
-//    private fun addRevisions(revisions: Int, retrieveNewDoc: Boolean) {
-//        testDatabase.inBatch<CouchbaseLiteException> {
-//            var mDoc = MutableDocument("doc")
-//            for (i in 0 until revisions) {
-//                mDoc.setValue("count", i)
-//                testCollection.save(mDoc)
-//                if (!retrieveNewDoc) {
-//                    System.gc()
-//                } else {
-//                    mDoc = testCollection.getDocument("doc")!!.toMutable()
-//                }
-//            }
-//        }
-//        val doc = testCollection.getDocument("doc")
-//        Assert.assertEquals((revisions - 1), doc!!.getInt("count")) // start from 0.
-//    }
-//
-//    private fun verifyByTag(tag: String, nRows: Int) {
-//        Assert.assertEquals(
-//            nRows.toLong(),
-//            QueryBuilder.select(SelectResult.expression(Meta.id))
-//                .from(DataSource.collection(testCollection))
-//                .where(Expression.property("tag").equalTo(Expression.string(tag)))
-//                .execute().allResults().size
-//        );
-//    }
-//
-//    private fun verifyByTag(tag: String, verifier: Verifier) {
-//        var n = 0
-//        QueryBuilder.select(SelectResult.expression(Meta.id))
-//            .from(DataSource.collection(testCollection))
-//            .where(Expression.property("tag").equalTo(Expression.string(tag)))
-//            .execute().use { rs ->
-//                for (row in rs) {
-//                    verifier.verify(++n, row)
-//                }
-//            }
-//    }
-//
-//    private fun timeTest(testName: String, maxTimeMs: Long, test: Runnable) {
-//        val t0 = System.currentTimeMillis()
-//        test.run()
-//        val elapsedTime = System.currentTimeMillis() - t0
-//        Report.log("Test ${testName} time: " + elapsedTime)
-//        assertTrue(elapsedTime < maxTimeMs)
-//    }
-//}
+package com.couchbase.lite
+
+import com.couchbase.lite.internal.utils.LoadTest
+import com.couchbase.lite.internal.utils.Report
+import com.couchbase.lite.internal.utils.SlowTest
+import com.couchbase.lite.internal.utils.VerySlowTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.util.*
+
+
+private const val ITERATIONS = 2000
+
+// Timings were chosen to allow a Nexus 6 running Android 7.0 to pass.
+class LoadTest : BaseDbTest() {
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1447
+    @SlowTest
+    @LoadTest
+    @Test
+    fun testCreateUnbatched() {
+        val tag = getUniqueName("create#1")
+        val docs = createComplexTestDocs(ITERATIONS, tag)
+
+        assertEquals(0, testCollection.count)
+        timeTest("testCreateUnbatched", 7 * 1000L) {
+            for (doc in docs) {
+                testCollection.save(doc)
+            }
+        }
+        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        verifyByTag(tag, ITERATIONS)
+    }
+
+    @SlowTest
+    @LoadTest
+    @Test
+    fun testCreateBatched() {
+        val tag = getUniqueName("create#2")
+        val docs = createComplexTestDocs(ITERATIONS, tag)
+
+        assertEquals(0, testCollection.count)
+        timeTest("testCreateBatched", 3 * 1000L) {
+            testDatabase.inBatch<CouchbaseLiteException> {
+                for (doc in docs) {
+                    testCollection.save(doc)
+                }
+            }
+        }
+        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        verifyByTag(tag, ITERATIONS)
+    }
+
+    @Test
+    @LoadTest
+    fun testRead() {
+        val tag = getUniqueName("read")
+        val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, tag)).map { it.id }
+
+        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        timeTest("testRead", 2 * 1000L) {
+            for (id in ids) {
+                val doc = testCollection.getDocument(id)
+                assertNotNull(doc)
+
+                assertEquals(tag, doc!!.getString(TEST_DOC_TAG_KEY))
+
+                val address = doc.getDictionary("address")
+                assertNotNull(address)
+                assertEquals("Mountain View", address!!.getString("city"))
+
+                val phones = doc.getArray("phones")
+                assertNotNull(phones)
+                assertEquals("650-123-0002", phones!!.getString(1))
+            }
+        }
+    }
+
+    @SlowTest
+    @LoadTest
+    @Test
+    fun testUpdate1() {
+        val newTag = getUniqueName("update")
+        val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("update"))).map { it.id }
+
+        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        timeTest("testUpdate1", 12 * 1000L) {
+            var i = 0
+            for (id in ids) {
+                i++
+
+                val mDoc = testCollection.getDocument(id)!!.toMutable()
+
+                mDoc.setValue("updated", Date())
+                mDoc.setValue("update", i)
+
+                mDoc.setValue(TEST_DOC_TAG_KEY, newTag)
+
+                val address = mDoc.getDictionary("address")
+                assertNotNull(address)
+                address!!.setValue("street", "${i} street")
+                mDoc.setDictionary("address", address)
+
+                val phones = mDoc.getArray("phones")
+                assertNotNull(phones)
+                phones!!.setValue(0, "650-000-${i}")
+                mDoc.setArray("phones", phones)
+
+                testCollection.save(mDoc)
+            }
+        }
+        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        verifyByTag(newTag, ITERATIONS)
+    }
+
+    // https://github.com/couchbase/couchbase-lite-android/issues/1610
+    @SlowTest
+    @LoadTest
+    @Test
+    fun testUpdate2() {
+        var mDoc = createTestDoc()
+        mDoc.setValue("map", mapOf("idx" to 0, "long" to 0L, TEST_DOC_TAG_KEY to getUniqueName("tag")))
+        testCollection.save(mDoc)
+
+        assertEquals(1L, testCollection.count)
+        timeTest("testUpdate2", 9 * 1000L) {
+            for (i in 0..ITERATIONS) {
+                mDoc = testCollection.getDocument(mDoc.id)!!.toMutable()
+                mDoc.setValue("map", mapOf("idx" to i, "long" to i.toLong(), TEST_DOC_TAG_KEY to getUniqueName("tag")))
+                testCollection.save(mDoc)
+            }
+        }
+
+        val doc = testCollection.getDocument(mDoc.id)
+        assertNotNull(doc)
+        val map = doc!!.getDictionary("map")
+        assertNotNull(map)
+        assertEquals(ITERATIONS, map!!.getInt("idx"))
+        assertEquals(ITERATIONS.toLong(), map.getLong("long"))
+        assertEquals(mDoc.getString(TEST_DOC_TAG_KEY), doc.getString(TEST_DOC_TAG_KEY))
+    }
+
+    @VerySlowTest
+    @LoadTest
+    @Test
+    fun testDelete() {
+        val docs = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("delete")))
+
+        assertEquals(ITERATIONS.toLong(), testCollection.count)
+        timeTest("testDelete", 8 * 1000L) {
+            for (doc in docs) {
+                testCollection.delete(doc)
+            }
+        }
+        assertEquals(0, testCollection.count)
+    }
+
+    @SlowTest
+    @LoadTest
+    @Test
+    fun testSaveRevisions1() {
+        var mDoc = MutableDocument()
+        timeTest("testSaveRevisions1", 4 * 1000L) {
+            testDatabase.inBatch<CouchbaseLiteException> {
+                for (i in 0 until ITERATIONS) {
+                    mDoc.setValue("count", i)
+                    testCollection.save(mDoc)
+                    mDoc = testCollection.getDocument(mDoc.id)!!.toMutable()
+                }
+            }
+        }
+        assertEquals((ITERATIONS - 1), testCollection.getDocument(mDoc.id)!!.getInt("count"))
+    }
+
+    @SlowTest
+    @LoadTest
+    @Test
+    fun testSaveRevisions2() {
+        val mDoc = MutableDocument()
+        timeTest("testSaveRevisions2", 2 * 1000L) {
+            testDatabase.inBatch<CouchbaseLiteException> {
+                for (i in 0 until ITERATIONS) {
+                    mDoc.setValue("count", i)
+                    testCollection.save(mDoc)
+                }
+            }
+        }
+        assertEquals((ITERATIONS - 1), testCollection.getDocument(mDoc.id)!!.getInt("count"))
+    }
+
+    // Utility methods
+
+    private fun verifyByTag(tag: String, count: Int) {
+        assertEquals(
+            count,
+            QueryBuilder.select(SelectResult.expression(Meta.id))
+                .from(DataSource.collection(testCollection))
+                .where(Expression.property(TEST_DOC_TAG_KEY).equalTo(Expression.string(tag)))
+                .execute().allResults().size
+        )
+    }
+
+    private fun timeTest(testName: String, maxTimeMs: Long, test: Runnable) {
+        val t0 = System.currentTimeMillis()
+        test.run()
+        val elapsedTime = System.currentTimeMillis() - t0
+        Report.log("Load test ${testName} completed in ${elapsedTime} ms")
+        assertTrue(elapsedTime < maxTimeMs)
+    }
+}

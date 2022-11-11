@@ -219,17 +219,17 @@ public class DocumentTest extends BaseDbTest {
     public void testGetValueFromDocument() {
         MutableDocument doc = new MutableDocument("doc1");
         saveDocInTestCollection(doc, d -> {
-            assertEquals(0, d.getInt("key"));
-            assertEquals(0.0f, d.getFloat("key"), 0.0f);
-            assertEquals(0.0, d.getDouble("key"), 0.0);
-            assertFalse(d.getBoolean("key"));
-            assertNull(d.getBlob("key"));
-            assertNull(d.getDate("key"));
-            assertNull(d.getNumber("key"));
-            assertNull(d.getValue("key"));
-            assertNull(d.getString("key"));
-            assertNull(d.getArray("key"));
-            assertNull(d.getDictionary("key"));
+            assertEquals(0, d.getInt(TEST_DOC_TAG_KEY));
+            assertEquals(0.0f, d.getFloat(TEST_DOC_TAG_KEY), 0.0f);
+            assertEquals(0.0, d.getDouble(TEST_DOC_TAG_KEY), 0.0);
+            assertFalse(d.getBoolean(TEST_DOC_TAG_KEY));
+            assertNull(d.getBlob(TEST_DOC_TAG_KEY));
+            assertNull(d.getDate(TEST_DOC_TAG_KEY));
+            assertNull(d.getNumber(TEST_DOC_TAG_KEY));
+            assertNull(d.getValue(TEST_DOC_TAG_KEY));
+            assertNull(d.getString(TEST_DOC_TAG_KEY));
+            assertNull(d.getArray(TEST_DOC_TAG_KEY));
+            assertNull(d.getDictionary(TEST_DOC_TAG_KEY));
             assertEquals(new HashMap<String, Object>(), d.toMap());
         });
     }
@@ -2124,7 +2124,7 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public void testEnumeratingKeys() {
         MutableDocument doc = new MutableDocument("doc1");
-        for (long i = 0; i < 20; i++) { doc.setLong("key" + i, i); }
+        for (long i = 0; i < 20; i++) { doc.setLong(TEST_DOC_TAG_KEY + i, i); }
         Map<String, Object> content = doc.toMap();
         Map<String, Object> result = new HashMap<>();
         int count = 0;
@@ -2306,14 +2306,14 @@ public class DocumentTest extends BaseDbTest {
         assertNull(doc);
 
         MutableDocument mDoc = new MutableDocument(docID);
-        mDoc.setValue("key", "value");
+        mDoc.setValue(TEST_DOC_TAG_KEY, "value");
         doc = saveDocInTestCollection(mDoc);
         assertNotNull(doc);
         assertEquals(1, testCollection.getCount());
 
         doc = testCollection.getDocument(docID);
         assertNotNull(doc);
-        assertEquals("value", doc.getString("key"));
+        assertEquals("value", doc.getString(TEST_DOC_TAG_KEY));
 
         testCollection.delete(doc);
         assertEquals(0, testCollection.getCount());
@@ -2747,8 +2747,6 @@ public class DocumentTest extends BaseDbTest {
     }
 
     // !!! These smell bad...
-
-    private String docId() { return BaseTest.getUniqueName("doc"); }
 
     private String docId(int i) { return String.format(Locale.ENGLISH, "doc-%03d", i); }
 

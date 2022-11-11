@@ -242,11 +242,11 @@ class DbCollectionsTest : BaseDbTest() {
     @Test
     fun testScopeNameContainingIllegalChars() {
         for (c in invalidChars) {
-            val scopeName = "notval" + c + "d"
+            val scopeName = "notval${c}d"
             try {
                 testDatabase.createCollection("col", scopeName)
                 fail("Expect CBL Exception for scope : $scopeName")
-            } catch (e: CouchbaseLiteException) {
+            } catch (ignore: CouchbaseLiteException) {
             }
         }
     }

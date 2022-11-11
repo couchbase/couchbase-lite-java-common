@@ -49,7 +49,9 @@ public class ConcurrencyTest extends BaseDbTest {
             copies,
             id -> {
                 try {
-                    for (MutableDocument mDoc: createDocs(nDocs, "TAG@CREATES-" + id)) { testCollection.save(mDoc); }
+                    for (MutableDocument mDoc: createComplexTestDocs(nDocs, "TAG@CREATES-" + id)) {
+                        testCollection.save(mDoc);
+                    }
                 }
                 catch (CouchbaseLiteException e) {
                     throw new AssertionError("Failed saving doc", e);
@@ -69,7 +71,7 @@ public class ConcurrencyTest extends BaseDbTest {
             copies,
             id -> {
                 try {
-                    for (MutableDocument mDoc: createDocs(nDocs, "TAG@CREATESBATCH-" + id)) {
+                    for (MutableDocument mDoc: createComplexTestDocs(nDocs, "TAG@CREATESBATCH-" + id)) {
                         testDatabase.inBatch(() -> testCollection.save(mDoc));
                     }
                 }
@@ -84,13 +86,13 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     public void testConcurrentReads() throws InterruptedException {
-        final List<String> docIDs = saveDocs(createDocs(5, "TAG@READS"));
+        final List<String> docIDs = saveDocs(createComplexTestDocs(5, "TAG@READS"));
         runConcurrentCopies(4, id -> readDocs(docIDs, 50));
     }
 
     @Test
     public void testConcurrentReadsInBatch() throws InterruptedException {
-        final List<String> docIDs = saveDocs(createDocs(5, "TAG@READSBATCH"));
+        final List<String> docIDs = saveDocs(createComplexTestDocs(5, "TAG@READSBATCH"));
 
         runConcurrentCopies(
             4,
@@ -104,10 +106,10 @@ public class ConcurrencyTest extends BaseDbTest {
     @SlowTest
     @Test
     public void testConcurrentUpdates() throws CouchbaseLiteException, InterruptedException {
-        final List<String> docIDs = saveDocs(createDocs(5, "TAG@UPDATES"));
+        final List<String> docIDs = saveDocs(createComplexTestDocs(5, "TAG@UPDATES"));
 
         final int copies = 4;
-        runConcurrentCopies(copies, threadId -> updateDocs(docIDs, 50, "TAG@UPDATED-" + threadId));
+        runConcurrentCopies(copies, id -> updateDocs(docIDs, 50, "TAG@UPDATED-" + id));
 
         int count = 0;
         for (int i = 0; i < copies; i++) { count += countTaggedDocs("TAG@UPDATED-" + i); }
@@ -117,7 +119,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     public void testConcurrentDeletes() {
-        final List<String> docIDs = saveDocs(createDocs(100, "TAG@DELETES"));
+        final List<String> docIDs = saveDocs(createComplexTestDocs(100, "TAG@DELETES"));
 
         runConcurrently(
             "delete",
@@ -145,7 +147,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     public void testConcurrentPurges() {
-        final List<String> docIDs = saveDocs(createDocs(100, "TAG@PURGES"));
+        final List<String> docIDs = saveDocs(createComplexTestDocs(100, "TAG@PURGES"));
 
         runConcurrently(
             "purge",
@@ -177,7 +179,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     public void testConcurrentReadWhileUpdate() throws CouchbaseLiteException {
-        final List<String> docIDs = saveDocs(createDocs(5, "TAG@READ&UPDATE"));
+        final List<String> docIDs = saveDocs(createComplexTestDocs(5, "TAG@READ&UPDATE"));
         runConcurrently(
             "readWhileUpdate",
             () -> readDocs(docIDs, 50),
@@ -188,7 +190,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     public void testConcurrentCreateWhileCloseDB() {
-        final List<MutableDocument> docs = createDocs(100, "TAG@CLOSEDB");
+        final List<MutableDocument> docs = createComplexTestDocs(100, "TAG@CLOSEDB");
         runConcurrently(
             "createWhileCloseD",
             () -> {
@@ -210,7 +212,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     public void testConcurrentCreateWhileDeleteDB() {
-        final List<MutableDocument> docs = createDocs(100, "TAG@DELETEDB");
+        final List<MutableDocument> docs = createComplexTestDocs(100, "TAG@DELETEDB");
 
         runConcurrently(
             "createWhileDeleteDb",
@@ -233,7 +235,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     @Test
     public void testConcurrentCreateWhileCompactDB() {
-        final List<MutableDocument> docs = createDocs(100, "TAG@COMPACTDB");
+        final List<MutableDocument> docs = createComplexTestDocs(100, "TAG@COMPACTDB");
 
         runConcurrently(
             "createAndCompactDb@1",
@@ -263,7 +265,7 @@ public class ConcurrencyTest extends BaseDbTest {
     public void testConcurrentCreateWhileIndexDB() {
         loadJSONResourceIntoTestCollection("sentences.json");
 
-        final List<MutableDocument> docs = createDocs(100, "TAG@INDEX");
+        final List<MutableDocument> docs = createComplexTestDocs(100, "TAG@INDEX");
 
         runConcurrently(
             "CreateWhileIndex",
@@ -342,31 +344,6 @@ public class ConcurrencyTest extends BaseDbTest {
         for (Integer n: nResults) { assertEquals(testCollection.getCount(), (long) n); }
     }
 
-    private List<MutableDocument> createDocs(int nDocs, String tag) {
-        List<MutableDocument> mDocs = createTestDocs(1000, nDocs);
-        for (MutableDocument mDoc: mDocs) {
-            mDoc.setValue("tag", tag);
-
-            // Dictionary:
-            MutableDictionary address = new MutableDictionary();
-            address.setValue("street", "1 Main street");
-            address.setValue("city", "Mountain View");
-            address.setValue("state", "CA");
-            mDoc.setValue("address", address);
-
-            // Array:
-            MutableArray phones = new MutableArray();
-            phones.addValue("650-123-0001");
-            phones.addValue("650-123-0002");
-            mDoc.setValue("phones", phones);
-        }
-
-        return mDocs;
-    }
-
-    // Do not remove the extraneous try-catch here!
-    // The Windows Java 11 compiler appears to infer that mapToList
-    // throws an Exception and gives a compiler error
     private List<String> saveDocs(List<MutableDocument> mDocs) {
         try { return Collections.synchronizedList(Fn.mapToList(saveDocsInTestCollection(mDocs), Document::getId)); }
         catch (Exception e) { throw new AssertionError("Failed saving documents", e); }
@@ -377,11 +354,9 @@ public class ConcurrencyTest extends BaseDbTest {
             for (String docId: docIds) {
                 MutableDocument mDoc;
                 try { mDoc = testCollection.getDocument(docId).toMutable(); }
-                catch (CouchbaseLiteException e) {
-                    throw new AssertionError("Failed getting document: " + docId, e);
-                }
+                catch (CouchbaseLiteException e) { throw new AssertionError("Failed getting document: " + docId, e); }
 
-                mDoc.setValue("tag", tag);
+                mDoc.setValue(TEST_DOC_TAG_KEY, tag);
 
                 MutableDictionary address = mDoc.getDictionary("address");
                 assertNotNull(address);
@@ -396,9 +371,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
                 mDoc.setValue("updated", new Date());
                 try { testCollection.save(mDoc); }
-                catch (CouchbaseLiteException e) {
-                    throw new AssertionError("Failed saving document: " + docId, e);
-                }
+                catch (CouchbaseLiteException e) { throw new AssertionError("Failed saving document: " + docId, e); }
             }
         }
     }
@@ -418,7 +391,7 @@ public class ConcurrencyTest extends BaseDbTest {
     private int countTaggedDocs(String tag) throws CouchbaseLiteException {
         final Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
-            .where(Expression.property("tag").equalTo(Expression.string(tag)));
+            .where(Expression.property(TEST_DOC_TAG_KEY).equalTo(Expression.string(tag)));
         try (ResultSet rs = query.execute()) { return rs.allResults().size(); }
     }
 
@@ -448,7 +421,7 @@ public class ConcurrencyTest extends BaseDbTest {
         createTestThreads("Concurrency-test", nThreads, barrier, latch, error, task);
 
         // wait
-        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+        assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
         checkForFailure(error);
     }

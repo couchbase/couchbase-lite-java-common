@@ -20,7 +20,6 @@ import androidx.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -67,8 +66,9 @@ public abstract class BaseTest extends PlatformBaseTest {
     public static final String TEST_DATE = "2019-02-21T05:37:22.014Z";
     public static final String BLOB_CONTENT = "Knox on fox in socks in box. Socks on Knox and Knox in box.";
 
-    public static final String TEST_DOC_SORT_KEY = "Sort";
-    public static final String TEST_DOC_REV_SORT_KEY = "ReverseSort";
+    public static final String TEST_DOC_SORT_KEY = "TEST_SORT_ASC";
+    public static final String TEST_DOC_REV_SORT_KEY = "TEST_SORT_DESC";
+    public static final String TEST_DOC_TAG_KEY = "TEST_TAG";
 
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
@@ -312,13 +312,34 @@ public abstract class BaseTest extends PlatformBaseTest {
         catch (Exception e) { Report.log("Failed to delete database %s", e, db); }
     }
 
-    protected final MutableDocument createTestDoc() { return createTestDoc(1, 1, getUniqueName("value")); }
+    protected final MutableDocument createTestDoc() { return createTestDoc(1, 1, getUniqueName("tag")); }
+
+    protected final MutableDocument createTestDoc(String tag) { return createTestDoc(1, 1, tag); }
 
     protected final List<MutableDocument> createTestDocs(int first, int n) {
-        final String keyVal = getUniqueName("value");
+        final String tag = getUniqueName("tag");
         final List<MutableDocument> docs = new ArrayList<>();
         final int last = first + n - 1;
-        for (int i = first; i <= last; i++) { docs.add(createTestDoc(i, last, keyVal)); }
+        for (int i = first; i <= last; i++) { docs.add(createTestDoc(i, last, tag)); }
+        return docs;
+    }
+
+    protected final MutableDocument createComplexTestDoc() {
+        return createComplexTestDoc(getUniqueName("tag"));
+    }
+
+    protected final MutableDocument createComplexTestDoc(String tag) {
+        return addComplexData(createTestDoc(1, 1, tag));
+    }
+
+    protected final List<MutableDocument> createComplexTestDocs(int n, String tag) {
+        return createComplexTestDocs(1000, n, tag);
+    }
+
+    protected final List<MutableDocument> createComplexTestDocs(int first, int n, String tag) {
+        final List<MutableDocument> docs = new ArrayList<>();
+        final int last = first + n - 1;
+        for (int i = first; i <= last; i++) { docs.add(addComplexData(createTestDoc(i, last, tag))); }
         return docs;
     }
 
@@ -328,7 +349,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     // This doc is sufficiently complex to make simple
     // comparison interesting but uses only values/types
     // that are seem to survive the Fleece round-trip, unchanged
-    private MutableDocument createTestDoc(int id, int top, String keyVal) {
+    private MutableDocument createTestDoc(int id, int top, String tag) {
         MutableDocument mDoc = new MutableDocument();
         mDoc.setValue("nullValue", null);
         mDoc.setBoolean("booleanTrue", true);
@@ -343,9 +364,26 @@ public abstract class BaseTest extends PlatformBaseTest {
         mDoc.setDate("dateNull", null);
         mDoc.setDate("dateCB", JSONUtils.toDate(TEST_DATE));
         mDoc.setBlob("blobNull", null);
+        mDoc.setString(TEST_DOC_TAG_KEY, tag);
         mDoc.setLong(TEST_DOC_SORT_KEY, id);
         mDoc.setLong(TEST_DOC_REV_SORT_KEY, top - id);
-        mDoc.setValue("key", keyVal);
+        return mDoc;
+    }
+
+    private MutableDocument addComplexData(MutableDocument mDoc) {
+        // Dictionary:
+        MutableDictionary address = new MutableDictionary();
+        address.setValue("street", "1 Main street");
+        address.setValue("city", "Mountain View");
+        address.setValue("state", "CA");
+        mDoc.setValue("address", address);
+
+        // Array:
+        MutableArray phones = new MutableArray();
+        phones.addValue("650-123-0001");
+        phones.addValue("650-123-0002");
+        mDoc.setValue("phones", phones);
+
         return mDoc;
     }
 

@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit
 // baseTestDb is managed by the superclass
 // If a test creates a new database it guarantees that it is deleted.
 // If a test opens a copy of the baseTestDb, it close (but does NOT delete) it
-@Suppress("DEPRECATION")
 class DatabaseTest : LegacyBaseDbTest() {
     //---------------------------------------------
     //  Get Document
