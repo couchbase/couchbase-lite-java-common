@@ -91,7 +91,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     // Run a boolean function every `waitMs` until it it true
     // If it is not true within `maxWaitMs` fail.
-    @SuppressWarnings("BusyWait")
+    @SuppressWarnings({"BusyWait", "ConditionalBreakInInfiniteLoop"})
     protected static void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {
         final long waitMs = 100L;
         final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;

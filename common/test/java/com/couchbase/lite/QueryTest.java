@@ -232,6 +232,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     // Throws clause prevents Windows compiler error
+    @SuppressWarnings("RedundantThrows")
     @Test
     public void testWhereComparison() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
@@ -271,6 +272,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     // Throws clause prevents Windows compiler error
+    @SuppressWarnings("RedundantThrows")
     @Test
     public void testWhereArithmetic() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
@@ -327,6 +329,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     // Throws clause prevents Windows compiler error
+    @SuppressWarnings("RedundantThrows")
     @Test
     public void testWhereAndOr() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
@@ -473,6 +476,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     // Throws clause prevents Windows compiler error
+    @SuppressWarnings("RedundantThrows")
     @Test
     public void testWhereBetween() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
@@ -829,6 +833,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     // Throws clause prevents Windows compiler error
+    @SuppressWarnings("RedundantThrows")
     @Test
     public void testMeta() throws Exception {
         List<String> expected = Fn.mapToList(loadDocuments(5), Document::getId);
@@ -1532,7 +1537,7 @@ public class QueryTest extends BaseQueryTest {
     // This is a pretty finickey test: the numbers are important.
     // It will fail by timing out; you'll have to figure out why.
     @Test
-    public void testLiveQuery() throws InterruptedException {
+    public void testLiveQuery() {
         List<MutableDocument> firstLoad = loadDocuments(100, 20);
 
         Query query = QueryBuilder

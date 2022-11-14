@@ -34,6 +34,7 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
     protected AbstractDatabaseConfiguration() { this((String) null); }
 
+    @SuppressWarnings("CopyConstructorMissesField")
     protected AbstractDatabaseConfiguration(@Nullable AbstractDatabaseConfiguration config) {
         this((config == null) ? null : config.getDirectory());
     }

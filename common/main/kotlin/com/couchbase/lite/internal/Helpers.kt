@@ -19,5 +19,7 @@ import com.couchbase.lite.Collection
 import com.couchbase.lite.CollectionConfiguration
 
 
-internal fun getCollectionConfigs(config: BaseReplicatorConfiguration?): Map<Collection, CollectionConfiguration>? =
-    config?.collectionConfigurations
+internal fun getCollectionConfigs(config: BaseReplicatorConfiguration?): Map<Collection, CollectionConfiguration>? {
+    val colls = config?.collectionConfigurations
+    return if ((colls == null) || (colls.isEmpty())) null else colls
+}

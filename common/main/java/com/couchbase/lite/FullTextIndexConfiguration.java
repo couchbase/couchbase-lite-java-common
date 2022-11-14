@@ -38,16 +38,6 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
 
     FullTextIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.FULL_TEXT, expressions); }
 
-    // For Kotlin
-    FullTextIndexConfiguration(
-        @Nullable String language,
-        boolean ignoreDiacritics,
-        @NonNull List<String> expressions) {
-        super(IndexType.FULL_TEXT, expressions);
-        this.language = language;
-        this.ignoreDiacrits = ignoreDiacritics;
-    }
-
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.
      * Setting the language code affects how word breaks and word stems are parsed.

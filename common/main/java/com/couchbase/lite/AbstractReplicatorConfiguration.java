@@ -92,12 +92,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Nullable
     private static Map<Collection, CollectionConfiguration> copyConfigs(
         @Nullable Map<Collection, CollectionConfiguration> configs) {
-        if (configs == null) { return null; }
-        final Map<Collection, CollectionConfiguration> configsCopy = new HashMap<>();
-        for (Map.Entry<Collection, CollectionConfiguration> config: configs.entrySet()) {
-            configsCopy.put(config.getKey(), new CollectionConfiguration(config.getValue()));
-        }
-        return configsCopy;
+        return (configs == null) ? null : new HashMap<>(configs);
     }
 
     //---------------------------------------------
@@ -150,6 +145,11 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             db);
     }
 
+    // maxAttemptsSet is not copied into the new config, by design:
+    // changing the the replication type will reset maxAttempts
+    // If there is a way to get rid of the whole kludgy business,
+    // this warning suppression can be removed
+    @SuppressWarnings("CopyConstructorMissesField")
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
         this(
             config.collectionConfigurations,
@@ -186,8 +186,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     // Although they are mutable, an AbstractReplicatorConfiguration holds
     // the only reference to its copies (they are copied in and copied out)
     // They are, therefore, effectively immutable
-    @SuppressWarnings({"PMD.ExcessiveParameterList", "PMD.ArrayIsStoredDirectly"})
-    protected AbstractReplicatorConfiguration(
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    private AbstractReplicatorConfiguration(
         @Nullable Map<Collection, CollectionConfiguration> collections,
         @NonNull Endpoint target,
         @NonNull com.couchbase.lite.ReplicatorType type,
@@ -403,6 +403,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use setType(AbstractReplicator.ReplicatorType)
      */
+    @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"})
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setReplicatorType(
@@ -432,6 +433,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Please use setPinnedServerX509Certificate(Certificate)
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
@@ -458,6 +460,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use CollectionConfiguration.setDocumentIDs
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
@@ -476,6 +479,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use CollectionConfiguration.setChannels
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
@@ -491,6 +495,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use CollectionConfiguration.setConflictResolver
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
@@ -507,6 +512,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use CollectionConfiguration.setPullFilter
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
@@ -523,6 +529,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Use CollectionConfiguration.setPushFilter
      */
+    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
@@ -555,12 +562,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Return the list of collections in the replicator configuration
      */
-    @Nullable
-    public final Set<Collection> getCollections() {
-        final Set<Collection> collections = collectionConfigurations.keySet();
-        // ??? should check for isEmpty and return null?
-        return (collections == null) ? null : new HashSet<>(collections);
-    }
+    @NonNull
+    public final Set<Collection> getCollections() { return new HashSet<>(collectionConfigurations.keySet()); }
 
     /**
      * Return Replicator type indicating the direction of the replicator.
@@ -601,7 +604,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Return the max number of retry attempts made after connection failure.
      * This method will return 0 when implicitly using the default:
-     * 10 total connection attempts (the inital attempt and up to 9 retries) for
+     * 10 total connection attempts (the initial attempt and up to 9 retries) for
      * a one-shot replicator and a very, very large number of retries, for a continuous replicator.
      */
     public final int getMaxAttempts() { return maxAttempts; }
@@ -625,6 +628,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      *
      * @deprecated Use getType()
      */
+    @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"})
     @Deprecated
     @NonNull
     public final AbstractReplicatorConfiguration.ReplicatorType getReplicatorType() {
@@ -664,6 +668,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     public final Database getDatabase() {
         if (database != null) { return database; }
+        // Can't change the nullity of this method: it has to throw.
         throw new IllegalStateException("No database or collections provided for replication configuration");
     }
 
