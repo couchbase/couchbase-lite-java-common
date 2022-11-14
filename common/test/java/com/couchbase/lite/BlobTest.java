@@ -68,7 +68,7 @@ public class BlobTest extends BaseDbTest {
     public void testBlobCtorsWithNullStream() { new Blob("image/png", (InputStream) null); }
 
     @Test
-    public void testEquals() throws CouchbaseLiteException {
+    public void testEquals() {
         byte[] content1a = BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
         byte[] content1b = BLOB_CONTENT.getBytes(StandardCharsets.UTF_8);
         byte[] content2a = localBlobContent.getBytes(StandardCharsets.UTF_8);
@@ -279,7 +279,9 @@ public class BlobTest extends BaseDbTest {
         try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
 
         byte[] blobContent = new byte[data.length];
-        new Blob("application/json", data).getContentStream().read(blobContent, 0, data.length);
+        assertEquals(
+            data.length,
+            new Blob("application/json", data).getContentStream().read(blobContent, 0, data.length));
         assertArrayEquals(blobContent, data);
     }
 
@@ -289,7 +291,7 @@ public class BlobTest extends BaseDbTest {
         try (InputStream is = PlatformUtils.getAsset("iTunesMusicLibrary.json")) { data = IOUtils.toByteArray(is); }
 
         InputStream blobStream = new Blob("application/json", data).getContentStream();
-        blobStream.skip(17);
+        assertEquals(17, blobStream.skip(17));
         assertEquals(blobStream.read(), data[17]);
     }
 

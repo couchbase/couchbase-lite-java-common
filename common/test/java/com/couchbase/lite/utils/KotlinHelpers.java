@@ -26,6 +26,7 @@ import com.couchbase.lite.Replicator;
 
 
 // Utility class to make calls that Kotlin will not allow
+@SuppressWarnings("ConstantConditions")
 public final class KotlinHelpers {
     private KotlinHelpers() { }
 
@@ -33,6 +34,12 @@ public final class KotlinHelpers {
     public static boolean callIsDocumentPendingWithNullId(@NonNull Replicator repl, @Nullable Collection collection)
         throws CouchbaseLiteException {
         return repl.isDocumentPending(null, collection);
+    }
+
+    // Kotlin will not allow a the call isDocumentPending(null)
+    public static boolean callIsDocumentPendingWithNullId(@NonNull Replicator repl)
+        throws CouchbaseLiteException {
+        return repl.isDocumentPending(null);
     }
 
     // Kotlin will not allow a the call LogFileConfiguration.<init>((String) null)

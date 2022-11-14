@@ -42,7 +42,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-@SuppressWarnings("ConstantConditions")
+@SuppressWarnings({"ConstantConditions", "SameParameterValue"})
 public class ArrayTest extends BaseDbTest {
 
     @Test
@@ -1073,7 +1073,7 @@ public class ArrayTest extends BaseDbTest {
 
     @SuppressWarnings("AssertBetweenInconvertibleTypes")
     @Test
-    public void testEquals() throws CouchbaseLiteException {
+    public void testEquals() {
 
         // mArray1 and mArray2 have exactly same data
         // mArray3 is different

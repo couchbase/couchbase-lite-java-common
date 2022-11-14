@@ -87,7 +87,7 @@ public class QueryTest extends BaseQueryTest {
         final String value = getUniqueName("value");
 
         MutableDocument document = new MutableDocument();
-        document.setString("key", value);
+        document.setString(TEST_DOC_TAG_KEY, value);
         saveDocInTestCollection(document);
 
         Query queryBuild = QueryBuilder.createQuery(
@@ -103,7 +103,7 @@ public class QueryTest extends BaseQueryTest {
         List<String> arrayResult = Arrays.asList(res);
 
         Map<String, String> mapResult = new HashMap<>();
-        mapResult.put("key", "value");
+        mapResult.put(TEST_DOC_TAG_KEY, "value");
 
         try (ResultSet rs = queryBuild.execute()) {
             Result result;
@@ -111,8 +111,8 @@ public class QueryTest extends BaseQueryTest {
                 assertEquals("{\"key\":\"value\"}", result.toJSON());
                 assertEquals(arrayResult, result.toList());
                 assertEquals(mapResult, result.toMap());
-                assertEquals("value", result.getValue("key").toString());
-                assertEquals("value", result.getString("key"));
+                assertEquals("value", result.getValue(TEST_DOC_TAG_KEY).toString());
+                assertEquals("value", result.getString(TEST_DOC_TAG_KEY));
                 assertEquals("value", result.getString(32));
             }
         }
@@ -231,8 +231,9 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
+    // Throws clause prevents Windows compiler error
     @Test
-    public void testWhereComparison() {
+    public void testWhereComparison() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
         runTests(
             new TestCase(Expression.property(TEST_DOC_SORT_KEY).lessThan(Expression.intValue(3)), docIds, 1, 2),
@@ -269,8 +270,9 @@ public class QueryTest extends BaseQueryTest {
         );
     }
 
+    // Throws clause prevents Windows compiler error
     @Test
-    public void testWhereArithmetic() {
+    public void testWhereArithmetic() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
         runTests(
             new TestCase(
@@ -324,8 +326,9 @@ public class QueryTest extends BaseQueryTest {
         );
     }
 
+    // Throws clause prevents Windows compiler error
     @Test
-    public void testWhereAndOr() {
+    public void testWhereAndOr() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
         runTests(
             new TestCase(
@@ -469,8 +472,9 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
+    // Throws clause prevents Windows compiler error
     @Test
-    public void testWhereBetween() {
+    public void testWhereBetween() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(10), Document::getId);
         runTests(new TestCase(Expression.property(TEST_DOC_SORT_KEY)
             .between(Expression.intValue(3), Expression.intValue(7)), docIds, 3, 4, 5, 6, 7));
@@ -824,8 +828,9 @@ public class QueryTest extends BaseQueryTest {
         verifyQuery(query, 4, (n, result) -> assertEquals(expectedNumbers[n - 1], (long) result.getValue(0)));
     }
 
+    // Throws clause prevents Windows compiler error
     @Test
-    public void testMeta() {
+    public void testMeta() throws Exception {
         List<String> expected = Fn.mapToList(loadDocuments(5), Document::getId);
 
         Query query = QueryBuilder
@@ -1579,9 +1584,9 @@ public class QueryTest extends BaseQueryTest {
             Collections.sort(secondBatch);
             assertEquals(expected, secondBatch);
         }
-        finally {
-            token.remove();
-        }
+        // Catch clause prevents Windows compiler error
+        catch (Exception e) { throw new AssertionError("Unexpected exception", e); }
+        finally { token.remove(); }
     }
 
     @SlowTest
@@ -2109,8 +2114,9 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
+    // Throws clause prevents Windows compiler error
     @Test
-    public void testResultSetEnumeration() throws CouchbaseLiteException {
+    public void testResultSetEnumeration() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(5), Document::getId);
 
         Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -2168,8 +2174,9 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
+    // Throws clause prevents Windows compiler error
     @Test
-    public void testGetAllResults() throws CouchbaseLiteException {
+    public void testGetAllResults() throws Exception {
         List<String> docIds = Fn.mapToList(loadDocuments(5), Document::getId);
 
         Query query = QueryBuilder.select(SelectResult.expression(Meta.id))

@@ -44,7 +44,13 @@ val Database.getC4Db
 val Scope.collectionCount
     get() = this.collections.size
 
-fun CountDownLatch.stdWait() = this.await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+fun CountDownLatch.stdWait(): Boolean {
+    try {
+        return await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+    } catch (e: InterruptedException) {
+        return false
+    }
+}
 
 fun Database.createTestCollection(name: String = "coll_", scope: String = "scope_"): Collection {
     val uname = BaseTest.getUniqueName(name)
@@ -129,6 +135,7 @@ fun readJSONResource(name: String?): String {
     return buf.toString()
 }
 
+@Suppress("SameParameterValue")
 abstract class BaseDbTest : BaseTest() {
     protected lateinit var testDatabase: Database
     protected lateinit var testCollection: Collection

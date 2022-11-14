@@ -206,7 +206,7 @@ class CollectionTest : BaseDbTest() {
         assertEquals(1, testCollection.count)
 
         // update doc
-        mDoc.setValue("key", "whuddaboutdit")
+        mDoc.setValue(TEST_DOC_TAG_KEY, "whuddaboutdit")
         saveDocInCollection(mDoc)
         assertEquals(1, testCollection.count)
 
@@ -675,7 +675,7 @@ class CollectionTest : BaseDbTest() {
         val db = Database(getUniqueName("test"))
         val coll = db.createCollection("aaa", "bbb")
         coll.createIndex("idx", FullTextIndexConfiguration("detail"))
-        Database(db.getName())
+        Database(db.name)
     }
 
     // Test getting index from a collection deleted from another DB instance causes CBL exception

@@ -28,25 +28,6 @@ public abstract class BaseQueryTest extends BaseDbTest {
         void check(int n, Result result) throws CouchbaseLiteException;
     }
 
-    private class DocumentCreator implements UnitOfWork<Exception> {
-        private final int first;
-        private final int n;
-        private final Collection collection;
-        public List<MutableDocument> docs;
-
-        public DocumentCreator(int first, int n, Collection collection) {
-            this.first = first;
-            this.n = n;
-            this. collection = collection;
-        }
-
-        @Override
-        public void run() throws Exception {
-            docs = createTestDocs(first, n);
-            for (MutableDocument doc: docs) { saveDocInCollection(doc, collection, null); }
-        }
-    }
-
     protected final List<MutableDocument> loadDocuments(int n) {
         return loadDocuments(n, testCollection);
     }
@@ -60,10 +41,9 @@ public abstract class BaseQueryTest extends BaseDbTest {
     }
 
     protected final List<MutableDocument> loadDocuments(int first, int n, Collection collection) {
-        DocumentCreator createDocs = new DocumentCreator(first, n, collection);
-        try { testDatabase.inBatch(createDocs); }
-        catch (Exception e) { throw new AssertionError("Failed loading numbered docs", e); }
-        return createDocs.docs;
+        final List<MutableDocument> docs = createTestDocs(first, n);
+        saveDocsInCollection(docs, collection, null);
+        return docs;
     }
 
     protected final void verifyQuery(@NonNull Query query, int expected, @NonNull ResultVerifier verifier) {
