@@ -29,6 +29,17 @@ import java.util.List;
 @Deprecated
 public class DatabaseChange {
     @NonNull
+    private static Collection getDefaultCollection(@NonNull Database database) {
+        CouchbaseLiteException fail = null;
+        try {
+            final Collection defaultCollection = database.getDefaultCollection();
+            if (defaultCollection != null) { return defaultCollection; }
+        }
+        catch (CouchbaseLiteException e) { fail = e; }
+        throw new IllegalStateException("Database " + database.getName() + " has no default collection", fail);
+    }
+
+    @NonNull
     private final List<String> documentIDs;
     @NonNull
     private final Collection collection;
@@ -36,6 +47,11 @@ public class DatabaseChange {
     DatabaseChange(@NonNull Collection collection, @NonNull List<String> documentIDs) {
         this.collection = collection;
         this.documentIDs = Collections.unmodifiableList(documentIDs);
+    }
+
+    @Deprecated
+    DatabaseChange(@NonNull Database database, @NonNull List<String> documentIDs) {
+        this(getDefaultCollection(database), documentIDs);
     }
 
     /**
