@@ -70,15 +70,9 @@ public final class LogFileConfiguration {
         this(directory, config, false);
     }
 
-    /**
-     * Constructs a file configuration object based on another one so
-     * that it may be modified
-     *
-     * @param config The other configuration to copy settings from
-     */
     LogFileConfiguration(@NonNull String directory, @Nullable LogFileConfiguration config, boolean readonly) {
         this(
-            Preconditions.assertNotNull(directory, "directory"),
+            directory,
             (config == null) ? null : config.maxSize,
             (config == null) ? null : config.maxRotateCount,
             (config == null) ? null : config.usePlaintext,
