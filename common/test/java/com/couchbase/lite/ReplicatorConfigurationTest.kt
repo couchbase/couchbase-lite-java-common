@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.ImmutableReplicatorConfiguration
+import com.couchbase.lite.internal.core.C4Replicator
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -63,21 +65,45 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     }
 
     @Test
-    fun testConfigDefaults() {
-        val config = CollectionConfiguration()
-        assertNull(config.channels)
-        assertNull(config.documentIDs)
-        assertNull(config.pushFilter)
-        assertNull(config.pullFilter)
-        assertNull(config.conflictResolver)
+    fun testCreateConfigDefaults() {
+        val config = ReplicatorConfiguration(mockURLEndpoint)
+        assertEquals(Defaults.Replicator.TYPE, config.type)
+        assertEquals(Defaults.Replicator.CONTINUOUS, config.isContinuous)
+        assertEquals(Defaults.Replicator.HEARTBEAT, config.heartbeat)
+        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT, config.maxAttempts)
+        assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, config.maxAttemptWaitTime)
+        assertEquals(Defaults.Replicator.ENABLE_AUTO_PURGE, config.isAutoPurgeEnabled)
 
-        // this does not actually verify that setting null
-        // causes Replication to use the default resolver.
-        // It just tests that null is a legal value and that it sticks.
-        config.conflictResolver = ConflictResolver { conflict -> null }
-        assertNotNull(config.conflictResolver)
-        config.conflictResolver = null
-        assertNull(config.conflictResolver)
+        config.setContinuous(true)
+        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_CONTINUOUS, config.maxAttempts)
+
+        config.heartbeat = 0
+        config.maxAttempts = 0
+        config.maxAttemptWaitTime = 0
+
+        val opts = ImmutableReplicatorConfiguration(config).getConnectionOptions()
+
+    }
+
+    @Test
+    fun testCreateConfigCompatibility() {
+        val config = ReplicatorConfiguration(mockURLEndpoint)
+        config.heartbeat = 6
+        config.maxAttempts = 6
+        config.maxAttemptWaitTime = 6
+
+        assertEquals(6, config.heartbeat)
+        assertEquals(6, config.maxAttempts)
+        assertEquals(6, config.maxAttemptWaitTime)
+
+        config.heartbeat = 0
+        config.maxAttempts = 0
+        config.maxAttemptWaitTime = 0
+
+        val opts = ImmutableReplicatorConfiguration(config).getConnectionOptions()
+        assertEquals(Defaults.Replicator.HEARTBEAT, opts[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
+        assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
+        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
     }
 
     //     1: Create a config object with ReplicatorConfiguration.init(database, endpoint).
