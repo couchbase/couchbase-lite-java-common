@@ -15,7 +15,7 @@
 //
 package com.couchbase.lite
 
-import java.util.*
+import com.couchbase.lite.internal.support.Log
 
 
 /**
@@ -30,27 +30,28 @@ val CollectionConfigurationFactory: CollectionConfiguration? = null
  *
  * @see com.couchbase.lite.CollectionConfiguration
  */
-fun CollectionConfiguration?.create(
+fun CollectionConfiguration?.newConfig(
     channels: List<String>? = null,
     documentIDs: List<String>? = null,
     pullFilter: ReplicationFilter? = null,
     pushFilter: ReplicationFilter? = null,
     conflictResolver: ConflictResolver? = null
 ): CollectionConfiguration {
-    return CollectionConfiguration(
-        channels ?: this?.channels,
-        documentIDs ?: this?.documentIDs,
-        pushFilter ?: this?.pushFilter,
-        pullFilter ?: this?.pullFilter,
-        conflictResolver ?: this?.conflictResolver
-    )
+    val config = CollectionConfiguration()
+
+    (channels ?: this?.channels)?.let { config.channels = it }
+    (documentIDs ?: this?.documentIDs)?.let { config.documentIDs = it }
+    (pushFilter ?: this?.pushFilter)?.let { config.pushFilter = it }
+    (pullFilter ?: this?.pullFilter)?.let { config.pullFilter = it }
+    (conflictResolver ?: this?.conflictResolver)?.let { config.conflictResolver = it }
+
+    return config
 }
 
 /**
  * Configuration factory for new FullTextIndexConfigurations
  *
  * Usage:
- *
  *      val fullTextIndexConfig = FullTextIndexConfigurationFactory.create(...)
  */
 val FullTextIndexConfigurationFactory: FullTextIndexConfiguration? = null
@@ -63,52 +64,53 @@ val FullTextIndexConfigurationFactory: FullTextIndexConfiguration? = null
  *
  * @see com.couchbase.lite.FullTextIndexConfiguration
  */
-fun FullTextIndexConfiguration?.create(
+fun FullTextIndexConfiguration?.newConfig(
     vararg expressions: String = emptyArray(),
     language: String? = null,
     ignoreAccents: Boolean? = null
-) = FullTextIndexConfiguration(
-    language ?: this?.language ?: Locale.getDefault().language,
-    ignoreAccents ?: this?.isIgnoringAccents ?: false,
-    if (expressions.isNotEmpty()) expressions.asList() else this?.expressions
-        ?: throw IllegalArgumentException("Must specify an expression")
-)
+): FullTextIndexConfiguration {
+    val config = FullTextIndexConfiguration(
+        (if (expressions.isNotEmpty()) expressions.asList() else this?.expressions)?.toMutableList()
+            ?: throw IllegalArgumentException("A FullTextIndexConfiguration must specify expressions")
+    )
+
+    (language ?: this?.language)?.let { config.language = language }
+    (ignoreAccents ?: this?.isIgnoringAccents)?.let { config.ignoreAccents(it) }
+
+    return config
+}
 
 /**
  * Configuration factory for new ValueIndexConfigurations
  *
  * Usage:
- *
  *     val valIndexConfig = ValueIndexConfigurationFactory.create(...)
  */
 val ValueIndexConfigurationFactory: ValueIndexConfiguration? = null
 
 /**
- * Create a FullTextIndexConfiguration, overriding the receiver's
+ * Create a ValueIndexConfiguration, overriding the receiver's
  * values with the passed parameters:
  *
  * @param expressions (required) the expressions to be matched.
  *
  * @see com.couchbase.lite.ValueIndexConfiguration
  */
-fun ValueIndexConfiguration?.create(
-    vararg expressions: String = emptyArray()
-) = ValueIndexConfiguration(
-    if (expressions.isNotEmpty()) expressions.asList() else this?.expressions
-        ?: throw IllegalArgumentException("Must specify an expression")
+fun ValueIndexConfiguration?.newConfig(vararg expressions: String = emptyArray()) = ValueIndexConfiguration(
+    (if (expressions.isNotEmpty()) expressions.asList() else this?.expressions)?.toMutableList()
+        ?: throw IllegalArgumentException("A ValueIndexConfiguration must specify expressions")
 )
 
 /**
  * Configuration factory for new LogFileConfigurations
  *
  * Usage:
- *
  *      val logFileConfig = LogFileConfigurationFactory.create(...)
  */
 val LogFileConfigurationFactory: LogFileConfiguration? = null
 
 /**
- * Create a FullTextIndexConfiguration, overriding the receiver's
+ * Create a LogFileConfiguration, overriding the receiver's
  * values with the passed parameters:
  *
  * @param directory (required) the directory in which the logs files are stored.
@@ -118,15 +120,130 @@ val LogFileConfigurationFactory: LogFileConfiguration? = null
  *
  * @see com.couchbase.lite.LogFileConfiguration
  */
+fun LogFileConfiguration?.newConfig(
+    directory: String? = null,
+    maxSize: Long? = null,
+    maxRotateCount: Int? = null,
+    usePlainText: Boolean? = null
+): LogFileConfiguration {
+    val config = LogFileConfiguration(
+        directory ?: this?.directory
+        ?: throw IllegalArgumentException("A LogFileConfiguration must specify a directory")
+    )
+
+    (maxSize ?: this?.maxSize)?.let { config.maxSize = it }
+    (maxRotateCount ?: this?.maxRotateCount)?.let { config.maxRotateCount = it }
+    (usePlainText ?: this?.usesPlaintext())?.let { config.setUsePlaintext(it) }
+
+    return config
+}
+
+/**
+ * Create a FullTextIndexConfiguration, overriding the receiver's
+ * values with the passed parameters:
+ *
+ * @param expressions (required) the expressions to be matched.
+ *
+ * @see com.couchbase.lite.FullTextIndexConfiguration
+ * @deprecated Use FullTextIndexConfiguration().newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)
+ */
+@Deprecated(
+    "Use FullTextIndexConfiguration().newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)",
+    replaceWith = ReplaceWith("FullTextIndexConfiguration().newConfig(vararg expressions: String, language: String?, ignoreAccents: Boolean?)")
+)
+fun FullTextIndexConfiguration?.create(
+    vararg expressions: String = emptyArray(),
+    language: String? = null,
+    ignoreAccents: Boolean? = null
+) = this.newConfig(*expressions, language = language, ignoreAccents = ignoreAccents)
+
+/**
+ * Create a ValueIndexConfiguration, overriding the receiver's
+ * values with the passed parameters:
+ *
+ * @param expressions (required) the expressions to be matched.
+ *
+ * @see com.couchbase.lite.ValueIndexConfiguration
+ * @deprecated Use ValueIndexConfiguration().newConfig(vararg expressions: String)
+ */
+@Deprecated(
+    "Use ValueIndexConfiguration().newConfig(vararg expressions: String)",
+    replaceWith = ReplaceWith("ValueIndexConfiguration().newConfig(vararg expressions: String)")
+)
+fun ValueIndexConfiguration?.create(vararg expressions: String = emptyArray()) = this.newConfig(*expressions)
+
+/**
+ * Create a LogFileConfiguration, overriding the receiver's
+ * values with the passed parameters:
+ *
+ * @param directory (required) the directory in which the logs files are stored.
+ * @param maxSize the max size of the log file in bytes.
+ * @param maxRotateCount the number of rotated logs that are saved.
+ * @param usePlainText whether or not to log in plaintext.
+ *
+ * @see com.couchbase.lite.LogFileConfiguration
+ * @deprecated Use LogFileConfiguration().newConfig(String?, Long?, Int?, Boolean?)
+ */
+@Deprecated(
+    "Use LogFileConfiguration().newConfig(String?, Long?, Int?, Boolean?)",
+    replaceWith = ReplaceWith("LogFileConfiguration().newConfig(String?, Long?, Int?, Boolean?)")
+)
 fun LogFileConfiguration?.create(
     directory: String? = null,
     maxSize: Long? = null,
     maxRotateCount: Int? = null,
     usePlainText: Boolean? = null
-) = LogFileConfiguration(
-    directory ?: this?.directory ?: throw IllegalArgumentException("Must specify a db directory"),
-    maxSize ?: this?.maxSize,
-    maxRotateCount ?: this?.maxRotateCount,
-    usePlainText ?: this?.usesPlaintext(),
-    true // always read only
-)
+) = this.newConfig(directory, maxSize, maxRotateCount, usePlainText)
+
+
+// If the source config contains anything other than exactly the
+// database default collection, we are about to lose information.
+internal fun checkDbCollections(db: Database, collections: Set<Collection>?) {
+    val colls = collections ?: emptySet()
+    val defaultCollection = db.defaultCollection
+        ?: throw IllegalArgumentException(Log.lookupStandardMessage("NoDefaultCollectionInConfig"))
+    if ((colls.size != 1) || (!colls.contains(defaultCollection))) {
+        Log.d(LogDomain.LISTENER, "Copy to deprecated config loses collection information")
+    }
+}
+
+internal fun copyReplConfig(
+    src: ReplicatorConfiguration?,
+    dst: ReplicatorConfiguration,
+    type: ReplicatorType?,
+    continuous: Boolean?,
+    authenticator: Authenticator?,
+    headers: Map<String, String>?,
+    maxAttempts: Int?,
+    maxAttemptWaitTime: Int?,
+    heartbeat: Int?,
+    enableAutoPurge: Boolean?
+) {
+    (type ?: src?.type)?.let { dst.setType(it) }
+    (continuous ?: src?.isContinuous)?.let { dst.setContinuous(it) }
+    (authenticator ?: src?.authenticator)?.let { dst.setAuthenticator(it) }
+    (headers ?: src?.headers)?.let { dst.headers = it }
+    (maxAttempts ?: src?.maxAttempts)?.let { dst.maxAttempts = it }
+    (maxAttemptWaitTime ?: src?.maxAttemptWaitTime)?.let { dst.maxAttemptWaitTime = it }
+    (heartbeat ?: src?.heartbeat)?.let { dst.heartbeat = it }
+    (enableAutoPurge ?: src?.isAutoPurgeEnabled)?.let { dst.setAutoPurgeEnabled(it) }
+}
+
+@Suppress("DEPRECATION")
+internal fun copyLegacyReplConfig(
+    src: ReplicatorConfiguration?,
+    dst: ReplicatorConfiguration,
+    pinnedServerCertificate: ByteArray?,
+    channels: List<String>?,
+    documentIDs: List<String>?,
+    pushFilter: ReplicationFilter?,
+    pullFilter: ReplicationFilter?,
+    conflictResolver: ConflictResolver?
+) {
+    (pinnedServerCertificate ?: src?.pinnedServerCertificate)?.let { dst.setPinnedServerCertificate(it) }
+    (channels ?: src?.channels)?.let { dst.channels = it }
+    (documentIDs ?: src?.documentIDs)?.let { dst.documentIDs = it }
+    (pushFilter ?: src?.pushFilter)?.let { dst.pushFilter = it }
+    (pullFilter ?: src?.pullFilter)?.let { dst.pullFilter = it }
+    (conflictResolver ?: src?.conflictResolver)?.let { dst.conflictResolver = it }
+}

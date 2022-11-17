@@ -70,8 +70,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     fun testCreateConfigWithDatabase1() {
         val replConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint)
         val collections = replConfig.collections
-        assertEquals(1, collections?.size)
-        assertTrue(collections?.contains(testDatabase.defaultCollection) ?: false)
+        assertEquals(1, collections.size)
+        assertTrue(collections.contains(testDatabase.defaultCollection))
         assertEquals(testDatabase, replConfig.database)
     }
 
@@ -275,7 +275,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         val collections = replConfig1.collections
         assertNotNull(collections)
-        assertTrue(collections!!.isEmpty())
+        assertTrue(collections.isEmpty())
     }
 
     //     1: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
@@ -386,8 +386,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
             .setConflictResolver(resolver)
         replConfig1.addCollection(collectionB, collectionConfig0)
 
-        assertTrue(replConfig1.collections?.contains(collectionA) ?: false)
-        assertTrue(replConfig1.collections?.contains(collectionB) ?: false)
+        assertTrue(replConfig1.collections.contains(collectionA))
+        assertTrue(replConfig1.collections.contains(collectionB))
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(collectionA)
         assertNotNull(collectionConfig1)
@@ -433,8 +433,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionB, collectionConfig0)
 
 
-        assertTrue(replConfig1.collections?.contains(collectionA) ?: false)
-        assertTrue(replConfig1.collections?.contains(collectionB) ?: false)
+        assertTrue(replConfig1.collections.contains(collectionA))
+        assertTrue(replConfig1.collections.contains(collectionB))
 
         val collectionConfig1 = replConfig1.getCollectionConfiguration(collectionA)
         assertNotNull(collectionConfig1)
@@ -500,12 +500,12 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionA, collectionConfig0)
         replConfig1.addCollection(collectionB, collectionConfig0)
 
-        assertTrue(replConfig1.collections?.contains(collectionA) ?: false)
-        assertTrue(replConfig1.collections?.contains(collectionB) ?: false)
+        assertTrue(replConfig1.collections.contains(collectionA))
+        assertTrue(replConfig1.collections.contains(collectionB))
 
         replConfig1.removeCollection(collectionB)
-        assertTrue(replConfig1.collections?.contains(collectionA) ?: false)
-        assertFalse(replConfig1.collections?.contains(collectionB) ?: false)
+        assertTrue(replConfig1.collections.contains(collectionA))
+        assertFalse(replConfig1.collections.contains(collectionB))
 
         assertNotNull(replConfig1.getCollectionConfiguration(collectionA))
         assertNull(replConfig1.getCollectionConfiguration(collectionB))
@@ -566,7 +566,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     @Test
     fun testAddDeletedCollections2() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
-        val collectionB = targetDatabase.createCollection("colB", "scopeA")
+        targetDatabase.createCollection("colB", "scopeA")
 
         testDatabase.deleteCollection("colB", "scopeA")
 
@@ -575,8 +575,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionA, null)
 
         val collections = replConfig1.collections
-        assertEquals(1, collections?.size ?: 0)
-        assertTrue(collections?.contains(collectionA) ?: false)
+        assertEquals(1, collections.size)
+        assertTrue(collections.contains(collectionA))
     }
 
     //     1: Create collection "colA" in the scope "scopeA" using database instance A.
@@ -586,7 +586,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     //     7: Use addCollection() to add colB. This should cause an InvalidArgumentException.
     @Test(expected = IllegalArgumentException::class)
     fun testAddDeletedCollections3() {
-        val collectionA = testDatabase.createCollection("colA", "scopeA")
+        testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
 
         targetDatabase.deleteCollection("colB", "scopeA")

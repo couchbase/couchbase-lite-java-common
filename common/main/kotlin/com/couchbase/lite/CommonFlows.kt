@@ -16,25 +16,9 @@
 package com.couchbase.lite
 
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.merge
-import java.lang.IllegalStateException
 import java.util.concurrent.Executor
 
-/**
- * A Flow of database changes.
- *
- * @param executor Optional executor on which to run the change listener: default is the main executor
- * @deprecated Use getDefaultCollection().collectionChangeFlow
- * @see com.couchbase.lite.Database.addChangeListener
- */
-@Deprecated(
-    "Use getDefaultCollection().collectionChangeFlow(executor",
-    replaceWith = ReplaceWith("getDefaultCollection().collectionChangeFlow(executor)"))
-fun Database.databaseChangeFlow(executor: Executor? = null) =
-    this@databaseChangeFlow.defaultCollection?.collectionChangeFlow(executor)
-        ?: throw IllegalStateException("Cannot get default collection for database ${this@databaseChangeFlow.name}")
 
 /**
  * A Flow of Collection changes.
@@ -49,22 +33,8 @@ fun Collection.collectionChangeFlow(executor: Executor?) = callbackFlow {
 }
 
 /**
- * A Flow of document changes.
- *
- * @param executor Optional executor on which to run the change listener: default is the main thread
- * @deprecated Use getDefaultCollection().documentChangeFlow
- * @see com.couchbase.lite.Database.addDocumentChangeListener
- */
-@Deprecated(
-    "Use getDefaultCollection().documentChangeFlow(documentId, executor)",
-    replaceWith = ReplaceWith("getDefaultCollection().documentChangeFlow(documentId, executor)"))
-fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) =
-    this@documentChangeFlow.defaultCollection?.documentChangeFlow(documentId, executor)
-        ?: throw IllegalStateException("Cannot get default collection for database ${this@documentChangeFlow.name}")
-
-/**
  * A Flow of document changes
- * @param executor Optional executor on which to run the change listener: default is the main thread
+ * @param executor Optional executor on which to run the change listener: default is the default executor
  *
  * @see com.couchbase.lite.Collection.addDocumentChangeListener
  */
@@ -76,7 +46,7 @@ fun Collection.documentChangeFlow(documentId: String, executor: Executor? = null
 /**
  * A Flow of replicator state changes.
  *
- * @param executor Optional executor on which to run the change listener: default is the main thread
+ * @param executor Optional executor on which to run the change listener: default is the default executor
  *
  * @see com.couchbase.lite.Replicator.addChangeListener
  */
@@ -88,7 +58,7 @@ fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow 
 /**
  * A Flow of document replications.
  *
- * @param executor Optional executor on which to run the change listener: default is the main thread
+ * @param executor Optional executor on which to run the change listener: default is the default executor
  *
  * @see com.couchbase.lite.Replicator.addDocumentReplicationListener
  */
@@ -100,7 +70,7 @@ fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlo
 /**
  * A Flow of query changes.
  *
- * @param executor Optional executor on which to run the change listener: default is the main thread
+ * @param executor Optional executor on which to run the change listener: default is the default executor
  *
  * @see com.couchbase.lite.Query.addChangeListener
  */
@@ -108,4 +78,40 @@ fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlo
 fun Query.queryChangeFlow(executor: Executor? = null) = callbackFlow {
     val token = this@queryChangeFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { token.remove() }
+}
+
+/**
+ * A Flow of database changes.
+ *
+ * @param executor Optional executor on which to run the change listener: default is the default executor
+ *
+ * @see com.couchbase.lite.Database.addChangeListener
+ * @deprecated Use getCollection(String, String?).collectionChangeFlow(Executor?)
+ */
+@Suppress("DEPRECATION")
+@Deprecated(
+    "Use getCollection(String, String?).collectionChangeFlow(executor)",
+    replaceWith = ReplaceWith("getCollection(String, String?).collectionChangeFlow(executor)")
+)
+fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow {
+    val token = this@databaseChangeFlow.addChangeListener(executor) { trySend(it) }
+    awaitClose { this@databaseChangeFlow.removeChangeListener(token) }
+}
+
+/**
+ * A Flow of document changes.
+ *
+ * @param executor Optional executor on which to run the change listener: default is the default executor
+ *
+ * @see com.couchbase.lite.Database.addDocumentChangeListener
+ * @deprecated Use getCollection(String, String?).documentChangeFlow(String, Executor?)
+ */
+@Suppress("DEPRECATION")
+@Deprecated(
+    "Use getCollection(String, String?).documentChangeFlow(documentId, executor)",
+    replaceWith = ReplaceWith("getCollection(String, String?).documentChangeFlow(documentId, executor)")
+)
+fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) = callbackFlow {
+    val token = this@documentChangeFlow.addDocumentChangeListener(documentId, executor) { trySend(it) }
+    awaitClose { this@documentChangeFlow.removeChangeListener(token) }
 }

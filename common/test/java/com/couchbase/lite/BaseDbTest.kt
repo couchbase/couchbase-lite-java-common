@@ -135,7 +135,6 @@ fun readJSONResource(name: String?): String {
     return buf.toString()
 }
 
-@Suppress("SameParameterValue")
 abstract class BaseDbTest : BaseTest() {
     protected lateinit var testDatabase: Database
     protected lateinit var testCollection: Collection
