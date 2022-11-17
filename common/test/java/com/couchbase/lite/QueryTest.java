@@ -597,14 +597,22 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
+    public void testFullTextIndexConfigDefaults() throws CouchbaseLiteException {
+        final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense");
+        assertEquals(Defaults.FullTextIndex.IGNORE_ACCENTS, idxConfig.isIgnoringAccents());
+        assertEquals(Locale.getDefault().getLanguage(), idxConfig.getLanguage());
+
+        idxConfig.setLanguage(null);
+        assertNull(idxConfig.getLanguage());
+    }
+
+    @Test
     public void testFullTextIndexConfig() throws CouchbaseLiteException {
         loadJSONResourceIntoCollection("sentences.json");
 
-        final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense");
-        assertFalse(idxConfig.isIgnoringAccents());
-        assertEquals("en", idxConfig.getLanguage());
-
-        idxConfig.setLanguage("en-ca").ignoreAccents(true);
+        final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense")
+            .setLanguage("en-ca")
+            .ignoreAccents(true);
         assertEquals("en-ca", idxConfig.getLanguage());
         assertTrue(idxConfig.isIgnoringAccents());
 
