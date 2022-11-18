@@ -604,6 +604,39 @@ class CollectionTest : BaseDbTest() {
     }
 
     @Test
+    fun testCreateIndexInCollectionWithBuilder() {
+        assertEquals(0, testCollection.indexes.size.toLong())
+        testCollection.createIndex(
+            "index1",
+            IndexBuilder.valueIndex(
+                ValueIndexItem.property("firstName"),
+                ValueIndexItem.property("lastName")
+            )
+        )
+        assertEquals(1, testCollection.indexes.size.toLong())
+
+        // Create FTS index:
+        testCollection.createIndex("index2", IndexBuilder.fullTextIndex(FullTextIndexItem.property("detail")))
+        assertEquals(2, testCollection.indexes.size.toLong())
+        testCollection.createIndex(
+            "index3",
+            IndexBuilder.fullTextIndex(FullTextIndexItem.property("es-detail")).ignoreAccents(true).setLanguage("es")
+        )
+        assertEquals(3, testCollection.indexes.size.toLong())
+
+        // Create value index with expression() instead of property()
+        testCollection.createIndex(
+            "index4",
+            IndexBuilder.valueIndex(
+                ValueIndexItem.expression(Expression.property("firstName")),
+                ValueIndexItem.expression(Expression.property("lastName"))
+            )
+        )
+        assertEquals(4, testCollection.indexes.size.toLong())
+        assertContents(testCollection.indexes.toList(), "index1", "index2", "index3", "index4")
+    }
+
+    @Test
     fun testCreateSameIndexTwice() {
         testCollection.createIndex("myindex", ValueIndexConfiguration("firstName", "lastName"))
         assertEquals(1, testCollection.indexes.size)
