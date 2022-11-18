@@ -40,7 +40,7 @@ class LoadTest : BaseDbTest() {
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
         assertEquals(0, testCollection.count)
-        timeTest("testCreateUnbatched", 7 * 1000L) {
+        timeTest("testCreateUnbatched", 8 * 1000L) {
             for (doc in docs) {
                 testCollection.save(doc)
             }
@@ -57,7 +57,7 @@ class LoadTest : BaseDbTest() {
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
         assertEquals(0, testCollection.count)
-        timeTest("testCreateBatched", 3 * 1000L) {
+        timeTest("testCreateBatched", 4 * 1000L) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (doc in docs) {
                     testCollection.save(doc)
@@ -140,7 +140,7 @@ class LoadTest : BaseDbTest() {
         testCollection.save(mDoc)
 
         assertEquals(1L, testCollection.count)
-        timeTest("testUpdate2", 9 * 1000L) {
+        timeTest("testUpdate2", 10 * 1000L) {
             for (i in 0..ITERATIONS) {
                 mDoc = testCollection.getDocument(mDoc.id)!!.toMutable()
                 mDoc.setValue("map", mapOf("idx" to i, "long" to i.toLong(), TEST_DOC_TAG_KEY to getUniqueName("tag")))
