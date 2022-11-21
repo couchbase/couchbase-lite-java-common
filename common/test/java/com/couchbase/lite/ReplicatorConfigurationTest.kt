@@ -62,6 +62,24 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         makeReplicatorConfig().heartbeat = 2147484
     }
 
+    @Test
+    fun testConfigDefaults() {
+        val config = CollectionConfiguration()
+        assertNull(config.channels)
+        assertNull(config.documentIDs)
+        assertNull(config.pushFilter)
+        assertNull(config.pullFilter)
+        assertNull(config.conflictResolver)
+
+        // this does not actually verify that setting null
+        // causes Replication to use the default resolver.
+        // It just tests that null is a legal value and that it sticks.
+        config.conflictResolver = ConflictResolver { conflict -> null }
+        assertNotNull(config.conflictResolver)
+        config.conflictResolver = null
+        assertNull(config.conflictResolver)
+    }
+
     //     1: Create a config object with ReplicatorConfiguration.init(database, endpoint).
     //     2: Access collections property. It mush have one collection which is the default collection.
     //     6: ReplicatorConfiguration.database should be the database with which the configuration was created
