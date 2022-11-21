@@ -64,6 +64,9 @@ public final class Defaults {
 
         /** Purge documents when a user loses access */
         public static final boolean ENABLE_AUTO_PURGE = true;
+
+        /** Whether or not a replicator only accepts self-signed certificates from the remote */
+        public static final boolean SELF_SIGNED_CERTIFICATE_ONLY = false;
     }
 
     public static final class Listener {
