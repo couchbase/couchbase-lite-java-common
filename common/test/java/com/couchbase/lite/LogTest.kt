@@ -24,6 +24,7 @@ import com.couchbase.lite.utils.KotlinHelpers
 import org.junit.After
 import org.junit.AfterClass
 import org.junit.Assert
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import java.io.BufferedReader
@@ -125,6 +126,14 @@ class LogTest : BaseDbTest() {
     fun tearDownLogTest() {
         Database.log.custom = null
         reloadStandardErrorMessages()
+    }
+
+    @Test
+    fun testFileLoggerDefaults() {
+        val config = LogFileConfiguration("up/down")
+        assertEquals(Defaults.LogFile.MAX_SIZE, config.maxSize)
+        assertEquals(Defaults.LogFile.MAX_ROTATE_COUNT, config.maxRotateCount)
+        assertEquals(Defaults.LogFile.USE_PLAIN_TEXT, config.usesPlaintext())
     }
 
     @Test
