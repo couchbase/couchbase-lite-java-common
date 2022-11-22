@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.getCollectionConfigs
 import com.couchbase.lite.internal.support.Log
 
 
@@ -241,9 +242,12 @@ internal fun copyLegacyReplConfig(
     conflictResolver: ConflictResolver?
 ) {
     (pinnedServerCertificate ?: src?.pinnedServerCertificate)?.let { dst.setPinnedServerCertificate(it) }
-    (channels ?: src?.channels)?.let { dst.channels = it }
-    (documentIDs ?: src?.documentIDs)?.let { dst.documentIDs = it }
-    (pushFilter ?: src?.pushFilter)?.let { dst.pushFilter = it }
-    (pullFilter ?: src?.pullFilter)?.let { dst.pullFilter = it }
-    (conflictResolver ?: src?.conflictResolver)?.let { dst.conflictResolver = it }
+
+    // copy the default collection configuration, if it exists
+    val srcConfig = src?.database?.defaultCollection?.let { getCollectionConfigs(src)?.get(it) }
+    (channels ?: srcConfig?.channels)?.let { dst.channels = it }
+    (documentIDs ?: srcConfig?.documentIDs)?.let { dst.documentIDs = it }
+    (pushFilter ?: srcConfig?.pushFilter)?.let { dst.pushFilter = it }
+    (pullFilter ?: srcConfig?.pullFilter)?.let { dst.pullFilter = it }
+    (conflictResolver ?: srcConfig?.conflictResolver)?.let { dst.conflictResolver = it }
 }

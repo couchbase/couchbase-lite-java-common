@@ -64,46 +64,46 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         makeReplicatorConfig().heartbeat = 2147484
     }
 
+    // Can't test the EE parameter (self-signed only) here
     @Test
     fun testCreateConfigDefaults() {
         val config = ReplicatorConfiguration(mockURLEndpoint)
-        assertEquals(Defaults.Replicator.TYPE, config.type)
-        assertEquals(Defaults.Replicator.CONTINUOUS, config.isContinuous)
-        assertEquals(Defaults.Replicator.HEARTBEAT, config.heartbeat)
-        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT, config.maxAttempts)
-        assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, config.maxAttemptWaitTime)
-        assertEquals(Defaults.Replicator.ENABLE_AUTO_PURGE, config.isAutoPurgeEnabled)
+        config.addCollection(testCollection, null)
 
-        config.setContinuous(true)
-        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_CONTINUOUS, config.maxAttempts)
+        val immutableConfig = ImmutableReplicatorConfiguration(config)
+        assertEquals(Defaults.Replicator.TYPE, immutableConfig.type)
+        assertEquals(Defaults.Replicator.CONTINUOUS, immutableConfig.isContinuous)
 
-        config.heartbeat = 0
-        config.maxAttempts = 0
-        config.maxAttemptWaitTime = 0
-
-        val opts = ImmutableReplicatorConfiguration(config).getConnectionOptions()
-
+        val opts = immutableConfig.getConnectionOptions()
+        assertEquals(Defaults.Replicator.HEARTBEAT, opts[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
+        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
+        assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
+        assertEquals(Defaults.Replicator.ENABLE_AUTO_PURGE, opts[C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE])
     }
 
+    // Can't test the EE parameter (self-signed only) here
     @Test
     fun testCreateConfigCompatibility() {
         val config = ReplicatorConfiguration(mockURLEndpoint)
+        config.addCollection(testCollection, null)
+
         config.heartbeat = 6
         config.maxAttempts = 6
         config.maxAttemptWaitTime = 6
 
-        assertEquals(6, config.heartbeat)
-        assertEquals(6, config.maxAttempts)
-        assertEquals(6, config.maxAttemptWaitTime)
+        val opts1 = ImmutableReplicatorConfiguration(config).getConnectionOptions()
+        assertEquals(6, opts1[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
+        assertEquals(6, opts1[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
+        assertEquals(6 - 1, opts1[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
 
         config.heartbeat = 0
         config.maxAttempts = 0
         config.maxAttemptWaitTime = 0
 
-        val opts = ImmutableReplicatorConfiguration(config).getConnectionOptions()
-        assertEquals(Defaults.Replicator.HEARTBEAT, opts[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
-        assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
-        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
+        val opts2 = ImmutableReplicatorConfiguration(config).getConnectionOptions()
+        assertEquals(Defaults.Replicator.HEARTBEAT, opts2[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
+        assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
+        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
     }
 
     //     1: Create a config object with ReplicatorConfiguration.init(database, endpoint).
