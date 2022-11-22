@@ -392,6 +392,12 @@ public final class Collection extends BaseCollection
 
     // - Indexes
 
+    /**
+     * Get a list of the names of indices in the collection.
+     *
+     * @return the list of index names
+     * @throws CouchbaseLiteException on failure
+     */
     @NonNull
     public Set<String> getIndexes() throws CouchbaseLiteException {
         final FLValue flIndexInfo;
@@ -414,14 +420,34 @@ public final class Collection extends BaseCollection
         return indexNames;
     }
 
+    /**
+     * Add an index to the collection.
+     *
+     * @param name  index name
+     * @param config index configuration
+     * @throws CouchbaseLiteException on failure
+     */
     public void createIndex(String name, IndexConfiguration config) throws CouchbaseLiteException {
         createIndexInternal(name, config);
     }
 
-    public void createIndex(String name, Index config) throws CouchbaseLiteException {
-        createIndexInternal(name, config);
+    /**
+     * Add an index to the collection.
+     *
+     * @param name   index name
+     * @param index index configuration
+     * @throws CouchbaseLiteException on failure
+     */
+    public void createIndex(String name, Index index) throws CouchbaseLiteException {
+        createIndexInternal(name, index);
     }
 
+    /**
+     * Delete the named index from the collection.
+     *
+     * @param name name of the index to delete
+     * @throws CouchbaseLiteException on failure
+     */
     public void deleteIndex(String name) throws CouchbaseLiteException {
         try { c4Collection.deleteIndex(name); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
