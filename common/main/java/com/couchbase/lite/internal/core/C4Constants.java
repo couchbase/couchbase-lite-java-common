@@ -246,7 +246,8 @@ public final class C4Constants {
         public static final int HOST_UNREACHABLE = 24;         // There is no network path to the host [EHOSTUNREACH, retryable]
         public static final int ADDRESS_NOT_AVAILABLE = 25;    // The address in question is already being used [EADDRNOTAVAIL, retryable]
         public static final int BROKEN_PIPE = 26;              // Broken pipe [EPIPE, retryable]
-        public static final int UNUSED = 27;
+        public static final int UNKNOWN_INTERFACE = 27;        // The requested interface does not exist
+        public static final int UNUSED = 28;
         // @formatter:on
     }
 
