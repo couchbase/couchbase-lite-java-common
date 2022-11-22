@@ -302,6 +302,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Enable/disable auto-purge.
      * The default is auto-purge enabled.
+     *
+     * Note: A document that is blocked by a document Id filter will not be auto-purged
+     *       regardless of the setting of the auto purge property
      */
     @NonNull
     public final ReplicatorConfiguration setAutoPurgeEnabled(boolean enabled) {
@@ -580,6 +583,9 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Enable/disable auto-purge.
      * Default is enabled.
+     *
+     * Note: A document that is blocked by a document Id filter will not be auto-purged
+     *       regardless of the setting of the auto purge property
      */
     public final boolean isAutoPurgeEnabled() { return enableAutoPurge; }
 
