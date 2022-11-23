@@ -23,6 +23,7 @@ import com.couchbase.lite.Scope
 import com.couchbase.lite.internal.core.C4Replicator
 import com.couchbase.lite.internal.fleece.FLEncoder
 import com.couchbase.lite.internal.fleece.FLValue
+import com.couchbase.lite.internal.fleece.withContent
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -109,7 +110,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val colls = mapOf(testDatabase.createCollection("pogs") to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
-        body.withContent {
+        withContent(body) {
             ReplicationCollection.filterCallback(token, null, null, "doc-1", "99", 0, it, false)
             ReplicationCollection.filterCallback(token, null, null, "doc-2", "88", 0, it, true)
         }
@@ -132,7 +133,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val colls = mapOf(testDatabase.createCollection("pogs") to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
-        body.withContent {
+        withContent(body) {
             ReplicationCollection.filterCallback(token, null, null, "doc-1", "99", 0, it, false)
             ReplicationCollection.filterCallback(token, null, null, "doc-2", "88", 0, it, true)
         }
@@ -156,7 +157,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         val colls = mapOf(testDatabase.createCollection("pogs") to config)
         val token = ReplicationCollection.createAll(colls)[0].token
 
-        body.withContent {
+        withContent(body) {
             ReplicationCollection.filterCallback(token, null, null, "doc-1", "99", 0, it, false)
             ReplicationCollection.filterCallback(token, null, null, "doc-2", "88", 0, it, true)
         }
@@ -182,7 +183,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
         // this token should be ignored.
         val token = ReplicationCollection.createAll(colls)[0].token + 1
 
-        body.withContent {
+        withContent(body) {
             ReplicationCollection.filterCallback(token, null, null, "doc-1", "99", 0, it, false)
             ReplicationCollection.filterCallback(token, null, null, "doc-2", "88", 0, it, true)
         }
