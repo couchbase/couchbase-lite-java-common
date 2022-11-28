@@ -17,7 +17,6 @@ package com.couchbase.lite.internal.fleece;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import java.util.List;
 import java.util.Map;
@@ -240,9 +239,8 @@ public class FLValue {
         }
     }
 
-    @VisibleForTesting
     @Nullable
-    public <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
+    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
 
     @NonNull
     FLArray asFLArray() { return FLArray.create(asArray(handle)); }
