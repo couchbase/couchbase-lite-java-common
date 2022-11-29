@@ -675,7 +675,11 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             sslContext.init(keyManagers, new TrustManager[] {trustManager}, null);
         }
         catch (NoSuchAlgorithmException | KeyManagementException e) {
-            throw new CBLSocketException("Failed getting SSL context", e);
+            throw new CBLSocketException(
+                C4Constants.ErrorDomain.WEB_SOCKET,
+                C4Constants.WebSocketError.CANT_FULFILL,
+                "Failed getting SSL context",
+                e);
         }
 
 
@@ -747,8 +751,13 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
                 }
             }
         }
-        catch (SocketException e) { throw new CBLSocketException("Could not get device interfaces", e); }
-
+        catch (SocketException e) {
+            throw new CBLSocketException(
+                C4Constants.ErrorDomain.NETWORK,
+                C4Constants.NetworkError.NETWORK_DOWN,
+                "Could not get device interfaces",
+                e);
+        }
 
         // if iFace is not the name of an interface, perhaps it is an IP address...
         // Or, perhaps, something else.  This call may well try to do a DNS lookup.
@@ -756,7 +765,11 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         // there in the i'Net. :shrug:
         try { return InetAddress.getByName(iFace); }
         catch (UnknownHostException e) {
-            throw new CBLSocketException("Could not resolve specified interface: " + iFace, e);
+            throw new CBLSocketException(
+                C4Constants.ErrorDomain.NETWORK,
+                C4Constants.NetworkError.UNKNOWN_INTERFACE,
+                "Could not resolve specified interface: " + iFace,
+                e);
         }
     }
 

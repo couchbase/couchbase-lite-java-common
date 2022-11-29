@@ -28,6 +28,7 @@ import java.util.List;
 import com.couchbase.lite.Endpoint;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.URLEndpoint;
+import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
 import com.couchbase.lite.internal.replicator.CBLWebSocket;
@@ -79,7 +80,12 @@ public abstract class AbstractSocketFactory implements BaseSocketFactory {
             ? createCBLWebSocket(toCore, scheme, host, port, path, opts)
             : createPlatformSocket(toCore);
 
-        if (fromCore == null) { throw new CBLSocketException("Can't create endpoint: " + endpoint); }
+        if (fromCore == null) {
+            throw new CBLSocketException(
+                C4Constants.ErrorDomain.WEB_SOCKET,
+                C4Constants.WebSocketError.CANT_FULFILL,
+                "Can't create endpoint: " + endpoint);
+        }
 
         // Test instrumentation
         final Fn.Consumer<SocketFromCore> testListener = getTestListener();
@@ -112,6 +118,8 @@ public abstract class AbstractSocketFactory implements BaseSocketFactory {
         try { uri = new URI(translateScheme(scheme), null, host, port, path, null, null); }
         catch (URISyntaxException e) {
             throw new CBLSocketException(
+                C4Constants.ErrorDomain.NETWORK,
+                C4Constants.NetworkError.INVALID_URL,
                 String.format("Bad URI for socket: %s//%s:%d/%s", scheme, host, port, path), e);
         }
 

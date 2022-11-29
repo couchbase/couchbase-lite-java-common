@@ -29,6 +29,7 @@ import com.couchbase.lite.internal.BaseSocketFactory;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.impl.NativeC4Socket;
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
+import com.couchbase.lite.internal.sockets.CBLSocketException;
 import com.couchbase.lite.internal.sockets.CloseStatus;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
@@ -368,9 +369,22 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     private void continueWith(SocketTask task) { queue.execute(() -> task.accept(this, fromCore.get())); }
 
     // make a guess about what went wrong...
-    private void openFailed(@NonNull Exception err) {
+    private void openFailed(@NonNull RuntimeException err) {
         Log.w(LOG_DOMAIN, "Failed opening connection", err);
-        release(null, C4Constants.ErrorDomain.NETWORK, C4Constants.NetworkError.INVALID_URL, err.getMessage());
+
+        final int domain;
+        final int code;
+        if (err instanceof CBLSocketException) {
+            final CBLSocketException cblErr = (CBLSocketException) err;
+            domain = cblErr.getDomain();
+            code = cblErr.getCode();
+        }
+        else {
+            domain = C4Constants.ErrorDomain.NETWORK;
+            code = C4Constants.NetworkError.UNKNOWN;
+        }
+
+        release(null, domain, code, err.getMessage());
     }
 
     private void release(LogDomain logDomain, int domain, int code, @Nullable String msg) {

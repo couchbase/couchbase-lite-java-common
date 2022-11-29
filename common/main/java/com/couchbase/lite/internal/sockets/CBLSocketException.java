@@ -16,13 +16,31 @@
 package com.couchbase.lite.internal.sockets;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 
 /**
  * Unchecked exception for fast failing in CBL network handling
  */
 public class CBLSocketException extends RuntimeException {
-    public CBLSocketException(@NonNull String message) { super(message); }
+    private final int domain;
+    private final int code;
 
-    public CBLSocketException(@NonNull String message, @NonNull Throwable cause) { super(message, cause); }
+    public CBLSocketException(int domain, int code, @NonNull String message) { this(domain, code, message, null); }
+
+    public CBLSocketException(
+        int domain,
+        int code,
+        @NonNull String message,
+        @Nullable Throwable cause) {
+        super(message, cause);
+        this.domain = domain;
+        this.code = code;
+    }
+
+    public int getDomain() { return code; }
+    public int getCode() { return code; }
+
+    @NonNull
+    public String toString() { return "[" + domain + ", " + code + "]: " + super.toString(); }
 }
