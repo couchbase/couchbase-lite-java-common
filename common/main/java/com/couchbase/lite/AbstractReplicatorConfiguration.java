@@ -302,7 +302,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Enable/disable auto-purge.
      * The default is auto-purge enabled.
-     *
+     * <p>
      * Note: A document that is blocked by a document Id filter will not be auto-purged
      *       regardless of the setting of the auto purge property
      */
@@ -467,7 +467,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setDocumentIDs(@Nullable List<String> documentIDs) {
-        getValidDefaultConfigOrThrow().setDocumentIDs((documentIDs == null) ? null : new ArrayList<>(documentIDs));
+        updateValidDefaultConfigOrThrow(
+            config -> config.setDocumentIDs((documentIDs == null) ? null : new ArrayList<>(documentIDs)));
         return getReplicatorConfiguration();
     }
 
@@ -486,7 +487,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setChannels(@Nullable List<String> channels) {
-        getValidDefaultConfigOrThrow().setChannels((channels == null) ? null : new ArrayList<>(channels));
+        updateValidDefaultConfigOrThrow(
+            config -> config.setChannels((channels == null) ? null : new ArrayList<>(channels)));
         return getReplicatorConfiguration();
     }
 
@@ -502,7 +504,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setConflictResolver(@Nullable ConflictResolver conflictResolver) {
-        getValidDefaultConfigOrThrow().setConflictResolver(conflictResolver);
+        updateValidDefaultConfigOrThrow(config -> config.setConflictResolver(conflictResolver));
         return getReplicatorConfiguration();
     }
 
@@ -519,7 +521,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPullFilter(@Nullable ReplicationFilter pullFilter) {
-        getValidDefaultConfigOrThrow().setPullFilter(pullFilter);
+        updateValidDefaultConfigOrThrow(config -> config.setPullFilter(pullFilter));
         return getReplicatorConfiguration();
     }
 
@@ -536,7 +538,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPushFilter(@Nullable ReplicationFilter pushFilter) {
-        getValidDefaultConfigOrThrow().setPushFilter(pushFilter);
+        updateValidDefaultConfigOrThrow(config -> config.setPushFilter(pushFilter));
         return getReplicatorConfiguration();
     }
 
@@ -583,7 +585,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     /**
      * Enable/disable auto-purge.
      * Default is enabled.
-     *
+     * <p>
      * Note: A document that is blocked by a document Id filter will not be auto-purged
      *       regardless of the setting of the auto purge property
      */
@@ -808,13 +810,32 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     @NonNull
-    private CollectionConfiguration getValidDefaultConfigOrThrow() {
+    private CollectionConfiguration getValidDefaultConfigOrThrow() { return getAndUpdateDefaultConfig(null); }
+
+    private void updateValidDefaultConfigOrThrow(@NonNull Fn.Consumer<CollectionConfiguration> updater) {
+        getAndUpdateDefaultConfig(updater);
+    }
+
+    @NonNull
+    private CollectionConfiguration getAndUpdateDefaultConfig(@Nullable Fn.Consumer<CollectionConfiguration> updater) {
         final Collection defaultCollection = Fn.firstOrNull(collectionConfigurations.keySet(), Collection::isDefault);
-        final CollectionConfiguration config = collectionConfigurations.get(defaultCollection);
-        if ((defaultCollection == null) || (config == null)) {
-            throw new IllegalArgumentException(
-                "Cannot use legacy parameter without a default collection configuration");
+        if (defaultCollection == null) {
+            throw new IllegalArgumentException("Cannot use legacy parameters when there is no default collection");
         }
+
+        CollectionConfiguration config = collectionConfigurations.get(defaultCollection);
+        if (config == null) {
+            throw new IllegalArgumentException(
+                "Cannot use legacy parameters when the default collection has no configuration");
+        }
+
+        // Copy on write...
+        if (updater != null) {
+            config = new CollectionConfiguration(config);
+            updater.accept(config);
+            addCollectionInternal(defaultCollection, config);
+        }
+
         return config;
     }
 }

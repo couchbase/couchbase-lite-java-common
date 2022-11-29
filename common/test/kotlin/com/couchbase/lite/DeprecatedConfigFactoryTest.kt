@@ -88,7 +88,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     fun testReplicatorConfigFromCollectionWithDefaultAndOther() {
         val config1 = ReplicatorConfigurationFactory
             .newConfig(testEndpoint, mapOf(testCollection to CollectionConfiguration()))
-        val filter = ReplicationFilter {document, flags -> true }
+        val filter = ReplicationFilter {_, _ -> true }
 
         // Information gets lost here (the configuration of testCollection): should be a log message
         val config2 = config1.create(pushFilter = filter)
