@@ -101,7 +101,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("update"))).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testUpdate1", 12 * 1000L) {
+        timeTest("testUpdate1", 13 * 1000L) {
             var i = 0
             for (id in ids) {
                 i++
