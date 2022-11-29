@@ -38,7 +38,7 @@ public class CBLSocketException extends RuntimeException {
         this.code = code;
     }
 
-    public int getDomain() { return code; }
+    public int getDomain() { return domain; }
     public int getCode() { return code; }
 
     @NonNull

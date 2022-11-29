@@ -702,7 +702,6 @@ class CollectionTest : BaseDbTest() {
         testCollection.indexes
     }
 
-    @Ignore("CBL-3824")
     @Test
     fun testCopyFullTextIndex() {
         val db = Database(getUniqueName("test"))
