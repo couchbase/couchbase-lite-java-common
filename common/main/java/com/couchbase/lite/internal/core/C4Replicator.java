@@ -243,13 +243,20 @@ public abstract class C4Replicator extends C4NativePeer {
     ////// Message Endpoint Replicator
 
     static final class C4MessageEndpointReplicator extends C4Replicator {
+        // Protect this socket from the GC.
+        @SuppressWarnings("FieldCanBeLocal")
+        @NonNull
+        private final C4Socket c4Socket;
+
         C4MessageEndpointReplicator(
             @NonNull NativeImpl impl,
             long peer,
             long token,
+            @NonNull C4Socket c4Socket,
             @NonNull List<ReplicationCollection> colls,
             @NonNull StatusListener statusListener) {
             super(impl, peer, token, colls, statusListener);
+            this.c4Socket = c4Socket;
         }
 
         @Override
@@ -583,7 +590,7 @@ public abstract class C4Replicator extends C4NativePeer {
             replToken);
 
         final C4Replicator c4Replicator
-            = new C4MessageEndpointReplicator(impl, peer, replToken, Arrays.asList(colls), statusListener);
+            = new C4MessageEndpointReplicator(impl, peer, replToken, c4Socket, Arrays.asList(colls), statusListener);
 
         BOUND_REPLICATORS.bind(replToken, c4Replicator);
 
