@@ -17,9 +17,9 @@ package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.BaseSocketFactory
+import com.couchbase.lite.internal.sockets.CBLSocketException
 import com.couchbase.lite.internal.sockets.CloseStatus
 import com.couchbase.lite.internal.sockets.SocketFromCore
-import com.couchbase.lite.internal.sockets.SocketToCore
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -43,17 +43,6 @@ open class MockSocketFromCore : SocketFromCore {
         threadId = Thread.currentThread().id
         latch.countDown()
     }
-}
-
-open class MockSocketFactory : BaseSocketFactory {
-    override fun createSocket(
-        toCore: SocketToCore,
-        scheme: String,
-        host: String,
-        port: Int,
-        path: String,
-        opts: ByteArray
-    ) = throw IllegalStateException("BOOM!")
 }
 
 // https://youtrack.jetbrains.com/issue/KT-5870
@@ -145,13 +134,27 @@ class C4SocketTest : BaseTest() {
             }
         }
 
-        val token = BaseSocketFactory.bindSocketFactory(MockSocketFactory())
+        val token = BaseSocketFactory.bindSocketFactory { _, _, _, _, _, _ ->
+            throw CBLSocketException(86, 666, "BOOM!")
+        }
+
         try {
-            assertFalse(C4Socket.openSocket(mockImpl, C4BaseTest.MOCK_PEER, token, "ws:", "Oprah", 86, "/fail", ByteArray(0)))
+            assertFalse(
+                C4Socket.openSocket(
+                    mockImpl,
+                    C4BaseTest.MOCK_PEER,
+                    token,
+                    "ws:",
+                    "Oprah",
+                    86,
+                    "/fail",
+                    ByteArray(0)
+                )
+            )
             assertEquals(0, C4Socket.BOUND_SOCKETS.keySet().size)
             assertEquals(2, mockImpl.totalCalls)
-            assertEquals(C4Constants.ErrorDomain.NETWORK, mockImpl.domain)
-            assertEquals(C4Constants.NetworkError.INVALID_URL, mockImpl.code)
+            assertEquals(86, mockImpl.domain)
+            assertEquals(666, mockImpl.code)
             assertEquals("BOOM!", mockImpl.message)
         } finally {
             BaseSocketFactory.unbindSocketFactory(token)
