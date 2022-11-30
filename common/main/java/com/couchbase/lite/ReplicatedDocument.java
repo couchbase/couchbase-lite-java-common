@@ -59,9 +59,7 @@ public final class ReplicatedDocument {
         this.error = error;
 
         this.flags = EnumSet.noneOf(DocumentFlag.class);
-        if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.DELETED)) {
-            this.flags.add(DocumentFlag.DELETED);
-        }
+        if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.DELETED)) { this.flags.add(DocumentFlag.DELETED); }
         if (C4Constants.hasFlags(flags, C4Constants.RevisionFlags.PURGED)) {
             this.flags.add(DocumentFlag.ACCESS_REMOVED);
         }

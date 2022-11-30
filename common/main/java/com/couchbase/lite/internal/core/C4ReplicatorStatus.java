@@ -102,9 +102,6 @@ public final class C4ReplicatorStatus {
     public int getErrorInternalInfo() { return errorInternalInfo; }
 
     @NonNull
-    public C4Error getC4Error() { return new C4Error(errorDomain, errorCode, errorInternalInfo); }
-
-    @NonNull
     @Override
     public String toString() {
         return "C4ReplicatorStatus{"

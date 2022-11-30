@@ -66,13 +66,11 @@ public class C4DocumentEnded {
         this.errorIsTransient = errorIsTransient;
     }
 
-    @NonNull
-    public C4Error getC4Error() { return new C4Error(errorDomain, errorCode, errorInternalInfo); }
+    public int getErrorDomain() { return errorDomain; }
 
-    public boolean isConflicted() {
-        return errorDomain == C4Constants.ErrorDomain.LITE_CORE
-            && errorCode == C4Constants.LiteCoreError.CONFLICT;
-    }
+    public int getErrorCode() { return errorCode; }
+
+    public int getErrorInfo() { return errorInternalInfo; }
 
     @NonNull
     @Override
