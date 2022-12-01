@@ -74,7 +74,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertEquals(Defaults.Replicator.TYPE, immutableConfig.type)
         assertEquals(Defaults.Replicator.CONTINUOUS, immutableConfig.isContinuous)
 
-        val opts = immutableConfig.getConnectionOptions()
+        val opts = immutableConfig.connectionOptions
         assertEquals(Defaults.Replicator.HEARTBEAT, opts[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
         assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
         assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
@@ -91,7 +91,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         config.maxAttempts = 6
         config.maxAttemptWaitTime = 6
 
-        val opts1 = ImmutableReplicatorConfiguration(config).getConnectionOptions()
+        val opts1 = ImmutableReplicatorConfiguration(config).connectionOptions
         assertEquals(6, opts1[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
         assertEquals(6, opts1[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
         assertEquals(6 - 1, opts1[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
@@ -100,10 +100,16 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         config.maxAttempts = 0
         config.maxAttemptWaitTime = 0
 
-        val opts2 = ImmutableReplicatorConfiguration(config).getConnectionOptions()
+        val opts2 = ImmutableReplicatorConfiguration(config).connectionOptions
         assertEquals(Defaults.Replicator.HEARTBEAT, opts2[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
-        assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
-        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
+        assertEquals(
+            Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
+            opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL]
+        )
+        assertEquals(
+            Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1,
+            opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES]
+        )
     }
 
     //     1: Create a config object with ReplicatorConfiguration.init(database, endpoint).
@@ -514,6 +520,48 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertEquals(pushFilter2, collectionConfig5!!.pushFilter)
         assertEquals(pullFilter2, collectionConfig5.pullFilter)
         assertEquals(resolver2, collectionConfig5.conflictResolver)
+    }
+
+    //     1: Create Collection "colA" in scope "scopeA".
+    //     2: Create a ReplicationFilter
+    //     3: Create a CollectionConfiguration and set the pull filter to be the ReplicationFilter.
+    //     4  Create a ReplicatorConfiguration.init(endpoint: endpoint).
+    //     5: Use addCollections() to add both colA and the default collection to the replicator config
+    //        configured with the the CollectionConfiguration.
+    //     6: Check the configurations for the two collections.  Both should have the ReplicationFilter as a pull
+    //        filter, and a null push filter.
+    //     7: Set ReplicationFilter as the push filter using the deprecated ReplicatorConfiguration.setPushFilter method.
+    //     8: Verify that the only thing that has changed is the default collection's push filter.
+    @Suppress("DEPRECATION")
+    @Test
+    fun testUpdateCollectionConfigWithDefault() {
+        val defaultCollection = testDatabase.defaultCollection!!
+        val collectionA = testDatabase.createCollection("colA", "scopeA")
+
+        val filter = ReplicationFilter { _, _ -> true }
+
+        val replConfig = ReplicatorConfiguration(mockURLEndpoint)
+        var collConfig = CollectionConfiguration(null, null, filter, null, null)
+
+        replConfig.addCollections(listOf(defaultCollection, collectionA), collConfig)
+
+        collConfig = replConfig.getCollectionConfiguration(defaultCollection)!!
+        assertEquals(filter, collConfig.pullFilter)
+        assertEquals(null, collConfig.pushFilter)
+
+        collConfig = replConfig.getCollectionConfiguration(collectionA)!!
+        assertEquals(filter, collConfig.pullFilter)
+        assertEquals(null, collConfig.pushFilter)
+
+        replConfig.pushFilter = filter
+
+        collConfig = replConfig.getCollectionConfiguration(defaultCollection)!!
+        assertEquals(filter, collConfig.pullFilter)
+        assertEquals(filter, collConfig.pushFilter)
+
+        collConfig = replConfig.getCollectionConfiguration(collectionA)!!
+        assertEquals(filter, collConfig.pullFilter)
+        assertEquals(null, collConfig.pushFilter)
     }
 
     //     1: Create Collection "colA" and "colB" in the scope "scopeA".
