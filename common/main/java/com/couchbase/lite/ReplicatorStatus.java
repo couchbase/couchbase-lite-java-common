@@ -52,6 +52,17 @@ public final class ReplicatorStatus {
         return ReplicatorActivityLevel.BUSY;
     }
 
+    @Nullable
+    private static CouchbaseLiteException getErrorFromC4(@NonNull C4ReplicatorStatus c4Status) {
+        final int errorCode = c4Status.getErrorCode();
+        return (errorCode == 0)
+            ? null
+            : CouchbaseLiteException.toCouchbaseLiteException(
+                c4Status.getErrorDomain(),
+                errorCode,
+                c4Status.getErrorInternalInfo());
+    }
+
     //---------------------------------------------
     // member variables
     //---------------------------------------------
@@ -71,7 +82,7 @@ public final class ReplicatorStatus {
         this(
             getActivityLevelFromC4(c4Status.getActivityLevel()),
             new ReplicatorProgress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
-            (c4Status.getErrorCode() == 0) ? null : CouchbaseLiteException.convertC4Error(c4Status.getC4Error()));
+            getErrorFromC4(c4Status));
     }
 
     ReplicatorStatus(@NonNull ReplicatorStatus status) {

@@ -42,7 +42,6 @@ import com.couchbase.lite.internal.ReplicationCollection;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4DocumentEnded;
-import com.couchbase.lite.internal.core.C4Error;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.exec.ExecutionService;
@@ -687,19 +686,23 @@ public abstract class AbstractReplicator extends BaseReplicator
                 continue;
             }
 
-            final String docId = docEnd.docId;
-            final ReplicatedDocument rDoc = new ReplicatedDocument(coll.scope, coll.name, docId, docEnd.flags, null);
+            final int errCode = docEnd.getErrorCode();
+            final CouchbaseLiteException err = (errCode == 0)
+                ? null
+                : CouchbaseLiteException.toCouchbaseLiteException(
+                    docEnd.getErrorDomain(),
+                    errCode,
+                    docEnd.getErrorInfo());
 
-            final C4Error err = docEnd.getC4Error();
-            if ((err != null) && (err.getCode() != 0)) {
-                if (pushing || !docEnd.isConflicted()) { rDoc.setError(CouchbaseLiteException.convertC4Error(err)); }
-                else {
-                    queueConflictResolution(rDoc, coll.getConflictResolver());
-                    continue;
-                }
+            final ReplicatedDocument rDoc
+                = new ReplicatedDocument(coll.scope, coll.name, docEnd.docId, docEnd.flags, err);
+
+            if (pushing && !CouchbaseLiteException.isConflict(err)) {
+                unconflictedDocs.add(rDoc);
+                continue;
             }
 
-            unconflictedDocs.add(rDoc);
+            queueConflictResolution(rDoc, coll.getConflictResolver());
         }
 
         if (!unconflictedDocs.isEmpty()) { notifyDocumentEnded(pushing, unconflictedDocs); }

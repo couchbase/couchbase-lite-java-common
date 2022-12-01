@@ -18,7 +18,7 @@ package com.couchbase.lite;
 import com.couchbase.lite.internal.core.C4Constants;
 
 
-@SuppressWarnings("LineLength")
+@SuppressWarnings({"LineLength", "unused"})
 public final class CBLError {
     private CBLError() {}
 

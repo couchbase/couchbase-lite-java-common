@@ -22,7 +22,6 @@ import java.util.Map;
 
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.core.C4Constants;
-import com.couchbase.lite.internal.core.C4Error;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.support.Log;
 
@@ -31,13 +30,6 @@ import com.couchbase.lite.internal.support.Log;
  * Misfortune: The little fox gets its tail wet.
  */
 public final class CouchbaseLiteException extends Exception {
-
-    @NonNull
-    public static CouchbaseLiteException convertC4Error(@Nullable C4Error c4err) {
-        return (c4err == null)
-            ? new CouchbaseLiteException("Unknown C4 error")
-            : toCouchbaseLiteException(c4err.getDomain(), c4err.getCode(), c4err.getInternalInfo());
-    }
 
     @NonNull
     public static CouchbaseLiteException convertException(@Nullable LiteCoreException e) {
