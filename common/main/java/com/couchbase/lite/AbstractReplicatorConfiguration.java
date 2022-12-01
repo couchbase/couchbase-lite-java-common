@@ -53,17 +53,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     public static final int DISABLE_HEARTBEAT = 2147483;
 
-    /**
-     * Replicator type
-     * PUSH_AND_PULL: Bidirectional; both push and pull
-     * PUSH: Pushing changes to the target
-     * PULL: Pulling changes from the target
-     *
-     * @deprecated Use com.couchbase.lite.ReplicatorType
-     */
-    @Deprecated
-    public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
-
     protected static int verifyHeartbeat(int heartbeat) {
         Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS);
         return heartbeat;
@@ -399,36 +388,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
-     * Old setter for replicator type, indicating the direction of the replicator.
-     * The default value is PUSH_AND_PULL which is bi-directional.
-     *
-     * @param replicatorType The replicator type.
-     * @return this.
-     * @deprecated Use setType(AbstractReplicator.ReplicatorType)
-     */
-    @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"})
-    @Deprecated
-    @NonNull
-    public final ReplicatorConfiguration setReplicatorType(
-        @NonNull AbstractReplicatorConfiguration.ReplicatorType replicatorType) {
-        final com.couchbase.lite.ReplicatorType type;
-        switch (Preconditions.assertNotNull(replicatorType, "replicator type")) {
-            case PUSH_AND_PULL:
-                type = com.couchbase.lite.ReplicatorType.PUSH_AND_PULL;
-                break;
-            case PUSH:
-                type = com.couchbase.lite.ReplicatorType.PUSH;
-                break;
-            case PULL:
-                type = com.couchbase.lite.ReplicatorType.PULL;
-                break;
-            default:
-                throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
-        }
-        return setType(type);
-    }
-
-    /**
      * Sets the target server's SSL certificate.
      * The default is no pinned cert.
      *
@@ -628,27 +587,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return heartbeat interval in seconds
      */
     public final int getHeartbeat() { return heartbeat; }
-
-    /**
-     * Old getter for Replicator type indicating the direction of the replicator.
-     *
-     * @deprecated Use getType()
-     */
-    @SuppressWarnings({"DeprecatedIsStillUsed", "deprecation"})
-    @Deprecated
-    @NonNull
-    public final AbstractReplicatorConfiguration.ReplicatorType getReplicatorType() {
-        switch (type) {
-            case PUSH_AND_PULL:
-                return AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL;
-            case PUSH:
-                return AbstractReplicatorConfiguration.ReplicatorType.PUSH;
-            case PULL:
-                return AbstractReplicatorConfiguration.ReplicatorType.PULL;
-            default:
-                throw new IllegalStateException("Unrecognized replicator type: " + type);
-        }
-    }
 
     /**
      * Return the remote target's SSL certificate.

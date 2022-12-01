@@ -299,32 +299,6 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             getActivityLevelFor(C4ReplicatorStatus.ActivityLevel.BUSY + 1));
     }
 
-    // Verify that deprecated and new ReplicatorTypes are interchangeable
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void testDeprecatedReplicatorType() {
-        ReplicatorConfiguration config = makeDefaultConfig();
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, config.getReplicatorType());
-        assertEquals(ReplicatorType.PUSH_AND_PULL, config.getType());
-
-        config.setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PUSH);
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH, config.getReplicatorType());
-        assertEquals(ReplicatorType.PUSH, config.getType());
-
-        config.setReplicatorType(AbstractReplicatorConfiguration.ReplicatorType.PULL);
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
-        assertEquals(ReplicatorType.PULL, config.getType());
-
-        config.setType(ReplicatorType.PUSH);
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH, config.getReplicatorType());
-        assertEquals(ReplicatorType.PUSH, config.getType());
-
-        config.setType(ReplicatorType.PULL);
-        assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PULL, config.getReplicatorType());
-        assertEquals(ReplicatorType.PULL, config.getType());
-    }
-
     /**
      * The 4 tests below test replicator cookies option when specifying replicator configuration
      **/
