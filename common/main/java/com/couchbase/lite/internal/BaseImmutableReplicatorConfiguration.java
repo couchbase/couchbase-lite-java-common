@@ -185,8 +185,6 @@ public class BaseImmutableReplicatorConfiguration {
         options.put(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE, enableAutoPurge);
 
         final Map<String, Object> httpHeaders = new HashMap<>();
-        httpHeaders.put("User-Agent", CBLVersion.getUserAgent());
-
         if (headers != null) {
             // If client code specified a cookies header, remove it and add it to the separate cookies option
             String cookies = headers.remove(AbstractCBLWebSocket.HEADER_COOKIES);
@@ -198,6 +196,8 @@ public class BaseImmutableReplicatorConfiguration {
 
             httpHeaders.putAll(headers);
         }
+
+        httpHeaders.put(AbstractCBLWebSocket.HEADER_USER_AGENT, CBLVersion.getUserAgent());
 
         options.put(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS, httpHeaders);
 

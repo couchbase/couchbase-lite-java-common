@@ -800,7 +800,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     private String baseDesc() {
         return "Replicator{" + ClassUtils.objId(this) + "("
             + (config.isPull() ? "<" : "")
-            + (config.isContinuous() ? "*" : "-")
+            + (config.isContinuous() ? "*" : "o")
             + (config.isPush() ? ">" : "")
             + ")";
     }

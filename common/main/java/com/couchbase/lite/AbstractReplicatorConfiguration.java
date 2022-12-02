@@ -743,7 +743,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         final StringBuilder buf = new StringBuilder("(");
 
         for (Collection c: collectionConfigurations.keySet()) {
-            if (buf.length() > 0) { buf.append(", "); }
+            if (buf.length() > 1) { buf.append(", "); }
             buf.append(c.getScope().getName()).append('.').append(c.getName());
         }
         buf.append(") ");
@@ -753,19 +753,17 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             buf.append('<');
         }
 
-        buf.append(continuous ? '*' : '=');
+        buf.append(continuous ? '*' : 'o');
 
         if ((type == com.couchbase.lite.ReplicatorType.PUSH)
             || (type == com.couchbase.lite.ReplicatorType.PUSH_AND_PULL)) {
             buf.append('>');
         }
 
-        buf.append('(');
         if (authenticator != null) { buf.append('@'); }
         if (pinnedServerCertificate != null) { buf.append('^'); }
-        buf.append(") ");
 
-        return "ReplicatorConfig{(" + buf + target + '}';
+        return "ReplicatorConfig{" + buf + target + '}';
     }
 
     //---------------------------------------------

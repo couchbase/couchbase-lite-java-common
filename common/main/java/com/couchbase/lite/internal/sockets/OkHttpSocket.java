@@ -97,15 +97,15 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     private final SocketFactory socketFactory;
 
     // This is the OkHttp connection outbound to the remote.
-    // Its value has lifecycle SocketFromRemote.NULL -> valid -> null and never changes again.
-    // It would be final, if the initialization process happened in the other order...
+    // Its value has lifecycle null -> NULL_WS -> valid -> null.
+    // It could be a simple final var, if the initialization process happened in the other order...
     // Whenever this value is non-null, we assume that referenced OkHttp WebSocket
     // will do something reasonable with calls.
     private final AtomicReference<WebSocket> toRemote = new AtomicReference<>();
 
     // From CBLWebSocket's point of view, this is the inbound pipe, from the remote
     // From our point of view, it is the outbound connection to core.
-    // Its value has lifecycle null -> valid -> null .
+    // Its value has lifecycle SocketFromRemote.NULL -> valid -> null.  After null, it should never change again.
     private final AtomicReference<SocketFromRemote> toCore = new AtomicReference<>(SocketFromRemote.Constants.NULL);
 
     //-------------------------------------------------------------------------
@@ -156,10 +156,12 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
             Log.w(LOG_DOMAIN, "Ignoring attempt to initialize a closed socket socket: %s", this);
             return;
         }
+
         if (core.equals(prevCore)) {
             Log.w(LOG_DOMAIN, "Ignoring socket re-initialization: %s", this);
             return;
         }
+
         throw new CBLSocketException(
             C4Constants.ErrorDomain.NETWORK,
             C4Constants.NetworkError.NETWORK_RESET,

@@ -57,7 +57,6 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import okhttp3.Authenticator;
 import okhttp3.Challenge;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
@@ -129,14 +128,19 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // Constants
     //-------------------------------------------------------------------------
 
-    private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
-
-    private static final int MAX_AUTH_RETRIES = 3;
     public static final int DEFAULT_HEARTBEAT_SEC = 300;
+    public static final int MAX_AUTH_RETRIES = 3;
+
+    public static final String HEADER_COOKIES = "Cookies"; // client customized cookies
+    public static final String HEADER_USER_AGENT = "User-Agent";
+    public static final String HEADER_AUTH = "Authorization";
+    // public static final String HEADER_PROXY_AUTH = "Proxy-Authorization";
 
     private static final String CHALLENGE_BASIC = "Basic";
-    private static final String HEADER_AUTH = "Authorization";
-    public static final String HEADER_COOKIES = "Cookies"; // client customized cookies
+    // private static final String CHALLENGE_PREEMPTIVE = "OkHttp-Preemptive";
+
+    private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
+
 
     //-------------------------------------------------------------------------
     // Types
@@ -438,15 +442,21 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     public void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) {
         // Heartbeat
         if (options != null) {
+            // Heartbeat
             final Object heartbeat = options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
             builder.pingInterval(
                 (heartbeat instanceof Number) ? ((long) heartbeat) : DEFAULT_HEARTBEAT_SEC,
                 TimeUnit.SECONDS);
-        }
 
-        // Authenticator
-        final Authenticator authenticator = getBasicAuthenticator();
-        if (authenticator != null) { builder.authenticator(authenticator); }
+            // Basic Auth
+            final Object authOpts = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+            if ((authOpts instanceof Map)) {
+                final Map<?, ?> auth = (Map<?, ?>) authOpts;
+                if (C4Replicator.AUTH_TYPE_BASIC.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) {
+                    setupBasicAuthenticator(auth, builder);
+                }
+            }
+        }
 
         // Cookies
         builder.cookieJar(new AbstractCBLWebSocket.WebSocketCookieJar());
@@ -617,23 +627,27 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         return 0;
     }
 
-    @Nullable
-    private Authenticator getBasicAuthenticator() {
-        if (options == null) { return null; }
-
-        final Object obj = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-        if (!(obj instanceof Map)) { return null; }
-        final Map<?, ?> auth = (Map<?, ?>) obj;
-
-        final Object authType = auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
-        if (!C4Replicator.AUTH_TYPE_BASIC.equals(authType)) { return null; }
-
+    private void setupBasicAuthenticator(@NonNull Map<?, ?> auth, @NonNull OkHttpClient.Builder builder) {
         final Object username = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
-        if (!(username instanceof String)) { return null; }
         final Object password = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
-        if (!(password instanceof String)) { return null; }
+        if (!((password instanceof String) && (username instanceof String))) { return; }
 
-        return (route, resp) -> authenticate(resp, (String) username, (String) password);
+        final String credentials = Credentials.basic((String) username, (String) password);
+
+        builder.authenticator((route, resp) -> authenticate(resp, credentials));
+
+        // Force pre-authentication
+        builder.addInterceptor(chain -> {
+            final Request request = chain.request();
+            return chain.proceed(
+                (chain.connection() != null)
+                    ? request
+                    // This should happen only when there is no existing connection: the first request.
+                    : request.newBuilder()
+                        .header(HEADER_AUTH, credentials)
+                        .method(request.method(), request.body())
+                        .build());
+        });
     }
 
     @SuppressWarnings("PMD.NPathComplexity")
@@ -719,23 +733,32 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // http://www.ietf.org/rfc/rfc2617.txt
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @Nullable
-    private Request authenticate(@NonNull Response resp, @NonNull String user, @NonNull String pwd) {
+    private Request authenticate(@NonNull Response resp, @NonNull String credentials) {
         Log.d(LOG_DOMAIN, "%s.authenticate: %s", this, resp);
 
         // If failed 3 times, give up.
         if (responseCount(resp) >= MAX_AUTH_RETRIES) { return null; }
 
         final List<Challenge> challenges = resp.challenges();
-        Log.d(LOG_DOMAIN, "CBLWebSocket challenges: %s", challenges);
+        Log.d(LOG_DOMAIN, "challenges: %s", challenges);
         if (challenges == null) { return null; }
 
         for (Challenge challenge: challenges) {
-            if (CHALLENGE_BASIC.equals(challenge.scheme())) {
+            if (CHALLENGE_BASIC.equalsIgnoreCase(challenge.scheme())) {
                 return resp.request()
                     .newBuilder()
-                    .header(HEADER_AUTH, Credentials.basic(user, pwd))
+                    .header(HEADER_AUTH, credentials)
                     .build();
             }
+            // CBL-3976: We probably need to handle this but I am not sure how.
+            // This is the challenge we will get if OkHttp determines that it
+            // is talking to a proxy and needs to authenticate with it.
+//            else if (CHALLENGE_PREEMPTIVE.equalsIgnoreCase(challenge.scheme())) {
+//                return resp.request()
+//                    .newBuilder()
+//                    .header(HEADER_PROXY_AUTH, ??)
+//                    .build();
+//            }
         }
 
         return null;
