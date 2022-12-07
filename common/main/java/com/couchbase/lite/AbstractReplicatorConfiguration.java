@@ -118,9 +118,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Nullable
     private Database database;
 
-    // Yuggg: what a kludge.
-    boolean maxAttemptsSet;
-
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
@@ -149,7 +146,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     // changing the the replication type will reset maxAttempts
     // If there is a way to get rid of the whole kludgy business,
     // this warning suppression can be removed
-    @SuppressWarnings("CopyConstructorMissesField")
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
         this(
             config.collectionConfigurations,
@@ -291,11 +287,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     public final ReplicatorConfiguration setContinuous(boolean continuous) {
         this.continuous = continuous;
-        if (!maxAttemptsSet) {
-            maxAttempts = continuous
-                ? Defaults.Replicator.MAX_ATTEMPTS_CONTINUOUS
-                : Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT;
-        }
         return getReplicatorConfiguration();
     }
 
@@ -366,7 +357,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     public final ReplicatorConfiguration setMaxAttempts(int maxAttempts) {
         this.maxAttempts = Preconditions.assertNotNegative(maxAttempts, "max attempts");
-        maxAttemptsSet = true;
         return getReplicatorConfiguration();
     }
 
@@ -587,7 +577,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Default is enabled.
      * <p>
      * Note: A document that is blocked by a document Id filter will not be auto-purged
-     *       regardless of the setting of the auto purge property
+     * regardless of the setting of the auto purge property
      */
     public final boolean isAutoPurgeEnabled() { return enableAutoPurge; }
 

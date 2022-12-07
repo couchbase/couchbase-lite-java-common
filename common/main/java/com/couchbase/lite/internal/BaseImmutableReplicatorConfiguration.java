@@ -176,7 +176,7 @@ public class BaseImmutableReplicatorConfiguration {
             C4Replicator.REPLICATOR_OPTION_MAX_RETRIES,
             ((maxAttempts > 0)
                 ? maxAttempts
-                : (continuous
+                : ((continuous)
                     ? Defaults.Replicator.MAX_ATTEMPTS_CONTINUOUS
                     : (Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT)))
             - 1); // subtract 1 from max attempts to get what LiteCore wants: number of retries.
