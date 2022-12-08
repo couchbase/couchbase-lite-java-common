@@ -30,17 +30,6 @@ public final class CouchbaseLite {
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
-     * <p>
-     * This method expects <code>Context.getExternalFilesDir(...)</code> to return a non-null value
-     * and will throw an <code>IllegalStateException</code> if it does not.
-     * On the rare device on which that occurs, you may want to do something like this:
-     * <code>
-     * try { init(); }
-     * catch (IllegalStateException e) {
-     *     final File rootDir = ctxt.getFilesDir();
-     *     init(false, rootDIr, new File(rootDir, "cbl_scratch"));
-     * }
-     * </code>
      *
      * @param ctxt the ApplicationContext.
      * @throws IllegalStateException on initialization failure
@@ -49,24 +38,12 @@ public final class CouchbaseLite {
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
-     * <p>
-     * This method expects <code>Context.getExternalFilesDir(...)</code> to return a non-null value
-     * and will throw an <code>IllegalStateException</code> if it does not.
-     * On the rare device on which that occurs, you may want to do something like this:
-     * <code>
-     * try { init(); }
-     * catch (IllegalStateException e) {
-     *     final File rootDir = ctxt.getFilesDir();
-     *     init(false, rootDIr, new File(rootDir, "cbl_scratch"));
-     * }
-     * </code>
      *
-     * @param ctxt the ApplicationContext.
      * @param debug true to enable debugging
      * @throws IllegalStateException on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug) {
-        init(ctxt, debug, ctxt.getFilesDir(), ctxt.getExternalFilesDir(CouchbaseLiteInternal.SCRATCH_DIR_NAME));
+        init(ctxt, debug, ctxt.getFilesDir(), new File(ctxt.getFilesDir(), CouchbaseLiteInternal.SCRATCH_DIR_NAME));
     }
 
     /**
