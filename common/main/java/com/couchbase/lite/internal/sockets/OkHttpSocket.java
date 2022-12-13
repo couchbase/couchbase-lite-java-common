@@ -21,13 +21,18 @@ import androidx.annotation.VisibleForTesting;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import okhttp3.Cookie;
 import okhttp3.Headers;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -88,6 +93,20 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
         @Override
         public void cancel() { throw new UnsupportedOperationException(); }
     };
+
+    /**
+     * Parse request header cookie in the format of "name=value;name=value..." as an OkHttp Cookie.
+     */
+    @NonNull
+    public static List<Cookie> parseCookies(@NonNull HttpUrl url, @NonNull String cookies) {
+        final List<Cookie> cookieList = new ArrayList<>();
+        final StringTokenizer st = new StringTokenizer(cookies, ";");
+        while (st.hasMoreTokens()) {
+            final Cookie cookie = Cookie.parse(url, st.nextToken().trim());
+            if (cookie != null) { cookieList.add(cookie); }
+        }
+        return cookieList;
+    }
 
 
     //-------------------------------------------------------------------------
