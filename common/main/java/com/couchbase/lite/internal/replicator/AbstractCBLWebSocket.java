@@ -75,6 +75,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.sockets.CBLSocketException;
 import com.couchbase.lite.internal.sockets.CloseStatus;
+import com.couchbase.lite.internal.sockets.OkHttpSocket;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketFromRemote;
 import com.couchbase.lite.internal.sockets.SocketState;
@@ -211,14 +212,10 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         }
     }
 
-    // Using the C4NativePeer lock to protect cookieStore may seem like overkill.  We have to use it anyway,
-    // for the (very necessary) call to assertState.  Might as well use it everywhere...
     private class WebSocketCookieJar implements CookieJar {
         @Override
         public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
-            synchronized (getLock()) {
-                for (Cookie cookie: cookies) { cookieStore.setCookie(httpUrl.uri(), cookie.toString()); }
-            }
+            cookieStore.setCookies(httpUrl.uri(), Fn.mapToList(cookies, Cookie::toString));
         }
 
         /**
@@ -251,30 +248,34 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
          * <p>
          * Full documentation for CBL JAK Cookie Architecture can be found on the mobile wiki page:
          * https://hub.internal.couchbase.com/confluence/display/cbeng/Mobile+Team
+         * <p>
+         * ??? The explicit reference to OkHttpSocket is unfortunate.
          *
          * @param url the url for which we need cookies
-         * @return a list of all available cookies
+         * @return a list of all available cookies.
          */
         @NonNull
         @Override
         public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
             final List<Cookie> cookies = new ArrayList<>();
 
-            synchronized (getLock()) {
-                if (!state.assertState(SocketState.UNOPENED, SocketState.OPENING)) { return cookies; }
+            // We can get away with this because we are using websocke protocol:
+            // there is only one request per session: the one that opens it.
+            if (!state.assertState(SocketState.UNOPENED, SocketState.OPENING)) { return cookies; }
 
-                // Cookies from config
-                if (options != null) {
-                    final String confCookies = (String) options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
-                    if (confCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, confCookies)); }
+            // Cookies from the config
+            if (options != null) {
+                final Object confCookies = options.get(C4Replicator.REPLICATOR_OPTION_COOKIES);
+                if (confCookies instanceof String) {
+                    cookies.addAll(OkHttpSocket.parseCookies(url, (String) confCookies));
                 }
-
-                // Set cookies in the CookieStore
-                final String setCookies = cookieStore.getCookies(url.uri());
-                if (setCookies != null) { cookies.addAll(CBLCookieStore.parseCookies(url, setCookies)); }
-
-                return cookies;
             }
+
+            // Set cookies from the CookieStore
+            final String setCookies = cookieStore.getCookies(url.uri());
+            if (setCookies != null) { cookies.addAll(OkHttpSocket.parseCookies(url, setCookies)); }
+
+            return cookies;
         }
     }
 

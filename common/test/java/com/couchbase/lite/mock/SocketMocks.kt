@@ -17,7 +17,11 @@ package com.couchbase.lite.mock
 
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket
 import com.couchbase.lite.internal.replicator.CBLCookieStore
-import com.couchbase.lite.internal.sockets.*
+import com.couchbase.lite.internal.sockets.CloseStatus
+import com.couchbase.lite.internal.sockets.SocketFromCore
+import com.couchbase.lite.internal.sockets.SocketFromRemote
+import com.couchbase.lite.internal.sockets.SocketToCore
+import com.couchbase.lite.internal.sockets.SocketToRemote
 import com.couchbase.lite.internal.utils.Fn
 import java.net.URI
 import java.security.cert.Certificate
@@ -44,8 +48,7 @@ open class MockCore : SocketToCore {
     override fun writeToCore(data: ByteArray): Unit = TODO("Not yet implemented")
     override fun requestCoreClose(status: CloseStatus): Unit = TODO("Not yet implemented")
     override fun closeCore(status: CloseStatus): Unit = TODO("Not yet implemented")
-    override fun ackOpenToCore(httpStatus: Int, responseHeadersFleece: ByteArray?): Unit =
-        TODO("Not yet implemented")
+    override fun ackOpenToCore(httpStatus: Int, responseHeadersFleece: ByteArray?): Unit = TODO("Not yet implemented")
 }
 
 open class MockRemote : SocketToRemote {
@@ -54,11 +57,10 @@ open class MockRemote : SocketToRemote {
     override fun writeToRemote(data: ByteArray): Boolean = TODO("Not yet implemented")
     override fun closeRemote(status: CloseStatus): Boolean = TODO("Not yet implemented")
     override fun cancelRemote(): Unit = TODO("Not yet implemented")
-    override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean =
-        TODO("Not yet implemented")
+    override fun openRemote(uri: URI, options: MutableMap<String, Any>?): Boolean = TODO("Not yet implemented")
 }
 
 open class MockCookieStore : CBLCookieStore {
-    override fun setCookie(uri: URI, setCookieHeader: String): Unit = TODO("Not yet implemented")
+    override fun setCookies(uri: URI, cookies: List<String>): Unit = TODO("Not yet implemented")
     override fun getCookies(uri: URI): String? = TODO("Not yet implemented")
 }

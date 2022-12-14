@@ -1233,13 +1233,22 @@ abstract class AbstractDatabase extends BaseDatabase
 
     // - Cookie Store:
 
-    void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) {
+    // We send the entire Set-Cookie string to Lite Core: e.g.,
+    // session="asdf0p8ure"; Expires=Wed Dec 14 2022; Domain=couchbase.com
+    // user="joe";  Expires=Wed Dec 14 2022; Domain=couchbase.com
+    void setCookies(@NonNull URI uri, @NonNull List<String> cookies) {
         try {
-            synchronized (getDbLock()) { getOpenC4DbLocked().setCookie(uri, setCookieHeader); }
+            synchronized (getDbLock()) {
+                for (String cookie: cookies) { getOpenC4DbLocked().setCookie(uri, cookie); }
+            }
         }
-        catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot save cookie for " + uri, e); }
+        catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot save cookies for " + uri, e); }
     }
 
+    // Lite Core parses the strings we send it and returns *ONLY* the semi-colon separated
+    // list of <cookie-pair>s: <cookie1-name>'='<cookie1-value>;<cookie1-name>'='<cookie1-value>,
+    // e.g.: session=asdf0p8ure;user=joe
+    // See: https://www.rfc-editor.org/rfc/rfc6265#section-4.1.1
     @Nullable
     String getCookies(@NonNull URI uri) {
         try {

@@ -28,7 +28,7 @@ import java.util.*
 
 private const val ITERATIONS = 2000
 
-// Timings were chosen to allow a Nexus 6 running Android 7.0 to pass.
+// Timings were chosen to allow a Samsung Galaxy A1 running Android 7.0 to pass.
 class LoadTest : BaseDbTest() {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1447
@@ -40,7 +40,7 @@ class LoadTest : BaseDbTest() {
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
         assertEquals(0, testCollection.count)
-        timeTest("testCreateUnbatched", 9 * 1000L) {
+        timeTest("testCreateUnbatched", 11) {
             for (doc in docs) {
                 testCollection.save(doc)
             }
@@ -57,7 +57,7 @@ class LoadTest : BaseDbTest() {
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
         assertEquals(0, testCollection.count)
-        timeTest("testCreateBatched", 5 * 1000L) {
+        timeTest("testCreateBatched", 5) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (doc in docs) {
                     testCollection.save(doc)
@@ -75,7 +75,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, tag)).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testRead", 2 * 1000L) {
+        timeTest("testRead", 3) {
             for (id in ids) {
                 val doc = testCollection.getDocument(id)
                 assertNotNull(doc)
@@ -101,7 +101,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("update"))).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testUpdate1", 14 * 1000L) {
+        timeTest("testUpdate1", 21) {
             var i = 0
             for (id in ids) {
                 i++
@@ -140,7 +140,7 @@ class LoadTest : BaseDbTest() {
         testCollection.save(mDoc)
 
         assertEquals(1L, testCollection.count)
-        timeTest("testUpdate2", 11 * 1000L) {
+        timeTest("testUpdate2", 15) {
             for (i in 0..ITERATIONS) {
                 mDoc = testCollection.getDocument(mDoc.id)!!.toMutable()
                 mDoc.setValue("map", mapOf("idx" to i, "long" to i.toLong(), TEST_DOC_TAG_KEY to getUniqueName("tag")))
@@ -164,7 +164,7 @@ class LoadTest : BaseDbTest() {
         val docs = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("delete")))
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testDelete", 9 * 1000L) {
+        timeTest("testDelete", 12) {
             for (doc in docs) {
                 testCollection.delete(doc)
             }
@@ -177,7 +177,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions1() {
         var mDoc = MutableDocument()
-        timeTest("testSaveRevisions1", 4 * 1000L) {
+        timeTest("testSaveRevisions1", 8) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)
@@ -194,7 +194,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions2() {
         val mDoc = MutableDocument()
-        timeTest("testSaveRevisions2", 2 * 1000L) {
+        timeTest("testSaveRevisions2", 4) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)
@@ -217,11 +217,13 @@ class LoadTest : BaseDbTest() {
         )
     }
 
-    private fun timeTest(testName: String, maxTimeMs: Long, test: Runnable) {
+    private fun timeTest(testName: String, maxTimeSec: Long, test: Runnable) {
         val t0 = System.currentTimeMillis()
         test.run()
         val elapsedTime = System.currentTimeMillis() - t0
         Report.log("Load test ${testName} completed in ${elapsedTime} ms")
-        assertTrue("Load test ${testName} over time: ${elapsedTime} > ${maxTimeMs}", elapsedTime < maxTimeMs)
+        assertTrue(
+            "Load test ${testName} over time: ${elapsedTime} > ${maxTimeSec}",
+            elapsedTime < (maxTimeSec * 1000L))
     }
 }
