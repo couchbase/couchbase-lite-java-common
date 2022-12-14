@@ -13,6 +13,9 @@ import org.junit.Test
 import java.net.URI
 
 
+// The suite of tests that verifies behavior
+// with a deleted default collection are in
+// cbl-java-common @ a2de0d43d09ce64fd3a1301dc35
 class DeprecatedConfigFactoryTest : BaseDbTest() {
     private val testEndpoint = URLEndpoint(URI("ws://foo.couchbase.com/db"))
 
@@ -33,13 +36,6 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     @Test(expected = IllegalArgumentException::class)
     fun testReplicatorConfigNoProtocol() {
         ReplicatorConfigurationFactory.create(testDatabase, type = ReplicatorType.PULL)
-    }
-
-    // Create on factory with db with no default collection should fail
-    @Test(expected = IllegalArgumentException::class)
-    fun testReplicatorConfigNoDefaultCollection() {
-        testDatabase.defaultCollection?.delete()
-        ReplicatorConfigurationFactory.create(testDatabase, testEndpoint)
     }
 
     // Create with db and endpoint should succeed
@@ -101,18 +97,6 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
 
         assertEquals(setOf(defaultCollection), config2.collections)
         assertEquals(filter, config2.getCollectionConfiguration(defaultCollection)?.pushFilter)
-    }
-
-    // Create from a source without default collection,
-    // explicitly specifying a non-default collection should fail
-    // ReplicatorConfiguration.create() needs to be able to configure
-    // a default collection.  If there is none, it must fail.
-    @Test(expected = IllegalArgumentException::class)
-    fun testReplicatorConfigFromCollectionWithoutDefault() {
-        testCollection.database.defaultCollection!!.delete()
-        val config1 = ReplicatorConfigurationFactory
-            .newConfig(testEndpoint, mapOf(testCollection to CollectionConfiguration()))
-        config1.create()
     }
 
     // Create with one of the parameters that has migrated to the collection configuration

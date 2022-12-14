@@ -390,11 +390,8 @@ class C4DatabaseTest : C4BaseTest() {
         assertEquals(setOf("test_coll_1", "test_coll_2", "test_coll_3"), c4Database.getCollectionNames("test_scope"))
     }
 
-    @Test
-    fun testDeleteDefaultCollection() {
-        c4Database.deleteCollection(Scope.DEFAULT_NAME, Collection.DEFAULT_NAME)
-        assertNull(c4Database.defaultCollection)
-    }
+    // Test DeleteDefaultCollection are in
+    // cbl-java-common @ a2de0d43d09ce64fd3a1301dc35
 
     // After deleting a collection, we can no longer get that collection (make sure test doesn't crash)
     @Test(expected = LiteCoreException::class)

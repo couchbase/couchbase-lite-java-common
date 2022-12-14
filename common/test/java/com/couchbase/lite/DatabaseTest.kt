@@ -35,6 +35,11 @@ import java.util.*
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 
+
+// The suite of tests that verifies behavior
+// with a deleted default collection are in
+// cbl-java-common @ a2de0d43d09ce64fd3a1301dc35
+
 // The rules in this test are:
 // baseTestDb is managed by the superclass
 // If a test creates a new database it guarantees that it is deleted.
@@ -868,110 +873,6 @@ class DatabaseTest : LegacyBaseDbTest() {
         assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             baseTestDb.getCollection("bobblehead", "horo")
         }
-    }
-
-    //---------------------------------------------
-    //  Collections, 8.9 Use Database API when the Default Collection is Deleted
-    //---------------------------------------------
-
-    @Test
-    fun testUseDatabaseCountWhenDefaultCollectionIsDeleted() {
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        assertEquals(0, baseTestDb.count)
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseSaveDocumentWhenDefaultCollectionIsDeleted() {
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.save(MutableDocument("BobaFet"))
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseGetDocumentWhenDefaultCollectionIsDeleted() {
-        baseTestDb.save(MutableDocument("BobaFet"))
-        assertNotNull(baseTestDb.getDocument("BobaFet"))
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.getDocument("BobaFet")
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseDeleteDocumentWhenDefaultCollectionIsDeleted() {
-        baseTestDb.save(MutableDocument("BobaFet"))
-        val doc = baseTestDb.getDocument("BobaFet")
-        assertNotNull(doc)
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.delete(doc!!)
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabasePurgeDocumentWhenDefaultCollectionIsDeleted() {
-        baseTestDb.save(MutableDocument("BobaFet"))
-        val doc = baseTestDb.getDocument("BobaFet")
-        assertNotNull(doc)
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.purge(doc!!)
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseSetDocumentExpirationWhenDefaultCollectionIsDeleted() {
-        baseTestDb.save(MutableDocument("BobaFet"))
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.setDocumentExpiration("BobaFet", Date(System.currentTimeMillis() + (5 * (60 * 1000))))
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseGetDocumentExpirationWhenDefaultCollectionIsDeleted() {
-        baseTestDb.save(MutableDocument("BobaFet"))
-        baseTestDb.setDocumentExpiration("BobaFet", Date(System.currentTimeMillis() + (5 * (60 * 1000))))
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.getDocumentExpiration("BobaFet")
-    }
-
-    @Test
-    fun testUseDatabaseCreateQueryWhenDefaultCollectionIsDeleted() {
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.createQuery("SELECT _id FROM .")
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseCreateIndexesWhenDefaultCollectionIsDeleted() {
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.createIndex("Princesses", ValueIndexConfiguration("HanSolo"))
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseGetIndexesWhenDefaultCollectionIsDeleted() {
-        baseTestDb.createIndex("Princesses", ValueIndexConfiguration("Leia"))
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.indexes.size
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseDeleteIndexWhenDefaultCollectionIsDeleted() {
-        baseTestDb.createIndex("Princesses", ValueIndexConfiguration("Leia"))
-        assertEquals(1, baseTestDb.indexes.size)
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.deleteIndex("index")
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseAddChangeListenerWhenDefaultCollectionIsDeleted() {
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.addChangeListener { fail("Unexpected call to change listener") }
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseAddDocumentChangeListenerWhenDefaultCollectionIsDeleted() {
-        baseTestDb.save(MutableDocument("BobaFet"))
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.addDocumentChangeListener("BobaFet") { fail("Unexpected call to change listener") }
-    }
-
-    @Test(expected = IllegalStateException::class)
-    fun testUseDatabaseRemoveChangeListenerWhenDefaultCollectionIsDeleted() {
-        val token = baseTestDb.addChangeListener { fail("Unexpected call to change listener") }
-        baseTestDb.deleteCollection(Collection.DEFAULT_NAME)
-        baseTestDb.removeChangeListener(token)
     }
 
     //---------------------------------------------
