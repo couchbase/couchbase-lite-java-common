@@ -24,12 +24,12 @@ import java.util.zip.ZipInputStream;
 
 
 public class ZipUtils {
-    public static void unzip(InputStream in, File destination) throws IOException {
+    public static void unzip(InputStream src, File dst) throws IOException {
         byte[] buffer = new byte[1024];
-        try (ZipInputStream zis = new ZipInputStream(in)) {
+        try (InputStream in = src; ZipInputStream zis = new ZipInputStream(in)) {
             ZipEntry ze = zis.getNextEntry();
             while (ze != null) {
-                File newFile = new File(destination, ze.getName());
+                File newFile = new File(dst, ze.getName());
                 if (ze.isDirectory()) { newFile.mkdirs(); }
                 else {
                     new File(newFile.getParent()).mkdirs();
@@ -41,10 +41,6 @@ public class ZipUtils {
                 ze = zis.getNextEntry();
             }
             zis.closeEntry();
-        }
-        finally {
-            try { in.close(); }
-            catch (IOException ignore) { }
         }
     }
 }
