@@ -152,7 +152,7 @@ public final class Collection extends BaseCollection
     /**
      * The number of documents in the collection.
      */
-    long getCount() {
+    public long getCount() {
         return Preconditions.assertNotNull(
             withLock(() -> (!db.isOpenLocked()) ? 0L : c4Collection.getDocumentCount()),
             "token");
