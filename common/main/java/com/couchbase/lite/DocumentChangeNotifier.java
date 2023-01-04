@@ -23,7 +23,7 @@ import com.couchbase.lite.internal.core.C4DocumentObserver;
 import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.utils.Fn;
 
-
+// See ChangeNotifier for a discussion of memory management
 final class DocumentChangeNotifier extends ChangeNotifier<DocumentChange> implements AutoCloseable {
     @NonNull
     private final Collection collection;

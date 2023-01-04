@@ -29,7 +29,7 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-// Not thread safe...
+// See ChangeNotifier for a discussion of memory management
 final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> implements AutoCloseable {
     private static final int REQUESTED_CHANGES = 100;
     private static final int MAX_CHANGES = 1000;
