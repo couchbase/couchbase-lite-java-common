@@ -18,8 +18,6 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Arrays;
-
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -484,13 +482,11 @@ abstract class AbstractFunction {
 
     @NonNull
     private static Expression.FunctionExpression sexpr(@NonNull String expr, @NonNull Expression operand) {
-        return new Expression.FunctionExpression(
-            expr,
-            Arrays.asList(Preconditions.assertNotNull(operand, "operand expression")));
+        return new Expression.FunctionExpression(expr, Preconditions.assertNotNull(operand, "operand expression"));
     }
 
     @NonNull
     private static Expression.FunctionExpression expr(@NonNull String expr, @NonNull Expression... operands) {
-        return new Expression.FunctionExpression(expr, Arrays.asList(operands));
+        return new Expression.FunctionExpression(expr, operands);
     }
 }

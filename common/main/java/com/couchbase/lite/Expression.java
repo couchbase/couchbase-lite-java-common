@@ -35,7 +35,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * The expression used in constructing a query.
  */
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyMethods"})
 public abstract class Expression {
     private static final String PARAM_EXPRESSION = "expression";
 
@@ -126,7 +126,6 @@ public abstract class Expression {
     //---------------------------------------------
     // Binary Expression
     //---------------------------------------------
-    @SuppressWarnings("PMD.FieldNamingConventions")
     static final class BinaryExpression extends Expression {
         private static final String OP_ADD = "+";
         private static final String OP_BETWEEN = "BETWEEN";
@@ -314,9 +313,9 @@ public abstract class Expression {
         @NonNull
         private final List<Expression> params;
 
-        FunctionExpression(@NonNull String func, @NonNull List<Expression> params) {
+        FunctionExpression(@NonNull String func, @NonNull Expression... params) {
             this.func = func;
-            this.params = params;
+            this.params = Arrays.asList(params);
         }
 
         @NonNull
@@ -326,6 +325,65 @@ public abstract class Expression {
             json.add(func);
             for (Expression expr: params) { json.add(expr.asJSON()); }
             return json;
+        }
+    }
+
+    //---------------------------------------------
+    // Idx Expression
+    //---------------------------------------------
+    static final class IdxExpression extends Expression {
+        @NonNull
+        private final String func;
+        @NonNull
+        private final IndexExpression idx;
+        @Nullable
+        private final List<Expression> params;
+
+        IdxExpression(@NonNull String func, @NonNull IndexExpression idx, @Nullable Expression... params) {
+            this.func = func;
+            this.idx = idx;
+            this.params = (params == null) ? null : Arrays.asList(params);
+        }
+
+        @NonNull
+        @Override
+        Object asJSON() {
+            final List<Object> json = new ArrayList<>();
+            json.add(func);
+            json.add(idx.toString());
+            if (params != null) {
+                for (Expression expr: params) { json.add(expr.asJSON()); }
+            }
+            return json;
+        }
+    }
+
+    //---------------------------------------------
+    // FTI Expression
+    //---------------------------------------------
+    static final class FTIExpression implements FullTextIndexExpression {
+        @NonNull
+        private final String name;
+        @Nullable
+        private final String alias;
+
+        FTIExpression(@NonNull String name, @Nullable String alias) {
+            this.name = name;
+            this.alias = alias;
+        }
+
+        @NonNull
+        @Override
+        public IndexExpression from(@NonNull String alias) {
+            return new FTIExpression(name, Preconditions.assertNotNull(alias, "alias"));
+        }
+
+        @NonNull
+        @Override
+        public String toString() {
+            final StringBuilder buf = new StringBuilder();
+            if (alias != null) { buf.append(alias).append('.'); }
+            return buf.append(name).toString();
         }
     }
 
@@ -486,6 +544,21 @@ public abstract class Expression {
     public static Expression not(@NonNull Expression expression) {
         Preconditions.assertNotNull(expression, PARAM_EXPRESSION);
         return negated(expression);
+    }
+
+    /**
+     * Create a full-text index expression referencing a full-text index with the given index name.
+     * <p>
+     * When there is a need to specify the data source in which the index has been created (e.g. in
+     * multi-collection join statement, calls the from(_ alias: String) method from the returned
+     * FullTextIndexExpressionProtocol object to specify the data source.
+     *
+     * @param indexName The name of the full-text index.
+     * @return The full-text index expression referring to a full text index in the specified data source.
+     */
+    @NonNull
+    public static FullTextIndexExpression fullTextIndex(@NonNull String indexName) {
+        return new FTIExpression(Preconditions.assertNotNull(indexName, "indexName"), null);
     }
 
 

@@ -18,8 +18,6 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 
-import java.util.Arrays;
-
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -33,18 +31,31 @@ public final class FullTextFunction {
     private FullTextFunction() { }
 
     /**
-     * Creates a full-text expression with the given full-text index name and search text.
+     * Creates a full-text rank function with the given full-text index expression.
+     * The rank function indicates how well the current query result matches
+     * the full-text query when performing the match comparison.
      *
-     * @param indexName The full-text index name.
-     * @param text The search text
-     * @return The full-text match expression
+     * @param index The full-text index expression.
+     * @return The full-text rank function.
      */
     @NonNull
-    public static Expression match(@NonNull String indexName, @NonNull String text) {
-        Preconditions.assertNotNull(indexName, "indexName");
-        return new Expression.FunctionExpression(
+    public static Expression rank(@NonNull IndexExpression index) {
+        return new Expression.IdxExpression("RANK()", Preconditions.assertNotNull(index, "index"));
+    }
+
+    /**
+     * Creates a full-text match() function  with the given full-text index expression and the query text
+     *
+     * @param index  The full-text index expression.
+     * @param query The query string.
+     * @return The full-text match() function expression.
+     */
+    @NonNull
+    public static Expression match(@NonNull IndexExpression index, @NonNull String query) {
+        return new Expression.IdxExpression(
             "MATCH()",
-            Arrays.asList(Expression.string(indexName), Expression.string(text)));
+            Preconditions.assertNotNull(index, "index"),
+            Expression.string(query));
     }
 
     /**
@@ -54,10 +65,30 @@ public final class FullTextFunction {
      *
      * @param indexName The index name.
      * @return The full-text rank function.
+     * @deprecated Use: FullTextFunction.rank(IndexExpression)
      */
+    @Deprecated
     @NonNull
     public static Expression rank(@NonNull String indexName) {
-        Preconditions.assertNotNull(indexName, "indexName");
-        return new Expression.FunctionExpression("RANK()", Arrays.asList(Expression.string(indexName)));
+        return new Expression.FunctionExpression(
+            "RANK()",
+            Expression.string(Preconditions.assertNotNull(indexName, "indexName")));
+    }
+
+    /**
+     * Creates a full-text expression with the given full-text index name and search text.
+     *
+     * @param indexName The full-text index name.
+     * @param query     The query string.
+     * @return The full-text match expression
+     * @deprecated Use: FullTextFunction.match(IndexExpression)
+     */
+    @Deprecated
+    @NonNull
+    public static Expression match(@NonNull String indexName, @NonNull String query) {
+        return new Expression.FunctionExpression(
+            "MATCH()",
+            Expression.string(Preconditions.assertNotNull(indexName, "indexName")),
+            Expression.string(query));
     }
 }

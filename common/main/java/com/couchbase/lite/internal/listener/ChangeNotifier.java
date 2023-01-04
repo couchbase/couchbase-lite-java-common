@@ -37,10 +37,10 @@ import com.couchbase.lite.internal.utils.Fn;
 // The token created here, and returned to the client code, dominates very
 // little memory.  Notifiers, however, hold references to Core companion
 // objects.  When the last listener is removed (removeListener returns true)
-// the notifer should be closed and the companion objects freed.
+// the notifier should be closed and the companion objects freed.
 // This moots the concerning scenario in which client code simply drops
-// the token on the floor.  If it is never released, the notifier that
-// contains it will not be released, retaining the Core objects.
+// the token on the floor.  If it is never released, it and the notifier
+// that contains it will not be released: the Core objects will be retained.
 // Having the tokens free themselves in their finalizers is not a good approach.
 // If you do that, as soon as the token is GCed, the associated listener will
 // stop listening, surely surprising to the client code.

@@ -17,8 +17,6 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 
-import java.util.Arrays;
-
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -38,9 +36,10 @@ public final class ArrayFunction {
      */
     @NonNull
     public static Expression contains(@NonNull Expression expression, @NonNull Expression value) {
-        Preconditions.assertNotNull(expression, "expression");
-        Preconditions.assertNotNull(value, "value");
-        return new Expression.FunctionExpression("ARRAY_CONTAINS()", Arrays.asList(expression, value));
+        return new Expression.FunctionExpression(
+            "ARRAY_CONTAINS()",
+            Preconditions.assertNotNull(expression, "expression"),
+            Preconditions.assertNotNull(value, "value"));
     }
 
     /**
@@ -52,7 +51,8 @@ public final class ArrayFunction {
      */
     @NonNull
     public static Expression length(@NonNull Expression expression) {
-        Preconditions.assertNotNull(expression, "expression");
-        return new Expression.FunctionExpression("ARRAY_LENGTH()", Arrays.asList(expression));
+        return new Expression.FunctionExpression(
+            "ARRAY_LENGTH()",
+            Preconditions.assertNotNull(expression, "expression"));
     }
 }
