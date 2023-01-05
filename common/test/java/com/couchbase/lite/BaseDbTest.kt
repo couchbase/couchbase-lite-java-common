@@ -45,10 +45,10 @@ val Scope.collectionCount
     get() = this.collections.size
 
 fun CountDownLatch.stdWait(): Boolean {
-    try {
-        return await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+    return try {
+        await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
     } catch (e: InterruptedException) {
-        return false
+        false
     }
 }
 

@@ -73,6 +73,7 @@ public final class C4CollectionObserver extends C4NativePeer {
         return observer;
     }
 
+
     //-------------------------------------------------------------------------
     // Member Variables
     //-------------------------------------------------------------------------

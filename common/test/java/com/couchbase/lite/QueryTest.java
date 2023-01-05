@@ -347,49 +347,6 @@ public class QueryTest extends BaseQueryTest {
         );
     }
 
-    // Remove, when deprecated isNullOrMissing is removed
-    @Test
-    public void testWhereNullOrMissing() {
-        MutableDocument doc1 = new MutableDocument();
-        doc1.setValue("name", "Scott");
-        doc1.setValue("address", null);
-        saveDocInTestCollection(doc1);
-
-        MutableDocument doc2 = new MutableDocument();
-        doc2.setValue("name", "Tiger");
-        doc2.setValue("address", "123 1st ave.");
-        doc2.setValue("age", 20);
-        saveDocInTestCollection(doc2);
-
-        Expression name = Expression.property("name");
-        Expression address = Expression.property("address");
-        Expression age = Expression.property("age");
-        Expression work = Expression.property("work");
-
-        for (TestCase testCase: new TestCase[] {
-            new TestCase(name.isNotValued()),
-            new TestCase(name.isValued(), doc1.getId(), doc2.getId()),
-            new TestCase(address.isNotValued(), doc1.getId()),
-            new TestCase(address.isValued(), doc2.getId()),
-            new TestCase(age.isNotValued(), doc1.getId()),
-            new TestCase(age.isValued(), doc2.getId()),
-            new TestCase(work.isNotValued(), doc1.getId(), doc2.getId()),
-            new TestCase(work.isValued())
-        }) {
-
-            verifyQuery(
-                QueryBuilder.select(SelectResult.expression(Meta.id))
-                    .from(DataSource.collection(testCollection))
-                    .where(testCase.expr),
-                testCase.docIds.size(),
-                (n, result) -> {
-                    if (n <= testCase.docIds.size()) {
-                        assertEquals(testCase.docIds.get(n - 1), result.getString(0));
-                    }
-                });
-        }
-    }
-
     @Test
     public void testWhereValued() {
         MutableDocument doc1 = new MutableDocument();
@@ -418,13 +375,10 @@ public class QueryTest extends BaseQueryTest {
             new TestCase(work.isNotValued(), doc1.getId(), doc2.getId()),
             new TestCase(work.isValued())}) {
             int nIds = testCase.docIds.size();
-
-            Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.collection(testCollection))
-                .where(testCase.expr);
-
             verifyQuery(
-                query,
+                QueryBuilder.select(SelectResult.expression(Meta.id))
+                    .from(DataSource.collection(testCollection))
+                    .where(testCase.expr),
                 nIds,
                 (n, result) -> { if (n <= nIds) { assertEquals(testCase.docIds.get(n - 1), result.getString(0)); } });
         }
@@ -559,12 +513,13 @@ public class QueryTest extends BaseQueryTest {
         loadJSONResourceIntoCollection("sentences.json");
 
         testCollection.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
+        IndexExpression idx = Expression.fullTextIndex("sentence");
 
         Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("sentence"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("sentence", "'Dummie woman'"))
-            .orderBy(Ordering.expression(FullTextFunction.rank("sentence")).descending());
+            .where(FullTextFunction.match(idx, "'Dummie woman'"))
+            .orderBy(Ordering.expression(FullTextFunction.rank(idx)).descending());
 
         verifyQuery(
             query,
@@ -580,12 +535,13 @@ public class QueryTest extends BaseQueryTest {
         loadJSONResourceIntoCollection("sentences.json");
 
         testCollection.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
+        IndexExpression idx = Expression.fullTextIndex("sentence");
 
         Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("sentence"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("sentence", "'Dummie woman'"))
-            .orderBy(Ordering.expression(FullTextFunction.rank("sentence")).descending());
+            .where(FullTextFunction.match(idx, "'Dummie woman'"))
+            .orderBy(Ordering.expression(FullTextFunction.rank(idx)).descending());
 
         verifyQuery(
             query,
@@ -597,7 +553,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testFullTextIndexConfigDefaults() throws CouchbaseLiteException {
+    public void testFullTextIndexConfigDefaults() {
         final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense");
         assertEquals(Defaults.FullTextIndex.IGNORE_ACCENTS, idxConfig.isIgnoringAccents());
         assertEquals(Locale.getDefault().getLanguage(), idxConfig.getLanguage());
@@ -617,12 +573,13 @@ public class QueryTest extends BaseQueryTest {
         assertTrue(idxConfig.isIgnoringAccents());
 
         testCollection.createIndex("sentence", idxConfig);
+        IndexExpression idx = Expression.fullTextIndex("sentence");
 
         Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("sentence"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("sentence", "'Dummie woman'"))
-            .orderBy(Ordering.expression(FullTextFunction.rank("sentence")).descending());
+            .where(FullTextFunction.match(idx, "'Dummie woman'"))
+            .orderBy(Ordering.expression(FullTextFunction.rank(idx)).descending());
 
         verifyQuery(
             query,
@@ -2400,6 +2357,7 @@ public class QueryTest extends BaseQueryTest {
         FullTextIndex ftsIndex = IndexBuilder.fullTextIndex(FullTextIndexItem.property("content"));
         ftsIndex.setLanguage(Locale.ENGLISH.getLanguage());
         testCollection.createIndex("ftsIndex", ftsIndex);
+        IndexExpression idx = Expression.fullTextIndex("ftsIndex");
 
         String[] expectedIDs = {mDoc1.getId(), mDoc2.getId(), mDoc3.getId()};
         String[] expectedContents = {"beauty", "beautifully", "beautiful"};
@@ -2407,7 +2365,7 @@ public class QueryTest extends BaseQueryTest {
         Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "beautiful"))
+            .where(FullTextFunction.match(idx, "beautiful"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         verifyQuery(
@@ -2425,10 +2383,12 @@ public class QueryTest extends BaseQueryTest {
         testCollection.createIndex(
             "passageIndex",
             IndexBuilder.fullTextIndex(FullTextIndexItem.property("passage")).setLanguage("en"));
+        IndexExpression idx = Expression.fullTextIndex("passageIndex");
 
         testCollection.createIndex(
             "passageIndexStemless",
             IndexBuilder.fullTextIndex(FullTextIndexItem.property("passage")).setLanguage(null));
+        IndexExpression stemlessIdx = Expression.fullTextIndex("passageIndexStemless");
 
         MutableDocument mDoc1 = new MutableDocument();
         mDoc1.setString("passage", "The boy said to the child, 'Mommy, I want a cat.'");
@@ -2440,7 +2400,7 @@ public class QueryTest extends BaseQueryTest {
 
         Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("passageIndex", "cat"));
+            .where(FullTextFunction.match(idx, "cat"));
 
         String[] expected = new String[] {mDoc1.getId(), mDoc2.getId()};
 
@@ -2448,7 +2408,7 @@ public class QueryTest extends BaseQueryTest {
 
         query = QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("passageIndexStemless", "cat"));
+            .where(FullTextFunction.match(stemlessIdx, "cat"));
 
         verifyQuery(query, 1, (n, result) -> assertEquals(expected[n - 1], result.getString(0)));
     }
@@ -2475,6 +2435,7 @@ public class QueryTest extends BaseQueryTest {
 
         FullTextIndex ftsIndex = IndexBuilder.fullTextIndex(FullTextIndexItem.property("content"));
         testCollection.createIndex("ftsIndex", ftsIndex);
+        IndexExpression idx = Expression.fullTextIndex("ftsIndex");
 
         // The enhanced query syntax
         // https://www.sqlite.org/fts3.html#_set_operations_using_the_enhanced_query_syntax
@@ -2483,7 +2444,7 @@ public class QueryTest extends BaseQueryTest {
         Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "sqlite AND database"))
+            .where(FullTextFunction.match(idx, "sqlite AND database"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
         verifyQuery(query, 1, (n, result) -> assertEquals(mDoc3.getId(), result.getString("id")));
 
@@ -2491,7 +2452,7 @@ public class QueryTest extends BaseQueryTest {
         query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "sqlite database"))
+            .where(FullTextFunction.match(idx, "sqlite database"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
         verifyQuery(query, 1, (n, result) -> assertEquals(mDoc3.getId(), result.getString("id")));
 
@@ -2499,7 +2460,7 @@ public class QueryTest extends BaseQueryTest {
         query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "sqlite OR database"))
+            .where(FullTextFunction.match(idx, "sqlite OR database"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
         String[] expected = {mDoc1.getId(), mDoc2.getId(), mDoc3.getId()};
         verifyQuery(query, 3, (n, result) -> assertEquals(expected[n - 1], result.getString("id")));
@@ -2507,7 +2468,7 @@ public class QueryTest extends BaseQueryTest {
         // NOT operator
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "database NOT sqlite"))
+            .where(FullTextFunction.match(idx, "database NOT sqlite"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
         verifyQuery(query, 1, (n, result) -> assertEquals(mDoc1.getId(), result.getString("id")));
     }
@@ -2532,6 +2493,7 @@ public class QueryTest extends BaseQueryTest {
 
         FullTextIndex ftsIndex = IndexBuilder.fullTextIndex(FullTextIndexItem.property("content"));
         testCollection.createIndex("ftsIndex", ftsIndex);
+        IndexExpression idx = Expression.fullTextIndex("ftsIndex");
 
         // The enhanced query syntax
         // https://www.sqlite.org/fts3.html#_set_operations_using_the_enhanced_query_syntax
@@ -2540,7 +2502,7 @@ public class QueryTest extends BaseQueryTest {
         Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "sqlite AND software AND system"))
+            .where(FullTextFunction.match(idx, "sqlite AND software AND system"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         verifyQuery(query, 1, (n, result) -> assertEquals(mDoc2.getId(), result.getString("id")));
@@ -2549,7 +2511,7 @@ public class QueryTest extends BaseQueryTest {
         // (A AND B) OR C
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "(sqlite AND software) OR database"))
+            .where(FullTextFunction.match(idx, "(sqlite AND software) OR database"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs2 = {mDoc1.getId(), mDoc2.getId(), mDoc3.getId()};
@@ -2557,7 +2519,7 @@ public class QueryTest extends BaseQueryTest {
 
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "(sqlite AND software) OR system"))
+            .where(FullTextFunction.match(idx, "(sqlite AND software) OR system"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs3 = {mDoc1.getId(), mDoc2.getId()};
@@ -2566,7 +2528,7 @@ public class QueryTest extends BaseQueryTest {
         // (A OR B) AND C
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "(sqlite OR software) AND database"))
+            .where(FullTextFunction.match(idx, "(sqlite OR software) AND database"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs4 = {mDoc1.getId(), mDoc3.getId()};
@@ -2574,7 +2536,7 @@ public class QueryTest extends BaseQueryTest {
 
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "(sqlite OR software) AND system"))
+            .where(FullTextFunction.match(idx, "(sqlite OR software) AND system"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs5 = {mDoc1.getId(), mDoc2.getId()};
@@ -2583,7 +2545,7 @@ public class QueryTest extends BaseQueryTest {
         // A OR B OR C
         query = QueryBuilder.select(SelectResult.expression(Meta.id), SelectResult.property("content"))
             .from(DataSource.collection(testCollection))
-            .where(FullTextFunction.match("ftsIndex", "database OR software OR system"))
+            .where(FullTextFunction.match(idx, "database OR software OR system"))
             .orderBy(Ordering.property(TEST_DOC_SORT_KEY).ascending());
 
         String[] expectedIDs6 = {mDoc1.getId(), mDoc2.getId(), mDoc3.getId()};
@@ -3484,6 +3446,61 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
+    // 8.12.3a: Test that query by using the new match() and rank()
+    // function with FullTextIndexExpression works as expected with
+    // and without specifying the data source alias name.
+    // Note: Reuse the existing match() and rank() test to create
+    // this test by loading the “sentences” test data into a named collection.
+    @Test
+    public void testQueryBuilderMatchWithFullTextIndexExpression1() throws CouchbaseLiteException {
+        loadJSONResourceIntoCollection("sentences.json");
+
+        testCollection.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
+        IndexExpression idx = Expression.fullTextIndex("sentence");
+
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id), SelectResult.property("sentence"))
+            .from(DataSource.collection(testCollection))
+            .where(FullTextFunction.match(idx, "'Dummie woman'"))
+            .orderBy(Ordering.expression(FullTextFunction.rank(idx)).descending());
+
+        verifyQuery(
+            query,
+            2,
+            (n, result) -> {
+                assertNotNull(result.getString(0));
+                assertNotNull(result.getString(1));
+            });
+    }
+
+    // 8.12.3b: Test that query by using the new match() and rank()
+    // function with FullTextIndexExpression works as expected with
+    // and without specifying the data source alias name.
+    // Note: Reuse the existing match() and rank() test to create
+    // this test by loading the “sentences” test data into a named collection.
+    @Test
+    public void testQueryBuilderMatchWithFullTextIndexExpression2() throws CouchbaseLiteException {
+        loadJSONResourceIntoCollection("sentences.json");
+
+        testCollection.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
+
+        IndexExpression idx = Expression.fullTextIndex("sentence").from("sentences");
+
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id), SelectResult.property("sentence"))
+            .from(DataSource.collection(testCollection).as("sentences"))
+            .where(FullTextFunction.match(idx, "'Dummie woman'"))
+            .orderBy(Ordering.expression(FullTextFunction.rank(idx)).descending());
+
+        verifyQuery(
+            query,
+            2,
+            (n, result) -> {
+                assertNotNull(result.getString(0));
+                assertNotNull(result.getString(1));
+            });
+    }
+
     @Test
     public void testBuilderQueryJoinWithCollections() throws CouchbaseLiteException {
         Collection flowerCol = testDatabase.createCollection("flowers", "test");
@@ -3672,6 +3689,80 @@ public class QueryTest extends BaseQueryTest {
             });
     }
 
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testWhereNullOrMissing() {
+        MutableDocument doc1 = new MutableDocument();
+        doc1.setValue("name", "Scott");
+        doc1.setValue("address", null);
+        saveDocInTestCollection(doc1);
+
+        MutableDocument doc2 = new MutableDocument();
+        doc2.setValue("name", "Tiger");
+        doc2.setValue("address", "123 1st ave.");
+        doc2.setValue("age", 20);
+        saveDocInTestCollection(doc2);
+
+        Expression name = Expression.property("name");
+        Expression address = Expression.property("address");
+        Expression age = Expression.property("age");
+        Expression work = Expression.property("work");
+
+        for (TestCase testCase: new TestCase[] {
+            new TestCase(name.isNullOrMissing()),
+            new TestCase(name.notNullOrMissing(), doc1.getId(), doc2.getId()),
+            new TestCase(address.isNullOrMissing(), doc1.getId()),
+            new TestCase(address.notNullOrMissing(), doc2.getId()),
+            new TestCase(age.isNullOrMissing(), doc1.getId()),
+            new TestCase(age.notNullOrMissing(), doc2.getId()),
+            new TestCase(work.isNullOrMissing(), doc1.getId(), doc2.getId()),
+            new TestCase(work.notNullOrMissing())
+        }) {
+            verifyQuery(
+                QueryBuilder.select(SelectResult.expression(Meta.id))
+                    .from(DataSource.collection(testCollection))
+                    .where(testCase.expr),
+                testCase.docIds.size(),
+                (n, result) -> {
+                    if (n <= testCase.docIds.size()) {
+                        assertEquals(testCase.docIds.get(n - 1), result.getString(0));
+                    }
+                });
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    @Test
+    public void testLegacyIndexMatch() throws CouchbaseLiteException {
+        loadJSONResourceIntoCollection("sentences.json");
+
+        testCollection.createIndex("sentence", IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
+
+        Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id), SelectResult.property("sentence"))
+            .from(DataSource.collection(testCollection))
+            .where(FullTextFunction.match("sentence", "'Dummie woman'"))
+            .orderBy(Ordering.expression(FullTextFunction.rank("sentence")).descending());
+
+        verifyQuery(
+            query,
+            2,
+            (n, result) -> {
+                assertNotNull(result.getString(0));
+                assertNotNull(result.getString(1));
+            });
+    }
+
+    // Utility Functions
+
+    protected final void loadJSONResourceIntoCollection(String resName) {
+        loadJSONResourceIntoCollection(resName, testCollection);
+    }
+
+    protected final void loadJSONResourceIntoCollection(String resName, Collection collection) {
+        loadJSONResourceIntoCollection(resName, "doc-%03d", collection);
+    }
+
     private void runTests(TestCase... cases) {
         for (TestCase testCase: cases) {
             final List<String> docIdList = new ArrayList<>(testCase.docIds);
@@ -3739,14 +3830,6 @@ public class QueryTest extends BaseQueryTest {
     }
 
     private String jsonDocId(int i) { return String.format(Locale.ENGLISH, "doc-%03d", i); }
-
-    protected final void loadJSONResourceIntoCollection(String resName) {
-        loadJSONResourceIntoCollection(resName, testCollection);
-    }
-
-    protected final void loadJSONResourceIntoCollection(String resName, Collection collection) {
-        loadJSONResourceIntoCollection(resName, "doc-%03d", collection);
-    }
 
     private Document createTaskDocument(String title, boolean complete) {
         MutableDocument doc = new MutableDocument();

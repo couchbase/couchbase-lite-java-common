@@ -458,7 +458,7 @@ public final class Collection extends BaseCollection
     @Override
     public void close() {
         synchronized (getDbLock()) {
-            closeCollectionChangNotifierLocked();
+            closeCollectionChangeNotifierLocked();
             for (DocumentChangeNotifier notifier: docChangeNotifiers.values()) { notifier.close(); }
             docChangeNotifiers.clear();
             c4Collection.close();
@@ -491,7 +491,7 @@ public final class Collection extends BaseCollection
 
 
     @NonNull
-    public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener)
+    C4CollectionObserver createCollectionObserver(@NonNull Runnable listener)
         throws CouchbaseLiteException {
         try { return c4Collection.createCollectionObserver(listener); }
         catch (LiteCoreException e) {
@@ -502,7 +502,7 @@ public final class Collection extends BaseCollection
     }
 
     @NonNull
-    public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener)
+    C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener)
         throws CouchbaseLiteException {
         try { return c4Collection.createDocumentObserver(docID, listener); }
         catch (LiteCoreException e) {
@@ -685,9 +685,7 @@ public final class Collection extends BaseCollection
         }
         synchronized (getDbLock()) {
             if (collectionChangeNotifier != null) {
-                if (collectionChangeNotifier.removeChangeListener(token)) {
-                    closeCollectionChangNotifierLocked();
-                }
+                if (collectionChangeNotifier.removeChangeListener(token)) { closeCollectionChangeNotifierLocked(); }
             }
         }
     }
@@ -704,7 +702,7 @@ public final class Collection extends BaseCollection
             docChangeNotifiers.put(docID, docNotifier);
             if (isOpen()) {
                 try { docNotifier.start(this::scheduleImmediateOnPostExecutor); }
-                // !!! Revisit this: there is no programatic way for client code
+                // ??? Revisit this: there is no programatic way for client code
                 // to know that the listener has failed.
                 catch (CouchbaseLiteException e) {
                     Log.d(LogDomain.LISTENER, "Listener failed", e);
@@ -877,7 +875,7 @@ public final class Collection extends BaseCollection
         }
     }
 
-    private void closeCollectionChangNotifierLocked() {
+    private void closeCollectionChangeNotifierLocked() {
         final CollectionChangeNotifier notifier = collectionChangeNotifier;
         collectionChangeNotifier = null;
         if (notifier != null) { notifier.close(); }
