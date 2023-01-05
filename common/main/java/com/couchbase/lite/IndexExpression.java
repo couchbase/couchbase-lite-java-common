@@ -16,4 +16,4 @@
 package com.couchbase.lite;
 
 
-interface IndexExpression { }
+public interface IndexExpression { }
