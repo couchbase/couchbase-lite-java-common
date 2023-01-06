@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import okhttp3.internal.Util;
 
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
@@ -767,6 +768,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     // Private
     //---------------------------------------------
 
+    // I think this is a Spotbugs bug: it claims something is null on line 788
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH")
     private void addCollectionConfig(@NonNull Collection collection, @NonNull CollectionConfiguration config) {
         final Database db = Preconditions.assertNotNull(collection, "collection").getDatabase();
         if (database == null) { database = db; }

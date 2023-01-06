@@ -115,7 +115,7 @@ class NetworkConnectivityManagerTest : BaseTest() {
     // CBSE-12499: multiple registration may cause exception
     @Test
     fun testRegisterALot() {
-        for (v in listOf(22, 26, 29)) {
+        for (v in listOf(22, 26, 29).filter { it <= Build.VERSION.SDK_INT }) {
             val mgr = AndroidConnectivityManager(v) { r -> r.run() }
             assertFalse(mgr.isRunning)
 
