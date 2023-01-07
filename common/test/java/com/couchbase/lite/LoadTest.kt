@@ -28,7 +28,7 @@ import java.util.*
 
 private const val ITERATIONS = 2000
 
-// Timings were chosen to allow a Samsung Galaxy A1 running Android 7.0 to pass.
+// Timings were chosen to allow a Google Nexus 4 running Android API 22 to pass.
 class LoadTest : BaseDbTest() {
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1447
@@ -40,7 +40,7 @@ class LoadTest : BaseDbTest() {
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
         assertEquals(0, testCollection.count)
-        timeTest("testCreateUnbatched", 11) {
+        timeTest("testCreateUnbatched", 14) {
             for (doc in docs) {
                 testCollection.save(doc)
             }
@@ -164,7 +164,7 @@ class LoadTest : BaseDbTest() {
         val docs = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("delete")))
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testDelete", 12) {
+        timeTest("testDelete", 16) {
             for (doc in docs) {
                 testCollection.delete(doc)
             }
