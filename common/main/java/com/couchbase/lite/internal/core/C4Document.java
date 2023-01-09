@@ -219,8 +219,10 @@ public final class C4Document extends C4NativePeer {
         return C4Constants.hasFlags(getFlags(), C4Constants.RevisionFlags.HAS_ATTACHMENTS);
     }
 
-    // Apparently, there may be multiple active references to a single C4Document,
-    // making it very hard to figure out when they can be closed, explicitly.
+    // Although we inherit it from C4NativePeer, actually closing the C4Document
+    // will cause crashes. Apparently, there may be multiple active references
+    // to a single C4Document, making it very hard to figure out when they can be
+    // closed, explicitly.  Just log the call: don't actually close it.
     // See finalize() below.
     @Override
     public void close() {
@@ -242,8 +244,8 @@ public final class C4Document extends C4NativePeer {
     // in many failed tests and even some native crashes in Database.saveInTransaction.
     // That is just a huge shame, since it means that every single document created by
     // client code, eventually ends up on the finalizer queue. A lot of code that seems
-    // to work -- some of it fairly mysterious -- would have to change.  I'm quite reluctant
-    // to make such big changes without a clear benefit from doing so.
+    // to work -- some of it fairly mysterious -- would have to change to fix this.
+    // I'm quite reluctant to make such big changes without a clear benefit from doing so.
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {

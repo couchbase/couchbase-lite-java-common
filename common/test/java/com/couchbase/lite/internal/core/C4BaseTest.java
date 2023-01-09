@@ -228,7 +228,9 @@ public class C4BaseTest extends BaseTest {
             String l;
             while ((l = br.readLine()) != null) {
                 String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
-                try (C4Document doc = C4Document.create(
+
+                // Don't try to autoclose this: See C4Document.close(), in
+                C4Document doc = C4Document.create(
                     c4Database,
                     c4Database.encodeJSON(l),
                     docID,
@@ -238,9 +240,8 @@ public class C4BaseTest extends BaseTest {
                     new String[0],
                     true,
                     0,
-                    0)) {
-                    assertNotNull(doc);
-                }
+                    0);
+                assertNotNull(doc);
 
                 numDocs++;
 
