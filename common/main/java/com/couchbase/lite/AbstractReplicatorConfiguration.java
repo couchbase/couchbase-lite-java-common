@@ -446,8 +446,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
-     * A set of document IDs identifying documents to be replicated.
-     * If non-empty, only documents with IDs in this set will be pushed and/or pulled.
+     * A collection of document IDs identifying documents to be replicated.
+     * If non-empty, only documents with IDs in this collection will be pushed and/or pulled.
      * Default is empty: do not filter documents.
      *
      * @param documentIDs The document IDs.
@@ -464,11 +464,18 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
-     * Sets a set of Sync Gateway channel names to pull from. Ignored for
-     * push replication. If unset, all accessible channels will be pulled.
-     * Note: channels that are not accessible to the user will be ignored
-     * by Sync Gateway.
+     * Sets a collection of Sync Gateway channel names from which to pull Documents.
+     * If unset, all accessible channels will be pulled.
      * Default is empty: pull from all accessible channels.
+     *
+     * Note:  Channel specifications apply only to replications
+     * pulling from a SyncGateway and only the channels visible
+     * to the authenticated user.  Channel specs are ignored:
+     * <ul>
+     *     <li>during a push replication.</li>
+     *     <li>during peer-to-peer or database-to-database replication</li>
+     *     <li>when the specified channel is not accessible to the user</li>
+     * </ul>
      *
      * @param channels The Sync Gateway channel names.
      * @return this.
@@ -672,7 +679,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
-     * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
+     * A collection of document IDs to filter: if not nil, only documents with these IDs will be pushed
      * and/or pulled.
      *
      * @deprecated Use CollectionConfiguration.getDocumentIDs
@@ -685,9 +692,18 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     }
 
     /**
-     * A set of Sync Gateway channel names to pull from. Ignored for push replication.
-     * The default value is null, meaning that all accessible channels will be pulled.
-     * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
+     * Gets the collection of Sync Gateway channel names from which to pull documents.
+     * If unset, all accessible channels will be pulled.
+     * Default is empty: pull from all accessible channels.
+     *
+     * Note:  Channel specifications apply only to replications
+     * pulling from a SyncGateway and only the channels visible
+     * to the authenticated user.  Channel specs are ignored:
+     * <ul>
+     *     <li>during a push replication.</li>
+     *     <li>during peer-to-peer or database-to-database replication</li>
+     *     <li>when the specified channel is not accessible to the user</li>
+     * </ul>
      *
      * @deprecated Use CollectionConfiguration.getChannels
      */

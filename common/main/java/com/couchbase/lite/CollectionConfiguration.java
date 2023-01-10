@@ -62,7 +62,7 @@ public class CollectionConfiguration {
     //---------------------------------------------
 
     /**
-     * Sets a set of document IDs to filter by: if given, only documents
+     * Sets a collection of document IDs to filter by: if given, only documents
      * with these IDs will be pushed and/or pulled.
      *
      * @param documentIDs The document IDs.
@@ -75,10 +75,18 @@ public class CollectionConfiguration {
     }
 
     /**
-     * Sets a set of Sync Gateway channel names to pull from. Ignored for
-     * push replication. If unset, all accessible channels will be pulled.
-     * Note: channels that are not accessible to the user will be ignored
-     * by Sync Gateway.
+     * Sets a collection of Sync Gateway channel names from which to pull Documents.
+     * If unset, all accessible channels will be pulled.
+     * Default is empty: pull from all accessible channels.
+     *
+     * Note:  Channel specifications apply only to replications
+     * pulling from a SyncGateway and only the channels visible
+     * to the authenticated user.  Channel specs are ignored:
+     * <ul>
+     *     <li>during a push replication.</li>
+     *     <li>during peer-to-peer or database-to-database replication</li>
+     *     <li>when the specified channel is not accessible to the user</li>
+     * </ul>
      *
      * @param channels The Sync Gateway channel names.
      * @return this.
@@ -90,7 +98,7 @@ public class CollectionConfiguration {
     }
 
     /**
-     * Sets the the conflict resolver.
+     * Sets the conflict resolver.
      *
      * @param conflictResolver A conflict resolver.
      * @return this.
@@ -132,15 +140,24 @@ public class CollectionConfiguration {
     //---------------------------------------------
 
     /**
-     * A set of Sync Gateway channel names to pull from. Ignored for push replication.
-     * The default value is null, meaning that all accessible channels will be pulled.
-     * Note: channels that are not accessible to the user will be ignored by Sync Gateway.
+     * Sets a collection of Sync Gateway channel names from which to pull Documents.
+     * If unset, all accessible channels will be pulled.
+     * Default is empty: pull from all accessible channels.
+     *
+     * Note:  Channel specifications apply only to replications
+     * pulling from a SyncGateway and only the channels visible
+     * to the authenticated user.  Channel specs are ignored:
+     * <ul>
+     *     <li>during a push replication.</li>
+     *     <li>during peer-to-peer or database-to-database replication</li>
+     *     <li>when the specified channel is not accessible to the user</li>
+     * </ul>
      */
     @Nullable
     public final List<String> getChannels() { return (channels == null) ? null : new ArrayList<>(channels); }
 
     /**
-     * A set of document IDs to filter: if not nil, only documents with these IDs will be pushed
+     * A collection of document IDs to filter: if not nil, only documents with these IDs will be pushed
      * and/or pulled.
      */
     @Nullable
