@@ -30,6 +30,9 @@ import com.couchbase.lite.internal.support.Log;
  * The activity level and progress of a replicator.
  */
 public final class ReplicatorStatus {
+    static final ReplicatorStatus INIT
+        = new ReplicatorStatus(ReplicatorActivityLevel.STOPPED, new ReplicatorProgress(0, 0), null);
+
     @NonNull
     private static final Map<Integer, ReplicatorActivityLevel> ACTIVITY_LEVEL_FROM_C4;
     static {

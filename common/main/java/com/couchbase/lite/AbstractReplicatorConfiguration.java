@@ -143,10 +143,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             db);
     }
 
-    // maxAttemptsSet is not copied into the new config, by design:
-    // changing the the replication type will reset maxAttempts
-    // If there is a way to get rid of the whole kludgy business,
-    // this warning suppression can be removed
     protected AbstractReplicatorConfiguration(@NonNull AbstractReplicatorConfiguration config) {
         this(
             config.collectionConfigurations,
@@ -327,7 +323,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      */
     @NonNull
-    public final ReplicatorConfiguration setAuthenticator(@NonNull Authenticator authenticator) {
+    public final ReplicatorConfiguration setAuthenticator(@Nullable Authenticator authenticator) {
         this.authenticator = Preconditions.assertNotNull(authenticator, "authenticator");
         return getReplicatorConfiguration();
     }
@@ -801,10 +797,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
                 Log.formatStandardMessage("AddCollectionFromClosedDB", collection.toString(), database.getName()));
         }
 
-        try {
-            final Collection coll = database.getCollection(collection.getName(), collection.getScope().getName());
-            if (coll != null) { coll.close(); }
-            else {
+        try (Collection coll = database.getCollection(collection.getName(), collection.getScope().getName())) {
+            if (coll == null) {
                 throw new IllegalArgumentException(
                     Log.formatStandardMessage("AddDeletedCollection", collection.toString()));
             }

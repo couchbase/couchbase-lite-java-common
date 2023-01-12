@@ -114,8 +114,7 @@ public abstract class AbstractReplicator extends BaseReplicator
 
     @NonNull
     @GuardedBy("getReplicatorLock()")
-    private ReplicatorStatus status
-        = new ReplicatorStatus(ReplicatorActivityLevel.STOPPED, new ReplicatorProgress(0, 0), null);
+    private ReplicatorStatus status = ReplicatorStatus.INIT;
 
     @GuardedBy("getReplicatorLock()")
     @Nullable

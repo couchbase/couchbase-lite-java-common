@@ -36,6 +36,8 @@ import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 
 class ExecutionServiceTest : BaseTest() {
@@ -264,26 +266,22 @@ class ExecutionServiceTest : BaseTest() {
 
     // Other tests
 
-    // The main executor always uses the same thread.
+    // The main executor uses a single thread.... at least a few times
     @Test
     fun testDefaultThreadExecutor() {
-        val latch = CountDownLatch(2)
+        val n = 10
+        val latch = CountDownLatch(n)
+        val threads = MutableList(n) { AtomicReference<Thread>() }
 
-        val threads = arrayOfNulls<Thread>(2)
-
-        cblService.defaultExecutor.execute {
-            threads[0] = Thread.currentThread()
-            latch.countDown()
+        for (i in 0 until n) {
+            cblService.defaultExecutor.execute {
+                threads[i].set(Thread.currentThread())
+                latch.countDown()
+            }
         }
-
-        cblService.defaultExecutor.execute {
-            threads[1] = Thread.currentThread()
-            latch.countDown()
-        }
-
         latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
-        assertEquals(threads[0], threads[1])
+        for (i in 1 until n) { assertEquals(threads[0].get(), threads[i].get()) }
     }
 
     // The scheduler schedules on the passed queue, with the proper delay.
@@ -291,27 +289,19 @@ class ExecutionServiceTest : BaseTest() {
     fun testEnqueueWithDelay() {
         val finishLatch = CountDownLatch(1)
 
-        val threads = arrayOfNulls<Thread>(2)
-
         val executor = cblService.defaultExecutor
 
-        // get the thread used by the executor
-        // note that only the mainThreadExecutor guarantees execution on a single thread...
-        executor.execute { threads[0] = Thread.currentThread() }
-
-        var t = System.currentTimeMillis()
+        val elapsedTime = AtomicLong(System.currentTimeMillis())
         val delay: Long = 777
         cblService.postDelayedOnExecutor(delay, executor) {
-            t = System.currentTimeMillis() - t
-            threads[1] = Thread.currentThread()
+            elapsedTime.set(System.currentTimeMillis() - elapsedTime.get())
             finishLatch.countDown()
         }
 
         assertTrue(finishLatch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
 
         // within 10% is good enough
-        assertEquals(0L, (t - delay) / (delay / 10))
-        assertEquals(threads[0], threads[1])
+        assertEquals(0L, (elapsedTime.get() - delay) / (delay / 10))
     }
 
     // A delayed task can be cancelled
@@ -319,8 +309,8 @@ class ExecutionServiceTest : BaseTest() {
     fun testCancelDelayedTask() {
         val completed = BooleanArray(1)
 
-        // schedule far enough in the future so that there is plenty of time to cancel it
-        // but not so far that we have to wait a long time to be sure it didn't run.
+        // schedule the task far enough in the future so that there is plenty of time to cancel
+        // it but not so far that we have to wait a long time to be sure it didn't run.
         val task = cblService.postDelayedOnExecutor(100, cblService.concurrentExecutor) {
             completed[0] = true
         }
@@ -358,7 +348,7 @@ class ExecutionServiceTest : BaseTest() {
         throw fail!!
     }
 
-    // If this test fails, it may down the entire test process
+    // If this test fails, it may bring down the entire test process
     @Test
     fun testExceptionDoesNotCauseCrashSerial() {
         val executor = CouchbaseLiteInternal.getExecutionService().serialExecutor
@@ -377,7 +367,7 @@ class ExecutionServiceTest : BaseTest() {
         assertTrue(latch2.await(2, TimeUnit.SECONDS))
     }
 
-    // If this test fails, it may down the entire test process
+    // If this test fails, it may bring down the entire test process
     @Test
     fun testExceptionDoesNotCauseCrashConcurrent() {
         val executor = CouchbaseLiteInternal.getExecutionService().concurrentExecutor
