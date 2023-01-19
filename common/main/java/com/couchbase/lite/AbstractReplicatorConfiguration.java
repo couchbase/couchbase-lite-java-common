@@ -292,7 +292,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * The default is auto-purge enabled.
      * <p>
      * Note: A document that is blocked by a document Id filter will not be auto-purged
-     *       regardless of the setting of the auto purge property
+     * regardless of the setting of the auto purge property
      */
     @NonNull
     public final ReplicatorConfiguration setAutoPurgeEnabled(boolean enabled) {
@@ -463,7 +463,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Sets a collection of Sync Gateway channel names from which to pull Documents.
      * If unset, all accessible channels will be pulled.
      * Default is empty: pull from all accessible channels.
-     *
+     * <p>
      * Note:  Channel specifications apply only to replications
      * pulling from a SyncGateway and only the channels visible
      * to the authenticated user.  Channel specs are ignored:
@@ -691,7 +691,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * Gets the collection of Sync Gateway channel names from which to pull documents.
      * If unset, all accessible channels will be pulled.
      * Default is empty: pull from all accessible channels.
-     *
+     * <p>
      * Note:  Channel specifications apply only to replications
      * pulling from a SyncGateway and only the channels visible
      * to the authenticated user.  Channel specs are ignored:
