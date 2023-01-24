@@ -33,12 +33,11 @@ class CookieStoreTest : BaseDbTest() {
 
         // Save each cookie in the store
         val uri = URI.create("http://localhost:4984/" + testDatabase.name)
-        cookieStore.setCookies(uri, listOf(c1.toString(), c2.toString(), c3.toString(), c4.toString()))
-
+        cookieStore.setCookies(uri, listOf(c1.toString(), c2.toString(), c3.toString(), c4.toString()), false)
 
         // Save couchbase domain cookie
         val cbUri = URI.create("http://www.couchbase.com/")
-        cookieStore.setCookies(cbUri, listOf(c4.toString()))
+        cookieStore.setCookies(cbUri, listOf(c4.toString()), false)
 
         // Sleep for 2 seconds for the c3 cookie to expire
         Thread.sleep(2000)

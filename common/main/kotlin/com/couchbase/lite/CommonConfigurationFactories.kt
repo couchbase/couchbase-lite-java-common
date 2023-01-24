@@ -218,7 +218,8 @@ internal fun copyReplConfig(
     maxAttempts: Int?,
     maxAttemptWaitTime: Int?,
     heartbeat: Int?,
-    enableAutoPurge: Boolean?
+    enableAutoPurge: Boolean?,
+    acceptParentDomainCookies: Boolean?,
 ) {
     (type ?: src?.type)?.let { dst.setType(it) }
     (continuous ?: src?.isContinuous)?.let { dst.setContinuous(it) }
@@ -228,6 +229,7 @@ internal fun copyReplConfig(
     (maxAttemptWaitTime ?: src?.maxAttemptWaitTime)?.let { dst.maxAttemptWaitTime = it }
     (heartbeat ?: src?.heartbeat)?.let { dst.heartbeat = it }
     (enableAutoPurge ?: src?.isAutoPurgeEnabled)?.let { dst.setAutoPurgeEnabled(it) }
+    (acceptParentDomainCookies ?: src?.isAcceptParentDomainCookies)?.let { dst.setAcceptParentDomainCookies(it) }
 }
 
 @Suppress("DEPRECATION")

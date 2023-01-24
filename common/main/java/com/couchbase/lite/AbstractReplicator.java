@@ -74,7 +74,9 @@ public abstract class AbstractReplicator extends BaseReplicator
         ReplicatorCookieStore(@NonNull Database db) { this.db = db; }
 
         @Override
-        public void setCookies(@NonNull URI uri, @NonNull List<String> cookies) { db.setCookies(uri, cookies); }
+        public void setCookies(@NonNull URI uri, @NonNull List<String> cookies, boolean acceptParentDomain) {
+            db.setCookies(uri, cookies, acceptParentDomain);
+        }
 
         @Nullable
         @Override

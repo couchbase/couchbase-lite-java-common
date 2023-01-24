@@ -394,6 +394,8 @@ static C4Listener *startListener(
     config.directory = path;
     config.allowCreateDBs = allowCreateDBs;
     config.allowDeleteDBs = allowDeleteDBs;
+    config.allowCreateCollections = false;
+    config.allowDeleteCollections = false;
     config.allowPush = allowPush;
     config.allowPull = allowPull;
     config.enableDeltaSync = enableDeltaSync;

@@ -154,6 +154,9 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         synchronized (options) {
             assertEquals(
+                Defaults.Replicator.ACCEPT_PARENT_COOKIES,
+                options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
+            assertEquals(
                 Defaults.Replicator.ENABLE_AUTO_PURGE,
                 options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
             assertEquals(
@@ -174,7 +177,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             .setHeartbeat(33)
             .setMaxAttempts(78)
             .setMaxAttemptWaitTime(45)
-            .setAutoPurgeEnabled(false));
+            .setAutoPurgeEnabled(false)
+            .setAcceptParentDomainCookies(true));
 
         Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setTestListener(delegate -> {
@@ -189,6 +193,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         run(repl, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST, CBLError.Domain.CBLITE);
 
         synchronized (options) {
+            assertEquals(Boolean.TRUE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
             assertEquals(Boolean.FALSE, options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
             assertEquals(33L, options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
             assertEquals(45L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
@@ -347,7 +352,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertTrue(cookies.contains("SyncGatewaySession=mysessionid"));
         assertTrue(cookies.contains("region=nw; city=sf"));
 
-        // user specified cookie should be removed from extra header
+        // user specified cookie should have been removed from extra header
         Object httpHeaders = options.get(C4Replicator.REPLICATOR_OPTION_EXTRA_HEADERS);
         assertTrue(httpHeaders instanceof Map);
 

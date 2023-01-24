@@ -90,7 +90,7 @@ class C4ReplicatorTest : BaseDbTest() {
             SocketFactory(
                 testReplicatorConfig,
                 object : CBLCookieStore {
-                    override fun setCookies(uri: URI, cookies: List<String>) = Unit
+                    override fun setCookies(uri: URI, cookies: List<String>, acceptParents: Boolean) = Unit
                     override fun getCookies(uri: URI): String? = null
                 })
             { }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2022-present Couchbase, Inc All rights reserved.
+// Copyright (c) 2023-present Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -67,6 +67,9 @@ public final class Defaults {
 
         /** Whether or not a replicator only accepts self-signed certificates from the remote */
         public static final boolean SELF_SIGNED_CERTIFICATE_ONLY = false;
+
+        /** Whether or not a replicator only accepts cookies for the sender's parent domains */
+        public static final boolean ACCEPT_PARENT_COOKIES = false;
     }
 
     public static final class Listener {

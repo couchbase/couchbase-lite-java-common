@@ -286,7 +286,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    setCookie
- * Signature: (JLjava/lang/String;Ljava/lang/String;)V
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Z)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie(
@@ -294,7 +294,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie(
         jclass ignore,
         jlong jdb,
         jstring jurl,
-        jstring jcookie) {
+        jstring jcookie,
+        jboolean acceptParentDomain) {
     jstringSlice url(env, jurl);
     jstringSlice cookie(env, jcookie);
 
@@ -305,7 +306,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie(
     }
 
     C4Error error{};
-    bool res = c4db_setCookie((C4Database *) jdb, cookie, address.hostname, address.path, &error);
+    bool res = c4db_setCookie(
+            (C4Database *) jdb,
+            cookie,
+            address.hostname,
+            address.path,
+            acceptParentDomain,
+            &error);
     if (!res && error.code != 0)
         throwError(env, error);
 }

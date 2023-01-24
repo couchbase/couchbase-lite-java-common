@@ -1236,10 +1236,10 @@ abstract class AbstractDatabase extends BaseDatabase
     // We send the entire Set-Cookie string to Lite Core: e.g.,
     // session="asdf0p8ure"; Expires=Wed Dec 14 2022; Domain=couchbase.com
     // user="joe";  Expires=Wed Dec 14 2022; Domain=couchbase.com
-    void setCookies(@NonNull URI uri, @NonNull List<String> cookies) {
+    void setCookies(@NonNull URI uri, @NonNull List<String> cookies, boolean acceptParentDomain) {
         try {
             synchronized (getDbLock()) {
-                for (String cookie: cookies) { getOpenC4DbLocked().setCookie(uri, cookie); }
+                for (String cookie: cookies) { getOpenC4DbLocked().setCookie(uri, cookie, acceptParentDomain); }
             }
         }
         catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot save cookies for " + uri, e); }

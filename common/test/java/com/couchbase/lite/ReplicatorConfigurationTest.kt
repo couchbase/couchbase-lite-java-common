@@ -79,6 +79,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
         assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
         assertEquals(Defaults.Replicator.ENABLE_AUTO_PURGE, opts[C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE])
+        assertEquals(Defaults.Replicator.ACCEPT_PARENT_COOKIES, opts[C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES])
     }
 
     // Can't test the EE parameter (self-signed only) here

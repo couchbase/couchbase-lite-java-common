@@ -61,6 +61,6 @@ open class MockRemote : SocketToRemote {
 }
 
 open class MockCookieStore : CBLCookieStore {
-    override fun setCookies(uri: URI, cookies: List<String>): Unit = TODO("Not yet implemented")
+    override fun setCookies(uri: URI, cookies: List<String>, acceptParents: Boolean): Unit = TODO("Not yet implemented")
     override fun getCookies(uri: URI): String? = TODO("Not yet implemented")
 }

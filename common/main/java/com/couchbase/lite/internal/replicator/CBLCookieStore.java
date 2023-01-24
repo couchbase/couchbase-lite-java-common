@@ -25,7 +25,7 @@ import java.util.List;
  * Interface for CookieStore
  */
 public interface CBLCookieStore {
-    void setCookies(@NonNull URI uri, @NonNull List<String> cookies);
+    void setCookies(@NonNull URI uri, @NonNull List<String> cookies, boolean acceptParentDomain);
 
     @Nullable
     String getCookies(@NonNull URI uri);
