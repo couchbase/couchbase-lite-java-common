@@ -691,7 +691,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
         return nullptr;
     }
 
-    return toStringList(env, urls);
+    jobject urLList = toStringList(env, urls);
+
+    FLMutableArray_Release(urls);
+
+    return urLList;
 }
 
 JNIEXPORT jint JNICALL
