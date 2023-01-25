@@ -213,9 +213,13 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     }
 
     private class WebSocketCookieJar implements CookieJar {
+        private final boolean acceptParentDomain;
+
+        WebSocketCookieJar(boolean acceptParentDomain) { this.acceptParentDomain = acceptParentDomain; }
+
         @Override
         public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
-            cookieStore.setCookies(httpUrl.uri(), Fn.mapToList(cookies, Cookie::toString));
+            cookieStore.setCookies(httpUrl.uri(), Fn.mapToList(cookies, Cookie::toString), acceptParentDomain);
         }
 
         /**
@@ -441,6 +445,8 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // Set up the remote socket factory
     @Override
     public void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) {
+        boolean acceptParentDomainCookies = false;
+
         // Heartbeat
         if (options != null) {
             // Heartbeat
@@ -457,10 +463,14 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
                     setupBasicAuthenticator(auth, builder);
                 }
             }
+
+            // Accept Parent Domain Cookies
+            final Object acceptParentCookies = options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES);
+            if (acceptParentCookies instanceof Boolean) { acceptParentDomainCookies = (Boolean) acceptParentCookies; }
         }
 
         // Cookies
-        builder.cookieJar(new AbstractCBLWebSocket.WebSocketCookieJar());
+        builder.cookieJar(new AbstractCBLWebSocket.WebSocketCookieJar(acceptParentDomainCookies));
 
         // Setup SSLFactory and trusted certificate (pinned certificate)
         setupSSLSocketFactory(builder);

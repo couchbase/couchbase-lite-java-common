@@ -64,8 +64,9 @@ public class NativeC4Database implements C4Database.NativeImpl {
     public void nRekey(long db, int keyType, byte[] newKey) throws LiteCoreException { rekey(db, keyType, newKey); }
 
     @Override
-    public void nSetCookie(long db, String url, String setCookieHeader) throws LiteCoreException {
-        setCookie(db, url, setCookieHeader);
+    public void nSetCookie(long db, String url, String setCookieHeader, boolean acceptParentDomain)
+        throws LiteCoreException {
+        setCookie(db, url, setCookieHeader, acceptParentDomain);
     }
 
     @NonNull
@@ -162,7 +163,8 @@ public class NativeC4Database implements C4Database.NativeImpl {
 
     // - Cookie Store
 
-    private static native void setCookie(long db, String url, String setCookieHeader) throws LiteCoreException;
+    private static native void setCookie(long db, String url, String setCookieHeader, boolean acceptParentDomain)
+        throws LiteCoreException;
 
     @NonNull
     private static native String getCookies(long db, @NonNull String url) throws LiteCoreException;

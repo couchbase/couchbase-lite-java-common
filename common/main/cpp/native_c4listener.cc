@@ -394,6 +394,8 @@ static C4Listener *startListener(
     config.directory = path;
     config.allowCreateDBs = allowCreateDBs;
     config.allowDeleteDBs = allowDeleteDBs;
+    config.allowCreateCollections = false;
+    config.allowDeleteCollections = false;
     config.allowPush = allowPush;
     config.allowPull = allowPull;
     config.enableDeltaSync = enableDeltaSync;
@@ -691,7 +693,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
         return nullptr;
     }
 
-    return toStringList(env, urls);
+    jobject urLList = toStringList(env, urls);
+
+    FLMutableArray_Release(urls);
+
+    return urLList;
 }
 
 JNIEXPORT jint JNICALL

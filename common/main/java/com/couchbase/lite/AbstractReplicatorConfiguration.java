@@ -109,6 +109,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     private Authenticator authenticator;
     @Nullable
     private Map<String, String> headers;
+    private boolean acceptParentCookies;
     @Nullable
     private X509Certificate pinnedServerCertificate;
     private int maxAttempts;
@@ -135,6 +136,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             Defaults.Replicator.CONTINUOUS,
             null,
             null,
+            Defaults.Replicator.ACCEPT_PARENT_COOKIES,
             null,
             Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT,
             Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
@@ -151,6 +153,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             config.continuous,
             config.authenticator,
             config.headers,
+            config.acceptParentCookies,
             config.pinnedServerCertificate,
             config.maxAttempts,
             config.maxAttemptWaitTime,
@@ -167,6 +170,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             config.isContinuous(),
             config.getAuthenticator(),
             config.getHeaders(),
+            config.isAcceptParentCookies(),
             config.getPinnedServerCertificate(),
             config.getMaxRetryAttempts(),
             config.getMaxRetryAttemptWaitTime(),
@@ -187,6 +191,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         boolean continuous,
         @Nullable Authenticator authenticator,
         @Nullable Map<String, String> headers,
+        boolean acceptParentCookies,
         @Nullable X509Certificate pinnedServerCertificate,
         int maxAttempts,
         int maxAttemptWaitTime,
@@ -199,6 +204,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         this.continuous = continuous;
         this.authenticator = authenticator;
         this.headers = headers;
+        this.acceptParentCookies = acceptParentCookies;
         this.pinnedServerCertificate = pinnedServerCertificate;
         this.maxAttempts = maxAttempts;
         this.maxAttemptWaitTime = maxAttemptWaitTime;
@@ -310,6 +316,22 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     public final ReplicatorConfiguration setHeaders(@Nullable Map<String, String> headers) {
         this.headers = (headers == null) ? null : new HashMap<>(headers);
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * The option to remove a restriction that does not allow a replicator to accept cookies
+     * from a remote host unless the cookie domain exactly matches the the domain of the sender.
+     * For instance, when the option is set to false (the default), and the remote host, “bar.foo.com”,
+     * sends a cookie for the domain “.foo.com”, the replicator will reject it.  If the option
+     * is set true, however, the replicator will accept it.  This is, in general, dangerous:
+     * a host might, for instance, set a cookie for the domain ".com".  It is safe only when
+     * the replicator is connecting only to known hosts.
+     * The default value of this option is false: parent-domain cookies are not accepted
+     */
+    @NonNull
+    public final ReplicatorConfiguration setAcceptParentDomainCookies(boolean acceptParentCookies) {
+        this.acceptParentCookies = acceptParentCookies;
         return getReplicatorConfiguration();
     }
 
@@ -590,6 +612,18 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     @Nullable
     public final Map<String, String> getHeaders() { return (headers == null) ? null : new HashMap<>(headers); }
+
+    /**
+     * The option to remove a restriction that does not allow a replicator to accept cookies
+     * from a remote host unless the cookie domain exactly matches the the domain of the sender.
+     * For instance, when the option is set to false (the default), and the remote host, “bar.foo.com”,
+     * sends a cookie for the domain “.foo.com”, the replicator will reject it.  If the option
+     * is set true, however, the replicator will accept it.  This is, in general, dangerous:
+     * a host might, for instance, set a cookie for the domain ".com".  It is safe only when
+     * the replicator is connecting only to known hosts.
+     * The default value of this option is false: parent-domain cookies are not accepted
+     */
+    public final boolean isAcceptParentDomainCookies() { return acceptParentCookies; }
 
     /**
      * Return the Authenticator used to authenticate the remote.

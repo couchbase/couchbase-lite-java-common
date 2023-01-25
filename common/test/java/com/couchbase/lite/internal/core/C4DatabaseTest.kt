@@ -68,7 +68,7 @@ class C4DatabaseTest : C4BaseTest() {
         override fun nEndTransaction(db: Long, commit: Boolean) = Unit
         override fun nMaintenance(db: Long, type: Int): Boolean = true
         override fun nRekey(db: Long, keyType: Int, newKey: ByteArray?) = Unit
-        override fun nSetCookie(db: Long, url: String?, setCookieHeader: String?) = Unit
+        override fun nSetCookie(db: Long, url: String?, setCookieHeader: String?, acceptParents: Boolean) = Unit
         override fun nGetCookies(db: Long, url: String): String = "test_cookies"
         override fun nGetSharedFleeceEncoder(db: Long): Long = 1L
         override fun nEncodeJSON(db: Long, jsonData: ByteArray): FLSliceResult = FLSliceResult(0, 0)

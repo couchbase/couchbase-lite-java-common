@@ -62,6 +62,8 @@ public class BaseImmutableReplicatorConfiguration {
     private final Authenticator authenticator;
     @Nullable
     private final Map<String, String> headers;
+
+    private final boolean acceptParentCookies;
     @Nullable
     private final X509Certificate pinnedServerCertificate;
     private final int maxAttempts;
@@ -91,6 +93,7 @@ public class BaseImmutableReplicatorConfiguration {
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
         this.headers = config.getHeaders();
+        this.acceptParentCookies = config.isAcceptParentDomainCookies();
         this.pinnedServerCertificate = config.getPinnedServerX509Certificate();
         this.maxAttempts = config.getMaxAttempts();
         this.maxAttemptWaitTime = config.getMaxAttemptWaitTime();
@@ -129,6 +132,8 @@ public class BaseImmutableReplicatorConfiguration {
 
     @Nullable
     public final Map<String, String> getHeaders() { return headers; }
+
+    public boolean isAcceptParentCookies() { return acceptParentCookies; }
 
     @Nullable
     public final X509Certificate getPinnedServerCertificate() { return pinnedServerCertificate; }
@@ -181,6 +186,8 @@ public class BaseImmutableReplicatorConfiguration {
                     : (Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT)))
             - 1); // subtract 1 from max attempts to get what LiteCore wants: number of retries.
 
+
+        options.put(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES, acceptParentCookies);
 
         options.put(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE, enableAutoPurge);
 
