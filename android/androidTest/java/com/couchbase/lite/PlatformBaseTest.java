@@ -22,7 +22,6 @@ import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -98,4 +97,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     @Override
     public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
+
+    @Override
+    public final String getDevice() { return android.os.Build.PRODUCT; }
 }

@@ -28,8 +28,23 @@ import java.util.*
 
 private const val ITERATIONS = 2000
 
-// Timings were chosen to allow a Google Nexus 4 running Android API 22 to pass.
+
 class LoadTest : BaseDbTest() {
+    companion object {
+        val DEVICE_SPEED_MULTIPLIER = mapOf(
+            "JVM" to 33,
+            "r8quex" to 100,
+            "a12uue" to 150,
+            "starqlteue" to 150,
+            "dandelion_global" to 100,
+            "cheetah" to 100,
+            "sunfish" to 55,
+            "taimen" to 55,
+            "shamu" to 130,
+            "hammerhead" to 130,
+            "occam" to 200,
+        )
+    }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1447
     @SlowTest
@@ -40,7 +55,7 @@ class LoadTest : BaseDbTest() {
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
         assertEquals(0, testCollection.count)
-        timeTest("testCreateUnbatched", 14) {
+        timeTest("testCreateUnbatched", 74) {
             for (doc in docs) {
                 testCollection.save(doc)
             }
@@ -57,7 +72,7 @@ class LoadTest : BaseDbTest() {
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
         assertEquals(0, testCollection.count)
-        timeTest("testCreateBatched", 5) {
+        timeTest("testCreateBatched", 30) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (doc in docs) {
                     testCollection.save(doc)
@@ -75,7 +90,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, tag)).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testRead", 3) {
+        timeTest("testRead", 12) {
             for (id in ids) {
                 val doc = testCollection.getDocument(id)
                 assertNotNull(doc)
@@ -101,7 +116,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("update"))).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testUpdate1", 21) {
+        timeTest("testUpdate1", 100) {
             var i = 0
             for (id in ids) {
                 i++
@@ -140,7 +155,7 @@ class LoadTest : BaseDbTest() {
         testCollection.save(mDoc)
 
         assertEquals(1L, testCollection.count)
-        timeTest("testUpdate2", 15) {
+        timeTest("testUpdate2", 70) {
             for (i in 0..ITERATIONS) {
                 mDoc = testCollection.getDocument(mDoc.id)!!.toMutable()
                 mDoc.setValue("map", mapOf("idx" to i, "long" to i.toLong(), TEST_DOC_TAG_KEY to getUniqueName("tag")))
@@ -164,7 +179,7 @@ class LoadTest : BaseDbTest() {
         val docs = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("delete")))
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testDelete", 16) {
+        timeTest("testDelete", 80) {
             for (doc in docs) {
                 testCollection.delete(doc)
             }
@@ -177,7 +192,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions1() {
         var mDoc = MutableDocument()
-        timeTest("testSaveRevisions1", 8) {
+        timeTest("testSaveRevisions1", 42) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)
@@ -194,7 +209,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions2() {
         val mDoc = MutableDocument()
-        timeTest("testSaveRevisions2", 4) {
+        timeTest("testSaveRevisions2", 22) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)
@@ -217,13 +232,15 @@ class LoadTest : BaseDbTest() {
         )
     }
 
-    private fun timeTest(testName: String, maxTimeSec: Long, test: Runnable) {
+    private fun timeTest(testName: String, testTime: Long, test: Runnable) {
+        val maxTimeMs = testTime * (DEVICE_SPEED_MULTIPLIER[device] ?: 200)
         val t0 = System.currentTimeMillis()
         test.run()
         val elapsedTime = System.currentTimeMillis() - t0
-        Report.log("Load test ${testName} completed in ${elapsedTime} ms")
+        Report.log("Load test ${testName} completed in ${elapsedTime} ms (${maxTimeMs})")
         assertTrue(
-            "Load test ${testName} over time: ${elapsedTime} > ${maxTimeSec}",
-            elapsedTime < (maxTimeSec * 1000L))
+            "Load test ${testName} over time: ${elapsedTime} > ${maxTimeMs}",
+            elapsedTime < maxTimeMs
+        )
     }
 }

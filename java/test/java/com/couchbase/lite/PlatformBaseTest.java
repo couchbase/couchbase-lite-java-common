@@ -107,10 +107,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     @Override
     public final void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
-
-    @Override
-    public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
-
     @Override
     public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
         return new JavaExecutionService(executor);
@@ -121,4 +117,10 @@ public abstract class PlatformBaseTest implements PlatformTest {
         ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
         executionService.postDelayedOnExecutor(delayMs, executionService.getDefaultExecutor(), task);
     }
+
+    @Override
+    public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
+
+    @Override
+    public final String getDevice() { return "JVM"; }
 }
