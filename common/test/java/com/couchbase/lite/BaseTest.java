@@ -89,7 +89,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     @NonNull
     public static String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 8); }
 
-    // Run a boolean function every `waitMs` until it it true
+    // Run a boolean function every `waitMs` until it is true
     // If it is not true within `maxWaitMs` fail.
     @SuppressWarnings({"BusyWait", "ConditionalBreakInInfiniteLoop"})
     protected static void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {

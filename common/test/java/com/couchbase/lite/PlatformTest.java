@@ -51,6 +51,9 @@ public interface PlatformTest {
     /* Skip the test on some platforms */
     Exclusion getExclusions(@NonNull String tag);
 
+    /* Get the device name */
+    String getDevice();
+
     AbstractExecutionService getExecutionService(ThreadPoolExecutor executor);
 
     /* Schedule a task to be executed asynchronously. */
