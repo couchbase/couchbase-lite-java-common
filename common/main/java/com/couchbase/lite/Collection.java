@@ -136,16 +136,19 @@ public final class Collection extends BaseCollection
     // - Properties
 
     /**
+     * Get scope
+     */
+    @NonNull
+    public Scope getScope() { return new Scope(c4Collection.getScope(), db); }
+
+    /**
      * Return the collection name
      */
     @NonNull
     public String getName() { return c4Collection.getName(); }
 
-    /**
-     * Get scope
-     */
     @NonNull
-    public Scope getScope() { return new Scope(c4Collection.getScope(), db); }
+    String getFullName() { return c4Collection.getScope() + "." + c4Collection.getName(); }
 
     // - Documents
 
@@ -469,7 +472,7 @@ public final class Collection extends BaseCollection
 
     @NonNull
     @Override
-    public String toString() { return c4Collection.getDb() + "." + getFQN(); }
+    public String toString() { return c4Collection.getDb() + "." + getFullName(); }
 
     @Override
     public boolean equals(Object o) {
@@ -511,9 +514,6 @@ public final class Collection extends BaseCollection
                 "Invalid collection: it has either been deleted or its database closed");
         }
     }
-
-    @NonNull
-    String getFQN() { return c4Collection.getScope() + "." + c4Collection.getName(); }
 
     @NonNull
     Database getDatabase() { return db; }
