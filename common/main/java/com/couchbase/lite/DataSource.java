@@ -116,7 +116,7 @@ public class DataSource {
     @NonNull
     Map<String, Object> asJSON() {
         final Map<String, Object> json = new HashMap<>();
-        json.put("COLLECTION", source.getFQN());
+        json.put("COLLECTION", source.getFullName());
         if (alias != null) { json.put("AS", alias); }
         return json;
     }

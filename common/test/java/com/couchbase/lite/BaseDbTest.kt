@@ -145,8 +145,7 @@ abstract class BaseDbTest : BaseTest() {
         Report.log("Created base test DB: $testDatabase")
         assertNotNull(testDatabase)
         assertTrue(testDatabase.isOpen)
-        testCollection =
-            testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
+        testCollection = testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
         Report.log("Created base test Collection: $testCollection")
     }
 
