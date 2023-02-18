@@ -17,14 +17,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4DocEnumerator_en
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4DocEnumerator
- * Method:    enumerateChanges
- * Signature: (JJI)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateChanges
-  (JNIEnv *, jclass, jlong, jlong, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4DocEnumerator
  * Method:    next
  * Signature: (J)Z
  */

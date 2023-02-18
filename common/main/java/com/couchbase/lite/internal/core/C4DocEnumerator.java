@@ -34,10 +34,6 @@ public class C4DocEnumerator extends C4NativePeer {
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
-    C4DocEnumerator(long db, long since, int flags) throws LiteCoreException {
-        this(enumerateChanges(db, since, flags));
-    }
-
     C4DocEnumerator(long db, int flags) throws LiteCoreException { this(enumerateAllDocs(db, flags)); }
 
     private C4DocEnumerator(long peer) { super(peer); }
@@ -75,8 +71,6 @@ public class C4DocEnumerator extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private static native long enumerateAllDocs(long db, int flags) throws LiteCoreException;
-
-    private static native long enumerateChanges(long db, long since, int flags) throws LiteCoreException;
 
     private static native boolean next(long peer) throws LiteCoreException;
 

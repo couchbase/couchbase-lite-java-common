@@ -336,32 +336,6 @@ Java_com_couchbase_lite_internal_core_C4Document_dictContainsBlobs(
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    create
- * Signature: (JLjava/lang/String;[BI)J
- * !!! Deprecated
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_create(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdb,
-        jstring jdocID,
-        jbyteArray jbody,
-        jint flags) {
-    jstringSlice docID(env, jdocID);
-    jbyteArraySlice body(env, jbody, false);
-    C4Error error{};
-    C4Document *doc = c4doc_create((C4Database *) jdb, docID, body, (unsigned) flags, &error);
-    if (!doc) {
-        throwError(env, error);
-        return 0;
-    }
-
-    return (jlong) doc;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    put
  * Signature: (J[BLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
  */
