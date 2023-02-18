@@ -26,14 +26,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_createF
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Document
- * Method:    create
- * Signature: (JLjava/lang/String;[BI)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4Document_create
-        (JNIEnv *, jclass, jlong, jstring, jbyteArray, jint);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4Document
  * Method:    put
  * Signature: (J[BLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
  */

@@ -33,28 +33,6 @@ extern "C" {
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4DocEnumerator
- * Method:    enumerateChanges
- * Signature: (JJI)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4DocEnumerator_enumerateChanges(
-        JNIEnv *env,
-        jclass ignore,
-        jlong jdb,
-        jlong since,
-        jint jflags) {
-    const C4EnumeratorOptions options = {C4EnumeratorFlags(jflags)};
-    C4Error error{};
-    C4DocEnumerator *e = c4db_enumerateChanges((C4Database *) jdb, (uint16_t) since, &options, &error);
-    if (!e) {
-        throwError(env, error);
-        return 0;
-    }
-    return (jlong) e;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4DocEnumerator
  * Method:    enumerateAllDocs
  * Signature: (JI)J
  */
