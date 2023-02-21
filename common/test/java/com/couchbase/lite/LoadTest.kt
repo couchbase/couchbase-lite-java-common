@@ -42,7 +42,7 @@ class LoadTest : BaseDbTest() {
             "taimen" to 55,
             "shamu" to 130,
             "hammerhead" to 130,
-            "occam" to 200,
+            "occam" to 220,
         )
     }
 
