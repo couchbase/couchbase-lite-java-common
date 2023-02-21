@@ -23,7 +23,7 @@ import com.couchbase.lite.internal.support.Log
  * Configuration factory for new CollectionConfigurations
  *
  * Usage:
- *      val collConfig = CollectionConfigurationFactory.create(...)
+ *      val collConfig = CollectionConfigurationFactory.newConfig(...)
  */
 val CollectionConfigurationFactory: CollectionConfiguration? = null
 
@@ -53,7 +53,7 @@ fun CollectionConfiguration?.newConfig(
  * Configuration factory for new FullTextIndexConfigurations
  *
  * Usage:
- *      val fullTextIndexConfig = FullTextIndexConfigurationFactory.create(...)
+ *      val fullTextIndexConfig = FullTextIndexConfigurationFactory.newConfig(...)
  */
 val FullTextIndexConfigurationFactory: FullTextIndexConfiguration? = null
 
@@ -85,7 +85,7 @@ fun FullTextIndexConfiguration?.newConfig(
  * Configuration factory for new ValueIndexConfigurations
  *
  * Usage:
- *     val valIndexConfig = ValueIndexConfigurationFactory.create(...)
+ *     val valIndexConfig = ValueIndexConfigurationFactory.newConfig(...)
  */
 val ValueIndexConfigurationFactory: ValueIndexConfiguration? = null
 
@@ -106,7 +106,7 @@ fun ValueIndexConfiguration?.newConfig(vararg expressions: String = emptyArray()
  * Configuration factory for new LogFileConfigurations
  *
  * Usage:
- *      val logFileConfig = LogFileConfigurationFactory.create(...)
+ *      val logFileConfig = LogFileConfigurationFactory.newConfig(...)
  */
 val LogFileConfigurationFactory: LogFileConfiguration? = null
 
