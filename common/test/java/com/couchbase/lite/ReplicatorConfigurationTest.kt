@@ -79,7 +79,10 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
         assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
         assertEquals(Defaults.Replicator.ENABLE_AUTO_PURGE, opts[C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE])
-        assertEquals(Defaults.Replicator.ACCEPT_PARENT_COOKIES, opts[C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES])
+        assertEquals(
+            Defaults.Replicator.ACCEPT_PARENT_COOKIES,
+            opts[C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES]
+        )
     }
 
     // Can't test the EE parameter (self-signed only) here
@@ -113,27 +116,41 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         )
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(database, endpoint).
-    //     2: Access collections property. It mush have one collection which is the default collection.
-    //     6: ReplicatorConfiguration.database should be the database with which the configuration was created
+    /****************** Scopes and Collections Section 8.13 ****************/
+
+
+    // 8.13.1a Create a config object with ReplicatorConfiguration.init(database: database,
+    // endpoint: endpoint).
+    //
+    // Access collections property. The returned collections will have one collection
+    // which is the default collection.
+    //
+    // Access database property, and the database object from the init should be
+    // returned.
     @Suppress("DEPRECATION")
     @Test
-    fun testCreateConfigWithDatabase1() {
+    fun testCreateConfigWithDatabaseA() {
         val replConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint)
         val collections = replConfig.collections
         assertEquals(1, collections.size)
-        assertTrue(collections.contains(testDatabase.defaultCollection))
+        assertTrue(collections.contains(testDatabase.defaultCollection!!))
         assertEquals(testDatabase, replConfig.database)
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(database, endpoint).
-    //     3: Calling getCollectionConfig() with the default collection should produce a CollectionConfiguration
-    //     4: CollectionConfiguration.collection should be the default collection.
-    //     5: CollectionConfiguration.conflictResolver, pushFilter, pullFilter, channels, and documentIDs
-    //        should be null.
+    // 8.13.1b Create a config object with ReplicatorConfiguration.init(database: database,
+    // endpoint: endpoint).
+    //
+    // Access collections property. The returned collections will have one collection
+    // which is the default collection.
+    //
+    // Call getCollectionConfig() method with the default collection. A
+    // CollectionConfiguration object should be returned.
+    //
+    // Check CollectionConfiguration.conflictResolver, .pushFilter, pullFilters,
+    // channels, and documentIDs. The return object of those properties should be NULL.
     @Suppress("DEPRECATION")
     @Test
-    fun testCreateConfigWithDatabase2() {
+    fun testCreateConfigWithDatabaseB() {
         val collectionConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint)
             .getCollectionConfiguration(testDatabase.defaultCollection!!)
         assertNotNull(collectionConfig)
@@ -144,10 +161,16 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertNull(collectionConfig.documentIDs)
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(database: database, endpoint: endpoint).
-    //     2: Set ReplicatorConfiguration.conflictResolver with a conflict resolver.
-    //     3: Calling getCollectionConfig() with the default collection should produce a CollectionConfiguration
-    //     4: CollectionConfiguration.conflictResolver should be the same as ReplicatorConfiguration.conflictResolver.
+    // 8.13.2 Create a config object with ReplicatorConfiguration.init(database: database,
+    // endpoint: endpoint).
+    //
+    // Set ReplicatorConfiguration.conflictResolver with a conflict resolver.
+    //
+    // Call getCollectionConfig() method with the default collection. A
+    // CollectionConfiguration object should be returned.
+    //
+    // Check CollectionConfiguration.conflictResolver. The returned conflict resolver
+    // should be the same as ReplicatorConfiguration.conflictResolver.
     @Suppress("DEPRECATION")
     @Test
     fun testCreateConfigWithDatabaseAndConflictResolver() {
@@ -159,13 +182,27 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertEquals(resolver, collectionConfig?.conflictResolver)
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(database: database, endpoint: endpoint).
-    //     2: Set ReplicatorConfiguration.conflictResolver with a conflict resolver.
-    //     3: Verify that CollectionConfiguration.conflictResolver and ReplicatorConfiguration.conflictResolver
-    //        are the same resolver..
-    //     4: Update ReplicatorConfiguration.conflictResolver with a new conflict resolver.
-    //     5-7: Verify that CollectionConfiguration.conflictResolver is still the same
-    //          as ReplicatorConfiguration.conflictResolver..
+    // 8.13.3Create a config object with ReplicatorConfiguration.init(database: database,
+    // endpoint: endpoint).
+    //
+    // Set ReplicatorConfiguration.conflictResolver with a conflict resolver.
+    //
+    // Call getCollectionConfig() method with the default collection. Check
+    // CollectionConfiguration.conflictResolver. The conflict resolver should be the
+    // same as ReplicatorConfiguration.conflictResolver.
+    //
+    // Update ReplicatorConfiguration.conflictResolver with a new conflict resolver.
+    //
+    // Call getCollectionConfig() method with the default collection. Check
+    // CollectionConfiguration.conflictResolver. The conflict resolver should be
+    // updated accordingly.
+    //
+    // Update CollectionConfiguration.conflictResolver with a new conflict resolver.
+    // Use addCollection() method to add the default collection with the updated
+    // config.
+    //
+    // Check ReplicatorConfiguration.conflictResolver. The conflict resolver should be
+    // updated accordingly.
     @Suppress("DEPRECATION")
     @Test
     fun testUpdateConflictResolverForDefaultCollection() {
@@ -183,11 +220,16 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         )
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(database: database, endpoint: endpoint).
-    //     2: Set values to ReplicatorConfiguration.pushFilter, pullFilters, channels, and documentIDs
-    //     3: Call getCollectionConfig() method with the default collection.
-    //       A CollectionConfiguration object should be returned and the properties in the config should
-    //       be the same as the corresponding properties in ReplicatorConfiguration
+    // 8.13.4 Create a config object with ReplicatorConfiguration.init(database:
+    // database, endpoint: endpoint).
+    //
+    // Set values to ReplicatorConfiguration.pushFilter, pullFilters, channels, and
+    // documentIDs
+    //
+    // Call getCollectionConfig() method with the default collection. A
+    // CollectionConfiguration object should be returned. The filters in the config
+    // should be the same ReplicatorConfiguration.pushFilter, pullFilters, channels,
+    // and documentIDs.
     @Suppress("DEPRECATION")
     @Test
     fun testCreateConfigWithDatabaseAndFilters() {
@@ -211,21 +253,33 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertArrayEquals(arrayOf("doc1", "doc2"), collectionConfig1.documentIDs?.toTypedArray())
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(database: database, endpoint: endpoint).
-    //     2: Set values to ReplicatorConfiguration.pushFilter, pullFilters, channels, and documentIDs.
-    //     3: Call getCollectionConfig() method with the default collection.
-    //       A CollectionConfiguration object should be returned and the properties in the config should
-    //       be the same as the corresponding properties in ReplicatorConfiguration
-    //     4: Update ReplicatorConfiguration.pushFilter, pullFilters, channels, and documentIDs with new values.
-    //     5: Repeat #3. The previously obtains ReplicatorConfiguration should not change.
-    //        The new one should have the new values.
-    //     6: Update CollectionConfiguration.pushFilter, pullFilters, channels, and documentIDs with new values.
-    //        Use addCollection() method to add the default collection with the updated config.
-    //     7: Check ReplicatorConfiguration.pushFilter, pullFilters, channels, and documentIDs.
-    //        The filters should be updated accordingly.
+    // 8.13.5a Create a config object with ReplicatorConfiguration.init(database: database,
+    // endpoint: endpoint).
+    //
+    // Set values to ReplicatorConfiguration.pushFilter, pullFilters, channels, and
+    // documentIDs.
+    //
+    // Call getCollectionConfig() method with the default collection. A
+    // CollectionConfiguration object should be returned. The filters in the config
+    // should be the same ReplicatorConfiguration.pushFilter, pullFilters, channels,
+    // and documentIDs.
+    //
+    // Update ReplicatorConfiguration.pushFilter, pullFilters, channels, and
+    // documentIDs with new values.
+    //
+    // Call getCollectionConfig() method with the default collection object getting
+    // from the database. A CollectionConfiguration object should be returned. The
+    // filters in the config be updated accordingly.
+    //
+    // Update CollectionConfiguration.pushFilter, pullFilters, channels, and
+    // documentIDs with new values. Use addCollection() method to add the default
+    // collection with the updated config.
+    //
+    // Check ReplicatorConfiguration.pushFilter, pullFilters, channels, and
+    // documentIDs. The filters should be updated accordingly.
     @Suppress("DEPRECATION")
     @Test
-    fun testUpdateFiltersForDefaultCollection1() {
+    fun testUpdateFiltersForDefaultCollectionA() {
         val pushFilter1 = ReplicationFilter { _, _ -> true }
         val pullFilter1 = ReplicationFilter { _, _ -> true }
         val replConfig1 = ReplicatorConfiguration(testDatabase, mockURLEndpoint)
@@ -265,18 +319,31 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertArrayEquals(arrayOf("doc3"), collectionConfig2.documentIDs?.toTypedArray())
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(database: database, endpoint: endpoint).
-    //     2: Set values to ReplicatorConfiguration.pushFilter, pullFilters, channels, and documentIDs.
-    //     3: Call getCollectionConfig() method with the default collection.
-    //       A CollectionConfiguration object should be returned and the properties in the config should
-    //       be the same as the corresponding properties in ReplicatorConfiguration
-    //     6: Update CollectionConfiguration.pushFilter, pullFilters, channels, and documentIDs with new values.
-    //        Use addCollection() method to add the default collection with the updated config.
-    //     7: Check ReplicatorConfiguration.pushFilter, pullFilters, channels, and documentIDs.
-    //        The filters should be updated accordingly.
+
+    // 8.13.5b Create a config object with ReplicatorConfiguration.init(database: database,
+    // endpoint: endpoint).
+    //
+    // Set values to ReplicatorConfiguration.pushFilter, pullFilters, channels, and
+    // documentIDs.
+    //
+    // Call getCollectionConfig() method with the default collection. A
+    // CollectionConfiguration object should be returned. The filters in the config
+    // should be the same ReplicatorConfiguration.pushFilter, pullFilters, channels,
+    // and documentIDs.
+    //
+    // Call getCollectionConfig() method with the default collection object getting
+    // from the database. A CollectionConfiguration object should be returned. The
+    // filters in the config be updated accordingly.
+    //
+    // Update CollectionConfiguration.pushFilter, pullFilters, channels, and
+    // documentIDs with new values. Use addCollection() method to add the default
+    // collection with the updated config.
+    //
+    // Check ReplicatorConfiguration.pushFilter, pullFilters, channels, and
+    // documentIDs. The filters should be updated accordingly.
     @Suppress("DEPRECATION")
     @Test
-    fun testUpdateFiltersForDefaultCollection2() {
+    fun testUpdateFiltersForDefaultCollectionB() {
         val pushFilter1 = ReplicationFilter { _, _ -> true }
         val pullFilter1 = ReplicationFilter { _, _ -> true }
         val replConfig1 = ReplicatorConfiguration(testDatabase, mockURLEndpoint)
@@ -318,8 +385,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertArrayEquals(arrayOf("doc3"), collectionConfig3.documentIDs?.toTypedArray())
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     2: Access collections property and an empty collection list should be returned.
+    // 8.13.6a Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    // Access collections property and an empty collection list should be returned.\
     @Test
     fun testCreateConfigWithEndpointOnly1() {
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
@@ -329,8 +396,9 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertTrue(collections.isEmpty())
     }
 
-    //     1: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     3: Access database property and Illegal State Exception will be thrown.
+    // 8.13.6b Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    // Access collections property and an empty collection list should be returned.
+    // Access database property and Illegal State Exception will be thrown.
     @Suppress("DEPRECATION")
     @Test(expected = IllegalStateException::class)
     fun testCreateConfigWithEndpointOnly2() {
@@ -338,12 +406,20 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.database
     }
 
-    //     1: Create Collection "colA" and "colB" in the scope "scopeA".
-    //     2: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     3: Use addCollections() to add both colA and colB to the config without specifying a collection config.
-    //     4: Check  ReplicatorConfiguration.collections. The collections should have colA and colB.
-    //     5: Use getCollectionConfig() to get the collection config for colA and colB.
-    //        Both should be non-null, they should be different instances and he conflict resolver and filters be null.
+    // 8.13.7 Create Collection "colA" and "colB" in the scope "scopeA".
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Use addCollections() to add both colA and colB to the config without specifying
+    // a collection config.
+    //
+    // Check  ReplicatorConfiguration.collections. The collections should have colA and
+    // colB.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. Check
+    // the returned configs of both collections. The returned configs should be
+    // different instances. The conflict resolver and filters of both configs should be
+    // all NULL.
     @Test
     fun testAddCollectionsWithoutCollectionConfig() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -371,14 +447,23 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertNotSame(collectionConfig1, collectionConfig2)
     }
 
-    //     1: Create Collection "colA" and "colB" in the scope "scopeA".
-    //     2: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     3: Create a CollectionConfiguration object, and set a conflictResolver and all filters.
-    //     4: Use addCollections() to add both colA and colB to the config created in the previous step.
-    //     5: Check  ReplicatorConfiguration.collections. The collections should have colA and colB.
-    //     6: Use getCollectionConfig() to get the collection config for colA and colB.
-    //        Both should be non-null, they should be different instances and he conflict resolver and filters
-    //        should be as assigned.
+    // 8.13.8 Create Collection "colA" and "colB" in the scope "scopeA".
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Create a CollectionConfiguration object, and set a conflictResolver and all
+    // filters.
+    //
+    // Use addCollections() to add both colA and colB to the config created from the
+    // previous step.
+    //
+    // Check  ReplicatorConfiguration.collections. The collections should have colA and
+    // colB.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. The
+    // returned configs of both collections should be different instances. The conflict
+    // resolver and filters of both configs should be the same as what was specified
+    // when calling addCollections().
     @Test
     fun testAddCollectionsWithCollectionConfig() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -410,15 +495,25 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertNotSame(collectionConfig1, collectionConfig2)
     }
 
-    //     1: Create Collection "colA" and "colB" in the scope "scopeA".
-    //     2: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     3: Use addCollection() to add the colA without specifying a collection config.
-    //     4: Create a CollectionConfiguration object, and set a conflictResolver and all filters.
-    //     5: Use addCollection() to add the colB with the collection config created from the previous step.
-    //     6: Check  ReplicatorConfiguration.collections. The collections should have colA and colB.
-    //     7: Use getCollectionConfig() to get the collection config for colA and colB.
-    //        All of the properties for colA's config should be null. The properties for colB should
-    //        be be those passed in the configuration used to add it..
+    // 8.13.9 Create Collection "colA" and "colB" in the scope "scopeA".
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Use addCollection() to add the colA without specifying a collection config.
+    //
+    // Create a CollectionConfiguration object, and set a conflictResolver and all
+    // filters.
+    //
+    // Use addCollection() to add the colB with the collection config created from the
+    // previous step.
+    //
+    // Check  ReplicatorConfiguration.collections. The collections should have colA and
+    // colB.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. The
+    // returned config of the colA should contain all NULL values. The returned config
+    // of the colB should contain the values according to the config used when adding
+    // the collection.
     @Test
     fun testAddCollection() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -453,20 +548,36 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertEquals(resolver, collectionConfig2.conflictResolver)
     }
 
-    //     1: Create Collection "colA" and "colB" in the scope "scopeA".
-    //     2: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     3: Create a CollectionConfiguration object, and set a conflictResolver and all filters.
-    //     4: Use addCollection() to add the colA and colB with the collection config created from the previous step.
-    //     5: Check  ReplicatorConfiguration.collections. The collections should have colA and colB.
-    //     6: Use getCollectionConfig() to get the collection config for colA and colB. Check the returned configs
-    //        for both collections and ensure that both configs contain the correct values.
-    //     7: Use addCollection() to add colA again without specifying collection config.
-    //     8: Create a new CollectionConfiguration object, and set a conflictResolver and all filters.
-    //     9: Use addCollection() to add colB again with the updated collection config created from the previous step.
-    //     10: Use getCollectionConfig() to get the collection config for colA and colB.
-    //         Check the configs for both collections and ensure that they contain the updated values.
+    // 8.13.10a Create Collection "colA" and "colB" in the scope "scopeA".
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Create a CollectionConfiguration object, and set a conflictResolver and all
+    // filters.
+    //
+    // Use addCollection() to add the colA and colB with the collection config created
+    // from the previous step.
+    //
+    // Check  ReplicatorConfiguration.collections. The collections should have colA and
+    // colB.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. Check
+    // the returned configs of both collections and ensure that both configs contain
+    // the values correctly.
+    //
+    // Use addCollection() to add colA again without specifying collection config.
+    //
+    // Create a new CollectionConfiguration object, and set a conflictResolver and all
+    // filters.
+    //
+    // Use addCollection() to add colB again with the updated collection config created
+    // from the previous step.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. Check
+    // the returned configs of both collections and ensure that both configs contain
+    // the updated values correctly.
     @Test
-    fun testUpdateCollectionConfig() {
+    fun testUpdateCollectionConfigA() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
         val collectionB = testDatabase.createCollection("colB", "scopeA")
 
@@ -523,19 +634,38 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertEquals(resolver2, collectionConfig5.conflictResolver)
     }
 
-    //     1: Create Collection "colA" in scope "scopeA".
-    //     2: Create a ReplicationFilter
-    //     3: Create a CollectionConfiguration and set the pull filter to be the ReplicationFilter.
-    //     4  Create a ReplicatorConfiguration.init(endpoint: endpoint).
-    //     5: Use addCollections() to add both colA and the default collection to the replicator config
-    //        configured with the the CollectionConfiguration.
-    //     6: Check the configurations for the two collections.  Both should have the ReplicationFilter as a pull
-    //        filter, and a null push filter.
-    //     7: Set ReplicationFilter as the push filter using the deprecated ReplicatorConfiguration.setPushFilter method.
-    //     8: Verify that the only thing that has changed is the default collection's push filter.
+
+    // 8.13.10a Create Collection "colA" and "colB" in the scope "scopeA".
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Create a CollectionConfiguration object, and set a conflictResolver and all
+    // filters.
+    //
+    // Use addCollection() to add the colA and colB with the collection config created
+    // from the previous step.
+    //
+    // Check  ReplicatorConfiguration.collections. The collections should have colA and
+    // colB.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. Check
+    // the returned configs of both collections and ensure that both configs contain
+    // the values correctly.
+    //
+    // Use addCollection() to add colA again without specifying collection config.
+    //
+    // Create a new CollectionConfiguration object, and set a conflictResolver and all
+    // filters.
+    //
+    // Use addCollection() to add colB again with the updated collection config created
+    // from the previous step.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. Check
+    // the returned configs of both collections and ensure that both configs contain
+    // the updated values correctly.
     @Suppress("DEPRECATION")
     @Test
-    fun testUpdateCollectionConfigWithDefault() {
+    fun testUpdateCollectionConfigB() {
         val defaultCollection = testDatabase.defaultCollection!!
         val collectionA = testDatabase.createCollection("colA", "scopeA")
 
@@ -565,16 +695,30 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertEquals(null, collConfig.pushFilter)
     }
 
-    //     1: Create Collection "colA" and "colB" in the scope "scopeA".
-    //     2: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     3: Create a CollectionConfiguration object, and set a conflictResolvers and all filters.
-    //     4: Use addCollections() to add both colA and colB to the config with the CollectionConfiguration.
-    //     5: Check ReplicatorConfiguration.collections. The collections should have colA and colB.
-    //     6: ...
-    //     7: Remove "colB" by calling removeCollection().
-    //     8: Check  ReplicatorConfiguration.collections. The collections should have only colA.
-    //     9: Use getCollectionConfig() to get the collection config for colA and colB.
-    //        All of colB's properties should be null.
+    // 8.13.11 Create Collection "colA" and "colB" in the scope "scopeA".
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Create a CollectionConfiguration object, and set a conflictResolvers and all
+    // filters.
+    //
+    // Use addCollections() to add both colA and colB to the config with the
+    // CollectionConfiguration created from the previous step.
+    //
+    // Check  ReplicatorConfiguration.collections. The collections should have colA and
+    // colB.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. Check
+    // the returned config of both collections and ensure that both configs contain the
+    // values correctly.
+    //
+    // Remove "colB" by calling removeCollection().
+    //
+    // Check  ReplicatorConfiguration.collections. The collections should have only
+    // colA.
+    //
+    // Use getCollectionConfig() to get the collection config for colA and colB. The
+    // returned config for the colB should be NULL.
     @Test
     fun testRemoveCollection() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
@@ -604,12 +748,21 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertNull(replConfig1.getCollectionConfiguration(collectionB))
     }
 
-    //     1: Create collection "colA" in the scope "scopeA" using database instance A.
-    //     2: Create collection "colB" in the scope "scopeA" using database instance B.
-    //     3: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     4: Use addCollections() to add both colA and colB. This should cause an InvalidArgumentException.
+    // 8.13.12a Create collection "colA" in the scope "scopeA" using database instance A.
+    //
+    // Create collection "colB" in the scope "scopeA" using database instance B.
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Use addCollections() to add both colA and colB. An invalid argument exception
+    // should be thrown as the collections are from different database instances.
+    //
+    // Use addCollection() to add colA. Ensure that the colA has been added correctly.
+    //
+    // Use addCollection() to add colB. An invalid argument exception should be thrown
+    // as the collections are from different database instances.
     @Test(expected = IllegalArgumentException::class)
-    fun testAddCollectionsFromDifferentDatabaseInstances1() {
+    fun testAddCollectionsFromDifferentDatabaseInstancesA() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
 
@@ -618,14 +771,21 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollections(setOf(collectionA, collectionB), null)
     }
 
-    //     1: Create collection "colA" in the scope "scopeA" using database instance A.
-    //     2: Create collection "colB" in the scope "scopeA" using database instance B.
-    //     3: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     4: Use addCollections() to add both colA and colB. This should cause an InvalidArgumentException.
-    //     5: Use addCollection() to add colA. Ensure that the colA has been added correctly.
-    //     6: Use addCollection() to add colB. This should cause an InvalidArgumentException.
+    // 8.13.12b Create collection "colA" in the scope "scopeA" using database instance A.
+    //
+    // Create collection "colB" in the scope "scopeA" using database instance B.
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Use addCollections() to add both colA and colB. An invalid argument exception
+    // should be thrown as the collections are from different database instances.
+    //
+    // Use addCollection() to add colA. Ensure that the colA has been added correctly.
+    //
+    // Use addCollection() to add colB. An invalid argument exception should be thrown
+    // as the collections are from different database instances.
     @Test(expected = IllegalArgumentException::class)
-    fun testAddCollectionsFromDifferentDatabaseInstances2() {
+    fun testAddCollectionsFromDifferentDatabaseInstancesB() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
 
@@ -635,13 +795,21 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         replConfig1.addCollection(collectionB, null)
     }
 
-    //     1: Create collection "colA" in the scope "scopeA" using database instance A.
-    //     2: Create collection "colB" in the scope "scopeA" using database instance B.
-    //     3: Delete collection colB
-    //     4: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     5: Use addCollections() to add both colA and colB. This should cause an InvalidArgumentException.
+    // 8.13.13a Create collection "colA" in the scope "scopeA" using database instance A.
+    //
+    // Create collection "colB" in the scope "scopeA" using database instance B.
+    //
+    // Delete collection colB.
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Use addCollections() to add both colA and colB. An invalid argument exception should be thrown as an added collection has been deleted.
+    //
+    // Use addCollection() to add colA. Ensure that the colA has been added correctly.
+    //
+    // Use addCollection() to add colB. An invalid argument exception should be thrown as an added collection has been deleted.
     @Test(expected = IllegalArgumentException::class)
-    fun testAddDeletedCollections1() {
+    fun testAddDeletedCollectionsA() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
 
@@ -651,13 +819,22 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
             .addCollections(setOf(collectionA, collectionB), null)
     }
 
-    //     1: Create collection "colA" in the scope "scopeA" using database instance A.
-    //     2: Create collection "colB" in the scope "scopeA" using database instance B.
-    //     3: Delete collection colB
-    //     4: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     6: Use addCollection() to add colA. Ensure that the colA has been added correctly.
+
+    // 8.13.13a Create collection "colA" in the scope "scopeA" using database instance A.
+    //
+    // Create collection "colB" in the scope "scopeA" using database instance B.
+    //
+    // Delete collection colB.
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Use addCollections() to add both colA and colB. An invalid argument exception should be thrown as an added collection has been deleted.
+    //
+    // Use addCollection() to add colA. Ensure that the colA has been added correctly.
+    //
+    // Use addCollection() to add colB. An invalid argument exception should be thrown as an added collection has been deleted.
     @Test
-    fun testAddDeletedCollections2() {
+    fun testAddDeletedCollectionsB() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
         targetDatabase.createCollection("colB", "scopeA")
 
@@ -672,13 +849,22 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         assertTrue(collections.contains(collectionA))
     }
 
-    //     1: Create collection "colA" in the scope "scopeA" using database instance A.
-    //     2: Create collection "colB" in the scope "scopeA" using database instance B.
-    //     3: Delete collection colB
-    //     4: Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
-    //     7: Use addCollection() to add colB. This should cause an InvalidArgumentException.
+
+    // 8.13.13c Create collection "colA" in the scope "scopeA" using database instance A.
+    //
+    // Create collection "colB" in the scope "scopeA" using database instance B.
+    //
+    // Delete collection colB.
+    //
+    // Create a config object with ReplicatorConfiguration.init(endpoint: endpoint).
+    //
+    // Use addCollections() to add both colA and colB. An invalid argument exception should be thrown as an added collection has been deleted.
+    //
+    // Use addCollection() to add colA. Ensure that the colA has been added correctly.
+    //
+    // Use addCollection() to add colB. An invalid argument exception should be thrown as an added collection has been deleted.
     @Test(expected = IllegalArgumentException::class)
-    fun testAddDeletedCollections3() {
+    fun testAddDeletedCollectionsC() {
         testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
 

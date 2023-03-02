@@ -29,20 +29,20 @@ import java.util.concurrent.TimeUnit
 
 class CollectionListenerTest : BaseDbTest() {
 
-    // Test that change listeners can be added to a collection and that they receive changes correctly.
+    // 8.4.1 Test that change listeners can be added to a collection and that they receive changes correctly.
     @Test
     fun testCollectionChangeListener() = testCollectionChangeListener(null)
 
-    // Test that change listeners can be added to a collection with a custom executor
+    // 8.4.2 Test that change listeners can be added to a collection with a custom executor
     //   and that they receive changes correctly.
     @Test
     fun testCollectionChangeListenerWithExecutor() = testCollectionChangeListener(testSerialExecutor)
 
-    // Test that document change listeners can be added to a collection and that they receive changes correctly.
+    // 8.4.3 Test that document change listeners can be added to a collection and that they receive changes correctly.
     @Test
     fun testCollectionDocumentChangeListener() = testCollectionDocumentChangeListener(null)
 
-    // Test that document change listeners can be added to a collection with a custom executor
+    // 8.4.4 Test that document change listeners can be added to a collection with a custom executor
     //   and that they receive changes correctly.
     @Test
     fun testCollectionDocumentChangeListenerWithExecutor() = testCollectionDocumentChangeListener(testSerialExecutor)
