@@ -21,6 +21,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal
 import com.couchbase.lite.internal.core.C4Database
 import com.couchbase.lite.internal.utils.FileUtils
 import com.couchbase.lite.internal.utils.SlowTest
+import com.couchbase.lite.internal.utils.StringUtils
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -767,11 +768,91 @@ class DatabaseTest : LegacyBaseDbTest() {
     }
 
     //---------------------------------------------
-    //  Collections, 8.7: Use Scope API on Closed or Deleted Database
+    //  Collections, 8.5: Use Collection API on Deleted Collection
     //---------------------------------------------
 
-    //
-    // 8.7.1: Test that after the database is closed, calling functions on the scope object
+    // 8.5.1: Test that after the database is closed, calling functions on the scope object
+    // returns the expected result based on section 6.3
+    @Test
+    fun testUseCollectionAPIOnDeletedCollection() {
+        baseTestDb.createCollection("bobblehead", "horo")
+        val collection = baseTestDb.getCollection("bobblehead", "horo")
+        assertNotNull(collection!!)
+
+        val doc = MutableDocument()
+        collection.save(doc)
+
+        baseTestDb.deleteCollection("bobblehead", "horo")
+        assertNull(baseTestDb.getCollection("bobblehead", "horo"))
+
+        assertEquals("horo", collection.scope.name)
+        assertEquals("bobblehead", collection.name)
+
+        // These two calls should generate warnings, but should not fail
+        collection.addChangeListener { }
+        collection.addDocumentChangeListener("docId") { }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.purge(doc.id) }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.indexes }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.deleteIndex("foo") }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+            collection.createIndex("index", IndexBuilder.valueIndex(ValueIndexItem.property("firstName")))
+        }
+    }
+
+    // 8.5.2: Test that after the database is closed, calling functions on the scope object
+    // returns the expected result based on section 6.3
+    @Test
+    fun testUseCollectionAPIOnDeletedCollectionDeletedFromDifferentDBInstance() {
+        baseTestDb.createCollection("bobblehead", "horo")
+        val collection = baseTestDb.getCollection("bobblehead", "horo")
+        assertNotNull(collection!!)
+
+        val doc = MutableDocument()
+        collection.save(doc)
+
+        // delete the collection in a differnt database
+        duplicateDb(baseTestDb).deleteCollection("bobblehead", "horo")
+        assertNull(baseTestDb.getCollection("bobblehead", "horo"))
+
+        assertEquals("horo", collection.scope.name)
+        assertEquals("bobblehead", collection.name)
+
+        // These two calls should generate warnings, but should not fail
+        collection.addChangeListener { }
+        collection.addDocumentChangeListener("docId") { }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.purge(doc.id) }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.indexes }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.deleteIndex("foo") }
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+            collection.createIndex("index", IndexBuilder.valueIndex(ValueIndexItem.property("firstName")))
+        }
+    }
+
+    //---------------------------------------------
+    //  Collections, 8.6: Use Collection API on Closed or Deleted Database
+    //---------------------------------------------
+
+    // 8.6.1: Test that after the database is closed, calling functions on the scope object
     // returns the expected result based on section 6.3
     @Test
     fun testUseScopeWhenDatabaseIsClosed1() {
@@ -792,6 +873,10 @@ class DatabaseTest : LegacyBaseDbTest() {
             scope!!.getCollection("bobblehead")
         }
     }
+
+    //---------------------------------------------
+    //  Collections, 8.7: Use Scope API on Closed or Deleted Database
+    //---------------------------------------------
 
     // 8.7.2: Test that after the database is deleted, calling functions on the scope object
     // returns the expected result based on section 6.3
@@ -876,69 +961,80 @@ class DatabaseTest : LegacyBaseDbTest() {
     }
 
     //---------------------------------------------
-    //  Collections, 8.10 Get Scopes or Collections on Closed or Deleted Database
+    //  Collections, 8.10 Use Scope API when No Collections in the Scope
     //---------------------------------------------
 
-    //
-    // 8.10.1: Test that after the database is closed, calling functions on the scope object
-    // returns the expected result based on section 6.3
+    // 8.10.1: Test that after all collections in the scope are deleted,
+    // calling the scope APIS returns the result as expected based
+    // on section 6.5.
     @Test
-    fun testUseScopeWithNoCollections1() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
+    fun testUseScopeAPIAfterDeletingAllCollections() {
+        val scopeName = StringUtils.getUniqueName("test-scope", 6)
+        baseTestDb.createCollection(StringUtils.getUniqueName("test-collection", 4), scopeName)
 
-        baseTestDb.deleteCollection("bobblehead", "horo")
+        val scope = baseTestDb.getScope(scopeName)
+        assertNotNull(scope!!)
 
-        val collections = scope!!.collections
+        // create more collections
+        (0..4).map { StringUtils.getUniqueName("test-collection", 4) }
+            .forEach { baseTestDb.createCollection(it, scope.name) }
+
+        val collectionNames = scope.collections.map { it.name }
+        assertEquals(6, collectionNames.size)
+
+        // verify that the collections exist
+        collectionNames.forEach { assertNotNull(baseTestDb.getCollection(it, scope.name)) }
+
+        // delete the collections
+        collectionNames.forEach { baseTestDb.deleteCollection(it, scope.name) }
+
+        // verify that the collections no longer exist
+        collectionNames.forEach { assertNull(scope.getCollection(it)) }
+
+        val collections = scope.collections
         assertNotNull(collections)
-        assertEquals(0, collections.size)
+        assertTrue(collections.isEmpty())
     }
 
+    // 8.10.2: Test that after all collections in the scope are deleted from
+    // a different database instance, calling the scope APIS returns
+    // the result as expected based on section 6.5. To test this,
+    // get and retain the scope object before deleting all collections.
     @Test
-    fun testUseScopeWithNoCollections2() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
+    fun testUseScopeAPIAfterDeletingAllCollectionsFromDifferentDBInstance() {
+        val scopeName = StringUtils.getUniqueName("test-scope", 6)
+        baseTestDb.createCollection(StringUtils.getUniqueName("test-collection", 4), scopeName)
 
-        baseTestDb.deleteCollection("bobblehead", "horo")
+        val scope = baseTestDb.getScope(scopeName)
+        assertNotNull(scope!!)
 
-        assertNull(scope!!.getCollection("bobblehead"))
-    }
+        // create more collections
+        (0..4).map { StringUtils.getUniqueName("test-collection", 4) }
+            .forEach { baseTestDb.createCollection(it, scope.name) }
 
-    // 8.10.2 Test that after all collections in the scope are deleted from a different database instance,
-    // calling the scope APIS returns the result as expected based on section 6.5.
-    // To test this, get and retain the scope object before deleting all collections.
-    @SlowTest
-    @Test
-    fun testTestUseScopeAPIAfterDeletingAllCollectionsFromDifferentDBInstance1() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
+        val collectionNames = scope.collections.map { it.name }
+        assertEquals(6, collectionNames.size)
 
-        val dbCopy = duplicateBaseTestDb()
-        assertNotNull(dbCopy.getScope("horo"))
+        // verify that the collections exist
+        collectionNames.forEach { assertNotNull(baseTestDb.getCollection(it, scope.name)) }
 
-        dbCopy.deleteCollection("bobblehead", "horo")
+        // delete the collections from a different database
+        val otherDatabase = Database(baseTestDb.name)
+        val otherScope = otherDatabase.getScope(scopeName)
+        assertNotNull(otherScope!!)
+        collectionNames.forEach { otherDatabase.deleteCollection(it, otherScope.name) }
 
-        val collections = scope!!.collections
+        // verify that the collections no longer exist in the other db
+        collectionNames.forEach { assertNull(scope.getCollection(it)) }
+        val otherCollections = otherScope.collections
+        assertNotNull(otherCollections)
+        assertTrue(otherCollections.isEmpty())
+
+        // verify that the collections no longer exist in the original db
+        collectionNames.forEach { assertNull(scope.getCollection(it)) }
+        val collections = scope.collections
         assertNotNull(collections)
-        assertEquals(0, collections.size)
-    }
-
-    @SlowTest
-    @Test
-    fun testTestUseScopeAPIAfterDeletingAllCollectionsFromDifferentDBInstance2() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
-
-        val dbCopy = duplicateBaseTestDb()
-        assertNotNull(dbCopy.getScope("horo"))
-
-        dbCopy.deleteCollection("bobblehead", "horo")
-
-        assertNull(scope!!.getCollection("bobblehead"))
+        assertTrue(collections.isEmpty())
     }
 
     //---------------------------------------------

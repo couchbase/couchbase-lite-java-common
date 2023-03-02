@@ -47,7 +47,7 @@ class CollectionCrossDbTest : BaseTest() {
         }
     }
 
-    // Test that creating a collection from a database instance is visible to the other database instance.
+    // 8.3.1 Test that creating a collection from a database instance is visible to the other database instance.
     // Create Database instance A and B.
     // Create a collection in a scope from the database instance A.
     // Ensure that the created collection is visible to the database instance B by using
@@ -61,7 +61,7 @@ class CollectionCrossDbTest : BaseTest() {
         assertNotNull(dbB.getCollection("autographs", "polari"))
     }
 
-    // Test that deleting a collection from a database instance is visible to the other database instance.
+    // 8.3.2 Test that deleting a collection from a database instance is visible to the other database instance.
     // Create Database instance A and B.
     // Create a collection in a scope from the database instance A.
     // Add some documents to the created collection.
@@ -97,7 +97,7 @@ class CollectionCrossDbTest : BaseTest() {
         assertNull(dbB.getCollections("sigmoido").firstOrNull { c -> c.name == "poster" })
     }
 
-    // Test that deleting a collection then recreating the collection from a database instance
+    // 8.3.3 Test that deleting a collection then recreating the collection from a database instance
     //    is visible to the other database instance.
     // Create Database instance A and B.
     // Create a collection in a scope from the database instance A.
