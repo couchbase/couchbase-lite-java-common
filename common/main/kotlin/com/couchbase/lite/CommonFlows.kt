@@ -27,7 +27,7 @@ import java.util.concurrent.Executor
  *
  * @see com.couchbase.lite.Collection.addChangeListener
  */
-fun Collection.collectionChangeFlow(executor: Executor?) = callbackFlow {
+fun Collection.collectionChangeFlow(executor: Executor? = null) = callbackFlow {
     val token = this@collectionChangeFlow.addChangeListener(executor) { trySend(it) }
     awaitClose { token.remove() }
 }
