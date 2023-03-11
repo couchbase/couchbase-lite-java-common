@@ -346,7 +346,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     @NonNull
     public final ReplicatorConfiguration setAuthenticator(@Nullable Authenticator authenticator) {
-        this.authenticator = Preconditions.assertNotNull(authenticator, "authenticator");
+        this.authenticator = authenticator;
         return getReplicatorConfiguration();
     }
 
