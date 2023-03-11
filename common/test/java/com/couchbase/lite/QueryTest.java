@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -42,7 +41,6 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.MathUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.SlowTest;
-import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -50,7 +48,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 
 @SuppressWarnings("ConstantConditions")

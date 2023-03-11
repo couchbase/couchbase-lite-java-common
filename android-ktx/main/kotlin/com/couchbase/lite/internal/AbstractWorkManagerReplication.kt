@@ -22,8 +22,7 @@ import com.couchbase.lite.ReplicatorConfiguration
 import com.couchbase.lite.ReplicatorType
 import java.security.cert.X509Certificate
 
-abstract class AbstractWorkManagerReplicatorConfiguration
-constructor(protected val replConfig: ReplicatorConfiguration) {
+abstract class AbstractWorkManagerReplicatorConfiguration(protected val replConfig: ReplicatorConfiguration) {
     val collections: Set<Collection> by replConfig::collections
 
     var type: ReplicatorType by replConfig::type
