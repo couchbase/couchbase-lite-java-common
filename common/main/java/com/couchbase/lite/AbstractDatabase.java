@@ -870,7 +870,7 @@ abstract class AbstractDatabase extends BaseDatabase
      * If the executor is not specified, the changes will be delivered on the UI thread for
      * the Android platform and on an arbitrary thread for the Java platform.
      *
-     * @deprecated Use getDefaultCollection().
+     * @deprecated Use getDefaultCollection().addDocumentChangeListener
      */
     @Deprecated
     @NonNull
