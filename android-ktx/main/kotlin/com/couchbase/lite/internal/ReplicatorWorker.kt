@@ -25,11 +25,12 @@ import com.couchbase.lite.CouchbaseLiteException
 import com.couchbase.lite.LogDomain
 import com.couchbase.lite.Replicator
 import com.couchbase.lite.ReplicatorActivityLevel
-import com.couchbase.lite.ReplicatorChange
+import com.couchbase.lite.ReplicatorStatus
 import com.couchbase.lite.WorkManagerReplicatorFactory
 import com.couchbase.lite.internal.support.Log
 import com.couchbase.lite.replicatorChangesFlow
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.runBlocking
 
 
@@ -53,7 +54,6 @@ import kotlinx.coroutines.runBlocking
  * val factory = MyReplicatorFactory().
  * WorkManager.getInstance(context).enqueue(
  *    factory.periodicWorkRequestBuilder(15L, TimeUnit.MINUTES)
- *         .addTag(factory.tag)
  *         .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1L, TimeUnit.HOURS)
  *         .setConstraints(
  *             Constraints.Builder()
@@ -112,12 +112,19 @@ import kotlinx.coroutines.runBlocking
  */
 class ReplicatorWorker(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
     override suspend fun doWork(): Result {
-        val configFactory = getFactory(inputData.getString(KEY_REPLICATOR))
-
         var repl: Replicator? = null
+        var tag: String? = null
         return try {
+            val workerClass = inputData.getString(KEY_REPLICATOR)
+            Log.i(LogDomain.REPLICATOR, "Background replicator ${workerClass} started")
+
+            val configFactory = getFactory(workerClass)
+
+            tag = configFactory.tag
+            Log.i(LogDomain.REPLICATOR, "Background replicator ${workerClass} has tag: ${tag}")
+
             val config = configFactory.getConfig()?.getConfig()
-                ?: throw IllegalArgumentException("Could not get ReplicatorConfiguration from factory")
+                ?: throw IllegalArgumentException("Could not get configuration from factory")
 
             // enforce single-shot and no retries
             config.isContinuous = false
@@ -126,36 +133,30 @@ class ReplicatorWorker(appContext: Context, params: WorkerParameters) : Coroutin
             config.maxAttemptWaitTime = 1
 
             repl = Replicator(config)
+            val flow = repl.replicatorChangesFlow()
 
+            var ok = true
             // ??? If this replication runs for a very long time (more than 10 minutes)
             // or if the scheduling conditions are no longer met, the system will force stop it.
-            val flow = repl.replicatorChangesFlow()
             runBlocking {
                 repl.start()
-                Log.i(LogDomain.REPLICATOR, "Replicator started: ${repl}")
-                flow.collect { change ->
-                    val state = change.status.activityLevel
+                Log.i(LogDomain.REPLICATOR, "Background replicator ${tag} started")
+                flow.onEach { change ->
+                    val status = change.status
+                    Log.i(LogDomain.REPLICATOR, "Background replicator ${tag} changed state: ${status}")
 
-                    val data = getData(configFactory, state)
-                    data.fromReplicatorStatus(change)
-                    setProgressAsync(data.build())
-
-                    if (stopStates.contains(state)) {
-                        cancel("Done", null)
-                    }
-                }
+                    ok = ok && status.error == null
+                    setProgressAsync(buildData(tag, status))
+                }.takeWhile { change ->
+                    !stopStates.contains(change.status.activityLevel)
+                }.collect { }
             }
+            Log.i(LogDomain.REPLICATOR, "Background replicator ${tag} finished ${ok}")
 
-            Log.i(LogDomain.REPLICATOR, "Replicator finished: ${repl}")
-
-            Result.success()
+            if (ok) Result.success() else Result.failure()
         } catch (e: Throwable) {
-            Log.w(LogDomain.REPLICATOR, "Replicator failed: ${repl}")
-
-            val data = getData(configFactory, ReplicatorActivityLevel.STOPPED)
-            data.fromError(e)
-            setProgressAsync(data.build())
-
+            setProgressAsync(buildData(tag, e))
+            Log.w(LogDomain.REPLICATOR, "Background replicator ${tag} failed", e)
             Result.failure()
         } finally {
             repl?.stop()
@@ -163,48 +164,54 @@ class ReplicatorWorker(appContext: Context, params: WorkerParameters) : Coroutin
     }
 
     private fun getFactory(factoryClass: String?): WorkManagerReplicatorFactory {
-        factoryClass ?: throw IllegalArgumentException("No factory class specified")
-        val klass = try {
-            Class.forName(factoryClass)
-        } catch (e: ClassNotFoundException) {
-            throw IllegalArgumentException("Factory class ${factoryClass} not found")
-        }
-        return (klass.newInstance() as WorkManagerReplicatorFactory)
-    }
-
-    private fun getData(factory: WorkManagerReplicatorFactory, state: ReplicatorActivityLevel) = Data.Builder()
-        .putString(KEY_REPLICATOR, factory.tag)
-        .putString(KEY_REPLICATION_ACTIVITY_LEVEL, state.toString())
-
-    private fun Data.Builder.fromReplicatorStatus(change: ReplicatorChange?) {
-        change?.status?.progress?.let {
-            putLong(KEY_REPLICATION_COMPLETED, it.completed)
-            putLong(KEY_REPLICATION_TOTAL, it.total)
-        }
-        change?.status?.error?.let {
-            putInt(KEY_REPLICATION_ERROR_CODE, it.code)
-            putString(KEY_REPLICATION_ERROR_MESSAGE, it.message)
+        factoryClass ?: throw java.lang.IllegalArgumentException("Factory class name is null")
+        try {
+            return (Class.forName(factoryClass).newInstance() as WorkManagerReplicatorFactory)
+        } catch (e: Exception) {
+            throw java.lang.IllegalStateException("Failed creating factory ${factoryClass}", e)
         }
     }
 
-    private fun Data.Builder.fromError(e: Throwable) {
-        var err: Throwable? = e
-        while (err != null) {
-            if (err is CouchbaseLiteException) break
-            else err = err.cause
+    private fun buildData(tag: String, status: ReplicatorStatus): Data {
+        val dataBuilder = Data.Builder()
+            .putString(KEY_REPLICATOR, tag)
+            .putString(KEY_REPLICATION_ACTIVITY_LEVEL, status.activityLevel.toString())
+
+        status.progress.let {
+            dataBuilder.putLong(KEY_REPLICATION_COMPLETED, it.completed)
+                .putLong(KEY_REPLICATION_TOTAL, it.total)
+        }
+
+        status.error?.let {
+            dataBuilder.putInt(KEY_REPLICATION_ERROR_CODE, it.code)
+                .putString(KEY_REPLICATION_ERROR_MESSAGE, it.message)
+        }
+
+        return dataBuilder.build()
+    }
+
+    private fun buildData(tag: String?, err: Throwable): Data {
+        var e: Throwable? = err
+        while (e != null) {
+            if (e is CouchbaseLiteException) break
+            else e = e.cause
         }
 
         var code = CBLError.Code.UNEXPECTED_ERROR
         val msg: String?
-        if (err !is CouchbaseLiteException) {
-            msg = e.message
-        } else {
+        if (e !is CouchbaseLiteException) {
             msg = err.message
-            code = err.code
+        } else {
+            msg = e.message
+            code = e.code
         }
 
-        putInt(KEY_REPLICATION_ERROR_CODE, code)
-        putString(KEY_REPLICATION_ERROR_MESSAGE, if (msg.isNullOrEmpty()) "error" else msg)
+        return Data.Builder()
+            .putString(KEY_REPLICATOR, tag ?: "unknown")
+            .putString(KEY_REPLICATION_ACTIVITY_LEVEL, ReplicatorActivityLevel.STOPPED.toString())
+            .putInt(KEY_REPLICATION_ERROR_CODE, code)
+            .putString(KEY_REPLICATION_ERROR_MESSAGE, if (msg.isNullOrEmpty()) "error" else msg)
+            .build()
     }
 
     companion object {
