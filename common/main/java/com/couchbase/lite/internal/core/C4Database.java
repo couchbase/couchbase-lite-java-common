@@ -22,7 +22,6 @@ import androidx.annotation.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +40,6 @@ import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Database;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
-import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -93,9 +91,6 @@ public abstract class C4Database extends C4NativePeer {
         @NonNull
         byte[] nGetPublicUUID(long db) throws LiteCoreException;
 
-        @NonNull
-        byte[] nGetPrivateUUID(long db) throws LiteCoreException;
-
         // - Transactions
 
         void nBeginTransaction(long db) throws LiteCoreException;
@@ -119,9 +114,6 @@ public abstract class C4Database extends C4NativePeer {
         // - Utilities
 
         long nGetSharedFleeceEncoder(long db);
-
-        @NonNull
-        FLSliceResult nEncodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
 
         long nGetFLSharedKeys(long db);
 
@@ -542,16 +534,6 @@ public abstract class C4Database extends C4NativePeer {
 
     // ??? Exposes the peer handle
     long getHandle() { return getPeer(); }
-
-    @VisibleForTesting
-    @NonNull
-    byte[] getPrivateUUID() throws LiteCoreException { return impl.nGetPrivateUUID(getPeer()); }
-
-    @VisibleForTesting
-    @NonNull
-    FLSliceResult encodeJSON(@NonNull String data) throws LiteCoreException {
-        return impl.nEncodeJSON(getPeer(), data.getBytes(StandardCharsets.UTF_8));
-    }
 
     //-------------------------------------------------------------------------
     // Private methods

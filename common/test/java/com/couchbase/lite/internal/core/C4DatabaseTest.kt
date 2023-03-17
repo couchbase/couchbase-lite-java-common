@@ -20,7 +20,6 @@ import com.couchbase.lite.Collection
 import com.couchbase.lite.LiteCoreException
 import com.couchbase.lite.MaintenanceType
 import com.couchbase.lite.Scope
-import com.couchbase.lite.internal.fleece.FLSliceResult
 import com.couchbase.lite.internal.utils.FileUtils
 import com.couchbase.lite.internal.utils.VerySlowTest
 import org.junit.Assert.assertArrayEquals
@@ -63,7 +62,6 @@ class C4DatabaseTest : C4BaseTest() {
         override fun nDelete(db: Long) = Unit
         override fun nDeleteNamed(name: String, dir: String) = Unit
         override fun nGetPublicUUID(db: Long): ByteArray = byteArrayOf()
-        override fun nGetPrivateUUID(db: Long): ByteArray = byteArrayOf()
         override fun nBeginTransaction(db: Long) = Unit
         override fun nEndTransaction(db: Long, commit: Boolean) = Unit
         override fun nMaintenance(db: Long, type: Int): Boolean = true
@@ -71,7 +69,6 @@ class C4DatabaseTest : C4BaseTest() {
         override fun nSetCookie(db: Long, url: String?, setCookieHeader: String?, acceptParents: Boolean) = Unit
         override fun nGetCookies(db: Long, url: String): String = "test_cookies"
         override fun nGetSharedFleeceEncoder(db: Long): Long = 1L
-        override fun nEncodeJSON(db: Long, jsonData: ByteArray): FLSliceResult = FLSliceResult(0, 0)
         override fun nGetFLSharedKeys(db: Long): Long = 1L
         override fun nGetScopeNames(peer: Long): MutableSet<String> = mutableSetOf()
         override fun nHasScope(peer: Long, scope: String): Boolean = true
@@ -130,7 +127,7 @@ class C4DatabaseTest : C4BaseTest() {
         //Weird requirements of UUIDs according to the spec
         assertEquals(0x40.toByte(), (publicUUID[6] and 0xF0.toByte()))
         assertEquals(0x80.toUByte(), (publicUUID[8].toUByte() and 0xC0.toUByte()))
-        val privateUUID = c4Database.privateUUID
+        val privateUUID = C4TestUtils.privateUUIDForDb(c4Database)
         assertNotNull(privateUUID)
         assertTrue(privateUUID.isNotEmpty())
         assertEquals(0x40.toByte(), (privateUUID[6] and 0xF0.toByte()))
@@ -141,7 +138,7 @@ class C4DatabaseTest : C4BaseTest() {
 
         //Make sure UUIDs are persistent
         val publicUUID2 = c4Database.publicUUID
-        val privateUUID2 = c4Database.privateUUID
+        val privateUUID2 = C4TestUtils.privateUUIDForDb(c4Database)
         assertArrayEquals(publicUUID, publicUUID2)
         assertArrayEquals(privateUUID, privateUUID2)
     }
@@ -181,7 +178,7 @@ class C4DatabaseTest : C4BaseTest() {
     fun testDatabaseReadOnlyUUIDs() {
         reopenDBReadOnly()
         assertNotNull(c4Database.publicUUID)
-        assertNotNull(c4Database.privateUUID)
+        assertNotNull(C4TestUtils.privateUUIDForDb(c4Database))
     }
 
     // - "Database OpenBundle"
@@ -256,6 +253,7 @@ class C4DatabaseTest : C4BaseTest() {
         val content1 = "This is the first attachment"
         val content2 = "This is the second attachment"
         val content3 = "This is the third attachment"
+
         val allKeys: MutableSet<C4BlobKey> = HashSet()
         val key1: C4BlobKey
         val key2: C4BlobKey
@@ -284,16 +282,17 @@ class C4DatabaseTest : C4BaseTest() {
             } finally {
                 c4Database.endTransaction(true)
             }
+
             val store = c4Database.blobStore
             assertNotNull(store)
-            compact(c4Database)
+            c4Database.performMaintenance(MaintenanceType.COMPACT)
             assertTrue(store.getSize(key1) > 0)
             assertTrue(store.getSize(key2) > 0)
             assertTrue(store.getSize(key3) > 0)
 
             // Only reference to first blob is gone
             createRev(doc1ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED)
-            compact(c4Database)
+            c4Database.performMaintenance(MaintenanceType.COMPACT)
             assertEquals(store.getSize(key1), -1)
             assertTrue(store.getSize(key2) > 0)
             assertTrue(store.getSize(key3) > 0)
@@ -301,21 +300,21 @@ class C4DatabaseTest : C4BaseTest() {
             // Two references exist to the second blob, so it should still
             // exist after deleting doc002
             createRev(doc2ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED)
-            compact(c4Database)
+            c4Database.performMaintenance(MaintenanceType.COMPACT)
             assertEquals(store.getSize(key1), -1)
             assertTrue(store.getSize(key2) > 0)
             assertTrue(store.getSize(key3) > 0)
 
             // After deleting doc4 both blobs should be gone
             createRev(doc4ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED)
-            compact(c4Database)
+            c4Database.performMaintenance(MaintenanceType.COMPACT)
             assertEquals(store.getSize(key1), -1)
             assertEquals(store.getSize(key2), -1)
             assertTrue(store.getSize(key3) > 0)
 
             // Delete doc with legacy attachment, and it too will be gone
             createRev(doc3ID, REV_ID_2, null, C4Constants.DocumentFlags.DELETED)
-            compact(c4Database)
+            c4Database.performMaintenance(MaintenanceType.COMPACT)
             assertEquals(store.getSize(key1), -1)
             assertEquals(store.getSize(key2), -1)
             assertEquals(store.getSize(key3), -1)
@@ -366,28 +365,41 @@ class C4DatabaseTest : C4BaseTest() {
     //  Test create 1 scope and 1 collection
     @Test
     fun testCreateScopeAndCollection() {
-        assertEquals(1, c4Database.scopeNames.size)
-        assertEquals(setOf(Scope.DEFAULT_NAME), c4Database.scopeNames)
+        val dbName = getUniqueName("c4_test_db")
+        val c4Db = C4Database.getDatabase(
+            dbParentDirPath,
+            dbName,
+            flags,
+            C4Constants.EncryptionAlgorithm.NONE,
+            null
+        )
 
-        c4Database.addCollection("test_scope", "test_coll")
-        assertEquals(2, c4Database.scopeNames.size)
-        assertTrue(c4Database.hasScope("test_scope"))
-        assertEquals(setOf(Scope.DEFAULT_NAME, "test_scope"), c4Database.scopeNames)
+        assertEquals(1, c4Db.scopeNames.size)
+        assertEquals(setOf(Scope.DEFAULT_NAME), c4Db.scopeNames)
 
-        assertEquals(1, c4Database.getCollectionNames("test_scope").size)
-        assertEquals(setOf("test_coll"), c4Database.getCollectionNames("test_scope"))
+        c4Db.addCollection("test_scope", "test_coll")
+        assertEquals(2, c4Db.scopeNames.size)
+
+        assertTrue(c4Db.hasScope("test_scope"))
+        assertEquals(setOf(Scope.DEFAULT_NAME, "test_scope"), c4Db.scopeNames)
+
+        assertEquals(1, c4Db.getCollectionNames("test_scope").size)
+        assertEquals(setOf("test_coll"), c4Db.getCollectionNames("test_scope"))
     }
 
     // Test create multiple collections in a scope
     @Test
     fun testCreateMultipleCollections() {
-        c4Database.addCollection("test_scope", "test_coll_1")
-        c4Database.addCollection("test_scope", "test_coll_2")
-        c4Database.addCollection("test_scope", "test_coll_3")
+        val scope = c4Collection.scope
+        c4Database.addCollection(scope, "test_coll_1")
+        c4Database.addCollection(scope, "test_coll_2")
+        c4Database.addCollection(scope, "test_coll_3")
 
-        assertEquals(2, c4Database.scopeNames.size)
-        assertEquals(3, c4Database.getCollectionNames("test_scope").size)
-        assertEquals(setOf("test_coll_1", "test_coll_2", "test_coll_3"), c4Database.getCollectionNames("test_scope"))
+        assertEquals(2, c4Database.scopeNames.size) // +1 for the default
+        assertEquals(4, c4Database.getCollectionNames(scope).size) // +1 for the test collection (c4Collection)
+        assertEquals(
+            setOf("test_coll_1", "test_coll_2", "test_coll_3", c4Collection.name),
+            c4Database.getCollectionNames(scope))
     }
 
     // Test DeleteDefaultCollection are in
@@ -423,16 +435,15 @@ class C4DatabaseTest : C4BaseTest() {
 
     @Test
     fun testDatabaseCopySucceeds() {
-        val doc1ID = "doc001"
-        val doc2ID = "doc002"
-        createRev(doc1ID, REV_ID_1, fleeceBody)
-        createRev(doc2ID, REV_ID_1, fleeceBody)
-        assertEquals(2L, c4Database.defaultCollection?.documentCount)
-        val srcDbPath = c4Database.dbPath
+        createRev( "doc001", REV_ID_1, fleeceBody)
+        createRev("doc002", REV_ID_1, fleeceBody)
+        assertEquals(2L, c4Collection.documentCount)
+
+
         val dbName = getUniqueName("c4_copy_test_db")
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
         C4Database.copyDb(
-            srcDbPath!!,
+            c4Database.dbPath!!,
             dstParentDirPath,
             dbName,
             flags,
@@ -447,7 +458,7 @@ class C4DatabaseTest : C4BaseTest() {
             null
         )
         assertNotNull(copyDb)
-        assertEquals(2L, copyDb.defaultCollection?.documentCount)
+        assertEquals(2L, c4Collection.documentCount)
     }
 
     @Test
@@ -463,7 +474,7 @@ class C4DatabaseTest : C4BaseTest() {
             C4Constants.EncryptionAlgorithm.NONE,
             null
         )
-        createRev(targetDb, "doc001", REV_ID_1, fleeceBody)
+        createRev(targetDb.defaultCollection, "doc001", REV_ID_1, fleeceBody)
         assertEquals(1L, targetDb.defaultCollection?.documentCount)
         targetDb.close()
         try {
@@ -500,11 +511,11 @@ class C4DatabaseTest : C4BaseTest() {
 
         // No start or end ID:
         val iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT
-        val allDocs = enumerateAllDocs(c4Database, iteratorFlags)
+        val allDocs = C4TestUtils.enumerateDocsForCollection(c4Collection, iteratorFlags)
         assertNotNull(allDocs)
         while (allDocs.next()) {
             val doc = allDocs.document
-            assertEquals(docId(i), doc.docID)
+            assertEquals(docId(i), C4TestUtils.idForDoc(doc))
             assertEquals(REV_ID_1, doc.revID)
             assertEquals(REV_ID_1, doc.selectedRevID)
             assertEquals(i.toLong(), doc.sequence)
@@ -521,29 +532,36 @@ class C4DatabaseTest : C4BaseTest() {
         val now = System.currentTimeMillis()
         val shortExpire = now + 1000
         val longExpire = now + STD_TIMEOUT_MS
+
         var docID = "expire_me"
         createRev(docID, REV_ID_1, fleeceBody)
-        assertEquals(0L, c4Database.defaultCollection?.getDocumentExpiration(docID))
-        c4Database.defaultCollection?.setDocumentExpiration(docID, longExpire)
-        assertEquals(longExpire, c4Database.defaultCollection?.getDocumentExpiration(docID))
-        c4Database.defaultCollection?.setDocumentExpiration(docID, shortExpire)
-        assertEquals(shortExpire, c4Database.defaultCollection?.getDocumentExpiration(docID))
+        assertEquals(0L, c4Collection.getDocumentExpiration(docID))
+
+        c4Collection.setDocumentExpiration(docID, longExpire)
+        assertEquals(longExpire, c4Collection.getDocumentExpiration(docID))
+
+        c4Collection.setDocumentExpiration(docID, shortExpire)
+        assertEquals(shortExpire, c4Collection.getDocumentExpiration(docID))
+
         docID = "expire_me_too"
         createRev(docID, REV_ID_1, fleeceBody)
-        c4Database.defaultCollection?.setDocumentExpiration(docID, shortExpire)
-        assertEquals(shortExpire, c4Database.defaultCollection?.getDocumentExpiration(docID))
+        c4Collection.setDocumentExpiration(docID, shortExpire)
+        assertEquals(shortExpire, c4Collection.getDocumentExpiration(docID))
+
         docID = "expire_me_later"
         createRev(docID, REV_ID_1, fleeceBody)
-        c4Database.defaultCollection?.setDocumentExpiration(docID, longExpire)
-        assertEquals(longExpire, c4Database.defaultCollection?.getDocumentExpiration(docID))
+        c4Collection.setDocumentExpiration(docID, longExpire)
+        assertEquals(longExpire, c4Collection.getDocumentExpiration(docID))
+
         docID = "dont_expire_me_at_all"
         createRev(docID, REV_ID_1, fleeceBody)
-        assertEquals(0L, c4Database.defaultCollection?.getDocumentExpiration(docID))
-        assertEquals(4L, c4Database.defaultCollection?.documentCount)
+
+        assertEquals(0L, c4Collection.getDocumentExpiration(docID))
+        assertEquals(4L, c4Collection.documentCount)
 
         // There should be a time at which exactly two of the docs have expired (the other two have not).
         // That time should be less than the long-expire timeout
-        waitUntil(STD_TIMEOUT_MS) { 2L == c4Database.defaultCollection?.documentCount }
+        waitUntil(STD_TIMEOUT_MS) { 2L == c4Collection.documentCount }
     }
 
     @Test
@@ -554,16 +572,16 @@ class C4DatabaseTest : C4BaseTest() {
         val docID2 = "dont_expire_me"
         createRev(docID2, REV_ID_1, fleeceBody)
 
-        assertEquals(2L, c4Database.defaultCollection?.documentCount)
+        assertEquals(2L, c4Collection.documentCount)
 
         val expire = System.currentTimeMillis() + 100
-        c4Database.defaultCollection?.setDocumentExpiration(docID1, expire)
-        c4Database.defaultCollection?.setDocumentExpiration(docID2, expire)
-        c4Database.defaultCollection?.setDocumentExpiration(docID2, 0)
+        c4Collection.setDocumentExpiration(docID1, expire)
+        c4Collection.setDocumentExpiration(docID2, expire)
+        c4Collection.setDocumentExpiration(docID2, 0)
 
-        waitUntil(STD_TIMEOUT_MS) { 1L == c4Database.defaultCollection?.documentCount }
+        waitUntil(STD_TIMEOUT_MS) { 1L == c4Collection.documentCount }
 
-        assertNotNull(c4Database.defaultCollection?.getDocument(docID2))
+        assertNotNull(c4Collection.getDocument(docID2))
     }
 
     @Test
@@ -634,9 +652,9 @@ class C4DatabaseTest : C4BaseTest() {
         json.append("]}")
 
         // Save document:
-        val doc = C4Document.create(
-            c4Database,
-            c4Database.encodeJSON(json5(json.toString())),
+        val doc = C4TestUtils.create(
+            c4Collection,
+            C4TestUtils.encodeJSONInDb(c4Database, json5(json.toString())),
             docID,
             C4Constants.RevisionFlags.HAS_ATTACHMENTS,
             false,
@@ -649,13 +667,5 @@ class C4DatabaseTest : C4BaseTest() {
         assertNotNull(doc)
         doc.close()
         return keys
-    }
-
-    private fun compact(db: C4Database) {
-        try {
-            db.performMaintenance(MaintenanceType.COMPACT)
-        } catch (e: LiteCoreException) {
-            throw IllegalStateException("Db compaction failed", e)
-        }
     }
 }

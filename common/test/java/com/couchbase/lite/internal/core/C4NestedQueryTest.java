@@ -40,7 +40,7 @@ public class C4NestedQueryTest extends C4QueryBaseTest {
     // - DB Query ANY nested
     @Test
     public void testDBQueryANYNested() throws LiteCoreException {
-        compile(json5("['ANY', 'Shape', ['.', 'shapes'], ['=', ['?', 'Shape', 'color'], 'red']]"));
+        compile("['ANY', 'Shape', ['.', 'shapes'], ['=', ['?', 'Shape', 'color'], 'red']]");
         assertEquals(Arrays.asList("0000001", "0000003"), run());
     }
 }

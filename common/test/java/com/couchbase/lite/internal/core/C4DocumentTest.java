@@ -17,28 +17,15 @@ package com.couchbase.lite.internal.core;
 
 import java.io.IOException;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
-// !!! SEVERAL OF THESE TESTS DEPEND ON USE OF THE DEFAULT COLLECTION
-
 public class C4DocumentTest extends C4BaseTest {
-    interface Verification {
-        void verify(C4Document doc) throws LiteCoreException;
-    }
-
-    // - "Invalid docID"
 
     @Test
     public void testInvalidDocIDEmpty() throws LiteCoreException { testInvalidDocID(""); }
@@ -53,14 +40,13 @@ public class C4DocumentTest extends C4BaseTest {
         testInvalidDocID(str.toString());
     }
 
-    // - "FleeceDocs"
     @Test
     public void testFleeceDocs() throws LiteCoreException, IOException { loadJsonAsset("names_100.json"); }
 
     private void testInvalidDocID(String docID) throws LiteCoreException {
         c4Database.beginTransaction();
         try {
-            C4Document.create(c4Database, fleeceBody, docID, 0, false, false, new String[0], true, 0, 0);
+            C4TestUtils.create(c4Collection, fleeceBody, docID, 0, false, false, new String[0], true, 0, 0);
             fail();
         }
         catch (LiteCoreException e) {

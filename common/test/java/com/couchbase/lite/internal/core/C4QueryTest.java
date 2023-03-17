@@ -38,12 +38,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
-// !!! SEVERAL OF THESE TESTS DEPEND ON USE OF THE DEFAULT COLLECTION
-
 public class C4QueryTest extends C4QueryBaseTest {
 
     @Before
-    public final void setUpC4QueryTest() throws LiteCoreException, IOException { loadJsonAsset("names_100.json"); }
+    public final void setUpC4QueryTest() throws LiteCoreException, IOException {
+        loadJsonAsset("names_100.json");
+    }
 
     //-------------------------------------------------------------------------
     // tests
@@ -65,12 +65,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query
     @Test
     public void testDBQuery() throws LiteCoreException {
-        compile(json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"));
+        compile("['=', ['.', 'contact', 'address', 'state'], 'CA']");
         assertEquals(
             Arrays.asList("0000001", "0000015", "0000036", "0000043", "0000053", "0000064", "0000072", "0000073"),
             run());
 
-        compile(json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"), "", true);
+        compile("['=', ['.', 'contact', 'address', 'state'], 'CA']", "", true);
         Map<String, Object> params = new HashMap<>();
         params.put("offset", 1);
         params.put("limit", 8);
@@ -83,8 +83,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         params.put("limit", 4);
         assertEquals(Arrays.asList("0000015", "0000036", "0000043", "0000053"), run(params));
 
-        compile(json5(
-            "['AND', ['=', ['array_count()', ['.', 'contact', 'phone']], 2],['=', ['.', 'gender'], 'male']]"));
+        compile(
+            "['AND', ['=', ['array_count()', ['.', 'contact', 'phone']], 2],['=', ['.', 'gender'], 'male']]");
         assertEquals(
             Arrays.asList(
                 "0000002",
@@ -109,14 +109,14 @@ public class C4QueryTest extends C4QueryBaseTest {
             run());
 
         // MISSING means no value is present (at that array index or dict key)
-        compile(json5("['IS', ['.', 'contact', 'phone', [0]], ['MISSING']]"), "", true);
+        compile("['IS', ['.', 'contact', 'phone', [0]], ['MISSING']]", "", true);
         params = new HashMap<>();
         params.put("offset", 0);
         params.put("limit", 4);
         assertEquals(Arrays.asList("0000004", "0000006", "0000008", "0000015"), run(params));
 
         // ...whereas null is a JSON null value
-        compile(json5("['IS', ['.', 'contact', 'phone', [0]], null]"), "", true);
+        compile("['IS', ['.', 'contact', 'phone', [0]], null]", "", true);
         params = new HashMap<>();
         params.put("offset", 0);
         params.put("limit", 4);
@@ -126,10 +126,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query LIKE
     @Test
     public void testDBQueryLIKE() throws LiteCoreException {
-        compile(json5("['LIKE', ['.name.first'], '%j%']"));
+        compile("['LIKE', ['.name.first'], '%j%']");
         assertEquals(Collections.singletonList("0000085"), run());
 
-        compile(json5("['LIKE', ['.name.first'], '%J%']"));
+        compile("['LIKE', ['.name.first'], '%J%']");
         assertEquals(
             Arrays.asList(
                 "0000002",
@@ -146,7 +146,7 @@ public class C4QueryTest extends C4QueryBaseTest {
                 "0000094"),
             run());
 
-        compile(json5("['LIKE', ['.name.first'], 'Jen%']"));
+        compile("['LIKE', ['.name.first'], 'Jen%']");
         assertEquals(Arrays.asList("0000008", "0000028"), run());
     }
 
@@ -154,11 +154,11 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQueryIN() throws LiteCoreException {
         // Type 1: RHS is an expression; generates a call to array_contains
-        compile(json5("['IN', 'reading', ['.', 'likes']]"));
+        compile("['IN', 'reading', ['.', 'likes']]");
         assertEquals(Arrays.asList("0000004", "0000056", "0000064", "0000079", "0000099"), run());
 
         // Type 2: RHS is an array literal; generates a SQL "IN" expression
-        compile(json5("['IN', ['.', 'name', 'first'], ['[]', 'Eddie', 'Verna']]"));
+        compile("['IN', ['.', 'name', 'first'], ['[]', 'Eddie', 'Verna']]");
         assertEquals(Arrays.asList("0000091", "0000093"), run());
     }
 
@@ -166,8 +166,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQuerySorted() throws LiteCoreException {
         compile(
-            json5("['=', ['.', 'contact', 'address', 'state'], 'CA']"),
-            json5("[['.', 'name', 'last']]"));
+            "['=', ['.', 'contact', 'address', 'state'], 'CA']", "[['.', 'name', 'last']]");
         assertEquals(
             Arrays.asList("0000015", "0000036", "0000072", "0000043", "0000001", "0000064", "0000073", "0000053"),
             run());
@@ -176,14 +175,14 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query bindings
     @Test
     public void testDBQueryBindings() throws LiteCoreException {
-        compile(json5("['=', ['.', 'contact', 'address', 'state'], ['$', 1]]"));
+        compile("['=', ['.', 'contact', 'address', 'state'], ['$', 1]]");
         Map<String, Object> params = new HashMap<>();
         params.put("1", "CA");
         assertEquals(
             Arrays.asList("0000001", "0000015", "0000036", "0000043", "0000053", "0000064", "0000072", "0000073"),
             run(params));
 
-        compile(json5("['=', ['.', 'contact', 'address', 'state'], ['$', 'state']]"));
+        compile("['=', ['.', 'contact', 'address', 'state'], ['$', 'state']]");
         params = new HashMap<>();
         params.put("state", "CA");
         assertEquals(
@@ -194,21 +193,21 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query ANY
     @Test
     public void testDBQueryANY() throws LiteCoreException {
-        compile(json5("['ANY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'climbing']]"));
+        compile("['ANY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'climbing']]");
         assertEquals(Arrays.asList("0000017", "0000021", "0000023", "0000045", "0000060"), run());
 
         // This EVERY query has lots of results because every empty `likes` array matches it
-        compile(json5("['EVERY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'taxes']]"));
+        compile("['EVERY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'taxes']]");
         List<String> result = run();
         assertEquals(42, result.size());
         assertEquals("0000007", result.get(0));
 
         // Changing the op to ANY AND EVERY returns no results
-        compile(json5("['ANY AND EVERY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'taxes']]"));
+        compile("['ANY AND EVERY', 'like', ['.', 'likes'], ['=', ['?', 'like'], 'taxes']]");
         assertEquals(Collections.emptyList(), run());
 
         // Look for people where every like contains an L:
-        compile(json5("['ANY AND EVERY', 'like', ['.', 'likes'], ['LIKE', ['?', 'like'], '%l%']]"));
+        compile("['ANY AND EVERY', 'like', ['.', 'likes'], ['LIKE', ['?', 'like'], '%l%']]");
         assertEquals(Arrays.asList("0000017", "0000027", "0000060", "0000068"), run());
     }
 
@@ -218,24 +217,24 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query ANY of dict
     @Test
     public void testDBQueryANYofDict() throws LiteCoreException {
-        compile(json5("['ANY', 'n', ['.', 'name'], ['=', ['?', 'n'], 'Arturo']]"));
+        compile("['ANY', 'n', ['.', 'name'], ['=', ['?', 'n'], 'Arturo']]");
         assertEquals(Collections.singletonList("0000090"), run());
 
-        compile(json5("['ANY', 'n', ['.', 'name'], ['contains()', ['?', 'n'], 'V']]"));
+        compile("['ANY', 'n', ['.', 'name'], ['contains()', ['?', 'n'], 'V']]");
         assertEquals(Arrays.asList("0000044", "0000048", "0000053", "0000093"), run());
     }
 
     // - DB Query expression index
     @Test
     public void testDBQueryExpressionIndex() throws LiteCoreException {
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "length",
             json5("[['length()', ['.name.first']]]"),
             AbstractIndex.QueryLanguage.JSON,
             AbstractIndex.IndexType.VALUE,
             null,
             true);
-        compile(json5("['=', ['length()', ['.name.first']], 9]"));
+        compile("['=', ['length()', ['.name.first']], 9]");
         assertEquals(Arrays.asList("0000015", "0000099"), run());
     }
 
@@ -243,7 +242,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDeleteIndexedDoc() throws LiteCoreException {
         // Create the same index as the above test:
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "length",
             json5("[['length()', ['.name.first']]]"),
             AbstractIndex.QueryLanguage.JSON,
@@ -256,13 +255,13 @@ public class C4QueryTest extends C4QueryBaseTest {
             boolean commit = false;
             c4Database.beginTransaction();
             try {
-                C4Document doc = c4Database.getDefaultCollection().getDocument("0000015");
+                C4Document doc = c4Collection.getDocument("0000015");
                 assertNotNull(doc);
                 String[] history = {doc.getRevID()};
-                C4Document updatedDoc = C4Document.create(
-                    c4Database,
+                C4Document updatedDoc = C4TestUtils.create(
+                    c4Collection,
                     (byte[]) null,
-                    doc.getDocID(),
+                    C4TestUtils.idForDoc(doc),
                     C4Constants.RevisionFlags.DELETED,
                     false,
                     false,
@@ -281,20 +280,19 @@ public class C4QueryTest extends C4QueryBaseTest {
         }
 
         // Now run a query that would have returned the deleted doc, if it weren't deleted:
-        compile(json5("['=', ['length()', ['.name.first']], 9]"));
+        compile("['=', ['length()', ['.name.first']], 9]");
         assertEquals(Collections.singletonList("0000099"), run());
     }
 
     // - Missing columns
     @Test
     public void testMissingColumns() throws LiteCoreException {
-        compileSelect(json5("['SELECT', {'WHAT': [['.name'], ['.gender']], 'LIMIT': 1}]"));
+        compileSelect("'WHAT': [['.name'], ['.gender']], 'LIMIT': 1");
         C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
         while (e.next()) { assertEquals(0x00, e.getMissingColumns()); }
         e.close();
 
-        compileSelect(
-            json5("['SELECT', {'WHAT': [['.XX'], ['.name'], ['.YY'], ['.gender'], ['.ZZ']], 'LIMIT': 1}]"));
+        compileSelect("'WHAT': [['.XX'], ['.name'], ['.YY'], ['.gender'], ['.ZZ']], 'LIMIT': 1");
         e = runQuery(query, new C4QueryOptions());
         while (e.next()) { assertEquals(0x15, e.getMissingColumns()); }
         e.close();
@@ -305,14 +303,14 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text query
     @Test
     public void testFullTextQuery() throws LiteCoreException {
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
             AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        compile(json5("['MATCH()', 'byStreet', 'Hwy']"));
+        compile("['MATCH()', 'byStreet', 'Hwy']");
         assertEquals(
             Arrays.asList(
                 Collections.singletonList(new C4FullTextMatch(13L, 0L, 0L, 10L, 3L)),
@@ -327,7 +325,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text multiple properties
     @Test
     public void testFullTextMultipleProperties() throws LiteCoreException {
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "byAddress",
             "[[\".contact.address.street\"], [\".contact.address.city\"], [\".contact.address.state\"]]",
             AbstractIndex.QueryLanguage.JSON,
@@ -336,7 +334,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             true);
 
         // Some docs match 'Santa' in the street name, some in the city name
-        compile(json5("['MATCH()', 'byAddress', 'Santa']"));
+        compile("['MATCH()', 'byAddress', 'Santa']");
         assertEquals(
             Arrays.asList(
                 Collections.singletonList(new C4FullTextMatch(15L, 1L, 0L, 0L, 5L)),
@@ -347,7 +345,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             runFTS());
 
         // Search only the street name:
-        compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa']"));
+        compile("['MATCH()', 'byAddress', 'contact.address.street:Santa']");
         assertEquals(
             Arrays.asList(
                 Collections.singletonList(new C4FullTextMatch(44L, 0L, 0L, 3L, 5L)),
@@ -356,7 +354,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             runFTS());
 
         // Search for 'Santa' in the street name, and 'Saint' in either:
-        compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa Saint']"));
+        compile("['MATCH()', 'byAddress', 'contact.address.street:Santa Saint']");
         assertEquals(
             Collections.singletonList(
                 Arrays.asList(
@@ -366,7 +364,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             runFTS());
 
         // Search for 'Santa' in the street name, _or_ 'Saint' in either:
-        compile(json5("['MATCH()', 'byAddress', 'contact.address.street:Santa OR Saint']"));
+        compile("['MATCH()', 'byAddress', 'contact.address.street:Santa OR Saint']");
         assertEquals(
             Arrays.asList(
                 Collections.singletonList(new C4FullTextMatch(20L, 1L, 1L, 0L, 5L)),
@@ -383,21 +381,21 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Multiple Full-text indexes
     @Test
     public void testMultipleFullTextIndexes() throws LiteCoreException {
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
             AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "byCity",
             "[[\".contact.address.city\"]]",
             AbstractIndex.QueryLanguage.JSON,
             AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        compile(json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]"));
+        compile("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]");
         assertEquals(Collections.singletonList("0000015"), run());
         assertEquals(
             Collections.singletonList(Collections.singletonList(new C4FullTextMatch(15L, 0L, 0L, 11L, 3L))),
@@ -407,22 +405,22 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text query in multiple ANDs
     @Test
     public void testFullTextQueryInMultipleANDs() throws LiteCoreException {
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
             AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "byCity",
             "[[\".contact.address.city\"]]",
             AbstractIndex.QueryLanguage.JSON,
             AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        compile(json5(
-            "['AND',['AND',['=',['.gender'],'male'],['MATCH()','byCity','Santa']],['=',['.name.first'],'Cleveland']]"));
+        compile("['AND',['AND',['=',['.gender'],'male'],"
+            + "['MATCH()','byCity','Santa']],['=',['.name.first'],'Cleveland']]");
         assertEquals(Collections.singletonList("0000015"), run());
         assertEquals(
             Collections.singletonList(Collections.singletonList(new C4FullTextMatch(15L, 0L, 0L, 0L, 5L))),
@@ -433,7 +431,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testMultipleFullTextQueries() throws LiteCoreException {
         // You can't query the same FTS index multiple times in a query (says SQLite)
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
@@ -442,7 +440,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             true);
         try {
             c4Database.createJsonQuery(
-                json5("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]"));
+                "['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byStreet', 'Blvd']]");
         }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
@@ -454,7 +452,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testBuriedFullTextQueries() throws LiteCoreException {
         // You can't put an FTS match inside an expression other than a top-level AND (says SQLite)
-        c4Database.getDefaultCollection().createIndex(
+        c4Collection.createIndex(
             "byStreet",
             "[[\".contact.address.street\"]]",
             AbstractIndex.QueryLanguage.JSON,
@@ -463,7 +461,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             true);
         try {
             c4Database.createJsonQuery(
-                json5("['OR', ['MATCH()', 'byStreet', 'Hwy'], ['=', ['.', 'contact', 'address', 'state'], 'CA']]"));
+                "['OR', ['MATCH()', 'byStreet', 'Hwy'], ['=', ['.', 'contact', 'address', 'state'], 'CA']]");
         }
         catch (LiteCoreException e) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain);
@@ -478,9 +476,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testDBQueryWHAT() throws LiteCoreException {
         List<String> expectedFirst = Arrays.asList("Cleveland", "Georgetta", "Margaretta");
         List<String> expectedLast = Arrays.asList("Bejcek", "Kolding", "Ogwynn");
-        compileSelect(json5(
-            "{WHAT: ['.name.first', '.name.last'], "
-                + "WHERE: ['>=', ['length()', ['.name.first']], 9],ORDER_BY: [['.name.first']]}"));
+        compileSelect(
+            "WHAT:['.name.first', '.name.last'],"
+                + "WHERE: ['>=', ['length()', ['.name.first']], 9],"
+                + "ORDER_BY: [['.name.first']]");
 
         assertEquals(2, query.getColumnCount());
 
@@ -503,8 +502,8 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testDBQueryWHATReturningObject() throws LiteCoreException {
         List<String> expectedFirst = Arrays.asList("Cleveland", "Georgetta", "Margaretta");
         List<String> expectedLast = Arrays.asList("Bejcek", "Kolding", "Ogwynn");
-        compileSelect(json5(
-            "{WHAT: ['.name'], WHERE: ['>=', ['length()', ['.name.first']], 9], ORDER_BY: [['.name.first']]}"));
+        compileSelect("WHAT: ['.name'], WHERE: ['>=', ['length()', ['.name.first']], 9], "
+            + "ORDER_BY: [['.name.first']]");
         assertEquals(1, query.getColumnCount());
 
         C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
@@ -526,7 +525,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query Aggregate
     @Test
     public void testDBQueryAggregate() throws LiteCoreException {
-        compileSelect(json5("{WHAT: [['min()', ['.name.last']], ['max()', ['.name.last']]]}"));
+        compileSelect("WHAT: [['min()', ['.name.last']], ['max()', ['.name.last']]]");
 
         C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
         assertNotNull(e);
@@ -551,9 +550,9 @@ public class C4QueryTest extends C4QueryBaseTest {
         final List<String> expectedMax = Arrays.asList("Mulneix", "Schmith", "Kinatyan", "Visnic");
         final int expectedRowCount = 42;
 
-        compileSelect(json5(
-            "{WHAT: [['.contact.address.state'], ['min()', ['.name.last']], ['max()', ['.name.last']]],"
-                + "GROUP_BY: [['.contact.address.state']]}"));
+        compileSelect(
+            "WHAT: [['.contact.address.state'], ['min()', ['.name.last']], ['max()', ['.name.last']]],"
+                + "GROUP_BY: [['.contact.address.state']]");
 
         C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
         assertNotNull(e);
@@ -574,16 +573,22 @@ public class C4QueryTest extends C4QueryBaseTest {
     }
 
     // - DB Query Join
+    // @formatter:off
     @Test
     public void testDBQueryJoin() throws IOException, LiteCoreException {
         loadJsonAsset("states_titlecase_line.json", "state-");
         List<String> expectedFirst = Arrays.asList("Cleveland", "Georgetta", "Margaretta");
         List<String> expectedState = Arrays.asList("California", "Ohio", "South Dakota");
-        compileSelect(json5(
-            "{WHAT: ['.person.name.first', '.state.name'],"
-                + "FROM: [{as:'person'},{as:'state',on:['=',['.state.abbreviation'],['.person.contact.address"
-                + ".state']]}],"
-                + "WHERE: ['>=', ['length()', ['.person.name.first']], 9],ORDER_BY: [['.person.name.first']]}"));
+        query = c4Database.createJsonQuery(json5(
+            "{ 'WHAT': [ '.person.name.first', '.state.name' ],"
+                + "  'FROM': ["
+                + "    { 'COLLECTION': '" + c4Collection.getScope() + "." + c4Collection.getName() + "', 'AS': 'person' },"
+                + "    { 'COLLECTION': '" + c4Collection.getScope() + "." + c4Collection.getName() + "', 'AS': 'state',"
+                + "       'ON': [ '=', [ '.state.abbreviation' ], [ '.person.contact.address.state' ] ] }"
+                + "  ],"
+                + "  'WHERE': [ '>=', [ 'length()', [ '.person.name.first' ] ], 9 ],"
+                + "  'ORDER_BY': [ [ '.person.name.first' ] ]"
+                + "}"));
         C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
         assertNotNull(e);
         int i = 0;
@@ -599,6 +604,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         e.close();
         assertEquals(3, i);
     }
+    // @formatter:on
 
     // - DB Query ANY nested
     // NOTE: in C4NestedQueryTest

@@ -7,7 +7,6 @@ import java.util.Set;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Database;
-import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
 @SuppressWarnings("PMD.TooManyMethods")
@@ -47,10 +46,6 @@ public class NativeC4Database implements C4Database.NativeImpl {
     @Override
     public byte[] nGetPublicUUID(long db) throws LiteCoreException { return getPublicUUID(db); }
 
-    @NonNull
-    @Override
-    public byte[] nGetPrivateUUID(long db) throws LiteCoreException { return getPrivateUUID(db); }
-
     @Override
     public void nBeginTransaction(long db) throws LiteCoreException { beginTransaction(db); }
 
@@ -75,12 +70,6 @@ public class NativeC4Database implements C4Database.NativeImpl {
 
     @Override
     public long nGetSharedFleeceEncoder(long db) { return getSharedFleeceEncoder(db); }
-
-    @NonNull
-    @Override
-    public FLSliceResult nEncodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException {
-        return encodeJSON(db, jsonData);
-    }
 
     @Override
     public long nGetFLSharedKeys(long db) { return getFLSharedKeys(db); }
@@ -146,9 +135,6 @@ public class NativeC4Database implements C4Database.NativeImpl {
     @NonNull
     private static native byte[] getPublicUUID(long db) throws LiteCoreException;
 
-    @NonNull
-    private static native byte[] getPrivateUUID(long db) throws LiteCoreException;
-
     // - Transactions
 
     private static native void beginTransaction(long db) throws LiteCoreException;
@@ -174,9 +160,6 @@ public class NativeC4Database implements C4Database.NativeImpl {
     private static native long getSharedFleeceEncoder(long db);
 
     private static native long getFLSharedKeys(long db);
-
-    @NonNull
-    private static native FLSliceResult encodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
 
     // - Scopes and Collections
 

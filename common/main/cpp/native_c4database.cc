@@ -185,24 +185,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPublicUUID(JNIEnv
     return toJByteArray(env, s);
 }
 
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    getPrivateUUID
- * Signature: (J)[B
- */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPrivateUUID(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4UUID uuid;
-
-    C4Error error{};
-    bool res = c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error);
-    if (!res && error.code != 0)
-        throwError(env, error);
-
-    C4Slice s = {&uuid, sizeof(uuid)};
-    return toJByteArray(env, s);
-}
-
 
 // - Transactions
 
@@ -372,29 +354,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getSharedFleeceEncod
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getFLSharedKeys(JNIEnv *env, jclass ignore, jlong db) {
     return (jlong) c4db_getFLSharedKeys((C4Database *) db);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    encodeJSON
- * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
- */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON(
-        JNIEnv *env,
-        jclass ignore,
-        jlong db,
-        jbyteArray jbody) {
-    jbyteArraySlice body(env, jbody, false);
-
-    C4Error error{};
-    C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
-    if (!res && error.code != 0) {
-        throwError(env, error);
-        return nullptr;
-    }
-
-    return toJavaFLSliceResult(env, res);
 }
 
 // - Scopes and Collections

@@ -34,8 +34,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 
-// !!! MAKE COLLECTION SAVVY
-
 /**
  * Ported from c4AllDocsPerformanceTest.cc
  */
@@ -66,7 +64,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                     list.add("1-deadbeefcafebabe80081e50");
                     String[] history = list.toArray(new String[0]);
                     C4Document doc
-                        = C4Document.create(c4Database, json2fleece(json), docID, 0, true, false, history, true, 0, 0);
+                        = C4TestUtils.create(c4Collection, json2fleece(json), docID, 0, true, false, history, true, 0, 0);
                     assertNotNull(doc);
                     doc.close();
                 }
@@ -78,7 +76,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
 
-        assertEquals(DOC_NUM, c4Database.getDefaultCollection().getDocumentCount());
+        assertEquals(DOC_NUM, c4Collection.getDocumentCount());
     }
 
     // - AllDocsPerformance
@@ -91,7 +89,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         // No start or end ID:
         int iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT;
         iteratorFlags &= ~C4Constants.EnumeratorFlags.INCLUDE_BODIES;
-        C4DocEnumerator e = enumerateAllDocs(c4Database, iteratorFlags);
+        C4TestUtils.C4DocEnumerator e = C4TestUtils.enumerateDocsForCollection(c4Collection, iteratorFlags);
         C4Document doc;
         int i = 0;
         while ((doc = nextDocument(e)) != null) {
@@ -104,7 +102,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         Report.log("Enumerating %d docs took %.3f ms (%.3f ms/doc)", i, elapsed, elapsed / i);
     }
 
-    private C4Document nextDocument(C4DocEnumerator e) throws LiteCoreException {
+    private C4Document nextDocument(C4TestUtils.C4DocEnumerator e) throws LiteCoreException {
         return e.next() ? e.getDocument() : null;
     }
 }

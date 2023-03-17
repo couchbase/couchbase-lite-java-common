@@ -34,6 +34,7 @@ import com.couchbase.lite.FileLogger;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.Logger;
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 
@@ -322,6 +323,7 @@ public final class Log {
     }
 
     private static boolean shouldLog(@NonNull LogLevel logLevel) {
+        if ((LogLevel.VERBOSE.compareTo(logLevel) >= 0) && !CouchbaseLiteInternal.debugging()) { return false; }
         final LogLevel callbackLevel = C4Log.get().getCallbackLevel();
         final LogLevel fileLogLevel = Database.log.getFile().getLevel();
         return ((callbackLevel.compareTo(fileLogLevel) < 0) ? callbackLevel : fileLogLevel).compareTo(logLevel) <= 0;

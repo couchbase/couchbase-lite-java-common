@@ -97,14 +97,6 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    getPrivateUUID
- * Signature: (J)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPrivateUUID
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    beginTransaction
  * Signature: (J)V
  */
@@ -142,14 +134,6 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Dat
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getSharedFleeceEncoder
         (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    encodeJSON
- * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
- */
-JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_encodeJSON
-        (JNIEnv *, jclass, jlong, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
