@@ -46,7 +46,35 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
+ * A <code>Collection</code> is a container for documents similar to aa table in a relational
+ * database. Collections are grouped into namespaces called `scope`s and have a
+ * unique name within that scope.
  *
+ * <p>Every database contains a default collection named `_default` in the default
+ * scope also named `_default` (the constant `Collection.DEFAULT_NAME`)
+ *
+ * <p>While creating a new collection requires the name of the collection name
+ * and the name of its scope name, there are convenience methods that take only
+ * the name of the collection and create the collection in the default scope.
+ *
+ * <p>The naming rules for collections and scopes are as follows:
+ * <ul>
+ * <li> Must be between 1 and 251 characters in length.
+ * <li> Can only contain the characters A-Z, a-z, 0-9, and the symbols _, -, and %.
+ * <li> Cannot start with _ or %.
+ * <li> Both scope and collection names are case sensitive.
+ * </ul>
+ *
+ * <code>Collection</code> objects are only valid during the time the database that
+ * contains them is open.  An attempt to use a collection that belongs to a closed
+ * database will throw an <code>IllegalStateException</code>.
+ * An application can hold references to multiple instances of a single database.
+ * Under these circumstances, it is possible that a collection will be deleted in
+ * one instance before an attempt to use it in another.  Such an attempt will
+ * also cause an <code>IllegalStateException</code> to be thrown.
+ * <p><code>Collection</code>s are <code>AutoCloseable</code>.  While garbage
+ * collection will manage them correctly, developers are strongly encouraged to
+ * to use them in try-with-resources blocks or to close them explicitly, after use.
  */
 // A considerable amount of code depends on this class being immutable!
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
@@ -165,6 +193,7 @@ public final class Collection extends BaseCollection
      * Gets an existing Document object with the given ID. If the document with the given ID doesn't
      * exist in the collection, the value returned will be null.
      * <p>
+     *
      * @param id the document id
      * @return the Document object or null
      * @throws CouchbaseLiteException if the database is closed, the collection has been deleted, etc.
@@ -426,7 +455,7 @@ public final class Collection extends BaseCollection
     /**
      * Add an index to the collection.
      *
-     * @param name  index name
+     * @param name   index name
      * @param config index configuration
      * @throws CouchbaseLiteException on failure
      */
@@ -437,7 +466,7 @@ public final class Collection extends BaseCollection
     /**
      * Add an index to the collection.
      *
-     * @param name   index name
+     * @param name  index name
      * @param index index configuration
      * @throws CouchbaseLiteException on failure
      */
