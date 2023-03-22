@@ -1584,7 +1584,6 @@ public class QueryTest extends BaseQueryTest {
         verifyQuery(query, 1, (n, result) -> assertEquals(100L, (long) result.getValue(0)));
     }
 
-    @Ignore("Doesn't test anything")
     @Test
     public void testJoinWithArrayContains() {
         // Data preparation

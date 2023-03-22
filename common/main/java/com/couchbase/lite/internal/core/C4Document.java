@@ -63,63 +63,6 @@ public final class C4Document extends C4NativePeer {
         return new C4Document(getFromCollection(coll.getPeer(), docID, false, true));
     }
 
-    @VisibleForTesting
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    @NonNull
-    static C4Document create(
-        @NonNull C4Database db,
-        @NonNull byte[] body,
-        @NonNull String docID,
-        int revFlags,
-        boolean existingRevision,
-        boolean allowConflict,
-        @NonNull String[] history,
-        boolean save,
-        int maxRevTreeDepth,
-        int remoteDBID)
-        throws LiteCoreException {
-        return new C4Document(put(
-            db.getPeer(),
-            body,
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID));
-    }
-
-    @VisibleForTesting
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    @NonNull
-    static C4Document create(
-        @NonNull C4Database db,
-        @NonNull FLSliceResult body, // C4Slice*
-        @NonNull String docID,
-        int revFlags,
-        boolean existingRevision,
-        boolean allowConflict,
-        @NonNull String[] history,
-        boolean save,
-        int maxRevTreeDepth,
-        int remoteDBID)
-        throws LiteCoreException {
-        return new C4Document(put2(
-            db.getPeer(),
-            body.getBase(),
-            body.getSize(),
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID));
-    }
-
     //-------------------------------------------------------------------------
     // Static Utility Methods
     //-------------------------------------------------------------------------
@@ -259,10 +202,6 @@ public final class C4Document extends C4NativePeer {
     // package protected methods
     //-------------------------------------------------------------------------
 
-    @VisibleForTesting
-    @Nullable
-    String getDocID() { return withPeerOrNull(C4Document::getDocID); }
-
     private int getFlags() { return withPeerOrDefault(0, C4Document::getFlags); }
 
     //-------------------------------------------------------------------------
@@ -333,42 +272,4 @@ public final class C4Document extends C4NativePeer {
     // - Utility
 
     private static native boolean dictContainsBlobs(long dictPtr, long dictSize, long sk);
-
-    // - Testing
-    // None of these methods may be used in production code.
-
-    // !!! Deprecated
-    private static native long create(long db, String docID, byte[] body, int flags) throws LiteCoreException;
-
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    private static native long put(
-        long db,
-        byte[] body,
-        String docID,
-        int revFlags,
-        boolean existingRevision,
-        boolean allowConflict,
-        String[] history,
-        boolean save,
-        int maxRevTreeDepth,
-        int remoteDBID)
-        throws LiteCoreException;
-
-    @SuppressWarnings("PMD.ExcessiveParameterList")
-    private static native long put2(
-        long db,
-        long bodyPtr,
-        long bodySize,
-        String docID,
-        int revFlags,
-        boolean existingRevision,
-        boolean allowConflict,
-        String[] history,
-        boolean save,
-        int maxRevTreeDepth,
-        int remoteDBID)
-        throws LiteCoreException;
-
-    @NonNull
-    private static native String getDocID(long doc);
 }

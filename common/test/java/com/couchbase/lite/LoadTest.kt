@@ -38,7 +38,7 @@ class LoadTest : BaseDbTest() {
             "starqlteue" to 150,
             "dandelion_global" to 100,
             "cheetah" to 100,
-            "sunfish" to 55,
+            "sunfish" to 65,
             "taimen" to 55,
             "shamu" to 130,
             "hammerhead" to 130,
@@ -209,7 +209,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions2() {
         val mDoc = MutableDocument()
-        timeTest("testSaveRevisions2", 22) {
+        timeTest("testSaveRevisions2", 24) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)

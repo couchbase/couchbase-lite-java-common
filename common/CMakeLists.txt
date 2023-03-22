@@ -60,7 +60,6 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4blobstore.cc
     ${JNI_SRC}/native_c4collection.cc
     ${JNI_SRC}/native_c4database.cc
-    ${JNI_SRC}/native_c4docenumerator.cc
     ${JNI_SRC}/native_c4document.cc
     ${JNI_SRC}/native_c4fulltextmatch.cc
     ${JNI_SRC}/native_c4listener.cc
@@ -71,6 +70,7 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4rawdocument.cc
     ${JNI_SRC}/native_c4replicator.cc
     ${JNI_SRC}/native_c4socket.cc
+    ${JNI_SRC}/native_c4testutils.cc
     ${JNI_SRC}/native_fleece.cc
     ${JNI_SRC}/native_flencoder.cc
     ${JNI_SRC}/native_glue.cc

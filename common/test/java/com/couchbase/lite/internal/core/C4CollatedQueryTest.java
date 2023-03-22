@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.VerySlowTest;
 
 import static org.junit.Assert.assertEquals;
@@ -36,27 +35,56 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     }
 
     // @formatter:off
-    @VerySlowTest
-    @Test
-    public void testDBQueryCollated() throws LiteCoreException {
-        String json = "{WHAT: [ ['.Name'] ], "
-            + "WHERE: ['COLLATE', {'unicode': true, 'case': false, 'diacritic': false}, ['=', ['.Artist'], 'Benoît Pioulard']], "
-            + "ORDER_BY: [ ['COLLATE', {'unicode': true, 'case': false, 'diacritic': false}, ['.Name']] ]}";
-        Report.log("COLLATED QUERY: " + json);
-        compileSelect(json5(json));
-        List<String> tracks = run();
-        assertEquals(2, tracks.size());
-    }
-    // @formatter:on
+  @VerySlowTest
+  @Test
+  public void testDBQueryCollated() throws LiteCoreException {
+    compileSelect(""
+      + "\"WHAT\": [ [ \".Name\" ] ],"
+      + "\"WHERE\": [ \"COLLATE\", {"
+      + "    \"unicode\": true,"
+      + "    \"case\": false,"
+      + "    \"diacritic\": false"
+      + "  },"
+      + "  [ \"=\","
+      + "    [ \".Artist\" ],"
+      + "    \"Beno\\u00eet Pioulard\""
+      + "  ]"
+      + "],"
+      + "\"ORDER_BY\": ["
+      + "  [ \"COLLATE\", {"
+      + "    \"unicode\": true,"
+      + "    \"case\": false,"
+      + "    \"diacritic\": false"
+      + "  },"
+      + "  [ \".Name\" ]"
+      + "]]");
+
+    List<String> tracks = run();
+    assertEquals(2, tracks.size());
+  }
+  // @formatter:on
 
     @VerySlowTest
     @Test
     public void testDBQueryAggregateCollated() throws LiteCoreException {
-        String json = "{WHAT: [ ['COLLATE', {'unicode': true, 'case': false, 'diacritic': false}, ['.Artist']] ], "
-            + "DISTINCT: true, "
-            + "ORDER_BY: [ ['COLLATE', {'unicode': true, 'case': false, 'diacritic': false}, ['.Artist']] ]}";
-        Report.log("COLLATED QUERY: " + json);
-        compileSelect(json5(json));
+        compileSelect(
+            "\"WHAT\": [ ["
+            + "    \"COLLATE\", {"
+            + "      \"unicode\": true,"
+            + "      \"case\": false,"
+            + "      \"diacritic\": false"
+            + "    },"
+            + "    [ \".Artist\" ]"
+            + "    ] ],"
+            + "  \"DISTINCT\": true,"
+            + "  \"ORDER_BY\": [ ["
+            + "    \"COLLATE\", {"
+            + "    \"unicode\": true,"
+            + "    \"case\": false,"
+            + "    \"diacritic\": false"
+            + "  },"
+            + "  [ \".Artist\" ]"
+            + "] ]");
         List<String> artists = run();
         assertEquals(2097, artists.size());
 

@@ -53,10 +53,8 @@ public class C4BaseTest extends BaseTest {
     public static final long MOCK_PEER = 500005L;
     public static final long MOCK_TOKEN = 0xba5eba11;
 
-    public static final String DOC_ID = "mydoc";
     public static final String REV_ID_1 = "1-abcd";
     public static final String REV_ID_2 = "2-c001d00d";
-    public static final String REV_ID_3 = "3-deadbeef";
 
     public static C4Document getDocumentOrEmpty(@Nullable C4Collection collection, @NonNull String docId)
         throws LiteCoreException {
@@ -65,6 +63,7 @@ public class C4BaseTest extends BaseTest {
     }
 
     protected C4Database c4Database;
+    protected C4Collection c4Collection;
 
     protected String dbParentDirPath;
     protected String dbName;
@@ -90,6 +89,10 @@ public class C4BaseTest extends BaseTest {
                 C4Constants.EncryptionAlgorithm.NONE,
                 null);
 
+            c4Collection = c4Database.addCollection(
+                getUniqueName("c4_test_collection"),
+                getUniqueName("c4_test_scope"));
+
             Map<String, Object> body = new HashMap<>();
             body.put("ans*wer", 42);
             fleeceBody = createFleeceBody(body);
@@ -100,6 +103,10 @@ public class C4BaseTest extends BaseTest {
 
     @After
     public final void tearDownC4BaseTest() throws LiteCoreException {
+        final C4Collection coll = c4Collection;
+        c4Collection = null;
+        if (coll != null) { coll.close(); }
+
         final C4Database db = c4Database;
         c4Database = null;
         if (db != null) { db.closeDb(); }
@@ -109,20 +116,6 @@ public class C4BaseTest extends BaseTest {
 
     protected int getFlags() { return C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.SHARED_KEYS; }
 
-    protected C4DocEnumerator enumerateAllDocs(C4Database db, int flags) throws LiteCoreException {
-        return new C4DocEnumerator(db.getPeer(), flags);
-    }
-
-    protected void createRev(String docID, String revID, byte[] body) throws LiteCoreException {
-        createRev(docID, revID, body, 0);
-    }
-
-    protected void createRev(C4Database db, String docID, String revID, byte[] body)
-        throws LiteCoreException {
-        createRev(db, docID, revID, body, 0);
-    }
-
-
     protected long loadJsonAsset(String name) throws LiteCoreException, IOException {
         return loadJsonAsset(name, "");
     }
@@ -131,11 +124,6 @@ public class C4BaseTest extends BaseTest {
         try (InputStream is = PlatformUtils.getAsset(name)) {
             return loadJsonAsset(is, idPrefix, 120, true);
         }
-    }
-
-    protected void createRev(String docID, String revID, byte[] body, int flags)
-        throws LiteCoreException {
-        createRev(this.c4Database, docID, revID, body, flags);
     }
 
     protected void reopenDB() throws LiteCoreException {
@@ -165,7 +153,7 @@ public class C4BaseTest extends BaseTest {
         boolean commit = false;
         c4Database.beginTransaction();
         try {
-            FLSliceResult body = c4Database.encodeJSON(json5(json));
+            FLSliceResult body = C4TestUtils.encodeJSONInDb(c4Database, json5(json));
             byte[] bytes = body.getContent();
             commit = true;
             return bytes;
@@ -187,23 +175,34 @@ public class C4BaseTest extends BaseTest {
         return json;
     }
 
-    /**
-     * @param flags C4RevisionFlags
-     *              <p>
-     *              !!! CONVERT TO BE COLLECTION SAVVY
-     */
-    private void createRev(C4Database db, String docID, String revID, byte[] body, int flags)
+    protected void createRev(String docID, String revID, byte[] body) throws LiteCoreException {
+        createRev(docID, revID, body, 0);
+    }
+
+    protected void createRev(C4Collection coll, String docID, String revID, byte[] body)
+        throws LiteCoreException {
+        createRev(coll, docID, revID, body, 0);
+    }
+
+    protected void createRev(String docID, String revID, byte[] body, int flags)
+        throws LiteCoreException {
+        createRev(c4Collection, docID, revID, body, flags);
+    }
+
+    private void createRev(C4Collection coll, String docID, String revID, byte[] body, int flags)
         throws LiteCoreException {
         boolean commit = false;
+
+        C4Database db = coll.getDb();
         db.beginTransaction();
         try {
-            C4Document curDoc = getDocumentOrEmpty(db.getDefaultCollection(), docID);
+            C4Document curDoc = getDocumentOrEmpty(coll, docID);
             assertNotNull(curDoc);
             List<String> revIDs = new ArrayList<>();
             revIDs.add(revID);
             if (curDoc.getRevID() != null) { revIDs.add(curDoc.getRevID()); }
             String[] history = revIDs.toArray(new String[0]);
-            C4Document doc = C4Document.create(db, body, docID, flags, true, false, history, true, 0, 0);
+            C4Document doc = C4TestUtils.create(coll, body, docID, flags, true, false, history, true, 0, 0);
             assertNotNull(doc);
             doc.close();
             curDoc.close();
@@ -230,9 +229,9 @@ public class C4BaseTest extends BaseTest {
                 String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
 
                 // Don't try to autoclose this: See C4Document.close(), in
-                C4Document doc = C4Document.create(
-                    c4Database,
-                    c4Database.encodeJSON(l),
+                C4Document doc = C4TestUtils.create(
+                    c4Collection,
+                    C4TestUtils.encodeJSONInDb(c4Database, l),
                     docID,
                     0,
                     false,

@@ -49,23 +49,23 @@ class C4CollectionObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(coll.peer, { i++ }).use { obs ->
                 assertEquals(0, i)
-                createRev(c4Database, "A", "1-aa", fleeceBody)
+                createRev(coll, "A", "1-aa", fleeceBody)
                 assertEquals(1, i)
-                createRev(c4Database, "B", "1-bb", fleeceBody)
+                createRev(coll, "B", "1-bb", fleeceBody)
                 assertEquals(1, i)
 
                 checkChanges(obs, arrayListOf("A", "B"), arrayListOf("1-aa", "1-bb"), false)
 
-                createRev(c4Database, "B", "2-bbbb", fleeceBody)
+                createRev(coll, "B", "2-bbbb", fleeceBody)
                 assertEquals(2, i)
-                createRev(c4Database, "C", "1-cc", fleeceBody)
+                createRev(coll, "C", "1-cc", fleeceBody)
                 assertEquals(2, i)
 
                 checkChanges(obs, arrayListOf("B", "C"), arrayListOf("2-bbbb", "1-cc"), false)
             }
 
-            //no call back if observer is closed
-            createRev(c4Database, "A", "2-aaaa", fleeceBody)
+            // no call back if observer is closed
+            createRev(coll, "A", "2-aaaa", fleeceBody)
             assertEquals(2, i)
         }
     }
@@ -77,12 +77,13 @@ class C4CollectionObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(coll.peer, { i++ }).use { obs ->
 
-                val otherDb =
+                val otherColl =
                     C4Database.getDatabase(dbParentDirPath, dbName, flags, C4Constants.EncryptionAlgorithm.NONE, null)
+                        .getCollection(coll.name, coll.scope)
 
-                createRev(otherDb, "c", "1-cc", fleeceBody)
-                createRev(otherDb, "d", "1-dd", fleeceBody)
-                createRev(otherDb, "e", "1-ee", fleeceBody)
+                createRev(otherColl, "c", "1-cc", fleeceBody)
+                createRev(otherColl, "d", "1-dd", fleeceBody)
+                createRev(otherColl, "e", "1-ee", fleeceBody)
 
                 assertEquals(1, i)
                 checkChanges(obs, arrayListOf("c", "d", "e"), arrayListOf("1-cc", "1-dd", "1-ee"), true)
@@ -99,14 +100,14 @@ class C4CollectionObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(coll.peer, { i++ }).use { obs1 ->
                 C4CollectionObserver.newObserver(coll.peer, { j++ }).use { obs2 ->
-                    createRev(c4Database, "A", "1-aa", fleeceBody)
+                    createRev(coll, "A", "1-aa", fleeceBody)
                     assertEquals(1, i)
                     assertEquals(1, j)
 
                     checkChanges(obs1, arrayListOf("A"), arrayListOf("1-aa"), false)
                     checkChanges(obs2, arrayListOf("A"), arrayListOf("1-aa"), false)
 
-                    createRev(c4Database, "A", "2-aaaa", fleeceBody)
+                    createRev(coll, "A", "2-aaaa", fleeceBody)
                     assertEquals(2, i)
                     assertEquals(2, j)
 

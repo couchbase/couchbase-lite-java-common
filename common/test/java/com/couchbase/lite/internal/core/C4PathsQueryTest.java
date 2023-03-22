@@ -35,13 +35,13 @@ public class C4PathsQueryTest extends C4QueryBaseTest {
     @Test
     public void testDBQueryANYwPaths() throws LiteCoreException {
         // For https://github.com/couchbase/couchbase-lite-core/issues/238
-        compile(json5("['ANY','path',['.paths'],['=',['?path','city'],'San Jose']]"));
+        compile("['ANY','path',['.paths'],['=',['?path','city'],'San Jose']]");
         assertEquals(Arrays.asList("0000001"), run());
 
-        compile(json5("['ANY','path',['.paths'],['=',['?path.city'],'San Jose']]"));
+        compile("['ANY','path',['.paths'],['=',['?path.city'],'San Jose']]");
         assertEquals(Arrays.asList("0000001"), run());
 
-        compile(json5("['ANY','path',['.paths'],['=',['?path','city'],'Palo Alto']]"));
+        compile("['ANY','path',['.paths'],['=',['?path','city'],'Palo Alto']]");
         assertEquals(Arrays.asList("0000001", "0000002"), run());
     }
 }

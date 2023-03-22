@@ -38,12 +38,16 @@ public class C4QueryBaseTest extends C4BaseTest {
         if (query != null) { query.close(); }
     }
 
-    protected final void compileSelect(String queryStr) throws LiteCoreException {
+    protected final void compileSelect(String json) throws LiteCoreException {
         if (query != null) {
             query.close();
             query = null;
         }
-        query = c4Database.createJsonQuery(queryStr);
+
+        json = "{'FROM': [{'COLLECTION':'" + c4Collection.getScope() + "." + c4Collection.getName() + "'}],"
+            + json + "}";
+
+        query = c4Database.createJsonQuery(json5(json));
         assertNotNull(query);
     }
 
@@ -55,21 +59,23 @@ public class C4QueryBaseTest extends C4BaseTest {
 
     protected final void compile(String whereExpr, String sortExpr, boolean addOffsetLimit)
         throws LiteCoreException {
-        StringBuilder json = new StringBuilder();
-        json.append("[\"SELECT\", {\"WHERE\": ");
+        StringBuilder json = new StringBuilder("{'FROM': [ {'COLLECTION':'");
+        json.append(c4Collection.getScope()).append(".");
+        json.append(c4Collection.getName()).append("'}],");
+        json.append("\"WHERE\": ");
         json.append(whereExpr);
         if (sortExpr != null && sortExpr.length() > 0) {
             json.append(", \"ORDER_BY\": ");
             json.append(sortExpr);
         }
         if (addOffsetLimit) { json.append(", \"OFFSET\": [\"$offset\"], \"LIMIT\":  [\"$limit\"]"); }
-        json.append("}]");
+        json.append("}");
 
         if (query != null) {
             query.close();
             query = null;
         }
-        query = c4Database.createJsonQuery(json.toString());
+        query = c4Database.createJsonQuery(json5(json.toString()));
         assertNotNull(query);
     }
 

@@ -164,11 +164,11 @@ class ReplicatorWorker(appContext: Context, params: WorkerParameters) : Coroutin
     }
 
     private fun getFactory(factoryClass: String?): WorkManagerReplicatorFactory {
-        factoryClass ?: throw java.lang.IllegalArgumentException("Factory class name is null")
+        factoryClass ?: throw IllegalArgumentException("Factory class name is null")
         try {
             return (Class.forName(factoryClass).newInstance() as WorkManagerReplicatorFactory)
         } catch (e: Exception) {
-            throw java.lang.IllegalStateException("Failed creating factory ${factoryClass}", e)
+            throw IllegalStateException("Failed creating factory ${factoryClass}", e)
         }
     }
 
