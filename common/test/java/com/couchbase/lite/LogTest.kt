@@ -17,6 +17,7 @@ package com.couchbase.lite
 
 import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.core.C4Log
+import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.core.impl.NativeC4Log
 import com.couchbase.lite.internal.support.Log
@@ -540,7 +541,7 @@ class LogTest : BaseDbTest() {
                 .from(DataSource.collection(testCollection))
                 .execute()
             val actualMinLevel = testLogger.minLevel
-            Assert.assertTrue(actualMinLevel >= oldLogger.getLogLevel(c4Domain))
+            Assert.assertTrue(actualMinLevel >= C4TestUtils.getLogLevel(c4Domain))
 
             testLogger.reset()
             testLogger.setLevels(actualMinLevel + 1, c4Domain)
@@ -551,13 +552,13 @@ class LogTest : BaseDbTest() {
             Assert.assertEquals(C4Constants.LogLevel.NONE.toLong(), testLogger.minLevel.toLong())
 
             testLogger.reset()
-            testLogger.setLevels(oldLogger.getLogLevel(c4Domain), c4Domain)
+            testLogger.setLevels(C4TestUtils.getLogLevel(c4Domain), c4Domain)
             QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.collection(testCollection))
                 .execute()
             Assert.assertEquals(actualMinLevel.toLong(), testLogger.minLevel.toLong())
         } finally {
-            testLogger.setLevels(oldLogger.getLogLevel(c4Domain), c4Domain)
+            testLogger.setLevels(C4TestUtils.getLogLevel(c4Domain), c4Domain)
             C4Log.LOGGER.set(oldLogger)
         }
     }

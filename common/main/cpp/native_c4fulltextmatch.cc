@@ -96,4 +96,39 @@ JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_length(
     if (!handle) return 0L;
     return (jlong) ((C4FullTextMatch *) handle)->length;
 }
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
+ * Method:    getFullTextMatchCount
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatchCount(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
+    auto e = (C4QueryEnumerator *) handle;
+    if (e == nullptr)
+        return 0L;
+
+    return (jlong) e->fullTextMatchCount;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatch
+ * Method:    getFullTextMatch
+ * Signature: (JI)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatch(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle,
+        jint jidx) {
+    auto e = (C4QueryEnumerator *) handle;
+    if (e == nullptr)
+        return 0L;
+
+    return (jlong) &(e->fullTextMatches[(int) jidx]);
+}
 }

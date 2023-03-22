@@ -16,19 +16,27 @@
 package com.couchbase.lite.internal.core;
 
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.Objects;
 
 
-// This class exists only for testing.
-// It is never used in production code
-// It is here to make JNI generation/use easier.
-
-@VisibleForTesting
 class C4FullTextMatch extends C4NativePeer {
     private static final long MOCK_PEER = 0x0cab00d1eL;
+
+    /**
+     * Return an array of details of each full-text match
+     */
+    @NonNull
+    public static C4FullTextMatch getFullTextMatches(@NonNull C4QueryEnumerator queryEnumerator, int idx) {
+        return new C4FullTextMatch(getFullTextMatch(queryEnumerator.getPeer(), idx));
+    }
+
+    public static long getFullTextMatchCount(C4QueryEnumerator queryEnumerator) {
+        return getFullTextMatchCount(queryEnumerator.getPeer());
+    }
 
 
     private long dataSource;
@@ -82,7 +90,8 @@ class C4FullTextMatch extends C4NativePeer {
             && (start == match.start)
             && (length == match.length);
     }
-//-------------------------------------------------------------------------
+
+    //-------------------------------------------------------------------------
     // Native methods
     //-------------------------------------------------------------------------
 
@@ -95,4 +104,8 @@ class C4FullTextMatch extends C4NativePeer {
     private static native long start(long peer);
 
     private static native long length(long peer);
+
+    private static native long getFullTextMatchCount(long peer);
+
+    private static native long getFullTextMatch(long peer, int idx);
 }

@@ -67,7 +67,6 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4prediction.cc
     ${JNI_SRC}/native_c4query.cc
     ${JNI_SRC}/native_c4queryenumerator.cc
-    ${JNI_SRC}/native_c4rawdocument.cc
     ${JNI_SRC}/native_c4replicator.cc
     ${JNI_SRC}/native_c4socket.cc
     ${JNI_SRC}/native_c4testutils.cc

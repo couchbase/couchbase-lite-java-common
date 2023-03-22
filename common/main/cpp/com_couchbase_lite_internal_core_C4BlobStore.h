@@ -17,30 +17,6 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4BlobStore_getBlo
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4BlobStore
- * Method:    openStore
- * Signature: (Ljava/lang/String;J)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4BlobStore_openStore
-  (JNIEnv *, jclass, jstring, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4BlobStore
- * Method:    deleteStore
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4BlobStore_deleteStore
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4BlobStore
- * Method:    freeStore
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4BlobStore_freeStore
-  (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4BlobStore
  * Method:    getSize
  * Signature: (JJ)J
  */

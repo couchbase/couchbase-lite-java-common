@@ -151,6 +151,7 @@ abstract class BaseDbTest : BaseTest() {
 
     @After
     fun tearDownBaseDbTest() {
+        testCollection.close()
         eraseDb(testDatabase)
         Report.log("Deleted baseTestDb: $testDatabase")
     }

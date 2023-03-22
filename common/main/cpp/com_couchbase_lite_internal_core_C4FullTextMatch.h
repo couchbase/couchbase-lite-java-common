@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
@@ -21,7 +21,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_da
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_property
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
@@ -29,7 +29,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_pr
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_term
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
@@ -37,7 +37,7 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_te
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_start
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
@@ -45,7 +45,30 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_st
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_length
-  (JNIEnv *, jclass, jlong);
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
+ * Method:    getFullTextMatchCount
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatchCount(
+        JNIEnv *,
+        jclass,
+        jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
+ * Method:    getFullTextMatch
+ * Signature: (JI)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatch(
+        JNIEnv *,
+        jclass,
+        jlong,
+        jint);
 
 #ifdef __cplusplus
 }

@@ -9,11 +9,6 @@ public class NativeC4Log implements C4Log.NativeImpl {
     public void nLog(String domain, int level, String message) { log(domain, level, message); }
 
     @Override
-    public int nGetLevel(String domain) {
-        return getLevel(domain);
-    }
-
-    @Override
     public void nSetLevel(String domain, int level) { setLevel(domain, level); }
 
     @Override
@@ -37,8 +32,6 @@ public class NativeC4Log implements C4Log.NativeImpl {
     //-------------------------------------------------------------------------
 
     private static native void log(String domain, int level, String message);
-
-    private static native int getLevel(String domain);
 
     private static native void setLevel(String domain, int level);
 

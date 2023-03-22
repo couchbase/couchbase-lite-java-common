@@ -76,7 +76,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     @Override
     public final File getTmpDir() {
-        return FileUtils.verifyDir(getAppContext().getExternalFilesDir(SCRATCH_DIR_NAME));
+        return FileUtils.verifyDir(new File(getAppContext().getFilesDir(), SCRATCH_DIR_NAME));
     }
 
     @Override

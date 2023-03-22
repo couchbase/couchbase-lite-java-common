@@ -40,14 +40,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Log_wr
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
- * Method:    getLevel
- * Signature: (Ljava/lang/String;)I
- */
-JNIEXPORT jint JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Log_getLevel
-  (JNIEnv *, jclass, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
  * Method:    setCallbackLevel
  * Signature: (I)V
  */

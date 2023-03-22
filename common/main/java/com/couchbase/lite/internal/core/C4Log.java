@@ -37,7 +37,6 @@ import com.couchbase.lite.internal.core.impl.NativeC4Log;
 public class C4Log {
     public interface NativeImpl {
         void nLog(String domain, int level, String message);
-        int nGetLevel(String domain);
         void nSetLevel(String domain, int level);
         void nSetCallbackLevel(int level);
         int nGetBinaryFileLevel();
@@ -166,9 +165,6 @@ public class C4Log {
 
     @NonNull
     public final LogLevel getCallbackLevel() { return CALLBACK_LEVEL.get(); }
-
-    @VisibleForTesting
-    public final int getLogLevel(String domain) { return impl.nGetLevel(domain); }
 
     @VisibleForTesting
     public final void forceCallbackLevel(@NonNull LogLevel logLevel) {

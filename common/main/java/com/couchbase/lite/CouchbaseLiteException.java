@@ -58,6 +58,9 @@ public final class CouchbaseLiteException extends Exception {
         int statusCode,
         @Nullable String msg,
         @Nullable Exception e) {
+        // make sure this gets logged
+        if (e != null) { Log.w(LogDomain.DATABASE, "Lite Core exception", e); }
+
         int code = statusCode;
 
         String domain = CBLError.Domain.CBLITE;

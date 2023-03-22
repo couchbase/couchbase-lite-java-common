@@ -30,9 +30,6 @@ public final class C4Key {
     public interface NativeImpl {
         @Nullable
         byte[] nPbkdf2(@NonNull String password);
-
-        @Nullable
-        byte[] nDeriveKeyFromPassword(@NonNull String password);
     }
 
     @NonNull
@@ -42,15 +39,6 @@ public final class C4Key {
     @NonNull
     public static byte[] getPbkdf2Key(@NonNull String password) throws CouchbaseLiteException {
         final byte[] key = NATIVE_IMPL.nPbkdf2(password);
-        if (key != null) { return key; }
-
-        throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
-    }
-
-    @VisibleForTesting
-    @NonNull
-    public static byte[] getCoreKey(@NonNull String password) throws CouchbaseLiteException {
-        final byte[] key = NATIVE_IMPL.nDeriveKeyFromPassword(password);
         if (key != null) { return key; }
 
         throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);

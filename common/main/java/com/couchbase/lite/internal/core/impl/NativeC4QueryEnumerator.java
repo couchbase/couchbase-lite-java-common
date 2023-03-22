@@ -31,13 +31,7 @@ public final class NativeC4QueryEnumerator implements C4QueryEnumerator.NativeIm
     public long nGetColumns(long peer) { return getColumns(peer); }
 
     @Override
-    public long nGetMissingColumns(long peer) {return getMissingColumns(peer); }
-
-    @Override
-    public long nGetFullTextMatchCount(long peer) {return getFullTextMatchCount(peer); }
-
-    @Override
-    public long nGetFullTextMatch(long peer, int idx) { return getFullTextMatch(peer, idx); }
+    public long nGetMissingColumns(long peer) { return getMissingColumns(peer); }
 
     //-------------------------------------------------------------------------
     // native methods
@@ -48,10 +42,6 @@ public final class NativeC4QueryEnumerator implements C4QueryEnumerator.NativeIm
     private static native long getColumns(long peer);
 
     private static native long getMissingColumns(long peer);
-
-    private static native long getFullTextMatchCount(long peer);
-
-    private static native long getFullTextMatch(long peer, int idx);
 
     private static native void free(long peer);
 }
