@@ -52,30 +52,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_getMissingCol
         JNIEnv *,
         jclass,
         jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
- * Method:    getFullTextMatchCount
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_getFullTextMatchCount(
-        JNIEnv *,
-        jclass,
-        jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator
- * Method:    getFullTextMatch
- * Signature: (JI)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_getFullTextMatch(
-        JNIEnv *,
-        jclass,
-        jlong,
-        jint);
-
 #ifdef __cplusplus
 }
 #endif

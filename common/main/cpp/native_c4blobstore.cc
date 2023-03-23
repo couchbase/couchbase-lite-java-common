@@ -231,50 +231,6 @@ Java_com_couchbase_lite_internal_core_C4BlobStore_openWriteStream(JNIEnv *env, j
     return (jlong) stream;
 }
 
-/* FOR TEST USE ONLY
- * Class:     com_couchbase_lite_internal_core_C4BlobStore
- * Method:    openStore
- * Signature: (Ljava/lang/String;J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4BlobStore_openStore(
-        JNIEnv *env,
-        jclass ignore,
-        jstring jdirpath,
-        jlong jflags) {
-    jstringSlice dirPath(env, jdirpath);
-    C4Error error{};
-    // TODO: Need to work for encryption
-    C4BlobStore *store = c4blob_openStore(dirPath, (C4DatabaseFlags) jflags, nullptr, &error);
-    if (store == nullptr) {
-        throwError(env, error);
-        return 0;
-    }
-    return (jlong) store;
-}
-
-/* FOR TEST USE ONLY
- * Class:     com_couchbase_lite_internal_core_C4BlobStore
- * Method:    deleteStore
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4BlobStore_deleteStore(JNIEnv *env, jclass ignore, jlong jblobstore) {
-    C4Error error{};
-    if (!c4blob_deleteStore((C4BlobStore *) jblobstore, &error))
-        throwError(env, error);
-}
-
-/* FOR TEST USE ONLY
- * Class:     com_couchbase_lite_internal_core_C4BlobStore
- * Method:    freeStore
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4BlobStore_freeStore(JNIEnv *env, jclass ignore, jlong jblobstore) {
-    c4blob_freeStore((C4BlobStore *) jblobstore);
-}
-
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4BlobReadStream
 // ----------------------------------------------------------------------------

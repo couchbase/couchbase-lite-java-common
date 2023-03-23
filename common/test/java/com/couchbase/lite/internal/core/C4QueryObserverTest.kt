@@ -26,8 +26,6 @@ val mockMockQueryEnumerator = object : C4QueryEnumerator.NativeImpl {
     override fun nFree(peer: Long) = Unit
     override fun nGetColumns(peer: Long) = 0L
     override fun nGetMissingColumns(peer: Long) = 0L
-    override fun nGetFullTextMatchCount(peer: Long) = 0L
-    override fun nGetFullTextMatch(peer: Long, idx: Int) = 0L
 }
 
 val mockNativeQueryObserver = object : C4QueryObserver.NativeImpl {

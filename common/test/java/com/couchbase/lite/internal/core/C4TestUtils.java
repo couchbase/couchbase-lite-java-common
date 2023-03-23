@@ -18,13 +18,16 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 
+import com.couchbase.lite.CBLError;
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
-
+// It is worth considering breaking this up.  You know, OOP and all...
 public class C4TestUtils {
     public static class C4DocEnumerator extends C4NativePeer {
         public C4DocEnumerator(long db, int flags) throws LiteCoreException { this(enumerateAllDocs(db, flags)); }
@@ -55,6 +58,46 @@ public class C4TestUtils {
         }
     }
 
+    // managed: Java code is responsible for freeing it
+    private static final class ManagedC4BlobStore extends C4BlobStore {
+        ManagedC4BlobStore(@NonNull String dirPath, long flags) throws LiteCoreException {
+            super(openStore(dirPath, flags));
+        }
+
+        @Override
+        public void close() { closePeer(null); }
+
+        @SuppressWarnings("NoFinalizer")
+        @Override
+        protected void finalize() throws Throwable {
+            try { closePeer(LogDomain.DATABASE); }
+            finally { super.finalize(); }
+        }
+
+        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4TestUtils::freeStore); }
+    }
+
+    // C4DocEnumerator
+
+    public static C4DocEnumerator enumerateDocsForCollection(C4Collection coll, int flags) throws LiteCoreException {
+        return new C4DocEnumerator(coll.getPeer(), flags);
+    }
+
+    // C4BlobStore
+
+    @NonNull
+    public static C4BlobStore open(@NonNull String dirPath, long flags) throws LiteCoreException {
+        return new ManagedC4BlobStore(
+            (dirPath.endsWith(File.separator)) ? dirPath : (dirPath + File.separator),
+            flags);
+    }
+
+    public static void delete(C4BlobStore store) throws LiteCoreException {
+        store.releasePeer(null, C4TestUtils::deleteStore);
+    }
+
+    // C4Database
+
     @NonNull
     public static byte[] privateUUIDForDb(@NonNull C4Database db) throws LiteCoreException {
         return getPrivateUUID(db.getPeer());
@@ -67,9 +110,7 @@ public class C4TestUtils {
 
     public static String idForDoc(C4Document doc) { return getDocID(doc.getPeer()); }
 
-    public static C4DocEnumerator enumerateDocsForCollection(C4Collection coll, int flags) throws LiteCoreException {
-        return new C4DocEnumerator(coll.getPeer(), flags);
-    }
+    // C4Document
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
@@ -126,16 +167,25 @@ public class C4TestUtils {
             remoteDBID));
     }
 
+    // C4Key
+
+    @NonNull
+    public static byte[] getCoreKey(@NonNull String password) throws CouchbaseLiteException {
+        final byte[] key = deriveKeyFromPassword(password);
+        if (key != null) { return key; }
+
+        throw new CouchbaseLiteException("Could not generate key", CBLError.Domain.CBLITE, CBLError.Code.CRYPTO);
+    }
+
+    // C4Log
+
+    public static int getLogLevel(String domain) { return getLevel(domain); }
 
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
 
-    @NonNull
-    private static native byte[] getPrivateUUID(long db) throws LiteCoreException;
-
-    @NonNull
-    private static native FLSliceResult encodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
+    // C4DocEnumerator
 
     private static native long enumerateAllDocs(long db, int flags) throws LiteCoreException;
 
@@ -145,8 +195,26 @@ public class C4TestUtils {
 
     private static native void free(long peer);
 
+    // C4BlobStore
+
+    private static native long openStore(String dirPath, long flags) throws LiteCoreException;
+
+    private static native void deleteStore(long peer) throws LiteCoreException;
+
+    private static native void freeStore(long peer);
+
+    // C4Database
+
+    @NonNull
+    private static native byte[] getPrivateUUID(long db) throws LiteCoreException;
+
+    @NonNull
+    private static native FLSliceResult encodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
+
     @NonNull
     private static native String getDocID(long doc);
+
+    // C4Document
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private static native long put(
@@ -176,4 +244,12 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException;
+    // C4Key
+
+    @Nullable
+    private static native byte[] deriveKeyFromPassword(@NonNull String password);
+
+    // C4Log
+
+    private static native int getLevel(@NonNull String domain);
 }

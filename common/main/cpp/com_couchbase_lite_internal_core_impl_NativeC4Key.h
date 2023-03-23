@@ -16,14 +16,6 @@ extern "C" {
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Key_pbkdf2
   (JNIEnv *, jclass, jstring);
 
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Key
- * Method:    deriveKeyFromPassword
- * Signature: (Ljava/lang/String;)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Key_deriveKeyFromPassword
-  (JNIEnv *, jclass, jstring);
-
 #ifdef __cplusplus
 }
 #endif

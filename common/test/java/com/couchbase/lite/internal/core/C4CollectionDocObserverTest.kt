@@ -29,8 +29,9 @@ class C4CollectionDocObserverTest : C4BaseTest() {
     @Test
     fun testCreateC4CollectionDocObserver() {
         C4Collection.create(c4Database, collName, scopeName).use { coll ->
-            C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "test", {})
-                .use { assertNotNull(it) }
+            C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "test", {}).use {
+                assertNotNull(it)
+            }
         }
     }
 
@@ -54,21 +55,19 @@ class C4CollectionDocObserverTest : C4BaseTest() {
 
     @Test
     fun testCollObserverWithCoreCallback() {
-        var i = 0
-
         val collection = C4Collection.create(c4Database, collName, scopeName)
         createRev(collection, "A", "1-aa", fleeceBody)
 
-        var obs: C4CollectionDocObserver? = null
+        var i = 0
         C4Collection.create(c4Database, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
-            obs = C4CollectionDocObserver.newObserver(coll.peer, "A") { i++ }
-            assertEquals(0, i)
+            C4CollectionDocObserver.newObserver(coll.peer, "A", { i++ }).use {
+                assertEquals(0, i)
 
-            createRev(coll, "A", "2-bb", fleeceBody)
-            createRev(coll, "B", "1-bb", fleeceBody)
+                createRev(coll, "A", "2-bb", fleeceBody)
+                createRev(coll, "B", "1-bb", fleeceBody)
 
-            assertEquals(1, i)
+                assertEquals(1, i)
+            }
         }
     }
 }
-

@@ -25,46 +25,7 @@ using namespace litecore::jni;
 
 extern "C" {
 
-/*
- * Class:     com_couchbase_lite_internal_core_C4TestUtils
- * Method:    getPrivateUUID
- * Signature: (J)[B
- */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID(JNIEnv *env, jclass ignore, jlong jdb) {
-    C4UUID uuid;
-
-    C4Error error{};
-    bool res = c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error);
-    if (!res && error.code != 0)
-        throwError(env, error);
-
-    C4Slice s = {&uuid, sizeof(uuid)};
-    return toJByteArray(env, s);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4TestUtils
- * Method:    encodeJSON
- * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
- */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON(
-        JNIEnv *env,
-        jclass ignore,
-        jlong db,
-        jbyteArray jbody) {
-    jbyteArraySlice body(env, jbody, false);
-
-    C4Error error{};
-    C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
-    if (!res && error.code != 0) {
-        throwError(env, error);
-        return nullptr;
-    }
-
-    return toJavaFLSliceResult(env, res);
-}
+// C4DocEnumerator
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4TestUtils
@@ -128,6 +89,97 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_free(JNIEnv *env, jclass ignore, jlong handle) {
     c4enum_free((C4DocEnumerator *) handle);
 }
+
+// C4BlobStore
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    openStore
+ * Signature: (Ljava/lang/String;J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_openStore(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jdirpath,
+        jlong jflags) {
+    jstringSlice dirPath(env, jdirpath);
+    C4Error error{};
+    // TODO: Need to work for encryption
+    C4BlobStore *store = c4blob_openStore(dirPath, (C4DatabaseFlags) jflags, nullptr, &error);
+    if (store == nullptr) {
+        throwError(env, error);
+        return 0;
+    }
+    return (jlong) store;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    deleteStore
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_deleteStore(JNIEnv *env, jclass ignore, jlong jblobstore) {
+    C4Error error{};
+    if (!c4blob_deleteStore((C4BlobStore *) jblobstore, &error))
+        throwError(env, error);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    freeStore
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_freeStore(JNIEnv *env, jclass ignore, jlong jblobstore) {
+    c4blob_freeStore((C4BlobStore *) jblobstore);
+}
+
+// C4Database
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getPrivateUUID
+ * Signature: (J)[B
+ */
+JNIEXPORT jbyteArray JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID(JNIEnv *env, jclass ignore, jlong jdb) {
+    C4UUID uuid;
+
+    C4Error error{};
+    bool res = c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error);
+    if (!res && error.code != 0)
+        throwError(env, error);
+
+    C4Slice s = {&uuid, sizeof(uuid)};
+    return toJByteArray(env, s);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    encodeJSON
+ * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
+ */
+JNIEXPORT jobject JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db,
+        jbyteArray jbody) {
+    jbyteArraySlice body(env, jbody, false);
+
+    C4Error error{};
+    C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
+    if (!res && error.code != 0) {
+        throwError(env, error);
+        return nullptr;
+    }
+
+    return toJavaFLSliceResult(env, res);
+}
+
+// C4Document
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4TestUtils
@@ -231,7 +283,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put2(
     auto collection = (C4Collection *) jcollection;
     jstringSlice docID(env, jdocID);
 
-    // Parameters for adding a revision using c4doc_put.
+    // Parameters for adding a revision using c4coll_put.
     C4DocPutRequest rq{};
     rq.body.buf = (const void *) jbodyPtr;  ///< Revision's body
     rq.body.size = (size_t) jbodySize;      ///< Revision's body
@@ -278,4 +330,41 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put2(
 
     return (jlong) doc;
 }
+
+// C4Key
+
+/*
+ * Class:     Java_com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    deriveKeyFromPassword
+ * Signature: (Ljava/lang/String;I)[B
+ */
+JNIEXPORT jbyteArray JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_deriveKeyFromPassword(JNIEnv *env, jclass ignore, jstring password) {
+    jstringSlice pwd(env, password);
+
+    C4EncryptionKey key;
+    if (!c4key_setPassword(&key, pwd, kC4EncryptionAES256))
+        return nullptr;
+
+    int keyLen = sizeof(key.bytes);
+    jbyteArray result = env->NewByteArray(keyLen);
+    env->SetByteArrayRegion(result, 0, keyLen, (jbyte *) &key.bytes);
+
+    return result;
+}
+
+// C4Log
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getLevel
+ * Signature: (Ljava/lang/String;I)V
+ */
+JNIEXPORT jint JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel(JNIEnv *env, jclass ignore, jstring jdomain) {
+    jstringSlice domain(env, jdomain);
+    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), false);
+    return (!logDomain) ? -1 : (jint) c4log_getLevel(logDomain);
+}
+
 }

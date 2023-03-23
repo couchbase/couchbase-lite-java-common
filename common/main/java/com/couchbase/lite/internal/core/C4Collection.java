@@ -26,7 +26,7 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public class C4Collection extends C4NativePeer {
+public final class C4Collection extends C4NativePeer {
     public interface NativeImpl {
         // Factory methods
         long nCreateCollection(long c4Db, @NonNull String scope, @NonNull String collection)
@@ -135,8 +135,7 @@ public class C4Collection extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    @VisibleForTesting
-    C4Collection(
+    private C4Collection(
         @NonNull NativeImpl impl,
         long peer,
         @NonNull C4Database db,
@@ -197,13 +196,13 @@ public class C4Collection extends C4NativePeer {
     // - Observers
 
     @NonNull
-    public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) throws LiteCoreException{
+    public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) throws LiteCoreException {
         return withPeerOrThrow(peer -> C4CollectionObserver.newObserver(peer, listener));
     }
 
     @NonNull
     public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener)
-        throws LiteCoreException{
+        throws LiteCoreException {
         return withPeerOrThrow(peer -> C4CollectionDocObserver.newObserver(peer, docID, listener));
     }
 

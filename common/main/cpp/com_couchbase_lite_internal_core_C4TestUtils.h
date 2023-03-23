@@ -8,22 +8,7 @@
 extern "C" {
 #endif
 
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4TestUtils
- * Method:    getPrivateUUID
- * Signature: (J)[B
- */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_C4TestUtils
- * Method:    encodeJSON
- * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
- */
-JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON
-        (JNIEnv *, jclass, jlong, jbyteArray);
+// C4DocEnumerator
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4TestUtils
@@ -57,6 +42,52 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getDoc
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_free
         (JNIEnv *, jclass, jlong);
 
+// C4BlobStore
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    openStore
+ * Signature: (Ljava/lang/String;J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_openStore
+        (JNIEnv *, jclass, jstring, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    deleteStore
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_deleteStore
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    freeStore
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_freeStore
+        (JNIEnv *, jclass, jlong);
+
+// C4Database
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getPrivateUUID
+ * Signature: (J)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    encodeJSON
+ * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
+ */
+JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON
+        (JNIEnv *, jclass, jlong, jbyteArray);
+
+// C4Document
+
 /*
  * Class:     com_couchbase_lite_internal_core_C4TestUtils
  * Method:    getDocID
@@ -83,6 +114,26 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_put2
         (JNIEnv *, jclass, jlong, jlong, jlong, jstring, jint, jboolean, jboolean, jobjectArray, jboolean, jint, jint);
+
+// C4Key
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    deriveKeyFromPassword
+ * Signature: (Ljava/lang/String;)[B
+ */
+JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_deriveKeyFromPassword
+        (JNIEnv *, jclass, jstring);
+
+// C4Log
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getLogLevel
+ * Signature: (Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel
+        (JNIEnv *, jclass, jstring);
 
 #ifdef __cplusplus
 }

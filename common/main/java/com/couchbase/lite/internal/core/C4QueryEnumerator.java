@@ -40,8 +40,6 @@ public class C4QueryEnumerator extends C4NativePeer {
         void nFree(long peer);
         long nGetColumns(long peer);
         long nGetMissingColumns(long peer);
-        long nGetFullTextMatchCount(long peer);
-        long nGetFullTextMatch(long peer, int idx);
     }
 
     @NonNull
@@ -112,23 +110,6 @@ public class C4QueryEnumerator extends C4NativePeer {
         try { closePeer(LogDomain.QUERY); }
         finally { super.finalize(); }
     }
-
-    //-------------------------------------------------------------------------
-    // package protected methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Return the number of full-text matches (i.e. the number of items in `getFullTextMatches`)
-     */
-    @VisibleForTesting
-    long getFullTextMatchCount() { return impl.nGetFullTextMatchCount(getPeer()); }
-
-    /**
-     * Return an array of details of each full-text match
-     */
-    @VisibleForTesting
-    @NonNull
-    C4FullTextMatch getFullTextMatches(int idx) { return new C4FullTextMatch(impl.nGetFullTextMatch(getPeer(), idx)); }
 
     //-------------------------------------------------------------------------
     // Private methods

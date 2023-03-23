@@ -240,17 +240,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir(JNIEnv *env, jcla
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4Log
 // ----------------------------------------------------------------------------
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
- * Method:    getLevel
- * Signature: (Ljava/lang/String;I)V
- */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Log_getLevel(JNIEnv *env, jclass ignore, jstring jdomain) {
-    jstringSlice domain(env, jdomain);
-    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), false);
-    return (!logDomain) ? -1 : (jint) c4log_getLevel(logDomain);
-}
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_C4Log
@@ -370,26 +359,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Key_pbkdf2(JNIEnv *env, jclas
 
     C4EncryptionKey key;
     if (!c4key_setPasswordSHA1(&key, pwd, kC4EncryptionAES256))
-        return nullptr;
-
-    int keyLen = sizeof(key.bytes);
-    jbyteArray result = env->NewByteArray(keyLen);
-    env->SetByteArrayRegion(result, 0, keyLen, (jbyte *) &key.bytes);
-
-    return result;
-}
-
-/*
- * Class:     Java_com_couchbase_lite_internal_core_impl_NativeC4Key
- * Method:    deriveKeyFromPassword
- * Signature: (Ljava/lang/String;I)[B
- */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Key_deriveKeyFromPassword(JNIEnv *env, jclass ignore, jstring password) {
-    jstringSlice pwd(env, password);
-
-    C4EncryptionKey key;
-    if (!c4key_setPassword(&key, pwd, kC4EncryptionAES256))
         return nullptr;
 
     int keyLen = sizeof(key.bytes);

@@ -114,7 +114,9 @@ public class C4QueryBaseTest extends C4BaseTest {
         try {
             while (e.next()) {
                 List<C4FullTextMatch> match = new ArrayList<>();
-                for (int i = 0; i < e.getFullTextMatchCount(); i++) { match.add(e.getFullTextMatches(i).load()); }
+                for (int i = 0; i < C4FullTextMatch.getFullTextMatchCount(e); i++) {
+                    match.add(C4FullTextMatch.getFullTextMatches(e, i).load());
+                }
                 matches.add(match);
             }
         }
