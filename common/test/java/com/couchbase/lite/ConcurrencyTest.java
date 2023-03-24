@@ -50,7 +50,7 @@ public class ConcurrencyTest extends BaseDbTest {
             id -> {
                 try {
                     for (MutableDocument mDoc: createComplexTestDocs(nDocs, "TAG@CREATES-" + id)) {
-                        testCollection.save(mDoc);
+                        getTestCollection().save(mDoc);
                     }
                 }
                 catch (CouchbaseLiteException e) {
@@ -72,7 +72,7 @@ public class ConcurrencyTest extends BaseDbTest {
             id -> {
                 try {
                     for (MutableDocument mDoc: createComplexTestDocs(nDocs, "TAG@CREATESBATCH-" + id)) {
-                        testDatabase.inBatch(() -> testCollection.save(mDoc));
+                        getTestDatabase().inBatch(() -> getTestCollection().save(mDoc));
                     }
                 }
                 catch (CouchbaseLiteException e) {
@@ -97,7 +97,7 @@ public class ConcurrencyTest extends BaseDbTest {
         runConcurrentCopies(
             4,
             id -> {
-                try { testDatabase.inBatch(() -> readDocs(docIDs, 50)); }
+                try { getTestDatabase().inBatch(() -> readDocs(docIDs, 50)); }
                 catch (CouchbaseLiteException e) { throw new AssertionError("Failed reading docs in batch", e); }
             });
     }
@@ -126,8 +126,8 @@ public class ConcurrencyTest extends BaseDbTest {
             () -> {
                 for (String docID: docIDs) {
                     try {
-                        Document doc = testCollection.getDocument(docID);
-                        if (doc != null) { testCollection.delete(doc); }
+                        Document doc = getTestCollection().getDocument(docID);
+                        if (doc != null) { getTestCollection().delete(doc); }
                     }
                     catch (CouchbaseLiteException e) { throw new AssertionError("Failed deleting doc: " + docID, e); }
                 }
@@ -135,14 +135,14 @@ public class ConcurrencyTest extends BaseDbTest {
             () -> {
                 for (String docID: docIDs) {
                     try {
-                        Document doc = testCollection.getDocument(docID);
-                        if (doc != null) { testCollection.delete(doc); }
+                        Document doc = getTestCollection().getDocument(docID);
+                        if (doc != null) { getTestCollection().delete(doc); }
                     }
                     catch (CouchbaseLiteException e) { throw new AssertionError("Failed deleting doc: " + docID, e); }
                 }
             });
 
-        assertEquals(0, testCollection.getCount());
+        assertEquals(0, getTestCollection().getCount());
     }
 
     @Test
@@ -154,8 +154,8 @@ public class ConcurrencyTest extends BaseDbTest {
             () -> {
                 for (String docID: docIDs) {
                     try {
-                        Document doc = testCollection.getDocument(docID);
-                        if (doc != null) { testCollection.purge(doc); }
+                        Document doc = getTestCollection().getDocument(docID);
+                        if (doc != null) { getTestCollection().purge(doc); }
                     }
                     catch (CouchbaseLiteException e) {
                         if (e.getCode() != 404) { throw new AssertionError("Failed purging doc: " + docID, e); }
@@ -165,8 +165,8 @@ public class ConcurrencyTest extends BaseDbTest {
             () -> {
                 for (String docID: docIDs) {
                     try {
-                        Document doc = testCollection.getDocument(docID);
-                        if (doc != null) { testCollection.purge(doc); }
+                        Document doc = getTestCollection().getDocument(docID);
+                        if (doc != null) { getTestCollection().purge(doc); }
                     }
                     catch (CouchbaseLiteException e) {
                         if (e.getCode() != 404) { throw new AssertionError("Failed purging doc: " + docID, e); }
@@ -174,7 +174,7 @@ public class ConcurrencyTest extends BaseDbTest {
                 }
             });
 
-        assertEquals(0, testCollection.getCount());
+        assertEquals(0, getTestCollection().getCount());
     }
 
     @Test
@@ -195,11 +195,11 @@ public class ConcurrencyTest extends BaseDbTest {
             "createWhileCloseD",
             () -> {
                 delay(); // wait for other task to get busy...
-                closeDb(testDatabase);
+                closeDb(getTestDatabase());
             },
             () -> {
                 for (MutableDocument mDoc: docs) {
-                    try { testCollection.save(mDoc); }
+                    try { getTestCollection().save(mDoc); }
                     catch (CouchbaseLiteException e) {
                         if (e.getDomain().equals(CBLError.Domain.CBLITE) && (e.getCode() == CBLError.Code.NOT_OPEN)) {
                             break;
@@ -218,11 +218,11 @@ public class ConcurrencyTest extends BaseDbTest {
             "createWhileDeleteDb",
             () -> {
                 delay(); // wait for other task to get busy...
-                deleteDb(testDatabase);
+                deleteDb(getTestDatabase());
             },
             () -> {
                 for (MutableDocument mDoc: docs) {
-                    try { testCollection.save(mDoc); }
+                    try { getTestCollection().save(mDoc); }
                     catch (CouchbaseLiteException e) {
                         if (e.getDomain().equals(CBLError.Domain.CBLITE) && (e.getCode() == CBLError.Code.NOT_OPEN)) {
                             break;
@@ -242,7 +242,7 @@ public class ConcurrencyTest extends BaseDbTest {
             () -> {
                 try {
                     delay(); // wait for other task to get busy...
-                    if (!testDatabase.performMaintenance(MaintenanceType.COMPACT)) {
+                    if (!getTestDatabase().performMaintenance(MaintenanceType.COMPACT)) {
                         throw new CouchbaseLiteException("Compaction failed");
                     }
                 }
@@ -250,7 +250,7 @@ public class ConcurrencyTest extends BaseDbTest {
             },
             () -> {
                 for (MutableDocument doc: docs) {
-                    try { testCollection.save(doc); }
+                    try { getTestCollection().save(doc); }
                     catch (CouchbaseLiteException e) {
                         if (e.getDomain().equals(CBLError.Domain.CBLITE) && (e.getCode() == CBLError.Code.NOT_OPEN)) {
                             break;
@@ -271,7 +271,7 @@ public class ConcurrencyTest extends BaseDbTest {
             "CreateWhileIndex",
             () -> {
                 try {
-                    testCollection.createIndex(
+                    getTestCollection().createIndex(
                         "sentence",
                         IndexBuilder.fullTextIndex(FullTextIndexItem.property("sentence")));
                 }
@@ -285,16 +285,16 @@ public class ConcurrencyTest extends BaseDbTest {
         final CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Exception> error = new AtomicReference<>();
 
-        ListenerToken token = testCollection.addChangeListener(testSerialExecutor, change -> latch.countDown());
-        try {
+
+        try (ListenerToken ignore = getTestCollection()
+            .addChangeListener(testSerialExecutor, change -> latch.countDown())) {
             testSerialExecutor.execute(() -> {
-                try { testCollection.save(new MutableDocument()); }
+                try { getTestCollection().save(new MutableDocument()); }
                 catch (Exception e) { error.compareAndSet(null, e); }
             });
 
             assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
-        finally { token.remove(); }
 
         Exception e = error.get();
         if (e != null) { throw new AssertionError("Error saving document", e); }
@@ -307,16 +307,16 @@ public class ConcurrencyTest extends BaseDbTest {
         final CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Exception> error = new AtomicReference<>();
 
-        ListenerToken token = testCollection.addDocumentChangeListener(mDoc.getId(), change -> latch.countDown());
-        try {
+
+        try (ListenerToken ignore
+                 = getTestCollection().addDocumentChangeListener(mDoc.getId(), change -> latch.countDown())) {
             testSerialExecutor.execute(() -> {
-                try { testCollection.save(mDoc); }
+                try { getTestCollection().save(mDoc); }
                 catch (Exception e) { error.compareAndSet(null, e); }
             });
 
             assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
-        finally { token.remove(); }
 
         Exception e = error.get();
         if (e != null) { throw new AssertionError("Error saving document", e); }
@@ -329,7 +329,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id), SelectResult.expression(Meta.sequence))
-            .from(DataSource.collection(testCollection));
+            .from(DataSource.collection(getTestCollection()));
 
         List<Integer> nResults = Collections.synchronizedList(new ArrayList<>());
         runConcurrentCopies(
@@ -341,7 +341,7 @@ public class ConcurrencyTest extends BaseDbTest {
         );
 
         assertEquals(10, nResults.size());
-        for (Integer n: nResults) { assertEquals(testCollection.getCount(), (long) n); }
+        for (Integer n: nResults) { assertEquals(getTestCollection().getCount(), (long) n); }
     }
 
     private List<String> saveDocs(List<MutableDocument> mDocs) {
@@ -353,7 +353,7 @@ public class ConcurrencyTest extends BaseDbTest {
         for (int i = 1; i <= rounds; i++) {
             for (String docId: docIds) {
                 MutableDocument mDoc;
-                try { mDoc = testCollection.getDocument(docId).toMutable(); }
+                try { mDoc = getTestCollection().getDocument(docId).toMutable(); }
                 catch (CouchbaseLiteException e) { throw new AssertionError("Failed getting document: " + docId, e); }
 
                 mDoc.setValue(TEST_DOC_TAG_KEY, tag);
@@ -370,7 +370,7 @@ public class ConcurrencyTest extends BaseDbTest {
                 phones.setValue(0, phone);
 
                 mDoc.setValue("updated", new Date());
-                try { testCollection.save(mDoc); }
+                try { getTestCollection().save(mDoc); }
                 catch (CouchbaseLiteException e) { throw new AssertionError("Failed saving document: " + docId, e); }
             }
         }
@@ -380,7 +380,7 @@ public class ConcurrencyTest extends BaseDbTest {
         for (int i = 1; i <= rounds; i++) {
             for (String docID: docIDs) {
                 Document doc;
-                try { doc = testCollection.getDocument(docID); }
+                try { doc = getTestCollection().getDocument(docID); }
                 catch (CouchbaseLiteException e) { throw new AssertionError("Failed reading document: " + docID, e); }
                 assertNotNull(doc);
                 assertEquals(docID, doc.getId());
@@ -390,7 +390,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
     private int countTaggedDocs(String tag) throws CouchbaseLiteException {
         final Query query = QueryBuilder.select(SelectResult.expression(Meta.id))
-            .from(DataSource.collection(testCollection))
+            .from(DataSource.collection(getTestCollection()))
             .where(Expression.property(TEST_DOC_TAG_KEY).equalTo(Expression.string(tag)));
         try (ResultSet rs = query.execute()) { return rs.allResults().size(); }
     }
@@ -474,7 +474,7 @@ public class ConcurrencyTest extends BaseDbTest {
     // Kotlin shim functions
 
     private List<Document> saveDocsInTestCollection(List<MutableDocument> mDocs) {
-        return saveDocsInTestCollection(mDocs, testCollection);
+        return saveDocsInTestCollection(mDocs, getTestCollection());
     }
 
     private List<Document> saveDocsInTestCollection(List<MutableDocument> mDocs, Collection collection) {
@@ -482,6 +482,6 @@ public class ConcurrencyTest extends BaseDbTest {
     }
 
     private void loadJSONResourceIntoTestCollection(String resName) {
-        loadJSONResourceIntoCollection(resName, "doc-%03d", testCollection);
+        loadJSONResourceIntoCollection(resName, "doc-%03d", getTestCollection());
     }
 }

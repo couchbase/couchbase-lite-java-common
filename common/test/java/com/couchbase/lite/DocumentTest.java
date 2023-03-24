@@ -92,7 +92,7 @@ public class DocumentTest extends BaseDbTest {
         assertThrowsCBL(
             CBLError.Domain.CBLITE,
             CBLError.Code.BAD_DOC_ID,
-            () -> testCollection.save(doc1a));
+            () -> getTestCollection().save(doc1a));
     }
 
     @Test
@@ -208,11 +208,11 @@ public class DocumentTest extends BaseDbTest {
     @Test
     public final void testMutateEmptyDocument() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument();
-        testCollection.save(doc);
+        getTestCollection().save(doc);
 
-        doc = testCollection.getDocument(doc.getId()).toMutable();
+        doc = getTestCollection().getDocument(doc.getId()).toMutable();
         doc.setString("foo", "bar");
-        testCollection.save(doc);
+        getTestCollection().save(doc);
     }
 
     @Test
@@ -240,8 +240,8 @@ public class DocumentTest extends BaseDbTest {
         doc1a.setValue("name", "Scott Tiger");
         saveDocInTestCollection(doc1a);
 
-        try (Database anotherDb = duplicateDb(testDatabase)) {
-            Document doc1b = BaseDbTestKt.getSimilarCollection(anotherDb, testCollection).getDocument("doc1");
+        try (Database anotherDb = duplicateDb(getTestDatabase())) {
+            Document doc1b = BaseDbTestKt.getSimilarCollection(anotherDb, getTestCollection()).getDocument("doc1");
             assertNotSame(doc1a, doc1b);
             assertEquals(doc1a.getId(), doc1b.getId());
             assertEquals(doc1a.toMap(), doc1b.toMap());
@@ -255,11 +255,11 @@ public class DocumentTest extends BaseDbTest {
 
         saveDocInTestCollection(doc1a);
 
-        Document doc1b = testCollection.getDocument("doc1");
-        Document doc1c = testCollection.getDocument("doc1");
+        Document doc1b = getTestCollection().getDocument("doc1");
+        Document doc1c = getTestCollection().getDocument("doc1");
 
-        try (Database anotherDb = duplicateDb(testDatabase)) {
-            Document doc1d = BaseDbTestKt.getSimilarCollection(anotherDb, testCollection).getDocument("doc1");
+        try (Database anotherDb = duplicateDb(getTestDatabase())) {
+            Document doc1d = BaseDbTestKt.getSimilarCollection(anotherDb, getTestCollection()).getDocument("doc1");
 
             assertNotSame(doc1a, doc1b);
             assertNotSame(doc1a, doc1c);
@@ -1537,7 +1537,7 @@ public class DocumentTest extends BaseDbTest {
         newProps.put("PropName3", "Val3");
         newProps.put("PropName4", 84);
 
-        MutableDocument existingDoc = testCollection.getDocument("docName").toMutable();
+        MutableDocument existingDoc = getTestCollection().getDocument("docName").toMutable();
         existingDoc.setData(newProps);
         saveDocInTestCollection(existingDoc);
 
@@ -1568,7 +1568,7 @@ public class DocumentTest extends BaseDbTest {
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setString("name", "Scott Tiger");
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.delete(mDoc));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> getTestCollection().delete(mDoc));
 
         assertEquals("Scott Tiger", mDoc.getString("name"));
     }
@@ -1583,9 +1583,9 @@ public class DocumentTest extends BaseDbTest {
         Document doc = saveDocInTestCollection(mDoc);
 
         // Delete:
-        testCollection.delete(doc);
+        getTestCollection().delete(doc);
 
-        assertNull(testCollection.getDocument(docID));
+        assertNull(getTestCollection().getDocument(docID));
 
         // NOTE: doc is reserved.
         Object v = doc.getValue("name");
@@ -1612,7 +1612,7 @@ public class DocumentTest extends BaseDbTest {
         assertEquals("Mountain View", address.getValue("city"));
         assertEquals("CA", address.getValue("state"));
 
-        testCollection.delete(doc);
+        getTestCollection().delete(doc);
 
         // The dictionary still has data but is detached:
         assertEquals("1 Main street", address.getValue("street"));
@@ -1634,7 +1634,7 @@ public class DocumentTest extends BaseDbTest {
         assertEquals("b", members.getValue(1));
         assertEquals("c", members.getValue(2));
 
-        testCollection.delete(doc);
+        getTestCollection().delete(doc);
 
         // The array still has data but is detached:
         assertEquals(3, members.count());
@@ -1645,10 +1645,10 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testDocumentChangeOnDocumentPurged() throws CouchbaseLiteException, InterruptedException {
-        testCollection.save(new MutableDocument("doc1").setValue("theanswer", 18));
+        getTestCollection().save(new MutableDocument("doc1").setValue("theanswer", 18));
 
         final CountDownLatch latch = new CountDownLatch(1);
-        ListenerToken token = testCollection.addDocumentChangeListener(
+        try (ListenerToken ignore = getTestCollection().addDocumentChangeListener(
             "doc1",
             change -> {
                 try {
@@ -1656,12 +1656,11 @@ public class DocumentTest extends BaseDbTest {
                     assertEquals("doc1", change.getDocumentID());
                 }
                 finally { latch.countDown(); }
-            });
-        try {
-            testCollection.setDocumentExpiration("doc1", new Date(System.currentTimeMillis() + 100));
+            })
+        ) {
+            getTestCollection().setDocumentExpiration("doc1", new Date(System.currentTimeMillis() + 100));
             assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
-        finally { token.remove(); }
     }
 
     @Test
@@ -1672,7 +1671,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("name", "Scott");
 
         // Purge before save:
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(doc));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> getTestCollection().purge(doc));
 
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1681,8 +1680,8 @@ public class DocumentTest extends BaseDbTest {
         Document savedDoc = saveDocInTestCollection(doc);
 
         // purge
-        testCollection.purge(savedDoc);
-        assertNull(testCollection.getDocument(docID));
+        getTestCollection().purge(savedDoc);
+        assertNull(getTestCollection().getDocument(docID));
     }
 
     @Test
@@ -1693,7 +1692,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("name", "Scott");
 
         // Purge before save:
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> testCollection.purge(docID));
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> getTestCollection().purge(docID));
 
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1702,8 +1701,8 @@ public class DocumentTest extends BaseDbTest {
         saveDocInTestCollection(doc);
 
         // purge
-        testCollection.purge(docID);
-        assertNull(testCollection.getDocument(docID));
+        getTestCollection().purge(docID);
+        assertNull(getTestCollection().getDocument(docID));
     }
 
     @Test
@@ -1725,69 +1724,72 @@ public class DocumentTest extends BaseDbTest {
         doc1c.setValue("question", "What is twenty plus twelve?");
         saveDocInTestCollection(doc1c);
 
-        testCollection.setDocumentExpiration("doc1", dto30);
-        testCollection.setDocumentExpiration("doc3", dto30);
+        getTestCollection().setDocumentExpiration("doc1", dto30);
+        getTestCollection().setDocumentExpiration("doc3", dto30);
 
-        testCollection.setDocumentExpiration("doc3", null);
-        Date exp = testCollection.getDocumentExpiration("doc1");
+        getTestCollection().setDocumentExpiration("doc3", null);
+        Date exp = getTestCollection().getDocumentExpiration("doc1");
         assertEquals(exp, dto30);
-        assertNull(testCollection.getDocumentExpiration("doc2"));
-        assertNull(testCollection.getDocumentExpiration("doc3"));
+        assertNull(getTestCollection().getDocumentExpiration("doc2"));
+        assertNull(getTestCollection().getDocumentExpiration("doc3"));
     }
 
     @Test
     public void testSetExpirationOnDoc() throws CouchbaseLiteException {
-        long now = System.currentTimeMillis();
+        final long now = System.currentTimeMillis();
+        final Collection testCollection = getTestCollection();
 
-        MutableDocument doc1 = new MutableDocument("doc1");
+        MutableDocument doc1 = new MutableDocument();
         doc1.setInt("answer", 12);
         doc1.setValue("question", "What is six plus six?");
         saveDocInTestCollection(doc1);
+        assertEquals(1, testCollection.getCount());
 
-        MutableDocument doc2 = new MutableDocument("doc2");
+        MutableDocument doc2 = new MutableDocument();
         doc2.setInt("answer", 12);
         doc2.setValue("question", "What is six plus six?");
         saveDocInTestCollection(doc2);
-
         assertEquals(2, testCollection.getCount());
 
-        testCollection.setDocumentExpiration("doc1", new Date(now + 100));
-        testCollection.setDocumentExpiration("doc2", new Date(now + LONG_TIMEOUT_MS));
-        assertEquals(2, testCollection.getCount());
+        testCollection.setDocumentExpiration(doc1.getId(), new Date(now + 100));
+        testCollection.setDocumentExpiration(doc2.getId(), new Date(now + LONG_TIMEOUT_MS));
 
+        assertEquals(2, testCollection.getCount());
         waitUntil(STD_TIMEOUT_MS, () -> 1 == testCollection.getCount());
     }
 
     @Test
     public void testSetExpirationOnDeletedDoc() throws CouchbaseLiteException {
-        final String id = "test_doc";
+        final Collection testCollection = getTestCollection();
+
+        MutableDocument doc1a = new MutableDocument();
+        doc1a.setInt("answer", 12);
+        doc1a.setValue("question", "What is six plus six?");
+        testCollection.save(doc1a);
+        assertEquals(1, testCollection.getCount());
+
         final Query queryDeleted = QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
             .where(Meta.deleted);
 
-        MutableDocument doc1a = new MutableDocument(id);
-        doc1a.setInt("answer", 12);
-        doc1a.setValue("question", "What is six plus six?");
-        testCollection.save(doc1a);
-
-        assertEquals(1, testCollection.getCount());
-        assertEquals(0, queryDeleted.execute().allResults().size());
+        int n;
+        try (ResultSet rs = queryDeleted.execute()) { n = rs.allResults().size(); }
+        assertEquals(0, n);
 
         testCollection.delete(doc1a);
-
         assertEquals(0, testCollection.getCount());
-        assertEquals(1, queryDeleted.execute().allResults().size());
+        try (ResultSet rs = queryDeleted.execute()) { n = rs.allResults().size(); }
+        assertEquals(1, n);
 
-        testCollection.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 100L));
+        testCollection.setDocumentExpiration(doc1a.getId(), new Date(System.currentTimeMillis() + 100L));
 
         waitUntil(
             STD_TIMEOUT_MS,
             () -> {
-                try { return (0 == testCollection.getCount()) && (0 == queryDeleted.execute().allResults().size()); }
-                catch (CouchbaseLiteException e) {
-                    Report.log("Unexpected exception", e);
-                    return false;
-                }
+                if (0 != testCollection.getCount()) { return false; }
+                try (ResultSet rs = queryDeleted.execute()) { return 0 == rs.allResults().size(); }
+                catch (CouchbaseLiteException e) { Report.log("Unexpected exception", e); }
+                return false;
             });
     }
 
@@ -1798,15 +1800,15 @@ public class DocumentTest extends BaseDbTest {
         doc1a.setValue("question", "What is six plus six?");
         saveDocInTestCollection(doc1a);
 
-        testCollection.delete(doc1a);
+        getTestCollection().delete(doc1a);
 
-        assertNull(testCollection.getDocumentExpiration("deleted_doc"));
+        assertNull(getTestCollection().getDocumentExpiration("deleted_doc"));
     }
 
     @Test
     public void testSetExpirationOnNoneExistDoc() {
         try {
-            testCollection.setDocumentExpiration("not_exist", new Date(System.currentTimeMillis() + 30000L));
+            getTestCollection().setDocumentExpiration("not_exist", new Date(System.currentTimeMillis() + 30000L));
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) { assertEquals(e.getCode(), CBLError.Code.NOT_FOUND); }
@@ -1814,7 +1816,7 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testGetExpirationFromNoneExistDoc() throws CouchbaseLiteException {
-        assertNull(testCollection.getDocumentExpiration("not_exist"));
+        assertNull(getTestCollection().getDocumentExpiration("not_exist"));
     }
 
     @Test
@@ -1823,10 +1825,10 @@ public class DocumentTest extends BaseDbTest {
         String id = "test_doc";
         saveDocInTestCollection(new MutableDocument(id));
 
-        BaseDbTestKt.delete(testCollection);
+        BaseDbTestKt.delete(getTestCollection());
 
         try {
-            testCollection.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
+            getTestCollection().setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) { assertEquals(CBLError.Code.NOT_OPEN, e.getCode()); }
@@ -1837,12 +1839,12 @@ public class DocumentTest extends BaseDbTest {
         String id = "test_doc";
         saveDocInTestCollection(new MutableDocument(id));
 
-        testCollection.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
+        getTestCollection().setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
 
-        testCollection.getDatabase().deleteCollection(testCollection.getName(), testCollection.getScope().getName());
+        getTestCollection().getDatabase().deleteCollection(getTestCollection().getName(), getTestCollection().getScope().getName());
 
         try {
-            testCollection.getDocumentExpiration(id);
+            getTestCollection().getDocumentExpiration(id);
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) { assertEquals(CBLError.Code.NOT_OPEN, e.getCode()); }
@@ -1854,9 +1856,9 @@ public class DocumentTest extends BaseDbTest {
         String id = "test_doc";
         saveDocInTestCollection(new MutableDocument(id));
 
-        try (Database otherDb = duplicateDb(testDatabase)) {
-            otherDb.deleteCollection(testCollection.getName(), testCollection.getScope().getName());
-            testCollection.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
+        try (Database otherDb = duplicateDb(getTestDatabase())) {
+            otherDb.deleteCollection(getTestCollection().getName(), getTestCollection().getScope().getName());
+            getTestCollection().setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) { assertEquals(CBLError.Code.NOT_OPEN, e.getCode()); }
@@ -1869,11 +1871,11 @@ public class DocumentTest extends BaseDbTest {
         String id = "test_doc";
         MutableDocument document = new MutableDocument(id);
         saveDocInTestCollection(document);
-        testCollection.setDocumentExpiration(id, expiration);
+        getTestCollection().setDocumentExpiration(id, expiration);
 
-        try (Database otherDb = duplicateDb(testDatabase)) {
-            otherDb.deleteCollection(testCollection.getName(), testCollection.getScope().getName());
-            testCollection.getDocumentExpiration(id);
+        try (Database otherDb = duplicateDb(getTestDatabase())) {
+            otherDb.deleteCollection(getTestCollection().getName(), getTestCollection().getScope().getName());
+            getTestCollection().getDocumentExpiration(id);
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) { assertEquals(CBLError.Code.NOT_OPEN, e.getCode()); }
@@ -1884,8 +1886,8 @@ public class DocumentTest extends BaseDbTest {
     public void testSetExpirationOnDocInCollectionOfClosedDB() {
         Date expiration = new Date(System.currentTimeMillis() + 30000L);
         try {
-            closeDb(testDatabase);
-            testCollection.setDocumentExpiration("doc_id", expiration);
+            closeDb(getTestDatabase());
+            getTestCollection().setDocumentExpiration("doc_id", expiration);
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) {
@@ -1901,11 +1903,11 @@ public class DocumentTest extends BaseDbTest {
         String id = "test_doc";
         MutableDocument document = new MutableDocument(id);
         saveDocInTestCollection(document);
-        testCollection.setDocumentExpiration(id, expiration);
-        testDatabase.deleteCollection(testCollection.getName(), testCollection.getScope().getName());
+        getTestCollection().setDocumentExpiration(id, expiration);
+        getTestDatabase().deleteCollection(getTestCollection().getName(), getTestCollection().getScope().getName());
 
         try {
-            testCollection.getDocumentExpiration(id);
+            getTestCollection().getDocumentExpiration(id);
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) {
@@ -1920,9 +1922,9 @@ public class DocumentTest extends BaseDbTest {
         String id = "doc_id";
         MutableDocument document = new MutableDocument(id);
         saveDocInTestCollection(document);
-        deleteDb(testDatabase);
+        deleteDb(getTestDatabase());
         try {
-            testCollection.setDocumentExpiration(id, expiration);
+            getTestCollection().setDocumentExpiration(id, expiration);
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) {
@@ -1938,10 +1940,10 @@ public class DocumentTest extends BaseDbTest {
         String id = "test_doc";
         MutableDocument document = new MutableDocument(id);
         saveDocInTestCollection(document);
-        testCollection.setDocumentExpiration(id, expiration);
-        deleteDb(testDatabase);
+        getTestCollection().setDocumentExpiration(id, expiration);
+        deleteDb(getTestDatabase());
         try {
-            testCollection.getDocumentExpiration(id);
+            getTestCollection().getDocumentExpiration(id);
             fail("Expect CouchbaseLiteException");
         }
         catch (CouchbaseLiteException e) {
@@ -1962,10 +1964,10 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("question", "What is twenty-one times two?");
         saveDocInTestCollection(doc);
 
-        assertNull(testCollection.getDocumentExpiration("doc"));
-        testCollection.setDocumentExpiration("doc", d60Days);
+        assertNull(getTestCollection().getDocumentExpiration("doc"));
+        getTestCollection().setDocumentExpiration("doc", d60Days);
 
-        Date exp = testCollection.getDocumentExpiration("doc");
+        Date exp = getTestCollection().getDocumentExpiration("doc");
         assertNotNull(exp);
         long diff = exp.getTime() - now.getTime();
         assertTrue(Math.abs(TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS) - 60.0) <= 1.0);
@@ -1979,7 +1981,7 @@ public class DocumentTest extends BaseDbTest {
 
         reopenTestDb();
 
-        Document doc = testCollection.getDocument("doc1");
+        Document doc = getTestCollection().getDocument("doc1");
         assertEquals("str", doc.getString("string"));
         Map<String, Object> expected = new HashMap<>();
         expected.put("string", "str");
@@ -2112,7 +2114,7 @@ public class DocumentTest extends BaseDbTest {
 
         reopenTestDb();
 
-        doc = testCollection.getDocument("doc1").toMutable();
+        doc = getTestCollection().getDocument("doc1").toMutable();
         doc.setValue("foo", "bar");
         doc = saveDocInTestCollection(doc).toMutable();
 
@@ -2258,9 +2260,9 @@ public class DocumentTest extends BaseDbTest {
     @VerySlowTest
     @Test
     public void testEqualityDifferentDB() throws CouchbaseLiteException {
-        Database dupDb = null;
+        Database dupDb;
         Database otherDB = createDb("equ-diff-db");
-        Collection otherCollection = BaseDbTestKt.createSimilarCollection(otherDB, testCollection);
+        Collection otherCollection = BaseDbTestKt.createSimilarCollection(otherDB, getTestCollection());
         try {
             MutableDocument doc1a = new MutableDocument("doc1");
             MutableDocument doc1b = new MutableDocument("doc1");
@@ -2280,19 +2282,18 @@ public class DocumentTest extends BaseDbTest {
             assertNotEquals(sDoc1a, sDoc1b);
             assertNotEquals(sDoc1b, sDoc1a);
 
-            sDoc1a = testCollection.getDocument("doc1");
+            sDoc1a = getTestCollection().getDocument("doc1");
             sDoc1b = otherCollection.getDocument("doc1");
             assertNotEquals(sDoc1b, sDoc1a);
 
-            dupDb = duplicateDb(testDatabase);
-            Collection sameCollection = BaseDbTestKt.getSimilarCollection(dupDb, testCollection);
+            dupDb = duplicateDb(getTestDatabase());
+            Collection sameCollection = BaseDbTestKt.getSimilarCollection(dupDb, getTestCollection());
 
             Document anotherDoc1a = sameCollection.getDocument("doc1");
             assertEquals(anotherDoc1a, sDoc1a);
             assertEquals(sDoc1a, anotherDoc1a);
         }
         finally {
-            discardDb(dupDb);
             eraseDb(otherDB);
         }
     }
@@ -2302,22 +2303,22 @@ public class DocumentTest extends BaseDbTest {
     public void testDeleteDocAndGetDoc() throws CouchbaseLiteException {
         String docID = "doc-1";
 
-        Document doc = testCollection.getDocument(docID);
+        Document doc = getTestCollection().getDocument(docID);
         assertNull(doc);
 
         MutableDocument mDoc = new MutableDocument(docID);
         mDoc.setValue(TEST_DOC_TAG_KEY, "value");
         doc = saveDocInTestCollection(mDoc);
         assertNotNull(doc);
-        assertEquals(1, testCollection.getCount());
+        assertEquals(1, getTestCollection().getCount());
 
-        doc = testCollection.getDocument(docID);
+        doc = getTestCollection().getDocument(docID);
         assertNotNull(doc);
         assertEquals("value", doc.getString(TEST_DOC_TAG_KEY));
 
-        testCollection.delete(doc);
-        assertEquals(0, testCollection.getCount());
-        doc = testCollection.getDocument(docID);
+        getTestCollection().delete(doc);
+        assertEquals(0, getTestCollection().getCount());
+        doc = getTestCollection().getDocument(docID);
         assertNull(doc);
     }
 
@@ -2618,17 +2619,17 @@ public class DocumentTest extends BaseDbTest {
     public void testRevisionIDNewDoc() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument();
         assertNull(doc.getRevisionID());
-        testCollection.save(doc);
+        getTestCollection().save(doc);
         assertNotNull(doc.getRevisionID());
     }
 
     @Test
     public void testRevisionIDExistingDoc() throws CouchbaseLiteException {
         MutableDocument mdoc = new MutableDocument("doc1");
-        testCollection.save(mdoc);
+        getTestCollection().save(mdoc);
         String docRevID = mdoc.getRevisionID();
 
-        Document doc = testCollection.getDocument("doc1");
+        Document doc = getTestCollection().getDocument("doc1");
         assertEquals(docRevID, doc.getRevisionID());
         assertEquals(docRevID, mdoc.getRevisionID());
 
@@ -2640,7 +2641,7 @@ public class DocumentTest extends BaseDbTest {
         assertEquals(docRevID, doc.getRevisionID());
         assertEquals(docRevID, mdoc.getRevisionID());
 
-        testCollection.save(mdoc);
+        getTestCollection().save(mdoc);
         assertEquals(docRevID, doc.getRevisionID());
         assertNotEquals(docRevID, mdoc.getRevisionID());
     }
@@ -2652,7 +2653,7 @@ public class DocumentTest extends BaseDbTest {
     public void testDocToJSON() throws JSONException, CouchbaseLiteException {
         final MutableDocument mDoc = makeDocument();
         saveDocInTestCollection(mDoc);
-        verifyDocument(new JSONObject(testCollection.getDocument(mDoc.getId()).toJSON()));
+        verifyDocument(new JSONObject(getTestCollection().getDocument(mDoc.getId()).toJSON()));
     }
 
     // JSON 3.5.?
@@ -2667,7 +2668,7 @@ public class DocumentTest extends BaseDbTest {
     public void testDocFromJSON() throws JSONException {
         Document dbDoc
             = saveDocInTestCollection(new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("document.json")));
-        testDatabase.saveBlob(makeBlob()); // be sure the blob is there...
+        getTestDatabase().saveBlob(makeBlob()); // be sure the blob is there...
         verifyDocument(dbDoc);
         verifyDocument(new JSONObject(dbDoc.toJSON()));
     }
@@ -2755,6 +2756,6 @@ public class DocumentTest extends BaseDbTest {
     private Document saveDocInTestCollection(MutableDocument doc) { return saveDocInTestCollection(doc, null); }
 
     private Document saveDocInTestCollection(MutableDocument doc, DocValidator validator) {
-        return saveDocInCollection(doc, testCollection, validator);
+        return saveDocInCollection(doc, getTestCollection(), validator);
     }
 }

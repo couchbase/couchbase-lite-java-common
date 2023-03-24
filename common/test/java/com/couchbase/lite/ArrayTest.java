@@ -511,7 +511,7 @@ public class ArrayTest extends BaseDbTest {
     }
 
     @Test
-    public void testCount() throws CouchbaseLiteException {
+    public void testCount() {
         for (int i = 0; i < 2; i++) {
             MutableArray array = new MutableArray();
             if (i % 2 == 0) { populateData(array); }
@@ -1976,7 +1976,7 @@ public class ArrayTest extends BaseDbTest {
     // Kotlin shim functions
 
     private Document saveDocInTestCollection(MutableDocument mDoc) {
-        return saveDocInTestCollection(mDoc, testCollection);
+        return saveDocInTestCollection(mDoc, getTestCollection());
     }
 
     private Document saveDocInTestCollection(MutableDocument mDoc, Collection collection) {
@@ -1986,6 +1986,6 @@ public class ArrayTest extends BaseDbTest {
     private void saveDocInTestCollection(
         MutableDocument mDoc, Fn.ConsumerThrows<Document,
         CouchbaseLiteException> validator) {
-        saveDocInCollection(mDoc, testCollection, validator);
+        saveDocInCollection(mDoc, getTestCollection(), validator);
     }
 }

@@ -334,7 +334,7 @@ class DbCollectionsTest : BaseDbTest() {
     @Test
     fun testGetScopeAndCollectionNameFromAClosedDatabase() {
         val collectionName = testCollection.name
-        discardDb(testDatabase)
+        testDatabase.close()
         assertNotNull(testCollection.scope)
         assertEquals(collectionName, testCollection.name)
     }

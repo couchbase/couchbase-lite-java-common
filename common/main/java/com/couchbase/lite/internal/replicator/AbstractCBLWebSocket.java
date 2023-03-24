@@ -707,7 +707,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
                 e);
         }
 
-
         final SSLSocketFactory socketFactory = sslContext.getSocketFactory();
         builder.sslSocketFactory(
             (iFace == null) ? socketFactory : new ConstrainedAddressSocketFactory(iFace, socketFactory),

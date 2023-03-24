@@ -13,11 +13,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-@file:Suppress("DEPRECATION")
-
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal
+import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.core.C4Database
 import com.couchbase.lite.internal.utils.FileUtils
 import com.couchbase.lite.internal.utils.SlowTest
@@ -42,74 +41,74 @@ import java.util.concurrent.TimeUnit
 // cbl-java-common @ a2de0d43d09ce64fd3a1301dc35
 
 // The rules in this test are:
-// baseTestDb is managed by the superclass
+// testDatabase is managed by the superclass
 // If a test creates a new database it guarantees that it is deleted.
-// If a test opens a copy of the baseTestDb, it close (but does NOT delete) it
-class DatabaseTest : LegacyBaseDbTest() {
+// If a test opens a copy of the testDatabase, it close (but does NOT delete) it
+class DatabaseTest : BaseDbTest() {
+
     //---------------------------------------------
     //  Get Document
     //---------------------------------------------
     @Test
     fun testGetNonExistingDocWithID() {
-        assertNull(baseTestDb.getDocument("non-exist"))
+        assertNull(testCollection.getDocument("doesnt-exist"))
     }
 
     @Test
     fun testGetExistingDocWithID() {
-        val docID = "doc1"
-        createSingleDocInBaseTestDb(docID)
-        verifyGetDocument(docID, 1)
+        val doc = MutableDocument()
+        doc.setValue(TEST_DOC_TAG_KEY, testTag)
+        saveDocInCollection(doc)
+        verifyDocInCollection(doc.id)
     }
 
+    @SlowTest
     @Test
     fun testGetExistingDocWithIDFromDifferentDBInstance() {
         // store doc
-        val docID = "doc1"
-        createSingleDocInBaseTestDb(docID)
+        val doc = createDocInCollection()
 
         // open db with same db name and default option
-        val otherDb = duplicateBaseTestDb()
+        val (otherDb, otherCollection) = duplicateTestDb()
         try {
-            assertNotSame(baseTestDb, otherDb)
+            assertNotSame(testDatabase, otherDb)
 
             // get doc from other DB.
-            assertEquals(1, otherDb.count)
-            verifyGetDocument(otherDb, docID, 1)
+            assertEquals(1, otherCollection.count)
+            verifyDocInCollection(doc.id)
         } finally {
-            discardDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
     @Test
     fun testGetExistingDocWithIDInBatch() {
-        // Save 10 docs:
-        val n = 13
-        createDocsInBaseTestDb(n)
-        baseTestDb.inBatch<RuntimeException> { verifyDocuments(n) }
+        val docIds = createDocsInCollection(13).map { it.id }
+        testDatabase.inBatch<RuntimeException> { verifyDocsInCollection(docIds) }
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testGetDocFromClosedDB() {
         // Store doc:
-        createSingleDocInBaseTestDb("doc1")
+        val docId = createDocInCollection().id
 
         // Close db:
-        baseTestDb.close()
+        testDatabase.close()
 
         // should fail
-        baseTestDb.getDocument("doc1")
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(docId) }
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testGetDocFromDeletedDB() {
         // Store doc:
-        createSingleDocInBaseTestDb("doc1")
+        val docId = createDocInCollection().id
 
         // Delete db:
-        baseTestDb.delete()
+        testDatabase.delete()
 
         // should fail
-        baseTestDb.getDocument("doc1")
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(docId) }
     }
 
     //---------------------------------------------
@@ -118,76 +117,92 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testSaveNewDocWithID() {
-        testSaveNewDocWithID("doc1")
+        val doc = MutableDocument("doc1")
+        doc.setValue(TEST_DOC_TAG_KEY, testTag)
+        testCollection.save(doc)
+
+        assertEquals(1, testCollection.count)
+
+        // validate document by getDocument
+        verifyDocInCollection(doc.id)
     }
 
     @Test
     fun testSaveNewDocWithSpecialCharactersDocID() {
-        testSaveNewDocWithID("`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'")
+        val n = testCollection.count
+
+        val doc = MutableDocument("`~@#$%^&*()_+{}|\\\\][=-/.,<>?\\\":;'")
+        doc.setValue(TEST_DOC_TAG_KEY, testTag)
+        testCollection.save(doc)
+
+
+        assertEquals(n + 1, testCollection.count)
+
+        // validate document by getDocument
+        verifyDocInCollection(doc.id)
     }
 
     @Test
     fun testSaveAndGetMultipleDocs() {
-        val nDocs = 11
-        for (i in 0 until nDocs) {
-            val doc = MutableDocument("doc_${i}")
-            doc.setValue("key", i)
-            saveDocInBaseTestDb(doc)
-        }
-        assertEquals(nDocs.toLong(), baseTestDb.count)
-        verifyDocuments(nDocs)
+        val docIds = createDocsInCollection(11).map { it.id }
+        assertEquals(docIds.size.toLong(), testCollection.count)
+        verifyDocsInCollection(docIds)
     }
 
     @Test
     fun testSaveDoc() {
+        val n = testCollection.count
+
         // store doc
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID).toMutable()
+        val doc = createDocInCollection()
 
         // update doc
-        doc.setValue("key", 2)
-        saveDocInBaseTestDb(doc)
-        assertEquals(1, baseTestDb.count)
+        doc.setValue(TEST_DOC_TAG_KEY, "bam!!!")
+        saveDocInCollection(doc)
+        assertEquals(n + 1, testCollection.count)
 
-        // validate document by getDocument
-        verifyGetDocument(docID, 2)
+        verifyDocInCollection(doc.id, "bam!!!")
     }
 
+    @SlowTest
     @Test
     fun testSaveDocInDifferentDBInstance() {
+        val n = testCollection.count
+
         // Store doc
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID).toMutable()
+        val doc = createDocInCollection()
 
         // Create db with default
-        val otherDb = duplicateBaseTestDb()
+        val (otherDb, otherCollection) = duplicateTestDb()
         try {
-            assertNotSame(otherDb, baseTestDb)
-            assertEquals(1, otherDb.count)
+            assertNotSame(otherDb, testDatabase)
+            assertNotSame(otherCollection, testCollection)
+            assertEquals(n + 1, otherCollection.count)
 
-            // Update doc & store it into different instance
-            doc.setValue("key", 2)
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
+            // Attempt to save the doc in the wrong db
+            doc.setValue(TEST_DOC_TAG_KEY, "bam!!!")
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
         } finally {
-            discardDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
     @Test
     fun testSaveDocInDifferentDB() {
         // Store doc
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID).toMutable()
+        val doc = createDocInCollection()
 
         // Create db with default
-        val otherDb = openDatabase()
+        val otherDb = createDb("save_doc_diff_db")
+        val otherCollection = otherDb.createSimilarCollection(testCollection)
         try {
-            assertNotSame(otherDb, baseTestDb)
-            assertEquals(0, otherDb.count)
+            assertNotSame(otherDb, testDatabase)
+            assertNotSame(otherCollection, testCollection)
+            assertEquals(0, otherCollection.count)
 
-            // Update doc & store it into different instance
-            doc.setValue("key", 2)
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
+            // Attempt to save the doc in a *very* wrong db
+            doc.setValue(TEST_DOC_TAG_KEY, "bam!!!")
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
         } finally {
             // delete otherDb
             eraseDb(otherDb)
@@ -196,90 +211,103 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testSaveSameDocTwice() {
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID).toMutable()
-        assertEquals(docID, saveDocInBaseTestDb(doc).id)
-        assertEquals(1, baseTestDb.count)
+        val n = testCollection.count
+
+        val doc = createDocInCollection()
+        assertEquals(n + 1, testCollection.count)
+
+        assertEquals(doc.id, saveDocInCollection(doc).id)
+
+        assertEquals(n + 1, testCollection.count)
     }
 
     @Test
     fun testSaveInBatch() {
         val nDocs = 17
-        baseTestDb.inBatch<CouchbaseLiteException> { createDocsInBaseTestDb(nDocs) }
-        assertEquals(nDocs.toLong(), baseTestDb.count)
-        verifyDocuments(nDocs)
+        val n = testCollection.count
+
+        var docIds: kotlin.collections.Collection<String>? = null
+        testDatabase.inBatch<CouchbaseLiteException> {
+            docIds = createDocsInCollection(nDocs).map { it.id }
+        }
+        assertEquals(n + nDocs, testCollection.count)
+        verifyDocsInCollection(docIds!!)
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testSaveDocToClosedDB() {
-        baseTestDb.close()
-        val doc = MutableDocument("doc1")
-        doc.setValue("key", 1)
-        saveDocInBaseTestDb(doc)
+        testDatabase.close()
+        val doc = MutableDocument()
+        doc.setValue(TEST_DOC_TAG_KEY, testTag)
+        assertThrowsCBL(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) { testCollection.save(doc) }
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testSaveDocToDeletedDB() {
         // Delete db:
-        baseTestDb.delete()
-        val doc = MutableDocument("doc1")
-        doc.setValue("key", 1)
-        saveDocInBaseTestDb(doc)
+        testDatabase.delete()
+        val doc = MutableDocument()
+        doc.setValue(TEST_DOC_TAG_KEY, testTag)
+        assertThrowsCBL(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) { testCollection.save(doc) }
     }
 
     //---------------------------------------------
     //  Delete Document
     //---------------------------------------------
     @Test
-    fun testDeletePreSaveDoc() {
-        val doc = MutableDocument("doc1")
-        doc.setValue("key", 1)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc) }
+    fun testDeleteNonExistentDoc() {
+        val doc = MutableDocument("doesnt_exist")
+        doc.setValue(TEST_DOC_TAG_KEY, testTag)
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc) }
     }
 
     @Test
     fun testDeleteDoc() {
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID)
-        assertEquals(1, baseTestDb.count)
-        baseTestDb.delete(doc)
-        assertEquals(0, baseTestDb.count)
-        assertNull(baseTestDb.getDocument(docID))
+        val n = testCollection.count
+        val doc = createDocInCollection()
+        assertEquals(n + 1, testCollection.count)
+        testCollection.delete(doc)
+        assertEquals(n, testCollection.count)
+        assertNull(testCollection.getDocument(doc.id))
     }
 
+    @SlowTest
     @Test
     fun testDeleteDocInDifferentDBInstance() {
+        val n = testCollection.count
+
         // Store doc:
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID)
+        val doc = createDocInCollection()
 
         // Create db with same name:
         // Create db with default
-        val otherDb = duplicateBaseTestDb()
+        val (otherDb, otherCollection) = duplicateTestDb()
         try {
-            assertNotSame(otherDb, baseTestDb)
-            assertEquals(1, otherDb.count)
+            assertNotSame(otherDb, testDatabase)
+            assertNotSame(otherCollection, testCollection)
+            assertEquals(n + 1, testCollection.count)
 
-            // Delete from the different db instance:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
+            // Delete from the the wrong db
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
         } finally {
-            discardDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
     @Test
     fun testDeleteDocInDifferentDB() {
         // Store doc
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID)
+        val doc = createDocInCollection()
 
         // Create db with default
-        val otherDb = openDatabase()
+        val otherDb = createDb("del_doc_other_db")
+        val otherCollection = otherDb.createTestCollection()
         try {
-            assertNotSame(otherDb, baseTestDb)
+            assertNotSame(otherDb, testDatabase)
+            assertNotSame(otherCollection, testCollection)
 
             // Delete from the different db:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -287,98 +315,106 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testDeleteDocInBatch() {
-        val nDocs = 10
+        val n = testCollection.count
 
-        // Save 10 docs:
-        createDocsInBaseTestDb(nDocs)
-        baseTestDb.inBatch<CouchbaseLiteException> {
-            for (i in 0 until nDocs) {
-                val docID = "doc_${i}"
-                val doc = baseTestDb.getDocument(docID)
-                baseTestDb.delete(doc!!)
-                assertNull(baseTestDb.getDocument(docID))
-                assertEquals((9 - i).toLong(), baseTestDb.count)
+        var nDocs = 23
+
+        val docs = createDocsInCollection(nDocs).map { it.id }
+        testDatabase.inBatch<CouchbaseLiteException> {
+            docs.forEach { docId ->
+                val doc = testCollection.getDocument(docId)
+                assertNotNull(doc!!)
+                testCollection.delete(doc)
+                assertNull(testCollection.getDocument(docId))
+                assertEquals(n + --nDocs, testCollection.count)
             }
         }
-        assertEquals(0, baseTestDb.count)
+        assertEquals(n, testCollection.count)
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testDeleteDocOnClosedDB() {
         // Store doc:
-        val doc = createSingleDocInBaseTestDb("doc1")
+        val doc = createDocInCollection()
 
         // Close db:
-        baseTestDb.close()
+        testDatabase.close()
 
-        // Delete doc from db:
-        baseTestDb.delete(doc)
+        // Delete doc from closed db:
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testDeleteDocOnDeletedDB() {
         // Store doc:
-        val doc = createSingleDocInBaseTestDb("doc1")
-        baseTestDb.delete()
+        val doc = createDocInCollection()
 
-        // Delete doc from db:
-        baseTestDb.delete(doc)
+        testDatabase.delete()
+
+        // Delete doc from deleted db:
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
     }
 
     //---------------------------------------------
     //  Purge Document
     //---------------------------------------------
     @Test
-    fun testPurgePreSaveDoc() {
+    fun testPurgeNonexistentDoc() {
+        val n = testCollection.count
         val doc = MutableDocument("doc1")
-        assertEquals(0, baseTestDb.count)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.purge(doc) }
-        assertEquals(0, baseTestDb.count)
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.purge(doc) }
+        assertEquals(n, testCollection.count)
     }
 
     @Test
     fun testPurgeDoc() {
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID)
+        val n = testCollection.count
+
+        val doc = createDocInCollection()
+        assertEquals(n + 1, testCollection.count)
 
         // Purge Doc
         purgeDocAndVerify(doc)
-        assertEquals(0, baseTestDb.count)
+        assertEquals(0, testCollection.count)
     }
 
+    @SlowTest
     @Test
     fun testPurgeDocInDifferentDBInstance() {
+        val n = testCollection.count
+
         // Store doc:
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID)
+        val doc = createDocInCollection()
 
         // Create db with default:
-        val otherDb = duplicateBaseTestDb()
+        val (otherDb, otherCollection) = duplicateTestDb()
         try {
-            assertNotSame(otherDb, baseTestDb)
-            assertEquals(1, otherDb.count)
+            assertNotSame(otherDb, testDatabase)
+            assertNotSame(otherCollection, testCollection)
+            assertEquals(n + 1, otherCollection.count)
 
             // purge document against other db instance:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
         } finally {
-            discardDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
     @Test
     fun testPurgeDocInDifferentDB() {
         // Store doc:
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID)
+        val doc = createDocInCollection()
 
         // Create db with default:
-        val otherDb = openDatabase()
+        val otherDb = createDb("purge_doc_other_db")
+        val otherCollection = otherDb.createSimilarCollection(testCollection)
         try {
-            assertNotSame(otherDb, baseTestDb)
-            assertEquals(0, otherDb.count)
+            assertNotSame(otherDb, testDatabase)
+            assertNotSame(otherCollection, testCollection)
+            assertEquals(0, otherCollection.count)
 
             // Purge document against other db:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -386,60 +422,66 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testPurgeSameDocTwice() {
+        val n = testCollection.count
+
         // Store doc:
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID)
+        val doc = createDocInCollection()
+        assertEquals(n + 1, testCollection.count)
 
         // Get the document for the second purge:
-        val doc1 = baseTestDb.getDocument(docID)
+        val doc1 = testCollection.getDocument(doc.id)
+        assertNotNull(doc1!!)
 
         // Purge the document first time:
         purgeDocAndVerify(doc)
-        assertEquals(0, baseTestDb.count)
+        assertEquals(n, testCollection.count)
 
         // Purge the document second time:
         purgeDocAndVerify(doc1)
-        assertEquals(0, baseTestDb.count)
+        assertEquals(n, testCollection.count)
     }
 
     @Test
     fun testPurgeDocInBatch() {
-        val nDocs = 10
-        // Save 10 docs:
-        createDocsInBaseTestDb(nDocs)
-        baseTestDb.inBatch<CouchbaseLiteException> {
-            for (i in 0 until nDocs) {
-                val docID = "doc_${i}"
-                val doc = baseTestDb.getDocument(docID)
+        val n = testCollection.count
+
+        var nDocs = 10
+
+        val docIds = createDocsInCollection(nDocs).map { it.id }
+
+        testDatabase.inBatch<CouchbaseLiteException> {
+            docIds.forEach { docId ->
+                val doc = testCollection.getDocument(docId)
+                assertNotNull(doc!!)
                 purgeDocAndVerify(doc)
-                assertEquals((9 - i).toLong(), baseTestDb.count)
+                assertEquals(n + --nDocs, testCollection.count)
             }
         }
-        assertEquals(0, baseTestDb.count)
+        assertEquals(0, testCollection.count)
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testPurgeDocOnClosedDB() {
         // Store doc:
-        val doc = createSingleDocInBaseTestDb("doc1")
+        val doc = createDocInCollection()
 
         // Close db:
-        baseTestDb.close()
+        testDatabase.close()
 
         // Purge doc:
-        baseTestDb.purge(doc)
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testPurgeDocOnDeletedDB() {
         // Store doc:
-        val doc = createSingleDocInBaseTestDb("doc1")
+        val doc = createDocInCollection()
 
         // Close db:
-        baseTestDb.close()
+        testDatabase.close()
 
         // Purge doc:
-        baseTestDb.purge(doc)
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
     }
 
     //---------------------------------------------
@@ -447,51 +489,59 @@ class DatabaseTest : LegacyBaseDbTest() {
     //---------------------------------------------
     @Test
     fun testClose() {
-        baseTestDb.close()
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
     }
 
     @Test
     fun testCloseTwice() {
-        baseTestDb.close()
-        baseTestDb.close()
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
     }
 
     @Test
     fun testCloseThenAccessDoc() {
         // Store doc:
-        val docID = "doc1"
-        val mDoc = MutableDocument(docID)
-        mDoc.setInt("key", 1)
         val mDict = MutableDictionary() // nested dictionary
         mDict.setString("hello", "world")
+        val mDoc = MutableDocument()
+        mDoc.setString(TEST_DOC_TAG_KEY, testTag)
         mDoc.setDictionary("dict", mDict)
-        val doc = saveDocInBaseTestDb(mDoc)
+        val doc = saveDocInCollection(mDoc)
 
         // Close db:
-        baseTestDb.close()
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
 
         // Content should be accessible & modifiable without error:
-        assertEquals(docID, doc.id)
-        assertEquals(1, (doc.getValue("key") as Number?)!!.toInt().toLong())
+        assertEquals(mDoc.id, doc.id)
+        assertEquals(testTag, doc.getValue(TEST_DOC_TAG_KEY))
         val dict = doc.getDictionary("dict")
-        assertNotNull(dict)
-        assertEquals("world", dict!!.getString("hello"))
+        assertNotNull(dict!!)
+        assertEquals("world", dict.getString("hello"))
         val updateDoc = doc.toMutable()
-        updateDoc.setValue("key", 2)
-        updateDoc.setValue("key1", "value")
-        assertEquals(2, updateDoc.getInt("key").toLong())
-        assertEquals("value", updateDoc.getString("key1"))
+        updateDoc.setValue(TEST_DOC_TAG_KEY, "bam!!")
+        updateDoc.setValue("anotherValue", 55)
+        assertEquals("bam!!", updateDoc.getString(TEST_DOC_TAG_KEY))
+        assertEquals(55, updateDoc.getInt("anotherValue"))
     }
 
     @Test
     fun testCloseThenAccessBlob1() {
         // Store doc with blob:
-        val mDoc = createSingleDocInBaseTestDb("doc1").toMutable()
+        val mDoc = createDocInCollection()
         mDoc.setValue("blob", Blob("text/plain", BLOB_CONTENT.toByteArray(StandardCharsets.UTF_8)))
-        val doc = saveDocInBaseTestDb(mDoc)
+        val doc = saveDocInCollection(mDoc)
 
         // Close db:
-        baseTestDb.close()
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
 
         // content should be accessible & modifiable without error
         val blob = doc.getBlob("blob")
@@ -499,57 +549,68 @@ class DatabaseTest : LegacyBaseDbTest() {
         assertEquals(BLOB_CONTENT.length.toLong(), blob!!.length())
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testCloseThenAccessBlob2() {
         // Store doc with blob:
-        val mDoc = createSingleDocInBaseTestDb("doc1").toMutable()
+        val mDoc = createDocInCollection()
         mDoc.setValue("blob", Blob("text/plain", BLOB_CONTENT.toByteArray(StandardCharsets.UTF_8)))
-        val doc = saveDocInBaseTestDb(mDoc)
+        val doc = saveDocInCollection(mDoc)
 
         // Close db:
-        baseTestDb.close()
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
 
         // content should be accessible & modifiable without error
         val blob = doc.getBlob("blob")
         assertNotNull(blob)
 
         // trying to get the content, however, should fail
-        blob!!.content
+        assertThrows(java.lang.IllegalStateException::class.java) { blob!!.content }
     }
 
     @Test
     fun testCloseThenGetDatabaseName() {
-        val dbName = baseTestDb.name
-        baseTestDb.close()
-        assertEquals(dbName, baseTestDb.name)
+        val dbName = testDatabase.name
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
+        assertEquals(dbName, testDatabase.name)
     }
 
     @Test
     fun testCloseThenGetDatabasePath() {
-        baseTestDb.close()
-        assertNull(baseTestDb.path)
+        assertNotNull(testDatabase.path)
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
+        assertNull(testDatabase.path)
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testCloseThenCallInBatch() {
-        baseTestDb.close()
-        baseTestDb.inBatch<RuntimeException> { fail() }
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
+        assertThrows(java.lang.IllegalStateException::class.java) {
+            testDatabase.inBatch<RuntimeException> { }
+        }
     }
 
     @Test
     fun testCloseInInBatch() {
-        baseTestDb.inBatch<RuntimeException> {
-            // delete db
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) {
-                baseTestDb.close()
-            }
+        testDatabase.inBatch<RuntimeException> {
+            // can't close a db in a transaction
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) { testDatabase.close() }
         }
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testCloseThenDeleteDatabase() {
-        baseTestDb.close()
-        baseTestDb.delete()
+        assertTrue(testDatabase.isOpen)
+        testDatabase.close()
+        assertFalse(testDatabase.isOpen)
+        assertThrows(java.lang.IllegalStateException::class.java) { testDatabase.delete() }
     }
 
     //---------------------------------------------
@@ -557,48 +618,56 @@ class DatabaseTest : LegacyBaseDbTest() {
     //---------------------------------------------
     @Test
     fun testDelete() {
-        baseTestDb.delete()
+        val path = File(testDatabase.path!!)
+        assertTrue(path.exists())
+        testDatabase.delete()
+        assertFalse(path.exists())
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testDeleteTwice() {
-        val path = File(baseTestDb.path!!)
+        val path = File(testDatabase.path!!)
         assertTrue(path.exists())
 
         // delete db
-        baseTestDb.delete()
+        testDatabase.delete()
         assertFalse(path.exists())
 
         // second delete should fail
-        baseTestDb.delete()
+        assertThrows(java.lang.IllegalStateException::class.java) { testDatabase.delete() }
     }
 
     @Test
     fun testDeleteThenAccessDoc() {
+        val path = File(testDatabase.path!!)
+        assertTrue(path.exists())
+
         // Store doc:
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID).toMutable()
+        val doc = createDocInCollection()
 
         // Delete db:
-        baseTestDb.delete()
+        testDatabase.delete()
+        assertFalse(path.exists())
 
         // Content should be accessible & modifiable without error:
-        assertEquals(docID, doc.id)
-        assertEquals(1, (doc.getValue("key") as Number).toInt().toLong())
-        doc.setValue("key", 2)
-        doc.setValue("key1", "value")
+        assertEquals(testTag, doc.getValue(TEST_DOC_TAG_KEY))
+        doc.setValue(TEST_DOC_TAG_KEY, "yaya")
+        doc.setValue("gitchagitcha", "yaya")
     }
 
     @Test
     fun testDeleteThenAccessBlob() {
+        val path = File(testDatabase.path!!)
+        assertTrue(path.exists())
+
         // Store doc with blob:
-        val docID = "doc1"
-        val doc = createSingleDocInBaseTestDb(docID).toMutable()
+        val doc = createDocInCollection()
         doc.setValue("blob", Blob("text/plain", BLOB_CONTENT.toByteArray(StandardCharsets.UTF_8)))
-        saveDocInBaseTestDb(doc)
+        saveDocInCollection(doc)
 
         // Delete db:
-        baseTestDb.delete()
+        testDatabase.delete()
+        assertFalse(path.exists())
 
         // content should be accessible & modifiable without error
         val obj = doc.getValue("blob")!!
@@ -613,48 +682,68 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testDeleteThenGetDatabaseName() {
-        val dbName = baseTestDb.name
+        val dbName = testDatabase.name
+
+        val path = File(testDatabase.path!!)
+        assertTrue(path.exists())
 
         // delete db
-        baseTestDb.delete()
-        assertEquals(dbName, baseTestDb.name)
+        testDatabase.delete()
+        assertFalse(path.exists())
+
+        assertEquals(dbName, testDatabase.name)
     }
 
     @Test
     fun testDeleteThenGetDatabasePath() {
+        val path = File(testDatabase.path!!)
+        assertTrue(path.exists())
+
         // delete db
-        baseTestDb.delete()
-        assertNull(baseTestDb.path)
+        testDatabase.delete()
+        assertFalse(path.exists())
+
+        assertNull(testDatabase.path)
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testDeleteThenCallInBatch() {
-        baseTestDb.delete()
-        baseTestDb.inBatch<RuntimeException> { fail() }
+        val path = File(testDatabase.path!!)
+        assertTrue(path.exists())
+        testDatabase.delete()
+        assertFalse(path.exists())
+        assertThrows(java.lang.IllegalStateException::class.java) {
+            testDatabase.inBatch<RuntimeException> { }
+        }
     }
 
     @Test
     fun testDeleteInInBatch() {
-        baseTestDb.inBatch<RuntimeException> {
-            // delete db
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) {
-                baseTestDb.close()
-            }
+        val path = File(testDatabase.path!!)
+        assertTrue(path.exists())
+        testDatabase.inBatch<RuntimeException> {
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) { testDatabase.delete() }
         }
     }
 
     @SlowTest
     @Test
     fun testDeleteDBOpenedByOtherInstance() {
-        val otherDb = duplicateBaseTestDb()
+        val n = testCollection.count
+
+        val path = File(testDatabase.path!!)
+        assertTrue(path.exists())
+
+        val (otherDb, otherCollection) = duplicateTestDb()
         try {
-            assertEquals(0, otherDb.count)
-            assertNotSame(baseTestDb, otherDb)
+            assertNotSame(testDatabase, otherDb)
+            assertNotSame(testCollection, otherCollection)
+            assertEquals(n, otherCollection.count)
 
             // delete db
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { baseTestDb.delete() }
+            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { testDatabase.delete() }
         } finally {
-            discardDb(otherDb)
+            eraseDb(otherDb)
         }
     }
 
@@ -663,14 +752,14 @@ class DatabaseTest : LegacyBaseDbTest() {
     //---------------------------------------------
     @Test
     fun testDeleteWithDefaultDirDB() {
-        val dbName = baseTestDb.name
+        val dbName = testDatabase.name
 
-        val path = File(baseTestDb.path!!)
+        val path = File(testDatabase.path!!)
         assertNotNull(path)
         assertTrue(path.exists())
 
         // close db before delete
-        baseTestDb.close()
+        testDatabase.close()
         Database.delete(dbName, null)
         assertFalse(path.exists())
     }
@@ -678,13 +767,11 @@ class DatabaseTest : LegacyBaseDbTest() {
     @SlowTest
     @Test
     fun testDeleteOpenDbWithDefaultDir() {
-        val path = File(baseTestDb.path!!)
+        val path = File(testDatabase.path!!)
         assertNotNull(path)
         assertTrue(path.exists())
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) {
-            Database.delete(baseTestDb.name, null)
-        }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { Database.delete(testDatabase.name, null) }
     }
 
     @Test
@@ -694,13 +781,12 @@ class DatabaseTest : LegacyBaseDbTest() {
         // create db in a custom directory
         val db = createDb("static_del_db", DatabaseConfiguration().setDirectory(dbDirPath))
         try {
-            val dbName = db.name
             val dbPath = File(db.path!!)
             assertTrue(dbPath.exists())
 
             // close db before delete
             db.close()
-            Database.delete(dbName, File(dbDirPath))
+            Database.delete(db.name, File(dbDirPath))
             assertFalse(dbPath.exists())
         } finally {
             eraseDb(db)
@@ -709,31 +795,28 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @SlowTest
     @Test
-    fun testDeleteOpeningDBByStaticMethod() {
-        val db = duplicateBaseTestDb()
-        val dbName = db.name
-        val dbDir = db.filePath!!.parentFile
-        try {
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { Database.delete(dbName, dbDir) }
-        } finally {
-            discardDb(db)
+    fun testDeleteOpenDBWithStaticMethod() {
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) {
+            Database.delete(testDatabase.name, testDatabase.filePath!!.parentFile)
         }
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteNonExistingDBWithDefaultDir() {
-        Database.delete("notexistdb", baseTestDb.filePath)
+        assertThrowsCBL(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_FOUND) {
+            Database.delete("doesntexist", testDatabase.filePath)
+        }
     }
 
     @Test
     fun testDeleteNonExistingDB() {
         assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
-            Database.delete(baseTestDb.name, File(getScratchDirectoryPath("nowhere")))
+            Database.delete(testDatabase.name, File(getScratchDirectoryPath("nowhere")))
         }
     }
 
     //---------------------------------------------
-    //  Database Existing
+    //  Database Existence
     //---------------------------------------------
     @Test
     fun testDatabaseExistsWithDir() {
@@ -745,12 +828,15 @@ class DatabaseTest : LegacyBaseDbTest() {
         // create db with custom directory
         val db = Database(dirName, DatabaseConfiguration().setDirectory(dbDirPath))
         try {
-            assertTrue(Database.exists(dirName, dbDir))
             val dbPath = db.path!!
+            assertTrue(Database.exists(dirName, dbDir))
+
             db.close()
             assertTrue(Database.exists(dirName, dbDir))
+
             Database.delete(dirName, dbDir)
             assertFalse(Database.exists(dirName, dbDir))
+
             assertFalse(File(dbPath).exists())
         } finally {
             eraseDb(db)
@@ -759,12 +845,12 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testDatabaseExistsAgainstNonExistDBWithDefaultDir() {
-        assertFalse(Database.exists("notexistdb", baseTestDb.filePath!!))
+        assertFalse(Database.exists("doesntexist", testDatabase.filePath!!))
     }
 
     @Test
     fun testDatabaseExistsAgainstNonExistDB() {
-        assertFalse(Database.exists(baseTestDb.name, File(getScratchDirectoryPath("nowhere"))))
+        assertFalse(Database.exists(testDatabase.name, File(getScratchDirectoryPath("nowhere"))))
     }
 
     //---------------------------------------------
@@ -775,23 +861,23 @@ class DatabaseTest : LegacyBaseDbTest() {
     // returns the expected result based on section 6.3
     @Test
     fun testUseCollectionAPIOnDeletedCollection() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val collection = baseTestDb.getCollection("bobblehead", "horo")
-        assertNotNull(collection!!)
+        val collection = testDatabase.createCollection("bobblehead", "horo")
+        assertNotNull(collection)
 
         val doc = MutableDocument()
         collection.save(doc)
 
-        baseTestDb.deleteCollection("bobblehead", "horo")
-        assertNull(baseTestDb.getCollection("bobblehead", "horo"))
+        testDatabase.deleteCollection("bobblehead", "horo")
+        assertNull(testDatabase.getCollection("bobblehead", "horo"))
 
         assertEquals("horo", collection.scope.name)
         assertEquals("bobblehead", collection.name)
 
         // These two calls should generate warnings, but should not fail
         collection.addChangeListener { }
-        collection.addDocumentChangeListener("docId") { }
+        collection.addDocumentChangeListener(doc.id) { }
 
+        // All of these things should throw
         assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
 
         assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
@@ -811,18 +897,18 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     // 8.5.2: Test that after the database is closed, calling functions on the scope object
     // returns the expected result based on section 6.3
+    @SlowTest
     @Test
     fun testUseCollectionAPIOnDeletedCollectionDeletedFromDifferentDBInstance() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val collection = baseTestDb.getCollection("bobblehead", "horo")
-        assertNotNull(collection!!)
+        val collection = testDatabase.createCollection("bobblehead", "horo")
+        assertNotNull(collection)
 
         val doc = MutableDocument()
         collection.save(doc)
 
-        // delete the collection in a differnt database
-        duplicateDb(baseTestDb).deleteCollection("bobblehead", "horo")
-        assertNull(baseTestDb.getCollection("bobblehead", "horo"))
+        // delete the collection in a different database
+        duplicateDb(testDatabase).deleteCollection("bobblehead", "horo")
+        assertNull(testDatabase.getCollection("bobblehead", "horo"))
 
         assertEquals("horo", collection.scope.name)
         assertEquals("bobblehead", collection.name)
@@ -831,6 +917,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         collection.addChangeListener { }
         collection.addDocumentChangeListener("docId") { }
 
+        // All of these things should throw
         assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
 
         assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
@@ -856,22 +943,26 @@ class DatabaseTest : LegacyBaseDbTest() {
     // returns the expected result based on section 6.3
     @Test
     fun testUseScopeWhenDatabaseIsClosed1() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
-        discardDb(baseTestDb)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
+        testDatabase.createCollection("bobblehead", "horo")
+
+        val scope = testDatabase.getScope("horo")
+        assertNotNull(scope!!)
+        assertNotNull(scope.collections)
+
+        testDatabase.close()
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.collections }
     }
 
     @Test
     fun testUseScopeWhenDatabaseIsClosed2() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
-        discardDb(baseTestDb)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
-            scope!!.getCollection("bobblehead")
-        }
+        testDatabase.createCollection("bobblehead", "horo")
+
+        val scope = testDatabase.getScope("horo")
+        assertNotNull(scope!!)
+        assertNotNull(scope.collections)
+
+        testDatabase.close()
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.getCollection("bobblehead") }
     }
 
     //---------------------------------------------
@@ -882,22 +973,26 @@ class DatabaseTest : LegacyBaseDbTest() {
     // returns the expected result based on section 6.3
     @Test
     fun testUseScopeWhenDatabaseIsDeleted1() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
-        discardDb(baseTestDb)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
+        testDatabase.createCollection("bobblehead", "horo")
+        val scope = testDatabase.getScope("horo")
+
+        assertNotNull(scope!!)
+        assertNotNull(scope.collections)
+
+        testDatabase.delete()
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.collections }
     }
 
     @Test
     fun testUseScopeWhenDatabaseIsDeleted2() {
-        baseTestDb.createCollection("bobblehead", "horo")
-        val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
-        discardDb(baseTestDb)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
-            scope!!.getCollection("bobblehead")
-        }
+        testDatabase.createCollection("bobblehead", "horo")
+        val scope = testDatabase.getScope("horo")
+
+        assertNotNull(scope!!)
+        assertNotNull(scope.collections)
+
+        testDatabase.delete()
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.getCollection("bobblehead") }
     }
 
     //---------------------------------------------
@@ -908,27 +1003,25 @@ class DatabaseTest : LegacyBaseDbTest() {
     // returns the result as expected based on section 6.4
     @Test
     fun testGetScopeWhenDatabaseIsClosed() {
-        baseTestDb.createCollection("bobblehead", "horo")
+        testDatabase.createCollection("bobblehead", "horo")
 
-        assertNotNull(baseTestDb.getScope("horo"))
+        assertNotNull(testDatabase.getScope("horo"))
 
-        discardDb(baseTestDb)
+        testDatabase.close()
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
-            baseTestDb.getScope("horo")
-        }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testDatabase.getScope("horo") }
     }
 
     @Test
     fun testGetCollectionWhenDatabaseIsClosed() {
-        baseTestDb.createCollection("bobblehead", "horo")
+        testDatabase.createCollection("bobblehead", "horo")
 
-        assertNotNull(baseTestDb.getCollection("bobblehead", "horo"))
+        assertNotNull(testDatabase.getCollection("bobblehead", "horo"))
 
-        discardDb(baseTestDb)
+        testDatabase.close()
 
         assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
-            baseTestDb.getCollection("bobblehead", "horo")
+            testDatabase.getCollection("bobblehead", "horo")
         }
     }
 
@@ -936,27 +1029,25 @@ class DatabaseTest : LegacyBaseDbTest() {
     // returns the expected result based on section 6.4
     @Test
     fun testGetScopeWhenDatabaseIsDeleted() {
-        baseTestDb.createCollection("bobblehead", "horo")
+        testDatabase.createCollection("bobblehead", "horo")
 
-        assertNotNull(baseTestDb.getScope("horo"))
+        assertNotNull(testDatabase.getScope("horo"))
 
-        eraseDb(baseTestDb)
+        testDatabase.delete()
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
-            baseTestDb.getScope("horo")
-        }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testDatabase.getScope("horo") }
     }
 
     @Test
     fun testGetCollectionWhenDatabaseIsDeleted() {
-        baseTestDb.createCollection("bobblehead", "horo")
+        testDatabase.createCollection("bobblehead", "horo")
 
-        assertNotNull(baseTestDb.getCollection("bobblehead", "horo"))
+        assertNotNull(testDatabase.getCollection("bobblehead", "horo"))
 
-        eraseDb(baseTestDb)
+        testDatabase.delete()
 
         assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
-            baseTestDb.getCollection("bobblehead", "horo")
+            testDatabase.getCollection("bobblehead", "horo")
         }
     }
 
@@ -969,24 +1060,27 @@ class DatabaseTest : LegacyBaseDbTest() {
     // on section 6.5.
     @Test
     fun testUseScopeAPIAfterDeletingAllCollections() {
-        val scopeName = StringUtils.getUniqueName("test-scope", 6)
-        baseTestDb.createCollection(StringUtils.getUniqueName("test-collection", 4), scopeName)
+        val collection = testDatabase.createCollection(
+            StringUtils.getUniqueName("test-collection", 4),
+            StringUtils.getUniqueName("test-scope", 6)
+        )
 
-        val scope = baseTestDb.getScope(scopeName)
+
+        val scope = testDatabase.getScope(collection.scope.name)
         assertNotNull(scope!!)
 
         // create more collections
         (0..4).map { StringUtils.getUniqueName("test-collection", 4) }
-            .forEach { baseTestDb.createCollection(it, scope.name) }
+            .forEach { testDatabase.createCollection(it, scope.name) }
 
         val collectionNames = scope.collections.map { it.name }
         assertEquals(6, collectionNames.size)
 
         // verify that the collections exist
-        collectionNames.forEach { assertNotNull(baseTestDb.getCollection(it, scope.name)) }
+        collectionNames.forEach { assertNotNull(testDatabase.getCollection(it, scope.name)) }
 
         // delete the collections
-        collectionNames.forEach { baseTestDb.deleteCollection(it, scope.name) }
+        collectionNames.forEach { testDatabase.deleteCollection(it, scope.name) }
 
         // verify that the collections no longer exist
         collectionNames.forEach { assertNull(scope.getCollection(it)) }
@@ -1000,32 +1094,40 @@ class DatabaseTest : LegacyBaseDbTest() {
     // a different database instance, calling the scope APIS returns
     // the result as expected based on section 6.5. To test this,
     // get and retain the scope object before deleting all collections.
+    @SlowTest
     @Test
     fun testUseScopeAPIAfterDeletingAllCollectionsFromDifferentDBInstance() {
-        val scopeName = StringUtils.getUniqueName("test-scope", 6)
-        baseTestDb.createCollection(StringUtils.getUniqueName("test-collection", 4), scopeName)
+        val collection = testDatabase.createCollection(
+            StringUtils.getUniqueName("test-collection", 4),
+            StringUtils.getUniqueName("test-scope", 6)
+        )
 
-        val scope = baseTestDb.getScope(scopeName)
+        val scope = testDatabase.getScope(collection.scope.name)
         assertNotNull(scope!!)
 
         // create more collections
         (0..4).map { StringUtils.getUniqueName("test-collection", 4) }
-            .forEach { baseTestDb.createCollection(it, scope.name) }
+            .forEach { testDatabase.createCollection(it, scope.name) }
 
         val collectionNames = scope.collections.map { it.name }
         assertEquals(6, collectionNames.size)
 
         // verify that the collections exist
-        collectionNames.forEach { assertNotNull(baseTestDb.getCollection(it, scope.name)) }
+        collectionNames.forEach { assertNotNull(testDatabase.getCollection(it, scope.name)) }
 
         // delete the collections from a different database
-        val otherDatabase = Database(baseTestDb.name)
-        val otherScope = otherDatabase.getScope(scopeName)
+        val otherDatabase = Database(testDatabase.name)
+        val otherScope = otherDatabase.getScope(scope.name)
         assertNotNull(otherScope!!)
+
+        // verify that the collections exist in the other view of the db
+        collectionNames.forEach { assertNotNull(otherDatabase.getCollection(it, scope.name)) }
+
+        // delete the collections
         collectionNames.forEach { otherDatabase.deleteCollection(it, otherScope.name) }
 
         // verify that the collections no longer exist in the other db
-        collectionNames.forEach { assertNull(scope.getCollection(it)) }
+        collectionNames.forEach { assertNull(otherDatabase.getCollection(it, otherScope.name)) }
         val otherCollections = otherScope.collections
         assertNotNull(otherCollections)
         assertTrue(otherCollections.isEmpty())
@@ -1045,45 +1147,44 @@ class DatabaseTest : LegacyBaseDbTest() {
     fun testCompact() {
         val nDocs = 20
         val nUpdates = 25
-        val docIDs = createDocsInBaseTestDb(nDocs)
+        val docIds = createDocsInCollection(nDocs).map { it.id }
 
         // Update each doc 25 times:
-        baseTestDb.inBatch<CouchbaseLiteException> {
-            for (docID in docIDs) {
-                var savedDoc = baseTestDb.getDocument(docID)
+        testDatabase.inBatch<CouchbaseLiteException> {
+            docIds.forEach { docId ->
+                var savedDoc = testCollection.getDocument(docId)
                 for (i in 0 until nUpdates) {
                     val doc = savedDoc!!.toMutable()
                     doc.setValue("number", i)
-                    savedDoc = saveDocInBaseTestDb(doc)
+                    savedDoc = saveDocInCollection(doc)
                 }
             }
         }
 
-        // Add each doc with a blob object:
-        for (docID in docIDs) {
-            val doc = baseTestDb.getDocument(docID)!!.toMutable()
+        // Add a blog to each doc
+        docIds.forEach { docId ->
+            val doc = testCollection.getDocument(docId)!!.toMutable()
             doc.setValue("blob", Blob("text/plain", doc.id.toByteArray()))
-            saveDocInBaseTestDb(doc)
+            saveDocInCollection(doc)
         }
-        assertEquals(nDocs.toLong(), baseTestDb.count)
-        val attsDir = File(baseTestDb.path, "Attachments")
+        assertEquals(nDocs.toLong(), testCollection.count)
+        val attsDir = File(testDatabase.path, "Attachments")
         assertTrue(attsDir.exists())
         assertTrue(attsDir.isDirectory)
         assertEquals(nDocs, attsDir.listFiles()?.size ?: -1)
 
         // Compact:
-        assertTrue(baseTestDb.performMaintenance(MaintenanceType.COMPACT))
+        assertTrue(testDatabase.performMaintenance(MaintenanceType.COMPACT))
         assertEquals(nDocs, attsDir.listFiles()?.size ?: -1)
 
         // Delete all docs:
-        for (docID in docIDs) {
-            val savedDoc = baseTestDb.getDocument(docID)
-            baseTestDb.delete(savedDoc!!)
-            assertNull(baseTestDb.getDocument(docID))
+        docIds.forEach { docId ->
+            testCollection.delete(testCollection.getDocument(docId)!!)
+            assertNull(testCollection.getDocument(docId))
         }
 
         // Compact:
-        assertTrue(baseTestDb.performMaintenance(MaintenanceType.COMPACT))
+        assertTrue(testDatabase.performMaintenance(MaintenanceType.COMPACT))
         assertEquals(0, attsDir.listFiles()?.size ?: -1)
     }
 
@@ -1091,22 +1192,22 @@ class DatabaseTest : LegacyBaseDbTest() {
     @Test
     fun testOverwriteDocWithNewDocInstance() {
         val mDoc1 = MutableDocument("abc")
-        mDoc1.setValue("someKey", "someVar")
-        val doc1 = saveDocInBaseTestDb(mDoc1)
+        mDoc1.setValue("someKey", "someVal")
+        val doc1 = saveDocInCollection(mDoc1)
 
-        // This cause conflict, DefaultConflictResolver should be applied.
+        // This causes a conflict, DefaultConflictResolver should be applied.
         val mDoc2 = MutableDocument("abc")
-        mDoc2.setValue("someKey", "newVar")
-        val doc2 = saveDocInBaseTestDb(mDoc2)
+        mDoc2.setValue("someKey", "newVal")
+        val doc2 = saveDocInCollection(mDoc2)
 
         // Both doc1 and doc2 are now generation 1. Higher revision one should win
-        assertEquals(1, baseTestDb.count)
-        val doc = baseTestDb.getDocument("abc")
+        assertEquals(1, testCollection.count)
+        val doc = testCollection.getDocument("abc")
         assertNotNull(doc)
         // doc1 -> theirs, doc2 -> mine
         if (doc2.revisionID!! > doc1.revisionID!!) {
             // mine -> doc 2 win
-            assertEquals("newVar", doc!!.getString("someKey"))
+            assertEquals("newVal", doc!!.getString("someKey"))
         } else {
             // their -> doc 1 win
             assertEquals("someVar", doc!!.getString("someKey"))
@@ -1115,213 +1216,236 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testCopy() {
-        val nDocs = 10
-        for (i in 0 until nDocs) {
-            val docID = "doc_$i"
-            val doc = MutableDocument(docID)
-            doc.setValue("name", docID)
-            doc.setValue("data", Blob("text/plain", docID.toByteArray()))
-            saveDocInBaseTestDb(doc)
+        val docIdField = getUniqueName("name")
+        val dataField = getUniqueName("data")
+
+        val n = testCollection.count
+
+        val docs = createDocsInCollection(10)
+        docs.forEach { doc ->
+            val mDoc = doc.toMutable()
+            mDoc.setValue(docIdField, doc.id)
+            mDoc.setValue(dataField, Blob("text/plain", doc.id.toByteArray()))
+            saveDocInCollection(mDoc)
         }
-        val config = baseTestDb.getConfig()
+
         val dbName = getUniqueName("test_copy_db")
+        val config = testDatabase.getConfig()
 
-        // Copy:
-        Database.copy(File(baseTestDb.path!!), dbName, config)
+        // Copy the db
+        Database.copy(File(testDatabase.path!!), dbName, config)
 
-        // Verify:
+        // Verify that it exists
         assertTrue(Database.exists(dbName, File(config.directory)))
-        val newDb = Database(dbName, config)
+
+        // Open it
+        val otherDb = Database(dbName, config)
+        assertNotNull(otherDb)
         try {
-            assertNotNull(newDb)
-            assertEquals(nDocs.toLong(), newDb.count)
+            val otherCollection = otherDb.getSimilarCollection(testCollection)
+            assertNotNull(otherCollection)
+
+            assertEquals(n + docs.size.toLong(), otherCollection.count)
+
             QueryBuilder.select(SelectResult.expression(Meta.id))
-                .from(DataSource.database(newDb))
-                .execute().use { rs ->
+                .from(DataSource.collection(testCollection))
+                .execute()
+                .use { rs ->
                     for (r in rs) {
-                        val docID = r.getString(0)
-                        assertNotNull(docID)
-                        val doc = newDb.getDocument(docID!!)
-                        assertNotNull(doc)
-                        assertEquals(docID, doc!!.getString("name"))
-                        val blob = doc.getBlob("data")
-                        assertNotNull(blob)
-                        assertEquals(docID, String(blob!!.content!!))
+                        r.getString(docIdField) ?: continue // ignore spurious docs...
+
+                        val docId = r.getString(0)  /// should be the same value as the above.
+                        assertNotNull(docId!!)
+
+                        val doc = otherCollection.getDocument(docId)
+                        assertNotNull(doc!!)
+
+                        assertEquals(docId, doc.getString(docIdField))
+                        val blob = doc.getBlob("dataField")
+                        assertNotNull(blob!!)
+
+                        assertEquals(docId, String(blob.content!!))
                     }
                 }
         } finally {
-            eraseDb(newDb)
+            eraseDb(otherDb)
         }
     }
 
     @Test
     fun testCreateIndex() {
-        assertEquals(0, baseTestDb.indexes.size.toLong())
-        baseTestDb.createIndex(
+        assertEquals(0, testCollection.indexes.size.toLong())
+
+        testCollection.createIndex(
             "index1",
             IndexBuilder.valueIndex(
                 ValueIndexItem.property("firstName"),
                 ValueIndexItem.property("lastName")
             )
         )
-        assertEquals(1, baseTestDb.indexes.size.toLong())
+        assertEquals(1, testCollection.indexes.size.toLong())
 
         // Create FTS index:
-        baseTestDb.createIndex("index2", IndexBuilder.fullTextIndex(FullTextIndexItem.property("detail")))
-        assertEquals(2, baseTestDb.indexes.size.toLong())
-        baseTestDb.createIndex(
+        testCollection.createIndex("index2", IndexBuilder.fullTextIndex(FullTextIndexItem.property("detail")))
+        assertEquals(2, testCollection.indexes.size.toLong())
+
+        testCollection.createIndex(
             "index3",
             IndexBuilder.fullTextIndex(FullTextIndexItem.property("es-detail")).ignoreAccents(true).setLanguage("es")
         )
-        assertEquals(3, baseTestDb.indexes.size.toLong())
+        assertEquals(3, testCollection.indexes.size.toLong())
 
         // Create value index with expression() instead of property()
-        baseTestDb.createIndex(
+        testCollection.createIndex(
             "index4",
             IndexBuilder.valueIndex(
                 ValueIndexItem.expression(Expression.property("firstName")),
                 ValueIndexItem.expression(Expression.property("lastName"))
             )
         )
-        assertEquals(4, baseTestDb.indexes.size.toLong())
-        assertContents(baseTestDb.indexes, "index1", "index2", "index3", "index4")
+        assertEquals(4, testCollection.indexes.size.toLong())
+
+        assertContents(testCollection.indexes, "index1", "index2", "index3", "index4")
     }
 
     @Test
     fun testCreateIndexWithConfig() {
-        assertEquals(0, baseTestDb.indexes.size.toLong())
-        baseTestDb.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
-        assertEquals(1, baseTestDb.indexes.size.toLong())
-        baseTestDb.createIndex(
+        assertEquals(0, testCollection.indexes.size.toLong())
+
+        testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
+        assertEquals(1, testCollection.indexes.size.toLong())
+
+        testCollection.createIndex(
             "index2",
             FullTextIndexConfiguration("detail").ignoreAccents(true).setLanguage("es")
         )
-        assertEquals(2, baseTestDb.indexes.size.toLong())
-        assertContents(baseTestDb.indexes, "index1", "index2")
+        assertEquals(2, testCollection.indexes.size.toLong())
+
+        assertContents(testCollection.indexes, "index1", "index2")
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testIndexBuilderEmptyArg1() {
-        IndexBuilder.fullTextIndex()
+        assertThrows(IllegalArgumentException::class.java) { IndexBuilder.fullTextIndex() }
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testIndexBuilderEmptyArg2() {
-        IndexBuilder.valueIndex()
+        assertThrows(IllegalArgumentException::class.java) { IndexBuilder.valueIndex() }
     }
 
     @Test
     fun testCreateSameIndexTwice() {
         // Create index with first name:
-        val indexItem = ValueIndexItem.property("firstName")
-        val index: Index = IndexBuilder.valueIndex(indexItem)
-        baseTestDb.createIndex("myindex", index)
+        val index: Index = IndexBuilder.valueIndex(ValueIndexItem.property("firstName"))
+        testCollection.createIndex("myindex", index)
+        assertEquals(1, testCollection.indexes.size.toLong())
 
         // Call create index again:
-        baseTestDb.createIndex("myindex", index)
-        assertEquals(1, baseTestDb.indexes.size.toLong())
-        assertContents(baseTestDb.indexes, "myindex")
+        testCollection.createIndex("myindex", index)
+        assertEquals(1, testCollection.indexes.size.toLong())
+
+        assertContents(testCollection.indexes, "myindex")
     }
 
     @Test
     fun testCreateSameNameIndexes() {
-        val fNameItem = ValueIndexItem.property("firstName")
-        val lNameItem = ValueIndexItem.property("lastName")
-        val detailItem = FullTextIndexItem.property("detail")
-
         // Create value index with first name:
-        val fNameIndex: Index = IndexBuilder.valueIndex(fNameItem)
-        baseTestDb.createIndex("myindex", fNameIndex)
+        testCollection.createIndex("myindex", IndexBuilder.valueIndex(ValueIndexItem.property("firstName")))
+        assertEquals(1, testCollection.indexes.size.toLong())
 
         // Create value index with last name:
-        val lNameindex = IndexBuilder.valueIndex(lNameItem)
-        baseTestDb.createIndex("myindex", lNameindex)
+        testCollection.createIndex("myindex", IndexBuilder.valueIndex(ValueIndexItem.property("lastName")))
+        assertEquals(1, testCollection.indexes.size.toLong())
 
-        // Check:
-        assertEquals(1, baseTestDb.indexes.size.toLong())
-        assertEquals(listOf("myindex"), baseTestDb.indexes)
+        assertContents(testCollection.indexes, "myindex")
 
         // Create FTS index:
-        val detailIndex: Index = IndexBuilder.fullTextIndex(detailItem)
-        baseTestDb.createIndex("myindex", detailIndex)
+        testCollection.createIndex("myindex", IndexBuilder.fullTextIndex(FullTextIndexItem.property("detail")))
+        assertEquals(1, testCollection.indexes.size)
 
-        // Check:
-        assertEquals(1, baseTestDb.indexes.size)
-        assertContents(baseTestDb.indexes, "myindex")
+        assertContents(testCollection.indexes, "myindex")
     }
 
     @Test
     fun testDeleteIndex() {
-        testCreateIndex()
+        createTestIndexes()
 
         // Delete indexes:
-        baseTestDb.deleteIndex("index4")
-        assertEquals(3, baseTestDb.indexes.size.toLong())
-        assertContents(baseTestDb.indexes, "index1", "index2", "index3")
-        baseTestDb.deleteIndex("index1")
-        assertEquals(2, baseTestDb.indexes.size.toLong())
-        assertContents(baseTestDb.indexes, "index2", "index3")
-        baseTestDb.deleteIndex("index2")
-        assertEquals(1, baseTestDb.indexes.size.toLong())
-        assertContents(baseTestDb.indexes, "index3")
-        baseTestDb.deleteIndex("index3")
-        assertEquals(0, baseTestDb.indexes.size.toLong())
-        assertTrue(baseTestDb.indexes.isEmpty())
+        testCollection.deleteIndex("index4")
+        assertEquals(3, testCollection.indexes.size.toLong())
+        assertContents(testCollection.indexes, "index1", "index2", "index3")
+
+        testCollection.deleteIndex("index1")
+        assertEquals(2, testCollection.indexes.size.toLong())
+        assertContents(testCollection.indexes, "index2", "index3")
+
+        testCollection.deleteIndex("index2")
+        assertEquals(1, testCollection.indexes.size.toLong())
+        assertContents(testCollection.indexes, "index3")
+
+        testCollection.deleteIndex("index3")
+        assertEquals(0, testCollection.indexes.size.toLong())
+        assertTrue(testCollection.indexes.isEmpty())
+    }
+
+    @Test
+    fun testDeleteNonexistentIndex() {
+        createTestIndexes()
 
         // Delete non existing index:
-        baseTestDb.deleteIndex("dummy")
+        testCollection.deleteIndex("dummy")
+    }
+
+    @Test
+    fun testDeleteDeletedIndexes() {
+        createTestIndexes()
+        assertEquals(4, testCollection.indexes.size)
+
+        testCollection.deleteIndex("index1")
+        testCollection.deleteIndex("index2")
+        testCollection.deleteIndex("index3")
+        testCollection.deleteIndex("index4")
+        assertEquals(0, testCollection.indexes.size)
 
         // Delete deleted indexes:
-        baseTestDb.deleteIndex("index1")
-        baseTestDb.deleteIndex("index2")
-        baseTestDb.deleteIndex("index3")
-        baseTestDb.deleteIndex("index4")
+        testCollection.deleteIndex("index1")
+        testCollection.deleteIndex("index2")
+        testCollection.deleteIndex("index3")
+        testCollection.deleteIndex("index4")
     }
 
     @Test
     fun testRebuildIndex() {
-        testCreateIndex()
-        assertTrue(baseTestDb.performMaintenance(MaintenanceType.REINDEX))
+        createTestIndexes()
+        assertTrue(testDatabase.performMaintenance(MaintenanceType.REINDEX))
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1416
     @Test
     fun testDeleteAndOpenDB() {
-        val config = DatabaseConfiguration()
-        var database1: Database? = null
-        var database2: Database? = null
+        var db: Database? = null
         try {
             // open a database
-            database1 = createDb("del_open_db", config)
-            val dbName = database1.name
+            db = createDb("del_open_db")
+            val dbDir = db.path
+            val dbName = db.name
 
             // delete it
-            database1.delete()
+            db.delete()
+            assertFalse(Database.exists(dbName, File(dbDir!!)))
 
             // open it again
-            database2 = Database(dbName, config)
+            db = Database(dbName)
 
             // insert documents
-            val db: Database = database2
-            database2.inBatch(UnitOfWork<CouchbaseLiteException> {
-                // just create 100 documents
-                for (i in 0..99) {
-                    val doc = MutableDocument()
-
-                    // each doc has 10 items
-                    doc.setInt("index", i)
-                    for (j in 0..9) {
-                        doc.setInt("item_$j", j)
-                    }
-                    db.save(doc)
-                }
-            })
+            val coll = db.createCollection("del_open_db")
+            db.inBatch(UnitOfWork<CouchbaseLiteException> { createDocsInCollection(100, collection = coll) })
 
             // close db again
-            database2.close()
+            db.close()
         } finally {
-            eraseDb(database1)
-            eraseDb(database2)
+            eraseDb(db)
         }
     }
 
@@ -1329,44 +1453,62 @@ class DatabaseTest : LegacyBaseDbTest() {
     fun testSaveAndUpdateMutableDoc() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
-        baseTestDb.save(doc)
+        testCollection.save(doc)
 
         // Update:
         doc.setString("lastName", "Tiger")
-        baseTestDb.save(doc)
+        testCollection.save(doc)
 
         // Update:
         doc.setLong("age", 20L) // Int vs Long assertEquals can not ignore diff.
-        baseTestDb.save(doc)
+        testCollection.save(doc)
         assertEquals(3, doc.sequence)
+
         val expected = mapOf("firstName" to "Daniel", "lastName" to "Tiger", "age" to 20L)
         assertEquals(expected, doc.toMap())
-        val savedDoc = baseTestDb.getDocument(doc.id)
+
+        val savedDoc = testCollection.getDocument(doc.id)
         assertEquals(expected, savedDoc!!.toMap())
         assertEquals(3, savedDoc.sequence)
     }
 
     @Test
-    fun testSaveDocWithConflict() {
+    fun testSaveDocWithConflictLastWrite() {
         testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS)
+    }
+
+    @Test
+    fun testSaveDocWithConflictFail() {
         testSaveDocWithConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT)
     }
 
     @Test
-    fun testDeleteDocWithConflict() {
+    fun testDeleteDocWithConflictLastWrite() {
         testDeleteDocWithConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS)
+    }
+
+    @Test
+    fun testDeleteDocWithConflictFail() {
         testDeleteDocWithConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT)
     }
 
     @Test
-    fun testSaveDocWithNoParentConflict() {
+    fun testSaveDocWithNoParentConflictLastWrite() {
         testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS)
+    }
+
+    @Test
+    fun testSaveDocWithNoParentConflictFail() {
         testSaveDocWithNoParentConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT)
     }
 
     @Test
-    fun testSaveDocWithDeletedConflict() {
+    fun testSaveDocWithDeletedConflictLastWrite() {
         testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl.LAST_WRITE_WINS)
+    }
+
+    @Test
+    fun testSaveDocWithDeletedConflictFail() {
         testSaveDocWithDeletedConflictUsingConcurrencyControl(ConcurrencyControl.FAIL_ON_CONFLICT)
     }
 
@@ -1375,97 +1517,106 @@ class DatabaseTest : LegacyBaseDbTest() {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        baseTestDb.save(doc)
-        baseTestDb.delete(doc)
+        testCollection.save(doc)
+
+        testCollection.delete(doc)
         assertEquals(2, doc.sequence)
-        assertNull(baseTestDb.getDocument(doc.id))
+
+        assertNull(testCollection.getDocument(doc.id))
+
         doc.setString("firstName", "Scott")
-        baseTestDb.save(doc)
+        testCollection.save(doc)
         assertEquals(3, doc.sequence)
+
         val expected = mapOf("firstName" to "Scott", "lastName" to "Tiger")
         assertEquals(expected, doc.toMap())
-        val savedDoc = baseTestDb.getDocument(doc.id)
+
+        val savedDoc = testCollection.getDocument(doc.id)
         assertNotNull(savedDoc)
         assertEquals(expected, savedDoc!!.toMap())
     }
 
     @Test
     fun testDeleteAlreadyDeletedDoc() {
-        val doc = MutableDocument("doc1")
-        doc.setString("firstName", "Daniel")
-        doc.setString("lastName", "Tiger")
-        baseTestDb.save(doc)
+        val doc = createDocInCollection()
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = baseTestDb.getDocument("doc1")
-        val doc1b = baseTestDb.getDocument("doc1")!!.toMutable()
+        val docA = testCollection.getDocument(doc.id)
+        val docB = testCollection.getDocument(doc.id)!!.toMutable()
 
         // Delete doc1a:
-        baseTestDb.delete(doc1a!!)
-        assertEquals(2, doc1a.sequence)
-        assertNull(baseTestDb.getDocument(doc.id))
+        testCollection.delete(docA!!)
+        assertEquals(2, docA.sequence)
+        assertNull(testCollection.getDocument(doc.id))
 
         // Delete doc1b:
-        baseTestDb.delete(doc1b)
-        assertEquals(2, doc1b.sequence)
-        assertNull(baseTestDb.getDocument(doc.id))
+        testCollection.delete(docB)
+        assertEquals(2, docB.sequence)
+        assertNull(testCollection.getDocument(doc.id))
     }
 
     @Test
     fun testDeleteNonExistingDoc() {
-        val doc1a = createSingleDocInBaseTestDb("doc1")
-        val doc1b = baseTestDb.getDocument("doc1")
+        val docA = createDocInCollection()
+        val docB = testCollection.getDocument(docA.id)
 
         // purge doc
-        baseTestDb.purge(doc1a)
-        assertEquals(0, baseTestDb.count)
-        assertNull(baseTestDb.getDocument(doc1a.id))
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc1a) }
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { baseTestDb.delete(doc1b!!) }
-        assertEquals(0, baseTestDb.count)
-        assertNull(baseTestDb.getDocument(doc1b!!.id))
+        testCollection.purge(docA)
+        assertEquals(0, testCollection.count)
+        assertNull(testCollection.getDocument(docA.id))
+
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(docA) }
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(docB!!) }
+        assertEquals(0, testCollection.count)
+
+        assertNull(testCollection.getDocument(docB!!.id))
     }
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1652
     @Test
     fun testDeleteWithOldDocInstance() {
         // 1. save
-        var mdoc = MutableDocument("doc")
-        mdoc.setBoolean("updated", false)
-        baseTestDb.save(mdoc)
-        val doc = baseTestDb.getDocument("doc")
+        val docA = MutableDocument().setBoolean("updated", false)
+        testCollection.save(docA)
 
-        // 2. update
-        mdoc = doc!!.toMutable()
-        mdoc.setBoolean("updated", true)
-        baseTestDb.save(mdoc)
+        val docB = testCollection.getDocument(docA.id)
+        testCollection.save(docB?.toMutable()?.setBoolean("updated", true)!!)
 
         // 3. delete by previously retrieved document
-        baseTestDb.delete(doc)
-        assertNull(baseTestDb.getDocument("doc"))
+        testCollection.delete(docB)
+        assertNull(testCollection.getDocument("doc"))
     }
 
     // The following four tests verify, explicitly, the code that
     // mitigates the 2.8.0 bug (CBL-1408)
     // There is one more test for this in DatabaseEncryptionTest
+
+    // Verify that a db can be reopened
     @Test
     fun testReOpenExistingDb() {
         val dbName = getUniqueName("test_db")
-
-        // verify that the db directory is no longer in the misguided 2.8.0 subdirectory
-        val dbDirectory = CouchbaseLiteInternal.getDefaultDbDir().absolutePath
-        assertFalse(dbDirectory.endsWith(".couchbase"))
         var db: Database? = null
         try {
             db = Database(dbName)
             val mDoc = MutableDocument()
             mDoc.setString("foo", "bar")
-            db.save(mDoc)
+
+            var coll = db.createTestCollection()
+            val colName = coll.name
+            val colScope = coll.scope.name
+
+            coll.save(mDoc)
+
             db.close()
-            db = Database(dbName)
-            assertEquals(1L, db.count)
-            val doc = db.getDocument(mDoc.id)
-            assertEquals("bar", doc!!.getString("foo"))
+
+            val config = DatabaseConfiguration()
+            config.directory = CouchbaseLiteInternal.getDefaultDbDir().absolutePath
+            assertFalse(config.directory.endsWith(".couchbase"))
+            db = Database(dbName, config)
+            coll = db.getCollection(colName, colScope)!!
+
+            assertEquals(1L, coll.count)
+            assertEquals("bar", coll.getDocument(mDoc.id)?.getString("foo"))
         } finally {
             eraseDb(db)
         }
@@ -1473,26 +1624,33 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testReOpenExisting2Dot8DotOhDb() {
-        val dbName = getUniqueName("test_db")
         val twoDot8DotOhDirPath = File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").canonicalPath
+        val dbName = getUniqueName("two_dot_oh_test_db")
         var db: Database? = null
         try {
             // Create a database in the misguided 2.8.0 directory
             val config = DatabaseConfiguration()
             config.directory = twoDot8DotOhDirPath
             db = Database(dbName, config)
+
+            var coll = db.createTestCollection()
+            val colName = coll.name
+            val colScope = coll.scope.name
+
             val mDoc = MutableDocument()
             mDoc.setString("foo", "bar")
-            db.save(mDoc)
+            coll.save(mDoc)
+
             db.close()
 
-            // This should open the database created above
+            // This should open the database and collection created above
+            // (the db should be copied out of the .couchbase directory)
             db = Database(dbName)
-            assertEquals(1L, db.count)
-            val doc = db.getDocument(mDoc.id)
-            assertEquals("bar", doc!!.getString("foo"))
-        } finally {
+            coll = db.getCollection(colName, colScope)!!
+            assertEquals(1L, coll.count)
 
+            assertEquals("bar", coll.getDocument(mDoc.id)?.getString("foo"))
+        } finally {
             FileUtils.eraseFileOrDir(twoDot8DotOhDirPath)
             eraseDb(db)
         }
@@ -1500,31 +1658,38 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testReOpenExisting2Dot8DotOhDbCopyFails() {
-        val dbName = getUniqueName("test_db")
         val twoDot8DotOhDirPath = File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").canonicalPath
+        val dbName = getUniqueName("two_dot_oh_test_db")
         var db: Database? = null
         try {
             // Create a database in the misguided 2.8.0 directory
             val config = DatabaseConfiguration()
             config.directory = twoDot8DotOhDirPath
             db = Database(dbName, config)
+            val coll = db.createTestCollection()
+
             val mDoc = MutableDocument()
             mDoc.setString("foo", "bar")
-            db.save(mDoc)
-            db.close()
-            db = null
-            val twoDot8DotOhDir = File(twoDot8DotOhDirPath)
-            FileUtils.deleteContents(C4Database.getDatabaseFile(twoDot8DotOhDir, dbName))
+            coll.save(mDoc)
 
-            // this should try to copy the db created above, but fail
+            db.close()
+
+            val twoDot8DotOhDir = File(twoDot8DotOhDirPath)
+            val dbFile = C4Database.getDatabaseFile(twoDot8DotOhDir, dbName)
+            assertTrue(dbFile.exists())
+            FileUtils.deleteContents(dbFile)
+
+            // this should try to copy the db created above
+            // it should fail because that isn't really a db anymore
             try {
                 db = Database(dbName)
                 fail("DB open should have thrown an exception")
             } catch (ignore: CouchbaseLiteException) {
             }
 
-            // the (uncopyable) 2.8.0 db should still exist
-            assertTrue(C4Database.getDatabaseFile(twoDot8DotOhDir, dbName).exists())
+            // the (un-copyable) 2.8.0 db should still exist
+            assertTrue(dbFile.exists())
+
             // the copy should not exist
             assertFalse(C4Database.getDatabaseFile(CouchbaseLiteInternal.getDefaultDbDir(), dbName).exists())
         } finally {
@@ -1535,29 +1700,39 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testReOpenExistingLegacyAnd2Dot8DotOhDb() {
-        val dbName = getUniqueName("test_db")
         val twoDot8DotOhDirPath = File(CouchbaseLiteInternal.getDefaultDbDir(), ".couchbase").canonicalPath
+        val dbName = getUniqueName("two_dot_oh_test_db")
         var db: Database? = null
         try {
             db = Database(dbName)
+            var coll = db.createTestCollection()
+            val colName = coll.name
+            val colScope = coll.scope.name
+
             val mDoc1 = MutableDocument()
             mDoc1.setString("foo", "bar")
-            db.save(mDoc1)
+            coll.save(mDoc1)
+
             db.close()
 
             // Create a database in the misguided 2.8.0 directory
             val config = DatabaseConfiguration()
             config.directory = twoDot8DotOhDirPath
             db = Database(dbName, config)
+            coll = db.createTestCollection(colName, colScope)
+
             val mDoc2 = MutableDocument()
             mDoc2.setString("foo", "baz")
-            db.save(mDoc2)
+            coll.save(mDoc2)
+
             db.close()
 
-            // This should open the database created above
+            // This should open the first database created above
+            // The 2.8.0 directory should not have been copied over it
             db = Database(dbName)
-            assertEquals(1L, db.count)
-            val doc = db.getDocument(mDoc1.id)
+            coll = db.getCollection(colName, colScope)!!
+            assertEquals(1L, coll.count)
+            val doc = coll.getDocument(mDoc1.id)
             assertEquals("bar", doc!!.getString("foo"))
         } finally {
             FileUtils.eraseFileOrDir(twoDot8DotOhDirPath)
@@ -1567,22 +1742,20 @@ class DatabaseTest : LegacyBaseDbTest() {
 
     @Test
     fun testSetDocumentExpirationHangInBatch() {
-        val nDocs = 10
-        createDocsInBaseTestDb(nDocs)
+        val docIds = createDocsInCollection(13).map { it.id }
 
         val now = Date().time
         val tomorrow = Date(now + 1000L * 60 * 60 * 24) // now + 1 day
 
-        val future = FutureTask<Void> {
-            baseTestDb.inBatch<CouchbaseLiteException> {
-                for (i in 0 until nDocs) {
-                    val doc = baseTestDb.getDocument("doc_${i}")!!.toMutable()
+        val future = FutureTask {
+            testDatabase.inBatch<CouchbaseLiteException> {
+                docIds.forEach { docId ->
+                    val doc = testCollection.getDocument(docId)!!.toMutable()
                     doc.setString("expiration", tomorrow.toString())
-                    baseTestDb.save(doc)
-                    baseTestDb.setDocumentExpiration(doc.id, tomorrow)
+                    testCollection.save(doc)
+                    testCollection.setDocumentExpiration(doc.id, tomorrow)
                 }
             }
-            null
         }
         testSerialExecutor.execute(future)
         try {
@@ -1591,184 +1764,173 @@ class DatabaseTest : LegacyBaseDbTest() {
             throw AssertionError("Batch execution failed", e)
         }
 
-        for (i in 0 until nDocs) {
-            val docID = "doc_${i}"
-            assertEquals(tomorrow.toString(), baseTestDb.getDocument("doc_${i}")!!.getString("expiration"))
-            assertEquals(tomorrow, baseTestDb.getDocumentExpiration(docID))
+        docIds.forEach { docId ->
+            assertEquals(tomorrow.toString(), testCollection.getDocument(docId)!!.getString("expiration"))
+            assertEquals(tomorrow, testCollection.getDocumentExpiration(docId))
         }
     }
 
 
     /////////////////////////////////   H E L P E R S   //////////////////////////////////////
 
-    // helper method to save n docs
-    private fun createDocsInBaseTestDb(n: Int): List<String> {
-        val docs: MutableList<String> = ArrayList()
-        for (i in 0 until n) {
-            val doc = MutableDocument("doc_${i}")
-            doc.setValue("key", i)
-            docs.add(saveDocInBaseTestDb(doc).id)
-        }
-        assertEquals(n.toLong(), baseTestDb.count)
-        return docs
-    }
+    // helper method to create a bunch of indices.
+    private fun createTestIndexes() {
+        testCollection.createIndex(
+            "index1",
+            IndexBuilder.valueIndex(ValueIndexItem.property("firstName"), ValueIndexItem.property("lastName"))
+        )
 
-    // helper method to verify n number of docs
-    private fun verifyDocuments(n: Int) {
-        for (i in 0 until n) verifyGetDocument("doc_${i}", i.toLong())
-    }
+        // Create FTS index:
+        testCollection.createIndex("index2", IndexBuilder.fullTextIndex(FullTextIndexItem.property("detail")))
 
-    // helper methods to verify getDoc
-    private fun verifyGetDocument(docID: String, value: Long) {
-        verifyGetDocument(baseTestDb, docID, value)
-    }
+        testCollection.createIndex(
+            "index3",
+            IndexBuilder.fullTextIndex(FullTextIndexItem.property("es-detail")).ignoreAccents(true).setLanguage("es")
+        )
 
-    // helper methods to verify getDoc
-    private fun verifyGetDocument(db: Database, docID: String, value: Long) {
-        val doc = db.getDocument(docID)
-        assertNotNull(doc)
-        assertEquals(docID, doc!!.id)
-        assertEquals(value, doc.getValue("key"))
+        testCollection.createIndex(
+            "index4",
+            IndexBuilder.valueIndex(
+                ValueIndexItem.expression(Expression.property("firstName")),
+                ValueIndexItem.expression(Expression.property("lastName"))
+            )
+        )
     }
 
     // helper method to purge doc and verify doc.
-    private fun purgeDocAndVerify(doc: Document?) {
-        val docID = doc!!.id
-        baseTestDb.purge(doc)
-        assertNull(baseTestDb.getDocument(docID))
-    }
-
-    // base test method
-    private fun testSaveNewDocWithID(docID: String) {
-        // store doc
-        createSingleDocInBaseTestDb(docID)
-        assertEquals(1, baseTestDb.count)
-
-        // validate document by getDocument
-        verifyGetDocument(docID, 1)
+    private fun purgeDocAndVerify(doc: Document) {
+        testCollection.purge(doc)
+        assertNull(testCollection.getDocument(doc.id))
     }
 
     private fun testSaveDocWithConflictUsingConcurrencyControl(cc: ConcurrencyControl) {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        baseTestDb.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = baseTestDb.getDocument("doc1")!!.toMutable()
-        val doc1b = baseTestDb.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")!!.toMutable()
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Modify doc1a:
         doc1a.setString("firstName", "Scott")
-        baseTestDb.save(doc1a)
+        testCollection.save(doc1a)
+
         doc1a.setString("nickName", "Scotty")
-        baseTestDb.save(doc1a)
+        testCollection.save(doc1a)
+
         val expected = mapOf("firstName" to "Scott", "lastName" to "Tiger", "nickName" to "Scotty")
         assertEquals(expected, doc1a.toMap())
         assertEquals(3, doc1a.sequence)
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Lion")
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(baseTestDb.save(doc1b, cc))
-            val savedDoc = baseTestDb.getDocument(doc.id)
-            assertEquals(doc1b.toMap(), savedDoc!!.toMap())
-            assertEquals(4, savedDoc.sequence)
-        } else {
-            assertFalse(baseTestDb.save(doc1b, cc))
-            val savedDoc = baseTestDb.getDocument(doc.id)
-            assertEquals(expected, savedDoc!!.toMap())
-            assertEquals(3, savedDoc.sequence)
+        when (cc) {
+            ConcurrencyControl.LAST_WRITE_WINS -> {
+                assertTrue(testCollection.save(doc1b, cc))
+                val savedDoc = testCollection.getDocument(doc.id)
+                assertEquals(doc1b.toMap(), savedDoc!!.toMap())
+                assertEquals(4, savedDoc.sequence)
+            }
+            ConcurrencyControl.FAIL_ON_CONFLICT -> {
+                assertFalse(testCollection.save(doc1b, cc))
+                val savedDoc = testCollection.getDocument(doc.id)
+                assertEquals(expected, savedDoc!!.toMap())
+                assertEquals(3, savedDoc.sequence)
+            }
         }
-        recreateBastTestDb()
     }
 
     private fun testDeleteDocWithConflictUsingConcurrencyControl(cc: ConcurrencyControl) {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        baseTestDb.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = baseTestDb.getDocument("doc1")!!.toMutable()
-        val doc1b = baseTestDb.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")!!.toMutable()
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Modify doc1a:
         doc1a.setString("firstName", "Scott")
-        baseTestDb.save(doc1a)
+        testCollection.save(doc1a)
         val expected = mapOf("firstName" to "Scott", "lastName" to "Tiger")
         assertEquals(expected, doc1a.toMap())
         assertEquals(2, doc1a.sequence)
 
         // Modify doc1b and delete, result to conflict when delete:
         doc1b.setString("lastName", "Lion")
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(baseTestDb.delete(doc1b, cc))
-            assertEquals(3, doc1b.sequence)
-            assertNull(baseTestDb.getDocument(doc1b.id))
-        } else {
-            assertFalse(baseTestDb.delete(doc1b, cc))
-            val savedDoc = baseTestDb.getDocument(doc.id)
-            assertEquals(expected, savedDoc!!.toMap())
-            assertEquals(2, savedDoc.sequence)
+        when (cc) {
+            ConcurrencyControl.LAST_WRITE_WINS -> {
+                assertTrue(testCollection.delete(doc1b, cc))
+                assertEquals(3, doc1b.sequence)
+                assertNull(testCollection.getDocument(doc1b.id))
+            }
+            ConcurrencyControl.FAIL_ON_CONFLICT -> {
+                assertFalse(testCollection.delete(doc1b, cc))
+                val savedDoc = testCollection.getDocument(doc.id)
+                assertEquals(expected, savedDoc!!.toMap())
+                assertEquals(2, savedDoc.sequence)
+            }
         }
-
-        recreateBastTestDb()
     }
 
     private fun testSaveDocWithNoParentConflictUsingConcurrencyControl(cc: ConcurrencyControl) {
         val doc1a = MutableDocument("doc1")
         doc1a.setString("firstName", "Daniel")
         doc1a.setString("lastName", "Tiger")
-        baseTestDb.save(doc1a)
-        var savedDoc = baseTestDb.getDocument(doc1a.id)
+        testCollection.save(doc1a)
+        var savedDoc = testCollection.getDocument(doc1a.id)
         assertEquals(doc1a.toMap(), savedDoc!!.toMap())
         assertEquals(1, savedDoc.sequence)
         val doc1b = MutableDocument("doc1")
         doc1b.setString("firstName", "Scott")
         doc1b.setString("lastName", "Tiger")
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(baseTestDb.save(doc1b, cc))
-            savedDoc = baseTestDb.getDocument(doc1b.id)
-            assertEquals(doc1b.toMap(), savedDoc!!.toMap())
-            assertEquals(2, savedDoc.sequence)
-        } else {
-            assertFalse(baseTestDb.save(doc1b, cc))
-            savedDoc = baseTestDb.getDocument(doc1b.id)
-            assertEquals(doc1a.toMap(), savedDoc!!.toMap())
-            assertEquals(1, savedDoc.sequence)
+        when (cc) {
+            ConcurrencyControl.LAST_WRITE_WINS -> {
+                assertTrue(testCollection.save(doc1b, cc))
+                savedDoc = testCollection.getDocument(doc1b.id)
+                assertEquals(doc1b.toMap(), savedDoc!!.toMap())
+                assertEquals(2, savedDoc.sequence)
+            }
+            ConcurrencyControl.FAIL_ON_CONFLICT -> {
+                assertFalse(testCollection.save(doc1b, cc))
+                savedDoc = testCollection.getDocument(doc1b.id)
+                assertEquals(doc1a.toMap(), savedDoc!!.toMap())
+                assertEquals(1, savedDoc.sequence)
+            }
         }
-
-        recreateBastTestDb()
     }
 
     private fun testSaveDocWithDeletedConflictUsingConcurrencyControl(cc: ConcurrencyControl) {
         val doc = MutableDocument("doc1")
         doc.setString("firstName", "Daniel")
         doc.setString("lastName", "Tiger")
-        baseTestDb.save(doc)
+        testCollection.save(doc)
 
         // Get two doc1 document objects (doc1a and doc1b):
-        val doc1a = baseTestDb.getDocument("doc1")
-        val doc1b = baseTestDb.getDocument("doc1")!!.toMutable()
+        val doc1a = testCollection.getDocument("doc1")
+        val doc1b = testCollection.getDocument("doc1")!!.toMutable()
 
         // Delete doc1a:
-        baseTestDb.delete(doc1a!!)
+        testCollection.delete(doc1a!!)
         assertEquals(2, doc1a.sequence)
-        assertNull(baseTestDb.getDocument(doc.id))
+        assertNull(testCollection.getDocument(doc.id))
 
         // Modify doc1b, result to conflict when save:
         doc1b.setString("lastName", "Lion")
-        if (cc == ConcurrencyControl.LAST_WRITE_WINS) {
-            assertTrue(baseTestDb.save(doc1b, cc))
-            val savedDoc = baseTestDb.getDocument(doc.id)
-            assertEquals(doc1b.toMap(), savedDoc!!.toMap())
-            assertEquals(3, savedDoc.sequence)
-        } else {
-            assertFalse(baseTestDb.save(doc1b, cc))
-            assertNull(baseTestDb.getDocument(doc.id))
+        when (cc) {
+            ConcurrencyControl.LAST_WRITE_WINS -> {
+                assertTrue(testCollection.save(doc1b, cc))
+                val savedDoc = testCollection.getDocument(doc.id)
+                assertEquals(doc1b.toMap(), savedDoc!!.toMap())
+                assertEquals(3, savedDoc.sequence)
+            }
+            ConcurrencyControl.FAIL_ON_CONFLICT -> {
+                assertFalse(testCollection.save(doc1b, cc))
+                assertNull(testCollection.getDocument(doc.id))
+            }
         }
-
-        recreateBastTestDb()
     }
 }

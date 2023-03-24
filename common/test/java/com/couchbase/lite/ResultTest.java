@@ -919,7 +919,7 @@ public class ResultTest extends BaseQueryTest {
         saveDocInTestCollection(mDoc);
 
         final Query query = QueryBuilder.select(SelectResult.property(key))
-            .from(DataSource.collection(testCollection))
+            .from(DataSource.collection(getTestCollection()))
             .where(Meta.id.equalTo(Expression.string(docId)));
 
         try (ResultSet results = query.execute()) {
@@ -950,7 +950,7 @@ public class ResultTest extends BaseQueryTest {
         for (int i = 1; i <= 29; i++) { projection[i - 1] = SelectResult.property("doc-" + i); }
 
         try (ResultSet results = QueryBuilder.select(projection)
-            .from(DataSource.collection(testCollection))
+            .from(DataSource.collection(getTestCollection()))
             .where(Expression.property("id").equalTo(Expression.string("jsonQuery-4")))
             .execute()) {
 
@@ -1036,7 +1036,7 @@ public class ResultTest extends BaseQueryTest {
         doc.setValue("blob", new Blob("text/plain", BLOB_CONTENT.getBytes(StandardCharsets.UTF_8)));
     }
 
-    private Query generateQuery(String docID) { return generateQuery(docID, testCollection); }
+    private Query generateQuery(String docID) { return generateQuery(docID, getTestCollection()); }
 
     private Query generateQuery(String docID, Collection collection) {
         return QueryBuilder.select(

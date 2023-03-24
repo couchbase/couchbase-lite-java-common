@@ -780,7 +780,7 @@ public class DictionaryTest extends BaseDbTest {
     // Kotlin shim functions
 
     private Document saveDocInTestCollection(MutableDocument mDoc) {
-        return saveDocInTestCollection(mDoc, testCollection);
+        return saveDocInTestCollection(mDoc, getTestCollection());
     }
 
     private Document saveDocInTestCollection(MutableDocument mDoc, Collection collection) {
@@ -790,6 +790,6 @@ public class DictionaryTest extends BaseDbTest {
     private void saveDocInTestCollection(
         MutableDocument mDoc,
         Fn.ConsumerThrows<Document, CouchbaseLiteException> validator) {
-        saveDocInCollection(mDoc, testCollection, validator);
+        saveDocInCollection(mDoc, getTestCollection(), validator);
     }
 }

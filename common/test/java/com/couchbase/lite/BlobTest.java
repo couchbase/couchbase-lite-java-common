@@ -175,10 +175,10 @@ public class BlobTest extends BaseDbTest {
             Blob blob = new Blob("image/png", is);
             MutableDocument mDoc = new MutableDocument("doc1");
             mDoc.setBlob("blob", blob);
-            testCollection.save(mDoc);
+            getTestCollection().save(mDoc);
         }
 
-        Document doc = testCollection.getDocument("doc1");
+        Document doc = getTestCollection().getDocument("doc1");
         Blob savedBlob = doc.getBlob("blob");
         assertNotNull(savedBlob);
 
@@ -233,7 +233,7 @@ public class BlobTest extends BaseDbTest {
 
         // Reload the doc from the database to make sure to "bust the cache" for the blob
         // cached in the doc object
-        Document reloadedDoc = testCollection.getDocument(doc.getId());
+        Document reloadedDoc = getTestCollection().getDocument(doc.getId());
         Blob savedBlob = reloadedDoc.getBlob("blob");
         byte[] content = savedBlob.getContent();
         assertArrayEquals(content, bytes);
@@ -328,7 +328,7 @@ public class BlobTest extends BaseDbTest {
     @Test
     public void testDbSaveBlob() throws JSONException {
         Blob blob = makeBlob();
-        testDatabase.saveBlob(blob);
+        getTestDatabase().saveBlob(blob);
         verifyBlob(new JSONObject(blob.toJSON()));
     }
 
@@ -341,7 +341,7 @@ public class BlobTest extends BaseDbTest {
         fetchProps.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
         fetchProps.put(Blob.PROP_DIGEST, props.get(Blob.PROP_DIGEST));
         fetchProps.put(Blob.PROP_CONTENT_TYPE, props.get(Blob.PROP_CONTENT_TYPE));
-        Blob dbBlob = testDatabase.getBlob(fetchProps);
+        Blob dbBlob = getTestDatabase().getBlob(fetchProps);
 
         verifyBlob(dbBlob);
         assertEquals(BLOB_CONTENT, new String(dbBlob.getContent()));
@@ -357,23 +357,23 @@ public class BlobTest extends BaseDbTest {
         Map<String, Object> props = new HashMap<>();
         props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
         props.put(Blob.PROP_DIGEST, "sha1-C+ThisIsTheWayWeMakeItFail=");
-        assertNull(testDatabase.getBlob(props));
+        assertNull(getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.0: null param
     @Test(expected = IllegalArgumentException.class)
     public void testDbGetNotBlob0() {
         Blob blob = makeBlob();
-        testDatabase.saveBlob(blob);
-        assertNull(testDatabase.getBlob(null));
+        getTestDatabase().saveBlob(blob);
+        assertNull(getTestDatabase().getBlob(null));
     }
 
     // 3.1.e.1: empty param
     @Test(expected = IllegalArgumentException.class)
     public void testDbGetNotBlob1() {
         Blob blob = makeBlob();
-        testDatabase.saveBlob(blob);
-        assertNull(testDatabase.getBlob(new HashMap<>()));
+        getTestDatabase().saveBlob(blob);
+        assertNull(getTestDatabase().getBlob(new HashMap<>()));
     }
 
     // 3.1.e.2: missing digest
@@ -381,7 +381,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob2() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.remove(Blob.PROP_DIGEST);
-        assertNull(testDatabase.getBlob(props));
+        assertNull(getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.3: missing meta-type
@@ -389,7 +389,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob3() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.remove(Blob.META_PROP_TYPE);
-        assertNull(testDatabase.getBlob(props));
+        assertNull(getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.4: length is not a number
@@ -397,7 +397,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob4() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put(Blob.PROP_LENGTH, "42");
-        assertNull(testDatabase.getBlob(props));
+        assertNull(getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.5: bad content type
@@ -405,7 +405,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob5() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put(Blob.PROP_CONTENT_TYPE, new Object());
-        assertNull(testDatabase.getBlob(props));
+        assertNull(getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.6: extra arg
@@ -413,7 +413,7 @@ public class BlobTest extends BaseDbTest {
     public void testDbGetNotBlob6() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put("foo", "bar");
-        assertNull(testDatabase.getBlob(props));
+        assertNull(getTestDatabase().getBlob(props));
     }
 
     // 3.1.f
@@ -433,15 +433,15 @@ public class BlobTest extends BaseDbTest {
     @Test
     public void testBlobGoneAfterCompact() throws CouchbaseLiteException {
         Blob blob = makeBlob();
-        testDatabase.saveBlob(blob);
+        getTestDatabase().saveBlob(blob);
 
-        assertTrue(testDatabase.performMaintenance(MaintenanceType.COMPACT));
+        assertTrue(getTestDatabase().performMaintenance(MaintenanceType.COMPACT));
 
         Map<String, Object> props = new HashMap<>();
         props.put(Blob.META_PROP_TYPE, Blob.TYPE_BLOB);
         props.put(Blob.PROP_DIGEST, blob.digest());
 
-        assertNull(testDatabase.getBlob(props));
+        assertNull(getTestDatabase().getBlob(props));
     }
 
     @Test
@@ -450,11 +450,11 @@ public class BlobTest extends BaseDbTest {
             Blob blob = new Blob("image/png", is);
             MutableDocument mDoc = new MutableDocument("doc1");
             mDoc.setBlob("blob", blob);
-            testCollection.save(mDoc);
+            getTestCollection().save(mDoc);
         }
 
         assertTrue(Blob.isBlob(
-            new MutableDictionary().setJSON(testCollection.getDocument("doc1").getBlob("blob").toJSON()).toMap()));
+            new MutableDictionary().setJSON(getTestCollection().getDocument("doc1").getBlob("blob").toJSON()).toMap()));
     }
 
     // https://issues.couchbase.com/browse/CBL-2320
@@ -466,7 +466,7 @@ public class BlobTest extends BaseDbTest {
             new Blob("application/octet-stream", new byte[] {-1, (byte) 255, (byte) 0xf0, (byte) 0xa0}));
         saveDocInTestCollection(mDoc);
 
-        InputStream blobStream = testCollection.getDocument("blobDoc").getBlob("blob").getContentStream();
+        InputStream blobStream = getTestCollection().getDocument("blobDoc").getBlob("blob").getContentStream();
 
         assertEquals(255, blobStream.read());
         assertEquals(255, blobStream.read());
@@ -476,14 +476,14 @@ public class BlobTest extends BaseDbTest {
 
     private Map<String, Object> getPropsForSavedBlob() {
         Blob blob = makeBlob();
-        testDatabase.saveBlob(blob);
+        getTestDatabase().saveBlob(blob);
         return blob.getProperties();
     }
 
     // Kotlin shim functions
 
     private Document saveDocInTestCollection(MutableDocument mDoc) {
-        return saveDocInTestCollection(mDoc, testCollection);
+        return saveDocInTestCollection(mDoc, getTestCollection());
     }
 
     private Document saveDocInTestCollection(MutableDocument mDoc, Collection collection) {

@@ -31,37 +31,37 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     fun testIllegalMaxAttempts() {
-        makeReplicatorConfig().maxAttempts = -1
+        makeReplConfig(maxAttempts = -1)
     }
 
     @Test
     fun testMaxAttemptsZero() {
-        makeReplicatorConfig().maxAttempts = 0
+        makeReplConfig(maxAttempts = 0)
     }
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     fun testIllegalAttemptsWaitTime() {
-        makeReplicatorConfig().maxAttemptWaitTime = -1
+        makeReplConfig(maxAttemptWaitTime = -1)
     }
 
     @Test
     fun testMaxAttemptsWaitTimeZero() {
-        makeReplicatorConfig().maxAttemptWaitTime = 0
+        makeReplConfig(maxAttemptWaitTime = 0)
     }
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     fun testIllegalHeartbeatMin() {
-        makeReplicatorConfig().heartbeat = -1
+        makeReplConfig().heartbeat = -1
     }
 
     @Test
     fun testHeartbeatZero() {
-        makeReplicatorConfig().heartbeat = 0
+        makeReplConfig().heartbeat = 0
     }
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     fun testIllegalHeartbeatMax() {
-        makeReplicatorConfig().heartbeat = 2147484
+        makeReplConfig().heartbeat = 2147484
     }
 
     // Can't test the EE parameter (self-signed only) here
@@ -174,7 +174,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     @Suppress("DEPRECATION")
     @Test
     fun testCreateConfigWithDatabaseAndConflictResolver() {
-        val resolver = ConflictResolver { conflict -> conflict.localDocument }
+        val resolver = localResolver
         val replConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint).setConflictResolver(resolver)
         assertEquals(resolver, replConfig.conflictResolver)
         val collectionConfig = replConfig.getCollectionConfiguration(testDatabase.defaultCollection!!)
@@ -206,13 +206,13 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     @Suppress("DEPRECATION")
     @Test
     fun testUpdateConflictResolverForDefaultCollection() {
-        val resolver = ConflictResolver { conflict -> conflict.localDocument }
+        val resolver = localResolver
         val replConfig = ReplicatorConfiguration(testDatabase, mockURLEndpoint).setConflictResolver(resolver)
         assertEquals(
             replConfig.conflictResolver,
             replConfig.getCollectionConfiguration(testDatabase.defaultCollection!!)?.conflictResolver
         )
-        val resolver2 = ConflictResolver { conflict -> conflict.localDocument }
+        val resolver2 = localResolver
         replConfig.conflictResolver = resolver2
         assertEquals(
             resolver2,
@@ -473,7 +473,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         val pushFilter1 = ReplicationFilter { _, _ -> true }
         val pullFilter1 = ReplicationFilter { _, _ -> true }
-        val resolver = ConflictResolver { conflict -> conflict.localDocument }
+        val resolver = localResolver
         val collectionConfig0 = CollectionConfiguration()
             .setPushFilter(pushFilter1)
             .setPullFilter(pullFilter1)
@@ -525,7 +525,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         val pushFilter1 = ReplicationFilter { _, _ -> true }
         val pullFilter1 = ReplicationFilter { _, _ -> true }
-        val resolver = ConflictResolver { conflict -> conflict.localDocument }
+        val resolver = localResolver
         val collectionConfig0 = CollectionConfiguration()
             .setPushFilter(pushFilter1)
             .setPullFilter(pullFilter1)
@@ -585,7 +585,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         val pushFilter1 = ReplicationFilter { _, _ -> true }
         val pullFilter1 = ReplicationFilter { _, _ -> true }
-        val resolver1 = ConflictResolver { conflict -> conflict.localDocument }
+        val resolver1 = localResolver
         val collectionConfig0 = CollectionConfiguration()
             .setPushFilter(pushFilter1)
             .setPullFilter(pullFilter1)
@@ -612,7 +612,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         val pushFilter2 = ReplicationFilter { _, _ -> true }
         val pullFilter2 = ReplicationFilter { _, _ -> true }
-        val resolver2 = ConflictResolver { conflict -> conflict.localDocument }
+        val resolver2 = localResolver
         val collectionConfig3 = CollectionConfiguration()
             .setPushFilter(pushFilter2)
             .setPullFilter(pullFilter2)
@@ -728,7 +728,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
         val pushFilter1 = ReplicationFilter { _, _ -> true }
         val pullFilter1 = ReplicationFilter { _, _ -> true }
-        val resolver1 = ConflictResolver { conflict -> conflict.localDocument }
+        val resolver1 = localResolver
         val collectionConfig0 = CollectionConfiguration()
             .setPushFilter(pushFilter1)
             .setPullFilter(pullFilter1)

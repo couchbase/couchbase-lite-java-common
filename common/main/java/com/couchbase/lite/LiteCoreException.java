@@ -31,7 +31,9 @@ public class LiteCoreException extends Exception {
     }
 
 
+    // the values for domain are in CBLConstants.ErrorDomain
     public final int domain;
+    // the values for code are in CBLConstants.{LiteCoreError,NetworkError,HttpError}
     public final int code;
 
     public LiteCoreException(int domain, int code, @Nullable String message) {

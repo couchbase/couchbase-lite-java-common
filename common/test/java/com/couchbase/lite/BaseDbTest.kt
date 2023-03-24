@@ -114,6 +114,10 @@ fun <T : Comparable<T>> assertContents(l1: List<T>, vararg contents: T) {
     assertEquals(l1.sorted(), listOf(*contents).sorted())
 }
 
+fun <T : Comparable<T>> assertContents(l1: Set<T>, vararg contents: T) {
+    assertEquals(l1.sorted(), listOf(*contents).sorted())
+}
+
 // Comparing documents isn't trivial:
 // Fleece will change the types of numeric values
 // to suit its internal requirements.
@@ -136,34 +140,68 @@ fun readJSONResource(name: String?): String {
 }
 
 abstract class BaseDbTest : BaseTest() {
-    protected lateinit var testDatabase: Database
-    protected lateinit var testCollection: Collection
+    protected val testDatabase: Database
+        get() = testDb
+    protected val testCollection: Collection
+        get() = testCol
+    protected val testTag: String
+        get() = testTg
+
+
+    private lateinit var testDb: Database
+    private lateinit var testCol: Collection
+    private lateinit var testTg: String
 
     @Before
     fun setUpBaseDbTest() {
-        testDatabase = createDb("base_db")
+        testDb = createDb("base_db")
         Report.log("Created base test DB: $testDatabase")
         assertNotNull(testDatabase)
         assertTrue(testDatabase.isOpen)
-        testCollection = testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
+        testCol =
+            testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
         Report.log("Created base test Collection: $testCollection")
+        testTg = getUniqueName("db_test_tag")
     }
 
     @After
     fun tearDownBaseDbTest() {
-        testCollection.close()
-        eraseDb(testDatabase)
-        Report.log("Deleted baseTestDb: $testDatabase")
+        testCol.close()
+        Report.log("Test collection closed: ${testCol.fullName}")
+        eraseDb(testDb)
+        Report.log("Test db erased: ${testDb.name}")
     }
 
     protected fun reopenTestDb() {
-        testDatabase = reopenDb(testDatabase)
-        testCollection = testDatabase.getSimilarCollection(testCollection)
+        val cScope = testCollection.scope.name
+        val cName = testCollection.name
+        testCollection.close()
+
+        testDb = reopenDb(testDatabase)
+
+        testCol = testDatabase.getCollection(cName, cScope)
+            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb.name}")
     }
 
     protected fun recreateTestDb() {
-        testDatabase = recreateDb(testDatabase)
-        testCollection = testDatabase.getSimilarCollection(testCollection)
+        val cScope = testCollection.scope.name
+        val cName = testCollection.name
+        testCollection.close()
+
+        eraseDb(testDatabase)
+
+        testDb = createDb("base_db")
+
+        testCol = testDatabase.getCollection(cName, cScope)
+            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb.name}")
+    }
+
+    protected fun duplicateTestDb(): Pair<Database, Collection> {
+        val otherDb = duplicateDb(testDatabase)
+        assertNotNull(otherDb)
+        val otherCollection = otherDb.getSimilarCollection(testCollection)
+        assertNotNull(otherCollection)
+        return Pair(otherDb, otherCollection)
     }
 
     protected fun saveDocInCollection(
@@ -194,8 +232,11 @@ abstract class BaseDbTest : BaseTest() {
         }
     }
 
-    protected fun createDocInCollection(collection: Collection = testCollection): MutableDocument {
-        val mDoc = createTestDoc()
+    protected fun createDocInCollection(
+        tag: String = testTag,
+        collection: Collection = testCollection
+    ): MutableDocument {
+        val mDoc = createTestDoc(tag)
         val n = collection.count
         val doc = saveDocInCollection(mDoc, collection)
         assertEquals(n + 1, collection.count)
@@ -205,12 +246,28 @@ abstract class BaseDbTest : BaseTest() {
 
     protected fun createDocsInCollection(
         count: Int = 1,
+        tag: String = testTag,
         collection: Collection = testCollection,
         first: Int = 1
     ): List<MutableDocument> {
-        val mDocs = createTestDocs(first, count)
+        val mDocs = createTestDocs(first, count, tag)
         saveDocsInCollection(mDocs, collection)
         return mDocs
+    }
+
+    protected fun verifyDocInCollection(docId: String, tag: String = testTag, coll: Collection = testCollection) {
+        val doc = coll.getDocument(docId)
+        assertNotNull(doc)
+        assertEquals(docId, doc?.id ?: Int.MAX_VALUE)
+        assertEquals(tag, doc?.getValue(TEST_DOC_TAG_KEY))
+    }
+
+    protected fun verifyDocsInCollection(
+        docIds: kotlin.collections.Collection<String>,
+        tag: String = testTag,
+        coll: Collection = testCollection
+    ) {
+        docIds.forEach { verifyDocInCollection(it, tag, coll) }
     }
 
     // file is one JSON object per line
@@ -226,11 +283,14 @@ abstract class BaseDbTest : BaseTest() {
                     val l = src.readLine() ?: break
                     val doc = MutableDocument(String.format(Locale.ENGLISH, idTemplate, n++))
                     doc.setData(JSONUtils.fromJSON(JSONObject(l)))
-                    saveDocInCollection(doc, collection, null)
+                    saveDocInCollection(doc, collection)
                 }
             }
         } catch (e: java.lang.Exception) {
-            throw java.lang.AssertionError("Failed reading JSON resource \${resName} into collection \${collection}", e)
+            throw java.lang.AssertionError(
+                "Failed reading JSON resource \${resName} into collection \${collection}",
+                e
+            )
         }
     }
 

@@ -47,12 +47,13 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         final ReplicatorChangeListener listener = change -> { };
 
         // custom Executor
-        ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener, t -> { });
-        assertEquals(executor, token.getExecutor());
-
-        // UI thread Executor
-        token = new ReplicatorChangeListenerToken(null, listener, t -> { });
-        assertEquals(CouchbaseLiteInternal.getExecutionService().getDefaultExecutor(), token.getExecutor());
+        try (ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener, t -> { })) {
+            assertEquals(executor, token.getExecutor());
+        }
+            // UI thread Executor
+        try (ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(null, listener, t -> { })) {
+            assertEquals(CouchbaseLiteInternal.getExecutionService().getDefaultExecutor(), token.getExecutor());
+        }
     }
 
     @Test
@@ -253,7 +254,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testStartReplicatorWithClosedDb() {
         Replicator repl = makeRepl(makeConfig());
 
-        closeDb(testDatabase);
+        closeDb(getTestDatabase());
 
         repl.start();
     }
@@ -263,9 +264,9 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException {
         Replicator repl = makeRepl();
 
-        deleteDb(testDatabase);
+        deleteDb(getTestDatabase());
 
-        repl.getPendingDocumentIds(testCollection);
+        repl.getPendingDocumentIds(getTestCollection());
     }
 
     // CBL-1218
@@ -273,9 +274,9 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testGetPendingDocIdsWithClosedDb() throws CouchbaseLiteException {
         Replicator repl = makeRepl();
 
-        closeDb(testDatabase);
+        closeDb(getTestDatabase());
 
-        repl.isDocumentPending("who-cares", testCollection);
+        repl.isDocumentPending("who-cares", getTestCollection());
     }
 
     // CBL-1441
@@ -401,8 +402,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     private ReplicatorConfiguration makeDefaultConfig() {
-        return new ReplicatorConfiguration(BaseReplicatorTestKt.getMockURLEndpoint())
-            .addCollection(testCollection, null);
+        return new ReplicatorConfiguration(getMockURLEndpoint())
+            .addCollection(getTestCollection(), null);
     }
 
     private ReplicatorConfiguration makeConfig() {

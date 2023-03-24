@@ -120,8 +120,8 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     }
 
     private ReplicatorConfiguration makeDefaultConfig() {
-        return new ReplicatorConfiguration(BaseReplicatorTestKt.getMockURLEndpoint())
-            .addCollection(testCollection, null);
+        return new ReplicatorConfiguration(getMockURLEndpoint())
+            .addCollection(getTestCollection(), null);
     }
 
     private ReplicatorConfiguration makeConfig() {
