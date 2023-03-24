@@ -96,31 +96,4 @@ public abstract class LegacyBaseDbTest extends BaseTest {
 
         return savedDoc;
     }
-
-    protected Database openDatabase() {
-        return verifyOrDeleteDb(createDb(getUniqueName("test_db")));
-    }
-
-    protected void recreateBastTestDb() { baseTestDb = recreateDb(baseTestDb); }
-
-    protected Database duplicateBaseTestDb() {
-        return verifyOrDeleteDb(duplicateDb(baseTestDb));
-    }
-
-    private Database verifyOrDeleteDb(Database db) {
-        try {
-            assertNotNull(db);
-            assertTrue(new File(db.getPath()).getCanonicalPath().endsWith(C4Database.DB_EXTENSION));
-
-            return db;
-        }
-        catch (IOException e) {
-            eraseDb(db);
-            throw new AssertionError("Unable to get db path", e);
-        }
-        catch (AssertionError e) {
-            eraseDb(db);
-            throw e;
-        }
-    }
 }

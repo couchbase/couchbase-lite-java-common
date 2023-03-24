@@ -2292,7 +2292,6 @@ public class DocumentTest extends BaseDbTest {
             assertEquals(sDoc1a, anotherDoc1a);
         }
         finally {
-            discardDb(dupDb);
             eraseDb(otherDB);
         }
     }

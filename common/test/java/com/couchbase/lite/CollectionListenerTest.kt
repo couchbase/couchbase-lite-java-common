@@ -147,7 +147,7 @@ class CollectionListenerTest : BaseDbTest() {
     // Test that adding a change listener to a collection in a closed database doesn't throw an exception
     @Test
     fun testAddChangeListenerToCollectionInClosedDatabase() {
-        discardDb(testDatabase)
+        testDatabase.close()
         testCollection.addChangeListener(null) {}
     }
 
@@ -157,7 +157,7 @@ class CollectionListenerTest : BaseDbTest() {
         val docID = "testDoc"
         testCollection.save(MutableDocument(docID))
 
-        discardDb(testDatabase)
+        testDatabase.close()
 
         testCollection.addDocumentChangeListener(docID, null) {}
     }
@@ -167,7 +167,7 @@ class CollectionListenerTest : BaseDbTest() {
     fun testRemoveChangeListenerFromCollectionInClosedDatabase() {
         val token = testCollection.addChangeListener {}
         try {
-            discardDb(testDatabase)
+            testDatabase.close()
         } finally {
             token.remove()
         }

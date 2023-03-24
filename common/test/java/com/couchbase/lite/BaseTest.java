@@ -105,6 +105,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     // Used to protect calls that should not fail,
     // in tests that expect an exception
+    // !!! Balony.  Get rid of the "expect" param
     public static void failOnError(String msg, Fn.TaskThrows<Exception> task) {
         try { task.run(); }
         catch (Exception e) { throw new AssertionError(msg, e); }
@@ -116,8 +117,7 @@ public abstract class BaseTest extends PlatformBaseTest {
             fail("Expecting exception: " + ex);
         }
         catch (Throwable e) {
-            try { ex.cast(e); }
-            catch (ClassCastException e1) { fail("Expecting exception: " + ex + " but got " + e); }
+            if (!ex.equals(e.getClass())) { fail("Expecting exception: " + ex + " but got " + e); }
         }
     }
 
@@ -254,18 +254,6 @@ public abstract class BaseTest extends PlatformBaseTest {
         catch (Exception e) { throw new AssertionError("Failed reopening database " + db, e); }
     }
 
-    @NonNull
-    protected final Database recreateDb(@NonNull Database db) { return recreateDb(db, null); }
-
-    // Delete and recreate the db or fail.
-    @NonNull
-    protected final Database recreateDb(@NonNull Database db, @Nullable DatabaseConfiguration config) {
-        final String dbName = db.getName();
-        deleteDb(db);
-        try { return (config == null) ? new Database(dbName) : new Database(dbName, config); }
-        catch (Exception e) { throw new AssertionError("Failed recreating database " + db, e); }
-    }
-
     // Close the db or fail.
     protected final void closeDb(@NonNull Database db) {
         assertNotNull(db);
@@ -288,13 +276,6 @@ public abstract class BaseTest extends PlatformBaseTest {
         catch (Exception e) { throw new AssertionError("Failed deleting database " + db, e); }
     }
 
-    // Test cleanup: Best effort to close the db.
-    protected final void discardDb(@Nullable Database db) {
-        if ((db == null) || (!db.isOpen())) { return; }
-        try { db.close(); }
-        catch (Exception e) { Report.log("Failed to close database %s", e, db); }
-    }
-
     // Test cleanup: Best effort to delete the db.
     protected final void eraseDb(@Nullable Database db) {
         if (db == null) { return; }
@@ -312,12 +293,15 @@ public abstract class BaseTest extends PlatformBaseTest {
         catch (Exception e) { Report.log("Failed to delete database %s", e, db); }
     }
 
-    protected final MutableDocument createTestDoc() { return createTestDoc(1, 1, getUniqueName("tag")); }
+    protected final MutableDocument createTestDoc() { return createTestDoc(1, 1, getUniqueName("no-tag")); }
 
     protected final MutableDocument createTestDoc(String tag) { return createTestDoc(1, 1, tag); }
 
     protected final List<MutableDocument> createTestDocs(int first, int n) {
-        final String tag = getUniqueName("tag");
+        return createTestDocs(first, n, getUniqueName("no-tag"));
+    }
+
+    protected final List<MutableDocument> createTestDocs(int first, int n, String tag) {
         final List<MutableDocument> docs = new ArrayList<>();
         final int last = first + n - 1;
         for (int i = first; i <= last; i++) { docs.add(createTestDoc(i, last, tag)); }

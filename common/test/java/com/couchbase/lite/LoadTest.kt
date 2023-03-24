@@ -34,7 +34,7 @@ class LoadTest : BaseDbTest() {
         val DEVICE_SPEED_MULTIPLIER = mapOf(
             "JVM" to 33,
             "r8quex" to 100,
-            "a12uue" to 150,
+            "a12uue" to 180,
             "starqlteue" to 150,
             "dandelion_global" to 100,
             "cheetah" to 100,
