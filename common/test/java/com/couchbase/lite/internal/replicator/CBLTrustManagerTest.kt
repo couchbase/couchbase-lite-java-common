@@ -24,58 +24,48 @@ import java.security.cert.X509Certificate
 
 
 class CBLTrustManagerTest : BaseTest() {
+    // This is just a self-signed cert
+    // It will expire: Apr 8, 18:27:35 2033 GMT
     private val testServerCert1 = """        -----BEGIN CERTIFICATE-----
-        MIICxTCCAi4CCQCVDKAyMSYtyjANBgkqhkiG9w0BAQUFADCBpjELMAkGA1UEBhMC
+        MIICxzCCAjACCQDfNwsfQF766DANBgkqhkiG9w0BAQsFADCBpzELMAkGA1UEBhMC
         VVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAcMC1NhbnRhIENsYXJhMRgw
-        FgYDVQQKDA9Db3VjaGJhc2UsIEluYy4xDzANBgNVBAsMBk1vYmlsZTEcMBoGA1UE
-        AwwTbW9iaWxlLmNvdWNiYXNlLmNvbTEjMCEGCSqGSIb3DQEJARYUbW9iaWxlQGNv
-        dWNoYmFzZS5jb20wHhcNMjIwNDA0MjAzMzE5WhcNMjMwNDA0MjAzMzE5WjCBpjEL
-        MAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAcMC1NhbnRh
-        IENsYXJhMRgwFgYDVQQKDA9Db3VjaGJhc2UsIEluYy4xDzANBgNVBAsMBk1vYmls
-        ZTEcMBoGA1UEAwwTbW9iaWxlLmNvdWNiYXNlLmNvbTEjMCEGCSqGSIb3DQEJARYU
-        bW9iaWxlQGNvdWNoYmFzZS5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGB
-        AMhWhhddpZS8NuFunWY9ZETEtfRGrnahmgzvIbzfGsZtk6wwTj9AwSPxG+gShItp
-        m277erZnQu9zl8e7BVUP+Vn6PmRHc4wIs2qC60Z2g+u8WMyzzw5crFhZRIyAJjyR
-        ph6UskmQUR7+AKL/c+6JJgDZBNgqZH55bL/cRQUpJPXxAgMBAAEwDQYJKoZIhvcN
-        AQEFBQADgYEAP3Q3BPsTz7YxcIikAlYz3ysbdRmFwm1MzCRxfbNmHmUrqcIkqVIN
-        UzwbyleqiUYUJRzzHvS7KV/8bQKAEl/ZTY7PBR3G9/rQEyNIbEdGB0Zf7xeN0hH3
-        zMM2Hgbpo257MYjfpXAoW1MqvS+OtISJTZA8kAYUDpKzmEEfFRFRVT4=
+        FgYDVQQKDA9Db3VjaGJhc2UsIEluYy4xDzANBgNVBAsMBk1vYmlsZTEdMBsGA1UE
+        AwwUbW9iaWxlLmNvdWNoYmFzZS5jb20xIzAhBgkqhkiG9w0BCQEWFG1vYmlsZUBj
+        b3VjaGJhc2UuY29tMB4XDTIzMDQxMTE4Mzk1OVoXDTMzMDQwODE4Mzk1OVowgacx
+        CzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRQwEgYDVQQHDAtTYW50
+        YSBDbGFyYTEYMBYGA1UECgwPQ291Y2hiYXNlLCBJbmMuMQ8wDQYDVQQLDAZNb2Jp
+        bGUxHTAbBgNVBAMMFG1vYmlsZS5jb3VjaGJhc2UuY29tMSMwIQYJKoZIhvcNAQkB
+        FhRtb2JpbGVAY291Y2hiYXNlLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkC
+        gYEAv2hcSW170Ysxdxwhoj86XbEdefNQ/VLIkkcZAAkjUMIKpkchVrTbY2mb0tE3
+        C2X0aEVXDuX12BLfANLLtGyaA/jhJEhFGV+ece+qvBhRkkXwryZnHY/rQm2yX3+2
+        7VjYu+fH0zoCZ30AQNsoMplrS8A1RT6BuW1hCyFQf6nOYQcCAwEAATANBgkqhkiG
+        9w0BAQsFAAOBgQCLiuDRKu66NSO34tHjLjQagYrEDcw63xmU/DLFxYb6HHt3JTvf
+        LFYpQr9UIVIE7+Bph2akVh+P1CwLiLQHszoS0LENJMlbEjuXJiNuREmYGOCbzI1c
+        TH75CzUjbb+aalTw4Xp3bKEkXQJ8JK+zMSbtb9SYwZGjziibUoafsiQFcA==
         -----END CERTIFICATE-----""".trimIndent()
 
+    // This is also just a self-signed cert that will expire
+    // Apr 8, 18:27:35 2033 GMT
+    // Note that our trust management algorithm does not verify that a
+    // server presents a cert chain. If the serverp resents multiple
+    // certs, we just check each them for match. We don't verify that
+    // they actually form a trust chain.
     val testServerCert2 = """        -----BEGIN CERTIFICATE-----
-        MIICxTCCAi4CCQC+BB4REq9jxTANBgkqhkiG9w0BAQUFADCBpjELMAkGA1UEBhMC
-        VVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAcMC1NhbnRhIENsYXJhMRgw
-        FgYDVQQKDA9Db3VjaGJhc2UsIEluYy4xDzANBgNVBAsMBk1vYmlsZTEcMBoGA1UE
-        AwwTbW9iaWxlLmNvdWNiYXNlLmNvbTEjMCEGCSqGSIb3DQEJARYUbW9iaWxlQGNv
-        dWNoYmFzZS5jb20wHhcNMjIwNDA0MjAzMzMyWhcNMjMwNDA0MjAzMzMyWjCBpjEL
+        MIICxTCCAi4CCQDGRUzDwytxHzANBgkqhkiG9w0BAQsFADCBpjELMAkGA1UEBhMC
+        VVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAcMC1NhbnRhIENsYXJhMRcw
+        FQYDVQQKDA5Db3VjaGJhc2UsIEluYzEPMA0GA1UECwwGTW9iaWxlMR0wGwYDVQQD
+        DBRtb2JpbGUuY291Y2hiYXNlLmNvbTEjMCEGCSqGSIb3DQEJARYUbW9iaWxlQGNv
+        dWNoYmFzZS5jb20wHhcNMjMwNDExMTg0MDU2WhcNMzMwNDA4MTg0MDU2WjCBpjEL
         MAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAcMC1NhbnRh
-        IENsYXJhMRgwFgYDVQQKDA9Db3VjaGJhc2UsIEluYy4xDzANBgNVBAsMBk1vYmls
-        ZTEcMBoGA1UEAwwTbW9iaWxlLmNvdWNiYXNlLmNvbTEjMCEGCSqGSIb3DQEJARYU
+        IENsYXJhMRcwFQYDVQQKDA5Db3VjaGJhc2UsIEluYzEPMA0GA1UECwwGTW9iaWxl
+        MR0wGwYDVQQDDBRtb2JpbGUuY291Y2hiYXNlLmNvbTEjMCEGCSqGSIb3DQEJARYU
         bW9iaWxlQGNvdWNoYmFzZS5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGB
-        AMhWhhddpZS8NuFunWY9ZETEtfRGrnahmgzvIbzfGsZtk6wwTj9AwSPxG+gShItp
-        m277erZnQu9zl8e7BVUP+Vn6PmRHc4wIs2qC60Z2g+u8WMyzzw5crFhZRIyAJjyR
-        ph6UskmQUR7+AKL/c+6JJgDZBNgqZH55bL/cRQUpJPXxAgMBAAEwDQYJKoZIhvcN
-        AQEFBQADgYEAkuo0DdOOeH0cxWtjl9JhbV2RcqaCU8yN7MqVfMi56zHYanCcZ2E+
-        zauY7WA/uvBQpNJbZ9EZAu6AV+FQDyN38gOamozYSqTtH3EOGN/oBQ6RK1k0vVMz
-        OSklpn0DSweV0yMn3CIJ8N1szmOXWDgI02r8ltnZ3mX9tyUm99E88g0=
-        -----END CERTIFICATE-----""".trimIndent()
-
-    val testServerCert3 = """        -----BEGIN CERTIFICATE-----
-        MIICxTCCAi4CCQCtogm1dt9IbTANBgkqhkiG9w0BAQUFADCBpjELMAkGA1UEBhMC
-        VVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAcMC1NhbnRhIENsYXJhMRgw
-        FgYDVQQKDA9Db3VjaGJhc2UsIEluYy4xDzANBgNVBAsMBk1vYmlsZTEcMBoGA1UE
-        AwwTbW9iaWxlLmNvdWNiYXNlLmNvbTEjMCEGCSqGSIb3DQEJARYUbW9iaWxlQGNv
-        dWNoYmFzZS5jb20wHhcNMjIwNDA0MjAzNDI3WhcNMjMwNDA0MjAzNDI3WjCBpjEL
-        MAkGA1UEBhMCVVMxEzARBgNVBAgMCkNhbGlmb3JuaWExFDASBgNVBAcMC1NhbnRh
-        IENsYXJhMRgwFgYDVQQKDA9Db3VjaGJhc2UsIEluYy4xDzANBgNVBAsMBk1vYmls
-        ZTEcMBoGA1UEAwwTbW9iaWxlLmNvdWNiYXNlLmNvbTEjMCEGCSqGSIb3DQEJARYU
-        bW9iaWxlQGNvdWNoYmFzZS5jb20wgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGB
-        AMhWhhddpZS8NuFunWY9ZETEtfRGrnahmgzvIbzfGsZtk6wwTj9AwSPxG+gShItp
-        m277erZnQu9zl8e7BVUP+Vn6PmRHc4wIs2qC60Z2g+u8WMyzzw5crFhZRIyAJjyR
-        ph6UskmQUR7+AKL/c+6JJgDZBNgqZH55bL/cRQUpJPXxAgMBAAEwDQYJKoZIhvcN
-        AQEFBQADgYEASpHD9NG8inh6eNckK/YML512j+FqfL8RprhBRx9i9RzD+y9a+7YJ
-        hhi99PSnk+kLGtHjKv7q1Cvl9XTM/rvRoF76Hqv6OfZHGBG7eMmZlDhgSJmKgQxg
-        rRWcuUZ+XNkR0YSObubO7cblBU4Ldj/w2bv1rXBhwodM/unw1fzGPI4=
+        AL9oXElte9GLMXccIaI/Ol2xHXnzUP1SyJJHGQAJI1DCCqZHIVa022Npm9LRNwtl
+        9GhFVw7l9dgS3wDSy7RsmgP44SRIRRlfnnHvqrwYUZJF8K8mZx2P60Jtsl9/tu1Y
+        2Lvnx9M6Amd9AEDbKDKZa0vANUU+gbltYQshUH+pzmEHAgMBAAEwDQYJKoZIhvcN
+        AQELBQADgYEAAAAFq7WPW29P9Eanr3GzAO//VOSQRogIOGI2rlfEQKGNmPN67PHt
+        QE0TK/ZWeayhNt1Ov+K9e+bOv90PcDeaY0H/IQFCuCiKexYkH4efP0F/eq1GADRL
+        tNCcBE9ZMr+BBxulQvWGhe1xcfy/Y64BvvUBN7gItFuT+S4/RjL6BWA=
         -----END CERTIFICATE-----""".trimIndent()
 
     @Test(expected = IllegalArgumentException::class)
@@ -85,7 +75,7 @@ class CBLTrustManagerTest : BaseTest() {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun testBadAuthType() {
+    fun testWrongCert() {
         object : AbstractCBLTrustManager(makeCert(testServerCert2), false, { }) {}
             .cBLServerTrustCheck(listOf(makeCert(testServerCert1)), "")
     }
@@ -99,14 +89,10 @@ class CBLTrustManagerTest : BaseTest() {
     @Test(expected = CertificateException::class)
     fun testTooManySelfSignedCerts() {
         object : AbstractCBLTrustManager(null, true, { }) {}
-            .cBLServerTrustCheck(
-                listOf(makeCert(testServerCert1), makeCert(testServerCert2)),
-                "ECDHE_RSA"
-            )
+            .cBLServerTrustCheck(listOf(makeCert(testServerCert1), makeCert(testServerCert2)), "ECDHE_RSA")
     }
 
-    // Should verify that a cert that is not self-signed is refused
-
+    // Verify that a cert that is not self-signed is refused
     @Test(expected = CertificateException::class)
     fun testPinnedCertDoesntMatch() {
         val certs = listOf(makeCert(testServerCert1))
@@ -135,10 +121,8 @@ class CBLTrustManagerTest : BaseTest() {
             .cBLServerTrustCheck(certs, "ECDHE_ECDSA")
     }
 
-    private fun makeCert(cert: String): X509Certificate =
-        ByteArrayInputStream(cert.toByteArray()).use {
-            CertificateFactory.getInstance("X.509").generateCertificate(it)
-                    as X509Certificate
-        }
+    private fun makeCert(cert: String): X509Certificate = ByteArrayInputStream(cert.toByteArray()).use {
+        CertificateFactory.getInstance("X.509").generateCertificate(it) as X509Certificate
+    }
 }
 
