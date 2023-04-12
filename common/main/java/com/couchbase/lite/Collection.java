@@ -50,11 +50,12 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * database. Collections are grouped into namespaces called `scope`s and have a
  * unique name within that scope.
  *
- * <p>Every database contains a default collection named `_default` in the default
- * scope also named `_default` (the constant `Collection.DEFAULT_NAME`)
+ * <p>Every database contains a default collection named "_default"
+ * (the constant <code>Collection.DEFAULT_NAME</code>) in the default scope
+ * (also named "_default", the constant <code>Scope.DEFAULT_NAME</code>)
  *
- * <p>While creating a new collection requires the name of the collection name
- * and the name of its scope name, there are convenience methods that take only
+ * <p>While creating a new collection requires the name of the collection
+ * and the name of its scope, there are convenience methods that take only
  * the name of the collection and create the collection in the default scope.
  *
  * <p>The naming rules for collections and scopes are as follows:
