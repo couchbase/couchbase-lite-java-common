@@ -137,6 +137,8 @@ public class C4QueryObserver extends C4NativePeer {
         if ((results != null) || (err != null)) { callback.onQueryChanged(results, err); }
     }
 
+    // ??? This is called only from LiteCore.
+    // Should it still be guarded by the db lock?
     @Nullable
     private C4QueryEnumerator getEnumerator() throws LiteCoreException {
         return withPeerOrNull(h -> c4QueryEnumeratorFactory.apply(impl.nGetEnumerator(h, false)));
