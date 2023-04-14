@@ -36,15 +36,15 @@ public class ErrorCaseTest extends BaseDbTest {
         Document doc = saveDocInCollection(new MutableDocument(docID));
 
         // First time deletion:
-        testCollection.delete(doc);
-        assertEquals(0, testCollection.getCount());
-        assertNull(testCollection.getDocument(docID));
+        getTestCollection().delete(doc);
+        assertEquals(0, getTestCollection().getCount());
+        assertNull(getTestCollection().getDocument(docID));
 
         // Second time deletion:
         // NOTE: doc is pointing to old revision. this cause conflict but this generate same revision
-        testCollection.delete(doc);
+        getTestCollection().delete(doc);
 
-        assertNull(testCollection.getDocument(docID));
+        assertNull(getTestCollection().getDocument(docID));
     }
 
     // -- DatabaseTest
@@ -53,7 +53,7 @@ public class ErrorCaseTest extends BaseDbTest {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         try {
-            testCollection.delete(doc);
+            getTestCollection().delete(doc);
             fail();
         }
         catch (CouchbaseLiteException e) {
@@ -79,8 +79,8 @@ public class ErrorCaseTest extends BaseDbTest {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
         saveDocInCollection(doc);
-        testCollection.delete(doc);
-        assertNull(testCollection.getDocument("doc1"));
+        getTestCollection().delete(doc);
+        assertNull(getTestCollection().getDocument("doc1"));
     }
 
     @Test
@@ -90,10 +90,10 @@ public class ErrorCaseTest extends BaseDbTest {
         Document saved = saveDocInCollection(doc);
 
         // purge doc
-        testCollection.purge(saved);
+        getTestCollection().purge(saved);
 
         try {
-            testCollection.delete(saved);
+            getTestCollection().delete(saved);
             fail();
         }
         catch (CouchbaseLiteException e) {
@@ -108,10 +108,10 @@ public class ErrorCaseTest extends BaseDbTest {
         Document saved = saveDocInCollection(doc);
 
         // delete doc
-        testCollection.delete(saved);
+        getTestCollection().delete(saved);
 
         // delete doc -> conflict resolver -> no-op
-        testCollection.delete(saved);
+        getTestCollection().delete(saved);
     }
 
     @Test
@@ -121,10 +121,10 @@ public class ErrorCaseTest extends BaseDbTest {
         Document saved = saveDocInCollection(doc);
 
         // delete doc
-        testCollection.delete(saved);
+        getTestCollection().delete(saved);
 
         // purge doc
-        testCollection.purge(saved);
+        getTestCollection().purge(saved);
     }
 
     @Test
@@ -134,10 +134,10 @@ public class ErrorCaseTest extends BaseDbTest {
         Document saved = saveDocInCollection(doc);
 
         // purge doc
-        testCollection.purge(saved);
+        getTestCollection().purge(saved);
 
         try {
-            testCollection.purge(saved);
+            getTestCollection().purge(saved);
             fail();
         }
         catch (CouchbaseLiteException e) {
@@ -160,6 +160,6 @@ public class ErrorCaseTest extends BaseDbTest {
     }
 
     private Document saveDocInCollection(MutableDocument doc) {
-        return saveDocInCollection(doc, testCollection, null);
+        return saveDocInCollection(doc, getTestCollection(), null);
     }
 }

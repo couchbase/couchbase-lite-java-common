@@ -43,7 +43,7 @@ public class QueryChangeTest extends BaseQueryTest {
 
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
-            .from(DataSource.collection(testCollection))
+            .from(DataSource.collection(getTestCollection()))
             .where(Expression.property(TEST_DOC_SORT_KEY).lessThan(Expression.intValue(5)));
 
         final AtomicReference<ListenerToken> token = new AtomicReference<>();

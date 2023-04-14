@@ -15,27 +15,80 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.replicator.ReplicationStatusChange
 import com.couchbase.lite.internal.utils.Fn
 import com.couchbase.lite.internal.utils.Report
-import com.couchbase.lite.mock.TestReplicatorChangeListener
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import java.net.URI
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+
+internal class ListenerAwaiter(private val token: ListenerToken) {
+    companion object {
+        private val stoppedStates = setOf(
+            ReplicatorActivityLevel.STOPPED,
+            ReplicatorActivityLevel.OFFLINE,
+            ReplicatorActivityLevel.IDLE
+        )
+    }
+
+    private val err = AtomicReference<Throwable?>(null)
+    private val latch = CountDownLatch(1)
+
+    val error: Throwable?
+        get() = err.get()
+
+    fun changed(change: ReplicationStatusChange) {
+        val status = change.status
+        status.error?.let { err.compareAndSet(null, it) }
+        val level = status.activityLevel
+        val e = status.error
+        Report.log(e, "Test replicator state change: $level")
+
+        if (e != null) err.compareAndSet(null, e)
+
+        if (stoppedStates.contains(level)) latch.countDown()
+    }
+
+    fun awaitCompletion(maxWait: Long = BaseTest.LONG_TIMEOUT_SEC, units: TimeUnit = TimeUnit.SECONDS): Boolean =
+        token.use {
+            val ok = latch.await(maxWait, units)
+            if (!ok) err.compareAndSet(null, IllegalStateException("timeout"))
+            return ok
+        }
+}
+
+internal class ReplicatorAwaiter(repl: Replicator, exec: Executor) : ReplicatorChangeListener {
+    private val awaiter = ListenerAwaiter(repl.addChangeListener(this))
+
+    val error: Throwable?
+        get() = awaiter.error
+
+    override fun changed(change: ReplicatorChange) = awaiter.changed(change)
+
+    fun awaitCompletion(maxWait: Long = BaseTest.LONG_TIMEOUT_SEC, units: TimeUnit = TimeUnit.SECONDS) =
+        awaiter.awaitCompletion(maxWait, units)
+}
 
 val mockURLEndpoint: URLEndpoint
     get() = URLEndpoint(URI("ws://foo.couchbase.com/db"))
 
-// Always use this to create a test replicator: it prevents
-// the network connectivity manager from messing up the tests
-fun testReplicator(config: ReplicatorConfiguration) = Replicator(null, config)
+
+// Prefer this method to any other, for creating new replicators
+// It prevents the NetworkConnectivityManager from confusing these tests
+fun ReplicatorConfiguration.testReplicator() = Replicator(null, this)
 
 abstract class BaseReplicatorTest : BaseDbTest() {
     protected lateinit var targetDatabase: Database
     protected lateinit var targetCollection: Collection
+
+    private val replicators = listOf<Replicator>()
 
     @Before
     @Throws(CouchbaseLiteException::class)
@@ -46,12 +99,14 @@ abstract class BaseReplicatorTest : BaseDbTest() {
 
     @After
     fun tearDownBaseReplicatorTest() {
+        replicators.forEach { it.close() }
         eraseDb(targetDatabase)
     }
 
-    protected fun makeReplicatorConfig(
-        source: Map<Collection, CollectionConfiguration?> = mapOf(testCollection to null),
+    protected fun makeReplConfig(
         target: Endpoint = mockURLEndpoint,
+        source: kotlin.collections.Collection<Collection> = setOf(testCollection),
+        srcConfig: CollectionConfiguration? = null,
         type: ReplicatorType? = null,
         continuous: Boolean? = null,
         authenticator: Authenticator? = null,
@@ -59,11 +114,38 @@ abstract class BaseReplicatorTest : BaseDbTest() {
         pinnedServerCert: Certificate? = null,
         maxAttempts: Int = 1,
         maxAttemptWaitTime: Int = 1,
-        heartbeat: Int = AbstractReplicatorConfiguration.DISABLE_HEARTBEAT,
+        autoPurge: Boolean = true
+    ): ReplicatorConfiguration {
+        return makeReplConfig(
+            target,
+            mapOf(source to srcConfig),
+            type,
+            continuous,
+            authenticator,
+            headers,
+            pinnedServerCert,
+            maxAttempts,
+            maxAttemptWaitTime,
+            autoPurge
+        )
+    }
+
+    protected fun makeReplConfig(
+        target: Endpoint,
+        source: Map<out kotlin.collections.Collection<Collection>, CollectionConfiguration?> =
+            mapOf(setOf(testCollection) to null),
+        type: ReplicatorType? = null,
+        continuous: Boolean? = null,
+        authenticator: Authenticator? = null,
+        headers: Map<String, String>? = null,
+        pinnedServerCert: Certificate? = null,
+        maxAttempts: Int = 1,
+        maxAttemptWaitTime: Int = 1,
         autoPurge: Boolean = true
     ): ReplicatorConfiguration {
         val config = ReplicatorConfiguration(target)
-        source.forEach { config.addCollection(it.key, it.value) }
+
+        source.forEach { config.addCollections(it.key, it.value) }
         type?.let { config.type = it }
         continuous?.let { config.isContinuous = it }
         authenticator?.let { config.setAuthenticator(it) }
@@ -71,57 +153,65 @@ abstract class BaseReplicatorTest : BaseDbTest() {
         pinnedServerCert?.let { config.pinnedServerX509Certificate = it as X509Certificate }
         maxAttempts.let { config.maxAttempts = it }
         maxAttemptWaitTime.let { config.maxAttemptWaitTime = it }
-        heartbeat.let { config.heartbeat = it }
         autoPurge.let { config.setAutoPurgeEnabled(it) }
+
+        // The mocks used in the loopback tests are
+        // not prepared to handle heartbeats
+        config.heartbeat = AbstractReplicatorConfiguration.DISABLE_HEARTBEAT
+
         return config
     }
 
     protected fun run(
-        config: ReplicatorConfiguration = makeReplicatorConfig(),
-        code: Int = 0,
-        domain: String? = null,
-        reset: Boolean = false,
-        onReady: Fn.Consumer<Replicator?>? = null
-    ) = run(testReplicator(config), code, domain, reset, onReady)
-
-    protected fun run(
-        repl: Replicator,
-        code: Int = 0,
-        domain: String? = null,
+        config: ReplicatorConfiguration,
+        expectedErrorCode: Int = 0,
+        expectedErrorDomain: String? = null,
         reset: Boolean = false,
         onReady: Fn.Consumer<Replicator?>? = null
     ): Replicator {
-        val listener = TestReplicatorChangeListener()
+        return run(
+            config.testReplicator(),
+            expectedErrorCode,
+            expectedErrorDomain,
+            reset,
+            onReady
+        )
+    }
+
+    protected fun run(
+        repl: Replicator,
+        expectedErrorCode: Int = 0,
+        expectedErrorDomain: String? = null,
+        reset: Boolean = false,
+        onReady: Fn.Consumer<Replicator?>? = null
+    ): Replicator {
+        val awaiter = ReplicatorAwaiter(repl, testSerialExecutor)
+
+        Report.log("Test replicator starting: %s", repl.config)
 
         onReady?.accept(repl)
-
         var ok = false
-        val token = repl.addChangeListener(testSerialExecutor, listener)
         try {
-            Report.log("Test replicator starting: %s", repl.config)
             repl.start(reset)
-            ok = listener.awaitCompletion(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+            ok = awaiter.awaitCompletion(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
         } finally {
-            Report.log(listener.error, "Test replicator finished ${if (ok) "" else "un"}successfully")
-            token.remove()
             repl.stop()
+            Report.log(awaiter.error, "Test replicator ${if (ok) "finished" else "timed out"}")
         }
 
-        val err = listener.error
-        if ((code == 0) && (domain == null)) {
-            if (err != null) {
-                throw AssertionError("Replication failed with unexpected error", err)
-            }
+        val err = awaiter.error
+        if ((expectedErrorCode == 0) && (expectedErrorDomain == null)) {
+            if (err != null) throw AssertionError("Replication failed with unexpected error", err)
         } else {
             if (err !is CouchbaseLiteException) {
-                throw AssertionError("Replication failed with unrecognized error", err)
+                throw AssertionError("Replication failed with unexpected error", err)
             }
 
-            if (code != 0) {
-                Assert.assertEquals(code, err.code)
+            if (expectedErrorCode != 0) {
+                Assert.assertEquals(expectedErrorCode, err.code)
             }
-            if (domain != null) {
-                Assert.assertEquals(domain, err.domain)
+            if (expectedErrorDomain != null) {
+                Assert.assertEquals(expectedErrorDomain, err.domain)
             }
         }
 

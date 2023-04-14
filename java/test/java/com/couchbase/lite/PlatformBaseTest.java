@@ -32,6 +32,7 @@ import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.utils.Report;
 
 
 /**
@@ -71,8 +72,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     private static LogFileConfiguration logConfig;
     static { CouchbaseLite.init(true); }
-
-
     // set up the file logger...
     @Override
     public final void setupPlatform() {
@@ -107,6 +106,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     @Override
     public final void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
+
     @Override
     public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
         return new JavaExecutionService(executor);
@@ -122,5 +122,9 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
 
     @Override
-    public final String getDevice() { return "JVM"; }
+    public final String getDevice() {
+        final String device = System.getProperty("os.name");
+        Report.log("Test device: " + device);
+        return device.toLowerCase(Locale.getDefault()).substring(0, 3);
+    }
 }

@@ -29,11 +29,11 @@ public abstract class BaseQueryTest extends BaseDbTest {
     }
 
     protected final List<MutableDocument> loadDocuments(int n) {
-        return loadDocuments(n, testCollection);
+        return loadDocuments(n, getTestCollection());
     }
 
     protected final List<MutableDocument> loadDocuments(int first,  int n) {
-        return loadDocuments(first, n, testCollection);
+        return loadDocuments(first, n, getTestCollection());
     }
 
     protected final List<MutableDocument> loadDocuments(int n, Collection collection) {
@@ -73,7 +73,7 @@ public abstract class BaseQueryTest extends BaseDbTest {
     // Kotlin shim functions
 
     protected final Document saveDocInTestCollection(MutableDocument doc) {
-        return saveDocInTestCollection(doc, testCollection);
+        return saveDocInTestCollection(doc, getTestCollection());
     }
 
     protected final Document saveDocInTestCollection(MutableDocument doc, Collection collection) {

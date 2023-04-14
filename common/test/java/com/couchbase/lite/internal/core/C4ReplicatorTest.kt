@@ -47,7 +47,7 @@ class C4ReplicatorTest : BaseDbTest() {
         clearBoundCollections()
         testReplicatorConfig = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
         testReplicatorConfig.addCollection(testCollection, CollectionConfiguration())
-        testReplicator =  testReplicator(testReplicatorConfig)
+        testReplicator =  testReplicatorConfig.testReplicator()
     }
 
     @After

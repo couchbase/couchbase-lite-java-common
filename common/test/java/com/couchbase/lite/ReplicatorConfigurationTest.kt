@@ -31,37 +31,37 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     fun testIllegalMaxAttempts() {
-        makeReplicatorConfig().maxAttempts = -1
+        makeReplConfig(maxAttempts = -1)
     }
 
     @Test
     fun testMaxAttemptsZero() {
-        makeReplicatorConfig().maxAttempts = 0
+        makeReplConfig(maxAttempts = 0)
     }
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     fun testIllegalAttemptsWaitTime() {
-        makeReplicatorConfig().maxAttemptWaitTime = -1
+        makeReplConfig(maxAttemptWaitTime = -1)
     }
 
     @Test
     fun testMaxAttemptsWaitTimeZero() {
-        makeReplicatorConfig().maxAttemptWaitTime = 0
+        makeReplConfig(maxAttemptWaitTime = 0)
     }
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     fun testIllegalHeartbeatMin() {
-        makeReplicatorConfig().heartbeat = -1
+        makeReplConfig().heartbeat = -1
     }
 
     @Test
     fun testHeartbeatZero() {
-        makeReplicatorConfig().heartbeat = 0
+        makeReplConfig().heartbeat = 0
     }
 
     @Test(expected = java.lang.IllegalArgumentException::class)
     fun testIllegalHeartbeatMax() {
-        makeReplicatorConfig().heartbeat = 2147484
+        makeReplConfig().heartbeat = 2147484
     }
 
     // Can't test the EE parameter (self-signed only) here

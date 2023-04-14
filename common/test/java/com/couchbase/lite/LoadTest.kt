@@ -31,10 +31,12 @@ private const val ITERATIONS = 2000
 
 class LoadTest : BaseDbTest() {
     companion object {
-        val DEVICE_SPEED_MULTIPLIER = mapOf(
-            "JVM" to 33,
+        private val DEVICE_SPEED_MULTIPLIER = mapOf(
+            "lin" to 33,
+            "mac" to 33,
+            "win" to 50,
             "r8quex" to 100,
-            "a12uue" to 180,
+            "a12uue" to 200,
             "starqlteue" to 150,
             "dandelion_global" to 100,
             "cheetah" to 100,
@@ -45,6 +47,10 @@ class LoadTest : BaseDbTest() {
             "occam" to 220,
         )
     }
+
+    private val speedMultiplier: Int
+        get() = DEVICE_SPEED_MULTIPLIER[device] ?: 100
+
 
     // https://github.com/couchbase/couchbase-lite-android/issues/1447
     @SlowTest
@@ -233,11 +239,11 @@ class LoadTest : BaseDbTest() {
     }
 
     private fun timeTest(testName: String, testTime: Long, test: Runnable) {
-        val maxTimeMs = testTime * (DEVICE_SPEED_MULTIPLIER[device] ?: 200)
+        val maxTimeMs = testTime * speedMultiplier
         val t0 = System.currentTimeMillis()
         test.run()
         val elapsedTime = System.currentTimeMillis() - t0
-        Report.log("Load test ${testName} completed in ${elapsedTime} ms (${maxTimeMs})")
+        Report.log("Load test ${testName} completed in ${elapsedTime}ms (${maxTimeMs}) on ${device}")
         assertTrue(
             "Load test ${testName} over time: ${elapsedTime} > ${maxTimeMs}",
             elapsedTime < maxTimeMs

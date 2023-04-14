@@ -140,40 +140,60 @@ fun readJSONResource(name: String?): String {
 }
 
 abstract class BaseDbTest : BaseTest() {
-    protected lateinit var testDatabase: Database
-    protected lateinit var testCollection: Collection
-    protected lateinit var testTag: String
+    protected val testDatabase: Database
+        get() = testDb
+    protected val testCollection: Collection
+        get() = testCol
+    protected val testTag: String
+        get() = testTg
+
+
+    private lateinit var testDb: Database
+    private lateinit var testCol: Collection
+    private lateinit var testTg: String
 
     @Before
     fun setUpBaseDbTest() {
-        testDatabase = createDb("base_db")
+        testDb = createDb("base_db")
         Report.log("Created base test DB: $testDatabase")
         assertNotNull(testDatabase)
         assertTrue(testDatabase.isOpen)
-        testCollection = testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
+        testCol =
+            testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
         Report.log("Created base test Collection: $testCollection")
-        testTag = getUniqueName("db_test_tag")
+        testTg = getUniqueName("db_test_tag")
     }
 
     @After
     fun tearDownBaseDbTest() {
-        testCollection.close()
-        eraseDb(testDatabase)
-        Report.log("Deleted baseTestDb: $testDatabase")
+        testCol.close()
+        Report.log("Test collection closed: ${testCol.fullName}")
+        eraseDb(testDb)
+        Report.log("Test db erased: ${testDb.name}")
     }
 
     protected fun reopenTestDb() {
-        testDatabase = reopenDb(testDatabase)
-        testCollection = testDatabase.getSimilarCollection(testCollection)
+        val cScope = testCollection.scope.name
+        val cName = testCollection.name
+        testCollection.close()
+
+        testDb = reopenDb(testDatabase)
+
+        testCol = testDatabase.getCollection(cName, cScope)
+            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb.name}")
     }
 
     protected fun recreateTestDb() {
-        assertNotNull(testCollection)
         val cScope = testCollection.scope.name
         val cName = testCollection.name
+        testCollection.close()
+
         eraseDb(testDatabase)
-        testDatabase = createDb("base_db")
-        testCollection = testDatabase.createTestCollection(cName, cScope)
+
+        testDb = createDb("base_db")
+
+        testCol = testDatabase.getCollection(cName, cScope)
+            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb.name}")
     }
 
     protected fun duplicateTestDb(): Pair<Database, Collection> {
@@ -267,7 +287,10 @@ abstract class BaseDbTest : BaseTest() {
                 }
             }
         } catch (e: java.lang.Exception) {
-            throw java.lang.AssertionError("Failed reading JSON resource \${resName} into collection \${collection}", e)
+            throw java.lang.AssertionError(
+                "Failed reading JSON resource \${resName} into collection \${collection}",
+                e
+            )
         }
     }
 
