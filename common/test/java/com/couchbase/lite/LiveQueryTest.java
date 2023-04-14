@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -52,9 +53,9 @@ public class LiveQueryTest extends BaseDbTest {
             .orderBy(Ordering.property(KEY).ascending());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
-        try { assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
-        finally { token.remove(); }
+        try (ListenerToken ignore = query.addChangeListener(testSerialExecutor, change -> latch.countDown())) {
+            assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
+        }
     }
 
     /**
@@ -64,7 +65,6 @@ public class LiveQueryTest extends BaseDbTest {
      */
     @Test
     public void testMultipleListeners() throws InterruptedException, CouchbaseLiteException {
-        ListenerToken token1 = null;
         final Query query = QueryBuilder
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
@@ -78,18 +78,15 @@ public class LiveQueryTest extends BaseDbTest {
 
         final AtomicIntegerArray atmCount = new AtomicIntegerArray(2);
 
-        try {
-            token1 = query.addChangeListener(
-                testSerialExecutor,
-                change -> latch1[atmCount.getAndIncrement(0)].countDown());
+        try (ListenerToken ignore1 = query.addChangeListener(
+            testSerialExecutor,
+            change -> latch1[atmCount.getAndIncrement(0)].countDown())) {
 
-            ListenerToken token2 = null;
             // listener 1 gets notified after observer subscribed
             assertTrue(latch1[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-            try {
-                token2 = query.addChangeListener(
-                    testSerialExecutor,
-                    change -> latch2[atmCount.getAndIncrement(1)].countDown());
+            try (ListenerToken ignore2 = query.addChangeListener(
+                testSerialExecutor,
+                change -> latch2[atmCount.getAndIncrement(1)].countDown())) {
                 // listener 2 should get notified
                 assertTrue(latch2[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
@@ -102,11 +99,8 @@ public class LiveQueryTest extends BaseDbTest {
                 assertTrue(latch1[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
                 assertTrue(latch2[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
             }
-            finally { token2.remove(); }
         }
-        finally { token1.remove(); }
     }
-
 
     // When a result set is closed, we should still be able to introduce a change
     @Test
@@ -119,20 +113,18 @@ public class LiveQueryTest extends BaseDbTest {
         final CountDownLatch[] latches = new CountDownLatch[2];
         for (int i = 0; i < latches.length; i++) { latches[i] = new CountDownLatch(1); }
 
-        ListenerToken token = query.addChangeListener(
+        try (ListenerToken ignore = query.addChangeListener(
             testSerialExecutor,
             change -> {
                 change.getResults().close();
                 latches[atmCount.getAndIncrement(0)].countDown();
-            });
-        try {
+            })) {
             createDocNumbered(10);
             assertTrue(latches[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             createDocNumbered(11);
             assertTrue(latches[1].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
-        finally { token.remove(); }
     }
 
     /**
@@ -149,7 +141,7 @@ public class LiveQueryTest extends BaseDbTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
-        ListenerToken token = query.addChangeListener(
+        try (ListenerToken ignore1 = query.addChangeListener(
             testSerialExecutor,
             change -> {
                 // even if the other listener finishes running first and iterates through doc-11,
@@ -159,26 +151,21 @@ public class LiveQueryTest extends BaseDbTest {
                     if (Objects.equals(r.getString(0), "doc-11")) { latch1.countDown(); }
                 }
             });
-        ListenerToken token1 = query.addChangeListener(
-            testSerialExecutor, change -> {
-                // even if the other listener finishes running first and iterates through doc-11,
-                // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
-                try (ResultSet rs = change.getResults()) {
-                    Result r = rs.next();
-                    if (Objects.equals(r.getString(0), "doc-11")) { latch2.countDown(); }
-                }
-            });
-        try {
+             ListenerToken ignore2 = query.addChangeListener(
+                 testSerialExecutor, change -> {
+                     // even if the other listener finishes running first and iterates through doc-11,
+                     // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
+                     try (ResultSet rs = change.getResults()) {
+                         Result r = rs.next();
+                         if (Objects.equals(r.getString(0), "doc-11")) { latch2.countDown(); }
+                     }
+                 })) {
             createDocNumbered(11);
 
             // both listeners get notified after doc-11 is created in database
             // rs iterates through the correct value
             assertTrue(latch1.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
             assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-        }
-        finally {
-            token.remove();
-            token1.remove();
         }
     }
 
@@ -206,7 +193,7 @@ public class LiveQueryTest extends BaseDbTest {
         params.setInt("VALUE", 2);
         query.setParameters(params);
 
-        ListenerToken token = query.addChangeListener(
+        try (ListenerToken ignore = query.addChangeListener(
             testSerialExecutor,
             change -> {
                 try (ResultSet rs = change.getResults()) {
@@ -218,8 +205,7 @@ public class LiveQueryTest extends BaseDbTest {
                         latch[atmCount.getAndIncrement(0)].countDown();
                     }
                 }
-            });
-        try {
+            })) {
             assertTrue(latch[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             params = new Parameters();
@@ -233,7 +219,6 @@ public class LiveQueryTest extends BaseDbTest {
             createDocNumbered(0);
             assertFalse(latch[2].await(APPROXIMATE_CORE_DELAY_MS, TimeUnit.MILLISECONDS));
         }
-        finally { token.remove(); }
     }
 
     // CBL-2344: Live query may stop refreshing
@@ -250,15 +235,14 @@ public class LiveQueryTest extends BaseDbTest {
             .where(Expression.property(KEY).greaterThan(Expression.intValue(0)));
 
         latchHolder.set(new CountDownLatch(1));
-        ListenerToken token = query.addChangeListener(
+
+        try (ListenerToken ignore = query.addChangeListener(
             testSerialExecutor,
             change -> {
                 resultsHolder.set(change.getResults().allResults());
                 latchHolder.get().countDown();
             }
-        );
-
-        try {
+        )) {
             // this update should happen nearly instantaneously
             assertTrue(latchHolder.get().await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
             assertEquals(1, resultsHolder.get().size());
@@ -276,9 +260,29 @@ public class LiveQueryTest extends BaseDbTest {
             assertTrue(latchHolder.get().await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
             assertEquals(2, resultsHolder.get().size());
         }
-        finally {
-            token.remove();
+    }
+
+    // CBL-4423: must close all live queries when closing a database
+    @Test
+    public void testLiveQueryOnDBClose() throws CouchbaseLiteException {
+        createDocNumbered(10);
+
+        final N1qlQuery query = new N1qlQuery(testDatabase, "SELECT _id FROM " + testCollection.getFullName());
+
+        final List<QueryChangeListener> listeners = new ArrayList<>();
+        final List<ListenerToken> tokens = new ArrayList<>();
+        for (int i = 0; i < 7; i++) {
+            QueryChangeListener listener = (change) -> { };
+            listeners.add(listener);
+            tokens.add(query.addChangeListener(listener));
         }
+
+        assertEquals(listeners.size(), query.liveCount());
+        for (ListenerToken token: tokens) { assertTrue(query.isLive(token)); }
+
+        testDatabase.close();
+
+        assertEquals(0, query.liveCount());
     }
 
     // create test docs
