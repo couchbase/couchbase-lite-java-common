@@ -20,9 +20,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -40,14 +41,61 @@ import com.couchbase.lite.internal.utils.Preconditions;
 abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListener>, Query {
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
 
+    // This class has two reasons for existence:
+    // - put/remove execute onFirst and onLast lambdas, respectively
+    // - it prevents starting an observer that has been removed.
+    private static class LiveQueries {
+        private final Map<ListenerToken, C4QueryObserver> liveQueries = new HashMap<>();
+
+        public void put(@NonNull ListenerToken token, @NonNull C4QueryObserver observer, @NonNull Runnable onFirst) {
+            synchronized (liveQueries) {
+                if (liveQueries.isEmpty()) { onFirst.run(); }
+                liveQueries.put(token, observer);
+            }
+        }
+
+        public void start(@NonNull ChangeListenerToken<QueryChange> token) {
+            synchronized (liveQueries) {
+                final C4QueryObserver observer = liveQueries.get(token);
+                if (observer != null) { observer.setEnabled(true); }
+            }
+        }
+
+        public void remove(@NonNull ListenerToken token, @NonNull Runnable onLast) {
+            synchronized (liveQueries) {
+                final C4QueryObserver observer = liveQueries.remove(token);
+                if (observer != null) { observer.close(); }
+                if (liveQueries.isEmpty()) { onLast.run(); }
+            }
+        }
+
+        @NonNull
+        public Set<ListenerToken> getTokens() {
+            synchronized (liveQueries) { return new HashSet<>(liveQueries.keySet()); }
+        }
+
+        public boolean isLive() {
+            synchronized (liveQueries) { return !liveQueries.isEmpty(); }
+        }
+
+        @VisibleForTesting
+        public boolean isLive(@NonNull ListenerToken token) {
+            synchronized (liveQueries) { return liveQueries.containsKey(token); }
+        }
+
+        @VisibleForTesting
+        public int liveCount() {
+            synchronized (liveQueries) { return liveQueries.size(); }
+        }
+    }
+
 
     //---------------------------------------------
     // member variables
     //---------------------------------------------
 
     // Keep the C4QueryObserver safe from the GC until this Query is freed.
-    private final Map<ChangeListenerToken<QueryChange>, C4QueryObserver> listeners
-        = Collections.synchronizedMap(new HashMap<>());
+    private final LiveQueries liveQueries = new LiveQueries();
 
     private final Object lock = new Object();
     // column names
@@ -130,10 +178,10 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
      * As currently implemented, the result is two or more lines separated by newline characters:
      * <ul>
      * <li> The first line is the SQLite SELECT statement.
-     * <li> The subsequent lines are the output of SQLite's "EXPLAIN QUERY PLAN" command applied to that
+     * <li> The subsequent lines are the output of SQLite's "EXPLAIN QUERY PLAN" command applied to that statement.
      * </ul>
-     * statement; for help interpreting this, see https://www.sqlite.org/eqp.html . The most
-     * important thing to know is that if you see "SCAN TABLE", it means that SQLite is doing a
+     * For help interpreting this, see: <a href="https://www.sqlite.org/eqp.html">eqp</a>.
+     * The most important thing to know is that if you see "SCAN TABLE", it means that SQLite is doing a
      * slow linear scan of the documents instead of using an index.
      *
      * @return a string describing the implementation of the compiled query.
@@ -179,20 +227,15 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
         Preconditions.assertNotNull(listener, "listener");
 
         final ChangeListenerToken<QueryChange> token
-            = new ChangeListenerToken<>(listener, executor, this::removeChangeListener);
-        final C4QueryObserver queryObserver;
-        try {
-            queryObserver = C4QueryObserver.create(
-                getC4QueryLocked(),
-                (results, err) -> onQueryChanged(token, results, err));
-        }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query listener", e); }
+            = new ChangeListenerToken<>(listener, executor, this::removeListener);
 
-        listeners.put(token, queryObserver);
+        liveQueries.put(token, getObserver(token), this::registerLiveQuery);
 
         // start the observer after the client gets the token
-        (executor != null ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor())
-            .execute(() -> queryObserver.setEnabled(true));
+        ((executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor())
+            .execute(() -> {
+                synchronized (getDbLock()) { liveQueries.start(token); }
+            });
 
         return token;
     }
@@ -205,11 +248,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
      */
     @Deprecated
     @Override
-    public void removeChangeListener(@NonNull ListenerToken token) {
-        Preconditions.assertNotNull(token, "token");
-        final C4QueryObserver observer = listeners.remove(token);
-        if (observer != null) { observer.close(); }
-    }
+    public void removeChangeListener(@NonNull ListenerToken token) { removeListener(token); }
 
     @Nullable
     protected abstract AbstractDatabase getDatabase();
@@ -219,7 +258,10 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
     protected abstract C4Query prepQueryLocked(@NonNull AbstractDatabase db) throws CouchbaseLiteException;
 
     @VisibleForTesting
-    boolean isLive(ListenerToken token) { return listeners.get(token) != null; }
+    boolean isLive(ListenerToken token) { return liveQueries.isLive(token); }
+
+    @VisibleForTesting
+    int liveCount() { return liveQueries.liveCount(); }
 
     @GuardedBy("lock")
     @NonNull
@@ -253,11 +295,43 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
         return c4query;
     }
 
+    private void registerLiveQuery() {
+        final AbstractDatabase db = getDatabase();
+        if (db == null) { return; }
+        db.registerProcess(new AbstractDatabase.ActiveProcess<AbstractQuery>(this) {
+            @Override
+            public boolean isActive() { return liveQueries.isLive(); }
+
+            @Override
+            public void stop() {
+                for (ListenerToken token: liveQueries.getTokens()) { token.remove(); }
+            }
+        });
+    }
+
+    private void unregisterLiveQuery() {
+        final AbstractDatabase db = getDatabase();
+        if (db != null) { db.unregisterProcess(this); }
+    }
+
+    @NonNull
+    private C4QueryObserver getObserver(@NonNull ChangeListenerToken<QueryChange> token) {
+        synchronized (lock) {
+            try { return C4QueryObserver.create(getC4QueryLocked(), (r, err) -> onQueryChanged(token, r, err)); }
+            catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query listener", e); }
+        }
+    }
+
+    private void removeListener(@NonNull ListenerToken token) {
+        Preconditions.assertNotNull(token, "token");
+        liveQueries.remove(token, this::unregisterLiveQuery);
+    }
+
     private void onQueryChanged(
-        ChangeListenerToken<QueryChange> token,
-        C4QueryEnumerator enumerator,
-        LiteCoreException err) {
-        token.postChange(new QueryChange(this, new ResultSet(this, enumerator, columnNames), err));
+        @NonNull ChangeListenerToken<QueryChange> token,
+        @Nullable C4QueryEnumerator results,
+        @Nullable LiteCoreException err) {
+        token.postChange(new QueryChange(this, new ResultSet(this, results, columnNames), err));
     }
 
     @NonNull
