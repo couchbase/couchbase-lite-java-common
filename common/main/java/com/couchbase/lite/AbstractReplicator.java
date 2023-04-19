@@ -382,6 +382,15 @@ public abstract class AbstractReplicator extends BaseReplicator
         }
     }
 
+    // When a replicator is closed it is detached from its from LiteCore and receives no further status updates.
+    // If it is not already in the STOPPED state, it will never be in the stopped state.  That means that
+    // a database that holds a reference to it can never close.
+    // Let's just tell the db forget about it.
+    public void close() {
+        getDatabase().removeActiveReplicator(this);
+        super.close();
+    }
+
     @NonNull
     @Override
     public String toString() {
@@ -726,7 +735,7 @@ public abstract class AbstractReplicator extends BaseReplicator
             err,
             this);
 
-        return c4Status.copy();
+        return new C4ReplicatorStatus(c4Status);
     }
 
     private void queueConflictResolution(@NonNull ReplicatedDocument rDoc, @Nullable ConflictResolver resolver) {

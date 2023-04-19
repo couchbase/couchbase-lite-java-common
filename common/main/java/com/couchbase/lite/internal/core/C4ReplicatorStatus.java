@@ -75,16 +75,15 @@ public final class C4ReplicatorStatus {
         }
     }
 
-    @NonNull
-    public C4ReplicatorStatus copy() {
-        return new C4ReplicatorStatus(
-            activityLevel,
-            progressUnitsCompleted,
-            progressUnitsTotal,
-            progressDocumentCount,
-            errorDomain,
-            errorCode,
-            errorInternalInfo);
+    public C4ReplicatorStatus(@NonNull C4ReplicatorStatus c4Status) {
+        this(
+            c4Status.activityLevel,
+            c4Status.progressUnitsCompleted,
+            c4Status.progressUnitsTotal,
+            c4Status.progressDocumentCount,
+            c4Status.errorDomain,
+            c4Status.errorCode,
+            c4Status.errorInternalInfo);
     }
 
     public int getActivityLevel() { return activityLevel; }

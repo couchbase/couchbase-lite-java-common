@@ -522,7 +522,6 @@ public final class Collection extends BaseCollection
     // Package visibility
     //-------------------------------------------------------------------------
 
-
     @NonNull
     C4CollectionObserver createCollectionObserver(@NonNull Runnable listener)
         throws CouchbaseLiteException {
@@ -557,25 +556,13 @@ public final class Collection extends BaseCollection
     @NonNull
     Object getDbLock() { return db.getDbLock(); }
 
-    @GuardedBy("getDbLock()")
-    boolean isOpen() { return db.isOpenLocked(); }
-
-    @GuardedBy("dbLock")
     @NonNull
-    C4Collection getOpenC4CollectionLocked() throws CouchbaseLiteException {
-        assertOpenChecked();
-        return Preconditions.assertNotNull(c4Collection, "c4collection");
+    C4Collection getOpenC4Collection() throws CouchbaseLiteException {
+        synchronized (getDbLock()) { return getOpenC4CollectionLocked(); }
     }
 
-    @GuardedBy("dbLock")
-    void assertOpenChecked() throws CouchbaseLiteException {
-        if (!db.isOpenLocked()) {
-            throw new CouchbaseLiteException(
-                Log.lookupStandardMessage("DBClosedOrCollectionDeleted"),
-                CBLError.Domain.CBLITE,
-                CBLError.Code.NOT_OPEN);
-        }
-    }
+    @GuardedBy("getDbLock()")
+    boolean isOpenLocked() { return db.isOpenLocked(); }
 
     // - Documents:
 
@@ -694,7 +681,7 @@ public final class Collection extends BaseCollection
         @NonNull CollectionChangeListener listener) {
         if (collectionChangeNotifier == null) {
             collectionChangeNotifier = new CollectionChangeNotifier(this);
-            if (isOpen()) {
+            if (isOpenLocked()) {
                 try { collectionChangeNotifier.start(this::scheduleImmediateOnPostExecutor); }
                 // ??? Revisit this: there is no programatic way for client code
                 // to know that the listener has failed.
@@ -730,7 +717,7 @@ public final class Collection extends BaseCollection
         if (docNotifier == null) {
             docNotifier = new DocumentChangeNotifier(this, docID);
             docChangeNotifiers.put(docID, docNotifier);
-            if (isOpen()) {
+            if (isOpenLocked()) {
                 try { docNotifier.start(this::scheduleImmediateOnPostExecutor); }
                 // ??? Revisit this: there is no programatic way for client code
                 // to know that the listener has failed.
@@ -799,6 +786,23 @@ public final class Collection extends BaseCollection
     @Nullable
     private <T> T withLock(@NonNull Fn.Provider<T> task) {
         synchronized (getDbLock()) { return task.get(); }
+    }
+
+    @GuardedBy("dbLock")
+    @NonNull
+    private C4Collection getOpenC4CollectionLocked() throws CouchbaseLiteException {
+        assertOpenChecked();
+        return Preconditions.assertNotNull(c4Collection, "c4collection");
+    }
+
+    @GuardedBy("dbLock")
+    private void assertOpenChecked() throws CouchbaseLiteException {
+        if (!db.isOpenLocked()) {
+            throw new CouchbaseLiteException(
+                Log.lookupStandardMessage("DBClosedOrCollectionDeleted"),
+                CBLError.Domain.CBLITE,
+                CBLError.Code.NOT_OPEN);
+        }
     }
 
     @GuardedBy("dbLock")

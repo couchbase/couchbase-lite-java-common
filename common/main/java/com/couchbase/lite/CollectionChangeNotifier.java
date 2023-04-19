@@ -63,7 +63,7 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
     private void collectionChanged() {
         synchronized (collection.getDbLock()) {
             final C4CollectionObserver observer = c4Observer;
-            if (!collection.isOpen() || (observer == null)) { return; }
+            if (!collection.isOpenLocked() || (observer == null)) { return; }
 
             boolean external = false;
             List<String> docIDs = new ArrayList<>();
