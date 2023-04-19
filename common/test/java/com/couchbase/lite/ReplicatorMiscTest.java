@@ -96,7 +96,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testDocumentReplication() {
         List<ReplicatedDocument> docs = new ArrayList<>();
-        Replicator repl = BaseReplicatorTestKt.testReplicator(makeConfig());
+        Replicator repl = testReplicator(makeConfig());
         DocumentReplication doc = new DocumentReplication(repl, true, docs);
         assertTrue(doc.isPush());
         assertEquals(doc.getReplicator(), repl);
@@ -106,12 +106,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // https://issues.couchbase.com/browse/CBL-89
     // Thanks to @James Flather for the ready-made test code
     @Test
-    public void testStopBeforeStart() { BaseReplicatorTestKt.testReplicator(makeConfig()).stop(); }
+    public void testStopBeforeStart() { testReplicator(makeConfig()).stop(); }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
-    public void testStatusBeforeStart() { BaseReplicatorTestKt.testReplicator(makeConfig()).getStatus(); }
+    public void testStatusBeforeStart() { testReplicator(makeConfig()).getStatus(); }
 
     @Test
     public void testDocumentEndListenerTokenRemove() {
@@ -151,7 +151,10 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(repl, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST, CBLError.Domain.CBLITE);
+        run(
+            repl,
+            false, CBLError.Domain.CBLITE, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST
+        );
 
         synchronized (options) {
             assertEquals(
@@ -191,7 +194,10 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(repl, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST, CBLError.Domain.CBLITE);
+        run(
+            repl,
+            false, CBLError.Domain.CBLITE, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST
+        );
 
         synchronized (options) {
             assertEquals(Boolean.TRUE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
@@ -417,7 +423,5 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     private Replicator makeRepl() { return makeRepl(makeConfig()); }
 
-    private Replicator makeRepl(ReplicatorConfiguration config) { return BaseReplicatorTestKt.testReplicator(config); }
-
-    private void run(Replicator repl, int code, String domain) { run(repl, code, domain, false, null); }
+    private Replicator makeRepl(ReplicatorConfiguration config) { return testReplicator(config); }
 }

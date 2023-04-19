@@ -44,14 +44,6 @@ val Database.getC4Db
 val Scope.collectionCount
     get() = this.collections.size
 
-fun CountDownLatch.stdWait(): Boolean {
-    return try {
-        await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
-    } catch (e: InterruptedException) {
-        false
-    }
-}
-
 fun Database.createTestCollection(name: String = "coll_", scope: String = "scope_"): Collection {
     val uname = BaseTest.getUniqueName(name)
     val uscope = BaseTest.getUniqueName(scope)
@@ -88,9 +80,6 @@ fun Collection.getQualifiedName() = "${this.scope.name}.${this.name}"
 
 fun Collection.getNonNullDoc(id: String) = this.getDocument(id) ?: throw AssertionError("document ${id} is null")
 
-fun Collection.isRevDeleted(id: String) =
-    C4BaseTest.getDocumentOrEmpty(this.openC4CollectionLocked, id)?.isRevDeleted ?: false
-
 fun Collection.delete() {
     val db = this.database
     try {
@@ -110,12 +99,26 @@ fun Document.delete() {
     }
 }
 
+fun assertCBLException(domain: String, code: Int, err: CouchbaseLiteException?) {
+    assertNotNull(err!!)
+    assertEquals(domain, err.domain)
+    assertEquals(code, err.code)
+}
+
 fun <T : Comparable<T>> assertContents(l1: List<T>, vararg contents: T) {
     assertEquals(l1.sorted(), listOf(*contents).sorted())
 }
 
 fun <T : Comparable<T>> assertContents(l1: Set<T>, vararg contents: T) {
     assertEquals(l1.sorted(), listOf(*contents).sorted())
+}
+
+fun CountDownLatch.stdWait(): Boolean {
+    return try {
+        await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+    } catch (e: InterruptedException) {
+        false
+    }
 }
 
 // Comparing documents isn't trivial:

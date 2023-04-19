@@ -33,7 +33,7 @@ class LoadTest : BaseDbTest() {
     companion object {
         private val DEVICE_SPEED_MULTIPLIER = mapOf(
             "lin" to 33,
-            "mac" to 33,
+            "mac" to 40,
             "win" to 50,
             "r8quex" to 100,
             "a12uue" to 200,

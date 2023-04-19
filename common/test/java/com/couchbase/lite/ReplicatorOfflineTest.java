@@ -135,5 +135,5 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
     private Replicator makeRepl() { return makeRepl(makeConfig()); }
 
-    private Replicator makeRepl(ReplicatorConfiguration config) { return BaseReplicatorTestKt.testReplicator(config); }
+    private Replicator makeRepl(ReplicatorConfiguration config) { return testReplicator(config); }
 }

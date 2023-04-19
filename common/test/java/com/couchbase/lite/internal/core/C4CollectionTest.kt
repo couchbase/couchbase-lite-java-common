@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.LiteCoreException
+import com.couchbase.lite.Collection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
