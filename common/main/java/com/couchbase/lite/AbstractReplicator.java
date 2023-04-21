@@ -382,9 +382,11 @@ public abstract class AbstractReplicator extends BaseReplicator
         }
     }
 
-    // When a replicator is closed it is detached from its from LiteCore and receives no further status updates.
-    // If it is not already in the STOPPED state, it will never be in the stopped state.  That means that
-    // a database that holds a reference to it can never close.
+    // This is a workaround: closing at the wrong time (while a push filter is running?) might even
+    // cause a crash.  The issue it addresses is that when a replicator is closed it is detached from
+    // its from LiteCore and receives no further status updates. If it is not already in the STOPPED
+    // state, it will never be in the stopped state.  That means that a database that holds a reference
+    // to it can never close.
     // Let's just tell the db forget about it.
     public void close() {
         getDatabase().removeActiveReplicator(this);

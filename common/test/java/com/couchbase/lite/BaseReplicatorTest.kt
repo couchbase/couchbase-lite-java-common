@@ -16,7 +16,6 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.replicator.ReplicationStatusChange
-import com.couchbase.lite.internal.utils.Fn
 import com.couchbase.lite.internal.utils.Report
 import org.junit.After
 import org.junit.Assert
@@ -32,7 +31,8 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal class ListenerAwaiter(
     private val token: ListenerToken,
-    private val stopStates: kotlin.collections.Collection<ReplicatorActivityLevel> = STOP_STATES) {
+    private val stopStates: kotlin.collections.Collection<ReplicatorActivityLevel> = STOP_STATES
+) {
 
     companion object {
         private val STOP_STATES = setOf(
@@ -80,12 +80,8 @@ internal class ReplicatorAwaiter(repl: Replicator, exec: Executor) : ReplicatorC
         awaiter.awaitCompletion(maxWait, units)
 }
 
-// Prefer this method to any other, for creating new replicators
-// It prevents the NetworkConnectivityManager from confusing these tests
-fun ReplicatorConfiguration.testReplicator() = Replicator(null, this)
 
 abstract class BaseReplicatorTest : BaseDbTest() {
-
     protected val mockURLEndpoint = URLEndpoint(URI("ws://foo.couchbase.com/db"))
 
     protected val nullResolver = ConflictResolver { null }
@@ -95,7 +91,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
     protected lateinit var targetDatabase: Database
     protected lateinit var targetCollection: Collection
 
-    private val replicators = listOf<Replicator>()
+    private val replicators = mutableListOf<Replicator>()
 
     @Before
     @Throws(CouchbaseLiteException::class)
@@ -183,40 +179,34 @@ abstract class BaseReplicatorTest : BaseDbTest() {
         return config
     }
 
-    protected fun run(
-        config: ReplicatorConfiguration,
-        expectedErrorCode: Int = 0,
-        expectedErrorDomain: String? = null,
-        reset: Boolean = false,
-        onReady: Fn.Consumer<Replicator?>? = null
-    ): Replicator {
-        return run(
-            config.testReplicator(),
-            expectedErrorCode,
-            expectedErrorDomain,
-            reset,
-            onReady
-        )
+    // Prefer this method to any other, for creating new replicators
+    // It prevents the NetworkConnectivityManager from confusing these tests
+    fun ReplicatorConfiguration.testReplicator(): Replicator {
+        val repl = Replicator(null, this)
+        replicators.add(repl)
+        return repl;
     }
 
-    protected fun run(
-        repl: Replicator,
-        expectedErrorCode: Int = 0,
-        expectedErrorDomain: String? = null,
+    protected fun ReplicatorConfiguration.run(
         reset: Boolean = false,
-        onReady: Fn.Consumer<Replicator?>? = null
+        expectedErrorDomain: String? = null,
+        expectedErrorCode: Int = 0
+    ) = replicatorConfiguration.testReplicator().run(reset, expectedErrorDomain, expectedErrorCode)
+
+    protected fun Replicator.run(
+        reset: Boolean = false,
+        expectedErrorDomain: String? = null,
+        expectedErrorCode: Int = 0
     ): Replicator {
-        val awaiter = ReplicatorAwaiter(repl, testSerialExecutor)
+        val awaiter = ReplicatorAwaiter(this, testSerialExecutor)
 
-        Report.log("Test replicator starting: %s", repl.config)
-
-        onReady?.accept(repl)
+        Report.log("Test replicator starting: %s", this.config)
         var ok = false
         try {
-            repl.start(reset)
+            this.start(reset)
             ok = awaiter.awaitCompletion(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
         } finally {
-            repl.stop()
+            this.stop()
             Report.log(awaiter.error, "Test replicator ${if (ok) "finished" else "timed out"}")
         }
 
@@ -236,6 +226,6 @@ abstract class BaseReplicatorTest : BaseDbTest() {
             }
         }
 
-        return repl
+        return this
     }
 }

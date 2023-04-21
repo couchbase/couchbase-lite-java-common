@@ -15,9 +15,8 @@
 //
 package com.couchbase.lite.internal.core
 
-import com.couchbase.lite.BaseDbTest
+import com.couchbase.lite.BaseReplicatorTest
 import com.couchbase.lite.CollectionConfiguration
-import com.couchbase.lite.Replicator
 import com.couchbase.lite.ReplicatorConfiguration
 import com.couchbase.lite.ReplicatorType
 import com.couchbase.lite.URLEndpoint
@@ -29,7 +28,6 @@ import com.couchbase.lite.internal.replicator.CBLCookieStore
 import com.couchbase.lite.internal.sockets.MessageFraming
 import com.couchbase.lite.mock.MockNativeReplicator
 import com.couchbase.lite.mock.MockNativeSocket
-import com.couchbase.lite.testReplicator
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -37,17 +35,12 @@ import org.junit.Test
 import java.net.URI
 
 
-class C4ReplicatorTest : BaseDbTest() {
-    private lateinit var testReplicatorConfig: ReplicatorConfiguration
-    private lateinit var testReplicator: Replicator
+class C4ReplicatorTest : BaseReplicatorTest() {
 
     @Before
     fun setUpC4ReplicatorTest() {
         C4Replicator.BOUND_REPLICATORS.clear()
         clearBoundCollections()
-        testReplicatorConfig = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
-        testReplicatorConfig.addCollection(testCollection, CollectionConfiguration())
-        testReplicator =  testReplicatorConfig.testReplicator()
     }
 
     @After
@@ -62,6 +55,9 @@ class C4ReplicatorTest : BaseDbTest() {
 
         assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
         assertEquals(0, boundCollectionCount())
+
+        val config = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
+        config.addCollection(testCollection, CollectionConfiguration())
 
         val c4Repl = C4Replicator.createRemoteReplicator(
             object : MockNativeReplicator() {
@@ -86,9 +82,9 @@ class C4ReplicatorTest : BaseDbTest() {
             null,
             { _, _ -> },
             { _, _ -> },
-            testReplicator,
+            config.testReplicator(),
             SocketFactory(
-                testReplicatorConfig,
+                config,
                 object : CBLCookieStore {
                     override fun setCookies(uri: URI, cookies: List<String>, acceptParents: Boolean) = Unit
                     override fun getCookies(uri: URI): String? = null
@@ -116,6 +112,9 @@ class C4ReplicatorTest : BaseDbTest() {
         assertEquals(0, C4Replicator.BOUND_REPLICATORS.size())
         assertEquals(0, boundCollectionCount())
 
+        val config = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
+        config.addCollection(testCollection, CollectionConfiguration())
+
         val c4Repl = C4Replicator.createLocalReplicator(
             object : MockNativeReplicator() {
                 override fun nStop(peer: Long) {
@@ -134,7 +133,7 @@ class C4ReplicatorTest : BaseDbTest() {
             null,
             { _, _ -> },
             { _, _ -> },
-            testReplicator
+            config.testReplicator()
         )
 
         assertEquals(1, C4Replicator.BOUND_REPLICATORS.size())
@@ -215,10 +214,12 @@ class C4ReplicatorTest : BaseDbTest() {
         assertEquals(1, calls)
     }
 
-
     @Test
     fun testDocumentEndedCallback() {
         var calls = 0
+
+        val config = ReplicatorConfiguration(URLEndpoint(URI("wss://foo")))
+        config.addCollection(testCollection, CollectionConfiguration())
 
         val c4Repl = C4Replicator.createLocalReplicator(
             MockNativeReplicator(),
@@ -230,7 +231,7 @@ class C4ReplicatorTest : BaseDbTest() {
             null,
             { _, _ -> },
             { _, _ -> calls++ },
-            testReplicator
+            config.testReplicator()
         )
 
         val docEnd = C4DocumentEnded(C4BaseTest.MOCK_TOKEN, "micro", "WWI sabres", "doc-1", "#57", 0, 0L, 0, 0, 0, true)

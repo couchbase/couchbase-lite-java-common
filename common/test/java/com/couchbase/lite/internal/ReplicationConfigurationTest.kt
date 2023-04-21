@@ -31,7 +31,7 @@ import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
-// These two functions expose package private state to other tests
+// These two functions have to be here, to expose package private state to other tests
 
 fun boundCollectionCount() = ReplicationCollection.BOUND_COLLECTIONS.size()
 
