@@ -2557,7 +2557,7 @@ public class DocumentTest extends BaseDbTest {
 
         Assert.assertNotEquals(doc3.hashCode(), 0);
         Assert.assertNotEquals(doc3.hashCode(), new Object().hashCode());
-        Assert.assertNotEquals(doc3.hashCode(), new Integer(1).hashCode());
+        Assert.assertNotEquals(doc3.hashCode(), Integer.valueOf(1).hashCode());
         Assert.assertNotEquals(doc3.hashCode(), new HashMap<>().hashCode());
         Assert.assertNotEquals(doc3.hashCode(), new MutableDictionary().hashCode());
         Assert.assertNotEquals(doc3.hashCode(), new MutableArray().hashCode());

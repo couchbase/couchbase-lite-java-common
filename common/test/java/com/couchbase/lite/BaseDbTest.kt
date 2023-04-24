@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.core.C4BaseTest
 import com.couchbase.lite.internal.utils.Fn.ConsumerThrows
 import com.couchbase.lite.internal.utils.JSONUtils
 import com.couchbase.lite.internal.utils.PlatformUtils
@@ -99,8 +98,9 @@ fun Document.delete() {
     }
 }
 
-fun assertCBLException(domain: String, code: Int, err: CouchbaseLiteException?) {
+fun assertCBLException(domain: String, code: Int, err: Exception?) {
     assertNotNull(err!!)
+    if (err !is CouchbaseLiteException) throw java.lang.AssertionError("Especting a CouchbaseLiteException", err)
     assertEquals(domain, err.domain)
     assertEquals(code, err.code)
 }
