@@ -487,6 +487,6 @@ public class BlobTest extends BaseDbTest {
     }
 
     private Document saveDocInTestCollection(MutableDocument mDoc, Collection collection) {
-        return saveDocInCollection(mDoc, collection, null);
+        return saveDocInCollection(mDoc, collection);
     }
 }

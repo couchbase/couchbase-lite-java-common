@@ -327,19 +327,19 @@ public class DictionaryTest extends BaseDbTest {
 
         final Map<String, Object> finalContent = content;
 
-        MutableDocument doc = new MutableDocument("doc1");
-        doc.setValue("dict", dict);
-        saveDocInTestCollection(doc, doc1 -> {
-            Map<String, Object> result1 = new HashMap<>();
-            int count1 = 0;
-            Dictionary dictObj = doc1.getDictionary("dict");
-            for (String key: dictObj) {
-                result1.put(key, dict.getValue(key));
-                count1++;
-            }
-            assertEquals(finalContent.size(), count1);
-            assertEquals(finalContent, result1);
-        });
+        MutableDocument mDoc = new MutableDocument("doc1");
+        mDoc.setValue("dict", dict);
+        Document doc = saveDocInTestCollection(mDoc);
+
+        count = 0;
+        result = new HashMap<>();
+        Dictionary dictObj = doc.getDictionary("dict");
+        for (String key: dictObj) {
+            result.put(key, dict.getValue(key));
+            count++;
+        }
+        assertEquals(finalContent.size(), count);
+        assertEquals(finalContent, result);
     }
 
     @Test(expected = ConcurrentModificationException.class)
@@ -411,25 +411,25 @@ public class DictionaryTest extends BaseDbTest {
         mDict.setArray("array-null", null);
         mDict.setDictionary("dict-null", null);
         mDoc.setDictionary("dict", mDict);
-        saveDocInTestCollection(mDoc, doc -> {
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("dict"));
-            Dictionary d = doc.getDictionary("dict");
-            assertNotNull(d);
-            assertEquals(6, d.count());
-            assertTrue(d.contains("obj-null"));
-            assertTrue(d.contains("string-null"));
-            assertTrue(d.contains("number-null"));
-            assertTrue(d.contains("date-null"));
-            assertTrue(d.contains("array-null"));
-            assertTrue(d.contains("dict-null"));
-            assertNull(d.getValue("obj-null"));
-            assertNull(d.getValue("string-null"));
-            assertNull(d.getValue("number-null"));
-            assertNull(d.getValue("date-null"));
-            assertNull(d.getValue("array-null"));
-            assertNull(d.getValue("dict-null"));
-        });
+        Document doc = saveDocInTestCollection(mDoc);
+
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("dict"));
+        Dictionary d = doc.getDictionary("dict");
+        assertNotNull(d);
+        assertEquals(6, d.count());
+        assertTrue(d.contains("obj-null"));
+        assertTrue(d.contains("string-null"));
+        assertTrue(d.contains("number-null"));
+        assertTrue(d.contains("date-null"));
+        assertTrue(d.contains("array-null"));
+        assertTrue(d.contains("dict-null"));
+        assertNull(d.getValue("obj-null"));
+        assertNull(d.getValue("string-null"));
+        assertNull(d.getValue("number-null"));
+        assertNull(d.getValue("date-null"));
+        assertNull(d.getValue("array-null"));
+        assertNull(d.getValue("dict-null"));
     }
 
     @Test
@@ -784,12 +784,6 @@ public class DictionaryTest extends BaseDbTest {
     }
 
     private Document saveDocInTestCollection(MutableDocument mDoc, Collection collection) {
-        return saveDocInCollection(mDoc, collection, null);
-    }
-
-    private void saveDocInTestCollection(
-        MutableDocument mDoc,
-        Fn.ConsumerThrows<Document, CouchbaseLiteException> validator) {
-        saveDocInCollection(mDoc, getTestCollection(), validator);
+        return saveDocInCollection(mDoc, collection);
     }
 }
