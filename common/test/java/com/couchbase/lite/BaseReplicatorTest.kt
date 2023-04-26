@@ -122,7 +122,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
         return config
     }
 
-    protected fun makeReplConfig(
+    protected fun makeSimpleReplConfig(
         target: Endpoint = mockURLEndpoint,
         source: kotlin.collections.Collection<Collection> = setOf(testCollection),
         srcConfig: CollectionConfiguration? = null,
@@ -148,7 +148,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
     )
 
     protected fun makeReplConfig(
-        target: Endpoint,
+        target: Endpoint = mockURLEndpoint,
         source: Map<out kotlin.collections.Collection<Collection>, CollectionConfiguration?> =
             mapOf(setOf(testCollection) to null),
         type: ReplicatorType? = null,

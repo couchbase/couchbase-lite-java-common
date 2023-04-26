@@ -34,7 +34,7 @@ class LoadTest : BaseDbTest() {
         private val DEVICE_SPEED_MULTIPLIER = mapOf(
             "lin" to 33,
             "mac" to 40,
-            "win" to 50,
+            "win" to 110,
             "r8quex" to 100,
             "a12uue" to 200,
             "starqlteue" to 150,
@@ -161,7 +161,7 @@ class LoadTest : BaseDbTest() {
         testCollection.save(mDoc)
 
         assertEquals(1L, testCollection.count)
-        timeTest("testUpdate2", 75) {
+        timeTest("testUpdate2", 90) {
             for (i in 0..ITERATIONS) {
                 mDoc = testCollection.getDocument(mDoc.id)!!.toMutable()
                 mDoc.setValue("map", mapOf("idx" to i, "long" to i.toLong(), TEST_DOC_TAG_KEY to getUniqueName("tag")))

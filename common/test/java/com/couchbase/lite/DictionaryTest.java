@@ -624,7 +624,7 @@ public class DictionaryTest extends BaseDbTest {
 
         assertNotEquals(0, dict3.hashCode());
         assertNotEquals(dict3.hashCode(), new Object().hashCode());
-        assertNotEquals(dict3.hashCode(), new Integer(1).hashCode());
+        assertNotEquals(dict3.hashCode(), Integer.valueOf(1).hashCode());
         assertNotEquals(dict3.hashCode(), new HashMap<>().hashCode());
         assertNotEquals(dict3.hashCode(), new MutableDictionary().hashCode());
         assertNotEquals(dict3.hashCode(), new MutableArray().hashCode());
