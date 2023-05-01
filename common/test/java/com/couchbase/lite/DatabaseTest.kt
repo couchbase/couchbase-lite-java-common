@@ -96,7 +96,7 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.close()
 
         // should fail
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(docId) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(docId) }
     }
 
     @Test
@@ -108,7 +108,7 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.delete()
 
         // should fail
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(docId) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(docId) }
     }
 
     //---------------------------------------------
@@ -181,7 +181,7 @@ class DatabaseTest : BaseDbTest() {
 
             // Attempt to save the doc in the wrong db
             doc.setValue(TEST_DOC_TAG_KEY, "bam!!!")
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -202,7 +202,7 @@ class DatabaseTest : BaseDbTest() {
 
             // Attempt to save the doc in a *very* wrong db
             doc.setValue(TEST_DOC_TAG_KEY, "bam!!!")
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
         } finally {
             // delete otherDb
             eraseDb(otherDb)
@@ -239,7 +239,7 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.close()
         val doc = MutableDocument()
         doc.setValue(TEST_DOC_TAG_KEY, testTag)
-        assertThrowsCBL(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) { testCollection.save(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) { testCollection.save(doc) }
     }
 
     @Test
@@ -248,7 +248,7 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.delete()
         val doc = MutableDocument()
         doc.setValue(TEST_DOC_TAG_KEY, testTag)
-        assertThrowsCBL(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) { testCollection.save(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) { testCollection.save(doc) }
     }
 
     //---------------------------------------------
@@ -258,7 +258,7 @@ class DatabaseTest : BaseDbTest() {
     fun testDeleteNonExistentDoc() {
         val doc = MutableDocument("doesnt_exist")
         doc.setValue(TEST_DOC_TAG_KEY, testTag)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc) }
     }
 
     @Test
@@ -288,7 +288,7 @@ class DatabaseTest : BaseDbTest() {
             assertEquals(n + 1, testCollection.count)
 
             // Delete from the the wrong db
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -307,7 +307,7 @@ class DatabaseTest : BaseDbTest() {
             assertNotSame(otherCollection, testCollection)
 
             // Delete from the different db:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -341,7 +341,7 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.close()
 
         // Delete doc from closed db:
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
     }
 
     @Test
@@ -352,7 +352,7 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.delete()
 
         // Delete doc from deleted db:
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
     }
 
     //---------------------------------------------
@@ -362,7 +362,7 @@ class DatabaseTest : BaseDbTest() {
     fun testPurgeNonexistentDoc() {
         val n = testCollection.count
         val doc = MutableDocument("doc1")
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.purge(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.purge(doc) }
         assertEquals(n, testCollection.count)
     }
 
@@ -394,7 +394,7 @@ class DatabaseTest : BaseDbTest() {
             assertEquals(n + 1, otherCollection.count)
 
             // purge document against other db instance:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -414,7 +414,7 @@ class DatabaseTest : BaseDbTest() {
             assertEquals(0, otherCollection.count)
 
             // Purge document against other db:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
         } finally {
             eraseDb(otherDb)
         }
@@ -469,7 +469,7 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.close()
 
         // Purge doc:
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
     }
 
     @Test
@@ -481,7 +481,7 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.close()
 
         // Purge doc:
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
     }
 
     //---------------------------------------------
@@ -601,7 +601,7 @@ class DatabaseTest : BaseDbTest() {
     fun testCloseInInBatch() {
         testDatabase.inBatch<RuntimeException> {
             // can't close a db in a transaction
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) { testDatabase.close() }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) { testDatabase.close() }
         }
     }
 
@@ -722,7 +722,7 @@ class DatabaseTest : BaseDbTest() {
         val path = File(testDatabase.path!!)
         assertTrue(path.exists())
         testDatabase.inBatch<RuntimeException> {
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) { testDatabase.delete() }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) { testDatabase.delete() }
         }
     }
 
@@ -741,7 +741,7 @@ class DatabaseTest : BaseDbTest() {
             assertEquals(n, otherCollection.count)
 
             // delete db
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { testDatabase.delete() }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { testDatabase.delete() }
         } finally {
             eraseDb(otherDb)
         }
@@ -771,7 +771,7 @@ class DatabaseTest : BaseDbTest() {
         assertNotNull(path)
         assertTrue(path.exists())
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { Database.delete(testDatabase.name, null) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { Database.delete(testDatabase.name, null) }
     }
 
     @Test
@@ -796,21 +796,21 @@ class DatabaseTest : BaseDbTest() {
     @SlowTest
     @Test
     fun testDeleteOpenDBWithStaticMethod() {
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.BUSY) {
             Database.delete(testDatabase.name, testDatabase.filePath!!.parentFile)
         }
     }
 
     @Test
     fun testDeleteNonExistingDBWithDefaultDir() {
-        assertThrowsCBL(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_FOUND) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_FOUND) {
             Database.delete("doesntexist", testDatabase.filePath)
         }
     }
 
     @Test
     fun testDeleteNonExistingDB() {
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             Database.delete(testDatabase.name, File(getScratchDirectoryPath("nowhere")))
         }
     }
@@ -878,19 +878,19 @@ class DatabaseTest : BaseDbTest() {
         collection.addDocumentChangeListener(doc.id) { }
 
         // All of these things should throw
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.purge(doc.id) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.purge(doc.id) }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.indexes }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.indexes }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.deleteIndex("foo") }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.deleteIndex("foo") }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             collection.createIndex("index", IndexBuilder.valueIndex(ValueIndexItem.property("firstName")))
         }
     }
@@ -918,19 +918,19 @@ class DatabaseTest : BaseDbTest() {
         collection.addDocumentChangeListener("docId") { }
 
         // All of these things should throw
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.purge(doc.id) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.purge(doc.id) }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.indexes }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.indexes }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.deleteIndex("foo") }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.deleteIndex("foo") }
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             collection.createIndex("index", IndexBuilder.valueIndex(ValueIndexItem.property("firstName")))
         }
     }
@@ -950,7 +950,7 @@ class DatabaseTest : BaseDbTest() {
         assertNotNull(scope.collections)
 
         testDatabase.close()
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.collections }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.collections }
     }
 
     @Test
@@ -962,7 +962,7 @@ class DatabaseTest : BaseDbTest() {
         assertNotNull(scope.collections)
 
         testDatabase.close()
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.getCollection("bobblehead") }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.getCollection("bobblehead") }
     }
 
     //---------------------------------------------
@@ -980,7 +980,7 @@ class DatabaseTest : BaseDbTest() {
         assertNotNull(scope.collections)
 
         testDatabase.delete()
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.collections }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.collections }
     }
 
     @Test
@@ -992,7 +992,7 @@ class DatabaseTest : BaseDbTest() {
         assertNotNull(scope.collections)
 
         testDatabase.delete()
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.getCollection("bobblehead") }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.getCollection("bobblehead") }
     }
 
     //---------------------------------------------
@@ -1009,7 +1009,7 @@ class DatabaseTest : BaseDbTest() {
 
         testDatabase.close()
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testDatabase.getScope("horo") }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testDatabase.getScope("horo") }
     }
 
     @Test
@@ -1020,7 +1020,7 @@ class DatabaseTest : BaseDbTest() {
 
         testDatabase.close()
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             testDatabase.getCollection("bobblehead", "horo")
         }
     }
@@ -1035,7 +1035,7 @@ class DatabaseTest : BaseDbTest() {
 
         testDatabase.delete()
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testDatabase.getScope("horo") }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testDatabase.getScope("horo") }
     }
 
     @Test
@@ -1046,7 +1046,7 @@ class DatabaseTest : BaseDbTest() {
 
         testDatabase.delete()
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
             testDatabase.getCollection("bobblehead", "horo")
         }
     }
@@ -1565,8 +1565,8 @@ class DatabaseTest : BaseDbTest() {
         assertEquals(0, testCollection.count)
         assertNull(testCollection.getDocument(docA.id))
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(docA) }
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(docB!!) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(docA) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(docB!!) }
         assertEquals(0, testCollection.count)
 
         assertNull(testCollection.getDocument(docB!!.id))

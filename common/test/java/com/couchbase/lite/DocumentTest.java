@@ -89,7 +89,7 @@ public class DocumentTest extends BaseDbTest {
     public void testCreateDocWithEmptyStringID() {
         final MutableDocument doc1a = new MutableDocument("");
         assertNotNull(doc1a);
-        assertThrowsCBL(
+        assertThrowsCBLException(
             CBLError.Domain.CBLITE,
             CBLError.Code.BAD_DOC_ID,
             () -> getTestCollection().save(doc1a));
@@ -1568,7 +1568,10 @@ public class DocumentTest extends BaseDbTest {
         MutableDocument mDoc = new MutableDocument("doc1");
         mDoc.setString("name", "Scott Tiger");
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> getTestCollection().delete(mDoc));
+        assertThrowsCBLException(
+            CBLError.Domain.CBLITE,
+            CBLError.Code.NOT_FOUND,
+            () -> getTestCollection().delete(mDoc));
 
         assertEquals("Scott Tiger", mDoc.getString("name"));
     }
@@ -1671,7 +1674,7 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("name", "Scott");
 
         // Purge before save:
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> getTestCollection().purge(doc));
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> getTestCollection().purge(doc));
 
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1692,7 +1695,10 @@ public class DocumentTest extends BaseDbTest {
         doc.setValue("name", "Scott");
 
         // Purge before save:
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND, () -> getTestCollection().purge(docID));
+        assertThrowsCBLException(
+            CBLError.Domain.CBLITE,
+            CBLError.Code.NOT_FOUND,
+            () -> getTestCollection().purge(docID));
 
         assertEquals("profile", doc.getValue("type"));
         assertEquals("Scott", doc.getValue("name"));
@@ -1841,7 +1847,9 @@ public class DocumentTest extends BaseDbTest {
 
         getTestCollection().setDocumentExpiration(id, new Date(System.currentTimeMillis() + 30000L));
 
-        getTestCollection().getDatabase().deleteCollection(getTestCollection().getName(), getTestCollection().getScope().getName());
+        getTestCollection().getDatabase().deleteCollection(
+            getTestCollection().getName(),
+            getTestCollection().getScope().getName());
 
         try {
             getTestCollection().getDocumentExpiration(id);
@@ -2753,7 +2761,11 @@ public class DocumentTest extends BaseDbTest {
 
     // Kotlin shim functions
 
-    private Document saveDocInTestCollection(MutableDocument mDoc) { return validateAndSaveDocInTestCollection(mDoc, null); }
+    private Document saveDocInTestCollection(MutableDocument mDoc) {
+        return validateAndSaveDocInTestCollection(
+            mDoc,
+            null);
+    }
 
     private Document validateAndSaveDocInTestCollection(MutableDocument mDoc, DocValidator validator) {
         try {
