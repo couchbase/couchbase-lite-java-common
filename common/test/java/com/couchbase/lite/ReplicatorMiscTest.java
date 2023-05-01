@@ -233,8 +233,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testReplicatedDocument() {
         String docId = getUniqueName("replicated-doc");
         ReplicatedDocument replicatedDoc = new ReplicatedDocument(
-            targetCollection.getScope().getName(),
-            targetCollection.getName(),
+            getTargetCollection().getScope().getName(),
+            getTargetCollection().getName(),
             docId,
             C4Constants.DocumentFlags.DELETED,
             new CouchbaseLiteException(
@@ -244,8 +244,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         assertEquals(replicatedDoc.getID(), docId);
 
-        assertEquals(targetCollection.getScope().getName(), replicatedDoc.getCollectionScope());
-        assertEquals(targetCollection.getName(), replicatedDoc.getCollectionName());
+        assertEquals(getTargetCollection().getScope().getName(), replicatedDoc.getCollectionScope());
+        assertEquals(getTargetCollection().getName(), replicatedDoc.getCollectionName());
 
         assertTrue(replicatedDoc.getFlags().contains(DocumentFlag.DELETED));
 

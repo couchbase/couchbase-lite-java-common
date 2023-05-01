@@ -33,7 +33,6 @@ internal class ListenerAwaiter(
     private val token: ListenerToken,
     private val stopStates: kotlin.collections.Collection<ReplicatorActivityLevel> = STOP_STATES
 ) {
-
     companion object {
         private val STOP_STATES = setOf(
             ReplicatorActivityLevel.STOPPED,
@@ -89,7 +88,9 @@ abstract class BaseReplicatorTest : BaseDbTest() {
     protected val remoteResolver = ConflictResolver { conflict -> conflict.remoteDocument }
 
     protected lateinit var targetDatabase: Database
+        private set
     protected lateinit var targetCollection: Collection
+        private set
 
     private val replicators = mutableListOf<Replicator>()
 

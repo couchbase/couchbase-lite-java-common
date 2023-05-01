@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.utils.Fn.ConsumerThrows
 import com.couchbase.lite.internal.utils.JSONUtils
 import com.couchbase.lite.internal.utils.PlatformUtils
 import com.couchbase.lite.internal.utils.Report
@@ -207,32 +206,21 @@ abstract class BaseDbTest : BaseTest() {
         return Pair(otherDb, otherCollection)
     }
 
-    protected fun saveDocInCollection(
-        mDoc: MutableDocument,
-        collection: Collection = testCollection,
-        validator: ConsumerThrows<Document, CouchbaseLiteException>? = null
-    ): Document {
-        try {
-            return saveDoc(mDoc, collection, validator)
-        } catch (e: Exception) {
-            throw AssertionError("Unexpected Exception saving document ${mDoc} in collection ${collection}", e)
-        }
+    protected fun saveDocInCollection(mDoc: MutableDocument, collection: Collection = testCollection): Document {
+        collection.save(mDoc)
+        val doc = collection.getDocument(mDoc.id)
+        assertNotNull(doc)
+        assertEquals(mDoc.id, doc!!.id)
+        return doc
     }
 
-    protected fun saveDocsInCollection(
-        mDocs: List<MutableDocument>,
-        collection: Collection = testCollection,
-        validator: ConsumerThrows<Document, CouchbaseLiteException>? = null
-    ): List<Document> {
-        try {
-            val docs = mutableListOf<Document>()
-            collection.database.inBatch<CouchbaseLiteException> {
-                docs.addAll(mDocs.map { saveDoc(it, collection, validator) })
-            }
-            return docs
-        } catch (e: Exception) {
-            throw AssertionError("Failed creating a document in collection ${collection}", e)
+    protected fun saveDocsInCollection(mDocs: List<MutableDocument>, collection: Collection = testCollection)
+            : List<Document> {
+        var docs: List<Document>? = null
+        collection.database.inBatch<CouchbaseLiteException> {
+            docs = mDocs.map { saveDocInCollection(it, collection) }
         }
+        return docs ?: throw IllegalStateException("doc list is null")
     }
 
     protected fun createDocInCollection(
@@ -1709,20 +1697,6 @@ abstract class BaseDbTest : BaseTest() {
         assertNull(doc.getArray("doc-28"))
         assertNull(doc.getDictionary("doc-28"))
         verifyBlob(doc.getBlob("doc-29"))
-    }
-
-    private fun saveDoc(
-        mDoc: MutableDocument,
-        collection: Collection,
-        validator: ConsumerThrows<Document, CouchbaseLiteException>?
-    ): Document {
-        validator?.accept(mDoc)
-        collection.save(mDoc)
-        val doc = collection.getDocument(mDoc.id)
-        assertNotNull(doc)
-        assertEquals(mDoc.id, doc!!.id)
-        validator?.accept(doc)
-        return doc
     }
 
     // Some JSON encoding will promote a Float to a Double.

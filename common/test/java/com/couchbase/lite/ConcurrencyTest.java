@@ -474,11 +474,11 @@ public class ConcurrencyTest extends BaseDbTest {
     // Kotlin shim functions
 
     private List<Document> saveDocsInTestCollection(List<MutableDocument> mDocs) {
-        return saveDocsInTestCollection(mDocs, getTestCollection());
+        return saveDocumentsInCollection(mDocs, getTestCollection());
     }
 
-    private List<Document> saveDocsInTestCollection(List<MutableDocument> mDocs, Collection collection) {
-        return saveDocsInCollection(mDocs, collection, null);
+    private List<Document> saveDocumentsInCollection(List<MutableDocument> mDocs, Collection collection) {
+        return saveDocsInCollection(mDocs, collection);
     }
 
     private void loadJSONResourceIntoTestCollection(String resName) {

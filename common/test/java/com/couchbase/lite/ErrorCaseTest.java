@@ -33,7 +33,7 @@ public class ErrorCaseTest extends BaseDbTest {
     public void testDeleteSameDocTwice() throws CouchbaseLiteException {
         // Store doc:
         String docID = "doc1";
-        Document doc = saveDocInCollection(new MutableDocument(docID));
+        Document doc = saveDocInTestCollection(new MutableDocument(docID));
 
         // First time deletion:
         getTestCollection().delete(doc);
@@ -66,9 +66,9 @@ public class ErrorCaseTest extends BaseDbTest {
     public void testSaveSavedMutableDocument() {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
-        saveDocInCollection(doc);
+        saveDocInTestCollection(doc);
         doc.setValue("age", 20);
-        Document saved = saveDocInCollection(doc);
+        Document saved = saveDocInTestCollection(doc);
         assertEquals(2, saved.generation());
         assertEquals(20, saved.getInt("age"));
         assertEquals("Scott Tiger", saved.getString("name"));
@@ -78,7 +78,7 @@ public class ErrorCaseTest extends BaseDbTest {
     public void testDeleteSavedMutableDocument() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
-        saveDocInCollection(doc);
+        saveDocInTestCollection(doc);
         getTestCollection().delete(doc);
         assertNull(getTestCollection().getDocument("doc1"));
     }
@@ -87,7 +87,7 @@ public class ErrorCaseTest extends BaseDbTest {
     public void testDeleteDocAfterPurgeDoc() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
-        Document saved = saveDocInCollection(doc);
+        Document saved = saveDocInTestCollection(doc);
 
         // purge doc
         getTestCollection().purge(saved);
@@ -105,7 +105,7 @@ public class ErrorCaseTest extends BaseDbTest {
     public void testDeleteDocAfterDeleteDoc() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
-        Document saved = saveDocInCollection(doc);
+        Document saved = saveDocInTestCollection(doc);
 
         // delete doc
         getTestCollection().delete(saved);
@@ -118,7 +118,7 @@ public class ErrorCaseTest extends BaseDbTest {
     public void testPurgeDocAfterDeleteDoc() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
-        Document saved = saveDocInCollection(doc);
+        Document saved = saveDocInTestCollection(doc);
 
         // delete doc
         getTestCollection().delete(saved);
@@ -131,7 +131,7 @@ public class ErrorCaseTest extends BaseDbTest {
     public void testPurgeDocAfterPurgeDoc() throws CouchbaseLiteException {
         MutableDocument doc = new MutableDocument("doc1");
         doc.setValue("name", "Scott Tiger");
-        Document saved = saveDocInCollection(doc);
+        Document saved = saveDocInTestCollection(doc);
 
         // purge doc
         getTestCollection().purge(saved);
@@ -159,7 +159,7 @@ public class ErrorCaseTest extends BaseDbTest {
         mArray.setValue(0, new CustomClass());
     }
 
-    private Document saveDocInCollection(MutableDocument doc) {
-        return saveDocInCollection(doc, getTestCollection(), null);
+    private Document saveDocInTestCollection(MutableDocument doc) {
+        return saveDocInCollection(doc, getTestCollection());
     }
 }

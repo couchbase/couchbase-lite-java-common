@@ -297,7 +297,7 @@ public class NotificationTest extends BaseDbTest {
             ListenerToken ignore1 = getTestDatabase().addChangeListener(change -> latch3.countDown());
             ListenerToken ignore2 = defaultCollection.addChangeListener(change -> latch3.countDown())) {
             assertEquals(2, defaultCollection.getCollectionListenerCount());
-            saveDocsInCollection(createTestDocs(1000, 10), defaultCollection, null);
+            saveDocsInCollection(createTestDocs(1000, 10), defaultCollection);
             assertTrue(latch3.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
 
@@ -307,7 +307,7 @@ public class NotificationTest extends BaseDbTest {
         try (ListenerToken ignore1 = getTestDatabase().addChangeListener(change -> latch4.countDown());
              ListenerToken ignore2 = defaultCollection.addChangeListener(change -> latch4.countDown())) {
             assertEquals(2, defaultCollection.getCollectionListenerCount());
-            saveDocsInCollection(createTestDocs(2000, 10), defaultCollection, null);
+            saveDocsInCollection(createTestDocs(2000, 10), defaultCollection);
             assertTrue(latch4.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
         assertEquals(0, defaultCollection.getCollectionListenerCount());
@@ -316,6 +316,6 @@ public class NotificationTest extends BaseDbTest {
     // Kotlin shims
 
     private Document saveDocInTestCollection(MutableDocument mDoc) {
-        return saveDocInCollection(mDoc, getTestCollection(), null);
+        return saveDocInCollection(mDoc, getTestCollection());
     }
 }
