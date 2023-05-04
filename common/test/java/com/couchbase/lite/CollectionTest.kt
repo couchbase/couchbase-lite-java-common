@@ -52,7 +52,7 @@ class CollectionTest : BaseDbTest() {
     }
 
     // getting doc from deleted collection causes CBL exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testGetDocFromDeletedCollection() {
         // store doc
         val doc = createDocInCollection()
@@ -61,38 +61,38 @@ class CollectionTest : BaseDbTest() {
         testCollection.delete()
 
         // should fail
-        testCollection.getDocument(doc.id)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(doc.id) }
     }
 
     // getting a doc from collection that is deleted in a different database instance causes CBL exception
     @SlowTest
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testGetDocFromCollectionDeletedInDifferentDBInstance() {
         val doc = createDocInCollection()
 
         duplicateDb(testDatabase).use { it.getSimilarCollection(testCollection).delete() }
 
-        testCollection.getDocument(doc.id)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(doc.id) }
     }
 
     // getting doc from collection in a closed db causes CBL Exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testGetDocFromCollectionInClosedDB() {
         val doc = createDocInCollection()
 
         closeDb(testDatabase)
 
-        testCollection.getDocument(doc.id)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(doc.id) }
     }
 
     // getting doc from collection in a deleted db causes CBL Exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testGetDocFromCollectionInDeletedDB() {
         val doc = createDocInCollection()
 
         deleteDb(testDatabase)
 
-        testCollection.getDocument(doc.id)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.getDocument(doc.id) }
     }
 
     // getting doc count from deleted collection returns 0
@@ -192,7 +192,7 @@ class CollectionTest : BaseDbTest() {
             assertNotNull(dupCollection)
             assertEquals(1, dupCollection.count)
 
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
                 dupCollection.save(doc.toMutable())
             }
         }
@@ -223,30 +223,30 @@ class CollectionTest : BaseDbTest() {
         assertEquals(1, testCollection.count)
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testSaveDocToDeletedCollection() {
         testCollection.delete()
-        testCollection.save(MutableDocument())
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.save(MutableDocument()) }
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testSaveDocToCollectionDeletedInDifferentDBInstance() {
         duplicateDb(testDatabase).use { it.getSimilarCollection(testCollection).delete() }
-        testCollection.save(MutableDocument())
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.save(MutableDocument()) }
     }
 
     // Test saving document in a collection of a closed database causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testSaveDocToCollectionInClosedDB() {
         closeDb(testDatabase)
-        testCollection.save(MutableDocument())
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.save(MutableDocument()) }
     }
 
     // Test saving document in a collection of a deleted database causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testSaveDocToCollectionInDeletedDB() {
         deleteDb(testDatabase)
-        testCollection.save(MutableDocument())
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.save(MutableDocument()) }
     }
 
     @Test
@@ -320,7 +320,7 @@ class CollectionTest : BaseDbTest() {
     @Test
     fun testDeleteDocBeforeSave() {
         assertEquals(0, testCollection.count)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             testCollection.delete(MutableDocument())
         }
     }
@@ -352,7 +352,7 @@ class CollectionTest : BaseDbTest() {
             assertEquals(1, dupColl.count)
 
             // Try to delete the doc from the duplicate db instance:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { dupColl.delete(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { dupColl.delete(doc) }
         }
     }
 
@@ -381,35 +381,35 @@ class CollectionTest : BaseDbTest() {
     }
 
     // Test deleting doc from a deleted collection causes CBL exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteDocFromDeletedCollection() {
         val doc = createDocInCollection()
         testCollection.delete()
-        testCollection.delete(doc)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
     }
 
     // Test deleting doc from a collection that is deleted from a different db instance causes CBL exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteDocFromCollectionDeletedInDifferentDBInstance() {
         val doc = createDocInCollection()
         duplicateDb(testDatabase).use { it.getSimilarCollection(testCollection).delete() }
-        testCollection.delete(doc)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
     }
 
     // Test deleting doc on a collection in a closed db causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteDocFromCollectionInClosedDB() {
         val doc = createDocInCollection()
         closeDb(testDatabase)
-        testCollection.delete(doc)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
     }
 
     // Test deleting doc on a collection in a deleted db causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteDocFromCollectionInDeletedDB() {
         val doc = createDocInCollection()
         deleteDb(testDatabase)
-        testCollection.delete(doc)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.delete(doc) }
     }
 
     @Test
@@ -442,8 +442,8 @@ class CollectionTest : BaseDbTest() {
         assertEquals(0, testCollection.count)
         assertNull(testCollection.getDocument(doc1a.id))
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1a) }
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1b) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1a) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) { testCollection.delete(doc1b) }
     }
 
     //---------------------------------------------
@@ -454,7 +454,7 @@ class CollectionTest : BaseDbTest() {
     fun testPurgeDocBeforeSaveDoc() {
         assertEquals(0, testCollection.count)
 
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
             testCollection.purge(MutableDocument())
         }
     }
@@ -490,25 +490,25 @@ class CollectionTest : BaseDbTest() {
     }
 
     // Purge document from a deleted collection
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testPurgeDocFromDeletedCollection() {
         val doc = createDocInCollection()
 
         // delete collection
         testCollection.delete()
 
-        testCollection.purge(doc.id)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc.id) }
     }
 
     // Purge document from a collection deleted in a different DB Instance
     @SlowTest
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testPurgeDocFromCollectionDeletedInADifferentDBInstance() {
         val doc = createDocInCollection()
 
         duplicateDb(testDatabase).use { it.getSimilarCollection(testCollection).delete() }
 
-        testCollection.purge(doc.id)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc.id) }
     }
 
     @Test
@@ -521,7 +521,7 @@ class CollectionTest : BaseDbTest() {
             val collection = it.getSimilarCollection(testCollection)
 
             // purge document against collection in the other db:
-            assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
                 collection.purge(doc)
             }
         }
@@ -557,7 +557,7 @@ class CollectionTest : BaseDbTest() {
     }
 
     // Test purging doc on a deleted collection causes CBL exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testPurgeDocOnDeletedCollection() {
         val doc = createDocInCollection()
 
@@ -565,23 +565,23 @@ class CollectionTest : BaseDbTest() {
         testCollection.delete()
 
         // purge doc
-        testCollection.purge(doc)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
     }
 
     // Test purging doc from a collection in a closed database causes CBL exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testPurgeDocFromCollectionInClosedDB() {
         val doc = createDocInCollection()
         closeDb(testDatabase)
-        testCollection.purge(doc)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
     }
 
     // Test purging doc from a collection in a deleted database causes CBL exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testPurgeDocFromCollectionInDeletedDB() {
         val doc = createDocInCollection()
         deleteDb(testDatabase)
-        testCollection.purge(doc)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.purge(doc) }
     }
 
     //---------------------------------------------
@@ -665,40 +665,48 @@ class CollectionTest : BaseDbTest() {
     }
 
     // Test create index from a deleted collection
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCreateIndexFromDeletedCollection() {
         // Delete collection
         testCollection.delete()
-        testCollection.createIndex("index2", ValueIndexConfiguration("firstName", "lastName"))
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+            testCollection.createIndex("index2", ValueIndexConfiguration("firstName", "lastName"))
+        }
     }
 
     // Test create index from a collection deleted in a different db instance
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCreateIndexFromCollectionDeletedInDifferentDBInstance() {
         duplicateDb(testDatabase).use { it.getSimilarCollection(testCollection).delete() }
-        testCollection.createIndex("index2", ValueIndexConfiguration("firstName", "lastName"))
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+            testCollection.createIndex("index2", ValueIndexConfiguration("firstName", "lastName"))
+        }
     }
 
     // Test that createIndex in collection in closed database causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCreateIndexInCollectionInClosedDatabase() {
         closeDb(testDatabase)
-        testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+            testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
+        }
     }
 
     // Test that createIndex in collection in deleted database causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCreateIndexInCollectionInDeletedDatabase() {
         deleteDb(testDatabase)
-        testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+            testCollection.createIndex("test_index", ValueIndexConfiguration("firstName", "lastName"))
+        }
     }
 
     // Test getting index from a deleted collection causes CBL exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testGetIndexFromDeletedCollection() {
         // Delete collection
         testCollection.delete()
-        testCollection.indexes
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.indexes }
     }
 
     @Test
@@ -710,32 +718,31 @@ class CollectionTest : BaseDbTest() {
     }
 
     // Test getting index from a collection deleted from another DB instance causes CBL exception
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testGetIndexFromCollectionDeletedFromADifferentDBInstance() {
         duplicateDb(testDatabase).use { it.getSimilarCollection(testCollection).delete() }
-        testCollection.indexes
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.indexes }
     }
 
     // Test that getIndexes from collection in closed database causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testGetIndexesFromCollectionFromClosedDatabase() {
-        failOnError("Failed to create index 'index1' for collection ${testCollection}") {
-            testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
-            assertContents(testCollection.indexes.toList(), "index1")
-        }
+        testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
+        assertContents(testCollection.indexes.toList(), "index1")
+
         closeDb(testDatabase)
-        testCollection.indexes
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.indexes }
     }
 
     // Test that getIndexes from collection in deleted database causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testGetIndexesFromCollectionFromDeletedDatabase() {
-        failOnError("Failed to create index 'index1' for collection ${testCollection}") {
+
             testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
             assertContents(testCollection.indexes.toList(), "index1")
-        }
+
         deleteDb(testDatabase)
-        testCollection.indexes
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.indexes }
     }
 
     @Test
@@ -784,53 +791,47 @@ class CollectionTest : BaseDbTest() {
     }
 
     // Test delete index from a deletedCollection
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteIndexFromDeletedCollection() {
-        failOnError("Failed to create index 'index1' for collection ${testCollection}") {
             testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
             assertContents(testCollection.indexes.toList(), "index1")
-        }
 
         // Delete collection
         testCollection.delete()
 
         // delete index
-        testCollection.deleteIndex("index1")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.deleteIndex("index1") }
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteIndexFromCollectionDeletedInDifferentDbInstance() {
-        failOnError("Failed to create index 'index1' for collection ${testCollection}") {
             testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
             assertContents(testCollection.indexes.toList(), "index1")
-        }
 
         duplicateDb(testDatabase).use { it.getSimilarCollection(testCollection).delete() }
 
         // delete index
-        testCollection.deleteIndex("index1")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.deleteIndex("index1") }
     }
 
     // Test that deletedIndex in collection in closed database causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteIndexInCollectionInClosedDatabase() {
-        failOnError("Failed to create index 'index1' for collection ${testCollection}") {
             testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
             assertContents(testCollection.indexes.toList(), "index1")
-        }
+
         closeDb(testDatabase)
-        testCollection.deleteIndex("index1")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.deleteIndex("index1") }
     }
 
     // Test that deleteIndex in collection in deleted causes CBLException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteIndexInCollectionInDeletedDatabase() {
-        failOnError("Failed to create index 'index1' for collection ${testCollection}") {
             testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
             assertContents(testCollection.indexes.toList(), "index1")
-        }
+
         deleteDb(testDatabase)
-        testCollection.deleteIndex("index1")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { testCollection.deleteIndex("index1") }
     }
 
     //---------------------------------------------

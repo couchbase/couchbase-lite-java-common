@@ -21,6 +21,7 @@ import com.couchbase.lite.internal.utils.Report
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -95,13 +96,6 @@ fun Document.delete() {
     } catch (e: CouchbaseLiteException) {
         throw AssertionError("Failed deleting document ${this.id} from collection ${coll}")
     }
-}
-
-fun assertCBLException(domain: String, code: Int, err: Exception?) {
-    assertNotNull(err!!)
-    if (err !is CouchbaseLiteException) throw java.lang.AssertionError("Especting a CouchbaseLiteException", err)
-    assertEquals(domain, err.domain)
-    assertEquals(code, err.code)
 }
 
 fun <T : Comparable<T>> assertContents(l1: List<T>, vararg contents: T) {

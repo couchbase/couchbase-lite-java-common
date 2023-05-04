@@ -151,10 +151,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(
-            repl,
-            false, CBLError.Domain.CBLITE, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST
-        );
+        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
 
         synchronized (options) {
             assertEquals(
@@ -194,10 +191,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(
-            repl,
-            false, CBLError.Domain.CBLITE, CBLError.Code.NETWORK_OFFSET + C4Constants.NetworkError.UNKNOWN_HOST
-        );
+        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
 
         synchronized (options) {
             assertEquals(Boolean.TRUE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));

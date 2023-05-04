@@ -46,8 +46,17 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
     // - it prevents starting an observer that has been removed.
     private static class LiveQueries {
         private final Map<ListenerToken, C4QueryObserver> liveQueries = new HashMap<>();
+        @NonNull
+        private final Runnable onFirst;
+        @NonNull
+        private final Runnable onLast;
 
-        public void put(@NonNull ListenerToken token, @NonNull C4QueryObserver observer, @NonNull Runnable onFirst) {
+        LiveQueries(@NonNull Runnable onFirst, @NonNull Runnable onLast) {
+            this.onFirst = onFirst;
+            this.onLast = onLast;
+        }
+
+        public void put(@NonNull ListenerToken token, @NonNull C4QueryObserver observer) {
             synchronized (liveQueries) {
                 if (liveQueries.isEmpty()) { onFirst.run(); }
                 liveQueries.put(token, observer);
@@ -61,7 +70,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
             }
         }
 
-        public void remove(@NonNull ListenerToken token, @NonNull Runnable onLast) {
+        public void remove(@NonNull ListenerToken token) {
             synchronized (liveQueries) {
                 final C4QueryObserver observer = liveQueries.remove(token);
                 if (observer != null) { observer.close(); }
@@ -95,7 +104,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
     //---------------------------------------------
 
     // Keep the C4QueryObserver safe from the GC until this Query is freed.
-    private final LiveQueries liveQueries = new LiveQueries();
+    private final LiveQueries liveQueries = new LiveQueries(this::registerLiveQuery, this::unregisterLiveQuery);
 
     private final Object lock = new Object();
     // column names
@@ -229,7 +238,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
         final ChangeListenerToken<QueryChange> token
             = new ChangeListenerToken<>(listener, executor, this::removeListener);
 
-        liveQueries.put(token, getObserver(token), this::registerLiveQuery);
+        liveQueries.put(token, getObserver(token));
 
         // start the observer after the client gets the token
         ((executor != null) ? executor : CouchbaseLiteInternal.getExecutionService().getDefaultExecutor())
@@ -324,7 +333,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
 
     private void removeListener(@NonNull ListenerToken token) {
         Preconditions.assertNotNull(token, "token");
-        liveQueries.remove(token, this::unregisterLiveQuery);
+        liveQueries.remove(token);
     }
 
     private void onQueryChanged(

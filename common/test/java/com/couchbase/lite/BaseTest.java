@@ -89,6 +89,36 @@ public abstract class BaseTest extends PlatformBaseTest {
     @NonNull
     public static String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 8); }
 
+    public static <T extends Exception> void assertThrows(Class<T> ex, Fn.TaskThrows<Exception> test) {
+        try {
+            test.run();
+            fail("Expecting exception: " + ex);
+        }
+        catch (Throwable e) {
+            if (!ex.equals(e.getClass())) { fail("Expecting exception: " + ex + " but got " + e); }
+        }
+    }
+
+    public static void assertIsCBLException(@Nullable Exception e, @Nullable String domain, int code) {
+        assertNotNull(e);
+        if (!(e instanceof CouchbaseLiteException)) {
+            throw new AssertionError("Expected CBL exception (" + domain + ", " + code + ") but got:", e);
+        }
+        final CouchbaseLiteException err = (CouchbaseLiteException) e;
+        if (domain != null) { assertEquals(domain, err.getDomain()); }
+        if (code > 0) { assertEquals(code, err.getCode()); }
+    }
+
+    public static void assertThrowsCBLException(@Nullable String domain, int code, Fn.TaskThrows<Exception> block) {
+        try {
+            block.run();
+            fail("Expected CBL exception (" + domain + ", " + code + ")");
+        }
+        catch (Exception e) {
+            assertIsCBLException(e, domain, code);
+        }
+    }
+
     // Run a boolean function every `waitMs` until it is true
     // If it is not true within `maxWaitMs` fail.
     @SuppressWarnings({"BusyWait", "ConditionalBreakInInfiniteLoop"})
@@ -100,35 +130,6 @@ public abstract class BaseTest extends PlatformBaseTest {
             if (System.currentTimeMillis() > endTime) { throw new AssertionError("Operation timed out"); }
             try { Thread.sleep(waitMs); }
             catch (InterruptedException e) { throw new AssertionError("Operation interrupted", e); }
-        }
-    }
-
-    // Used to protect calls that should not fail,
-    // in tests that expect an exception
-    // !!! Balony.  Get rid of the "expect" param
-    public static void failOnError(String msg, Fn.TaskThrows<Exception> task) {
-        try { task.run(); }
-        catch (Exception e) { throw new AssertionError(msg, e); }
-    }
-
-    public static <T extends Exception> void assertThrows(Class<T> ex, Fn.TaskThrows<Exception> test) {
-        try {
-            test.run();
-            fail("Expecting exception: " + ex);
-        }
-        catch (Throwable e) {
-            if (!ex.equals(e.getClass())) { fail("Expecting exception: " + ex + " but got " + e); }
-        }
-    }
-
-    public static void assertThrowsCBL(String domain, int code, Fn.TaskThrows<CouchbaseLiteException> task) {
-        try {
-            task.run();
-            fail("Expected CouchbaseLiteException{" + domain + ", " + code + "}");
-        }
-        catch (CouchbaseLiteException e) {
-            assertEquals(code, e.getCode());
-            assertEquals(domain, e.getDomain());
         }
     }
 

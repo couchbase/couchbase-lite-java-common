@@ -23,9 +23,12 @@ import org.junit.Before
 import java.net.URI
 import java.security.cert.Certificate
 import java.security.cert.X509Certificate
+import java.util.*
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 
@@ -77,6 +80,21 @@ internal class ReplicatorAwaiter(repl: Replicator, exec: Executor) : ReplicatorC
 
     fun awaitCompletion(maxWait: Long = BaseTest.LONG_TIMEOUT_SEC, units: TimeUnit = TimeUnit.SECONDS) =
         awaiter.awaitCompletion(maxWait, units)
+}
+
+// A filter can actually hang the replication
+internal class DelayFilter(val name: String, val barrier: CyclicBarrier) : ReplicationFilter {
+    val shouldWait = AtomicBoolean(true)
+
+    override fun filtered(doc: Document, flags: EnumSet<DocumentFlag>): Boolean {
+        if (shouldWait.getAndSet(false)) {
+            Report.log("${name} waiting with doc: ${doc.id}")
+            barrier.await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+        }
+
+        Report.log("${name} filtered doc: ${doc.id}")
+        return true
+    }
 }
 
 
@@ -182,23 +200,16 @@ abstract class BaseReplicatorTest : BaseDbTest() {
 
     // Prefer this method to any other, for creating new replicators
     // It prevents the NetworkConnectivityManager from confusing these tests
-    fun ReplicatorConfiguration.testReplicator(): Replicator {
+    protected fun ReplicatorConfiguration.testReplicator(): Replicator {
         val repl = Replicator(null, this)
         replicators.add(repl)
-        return repl;
+        return repl
     }
 
-    protected fun ReplicatorConfiguration.run(
-        reset: Boolean = false,
-        expectedErrorDomain: String? = null,
-        expectedErrorCode: Int = 0
-    ) = replicatorConfiguration.testReplicator().run(reset, expectedErrorDomain, expectedErrorCode)
+    protected fun ReplicatorConfiguration.run(reset: Boolean = false, errDomain: String? = null, errCode: Int = 0) =
+        replicatorConfiguration.testReplicator().run(reset, errDomain, errCode)
 
-    protected fun Replicator.run(
-        reset: Boolean = false,
-        expectedErrorDomain: String? = null,
-        expectedErrorCode: Int = 0
-    ): Replicator {
+    protected fun Replicator.run(reset: Boolean = false, errDomain: String? = null, errCode: Int = 0): Replicator {
         val awaiter = ReplicatorAwaiter(this, testSerialExecutor)
 
         Report.log("Test replicator starting: %s", this.config)
@@ -212,18 +223,20 @@ abstract class BaseReplicatorTest : BaseDbTest() {
         }
 
         val err = awaiter.error
-        if ((expectedErrorCode == 0) && (expectedErrorDomain == null)) {
+        if ((errCode == 0) && (errDomain == null)) {
             if (err != null) throw AssertionError("Replication failed with unexpected error", err)
         } else {
             if (err !is CouchbaseLiteException) {
-                throw AssertionError("Replication failed with unexpected error", err)
+                if (err != null) throw AssertionError("Replication failed with unexpected error", err)
+                throw AssertionError("Expected CBLError (${errDomain}, ${errCode}) but no error occurred")
             }
 
-            if (expectedErrorCode != 0) {
-                Assert.assertEquals(expectedErrorCode, err.code)
+            if (errCode != 0) {
+                Assert.assertEquals(errCode, err.code)
             }
-            if (expectedErrorDomain != null) {
-                Assert.assertEquals(expectedErrorDomain, err.domain)
+
+            if (errDomain != null) {
+                Assert.assertEquals(errDomain, err.domain)
             }
         }
 
