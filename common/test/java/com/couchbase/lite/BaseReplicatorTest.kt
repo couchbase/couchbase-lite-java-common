@@ -83,8 +83,8 @@ internal class ReplicatorAwaiter(repl: Replicator, exec: Executor) : ReplicatorC
 }
 
 // A filter can actually hang the replication
-internal class DelayFilter(val name: String, val barrier: CyclicBarrier) : ReplicationFilter {
-    val shouldWait = AtomicBoolean(true)
+internal class DelayFilter(val name: String, private val barrier: CyclicBarrier) : ReplicationFilter {
+    private val shouldWait = AtomicBoolean(true)
 
     override fun filtered(doc: Document, flags: EnumSet<DocumentFlag>): Boolean {
         if (shouldWait.getAndSet(false)) {

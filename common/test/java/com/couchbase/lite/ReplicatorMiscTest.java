@@ -261,7 +261,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     // CBL-1218
     @Test
-    public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException {
+    public void testIsDocumentPendingWithClosedDb() {
         Replicator repl = makeRepl();
 
         deleteDb(getTestDatabase());
@@ -271,7 +271,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     // CBL-1218
     @Test
-    public void testGetPendingDocIdsWithClosedDb() throws CouchbaseLiteException {
+    public void testGetPendingDocIdsWithClosedDb() {
         Replicator repl = makeRepl();
 
         closeDb(getTestDatabase());

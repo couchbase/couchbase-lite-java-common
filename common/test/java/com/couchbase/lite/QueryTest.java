@@ -507,6 +507,16 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
+    public void testRank() {
+        Expression expr = FullTextFunction.rank(Expression.fullTextIndex("abc"));
+        assertNotNull(expr);
+        Object obj = expr.asJSON();
+        assertNotNull(obj);
+        assertTrue(obj instanceof List);
+        assertEquals(Arrays.asList("RANK()", "abc"), obj);
+    }
+
+    @Test
     public void testWhereIndexMatch() throws CouchbaseLiteException {
         loadJSONResourceIntoCollection("sentences.json");
 

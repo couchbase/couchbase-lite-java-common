@@ -89,6 +89,26 @@ public abstract class BaseTest extends PlatformBaseTest {
     @NonNull
     public static String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 8); }
 
+    // Run a boolean function every `waitMs` until it is true
+    // If it is not true within `maxWaitMs` fail.
+    @SuppressWarnings({"BusyWait", "ConditionalBreakInInfiniteLoop"})
+    protected static void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {
+        final long waitMs = 100L;
+        final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;
+        while (true) {
+            if (test.get()) { break; }
+            if (System.currentTimeMillis() > endTime) { throw new AssertionError("Operation timed out"); }
+            try { Thread.sleep(waitMs); }
+            catch (InterruptedException e) { throw new AssertionError("Operation interrupted", e); }
+        }
+    }
+
+    ///////////////////////////////   E X C E P T I O N   A S S E R T I O N S   ///////////////////////////////
+
+    // Please do *NOT* use the @Test(expected=...) annotation.  It is entirely too prone to error.
+    // Even though it can work pretty will in a very limited number of cases, please, always prefer
+    // one of these methods (or their equvalents in C4BaseTest and OKHttpSocketTest
+
     public static <T extends Exception> void assertThrows(Class<T> ex, @NonNull Fn.TaskThrows<Exception> test) {
         try {
             test.run();
@@ -119,20 +139,6 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
         catch (Exception e) {
             assertIsCBLException(e, domain, code);
-        }
-    }
-
-    // Run a boolean function every `waitMs` until it is true
-    // If it is not true within `maxWaitMs` fail.
-    @SuppressWarnings({"BusyWait", "ConditionalBreakInInfiniteLoop"})
-    protected static void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {
-        final long waitMs = 100L;
-        final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;
-        while (true) {
-            if (test.get()) { break; }
-            if (System.currentTimeMillis() > endTime) { throw new AssertionError("Operation timed out"); }
-            try { Thread.sleep(waitMs); }
-            catch (InterruptedException e) { throw new AssertionError("Operation interrupted", e); }
         }
     }
 
