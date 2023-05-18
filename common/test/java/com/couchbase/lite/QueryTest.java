@@ -34,7 +34,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Fn;
@@ -629,7 +628,8 @@ public class QueryTest extends BaseQueryTest {
         saveDocInTestCollection(doc2);
 
         verifyQuery(
-            QueryBuilder.selectDistinct(SelectResult.property("number")).from(DataSource.collection(getTestCollection())),
+            QueryBuilder.selectDistinct(SelectResult.property("number"))
+                .from(DataSource.collection(getTestCollection())),
             1,
             (n, result) -> assertEquals(20, result.getInt(0)));
     }
@@ -1534,8 +1534,7 @@ public class QueryTest extends BaseQueryTest {
             }
         };
 
-        ListenerToken token = query.addChangeListener(testSerialExecutor, listener);
-        try {
+        try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
             assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // create some more docs
@@ -1555,7 +1554,6 @@ public class QueryTest extends BaseQueryTest {
         }
         // Catch clause prevents Windows compiler error
         catch (Exception e) { throw new AssertionError("Unexpected exception", e); }
-        finally { token.remove(); }
     }
 
     @SlowTest
@@ -1995,12 +1993,10 @@ public class QueryTest extends BaseQueryTest {
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(getTestCollection()));
 
-        ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch1.countDown());
-        try {
+        try (ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch1.countDown())) {
             assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
             deleteDb(getTestDatabase());
         }
-        finally { token.remove(); }
     }
 
     @Test
@@ -2563,31 +2559,27 @@ public class QueryTest extends BaseQueryTest {
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
-        ListenerToken token = query.addChangeListener(
-            testSerialExecutor,
-            change -> {
-                int count = 0;
-                ResultSet rs = change.getResults();
-                while (rs.next() != null) {
-                    count++;
-                    // The first run of this query should see a result set with 25 results:
-                    // 50 docs in the db minus 25 with values < 25
-                    // When we add 50 more documents, after the first latch springs,
-                    // there are 100 docs in the db, 75 of which have vaules > 25
-                    if ((count >= 25) && (latch1.getCount() > 0)) { latch1.countDown(); }
-                    else if (count >= 75) { latch2.countDown(); }
-                }
-            });
 
-        try {
+        final QueryChangeListener listener = change -> {
+            int count = 0;
+            ResultSet rs = change.getResults();
+            while (rs.next() != null) {
+                count++;
+                // The first run of this query should see a result set with 25 results:
+                // 50 docs in the db minus 25 with values < 25
+                // When we add 50 more documents, after the first latch springs,
+                // there are 100 docs in the db, 75 of which have vaules > 25
+                if ((count >= 25) && (latch1.getCount() > 0)) { latch1.countDown(); }
+                else if (count >= 75) { latch2.countDown(); }
+            }
+        };
+
+        try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
             assertTrue(latch1.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             loadDocuments(51, 50, getTestCollection());
 
             assertTrue(latch2.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
-        }
-        finally {
-            token.remove();
         }
     }
 
@@ -2607,7 +2599,8 @@ public class QueryTest extends BaseQueryTest {
 
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
-        ListenerToken token = query.addChangeListener(testSerialExecutor, change -> {
+
+        final QueryChangeListener listener = change -> {
             int matches = 0;
             for (Result ignored: change.getResults()) { matches++; }
 
@@ -2615,9 +2608,9 @@ public class QueryTest extends BaseQueryTest {
             if (matches == 1) { latch1.countDown(); }
             // Not match with doc1 because number1 -> 15 which does not match the query criteria
             else { latch2.countDown(); }
-        });
+        };
 
-        try {
+        try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
             assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             doc = getTestCollection().getDocument(doc.getId()).toMutable();
@@ -2625,9 +2618,6 @@ public class QueryTest extends BaseQueryTest {
             saveDocInTestCollection(doc);
 
             assertTrue(latch2.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
-        }
-        finally {
-            token.remove();
         }
     }
 
@@ -3291,8 +3281,7 @@ public class QueryTest extends BaseQueryTest {
             else { latch2.countDown(); }
         };
 
-        ListenerToken token = query.addChangeListener(testSerialExecutor, listener);
-        try {
+        try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
             assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // create more docs
@@ -3303,9 +3292,6 @@ public class QueryTest extends BaseQueryTest {
             // ??? This is a very expensive way to test
             assertFalse(latch2.await(5 * 1000, TimeUnit.MILLISECONDS));
             assertEquals(1, latch2.getCount());
-        }
-        finally {
-            token.remove();
         }
     }
 }

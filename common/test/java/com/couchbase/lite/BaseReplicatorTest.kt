@@ -207,7 +207,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
     }
 
     protected fun ReplicatorConfiguration.run(reset: Boolean = false, errDomain: String? = null, errCode: Int = 0) =
-        replicatorConfiguration.testReplicator().run(reset, errDomain, errCode)
+        this.testReplicator().run(reset, errDomain, errCode)
 
     protected fun Replicator.run(reset: Boolean = false, errDomain: String? = null, errCode: Int = 0): Replicator {
         val awaiter = ReplicatorAwaiter(this, testSerialExecutor)
