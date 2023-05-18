@@ -16,7 +16,6 @@
 package com.couchbase.lite;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.junit.Test;
 
@@ -25,14 +24,14 @@ import static org.junit.Assert.assertTrue;
 
 
 public class URLEndpointTest extends BaseTest {
-    @Test(expected = IllegalArgumentException.class)
-    public void testEmbeddedUserForbidden() throws URISyntaxException {
-        new URLEndpoint(new URI("ws://user@couchbase.com/sg"));
+    @Test
+    public void testEmbeddedUserForbidden() {
+        assertThrows(IllegalArgumentException.class, () -> new URLEndpoint(new URI("ws://user@couchbase.com/sg")));
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testEmbeddedPasswordNotAllowed() throws URISyntaxException {
-        new URLEndpoint(new URI("ws://user:pass@couchbase.com/sg"));
+    @Test
+    public void testEmbeddedPasswordNotAllowed() {
+        assertThrows(IllegalArgumentException.class, () -> new URLEndpoint(new URI("ws://user:pass@couchbase.com/sg")));
     }
 
     @Test

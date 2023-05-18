@@ -15,8 +15,6 @@
 //
 package com.couchbase.lite.internal.core
 
-import com.couchbase.lite.LiteCoreException
-import com.couchbase.lite.Collection
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -52,21 +50,33 @@ class C4CollectionTest : C4BaseTest() {
         }
     }
 
-    @Test(expected = LiteCoreException::class)
+    @Test
     fun testGetNonExistentDoc() {
         C4Collection.create(c4Database, "Kaleido", "BeanieBabies").use { coll ->
             assertEquals(0, coll.documentCount)
-            coll.getDocument("nexistpas")
+            assertThrowsLiteCoreException(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.NOT_FOUND) {
+                coll.getDocument("nexistpas")
+            }
         }
     }
 
-    @Test(expected = LiteCoreException::class)
+    @Test
     fun testCreateDocWithNullBody() {
         C4Collection.create(c4Database, "Tachisto", "Stamps").use { coll ->
             assertEquals(0, coll.documentCount)
-            assertNotNull(coll.createDocument("yep", null, 0))
-            assertEquals(1, coll.documentCount)
-            assertNotNull(coll.getDocument("yep"))
+            assertThrowsLiteCoreException(
+                C4Constants.ErrorDomain.LITE_CORE,
+                C4Constants.LiteCoreError.NOT_IN_TRANSACTION
+            ) {
+                coll.createDocument("yep", null, 0)
+            }
+            assertThrowsLiteCoreException(
+                C4Constants.ErrorDomain.LITE_CORE,
+                C4Constants.LiteCoreError.NOT_FOUND
+            ) {
+                coll.getDocument("yep")
+            }
+            assertEquals(0, coll.documentCount)
         }
     }
 }

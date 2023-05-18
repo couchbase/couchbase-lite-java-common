@@ -94,18 +94,24 @@ public class C4BlobStoreTest extends C4BaseTest {
     }
 
     // - missing blobs
-    @Test(expected = LiteCoreException.class)
-    public void testMissingContent() throws LiteCoreException {
+    @Test
+    public void testMissingContent() {
         assertEquals(-1, blobStore.getSize(bogusKey));
-        blobStore.getContents(bogusKey);
+        assertThrowsLiteCoreException(
+            C4Constants.ErrorDomain.LITE_CORE,
+            C4Constants.LiteCoreError.NOT_FOUND,
+            () -> blobStore.getContents(bogusKey));
     }
 
     // - missing blobs
 
-    @Test(expected = LiteCoreException.class)
-    public void testMissingFilePath() throws LiteCoreException {
+    @Test
+    public void testMissingFilePath() {
         assertEquals(-1, blobStore.getSize(bogusKey));
-        blobStore.getFilePath(bogusKey);
+        assertThrowsLiteCoreException(
+            C4Constants.ErrorDomain.LITE_CORE,
+            C4Constants.LiteCoreError.NOT_FOUND,
+            () -> blobStore.getFilePath(bogusKey));
     }
 
     // - create blobs
@@ -316,7 +322,7 @@ public class C4BlobStoreTest extends C4BaseTest {
     }
 
     private void parseInvalidBlobKeys(String str) {
-        try (C4BlobKey key = new C4BlobKey(str)) { fail(); }
+        try (C4BlobKey ignore = new C4BlobKey(str)) { fail(); }
         catch (LiteCoreException ignore) { }
     }
 }

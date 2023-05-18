@@ -39,7 +39,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         ListenerToken token = repl.addChangeListener(
             testSerialExecutor,
             change -> {
-                switch(change.getStatus().getActivityLevel()) {
+                switch (change.getStatus().getActivityLevel()) {
                     case STOPPED:
                         stopped.countDown();
                         break;
@@ -79,7 +79,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         finally { token.remove(); }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAddNullDocumentReplicationListener() {
         Replicator repl = makeRepl();
 
@@ -87,10 +87,10 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         assertNotNull(token);
         token.remove();
 
-        repl.addDocumentReplicationListener(null);
+        assertThrows(IllegalArgumentException.class, () -> repl.addDocumentReplicationListener(null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAddNullDocumentReplicationListenerWithExecutor() {
         Replicator repl = makeRepl();
 
@@ -98,25 +98,27 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         assertNotNull(token);
         token.remove();
 
-        repl.addDocumentReplicationListener(testSerialExecutor, null);
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> repl.addDocumentReplicationListener(testSerialExecutor, null));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAddNullChangeListener() {
-        ListenerToken token = null;
-        try { token = makeRepl().addChangeListener(null); }
-        finally {
-            if (token != null) { token.remove(); }
-        }
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+                try (ListenerToken token = makeRepl().addChangeListener(null)) { }
+            });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNullChangeListenerWithExecutor() {
-        ListenerToken token = null;
-        try { token = makeRepl().addChangeListener(testSerialExecutor, null); }
-        finally {
-            if (token != null) { token.remove(); }
-        }
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+                try (ListenerToken token = makeRepl().addChangeListener(testSerialExecutor, null)) { }
+            });
     }
 
     private ReplicatorConfiguration makeDefaultConfig() {

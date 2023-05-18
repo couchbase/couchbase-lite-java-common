@@ -29,9 +29,9 @@ import org.junit.Test
 
 class ReplicatorConfigurationTest : BaseReplicatorTest() {
 
-    @Test(expected = java.lang.IllegalArgumentException::class)
+    @Test
     fun testIllegalMaxAttempts() {
-        makeSimpleReplConfig(maxAttempts = -1)
+        assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig(maxAttempts = -1) }
     }
 
     @Test
@@ -39,9 +39,9 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         makeSimpleReplConfig(maxAttempts = 0)
     }
 
-    @Test(expected = java.lang.IllegalArgumentException::class)
+    @Test
     fun testIllegalAttemptsWaitTime() {
-        makeSimpleReplConfig(maxAttemptWaitTime = -1)
+        assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig(maxAttemptWaitTime = -1) }
     }
 
     @Test
@@ -49,9 +49,9 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         makeSimpleReplConfig(maxAttemptWaitTime = 0)
     }
 
-    @Test(expected = java.lang.IllegalArgumentException::class)
+    @Test
     fun testIllegalHeartbeatMin() {
-        makeSimpleReplConfig().heartbeat = -1
+        assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig().heartbeat = -1 }
     }
 
     @Test
@@ -59,9 +59,9 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         makeSimpleReplConfig().heartbeat = 0
     }
 
-    @Test(expected = java.lang.IllegalArgumentException::class)
+    @Test
     fun testIllegalHeartbeatMax() {
-        makeSimpleReplConfig().heartbeat = 2147484
+        assertThrows(IllegalArgumentException::class.java) { makeSimpleReplConfig().heartbeat = 2147484 }
     }
 
     // Can't test the EE parameter (self-signed only) here
@@ -400,10 +400,10 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Access collections property and an empty collection list should be returned.
     // Access database property and Illegal State Exception will be thrown.
     @Suppress("DEPRECATION")
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testCreateConfigWithEndpointOnly2() {
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
-        replConfig1.database
+        assertThrows(IllegalStateException::class.java) { replConfig1.database }
     }
 
     // 8.13.7 Create Collection "colA" and "colB" in the scope "scopeA".
@@ -761,14 +761,16 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown
     // as the collections are from different database instances.
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testAddCollectionsFromDifferentDatabaseInstancesA() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
 
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
 
-        replConfig1.addCollections(setOf(collectionA, collectionB), null)
+        assertThrows(IllegalArgumentException::class.java) {
+            replConfig1.addCollections(setOf(collectionA, collectionB), null)
+        }
     }
 
     // 8.13.12b Create collection "colA" in the scope "scopeA" using database instance A.
@@ -784,7 +786,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown
     // as the collections are from different database instances.
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testAddCollectionsFromDifferentDatabaseInstancesB() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
@@ -792,7 +794,8 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
 
         replConfig1.addCollection(collectionA, null)
-        replConfig1.addCollection(collectionB, null)
+
+        assertThrows(IllegalArgumentException::class.java) { replConfig1.addCollection(collectionB, null) }
     }
 
     // 8.13.13a Create collection "colA" in the scope "scopeA" using database instance A.
@@ -808,15 +811,16 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Use addCollection() to add colA. Ensure that the colA has been added correctly.
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown as an added collection has been deleted.
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testAddDeletedCollectionsA() {
         val collectionA = testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
 
         testDatabase.deleteCollection("colB", "scopeA")
 
-        ReplicatorConfiguration(mockURLEndpoint)
-            .addCollections(setOf(collectionA, collectionB), null)
+        assertThrows(IllegalArgumentException::class.java) {
+            ReplicatorConfiguration(mockURLEndpoint).addCollections(setOf(collectionA, collectionB), null)
+        }
     }
 
 
@@ -863,23 +867,24 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // Use addCollection() to add colA. Ensure that the colA has been added correctly.
     //
     // Use addCollection() to add colB. An invalid argument exception should be thrown as an added collection has been deleted.
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testAddDeletedCollectionsC() {
         testDatabase.createCollection("colA", "scopeA")
         val collectionB = targetDatabase.createCollection("colB", "scopeA")
 
         targetDatabase.deleteCollection("colB", "scopeA")
 
-        ReplicatorConfiguration(mockURLEndpoint)
-            .addCollection(collectionB, null)
+        assertThrows(IllegalArgumentException::class.java) {
+            ReplicatorConfiguration(mockURLEndpoint).addCollection(collectionB, null)
+        }
     }
 
     // CBL-3736
     // Attempting to configure a replicator with no collection
     // should throw an illegal argument exception.
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testCreateReplicatorWithNoCollections() {
-        Replicator(ReplicatorConfiguration(mockURLEndpoint))
+        assertThrows(IllegalArgumentException::class.java) { Replicator(ReplicatorConfiguration(mockURLEndpoint)) }
     }
 
     // CBL-3736
@@ -897,12 +902,14 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     // CBL-3736
     // An attempt to get a collection from a closed database
     // should throw a CouchbaseLiteException
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testUseScopeAfterDBClosed() {
         assertNotNull(testDatabase.createCollection("colA", "scopeA"))
 
         testDatabase.close()
 
-        testDatabase.getCollection("colA", "scopeA")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+            testDatabase.getCollection("colA", "scopeA")
+        }
     }
 }

@@ -55,17 +55,25 @@ public class BlobTest extends BaseDbTest {
     @Before
     public final void setUpBlobTest() { localBlobContent = StringUtils.randomString(100); }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBlobCtorWithNullContentType() { new Blob(null, new byte[] {5, 6, 7, 8}); }
+    @Test
+    public void testBlobCtorWithNullContentType() {
+        assertThrows(IllegalArgumentException.class, () -> new Blob(null, new byte[] {5, 6, 7, 8}));
+    }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBlobCtorWithNullContent() { new Blob("image/png", (byte[]) null); }
+    @Test
+    public void testBlobCtorWithNullContent() {
+        assertThrows(IllegalArgumentException.class, () -> new Blob("image/png", (byte[]) null));
+    }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBlobCtorWithStreamAndNullContentType() { new Blob(null, PlatformUtils.getAsset("attachment.png")); }
+    @Test
+    public void testBlobCtorWithStreamAndNullContentType() {
+        assertThrows(IllegalArgumentException.class, () -> new Blob(null, PlatformUtils.getAsset("attachment.png")));
+    }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBlobCtorsWithNullStream() { new Blob("image/png", (InputStream) null); }
+    @Test
+    public void testBlobCtorsWithNullStream() {
+        assertThrows(IllegalArgumentException.class, () -> new Blob("image/png", (InputStream) null));
+    }
 
     @Test
     public void testEquals() {
@@ -348,8 +356,10 @@ public class BlobTest extends BaseDbTest {
     }
 
     // 3.1.c
-    @Test(expected = IllegalStateException.class)
-    public void testUnsavedBlobToJSON() { makeBlob().toJSON(); }
+    @Test
+    public void testUnsavedBlobToJSON() {
+        assertThrows(IllegalStateException.class, () -> makeBlob().toJSON());
+    }
 
     // 3.1.d
     @Test
@@ -361,59 +371,59 @@ public class BlobTest extends BaseDbTest {
     }
 
     // 3.1.e.0: null param
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDbGetNotBlob0() {
         Blob blob = makeBlob();
         getTestDatabase().saveBlob(blob);
-        assertNull(getTestDatabase().getBlob(null));
+        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(null));
     }
 
     // 3.1.e.1: empty param
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDbGetNotBlob1() {
         Blob blob = makeBlob();
         getTestDatabase().saveBlob(blob);
-        assertNull(getTestDatabase().getBlob(new HashMap<>()));
+        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(new HashMap<>()));
     }
 
     // 3.1.e.2: missing digest
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDbGetNotBlob2() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.remove(Blob.PROP_DIGEST);
-        assertNull(getTestDatabase().getBlob(props));
+        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.3: missing meta-type
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDbGetNotBlob3() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.remove(Blob.META_PROP_TYPE);
-        assertNull(getTestDatabase().getBlob(props));
+        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.4: length is not a number
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDbGetNotBlob4() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put(Blob.PROP_LENGTH, "42");
-        assertNull(getTestDatabase().getBlob(props));
+        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.5: bad content type
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDbGetNotBlob5() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put(Blob.PROP_CONTENT_TYPE, new Object());
-        assertNull(getTestDatabase().getBlob(props));
+        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.e.6: extra arg
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDbGetNotBlob6() {
         Map<String, Object> props = getPropsForSavedBlob();
         props.put("foo", "bar");
-        assertNull(getTestDatabase().getBlob(props));
+        assertThrows(IllegalArgumentException.class, () -> getTestDatabase().getBlob(props));
     }
 
     // 3.1.f

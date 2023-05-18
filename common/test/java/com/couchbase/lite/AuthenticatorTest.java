@@ -26,14 +26,16 @@ public class AuthenticatorTest extends BaseTest {
         assertEquals(password, new String(auth.getPasswordChars()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBasicAuthenticatorWithEmptyUsername() {
-        new BasicAuthenticator(null, "somePassword".toCharArray());
+        assertThrows(IllegalArgumentException.class, () -> new BasicAuthenticator(null, "somePassword".toCharArray()));
     }
 
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBasicAuthenticatorWithEmptyPassword() { new BasicAuthenticator("someUsername", null); }
+    @Test
+    public void testBasicAuthenticatorWithEmptyPassword() {
+        assertThrows(IllegalArgumentException.class, () -> new BasicAuthenticator("someUsername", null));
+    }
 
     @Test
     public void testSessionAuthenticatorWithSessionID() {
@@ -52,8 +54,10 @@ public class AuthenticatorTest extends BaseTest {
         assertEquals(cookie, auth.getCookieName());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testSessionAuthenticatorEmptySessionID() { new SessionAuthenticator(null, null); }
+    @Test
+    public void testSessionAuthenticatorEmptySessionID() {
+        assertThrows(IllegalArgumentException.class, () -> new SessionAuthenticator(null, null));
+    }
 
     @Test
     public void testSessionAuthenticatorEmptyCookie() {

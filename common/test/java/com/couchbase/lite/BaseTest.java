@@ -89,7 +89,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     @NonNull
     public static String getUniqueName(@NonNull String prefix) { return StringUtils.getUniqueName(prefix, 8); }
 
-    public static <T extends Exception> void assertThrows(Class<T> ex, Fn.TaskThrows<Exception> test) {
+    public static <T extends Exception> void assertThrows(Class<T> ex, @NonNull Fn.TaskThrows<Exception> test) {
         try {
             test.run();
             fail("Expecting exception: " + ex);
@@ -109,7 +109,10 @@ public abstract class BaseTest extends PlatformBaseTest {
         if (code > 0) { assertEquals(code, err.getCode()); }
     }
 
-    public static void assertThrowsCBLException(@Nullable String domain, int code, Fn.TaskThrows<Exception> block) {
+    public static void assertThrowsCBLException(
+        @Nullable String domain,
+        int code,
+        @NonNull Fn.TaskThrows<Exception> block) {
         try {
             block.run();
             fail("Expected CBL exception (" + domain + ", " + code + ")");

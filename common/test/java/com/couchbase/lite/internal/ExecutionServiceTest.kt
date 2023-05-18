@@ -24,7 +24,6 @@ import com.couchbase.lite.internal.exec.InstrumentedTask
 import com.couchbase.lite.internal.support.Log
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -87,11 +86,13 @@ class ExecutionServiceTest : BaseTest() {
     }
 
     // A stopped serial executor throws on further attempts to schedule
-    @Test(expected = RejectedExecutionException::class)
+    @Test
     fun testStoppedSerialExecutorRejects() {
         val executor = cblService.serialExecutor
         assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
-        executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
+        assertThrows(ExecutionService.CloseableExecutor.ExecutorClosedException::class.java) {
+            executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
+        }
     }
 
     // A stopped serial executor can finish currently queued tasks.
@@ -166,11 +167,13 @@ class ExecutionServiceTest : BaseTest() {
     }
 
     // A stopped concurrent executor throws on further attempts to schedule
-    @Test(expected = RejectedExecutionException::class)
+    @Test
     fun testStoppedConcurrentExecutorRejects() {
         val executor = cblService.concurrentExecutor
         assertTrue(executor.stop(0, TimeUnit.SECONDS)) // no tasks
-        executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
+        assertThrows(ExecutionService.CloseableExecutor.ExecutorClosedException::class.java) {
+            executor.execute { Log.d(LogDomain.DATABASE, "This test is about to fail!") }
+        }
     }
 
     // A stopped concurrent executor finishes currently queued tasks.
@@ -211,7 +214,7 @@ class ExecutionServiceTest : BaseTest() {
     }
 
     // The Concurrent Executor throws on fail
-    @Test(expected = RejectedExecutionException::class)
+    @Test
     fun testConcurrentExecutorThrowAndDumpOnFail() {
         val latch = CountDownLatch(1)
         try {
@@ -222,7 +225,9 @@ class ExecutionServiceTest : BaseTest() {
             exec.execute { }                                                // this one stays on the queue
             exec.execute { }                                                // two on the queue
             exec.execute { }                                                // this one fills the queue
-            exec.execute { }                                                // this one should fail
+            assertThrows(RejectedExecutionException::class.java) {
+                exec.execute { }
+            }                                                               // this one should fail
         } finally {
             latch.countDown()
         }
@@ -322,7 +327,7 @@ class ExecutionServiceTest : BaseTest() {
         assertFalse(completed[0])
     }
 
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testCantRunInstrumentedTaskTwice() {
         val barrier = CyclicBarrier(2)
         val exec = CBLExecutor("simple test worker", 1, 1, LinkedBlockingQueue(3))
@@ -344,8 +349,7 @@ class ExecutionServiceTest : BaseTest() {
         barrier.reset()
         exec.execute(runnable)
         barrier.await()
-        assertNotNull(fail)
-        throw fail!!
+        assertTrue(fail is IllegalStateException)
     }
 
     // If this test fails, it may bring down the entire test process

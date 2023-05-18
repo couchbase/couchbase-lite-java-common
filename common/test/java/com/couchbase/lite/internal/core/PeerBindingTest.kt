@@ -11,6 +11,7 @@
 package com.couchbase.lite.internal.core
 
 
+import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding
 import org.junit.Assert
@@ -48,15 +49,17 @@ class PeerBindingTest {
     }
 
     // Trying to bind an object to a key that's not reserved leads to exception
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testBindWithoutKey() {
         val binding = TaggedWeakPeerBinding<Any>()
-        try { binding.bind(4345, object {}) }
+        try {
+            BaseTest.assertThrows(IllegalStateException::class.java) { binding.bind(4345, object {}) }
+        }
         finally { binding.clear() }
     }
 
     // Rebinding an existing mapping with a different object results in exception
-    @Test(expected = IllegalStateException::class)
+    @Test
     fun testRebindPeerWithDifferentObject() {
         val binding = TaggedWeakPeerBinding<Any>()
         try {
@@ -65,7 +68,7 @@ class PeerBindingTest {
             val object2 = object {}
 
             binding.bind(keyReserve, object1)
-            binding.bind(keyReserve, object2)
+            BaseTest.assertThrows(IllegalStateException::class.java) { binding.bind(keyReserve, object2) }
         }
         finally { binding.clear() }
     }
@@ -79,10 +82,12 @@ class PeerBindingTest {
     }
 
     // Getting an out of bound key for lookup should throw an exception right away
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testGetOutOfBoundKey() {
         val binding = TaggedWeakPeerBinding<Any>()
-        try { binding.getBinding(-1) }
+        try {
+            BaseTest.assertThrows(IllegalArgumentException::class.java) { binding.getBinding(-1) }
+        }
         finally { binding.clear() }
     }
 

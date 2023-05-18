@@ -158,13 +158,15 @@ class CollectionQueryTest : BaseQueryTest() {
     // Use the following SQL++ query to create and execute the query:
     //     SELECT name.first FROM person.names BY name.first LIMIT 1
     // Ensure that an error is returned or thrown when executing the query.
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testSQLPPQueryNonExistingCollection() {
         val collection = testDatabase.createCollection("names", "people")
         loadJSONResourceIntoCollection("names_100.json", collection = collection)
         val queryString = "SELECT name.first FROM person.names ORDER BY name.first LIMIT 1"
         val query = QueryBuilder.createQuery(queryString, testDatabase)
-        query.execute()
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_QUERY) {
+            query.execute().use { }
+        }
     }
 
     // 8.11.5a: Test that query by joining collections works as expected.
@@ -586,7 +588,7 @@ class CollectionQueryTest : BaseQueryTest() {
 
     // 8.11.9: Test that a multi-collection join query with match() function that
     // only uses index name without collection-alias-name prefix is failed to create.
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testFTSJoinQueryError() {
         testDatabase.createCollection("colors", "test")
 
@@ -595,7 +597,7 @@ class CollectionQueryTest : BaseQueryTest() {
         flowerCol.createIndex("DescIndex", IndexBuilder.fullTextIndex(FullTextIndexItem.property("description")))
 
         // create with query string
-        QueryBuilder.createQuery(
+        val query = QueryBuilder.createQuery(
             """SELECT f.name, f.description, c.color
                 FROM test.flowers AS f
                 JOIN test.colors AS c
@@ -604,7 +606,10 @@ class CollectionQueryTest : BaseQueryTest() {
                 ORDER BY f.name"""
                 .trimIndent(),
             testDatabase
-        ).execute()
+        )
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_QUERY) {
+            query.execute().use { }
+        }
     }
 
     // 8.11.10a: Test that the result’s key names of the SELECT * are as follows.

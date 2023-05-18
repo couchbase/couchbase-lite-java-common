@@ -77,14 +77,18 @@ class DbCollectionsTest : BaseDbTest() {
     }
 
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCollectionNameStartsWithIllegalChars1() {
-        testDatabase.createCollection("_notvalid")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            testDatabase.createCollection("_notvalid")
+        }
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCollectionNameStartsWithIllegalChars2() {
-        testDatabase.createCollection("%notvalid")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            testDatabase.createCollection("%notvalid")
+        }
     }
 
     @Test
@@ -99,11 +103,13 @@ class DbCollectionsTest : BaseDbTest() {
         }
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCreateCollectionNameLength252() {
         val name =
             "fhndlbjgjyggvvnreutzuzyzszqiqmbqbegudyvdzvenpybjuayxssmipnpjysyfldhjmyyjmzxhegjjqwfrgzkwbiepqbvwbijcifvqamanpmiqydqpcqgubyputmrjiulrjxbayzpxqbxsaszkdxdobhreeqorlmfeoukbspfocymiucffsvioqmvqpqnpvdhpbnenkppfogruvdrrhiaalcfijifapsjqpjuwmlkkrxohvgxoqumkktipsqpsgrqidtcdeadnanxlhbivyvqkdxprsjybvuhjolkpaswlkgtiz"
-        testDatabase.createCollection(name)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            testDatabase.createCollection(name)
+        }
     }
 
     @Test
@@ -157,14 +163,18 @@ class DbCollectionsTest : BaseDbTest() {
     }
 
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testScopeNameStartsWithIllegalChar1() {
-        testDatabase.createCollection("chintz", "_micro")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            testDatabase.createCollection("chintz", "_micro")
+        }
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testScopeNameStartsWithIllegalChar2() {
-        testDatabase.createCollection("chintz", "%micro")
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            testDatabase.createCollection("chintz", "%micro")
+        }
     }
 
     @Test
@@ -207,29 +217,24 @@ class DbCollectionsTest : BaseDbTest() {
         assertNotNull(recreateCol)
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testDeleteDefaultCollection() {
-        var scopes = testDatabase.scopes
+        val scopes = testDatabase.scopes
 
-        // scopes should have a default scope and a non default test scope created in BaseCollection
+        // scopes should have a default scope and a non default test scope created in BaseDbTest
         assertEquals(2, scopes.size)
 
-        var scope = testDatabase.defaultScope
+        val scope = testDatabase.defaultScope
         assertEquals(1, scope.collectionCount)
 
-        testDatabase.deleteCollection(Collection.DEFAULT_NAME)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            testDatabase.deleteCollection(Collection.DEFAULT_NAME, Scope.DEFAULT_NAME)
+        }
 
-        // The default scope should not go away when it is empty
-        scopes = testDatabase.scopes
-        assertEquals(2, scopes.size)
-        assertNotNull(testDatabase.defaultScope)
-
-        scope = testDatabase.defaultScope
-        assertEquals(0, scope.collectionCount)
-
-        // default collection cannot be recreated
-        testDatabase.createCollection(Collection.DEFAULT_NAME)
-
+        // Creating the default collection just returns it
+        assertEquals(
+            testDatabase.defaultScope.getCollection(Collection.DEFAULT_NAME),
+            testDatabase.createCollection(Collection.DEFAULT_NAME, Scope.DEFAULT_NAME))
     }
 
     // When deleting all collections in non-default scope, the scope will be deleted
@@ -252,11 +257,13 @@ class DbCollectionsTest : BaseDbTest() {
         }
     }
 
-    @Test(expected = CouchbaseLiteException::class)
+    @Test
     fun testCreateScopeNameLength252() {
         val name =
             "fhndlbjgjyggvvnreutzuzyzszqiqmbqbegudyvdzvenpybjuayxssmipnpjysyfldhjmyyjmzxhegjjqwfrgzkwbiepqbvwbijcifvqamanpmiqydqpcqgubyputmrjiulrjxbayzpxqbxsaszkdxdobhreeqorlmfeoukbspfocymiucffsvioqmvqpqnpvdhpbnenkppfogruvdrrhiaalcfijifapsjqpjuwmlkkrxohvgxoqumkktipsqpsgrqidtcdeadnanxlhbivyvqkdxprsjybvuhjolkpaswlkgtiz"
-        testDatabase.createCollection("col", name)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+            testDatabase.createCollection("col", name)
+        }
     }
 
     /**

@@ -21,21 +21,25 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
 
     ///// Test ReplicatorConfiguration Factory
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testReplicatorConfigNoArgs() {
-        ReplicatorConfigurationFactory.create()
+        assertThrows(IllegalArgumentException::class.java) { ReplicatorConfigurationFactory.create() }
     }
 
     // Create on factory with no db should fail
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testReplicatorConfigNoDb() {
-        ReplicatorConfigurationFactory.create(target = testEndpoint, type = ReplicatorType.PULL)
+        assertThrows(IllegalArgumentException::class.java) {
+            ReplicatorConfigurationFactory.create(target = testEndpoint, type = ReplicatorType.PULL)
+        }
     }
 
     // Create on factory with no target should fail
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testReplicatorConfigNoProtocol() {
-        ReplicatorConfigurationFactory.create(testDatabase, type = ReplicatorType.PULL)
+        assertThrows(IllegalArgumentException::class.java) {
+            ReplicatorConfigurationFactory.create(testDatabase, type = ReplicatorType.PULL)
+        }
     }
 
     // Create with db and endpoint should succeed

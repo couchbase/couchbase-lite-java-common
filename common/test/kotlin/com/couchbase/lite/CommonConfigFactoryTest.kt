@@ -40,9 +40,9 @@ class CommonConfigFactoryTest : BaseTest() {
         assertEquals("fr", config.language)
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testFullTextIndexConfigurationFactoryNullExp() {
-        FullTextIndexConfigurationFactory.newConfig()
+        assertThrows(IllegalArgumentException::class.java) { FullTextIndexConfigurationFactory.newConfig() }
     }
 
     @Test
@@ -61,9 +61,9 @@ class CommonConfigFactoryTest : BaseTest() {
         assertEquals(CONFIG_FACTORY_TEST_STRING, config.expressions[0])
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testValueIndexConfigurationFactoryNullExp() {
-        ValueIndexConfigurationFactory.newConfig()
+        assertThrows(IllegalArgumentException::class.java) { ValueIndexConfigurationFactory.newConfig() }
     }
 
     @Test
@@ -82,9 +82,9 @@ class CommonConfigFactoryTest : BaseTest() {
         assertEquals(4096L, config.maxSize)
     }
 
-    @Test(expected = IllegalArgumentException::class)
+    @Test
     fun testLogFileConfigurationFactoryNullDir() {
-        LogFileConfigurationFactory.newConfig()
+        assertThrows(IllegalArgumentException::class.java) { LogFileConfigurationFactory.newConfig() }
     }
 
     @Test
