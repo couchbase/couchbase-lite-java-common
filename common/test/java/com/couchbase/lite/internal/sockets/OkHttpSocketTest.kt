@@ -18,12 +18,12 @@ package com.couchbase.lite.internal.sockets
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.utils.Fn.TaskThrows
-import okhttp3.MediaType.parse
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
-import okhttp3.ResponseBody
+import okhttp3.ResponseBody.Companion.toResponseBody
 import okhttp3.WebSocket
 import okio.ByteString
 import org.junit.Assert.assertEquals
@@ -64,7 +64,7 @@ val mockResponse: Response = Response.Builder()
     .protocol(Protocol.HTTP_1_1)
     .code(200)
     .message("")
-    .body(ResponseBody.create(parse("application/json"), "{\"key\": \"val\"}"))
+    .body("{\"key\": \"val\"}".toResponseBody("application/json".toMediaType()))
     .build()
 
 class OkHttpSocketTest : BaseTest() {
@@ -243,7 +243,7 @@ class OkHttpSocketTest : BaseTest() {
         var sentBytes = 0
         val ws = object : MockWS() {
             override fun send(bytes: ByteString): Boolean {
-                sentBytes = bytes.size()
+                sentBytes = bytes.size
                 return true
             }
         }
@@ -272,7 +272,7 @@ class OkHttpSocketTest : BaseTest() {
         var sentBytes = 0
         val ws = object : MockWS() {
             override fun send(bytes: ByteString): Boolean {
-                sentBytes = bytes.size()
+                sentBytes = bytes.size
                 return true
             }
         }

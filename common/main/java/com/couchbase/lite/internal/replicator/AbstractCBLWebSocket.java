@@ -108,7 +108,10 @@ import com.couchbase.lite.internal.utils.StringUtils;
  * responsible for framing the data as necessary for the remote.  We leave that to OkHttp.
  * <p>
  * <p>
- * This document: https://docs.google.com/document/d/1DH1heyHw_pIJdKx8K1vD1GBvwp5RVlX_IUN2DohkSg0/edit,
+ * This document: <a href="https://docs.google.com/document/d/1DH1heyHw_pIJdKx8K1vD1GBvwp5RVlX_IUN2DohkSg0/edit">
+ * https://docs.google.com/document/d/1DH1heyHw_pIJdKx8K1vD1GBvwp5RVlX_IUN2DohkSg0/edit
+ * </a>
+ * ,
  * and the comments in c4Socket.h are quite valuable.
  * <p>
  * <p>
@@ -251,7 +254,9 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
          * list and gives it to remote OkHttp to create a "Cookie" header.
          * <p>
          * Full documentation for CBL JAK Cookie Architecture can be found on the mobile wiki page:
-         * https://hub.internal.couchbase.com/confluence/display/cbeng/Mobile+Team
+         * <a href="https://hub.internal.couchbase.com/confluence/display/cbeng/Mobile+Team">
+         *  https://hub.internal.couchbase.com/confluence/display/cbeng/Mobile+Team
+         * </a>
          * <p>
          * ??? The explicit reference to OkHttpSocket is unfortunate.
          *
@@ -263,7 +268,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         public List<Cookie> loadForRequest(@NonNull HttpUrl url) {
             final List<Cookie> cookies = new ArrayList<>();
 
-            // We can get away with this because we are using websocke protocol:
+            // We can get away with this because we are using websocket protocol:
             // there is only one request per session: the one that opens it.
             if (!state.assertState(SocketState.UNOPENED, SocketState.OPENING)) { return cookies; }
 

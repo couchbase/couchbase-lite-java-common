@@ -7,7 +7,7 @@ package com.couchbase.lite
 import com.couchbase.lite.internal.sockets.OkHttpSocket
 import com.couchbase.lite.internal.utils.SlowTest
 import okhttp3.Cookie
-import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -45,7 +45,7 @@ class CookieStoreTest : BaseDbTest() {
         // Get localhost cookie
         var cookieHeader = cookieStore.getCookies(uri)
         assertNotNull(cookieHeader)
-        var cookies = OkHttpSocket.parseCookies(HttpUrl.get(uri)!!, cookieHeader!!)
+        var cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, cookieHeader!!)
         assertEquals(2, cookies.size)
         assertTrue(containsCookie(cookies, c1))
         assertTrue(containsCookie(cookies, c2))
@@ -55,7 +55,7 @@ class CookieStoreTest : BaseDbTest() {
         // Get couchbase domain cookie
         cookieHeader = cookieStore.getCookies(cbUri)
         assertNotNull(cookieHeader)
-        cookies = OkHttpSocket.parseCookies(HttpUrl.get(cbUri)!!, cookieHeader!!)
+        cookies = OkHttpSocket.parseCookies(cbUri.toHttpUrlOrNull()!!, cookieHeader!!)
         assertEquals(1, cookies.size)
         assertTrue(containsCookie(cookies, c4))
 
@@ -63,7 +63,7 @@ class CookieStoreTest : BaseDbTest() {
         reopenTestDb()
         cookieHeader = AbstractReplicator.ReplicatorCookieStore(testDatabase).getCookies(uri)
         assertNotNull(cookies)
-        cookies = OkHttpSocket.parseCookies(HttpUrl.get(uri)!!, cookieHeader!!)
+        cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, cookieHeader!!)
         assertEquals(1, cookies.size)
         assertTrue(containsCookie(cookies, c2))
     }
@@ -73,30 +73,30 @@ class CookieStoreTest : BaseDbTest() {
         val uri = URI.create("http://www.couchbase.com/")
 
         // Empty
-        var cookies = OkHttpSocket.parseCookies(HttpUrl.get(uri)!!, "")
+        var cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, "")
         assertNotNull(cookies)
         assertEquals(0, cookies.size)
 
         // Invalid
-        cookies = OkHttpSocket.parseCookies(HttpUrl.get(uri)!!, "cookie")
+        cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, "cookie")
         assertNotNull(cookies)
         assertEquals(0, cookies.size)
 
         // One cookie
-        cookies = OkHttpSocket.parseCookies(HttpUrl.get(uri)!!, "a1=b1")
+        cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, "a1=b1")
         assertNotNull(cookies)
         assertEquals(1, cookies.size)
-        assertEquals("a1", cookies[0].name())
-        assertEquals("b1", cookies[0].value())
+        assertEquals("a1", cookies[0].name)
+        assertEquals("b1", cookies[0].value)
 
         // Multiple cookies
-        cookies = OkHttpSocket.parseCookies(HttpUrl.get(uri)!!, "a1=b1; a2=b2")
+        cookies = OkHttpSocket.parseCookies(uri.toHttpUrlOrNull()!!, "a1=b1; a2=b2")
         assertNotNull(cookies)
         assertEquals(2, cookies.size)
-        assertEquals("a1", cookies[0].name())
-        assertEquals("b1", cookies[0].value())
-        assertEquals("a2", cookies[1].name())
-        assertEquals("b2", cookies[1].value())
+        assertEquals("a1", cookies[0].name)
+        assertEquals("b1", cookies[0].value)
+        assertEquals("a2", cookies[1].name)
+        assertEquals("b2", cookies[1].value)
     }
 
     private fun makeCookie(name: String, value: String, maxAge: Long, domain: String?): Cookie {
@@ -111,6 +111,6 @@ class CookieStoreTest : BaseDbTest() {
     }
 
     private fun containsCookie(list: List<Cookie>, cookie: Cookie): Boolean {
-        return null != list.firstOrNull { it.name().equals(cookie.name()) && it.value().equals(cookie.value()) }
+        return null != list.firstOrNull { (it.name == cookie.name) && (it.value == cookie.value) }
     }
 }

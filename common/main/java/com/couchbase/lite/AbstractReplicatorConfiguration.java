@@ -65,8 +65,11 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Deprecated
     public enum ReplicatorType {PUSH_AND_PULL, PUSH, PULL}
 
-    protected static int verifyHeartbeat(int heartbeat) {
-        Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS);
+    // This method uses an internal OkHttp function
+    // which is not entirely kosher
+    private static int verifyHeartbeat(int heartbeat) {
+        try { Util.checkDuration("heartbeat", heartbeat, TimeUnit.SECONDS); }
+        catch (IllegalStateException e) { throw new IllegalArgumentException(e.getMessage()); }
         return heartbeat;
     }
 
@@ -445,7 +448,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      * @return this.
      * @deprecated Please use setPinnedServerX509Certificate(Certificate)
      */
-    @SuppressWarnings("DeprecatedIsStillUsed")
     @Deprecated
     @NonNull
     public final ReplicatorConfiguration setPinnedServerCertificate(@Nullable byte[] pinnedCert) {
