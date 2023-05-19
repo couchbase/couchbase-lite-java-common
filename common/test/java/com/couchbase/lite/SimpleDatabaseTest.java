@@ -46,7 +46,7 @@ public class SimpleDatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testGetSetConfiguration() throws CouchbaseLiteException {
+    public void testGetSetConfiguration() {
         final DatabaseConfiguration config
             = new DatabaseConfiguration().setDirectory(getScratchDirectoryPath(getUniqueName("get-set-config-dir")));
 
@@ -60,7 +60,7 @@ public class SimpleDatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testConfigurationIsCopiedWhenGetSet() throws CouchbaseLiteException {
+    public void testConfigurationIsCopiedWhenGetSet() {
         final DatabaseConfiguration config
             = new DatabaseConfiguration().setDirectory(getScratchDirectoryPath(getUniqueName("copy-config-dir")));
 
@@ -84,8 +84,10 @@ public class SimpleDatabaseTest extends BaseTest {
         finally { db.delete(); }
     }
 
+
+    @SuppressWarnings("deprecation")
     @Test
-    public void testCreateWithDefaultConfiguration() throws CouchbaseLiteException {
+    public void testCreateWithDefaultConfiguration() {
         Database db = createDb("default_config_db");
         try {
             assertNotNull(db);
@@ -94,8 +96,10 @@ public class SimpleDatabaseTest extends BaseTest {
         finally { eraseDb(db); }
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testCreateWithEmptyDBNames() throws CouchbaseLiteException { new Database(""); }
+    @Test
+    public void testCreateWithEmptyDBNames() {
+        assertThrows(IllegalArgumentException.class, () -> new Database(""));
+    }
 
     @Test
     public void testCreateWithSpecialCharacterDBNames() throws CouchbaseLiteException {
@@ -104,6 +108,7 @@ public class SimpleDatabaseTest extends BaseTest {
         finally { eraseDb(db); }
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testCreateWithCustomDirectory() throws CouchbaseLiteException, IOException {
         final File dir = new File(getScratchDirectoryPath(getUniqueName("create-custom-dir")));

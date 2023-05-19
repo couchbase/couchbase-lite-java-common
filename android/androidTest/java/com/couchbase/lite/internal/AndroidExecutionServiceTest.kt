@@ -38,7 +38,7 @@ class AndroidExecutionServiceTest : BaseTest() {
             latch.countDown()
         }
 
-        latch.await(BaseTest.STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+        latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
 
         Assert.assertEquals(Looper.getMainLooper().thread, thread1.get())
     }

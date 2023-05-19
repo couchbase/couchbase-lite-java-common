@@ -16,13 +16,10 @@
 package com.couchbase.lite;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.utils.Report;
 
 
 public class PreInitTest extends BaseTest {
@@ -32,17 +29,23 @@ public class PreInitTest extends BaseTest {
     @After
     public void tearDownPreInitTest() { CouchbaseLiteInternal.reset(true); }
 
-    @Test(expected = IllegalStateException.class)
-    public void testCreateDatabaseBeforeInit() throws CouchbaseLiteException {
-        new Database("fail", new DatabaseConfiguration());
+    @Test
+    public void testCreateDatabaseBeforeInit() {
+        assertThrows(IllegalStateException.class, () -> new Database("fail"));
     }
 
-    @Test(expected = IllegalStateException.class)
-    public void testGetConsoleBeforeInit() { new Log().getConsole(); }
+    @Test
+    public void testGetConsoleBeforeInit() {
+        assertThrows(IllegalStateException.class, () -> new Log().getConsole());
+    }
 
-    @Test(expected = IllegalStateException.class)
-    public void testGetFileBeforeInit() { new Log().getFile(); }
+    @Test
+    public void testGetFileBeforeInit() {
+        assertThrows(IllegalStateException.class, () -> new Log().getFile());
+    }
 
-    @Test(expected = IllegalStateException.class)
-    public void testCreateDBConfigBeforeInit() { new DatabaseConfiguration(); }
+    @Test
+    public void testCreateDBConfigBeforeInit() {
+        assertThrows(IllegalStateException.class, () -> new DatabaseConfiguration());
+    }
 }

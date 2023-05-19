@@ -147,16 +147,16 @@ public class ErrorCaseTest extends BaseDbTest {
 
     // -- ArrayTest
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAddValueUnExpectedObject() {
-        new MutableArray().addValue(new CustomClass());
+        assertThrows(IllegalArgumentException.class, () -> new MutableArray().addValue(new CustomClass()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetValueUnExpectedObject() {
         MutableArray mArray = new MutableArray();
         mArray.addValue(0);
-        mArray.setValue(0, new CustomClass());
+        assertThrows(IllegalArgumentException.class, () -> mArray.setValue(0, new CustomClass()));
     }
 
     private Document saveDocInTestCollection(MutableDocument doc) {

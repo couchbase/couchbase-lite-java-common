@@ -399,14 +399,15 @@ class C4DatabaseTest : C4BaseTest() {
         assertEquals(4, c4Database.getCollectionNames(scope).size) // +1 for the test collection (c4Collection)
         assertEquals(
             setOf("test_coll_1", "test_coll_2", "test_coll_3", c4Collection.name),
-            c4Database.getCollectionNames(scope))
+            c4Database.getCollectionNames(scope)
+        )
     }
 
     // Test DeleteDefaultCollection are in
     // cbl-java-common @ a2de0d43d09ce64fd3a1301dc35
 
     // After deleting a collection, we can no longer get that collection (make sure test doesn't crash)
-    @Test(expected = LiteCoreException::class)
+    @Test
     fun testDeleteCollection() {
         val coll = c4Database.addCollection("test_scope", "test_coll")
         assertNotNull(c4Database.getCollection("test_scope", "test_coll"))
@@ -416,16 +417,26 @@ class C4DatabaseTest : C4BaseTest() {
         assertNull(c4Database.getCollection("test_scope", "test_coll"))
         assertEquals(0, coll.documentCount)
 
-        coll.createDocument("1", null, 0)
+        assertThrowsLiteCoreException(
+            C4Constants.ErrorDomain.LITE_CORE,
+            C4Constants.LiteCoreError.NOT_OPEN
+        ) {
+            coll.createDocument("1", null, 0)
+        }
     }
 
     // Close Database and collection operations will throw error
-    @Test(expected = LiteCoreException::class)
+    @Test
     fun testCollectionOnClosedDB() {
         val col = c4Database.getCollection(Scope.DEFAULT_NAME, Collection.DEFAULT_NAME)
         c4Database.closeDb()
         c4Database = null // prevent @after from closing the database again
-        col?.createDocument("1", null, 0)
+        assertThrowsLiteCoreException(
+            C4Constants.ErrorDomain.LITE_CORE,
+            C4Constants.LiteCoreError.NOT_OPEN
+        ) {
+            col?.createDocument("1", null, 0)
+        }
     }
 
 
@@ -435,7 +446,7 @@ class C4DatabaseTest : C4BaseTest() {
 
     @Test
     fun testDatabaseCopySucceeds() {
-        createRev( "doc001", REV_ID_1, fleeceBody)
+        createRev("doc001", REV_ID_1, fleeceBody)
         createRev("doc002", REV_ID_1, fleeceBody)
         assertEquals(2L, c4Collection.documentCount)
 

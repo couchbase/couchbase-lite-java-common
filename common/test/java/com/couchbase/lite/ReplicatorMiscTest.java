@@ -250,33 +250,33 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     // CBL-1218
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testStartReplicatorWithClosedDb() {
         Replicator repl = makeRepl(makeConfig());
 
         closeDb(getTestDatabase());
 
-        repl.start();
+        assertThrows(IllegalStateException.class, () -> repl.start());
     }
 
     // CBL-1218
-    @Test(expected = IllegalStateException.class)
-    public void testIsDocumentPendingWithClosedDb() throws CouchbaseLiteException {
+    @Test
+    public void testIsDocumentPendingWithClosedDb() {
         Replicator repl = makeRepl();
 
         deleteDb(getTestDatabase());
 
-        repl.getPendingDocumentIds(getTestCollection());
+        assertThrows(IllegalStateException.class, () -> repl.getPendingDocumentIds(getTestCollection()));
     }
 
     // CBL-1218
-    @Test(expected = IllegalStateException.class)
-    public void testGetPendingDocIdsWithClosedDb() throws CouchbaseLiteException {
+    @Test
+    public void testGetPendingDocIdsWithClosedDb() {
         Replicator repl = makeRepl();
 
         closeDb(getTestDatabase());
 
-        repl.isDocumentPending("who-cares", getTestCollection());
+        assertThrows(IllegalStateException.class, () -> repl.isDocumentPending("who-cares", getTestCollection()));
     }
 
     // CBL-1441

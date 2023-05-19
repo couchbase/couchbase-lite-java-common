@@ -27,8 +27,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Test;
 
-import com.couchbase.lite.internal.utils.Fn;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -54,10 +52,10 @@ public class DictionaryTest extends BaseDbTest {
         assertEquals(new HashMap<String, Object>(), doc.getDictionary("address").toMap());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRecursiveDictionary() {
         MutableDictionary dict = new MutableDictionary();
-        dict.setDictionary("k1", dict);
+        assertThrows(IllegalArgumentException.class, () -> dict.setDictionary("k1", dict));
     }
 
     @Test
@@ -342,20 +340,22 @@ public class DictionaryTest extends BaseDbTest {
         assertEquals(finalContent, result);
     }
 
-    @Test(expected = ConcurrentModificationException.class)
+    @Test
     public void testDictionaryEnumerationWithDataModification1() {
         MutableDictionary dict = new MutableDictionary();
         for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
 
         assertEquals(3, dict.count());
 
-        int n = 0;
-        for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
-            if (n++ == 1) { dict.setValue("key-3", 3); }
-        }
+        assertThrows(ConcurrentModificationException.class, () -> {
+            int n = 0;
+            for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
+                if (n++ == 1) { dict.setValue("key-3", 3); }
+            }
+        });
     }
 
-    @Test(expected = ConcurrentModificationException.class)
+    @Test
     public void testDictionaryEnumerationWithDataModification2() {
         MutableDictionary dict = new MutableDictionary();
         for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
@@ -363,12 +363,14 @@ public class DictionaryTest extends BaseDbTest {
         assertEquals(3, dict.count());
 
         MutableDocument doc = new MutableDocument("doc1").setValue("dict", dict);
-        dict = saveDocInTestCollection(doc).toMutable().getDictionary("dict");
+        final MutableDictionary savedDict = saveDocInTestCollection(doc).toMutable().getDictionary("dict");
 
-        int n = 0;
-        for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
-            if (n++ == 1) { dict.setValue("key-3", 3); }
-        }
+        assertThrows(ConcurrentModificationException.class, () -> {
+            int n = 0;
+            for (Iterator<String> itr = savedDict.iterator(); itr.hasNext(); itr.next()) {
+                if (n++ == 1) { savedDict.setValue("key-3", 3); }
+            }
+        });
     }
 
     // https://github.com/couchbase/couchbase-lite-core/issues/230
@@ -747,8 +749,10 @@ public class DictionaryTest extends BaseDbTest {
     }
 
     // JSON 3.6.?
-    @Test(expected = IllegalStateException.class)
-    public void testDictToJSONBeforeSave() { new MutableDictionary().toJSON(); }
+    @Test
+    public void testDictToJSONBeforeSave() {
+        assertThrows(IllegalStateException.class, () -> new MutableDictionary().toJSON());
+    }
 
     // JSON 3.5.a-b
     @Test
@@ -761,20 +765,28 @@ public class DictionaryTest extends BaseDbTest {
     }
 
     // JSON 3.6.c.1
-    @Test(expected = IllegalArgumentException.class)
-    public void testDictFromBadJSON1() { new MutableDictionary("{"); }
+    @Test
+    public void testDictFromBadJSON1() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableDictionary("{"));
+    }
 
     // JSON 3.6.c.2
-    @Test(expected = IllegalArgumentException.class)
-    public void testDictFromBadJSON2() { new MutableDictionary("{ab cd: \"xyz\"}"); }
+    @Test
+    public void testDictFromBadJSON2() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableDictionary("{ab cd: \"xyz\"}"));
+    }
 
     // JSON 3.6.c.3
-    @Test(expected = IllegalArgumentException.class)
-    public void testDictFromBadJSON3() { new MutableDictionary("{ab: \"xyz\" cd: \"xyz\"}"); }
+    @Test
+    public void testDictFromBadJSON3() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableDictionary("{ab: \"xyz\" cd: \"xyz\"}"));
+    }
 
     // JSON 3.6.d
-    @Test(expected = IllegalArgumentException.class)
-    public void testDictFromArray() { new MutableDictionary("[1, a, 1.0]"); }
+    @Test
+    public void testDictFromArray() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableDictionary("[1, a, 1.0]"));
+    }
 
 
     // Kotlin shim functions

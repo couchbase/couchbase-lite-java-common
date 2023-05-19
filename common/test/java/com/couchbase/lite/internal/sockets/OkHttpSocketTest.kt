@@ -17,15 +17,23 @@ package com.couchbase.lite.internal.sockets
 
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.internal.core.C4Constants
-import okhttp3.*
+import com.couchbase.lite.internal.utils.Fn.TaskThrows
 import okhttp3.MediaType.parse
+import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody
+import okhttp3.WebSocket
 import okio.ByteString
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import java.net.URI
-
-
-fun Any?.unit() = Unit
 
 
 private open class MockWS : WebSocket {
@@ -105,7 +113,7 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Can't initialize a socket twice
-    @Test(expected = CBLSocketException::class)
+    @Test
     fun testReinitDifferentCore() {
         val ok = OkHttpSocket()
         assertEquals(SocketFromRemote.Constants.NULL, ok.core)
@@ -116,12 +124,19 @@ class OkHttpSocketTest : BaseTest() {
         assertEquals(core, ok.core)
         assertNull(ok.remote)
 
-        ok.init(MockCore())
+        assertThrowsCBLSocketException(
+            C4Constants.ErrorDomain.NETWORK,
+            C4Constants.NetworkError.NETWORK_RESET
+        ) { ok.init(MockCore()) }
     }
 
     // Core request to open a socket before it is initialized, fails
-    @Test(expected = IllegalStateException::class)
-    fun testOpenRemoteBeforeInit() = OkHttpSocket().openRemote(URI("https://foo.com"), null).unit()
+    @Test
+    fun testOpenRemoteBeforeInit() {
+        assertThrows(IllegalStateException::class.java) {
+            OkHttpSocket().openRemote(URI("https://foo.com"), null)
+        }
+    }
 
     // Core request to open the remote creates the socket
     @Test
@@ -200,8 +215,12 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Core request to write to a socket before it is initialized, fails
-    @Test(expected = IllegalStateException::class)
-    fun testWriteToRemoteBeforeInit() = OkHttpSocket().writeToRemote(ByteArray(1)).unit()
+    @Test
+    fun testWriteToRemoteBeforeInit() {
+        assertThrows(java.lang.IllegalStateException::class.java) {
+            OkHttpSocket().writeToRemote(ByteArray(1))
+        }
+    }
 
     // Core request to write to an unopened socket is ignored
     @Test
@@ -312,8 +331,12 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Core request to close a socket before it is initialized, fails
-    @Test(expected = IllegalStateException::class)
-    fun testCloseRemoteBeforeInit() = OkHttpSocket().closeRemote(CloseStatus(1, "")).unit()
+    @Test
+    fun testCloseRemoteBeforeInit() {
+        assertThrows(java.lang.IllegalStateException::class.java) {
+            OkHttpSocket().closeRemote(CloseStatus(1, ""))
+        }
+    }
 
     // Core request to close a socket it hasn't opened is ignored
     @Test
@@ -560,8 +583,12 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Remote attempt to open an uninitialized socket fails
-    @Test(expected = IllegalStateException::class)
-    fun testOnOpenBeforeInit() = OkHttpSocket().onOpen(MockWS(), mockResponse)
+    @Test
+    fun testOnOpenBeforeInit() {
+        assertThrows(java.lang.IllegalStateException::class.java) {
+            OkHttpSocket().onOpen(MockWS(), mockResponse)
+        }
+    }
 
     // Remote attempt to open a socket before core requests open, is ignored
     @Test
@@ -669,8 +696,13 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Remote attempt to send to an uninitialized socket fails
-    @Test(expected = IllegalStateException::class)
-    fun testOnMessageBeforeInit() = OkHttpSocket().onMessage(MockWS(), "booya")
+    @Test
+    fun testOnMessageBeforeInit() {
+        assertThrows(IllegalStateException::class.java) {
+            OkHttpSocket().onMessage(MockWS(), "booya")
+        }
+    }
+
 
     // Remote attempt to send data on an unopened socket is ignored
     @Test
@@ -813,8 +845,12 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Remote request to close an uninitialized socket fails
-    @Test(expected = IllegalStateException::class)
-    fun testOnClosingBeforeInit() = OkHttpSocket().onClosing(MockWS(), 47, "xyzzy")
+    @Test
+    fun testOnClosingBeforeInit() {
+        assertThrows(IllegalStateException::class.java) {
+            OkHttpSocket().onClosing(MockWS(), 47, "xyzzy")
+        }
+    }
 
     // Remote request to close an unopened socket is ignored
     @Test
@@ -923,8 +959,12 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Remote confirm close on an uninitialized socket fails
-    @Test(expected = IllegalStateException::class)
-    fun testOnClosedBeforeInit() = OkHttpSocket().onClosed(MockWS(), 47, "xyzzy")
+    @Test
+    fun testOnClosedBeforeInit() {
+        assertThrows(java.lang.IllegalStateException::class.java) {
+            OkHttpSocket().onClosed(MockWS(), 47, "xyzzy")
+        }
+    }
 
     // Remote confirmation of close on an unopened socket closed the socket
     @Test
@@ -1044,8 +1084,12 @@ class OkHttpSocketTest : BaseTest() {
     }
 
     // Remote failure on an uninitialized socket fails
-    @Test(expected = IllegalStateException::class)
-    fun testOnFailureBeforeInit() = OkHttpSocket().onFailure(MockWS(), Exception(), null)
+    @Test
+    fun testOnFailureBeforeInit() {
+        assertThrows(java.lang.IllegalStateException::class.java) {
+            OkHttpSocket().onFailure(MockWS(), Exception(), null)
+        }
+    }
 
     // Remote failure on an unopened socket closes it and proxies to core
     @Test
@@ -1324,5 +1368,27 @@ class OkHttpSocketTest : BaseTest() {
         assertNull(ok.core)
         assertNull(ok.remote)
         assertNull(closeStatus)
+    }
+
+    private fun assertIsCBLSocketException(err: Exception?, domain: Int, code: Int) {
+        assertNotNull(err)
+        if (err !is CBLSocketException) {
+            throw AssertionError("Expected CBL Socket exception ($domain, $code) but got:", err)
+        }
+        if (domain > 0) {
+            assertEquals(domain, err.domain)
+        }
+        if (code > 0) {
+            assertEquals(code.toLong(), err.code.toLong())
+        }
+    }
+
+    private fun assertThrowsCBLSocketException(domain: Int, code: Int, block: TaskThrows<java.lang.Exception?>) {
+        try {
+            block.run()
+            fail("Expected CBL Socket exception ($domain, $code)")
+        } catch (e: Exception) {
+            assertIsCBLSocketException(e, domain, code)
+        }
     }
 }

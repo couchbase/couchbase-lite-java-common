@@ -2665,8 +2665,10 @@ public class DocumentTest extends BaseDbTest {
     }
 
     // JSON 3.5.?
-    @Test(expected = IllegalStateException.class)
-    public void testMutableDocToJSONBeforeSave() { new MutableDocument().toJSON(); }
+    @Test
+    public void testMutableDocToJSONBeforeSave() {
+        assertThrows(IllegalStateException.class, () -> new MutableDocument().toJSON());
+    }
 
     // JSON 3.5.a
     // Java does not have MutableDocument(String json) because it collides with MutableDocument(String id)
@@ -2682,20 +2684,32 @@ public class DocumentTest extends BaseDbTest {
     }
 
     // JSON 3.5.d.1
-    @Test(expected = IllegalArgumentException.class)
-    public void testDocFromBadJSON1() { new MutableDocument("fromJSON", "{"); }
+    @Test
+    public void testDocFromBadJSON1() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableDocument("fromJSON", "{"));
+    }
 
     // JSON 3.5.d.2
-    @Test(expected = IllegalArgumentException.class)
-    public void testDocFromBadJSON2() { new MutableDocument("fromJSON", "{ab cd: \"xyz\"}"); }
+    @Test
+    public void testDocFromBadJSON2() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableDocument("fromJSON", "{ab cd: \"xyz\"}"));
+    }
 
     // JSON 3.5.d.3
-    @Test(expected = IllegalArgumentException.class)
-    public void testDocFromBadJSON3() { new MutableDocument("fromJSON", "{ab: \"xyz\" cd: \"xyz\"}"); }
+    @Test
+    public void testDocFromBadJSON3() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new MutableDocument("fromJSON", "{ab: \"xyz\" cd: \"xyz\"}"));
+    }
 
     // JSON 3.5.e
-    @Test(expected = IllegalArgumentException.class)
-    public void testMutableFromArray() { new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("array.json")); }
+    @Test
+    public void testMutableFromArray() {
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("array.json")));
+    }
 
     // !!! Replace with BaseDbTest.makeDocument
     private void populateData(MutableDocument doc) {

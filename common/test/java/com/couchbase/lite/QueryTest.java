@@ -507,6 +507,16 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
+    public void testRank() {
+        Expression expr = FullTextFunction.rank(Expression.fullTextIndex("abc"));
+        assertNotNull(expr);
+        Object obj = expr.asJSON();
+        assertNotNull(obj);
+        assertTrue(obj instanceof List);
+        assertEquals(Arrays.asList("RANK()", "abc"), obj);
+    }
+
+    @Test
     public void testWhereIndexMatch() throws CouchbaseLiteException {
         loadJSONResourceIntoCollection("sentences.json");
 
@@ -552,7 +562,7 @@ public class QueryTest extends BaseQueryTest {
 
     @Test
     public void testFullTextIndexConfigDefaults() {
-        final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense");
+        final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonsense");
         assertEquals(Defaults.FullTextIndex.IGNORE_ACCENTS, idxConfig.isIgnoringAccents());
         assertEquals(Locale.getDefault().getLanguage(), idxConfig.getLanguage());
 
@@ -564,7 +574,7 @@ public class QueryTest extends BaseQueryTest {
     public void testFullTextIndexConfig() throws CouchbaseLiteException {
         loadJSONResourceIntoCollection("sentences.json");
 
-        final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonesense")
+        final FullTextIndexConfiguration idxConfig = new FullTextIndexConfiguration("sentence", "nonsense")
             .setLanguage("en-ca")
             .ignoreAccents(true);
         assertEquals("en-ca", idxConfig.getLanguage());
@@ -1627,40 +1637,71 @@ public class QueryTest extends BaseQueryTest {
             .where(Expression.property("type").from("main").equalTo(Expression.string("bookmark")));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJoinWithEmptyArgs1() {
-        QueryBuilder.select(SelectResult.all())
-            .from(DataSource.collection(getTestCollection()).as("main")).join((Join[]) null);
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+                QueryBuilder.select(SelectResult.all())
+                    .from(DataSource.collection(getTestCollection()).as("main"))
+                    .join((Join[]) null);
+            });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJoinWithEmptyArgs2() {
-        QueryBuilder.select(SelectResult.all())
-            .from(DataSource.collection(getTestCollection()).as("main")).where(null);
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+                QueryBuilder.select(SelectResult.all())
+                    .from(DataSource.collection(getTestCollection()).as("main"))
+                    .where(null);
+            });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJoinWithEmptyArgs3() {
-        QueryBuilder.select(SelectResult.all())
-            .from(DataSource.collection(getTestCollection()).as("main")).groupBy((Expression[]) null);
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+                QueryBuilder.select(SelectResult.all())
+                    .from(DataSource.collection(getTestCollection()).as("main"))
+                    .groupBy((Expression[]) null);
+            });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJoinWithEmptyArgs4() {
-        QueryBuilder.select(SelectResult.all())
-            .from(DataSource.collection(getTestCollection()).as("main")).orderBy((Ordering[]) null);
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+                QueryBuilder.select(SelectResult.all())
+                    .from(DataSource.collection(getTestCollection()).as("main"))
+                    .orderBy((Ordering[]) null);
+            });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJoinWithEmptyArgs5() {
-        QueryBuilder.select(SelectResult.all())
-            .from(DataSource.collection(getTestCollection()).as("main")).limit(null);
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+
+                QueryBuilder.select(SelectResult.all())
+                    .from(DataSource.collection(getTestCollection()).as("main"))
+                    .limit(null);
+            });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJoinWithEmptyArgs6() {
-        QueryBuilder.select(SelectResult.all())
-            .from(DataSource.collection(getTestCollection()).as("main")).limit(null, null);
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> {
+                QueryBuilder.select(SelectResult.all())
+                    .from(DataSource.collection(getTestCollection()).as("main"))
+                    .limit(null, null);
+            });
     }
 
     //https://github.com/couchbase/couchbase-lite-android/issues/1785

@@ -77,10 +77,10 @@ public class ArrayTest extends BaseDbTest {
         assertEquals(data, savedDoc.getArray("array").toList());
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRecursiveArray() {
         MutableArray array = new MutableArray();
-        array.addArray(array);
+        assertThrows(IllegalArgumentException.class, () -> array.addArray(array));
     }
 
     @Test
@@ -1013,7 +1013,7 @@ public class ArrayTest extends BaseDbTest {
         });
     }
 
-    @Test(expected = ConcurrentModificationException.class)
+    @Test
     public void testArrayEnumerationWithDataModification1() {
         final MutableArray array = new MutableArray();
         for (int i = 0; i <= 2; i++) { array.addValue(i); }
@@ -1021,28 +1021,36 @@ public class ArrayTest extends BaseDbTest {
         assertEquals(3, array.count());
         assertArrayEquals(new Object[] {0, 1, 2}, array.toList().toArray());
 
-        int n = 0;
-        for (Iterator<Object> itr = array.iterator(); itr.hasNext(); itr.next()) {
-            if (n++ == 1) { array.addValue(3); }
-        }
+        assertThrows(
+            ConcurrentModificationException.class,
+            () -> {
+                int n = 0;
+                for (Iterator<Object> itr = array.iterator(); itr.hasNext(); itr.next()) {
+                    if (n++ == 1) { array.addValue(3); }
+                }
+            });
     }
 
-    @Test(expected = ConcurrentModificationException.class)
+    @Test
     public void testArrayEnumerationWithDataModification2() {
-        MutableArray array = new MutableArray();
+        final MutableArray array = new MutableArray();
         for (int i = 0; i <= 2; i++) { array.addValue(i); }
 
         assertEquals(3, array.count());
         assertArrayEquals(new Object[] {0, 1, 2}, array.toList().toArray());
 
         MutableDocument doc = new MutableDocument("doc1").setValue("array", array);
-        array = saveDocInTestCollection(doc).toMutable().getArray("array");
-        assertNotNull(array);
+        final MutableArray savedArray = saveDocInTestCollection(doc).toMutable().getArray("array");
+        assertNotNull(savedArray);
 
-        int n = 0;
-        for (Iterator<Object> itr = array.iterator(); itr.hasNext(); itr.next()) {
-            if (n++ == 1) { array.addValue(3); }
-        }
+        assertThrows(
+            ConcurrentModificationException.class,
+            () -> {
+                int n = 0;
+                for (Iterator<Object> itr = savedArray.iterator(); itr.hasNext(); itr.next()) {
+                    if (n++ == 1) { savedArray.addValue(3); }
+                }
+            });
     }
 
     @Test
@@ -1845,8 +1853,10 @@ public class ArrayTest extends BaseDbTest {
     }
 
     // JSON 3.7.?
-    @Test(expected = IllegalStateException.class)
-    public void testArrayToJSONBeforeSave() { new MutableArray().toJSON(); }
+    @Test
+    public void testArrayToJSONBeforeSave() {
+        assertThrows(IllegalStateException.class, () -> new MutableArray().toJSON());
+    }
 
     // JSON 3.7.a-b
     @Test
@@ -1859,17 +1869,23 @@ public class ArrayTest extends BaseDbTest {
     }
 
     // JSON 3.7.c.1
-    @Test(expected = IllegalArgumentException.class)
-    public void testArrayFromBadJSON1() { new MutableArray("["); }
+    @Test
+    public void testArrayFromBadJSON1() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableArray("["));
+    }
 
     // JSON 3.7.c.2
-    @Test(expected = IllegalArgumentException.class)
-    public void testArrayFromBadJSON2() { new MutableArray("[ab cd]"); }
+    @Test
+    public void testArrayFromBadJSON2() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableArray("[ab cd]"));
+    }
 
     // JSON 3.7.d
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDictFromArray() {
-        new MutableArray(BaseDbTestKt.readJSONResource("dictionary.json"));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> new MutableArray(BaseDbTestKt.readJSONResource("dictionary.json")));
     }
 
 

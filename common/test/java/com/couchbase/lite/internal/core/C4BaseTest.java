@@ -41,10 +41,12 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StopWatch;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -61,6 +63,26 @@ public class C4BaseTest extends BaseTest {
         throws LiteCoreException {
         assertNotNull(collection);
         return C4Document.getOrEmpty(collection, docId);
+    }
+
+    public static void assertIsLiteCoreException(@Nullable Exception e, int domain, int code) {
+        assertNotNull(e);
+        if (!(e instanceof LiteCoreException)) {
+            throw new AssertionError("Expected CBL exception (" + domain + ", " + code + ") but got:", e);
+        }
+        final LiteCoreException err = (LiteCoreException) e;
+        if (domain > 0) { assertEquals(domain, err.getDomain()); }
+        if (code > 0) { assertEquals(code, err.getCode()); }
+    }
+
+    public static void assertThrowsLiteCoreException(int domain, int code, @NonNull Fn.TaskThrows<Exception> block) {
+        try {
+            block.run();
+            fail("Expected LiteCore exception (" + domain + ", " + code + ")");
+        }
+        catch (Exception e) {
+           assertIsLiteCoreException(e, domain, code);
+        }
     }
 
     protected C4Database c4Database;

@@ -46,9 +46,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
-
-
-@SuppressWarnings("unchecked")
 public class C4MutableFleeceTest extends C4BaseTest {
     static class TestContext extends DbContext {
         @NonNull
