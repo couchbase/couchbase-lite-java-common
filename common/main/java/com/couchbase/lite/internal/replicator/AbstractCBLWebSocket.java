@@ -52,7 +52,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.TrustManager;
 
-import okhttp3.Authenticator;
 import okhttp3.Challenge;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
@@ -127,7 +126,6 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     private static final int MAX_AUTH_RETRIES = 3;
     public static final int DEFAULT_HEARTBEAT_SEC = 300;
 
-    private static final String CHALLENGE_BASIC = "Basic";
     private static final String HEADER_AUTH = "Authorization";
     public static final String HEADER_COOKIES = "Cookies"; // client customized cookies
 
@@ -611,8 +609,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         }
 
         // Authenticator
-        final Authenticator authenticator = getBasicAuthenticator();
-        if (authenticator != null) { builder.authenticator(authenticator); }
+        getBasicAuthenticator(builder);
 
         // Cookies
         builder.cookieJar(new WebSocketCookieJar());
@@ -653,23 +650,39 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         return builder.build();
     }
 
-    @Nullable
-    private Authenticator getBasicAuthenticator() {
-        if (options == null) { return null; }
+    private void getBasicAuthenticator(@NonNull OkHttpClient.Builder builder) {
+        if (options == null) { return; }
 
         final Object obj = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-        if (!(obj instanceof Map)) { return null; }
+        if (!(obj instanceof Map)) { return; }
         final Map<?, ?> auth = (Map<?, ?>) obj;
 
         final Object authType = auth.get(C4Replicator.REPLICATOR_AUTH_TYPE);
-        if (!C4Replicator.AUTH_TYPE_BASIC.equals(authType)) { return null; }
+        if (!C4Replicator.AUTH_TYPE_BASIC.equals(authType)) { return; }
 
         final Object username = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
-        if (!(username instanceof String)) { return null; }
+        if (!(username instanceof String)) { return; }
         final Object password = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
-        if (!(password instanceof String)) { return null; }
+        if (!(password instanceof String)) { return; }
 
-        return (route, response) -> authenticate(response, (String) username, (String) password);
+        final String credentials = Credentials.basic((String) username, (String) password);
+
+        builder.authenticator((route, response) -> authenticate(response, credentials));
+
+        // Force pre-authentication
+        builder.addInterceptor(chain -> {
+            final Request request = chain.request();
+            return chain.proceed(
+                (chain.connection() != null)
+                    ? request
+                    // If there is no connection, this must be the first request:
+                    // force an Auth header so that SGW doesn't think it is
+                    // a request from anonymous.
+                    : request.newBuilder()
+                        .header(HEADER_AUTH, credentials)
+                        .method(request.method(), request.body())
+                        .build());
+        });
     }
 
     private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) throws GeneralSecurityException {
@@ -734,7 +747,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
 
     // http://www.ietf.org/rfc/rfc2617.txt
     @Nullable
-    private Request authenticate(@NonNull Response resp, @NonNull String user, @NonNull String pwd) {
+    private Request authenticate(@NonNull Response resp, @NonNull String credentials) {
         Log.d(TAG, "CBLWebSocket.authenticate: %s", resp);
 
         // If failed 3 times, give up.
@@ -745,10 +758,10 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         if (challenges == null) { return null; }
 
         for (Challenge challenge: challenges) {
-            if (CHALLENGE_BASIC.equals(challenge.scheme())) {
+            if (C4Replicator.AUTH_TYPE_BASIC.equalsIgnoreCase(challenge.scheme())) {
                 return resp.request()
                     .newBuilder()
-                    .header(HEADER_AUTH, Credentials.basic(user, pwd))
+                    .header(HEADER_AUTH, credentials)
                     .build();
             }
         }
