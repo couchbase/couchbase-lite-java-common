@@ -432,8 +432,9 @@ public abstract class C4Database extends C4NativePeer {
     // Cookie Store
     ////////////////////////////////
 
-    public void setCookie(@NonNull URI uri, @NonNull String setCookieHeader) throws LiteCoreException {
-        setCookie(getPeer(), uri.toString(), setCookieHeader);
+    public void setCookie(@NonNull URI uri, @NonNull String setCookieHeader, boolean acceptParentDomain)
+        throws LiteCoreException {
+        setCookie(getPeer(), uri.toString(), setCookieHeader, acceptParentDomain);
     }
 
     @Nullable
@@ -636,7 +637,8 @@ public abstract class C4Database extends C4NativePeer {
 
     // - Cookie Store
 
-    private static native void setCookie(long db, String url, String setCookieHeader) throws LiteCoreException;
+    private static native void setCookie(long db, String url, String setCookieHeader, boolean acceptParentDomain)
+        throws LiteCoreException;
 
     @NonNull
     private static native String getCookies(long db, @NonNull String url) throws LiteCoreException;

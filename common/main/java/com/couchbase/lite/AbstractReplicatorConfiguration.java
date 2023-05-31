@@ -78,6 +78,7 @@ public abstract class AbstractReplicatorConfiguration {
     private Authenticator authenticator;
     @Nullable
     private Map<String, String> headers;
+    private boolean acceptParentCookies; // defaults false
     @Nullable
     private byte[] pinnedServerCertificate;
     @Nullable
@@ -113,6 +114,7 @@ public abstract class AbstractReplicatorConfiguration {
             config.continuous,
             config.authenticator,
             config.headers,
+            config.acceptParentCookies,
             config.pinnedServerCertificate,
             config.channels,
             config.documentIDs,
@@ -133,6 +135,7 @@ public abstract class AbstractReplicatorConfiguration {
             config.isContinuous(),
             config.getAuthenticator(),
             config.getHeaders(),
+            config.isAcceptParentCookies(),
             config.getPinnedServerCertificate(),
             config.getChannels(),
             config.getDocumentIDs(),
@@ -153,6 +156,7 @@ public abstract class AbstractReplicatorConfiguration {
         boolean continuous,
         @Nullable Authenticator authenticator,
         @Nullable Map<String, String> headers,
+        boolean acceptParentCookies,
         @Nullable byte[] pinnedServerCertificate,
         @Nullable List<String> channels,
         @Nullable List<String> documentIDs,
@@ -169,6 +173,7 @@ public abstract class AbstractReplicatorConfiguration {
         this.continuous = continuous;
         this.authenticator = authenticator;
         this.headers = headers;
+        this.acceptParentCookies = acceptParentCookies;
         this.pinnedServerCertificate = pinnedServerCertificate;
         this.channels = channels;
         this.documentIDs = documentIDs;
@@ -264,6 +269,22 @@ public abstract class AbstractReplicatorConfiguration {
     @NonNull
     public final ReplicatorConfiguration setHeaders(@Nullable Map<String, String> headers) {
         this.headers = (headers == null) ? null : new HashMap<>(headers);
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * The option to remove a restriction that does not allow a replicator to accept cookies
+     * from a remote host unless the cookie domain exactly matches the the domain of the sender.
+     * For instance, when the option is set to false (the default), and the remote host, “bar.foo.com”,
+     * sends a cookie for the domain “.foo.com”, the replicator will reject it.  If the option
+     * is set true, however, the replicator will accept it.  This is, in general, dangerous:
+     * a host might, for instance, set a cookie for the domain ".com".  It is safe only when
+     * the replicator is connecting only to known hosts.
+     * The default value of this option is false: parent-domain cookies are not accepted
+     */
+    @NonNull
+    public final ReplicatorConfiguration setAcceptParentDomainCookies(boolean acceptParentCookies) {
+        this.acceptParentCookies = acceptParentCookies;
         return getReplicatorConfiguration();
     }
 
@@ -448,6 +469,18 @@ public abstract class AbstractReplicatorConfiguration {
      */
     @Nullable
     public final Map<String, String> getHeaders() { return (headers == null) ? null : new HashMap<>(headers); }
+
+    /**
+     * The option to remove a restriction that does not allow a replicator to accept cookies
+     * from a remote host unless the cookie domain exactly matches the the domain of the sender.
+     * For instance, when the option is set to false (the default), and the remote host, “bar.foo.com”,
+     * sends a cookie for the domain “.foo.com”, the replicator will reject it.  If the option
+     * is set true, however, the replicator will accept it.  This is, in general, dangerous:
+     * a host might, for instance, set a cookie for the domain ".com".  It is safe only when
+     * the replicator is connecting only to known hosts.
+     * The default value of this option is false: parent-domain cookies are not accepted
+     */
+    public final boolean isAcceptParentDomainCookies() { return acceptParentCookies; }
 
     /**
      * Return the remote target's SSL certificate.

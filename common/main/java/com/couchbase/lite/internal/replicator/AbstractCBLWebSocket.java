@@ -240,10 +240,16 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     // Using the C4NativePeer lock to protect cookieStore may seem like overkill.  We have to use it anyway,
     // for the (very necessary) call to assertState.  Might as well use it everywhere...
     private class WebSocketCookieJar implements CookieJar {
+        private final boolean acceptParentDomain;
+
+        WebSocketCookieJar(boolean acceptParentDomain) { this.acceptParentDomain = acceptParentDomain; }
+
         @Override
         public void saveFromResponse(@NonNull HttpUrl httpUrl, @NonNull List<Cookie> cookies) {
+            final List<String> cookieStrs = new ArrayList<>(cookies.size());
+            for (Cookie cookie: cookies) { cookieStrs.add(cookie.toString()); }
             synchronized (getPeerLock()) {
-                for (Cookie cookie: cookies) { cookieStore.setCookie(httpUrl.uri(), cookie.toString()); }
+                cookieStore.setCookies(httpUrl.uri(), cookieStrs, acceptParentDomain);
             }
         }
 
@@ -599,6 +605,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
     @NonNull
     private OkHttpClient setupOkHttpFactory() throws GeneralSecurityException {
         final OkHttpClient.Builder builder = BASE_HTTP_CLIENT.newBuilder();
+        boolean acceptParentDomainCookies = false;
 
         // Heartbeat
         if (options != null) {
@@ -606,13 +613,18 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
             builder.pingInterval(
                 (heartbeat instanceof Number) ? ((long) heartbeat) : DEFAULT_HEARTBEAT_SEC,
                 TimeUnit.SECONDS);
+
+
+            // Accept Parent Domain Cookies
+            final Object acceptParentCookies = options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES);
+            if (acceptParentCookies instanceof Boolean) { acceptParentDomainCookies = (Boolean) acceptParentCookies; }
         }
 
         // Authenticator
-        getBasicAuthenticator(builder);
+        setupBasicAuthenticator(builder);
 
         // Cookies
-        builder.cookieJar(new WebSocketCookieJar());
+        builder.cookieJar(new WebSocketCookieJar(acceptParentDomainCookies));
 
         // Setup SSLFactory and trusted certificate (pinned certificate)
         setupSSLSocketFactory(builder);
@@ -650,7 +662,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         return builder.build();
     }
 
-    private void getBasicAuthenticator(@NonNull OkHttpClient.Builder builder) {
+    private void setupBasicAuthenticator(@NonNull OkHttpClient.Builder builder) {
         if (options == null) { return; }
 
         final Object obj = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);

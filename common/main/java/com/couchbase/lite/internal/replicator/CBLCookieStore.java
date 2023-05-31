@@ -45,7 +45,7 @@ public interface CBLCookieStore {
         return cookieList;
     }
 
-    void setCookie(@NonNull URI uri, @NonNull String setCookieHeader);
+    void setCookies(@NonNull URI uri, @NonNull List<String> cookies, boolean acceptParentDomain);
 
     @Nullable
     String getCookies(@NonNull URI uri);
