@@ -114,7 +114,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         }
 
         // Log outside the the synchronized block
-        Log.w(DOMAIN, msg, err);
+        Log.i(DOMAIN, msg, err);
         return null;
     }
 

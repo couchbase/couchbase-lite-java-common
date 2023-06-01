@@ -1239,7 +1239,8 @@ abstract class AbstractDatabase extends BaseDatabase
     void setCookies(@NonNull URI uri, @NonNull List<String> cookies, boolean acceptParentDomain) {
         try {
             synchronized (getDbLock()) {
-                for (String cookie: cookies) { getOpenC4DbLocked().setCookie(uri, cookie, acceptParentDomain); }
+                final C4Database c4db = getOpenC4DbLocked();
+                for (String cookie: cookies) { c4db.setCookie(uri, cookie, acceptParentDomain); }
             }
         }
         catch (LiteCoreException e) { Log.w(DOMAIN, "Cannot save cookies for " + uri, e); }
