@@ -51,6 +51,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
         final Map<String, Exclusion> m = new HashMap<>();
         m.put("android<21", new Exclusion("Not supported on Android API < 21", () -> Build.VERSION.SDK_INT < 21));
         m.put("NOT WINDOWS", new Exclusion("Supported only on Windows", () -> true));
+        m.put("NEXUS5", new Exclusion("Fails on Nexus 5", () -> "Nexus 5".equals(android.os.Build.MODEL)));
         m.put(
             "SWEDISH UNSUPPORTED",
             new Exclusion(
