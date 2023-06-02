@@ -102,7 +102,7 @@ final class NativeLibrary {
         try {
             libPath = extract(lib, resDirPath, targetDir);
             // On non-windows systems set up permissions for the extracted native library.
-            if (!OS_WINDOWS.equals(os)) { setPermissions(libPath); }
+            if (!isWindows(os)) { setPermissions(libPath); }
         }
         catch (IOException e) {
             throw new IllegalStateException("Failed extracting library resource: " + lib + " to " + targetDir, e);
@@ -144,10 +144,9 @@ final class NativeLibrary {
     // Per the support matrix: Linux, Windows and Mac (loosy goosy checking)
     @NonNull
     private static String getOsDir(@NonNull String osName) {
-        final String os = osName.toLowerCase(Locale.getDefault());
-        if (os.contains(OS_WINDOWS)) { return WINDOWS_OS_DIR; }
-        if (os.contains(OS_LINUX)) { return LINUX_OS_DIR; }
-        if (os.contains(OS_MAC)) { return MAC_OS_DIR; }
+        if (isWindows(osName)) { return WINDOWS_OS_DIR; }
+        if (isLinux(osName)) { return LINUX_OS_DIR; }
+        if (isMacOS(osName)) { return MAC_OS_DIR; }
         throw new IllegalStateException("Unsupported OS: " + osName);
     }
 
@@ -157,9 +156,8 @@ final class NativeLibrary {
     //  - Mac: universal (unchecked)
     @NonNull
     private static String getCoreArchDir(@NonNull String rootPath, @NonNull String osName, @NonNull String archName) {
-        final String os = osName.toLowerCase(Locale.getDefault());
-        if (os.contains(OS_WINDOWS) || os.contains(OS_LINUX)) { return rootPath + ARCH_X86 + LIB_DIR; }
-        if (os.contains(OS_MAC)) { return rootPath + ARCH_UNIVERSAL + LIB_DIR; }
+        if (isWindows(osName) || isLinux(osName)) { return rootPath + ARCH_X86 + LIB_DIR; }
+        if (isMacOS(osName)) { return rootPath + ARCH_UNIVERSAL + LIB_DIR; }
         throw new IllegalStateException("Unsupported LiteCore architecture: " + osName + "/" + archName);
     }
 
@@ -169,11 +167,10 @@ final class NativeLibrary {
     //  - Mac: x86_64 and aarch64
     @NonNull
     private static String getJniArchDir(@NonNull String rootPath, @NonNull String osName, @NonNull String archName) {
-        final String os = osName.toLowerCase(Locale.getDefault());
-        if (os.contains(OS_WINDOWS) || os.contains(OS_LINUX)) { return rootPath + ARCH_X86 + LIB_DIR; }
+        if (isWindows(osName) || isLinux(osName)) { return rootPath + ARCH_X86 + LIB_DIR; }
 
         final String arch = archName.toLowerCase(Locale.getDefault());
-        if (os.contains(OS_MAC) && (ARCH_X86.equals(arch) || ARCH_APPLE_ARM.equals(arch))) {
+        if (isMacOS(osName) && (ARCH_X86.equals(arch) || ARCH_APPLE_ARM.equals(arch))) {
             return rootPath + arch + LIB_DIR;
         }
 
@@ -222,5 +219,19 @@ final class NativeLibrary {
         }
 
         return targetPath;
+    }
+
+    // Although it would be more efficient to do this once and use the value everywhere,
+    // we want error messages to have the exact thing that we got from the system property.
+    private static boolean isWindows(@NonNull String sysOs) {
+        return sysOs.toLowerCase(Locale.getDefault()).contains(OS_WINDOWS);
+    }
+
+    private static boolean isMacOS(@NonNull String sysOs) {
+        return sysOs.toLowerCase(Locale.getDefault()).contains(OS_MAC);
+    }
+
+    private static boolean isLinux(@NonNull String sysOs) {
+        return sysOs.toLowerCase(Locale.getDefault()).contains(OS_LINUX);
     }
 }
