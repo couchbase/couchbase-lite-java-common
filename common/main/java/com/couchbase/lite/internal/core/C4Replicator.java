@@ -96,6 +96,7 @@ public class C4Replicator extends C4NativePeer {
 
     public static final String REPLICATOR_OPTION_EXTRA_HEADERS = "headers";  // Extra HTTP headers: string[]
     public static final String REPLICATOR_OPTION_COOKIES = "cookies";  // HTTP Cookie header value: string
+    public static final String REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES = "acceptParentDomainCookies"; // Accept parent domain cookies: boolean
     public static final String REPLICATOR_OPTION_AUTHENTICATION = "auth";  // Auth settings: Dict
     public static final String REPLICATOR_OPTION_PROXY_SERVER = "proxy";   ///< Proxy settings (Dict); see [3]]
 

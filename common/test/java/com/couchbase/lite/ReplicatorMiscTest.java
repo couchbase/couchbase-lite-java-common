@@ -164,6 +164,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         catch (CouchbaseLiteException ignore) { }
 
         synchronized (options) {
+            assertEquals(Boolean.FALSE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
             assertNull(options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
             assertFalse(options.containsKey(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
             assertFalse(options.containsKey(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));
@@ -179,7 +180,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             .setHeartbeat(33)
             .setMaxAttempts(78)
             .setMaxAttemptWaitTime(45)
-            .setAutoPurgeEnabled(false);
+            .setAutoPurgeEnabled(false)
+            .setAcceptParentDomainCookies(true);
 
         final Replicator repl = testReplicator(config);
 
@@ -196,6 +198,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         catch (CouchbaseLiteException ignore) { }
 
         synchronized (options) {
+            assertEquals(Boolean.TRUE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
             assertEquals(Boolean.FALSE, options.get(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE));
             assertEquals(33L, options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL));
             assertEquals(45L, options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL));

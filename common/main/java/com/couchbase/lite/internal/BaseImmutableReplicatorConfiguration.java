@@ -56,6 +56,7 @@ public class BaseImmutableReplicatorConfiguration {
     private final Authenticator authenticator;
     @Nullable
     private final Map<String, String> headers;
+    private final boolean acceptParentCookies;
     @Nullable
     private final byte[] pinnedServerCertificate;
     @Nullable
@@ -84,6 +85,7 @@ public class BaseImmutableReplicatorConfiguration {
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
         this.headers = config.getHeaders();
+        this.acceptParentCookies = config.isAcceptParentDomainCookies();
         this.pinnedServerCertificate = config.getPinnedServerCertificate();
         this.channels = config.getChannels();
         this.documentIDs = config.getDocumentIDs();
@@ -123,6 +125,8 @@ public class BaseImmutableReplicatorConfiguration {
 
     @Nullable
     public final Map<String, String> getHeaders() { return headers; }
+
+    public boolean isAcceptParentCookies() { return acceptParentCookies; }
 
     // DO NOT MESS WITH THIS RETURN VALUE!!!
     @SuppressWarnings("PMD.MethodReturnsInternalArray")
@@ -181,6 +185,8 @@ public class BaseImmutableReplicatorConfiguration {
         if (maxRetryAttemptWaitTime > 0) {
             options.put(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL, maxRetryAttemptWaitTime);
         }
+
+        options.put(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES, acceptParentCookies);
 
         if (!enableAutoPurge) { options.put(C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE, Boolean.FALSE); }
 

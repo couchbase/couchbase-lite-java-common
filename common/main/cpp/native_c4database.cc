@@ -306,7 +306,7 @@ Java_com_couchbase_lite_internal_core_C4Database_rawGet(
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    setCookie
- * Signature: (JLjava/lang/String;Ljava/lang/String;)V
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Z)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4Database_setCookie(
@@ -314,7 +314,8 @@ Java_com_couchbase_lite_internal_core_C4Database_setCookie(
         jclass ignore,
         jlong jdb,
         jstring jurl,
-        jstring jcookie) {
+        jstring jcookie,
+        jboolean acceptParentDomain) {
     jstringSlice url(env, jurl);
     jstringSlice cookie(env, jcookie);
 
@@ -325,7 +326,7 @@ Java_com_couchbase_lite_internal_core_C4Database_setCookie(
     }
 
     C4Error error = {};
-    if (!c4db_setCookie((C4Database *) jdb, cookie, address.hostname, address.path, &error))
+    if (!c4db_setCookie((C4Database *) jdb, cookie, address.hostname, address.path, acceptParentDomain, &error))
         throwError(env, error);
 }
 

@@ -154,10 +154,10 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_rawFree
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
  * Method:    setCookie
- * Signature: (JLjava/lang/String;Ljava/lang/String;)V
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Z)V
  */
 JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4Database_setCookie
-  (JNIEnv *, jclass, jlong, jstring, jstring);
+  (JNIEnv *, jclass, jlong, jstring, jstring, jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4Database
