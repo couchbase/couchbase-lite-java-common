@@ -520,7 +520,7 @@ class LogTest : BaseDbTest() {
         Log.initLogging(mapOf("FOO" to "$$\$TEST DEBUG"))
         val msg = CouchbaseLiteException("FOO", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
         assertNotNull(msg)
-        assertTrue(msg!!.startsWith("$$\$TEST DEBUG"))
+        assertTrue(msg.startsWith("$$\$TEST DEBUG"))
     }
 
     @Test
@@ -528,7 +528,7 @@ class LogTest : BaseDbTest() {
         Log.initLogging(mapOf("FOO" to "$$\$TEST DEBUG"))
         val msg = CouchbaseLiteException("bork", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
         assertNotNull(msg)
-        assertTrue(msg!!.startsWith("bork"))
+        assertTrue(msg.startsWith("bork"))
     }
 
     // Verify that we can set the level for log domains that the platform doesn't recognize.

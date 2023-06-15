@@ -95,26 +95,23 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     public Result next() {
         Preconditions.assertNotNull(query, "query");
 
-        String msg;
-        LiteCoreException err = null;
+        final LiteCoreException err;
         synchronized (lock) {
+            if ((c4enum == null) || (isAllEnumerated)) { return null; }
+
             try {
-                if (c4enum == null) { return null; }
-                else if (isAllEnumerated) { msg = "ResultSetAlreadyEnumerated"; }
-                else if (!c4enum.next()) {
+                if (!c4enum.next()) {
                     isAllEnumerated = true;
-                    msg = "End of query enumeration";
+                    return null;
                 }
-                else { return new Result(this, c4enum, context); }
+
+                return new Result(this, c4enum, context);
             }
-            catch (LiteCoreException e) {
-                msg = "Error enumerating query";
-                err = e;
-            }
+            catch (LiteCoreException e) { err = e; }
         }
 
         // Log outside the the synchronized block
-        Log.i(DOMAIN, msg, err);
+        Log.i(DOMAIN, "Error enumerating query", err);
         return null;
     }
 

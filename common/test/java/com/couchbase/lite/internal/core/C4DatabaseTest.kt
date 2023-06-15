@@ -113,7 +113,7 @@ class C4DatabaseTest : C4BaseTest() {
         } catch (e: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
             assertEquals(C4Constants.LiteCoreError.WRONG_FORMAT, e.code)
-            e.message?.let { assertTrue(it.startsWith("Parent directory does not exist")) }
+            assertTrue(e.message.startsWith("Parent directory does not exist"))
         }
     }
 
