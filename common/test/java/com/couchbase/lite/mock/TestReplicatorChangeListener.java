@@ -40,7 +40,7 @@ public class TestReplicatorChangeListener implements ReplicatorChangeListener {
         final ReplicatorStatus status = change.getStatus();
         final CouchbaseLiteException error = status.getError();
         final ReplicatorActivityLevel state = status.getActivityLevel();
-        Report.log(error, "Test replicator state change: " + state, error);
+        Report.log(error, "Test replicator state change: %s", state);
 
         observedError.compareAndSet(null, error);
 

@@ -150,7 +150,7 @@ public class EncodingTest extends BaseTest {
             assertNotNull(flValue);
 
             Object obj = FLValue.toObject(flValue);
-            Report.log("ROUND TRIP SLICE: '" + obj + "'; FROM: '" + item + "'; EXPECTING: '" + expected + "'");
+            Report.log("ROUND TRIP SLICE: '%s'; FROM: '%s'; EXPECTING: '%s'", obj, item, expected);
             assertEquals(expected, obj);
         }
     }
@@ -158,7 +158,7 @@ public class EncodingTest extends BaseTest {
     private void testSlice(byte[] utf8Slice, String expected) {
         FLValue flValue = FLValue.fromData(utf8Slice);
         Object obj = FLValue.toObject(flValue);
-        Report.log("DECODE SLICE: '" + obj + "'; EXPECTED: '" + expected + "'");
+        Report.log("DECODE SLICE: '%s'; EXPECTED: '%s'", obj, expected);
         assertEquals(expected, obj);
     }
 }
