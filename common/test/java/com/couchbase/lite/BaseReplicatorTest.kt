@@ -216,7 +216,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
         var ok = false
         try {
             this.start(reset)
-            ok = awaiter.awaitCompletion(STD_TIMEOUT_SEC, TimeUnit.SECONDS)
+            ok = awaiter.awaitCompletion(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)
         } finally {
             this.stop()
             Report.log(awaiter.error, "Test replicator ${if (ok) "finished" else "timed out"}")

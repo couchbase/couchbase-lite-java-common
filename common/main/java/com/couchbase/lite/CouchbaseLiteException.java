@@ -248,6 +248,6 @@ public final class CouchbaseLiteException extends Exception {
     @NonNull
     @Override
     public String getMessage() {
-        return "(" + domain + ", " + code + "): " + super.getMessage() + "  [" + CBLVersion.getVersionInfo() + "]";
+        return super.getMessage() + " (" + domain + ", " + code + ")" + "  [" + CBLVersion.getVersionInfo() + "]";
     }
 }

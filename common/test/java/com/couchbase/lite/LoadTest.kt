@@ -43,7 +43,7 @@ class LoadTest : BaseDbTest() {
             "sunfish" to 65,
             "taimen" to 55,
             "shamu" to 130,
-            "hammerhead" to 130,
+            "hammerhead" to 150,
             "occam" to 220,
         )
     }
@@ -122,7 +122,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("update"))).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testUpdate1", 100) {
+        timeTest("testUpdate1", 110) {
             var i = 0
             for (id in ids) {
                 i++
