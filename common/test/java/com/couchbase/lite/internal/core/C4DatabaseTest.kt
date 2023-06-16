@@ -113,7 +113,7 @@ class C4DatabaseTest : C4BaseTest() {
         } catch (e: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
             assertEquals(C4Constants.LiteCoreError.WRONG_FORMAT, e.code)
-            assertTrue(e.message.startsWith("Parent directory does not exist"))
+            assertTrue(e.message.contains("Parent directory does not exist"))
         }
     }
 
@@ -608,7 +608,7 @@ class C4DatabaseTest : C4BaseTest() {
         } catch (e: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE.toLong(), e.domain.toLong())
             assertEquals(C4Constants.LiteCoreError.NOT_FOUND.toLong(), e.code.toLong())
-            assertEquals("not found", e.message)
+            assertTrue(e.message.contains("not found"))
         }
     }
 

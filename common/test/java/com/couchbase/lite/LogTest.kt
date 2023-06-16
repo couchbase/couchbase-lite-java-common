@@ -37,7 +37,9 @@ import java.io.FileInputStream
 import java.io.FileReader
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
-import java.util.*
+import java.util.EnumMap
+import java.util.Locale
+import java.util.UUID
 import kotlin.Array
 
 
@@ -520,7 +522,7 @@ class LogTest : BaseDbTest() {
         Log.initLogging(mapOf("FOO" to "$$\$TEST DEBUG"))
         val msg = CouchbaseLiteException("FOO", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
         assertNotNull(msg)
-        assertTrue(msg.startsWith("$$\$TEST DEBUG"))
+        assertTrue(msg.contains("$$\$TEST DEBUG"))
     }
 
     @Test
@@ -528,7 +530,7 @@ class LogTest : BaseDbTest() {
         Log.initLogging(mapOf("FOO" to "$$\$TEST DEBUG"))
         val msg = CouchbaseLiteException("bork", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
         assertNotNull(msg)
-        assertTrue(msg.startsWith("bork"))
+        assertTrue(msg.contains("bork"))
     }
 
     // Verify that we can set the level for log domains that the platform doesn't recognize.
@@ -588,7 +590,7 @@ class LogTest : BaseDbTest() {
     private fun writeOneKiloByteOfLog() {
         val message = "11223344556677889900" // ~43 bytes
         // 24 * 43 = 1032
-        for (i in 0..23) {  writeAllLogs(message) }
+        for (i in 0..23) { writeAllLogs(message) }
     }
 
     private fun writeAllLogs(message: String) {

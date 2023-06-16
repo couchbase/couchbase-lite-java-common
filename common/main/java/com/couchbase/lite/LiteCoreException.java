@@ -48,5 +48,5 @@ public class LiteCoreException extends Exception {
 
     @NonNull
     @Override
-    public String getMessage() { return "[" + domain + ", " + code + "]" + super.getMessage(); }
+    public String getMessage() { return super.getMessage() + " [" + domain + ", " + code + "]"; }
 }
