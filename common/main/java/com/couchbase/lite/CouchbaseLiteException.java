@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Map;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.CBLVersion;
@@ -58,8 +59,10 @@ public final class CouchbaseLiteException extends Exception {
         int statusCode,
         @Nullable String msg,
         @Nullable Exception e) {
-        // make sure this gets logged
-        if (e != null) { Log.w(LogDomain.DATABASE, "Lite Core exception", e); }
+        // log the LiteCoreException in case the client swallows it.
+        if ((e != null) && (CouchbaseLiteInternal.debugging())) {
+            Log.w(LogDomain.DATABASE, "Lite Core exception", e);
+        }
 
         int code = statusCode;
 
