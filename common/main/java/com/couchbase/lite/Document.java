@@ -79,7 +79,6 @@ public class Document implements DictionaryInterface, Iterable<String> {
         return new Document(collection, id, c4Doc, false);
     }
 
-
     @NonNull
     private static C4Document getC4Document(@NonNull Collection collection, @NonNull String id)
         throws CouchbaseLiteException {

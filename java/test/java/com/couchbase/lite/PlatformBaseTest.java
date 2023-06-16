@@ -124,7 +124,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public final String getDevice() {
         final String device = System.getProperty("os.name");
-        Report.log("Test device: " + device);
+        Report.log("Test device: %s", device);
         return device.toLowerCase(Locale.getDefault()).substring(0, 3);
     }
 }

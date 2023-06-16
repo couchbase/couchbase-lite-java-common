@@ -1545,7 +1545,7 @@ abstract class AbstractDatabase extends BaseDatabase
         final Set<ActiveProcess<?>> deadProcesses = new HashSet<>();
         for (ActiveProcess<?> process: processes) {
             if (!process.isActive()) {
-                Log.i(DOMAIN, "Found dead process: " + process);
+                Log.i(DOMAIN, "Found dead db process: " + process);
                 deadProcesses.add(process);
             }
         }

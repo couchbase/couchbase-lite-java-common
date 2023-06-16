@@ -154,7 +154,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @Before
     public final void setUpBaseTest() {
-        Report.log(">>>>>>>> Test started: " + testName);
+        Report.log(">>>>>>>> Test started: %s", testName);
         Log.initLogging();
 
         setupPlatform();
@@ -176,11 +176,11 @@ public abstract class BaseTest extends PlatformBaseTest {
 
             @Override
             public void execute(@NonNull Runnable task) {
-                Report.log("task enqueued: " + task);
+                Report.log("task enqueued: %s", task);
                 executor.execute(() -> {
-                    Report.log("task started: " + task);
+                    Report.log("task started: %s", task);
                     task.run();
-                    Report.log("task finished: " + task);
+                    Report.log("task finished: %s", task);
                 });
             }
 
@@ -198,7 +198,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     public final void tearDownBaseTest() {
         boolean succeeded = false;
         if (testSerialExecutor != null) { succeeded = testSerialExecutor.stop(2, TimeUnit.SECONDS); }
-        Report.log("Executor stopped: " + succeeded);
+        Report.log("Executor stopped: %s", succeeded);
 
         Report.log(
             "<<<<<<<< Test completed(%s): %s",
@@ -300,7 +300,7 @@ public abstract class BaseTest extends PlatformBaseTest {
             final File dbFile = db.getDbFile();
             if ((dbFile != null) && (dbFile.exists())) { FileUtils.eraseFileOrDir(dbFile); }
         }
-        catch (Exception e) { Report.log("Failed to delete database %s", e, db); }
+        catch (Exception e) { Report.log(e, "Failed to delete database %s", db); }
     }
 
     protected final MutableDocument createTestDoc() { return createTestDoc(1, 1, getUniqueName("no-tag")); }

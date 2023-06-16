@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 
 import java.util.Map;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.CBLVersion;
@@ -58,11 +59,12 @@ public final class CouchbaseLiteException extends Exception {
         int statusCode,
         @Nullable String msg,
         @Nullable Exception e) {
-        // make sure this gets logged
-        if (e != null) { Log.w(LogDomain.DATABASE, "Lite Core exception", e); }
+        // log the LiteCoreException in case the client swallows it.
+        if ((e != null) && (CouchbaseLiteInternal.debugging())) {
+            Log.w(LogDomain.DATABASE, "Lite Core exception", e);
+        }
 
         int code = statusCode;
-
         String domain = CBLError.Domain.CBLITE;
         switch (domainCode) {
             case C4Constants.ErrorDomain.LITE_CORE:
@@ -106,7 +108,7 @@ public final class CouchbaseLiteException extends Exception {
 
         if ((msg == null) && (e != null)) { errMsg = e.getMessage(); }
 
-        return Log.lookupStandardMessage(errMsg) + "\n   (" + CBLVersion.getVersionInfo() + ")";
+        return Log.lookupStandardMessage(errMsg);
     }
 
     private final int code;
@@ -245,8 +247,7 @@ public final class CouchbaseLiteException extends Exception {
 
     @NonNull
     @Override
-    public String toString() {
-        final String msg = getMessage();
-        return "CouchbaseLiteException{" + domain + "," + code + "," + ((msg == null) ? "" : ("'" + msg + "'")) + "}";
+    public String getMessage() {
+        return "(" + domain + ", " + code + "): " + super.getMessage() + "  [" + CBLVersion.getVersionInfo() + "]";
     }
 }

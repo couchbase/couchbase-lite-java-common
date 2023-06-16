@@ -1794,7 +1794,7 @@ public class DocumentTest extends BaseDbTest {
             () -> {
                 if (0 != testCollection.getCount()) { return false; }
                 try (ResultSet rs = queryDeleted.execute()) { return 0 == rs.allResults().size(); }
-                catch (CouchbaseLiteException e) { Report.log("Unexpected exception", e); }
+                catch (CouchbaseLiteException e) { Report.log(e, "Unexpected exception"); }
                 return false;
             });
     }

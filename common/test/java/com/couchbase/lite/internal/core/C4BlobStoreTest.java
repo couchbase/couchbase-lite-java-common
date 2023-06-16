@@ -249,7 +249,7 @@ public class C4BlobStoreTest extends C4BaseTest {
                 int line = increment;
                 for (int i = 0; i < 1000; i++) {
                     line = (line + increment) % 1000;
-                    Report.log("Reading line " + line + " at offset " + (18 * line));
+                    Report.log("Reading line '%s' at offset %d", line, (18 * line));
                     String buf = String.format(Locale.ENGLISH, "This is line %03d.\n", line);
                     reader.seek(18 * line);
                     byte[] readBuf = new byte[18];
