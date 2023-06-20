@@ -118,6 +118,10 @@ public abstract class AbstractReplicator extends BaseReplicator
     @GuardedBy("getReplicatorLock()")
     private ReplicatorStatus status = ReplicatorStatus.INIT;
 
+    // This is pretty arbitrary.  There's actually no reason that one couldn't restert a closed replicator
+    @GuardedBy("getReplicatorLock()")
+    private boolean closed;
+
     @GuardedBy("getReplicatorLock()")
     @Nullable
     private CouchbaseLiteException lastError;
@@ -170,11 +174,11 @@ public abstract class AbstractReplicator extends BaseReplicator
 
         getDatabase().addActiveReplicator(this);
 
-        final C4Replicator repl = getOrCreateC4Replicator();
+        final C4Replicator c4Repl = getOrCreateC4Replicator();
         synchronized (getReplicatorLock()) {
-            repl.start(resetCheckpoint);
+            c4Repl.start(resetCheckpoint);
 
-            C4ReplicatorStatus status = repl.getStatus();
+            C4ReplicatorStatus status = c4Repl.getStatus();
             if (status == null) {
                 status = new C4ReplicatorStatus(
                     C4ReplicatorStatus.ActivityLevel.STOPPED,
@@ -184,7 +188,7 @@ public abstract class AbstractReplicator extends BaseReplicator
 
             status = updateStatus(status);
 
-            dispatchStatusChange(repl, status);
+            dispatchStatusChange(c4Repl, status);
         }
     }
 
@@ -382,15 +386,63 @@ public abstract class AbstractReplicator extends BaseReplicator
         }
     }
 
-    // This is a workaround: closing at the wrong time (while a push filter is running?) might even
-    // cause a crash.  The issue it addresses is that when a replicator is closed it is detached from
-    // its from LiteCore and receives no further status updates. If it is not already in the STOPPED
-    // state, it will never be in the stopped state.  That means that a database that holds a reference
-    // to it can never close.
-    // Let's just tell the db forget about it.
+    // I've thought a lot about how to implement this.  The problem is that you cannot, fundamentally,
+    // close a replicator(discard its resources before this method returns). If it is not stopped,
+    // it will have to be stopped.  I came up with several possibilities.
+    // 1) close it if it is stopped; stop it if it is running.
+    // 2) throw an exception on the attempt to close a running replicator.
+    // 3) tell it to stop and forget it, without verifying that it actually goes away.
+    // 4) Make replicators not Autoclosable.
+    // #4 is very tempting.  Replicators will never be used in a try-with-resources block.
+    // Replicators *do*, however, dominate a LiteCore object that must be freed explicitly.
+    // Making them, transitively, Autoclosable seems correct.
+    // #2 seems to put an excessive burden on client code: it is a bomb that explodes unless you
+    // wait around and pay very close attention to the state of every replicator.
+    // I dislike #1 because it puts the replicator into an odd state in which it is still kinda
+    // half alive.  The client closed it but it isn't quite gone yet.
+    // I have chosen #3.  My rational is that, if you create and start a replicator and then null out
+    // all references to it, this is exactly what will happen: the replicator will be forgotten and
+    // eventually, GCed, told to stop, and freed.  This method does precisely that: best effort to
+    // release the resources and then forget about them.
+
+    /**
+     * Immediatly close the replicator and free its resources.
+     * We recommend the use of this method on Replicators that are in the STOPPED state.  If the
+     * replicator is not stopped, this method will make a best effort attempt to stop it but
+     * will not wait to confirm that it was stopped cleanly.
+     * Any attempt to restart a closed replicator will result in an IllegalStateException.
+     * This includes calls to getPendingDocIds and isDocPending.
+     */
     public void close() {
-        getDatabase().removeActiveReplicator(this);
+        HashSet<ReplicatorChangeListenerToken> listeners = null;
+        ReplicatorStatus newStatus = null;
+
+        synchronized (getReplicatorLock()) {
+            if (closed) { return; }
+            closed = true;
+
+            if (status.getActivityLevel() != ReplicatorActivityLevel.STOPPED) {
+                listeners = new HashSet<>(changeListeners);
+                newStatus = new ReplicatorStatus(ReplicatorActivityLevel.STOPPED, status.getProgress(), null);
+                status = newStatus;
+            }
+        }
+
+        // there is the potential for a race here...
         super.close();
+
+        if ((listeners == null) || listeners.isEmpty()) { return; }
+
+        postChange(true, new ReplicatorChange((Replicator) this, newStatus), listeners);
+    }
+
+    /**
+     * Determine whether this replicator has been closed.
+     *
+     * @return true iff the replicator is closed.
+     */
+    public boolean isClosed() {
+        synchronized (getReplicatorLock()) { return closed; }
     }
 
     @NonNull
@@ -629,6 +681,8 @@ public abstract class AbstractReplicator extends BaseReplicator
     private C4Replicator getOrCreateC4Replicator() {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
         synchronized (getDatabase().getDbLock()) {
+            if (closed) { throw new IllegalStateException("Attempt to operate on a closed replicator"); }
+
             C4Replicator c4Repl = getC4Replicator();
 
             final Map<String, Object> options = config.getConnectionOptions();
@@ -680,10 +734,13 @@ public abstract class AbstractReplicator extends BaseReplicator
             listenerTokens = new HashSet<>(changeListeners);
         }
 
-        // this will probably make this instance eligible for garbage collection...
-        if (isStopped(c4Status)) { getDatabase().removeActiveReplicator(this); }
+        postChange(isStopped(c4Status), change, listenerTokens);
+    }
 
-        Fn.forAll(listenerTokens, token -> token.postChange(change));
+    // this will probably make this instance eligible for garbage collection...
+    private void postChange(boolean isStopped, ReplicatorChange change, Set<ReplicatorChangeListenerToken> listeners) {
+        if (isStopped) { getDatabase().removeActiveReplicator(this); }
+        Fn.forAll(listeners, token -> token.postChange(change));
     }
 
     private void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
@@ -720,6 +777,9 @@ public abstract class AbstractReplicator extends BaseReplicator
         if (!unconflictedDocs.isEmpty()) { notifyDocumentEnded(pushing, unconflictedDocs); }
     }
 
+    // ??? Don't like logging with a lock.
+    // Perhaps refactor so that only the assignment to status
+    // happens with the lock?
     @NonNull
     @GuardedBy("getReplicatorLock()")
     private C4ReplicatorStatus updateStatus(@NonNull C4ReplicatorStatus c4Status) {
