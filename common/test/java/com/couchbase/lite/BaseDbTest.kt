@@ -21,7 +21,6 @@ import com.couchbase.lite.internal.utils.Report
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
-import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -31,7 +30,7 @@ import org.junit.Before
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -223,9 +222,8 @@ abstract class BaseDbTest : BaseTest() {
     ): MutableDocument {
         val mDoc = createTestDoc(tag)
         val n = collection.count
-        val doc = saveDocInCollection(mDoc, collection)
+        saveDocInCollection(mDoc, collection)
         assertEquals(n + 1, collection.count)
-        assertEquals(1, doc.sequence)
         return mDoc
     }
 

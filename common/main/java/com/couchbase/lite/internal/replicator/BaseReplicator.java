@@ -37,28 +37,31 @@ public abstract class BaseReplicator implements AutoCloseable {
     protected BaseReplicator() { }
 
     @Override
-    public void close() {
-        final C4Replicator c4Repl;
-        synchronized (getReplicatorLock()) {
-            c4Repl = c4Replicator;
-            c4Replicator = null;
-        }
-        if (c4Repl != null) { c4Repl.close(); }
-    }
+    public void close() { setC4ReplicatorInternal(null); }
 
     @Nullable
     public C4Replicator getC4Replicator() {
         synchronized (getReplicatorLock()) { return c4Replicator; }
     }
 
-    protected void setC4Replicator(@NonNull C4Replicator c4Repl) {
+    protected void setC4Replicator(@NonNull C4Replicator newC4Repl) {
         Log.d(
             LogDomain.REPLICATOR,
-            "Setting c4 replicator %s for replicator %s", ClassUtils.objId(c4Repl), ClassUtils.objId(this));
-
-        synchronized (getReplicatorLock()) { c4Replicator = c4Repl; }
+            "Setting c4 replicator %s for replicator %s",
+            ClassUtils.objId(newC4Repl), ClassUtils.objId(this));
+        setC4ReplicatorInternal(newC4Repl);
     }
 
     @NonNull
     protected Object getReplicatorLock() { return lock; }
+
+    private void setC4ReplicatorInternal(@Nullable C4Replicator newC4Repl) {
+        final C4Replicator oldC4Repl;
+        synchronized (getReplicatorLock()) {
+            oldC4Repl = c4Replicator;
+            c4Replicator = newC4Repl;
+        }
+
+        if (oldC4Repl != null) { oldC4Repl.close(); }
+    }
 }

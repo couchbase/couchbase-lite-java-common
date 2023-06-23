@@ -40,7 +40,6 @@ import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("ConstantConditions")
 public class ReplicatorMiscTest extends BaseReplicatorTest {
-
     @Test
     public void testGetExecutor() {
         final Executor executor = runnable -> { };
@@ -50,7 +49,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         try (ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(executor, listener, t -> { })) {
             assertEquals(executor, token.getExecutor());
         }
-            // UI thread Executor
+        // UI thread Executor
         try (ReplicatorChangeListenerToken token = new ReplicatorChangeListenerToken(null, listener, t -> { })) {
             assertEquals(CouchbaseLiteInternal.getExecutionService().getDefaultExecutor(), token.getExecutor());
         }
@@ -72,7 +71,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             0
         );
 
-        Replicator repl = makeRepl();
+        Replicator repl = makeDefaultRepl();
         ReplicatorStatus replStatus = new ReplicatorStatus(c4ReplicatorStatus);
         ReplicatorChange repChange = new ReplicatorChange(repl, replStatus);
 
@@ -96,7 +95,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testDocumentReplication() {
         List<ReplicatedDocument> docs = new ArrayList<>();
-        Replicator repl = testReplicator(makeConfig());
+        Replicator repl = makeDefaultRepl();
         DocumentReplication doc = new DocumentReplication(repl, true, docs);
         assertTrue(doc.isPush());
         assertEquals(doc.getReplicator(), repl);
@@ -106,16 +105,16 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // https://issues.couchbase.com/browse/CBL-89
     // Thanks to @James Flather for the ready-made test code
     @Test
-    public void testStopBeforeStart() { testReplicator(makeConfig()).stop(); }
+    public void testStopBeforeStart() { makeDefaultRepl().stop(); }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
-    public void testStatusBeforeStart() { testReplicator(makeConfig()).getStatus(); }
+    public void testStatusBeforeStart() { makeDefaultRepl().getStatus(); }
 
     @Test
     public void testDocumentEndListenerTokenRemove() {
-        final Replicator repl = makeRepl();
+        final Replicator repl = makeDefaultRepl();
         assertEquals(0, repl.getDocEndListenerCount());
         ListenerToken token = repl.addDocumentReplicationListener(r -> { });
         assertEquals(1, repl.getDocEndListenerCount());
@@ -127,7 +126,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testReplicationListenerTokenRemove() {
-        final Replicator repl = makeRepl();
+        final Replicator repl = makeDefaultRepl();
         assertEquals(0, repl.getReplicatorListenerCount());
         ListenerToken token = repl.addChangeListener(r -> { });
         assertEquals(1, repl.getReplicatorListenerCount());
@@ -139,7 +138,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testDefaultConnectionOptions() {
-        final Replicator repl = makeRepl(makeDefaultConfig().setType(ReplicatorType.PUSH).setContinuous(false));
+        final Replicator repl = makeDefaultRepl();
 
         Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setTestListener(c4Socket -> {
@@ -174,7 +173,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testCustomConnectionOptions() {
-        final Replicator repl = makeRepl(makeConfig()
+        // Caution: not disabling heartbeat
+        final Replicator repl = testReplicator(makeDefaultConfig()
             .setHeartbeat(33)
             .setMaxAttempts(78)
             .setMaxAttemptWaitTime(45)
@@ -205,7 +205,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testStopWhileConnecting() throws InterruptedException {
-        Replicator repl = makeRepl();
+        Replicator repl = makeDefaultRepl();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final ListenerToken token = repl.addChangeListener(status -> {
@@ -252,17 +252,17 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // CBL-1218
     @Test
     public void testStartReplicatorWithClosedDb() {
-        Replicator repl = makeRepl(makeConfig());
+        Replicator repl = makeDefaultRepl();
 
         closeDb(getTestDatabase());
 
-        assertThrows(IllegalStateException.class, () -> repl.start());
+        assertThrows(IllegalStateException.class, repl::start);
     }
 
     // CBL-1218
     @Test
     public void testIsDocumentPendingWithClosedDb() {
-        Replicator repl = makeRepl();
+        Replicator repl = makeDefaultRepl();
 
         deleteDb(getTestDatabase());
 
@@ -272,7 +272,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // CBL-1218
     @Test
     public void testGetPendingDocIdsWithClosedDb() {
-        Replicator repl = makeRepl();
+        Replicator repl = makeDefaultRepl();
 
         closeDb(getTestDatabase());
 
@@ -310,7 +310,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @SuppressWarnings("deprecation")
     @Test
     public void testDeprecatedReplicatorType() {
-        ReplicatorConfiguration config = makeDefaultConfig();
+        final ReplicatorConfiguration config = makeDefaultConfig();
+
         assertEquals(AbstractReplicatorConfiguration.ReplicatorType.PUSH_AND_PULL, config.getReplicatorType());
         assertEquals(ReplicatorType.PUSH_AND_PULL, config.getType());
 
@@ -340,7 +341,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         Authenticator authenticator = new SessionAuthenticator("mysessionid");
         HashMap<String, String> header = new HashMap<>();
         header.put(AbstractCBLWebSocket.HEADER_COOKIES, "region=nw; city=sf");
-        ReplicatorConfiguration configuration = makeConfig()
+        ReplicatorConfiguration configuration = makeDefaultConfig()
             .setAuthenticator(authenticator)
             .setHeaders(header);
 
@@ -372,7 +373,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testReplicatorWithOnlyAuthenticationCookie() {
         assertEquals(
             "SyncGatewaySession=mysessionid",
-            new ImmutableReplicatorConfiguration(makeConfig().setAuthenticator(new SessionAuthenticator("mysessionid")))
+            new ImmutableReplicatorConfiguration(
+                makeDefaultConfig().setAuthenticator(new SessionAuthenticator("mysessionid")))
                 .getConnectionOptions()
                 .get(C4Replicator.REPLICATOR_OPTION_COOKIES));
     }
@@ -381,7 +383,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testReplicatorWithOnlyHeaderCookie() {
         HashMap<String, String> header = new HashMap<>();
         header.put(AbstractCBLWebSocket.HEADER_COOKIES, "region=nw; city=sf");
-        ReplicatorConfiguration configuration = makeConfig().setHeaders(header);
+        ReplicatorConfiguration configuration = makeDefaultConfig().setHeaders(header);
 
         ImmutableReplicatorConfiguration immutableConfiguration = new ImmutableReplicatorConfiguration(configuration);
         HashMap<String, Object> options = (HashMap<String, Object>) immutableConfiguration.getConnectionOptions();
@@ -397,25 +399,24 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertFalse(((Map<?, ?>) httpHeaders).containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
+
+    ///////// Utility functions
+
     private ReplicatorActivityLevel getActivityLevelFor(int activityLevel) {
         return new ReplicatorStatus(new C4ReplicatorStatus(activityLevel, 0, 0, 0, 0, 0, 0)).getActivityLevel();
     }
 
+    // return a nearly default config.
+    // Not using makeSimpleReplConfig, in order to make sure this is pure vanilla
+    // Note that this does not set heartbeat.  These configs are likely to cause flaky tests
+    // when used in test with a live replicator
     private ReplicatorConfiguration makeDefaultConfig() {
-        return new ReplicatorConfiguration(getMockURLEndpoint())
-            .addCollection(getTestCollection(), null);
+        return new ReplicatorConfiguration(getMockURLEndpoint()).addCollection(getTestCollection(), null);
     }
 
-    private ReplicatorConfiguration makeConfig() {
-        return makeDefaultConfig()
-            .setType(ReplicatorType.PUSH)
-            .setContinuous(false)
-            .setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
+    private Replicator makeDefaultRepl() {
+        final ReplicatorConfiguration config = makeDefaultConfig();
+        config.setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
+        return testReplicator(makeDefaultConfig());
     }
-
-    // Kotlin shim functions
-
-    private Replicator makeRepl() { return makeRepl(makeConfig()); }
-
-    private Replicator makeRepl(ReplicatorConfiguration config) { return testReplicator(config); }
 }
