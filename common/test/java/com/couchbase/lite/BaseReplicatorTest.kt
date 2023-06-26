@@ -121,6 +121,7 @@ abstract class BaseReplicatorTest : BaseDbTest() {
 
     @After
     fun tearDownBaseReplicatorTest() {
+        targetCollection.close()
         replicators.forEach { it.close() }
         eraseDb(targetDatabase)
     }

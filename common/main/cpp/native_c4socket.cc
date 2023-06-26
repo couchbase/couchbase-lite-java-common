@@ -70,6 +70,7 @@ bool litecore::jni::initC4Socket(JNIEnv *env) {
             return false;
     }
 
+    logError("sockets initialized");
     return true;
 }
 

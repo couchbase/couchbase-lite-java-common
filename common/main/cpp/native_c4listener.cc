@@ -333,6 +333,7 @@ static bool initListenerCallbacks(JNIEnv *env) {
             return false;
     }
 
+    logError("listener initialized");
     return true;
 }
 
@@ -366,6 +367,7 @@ static bool initKeyPairCallbacks(JNIEnv *env) {
     keyCallbacks.sign = &signKeyCallback;
     keyCallbacks.free = &freeKeyCallback;
 
+    logError("keypair initialized");
     return true;
 }
 

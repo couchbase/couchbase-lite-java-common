@@ -108,6 +108,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
             return false;
     }
 
+    logError("observers initialized");
     return true;
 }
 

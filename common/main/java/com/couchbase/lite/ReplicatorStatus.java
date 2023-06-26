@@ -56,7 +56,7 @@ public final class ReplicatorStatus {
     }
 
     @Nullable
-    private static CouchbaseLiteException getErrorFromC4(@NonNull C4ReplicatorStatus c4Status) {
+    private static CouchbaseLiteException convertC4StatusError(@NonNull C4ReplicatorStatus c4Status) {
         final int errorCode = c4Status.getErrorCode();
         return (errorCode == 0)
             ? null
@@ -85,7 +85,7 @@ public final class ReplicatorStatus {
         this(
             getActivityLevelFromC4(c4Status.getActivityLevel()),
             new ReplicatorProgress((int) c4Status.getProgressUnitsCompleted(), (int) c4Status.getProgressUnitsTotal()),
-            getErrorFromC4(c4Status));
+            convertC4StatusError(c4Status));
     }
 
     ReplicatorStatus(@NonNull ReplicatorStatus status) {

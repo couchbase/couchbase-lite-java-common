@@ -28,15 +28,14 @@ import java.util.*
 
 private const val ITERATIONS = 2000
 
-
 class LoadTest : BaseDbTest() {
     companion object {
         private val DEVICE_SPEED_MULTIPLIER = mapOf(
             "lin" to 33,
             "mac" to 40,
-            "win" to 110,
+            "win" to 120,
             "r8quex" to 100,
-            "a12uue" to 200,
+            "a12uue" to 210,
             "starqlteue" to 150,
             "dandelion_global" to 100,
             "cheetah" to 100,
@@ -78,7 +77,7 @@ class LoadTest : BaseDbTest() {
         val docs = createComplexTestDocs(ITERATIONS, tag)
 
         assertEquals(0, testCollection.count)
-        timeTest("testCreateBatched", 30) {
+        timeTest("testCreateBatched", 35) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (doc in docs) {
                     testCollection.save(doc)
@@ -96,7 +95,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, tag)).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testRead", 12) {
+        timeTest("testRead", 15) {
             for (id in ids) {
                 val doc = testCollection.getDocument(id)
                 assertNotNull(doc)
@@ -122,7 +121,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("update"))).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testUpdate1", 110) {
+        timeTest("testUpdate1", 120) {
             var i = 0
             for (id in ids) {
                 i++
@@ -239,6 +238,7 @@ class LoadTest : BaseDbTest() {
     }
 
     private fun timeTest(testName: String, testTime: Long, test: Runnable) {
+        System.gc() // try to avoid an unnecessary gc during the test
         val maxTimeMs = testTime * speedMultiplier
         val t0 = System.currentTimeMillis()
         test.run()

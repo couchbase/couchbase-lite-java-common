@@ -55,6 +55,7 @@ bool litecore::jni::initC4Logging(JNIEnv *env) {
 
     c4log_writeToCallback((C4LogLevel) kC4LogDebug, logCallback, true);
 
+    logError("logging initialized");
     return true;
 }
 
