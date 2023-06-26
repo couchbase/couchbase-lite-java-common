@@ -62,9 +62,12 @@ import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -139,6 +142,9 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     private static final String CHALLENGE_BASIC = "Basic";
     // private static final String CHALLENGE_PREEMPTIVE = "OkHttp-Preemptive";
+
+    // OkHttp Interceptor failure message
+    public static final String ERROR_INTERCEPTOR = "Interceptor Failure";
 
     private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
 
@@ -647,19 +653,37 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
         builder.authenticator((route, resp) -> authenticate(resp, credentials));
 
+
         // Force pre-authentication
         builder.addInterceptor(chain -> {
             final Request request = chain.request();
-            return chain.proceed(
-                (chain.connection() != null)
-                    ? request
-                    // This should happen only when there is no existing connection: the first request.
-                    : request.newBuilder()
-                        .header(HEADER_AUTH, credentials)
-                        .method(request.method(), request.body())
-                        .build());
-        });
-    }
+            try {
+                return chain.proceed(
+                    (chain.connection() != null)
+                        ? request
+                        // This should happen only when there is no existing connection: the first request.
+                        : request.newBuilder()
+                            .header(HEADER_AUTH, credentials)
+                            .method(request.method(), request.body())
+                            .build());
+            }
+            catch (Exception e) {
+                Log.w(
+                    LOG_DOMAIN,
+                    "Interceptor failure on thread %s: (%s) \"%s\"",
+                    e,
+                    Thread.currentThread().toString(),
+                    request.method(),
+                    request.body());
+            }
+            return new Response.Builder()
+                .request(request)
+                .protocol(Protocol.HTTP_1_1)
+                .code(C4Constants.HttpError.INTERNAL_SERVER_ERROR)
+                .message(ERROR_INTERCEPTOR)
+                .body(ResponseBody.create(MediaType.parse("text/plain"), ERROR_INTERCEPTOR))
+                .build();
+        });    }
 
     @SuppressWarnings("PMD.NPathComplexity")
     private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) {
