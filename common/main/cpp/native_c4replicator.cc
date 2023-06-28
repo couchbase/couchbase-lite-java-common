@@ -160,6 +160,7 @@ bool litecore::jni::initC4Replicator(JNIEnv *env) {
             return false;
     }
 
+    logError("replicator initialized");
     return true;
 }
 

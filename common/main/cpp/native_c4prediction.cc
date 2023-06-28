@@ -46,6 +46,7 @@ bool litecore::jni::initC4Prediction(JNIEnv *env) {
     if (!m_C4Prediction_prediction)
         return false;
 
+    logError("prediction initialized");
     return true;
 }
 

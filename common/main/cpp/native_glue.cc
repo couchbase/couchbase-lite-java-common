@@ -179,6 +179,7 @@ static bool initC4Glue(JNIEnv *env) {
 
     }
 
+    logError("glue initialized");
     return true;
 }
 
