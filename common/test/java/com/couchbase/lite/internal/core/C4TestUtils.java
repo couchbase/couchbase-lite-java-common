@@ -116,7 +116,7 @@ public class C4TestUtils {
     @NonNull
     public static C4Document create(
         @NonNull C4Collection collection,
-        @NonNull byte[] body,
+        @Nullable byte[] body,
         @NonNull String docID,
         int revFlags,
         boolean existingRevision,

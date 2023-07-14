@@ -58,10 +58,10 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Que
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    run
- * Signature: (JZJJ)J
+ * Signature: (JJJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run
-  (JNIEnv *, jclass, jlong, jboolean, jlong, jlong);
+  (JNIEnv *, jclass, jlong, jlong, jlong);
 
 #ifdef __cplusplus
 }

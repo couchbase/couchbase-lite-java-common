@@ -36,8 +36,8 @@ public class NativeC4Query implements C4Query.NativeImpl {
     public String nExplain(long peer) { return explain(peer); }
 
     @Override
-    public long nRun(long peer, boolean rankFullText, long paramPtr, long paramSize) throws LiteCoreException {
-        return run(peer, rankFullText, paramPtr, paramSize);
+    public long nRun(long peer, long paramPtr, long paramSize) throws LiteCoreException {
+        return run(peer, paramPtr, paramSize);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class NativeC4Query implements C4Query.NativeImpl {
     @NonNull
     private static native String explain(long peer);
 
-    private static native long run(long peer, boolean rankFullText, long paramPtr, long paramSize)
+    private static native long run(long peer, long paramPtr, long paramSize)
         throws LiteCoreException;
 
     private static native int columnCount(long peer);

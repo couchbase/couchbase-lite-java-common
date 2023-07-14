@@ -31,7 +31,6 @@ import com.couchbase.lite.internal.Listenable;
 import com.couchbase.lite.internal.core.C4Query;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryObserver;
-import com.couchbase.lite.internal.core.C4QueryOptions;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
 import com.couchbase.lite.internal.support.Log;
@@ -161,14 +160,13 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
     @Override
     public ResultSet execute() throws CouchbaseLiteException {
         try {
-            final C4QueryOptions options = new C4QueryOptions();
             if (parameters == null) { parameters = new Parameters(); }
             final C4QueryEnumerator c4enum;
             final Map<String, Integer> colNames;
             final FLSliceResult params = parameters.encode();
             synchronized (getDbLock()) {
                 synchronized (lock) {
-                    c4enum = getC4QueryLocked().run(options, params);
+                    c4enum = getC4QueryLocked().run(params);
                     colNames = columnNames;
                 }
             }
