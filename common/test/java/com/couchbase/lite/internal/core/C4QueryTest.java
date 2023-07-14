@@ -288,12 +288,12 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testMissingColumns() throws LiteCoreException {
         compileSelect("'WHAT': [['.name'], ['.gender']], 'LIMIT': 1");
-        C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
+        C4QueryEnumerator e = runQuery(query);
         while (e.next()) { assertEquals(0x00, e.getMissingColumns()); }
         e.close();
 
         compileSelect("'WHAT': [['.XX'], ['.name'], ['.YY'], ['.gender'], ['.ZZ']], 'LIMIT': 1");
-        e = runQuery(query, new C4QueryOptions());
+        e = runQuery(query);
         while (e.next()) { assertEquals(0x15, e.getMissingColumns()); }
         e.close();
     }
@@ -483,7 +483,7 @@ public class C4QueryTest extends C4QueryBaseTest {
 
         assertEquals(2, query.getColumnCount());
 
-        C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
+        C4QueryEnumerator e = runQuery(query);
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -506,7 +506,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             + "ORDER_BY: [['.name.first']]");
         assertEquals(1, query.getColumnCount());
 
-        C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
+        C4QueryEnumerator e = runQuery(query);
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -527,7 +527,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     public void testDBQueryAggregate() throws LiteCoreException {
         compileSelect("WHAT: [['min()', ['.name.last']], ['max()', ['.name.last']]]");
 
-        C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
+        C4QueryEnumerator e = runQuery(query);
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -554,7 +554,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             "WHAT: [['.contact.address.state'], ['min()', ['.name.last']], ['max()', ['.name.last']]],"
                 + "GROUP_BY: [['.contact.address.state']]");
 
-        C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
+        C4QueryEnumerator e = runQuery(query);
         assertNotNull(e);
         int i = 0;
         while (e.next()) {
@@ -589,7 +589,7 @@ public class C4QueryTest extends C4QueryBaseTest {
                 + "  'WHERE': [ '>=', [ 'length()', [ '.person.name.first' ] ], 9 ],"
                 + "  'ORDER_BY': [ [ '.person.name.first' ] ]"
                 + "}"));
-        C4QueryEnumerator e = runQuery(query, new C4QueryOptions());
+        C4QueryEnumerator e = runQuery(query);
         assertNotNull(e);
         int i = 0;
         while (e.next()) {

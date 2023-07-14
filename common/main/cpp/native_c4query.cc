@@ -89,17 +89,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_explain(JNIEnv *env, jc
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Query
  * Method:    run
- * Signature: (JZJJ)J
+ * Signature: (JJJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
         JNIEnv *env,
         jclass ignore,
         jlong jquery,
-        jboolean jrankFullText,
         jlong jparamPtr,
         jlong jparamSize) {
-    C4QueryOptions options = {(bool) jrankFullText};
+    C4QueryOptions options = {true};
     C4Error error{};
     C4Slice s {(const void *)jparamPtr, (size_t) jparamSize};
     C4QueryEnumerator *e = c4query_run((C4Query *) jquery, &options, s, &error);

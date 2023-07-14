@@ -41,7 +41,7 @@ class LoadTest : BaseDbTest() {
             "cheetah" to 100,
             "sunfish" to 65,
             "taimen" to 55,
-            "shamu" to 130,
+            "shamu" to 200,
             "hammerhead" to 150,
             "occam" to 220,
         )

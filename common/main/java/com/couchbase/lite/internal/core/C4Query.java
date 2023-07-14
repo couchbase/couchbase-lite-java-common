@@ -34,7 +34,7 @@ public final class C4Query extends C4NativePeer {
         void nSetParameters(long peer, long paramPtr, long paramSize);
         @NonNull
         String nExplain(long peer);
-        long nRun(long peer, boolean rankFullText, long paramPtr, long paramSize) throws LiteCoreException;
+        long nRun(long peer, long paramPtr, long paramSize) throws LiteCoreException;
         int nColumnCount(long peer);
         @Nullable
         String nColumnName(long peer, int colIdx);
@@ -103,9 +103,9 @@ public final class C4Query extends C4NativePeer {
     public String explain() { return withPeerOrNull(impl::nExplain); }
 
     @Nullable
-    public C4QueryEnumerator run(@NonNull C4QueryOptions opts, @NonNull FLSliceResult params) throws LiteCoreException {
+    public C4QueryEnumerator run(@NonNull FLSliceResult params) throws LiteCoreException {
         return withPeerOrNull(h -> C4QueryEnumerator.create(
-            impl.nRun(h, opts.isRankFullText(), params.getBase(), params.getSize())));
+            impl.nRun(h, params.getBase(), params.getSize())));
     }
 
     public int getColumnCount() { return withPeerOrDefault(0, impl::nColumnCount); }
