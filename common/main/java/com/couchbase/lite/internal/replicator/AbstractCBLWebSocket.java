@@ -62,12 +62,9 @@ import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -649,6 +646,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         return 0;
     }
 
+    @SuppressWarnings("PMD.AvoidRethrowingException")
     private void setupBasicAuthenticator(@NonNull Map<?, ?> auth, @NonNull OkHttpClient.Builder builder) {
         final Object username = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
         final Object password = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
@@ -660,33 +658,28 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
         // Force pre-authentication
         builder.addInterceptor(chain -> {
-            final Request request = chain.request();
+            final Request req = chain.request();
             try {
                 return chain.proceed(
                     (chain.connection() != null)
-                        ? request
+                        ? req
                         // This should happen only when there is no existing connection: the first request.
-                        : request.newBuilder()
+                        : req.newBuilder()
                             .header(HEADER_AUTH, credentials)
-                            .method(request.method(), request.body())
+                            .method(req.method(), req.body())
                             .build());
             }
+            // IOExceptions are OkHttp's normal way if failing a connection.
+            // Don't mess with them.
+            catch (IOException e) { throw e; }
+            // Treat unexpected errors as normally failing connections
+            // ...and hope there's enough info here to figure out what went wrong.
             catch (Exception e) {
-                Log.w(
-                    LOG_DOMAIN,
-                    "Interceptor failure on thread %s: (%s) \"%s\"",
-                    e,
-                    Thread.currentThread().toString(),
-                    request.method(),
-                    request.body());
+                throw new IOException(
+                    "Unexpected interceptor failure @"
+                        + Thread.currentThread() + ": " + req.method() + " \"" + req.body() + "\"",
+                    e);
             }
-            return new Response.Builder()
-                .request(request)
-                .protocol(Protocol.HTTP_1_1)
-                .code(C4Constants.HttpError.INTERNAL_SERVER_ERROR)
-                .message(ERROR_INTERCEPTOR)
-                .body(ResponseBody.create(ERROR_INTERCEPTOR, MediaType.parse("text/plain")))
-                .build();
         });
     }
 
