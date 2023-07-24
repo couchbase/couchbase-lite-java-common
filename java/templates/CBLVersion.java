@@ -43,6 +43,8 @@ public final class CBLVersion {
     private static final AtomicReference<String> LIB_INFO = new AtomicReference<>();
     private static final AtomicReference<String> SYS_INFO = new AtomicReference<>();
 
+    public static final String VERSION_NAME = "@VERSION@";
+
     @NonNull
     public static String getUserAgent() {
         String agent = USER_AGENT.get();

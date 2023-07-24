@@ -148,7 +148,7 @@ public class LiveQueryTest extends BaseDbTest {
                 // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
                 try (ResultSet rs = change.getResults()) {
                     Result r = rs.next();
-                    if (Objects.equals(r.getString(0), "doc-11")) { latch1.countDown(); }
+                    if ((r != null) && Objects.equals(r.getString(0), "doc-11")) { latch1.countDown(); }
                 }
             });
              ListenerToken ignore2 = query.addChangeListener(
@@ -157,7 +157,7 @@ public class LiveQueryTest extends BaseDbTest {
                      // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
                      try (ResultSet rs = change.getResults()) {
                          Result r = rs.next();
-                         if (Objects.equals(r.getString(0), "doc-11")) { latch2.countDown(); }
+                         if ((r != null) && Objects.equals(r.getString(0), "doc-11")) { latch2.countDown(); }
                      }
                  })) {
             createDocNumbered(11);

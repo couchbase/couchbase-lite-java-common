@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.utils.Report
 import org.junit.Assert
 import org.junit.Test
 
