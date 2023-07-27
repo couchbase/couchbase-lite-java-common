@@ -21,6 +21,7 @@ import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.core.impl.NativeC4Log
 import com.couchbase.lite.internal.support.Log
+import com.couchbase.lite.internal.utils.Report
 import com.couchbase.lite.utils.KotlinHelpers
 import org.junit.After
 import org.junit.AfterClass
@@ -320,12 +321,15 @@ class LogTest : BaseDbTest() {
         testWithConfiguration(LogLevel.VERBOSE, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             writeOneKiloByteOfLog()
             for (log in logFiles) {
-                var firstLine: String
-                BufferedReader(FileReader(log)).use { firstLine = it.readLine() }
-                assertNotNull(firstLine)
-                assertTrue(firstLine.contains("CouchbaseLite $PRODUCT"))
-                assertTrue(firstLine.contains("Core/"))
-                assertTrue(firstLine.contains(CBLVersion.getSysInfo()))
+                var logLine: String
+                BufferedReader(FileReader(log)).use {
+                    logLine = it.readLine()
+                    logLine = it.readLine() // skip the LiteCore log line...
+                }
+                assertNotNull(logLine)
+                assertTrue(logLine.contains("CouchbaseLite $PRODUCT"))
+                assertTrue(logLine.contains("Core/"))
+                assertTrue(logLine.contains(CBLVersion.getSysInfo()))
             }
         }
     }

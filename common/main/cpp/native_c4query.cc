@@ -98,10 +98,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
         jlong jquery,
         jlong jparamPtr,
         jlong jparamSize) {
-    C4QueryOptions options = {true};
     C4Error error{};
     C4Slice s {(const void *)jparamPtr, (size_t) jparamSize};
-    C4QueryEnumerator *e = c4query_run((C4Query *) jquery, &options, s, &error);
+    C4QueryEnumerator *e = c4query_run((C4Query *) jquery, s, &error);
     if (!e) {
         throwError(env, error);
         return 0;
