@@ -100,7 +100,6 @@
     <rule ref="category/java/design.xml">
         <exclude name="ExcessiveImports" />
         <exclude name="ExcessiveClassLength" />
-        <exclude name="CyclomaticComplexity" />
         <exclude name="LoosePackageCoupling" />
         <exclude name="NcssCount" />
         <exclude name="TooManyMethods" />
