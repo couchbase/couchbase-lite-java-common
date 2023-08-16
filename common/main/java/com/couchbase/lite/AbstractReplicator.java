@@ -449,7 +449,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     @Override
     public String toString() {
         if (desc == null) { desc = description(); }
-        return desc + "$" + getC4Replicator();
+        return desc + " $" + getC4Replicator();
     }
 
     //---------------------------------------------
@@ -861,7 +861,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     private void setServerCertificates(List<Certificate> certificates) { serverCertificates.set(certificates); }
 
     @NonNull
-    private String description() { return baseDesc() + "," + getDatabase() + " => " + config.getTarget() + "}"; }
+    private String description() { return baseDesc() + ", " + getDatabase() + " => " + config.getTarget() + "}"; }
 
     // keep this around
     @NonNull

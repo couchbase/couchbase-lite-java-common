@@ -21,7 +21,6 @@ import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.core.impl.NativeC4Log
 import com.couchbase.lite.internal.support.Log
-import com.couchbase.lite.internal.utils.Report
 import com.couchbase.lite.utils.KotlinHelpers
 import org.junit.After
 import org.junit.AfterClass

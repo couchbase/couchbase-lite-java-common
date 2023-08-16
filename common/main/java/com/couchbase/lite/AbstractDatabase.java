@@ -1149,7 +1149,7 @@ abstract class AbstractDatabase extends BaseDatabase
         }
     }
 
-    void addActiveReplicator(AbstractReplicator replicator) {
+    void addActiveReplicator(@NonNull AbstractReplicator replicator) {
         synchronized (getDbLock()) {
             assertOpenUnchecked();
 
@@ -1165,7 +1165,7 @@ abstract class AbstractDatabase extends BaseDatabase
         }
     }
 
-    void removeActiveReplicator(AbstractReplicator replicator) { unregisterProcess(replicator); }
+    void removeActiveReplicator(@NonNull AbstractReplicator replicator) { unregisterProcess(replicator); }
 
     // - Replicator: Conflict resolution
 
@@ -1261,7 +1261,7 @@ abstract class AbstractDatabase extends BaseDatabase
 
     // - Execution:
 
-    void registerProcess(ActiveProcess<?> process) {
+    void registerProcess(@NonNull ActiveProcess<?> process) {
         synchronized (activeProcesses) { activeProcesses.add(process); }
         Log.d(DOMAIN, "Added active process(%s): %s", getName(), process);
     }
