@@ -667,23 +667,19 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
                             .method(request.method(), request.body())
                             .build());
             }
+            // IOExceptions are OkHttp's normal way if failing a connection.
+            // Don't mess with them.
+            catch (IOException e) { throw e; }
+            // Treat unexpected errors as normally failing connections
+            // ...and hope there's enough info here to figure out what went wrong.
             catch (Exception e) {
-                Log.w(
-                    LOG_DOMAIN,
-                    "Interceptor failure on thread %s: (%s) \"%s\"",
-                    e,
-                    Thread.currentThread().toString(),
-                    request.method(),
-                    request.body());
+                throw new IOException(
+                    "Unexpected interceptor failure @"
+                        + Thread.currentThread() + ": " + request.method() + " \"" + request.body() + "\"",
+                    e);
             }
-            return new Response.Builder()
-                .request(request)
-                .protocol(Protocol.HTTP_1_1)
-                .code(C4Constants.HttpError.INTERNAL_SERVER_ERROR)
-                .message(ERROR_INTERCEPTOR)
-                .body(ResponseBody.create(MediaType.parse("text/plain"), ERROR_INTERCEPTOR))
-                .build();
-        });    }
+        });
+    }
 
     @SuppressWarnings("PMD.NPathComplexity")
     private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) {
