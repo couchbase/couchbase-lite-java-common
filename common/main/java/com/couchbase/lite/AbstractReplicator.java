@@ -709,7 +709,7 @@ public abstract class AbstractReplicator extends BaseReplicator
             final ReplicatedDocument rDoc
                 = new ReplicatedDocument(coll.scope, coll.name, docEnd.docId, docEnd.flags, err);
 
-            if (pushing && !CouchbaseLiteException.isConflict(err)) {
+            if (pushing || !CouchbaseLiteException.isConflict(err)) {
                 unconflictedDocs.add(rDoc);
                 continue;
             }
