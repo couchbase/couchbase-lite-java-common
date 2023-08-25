@@ -31,18 +31,14 @@ import com.couchbase.lite.internal.support.Log;
 
 /**
  * Synchronous safe execution of a client task.
- * Motto: Their failure is not our failure.
  * <p>
- * I think it is ok to permit this executor pool to get very large: it is used only
- * for Core callbacks that run client code and.  There should not, therefore, be
- * more threads here than there are Core threads (the Core thread is suspended
- * until this task completes).  That means that it shouldn't, actually, get all that big.
+ * Motto: Their failure is not our failure.
  *
  * @param <T> type of the value returned by the wrapped task.
  */
 public class ClientTask<T> {
     private static final CBLExecutor EXECUTOR
-        = new CBLExecutor("Client worker", 128, 128, new SynchronousQueue<>());
+        = new CBLExecutor("Client worker", 4, 8, new SynchronousQueue<>());
 
     public static void dumpState() {
         EXECUTOR.dumpState();
