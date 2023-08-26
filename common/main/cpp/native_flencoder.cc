@@ -129,6 +129,20 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeString(
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Method:    writeStringBytes
+ * Signature: (J[B)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_FLEncoder_writeStringBytes(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jenc,
+        jbyteArray jvalue) {
+    jstringSlice value(env, jvalue);
+    return (jboolean) FLEncoder_WriteString((FLEncoder) jenc, value);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLEncoder
  * Method:    writeData
  * Signature: (J[B)Z
  */

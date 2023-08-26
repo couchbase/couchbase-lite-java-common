@@ -17,7 +17,6 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.CBLError;
 import com.couchbase.lite.CouchbaseLiteException;
@@ -33,7 +32,6 @@ public final class C4Key {
     }
 
     @NonNull
-    @VisibleForTesting
     private static final NativeImpl NATIVE_IMPL = new NativeC4Key();
 
     @NonNull

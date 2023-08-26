@@ -237,6 +237,20 @@ namespace litecore {
             }
         }
 
+        jstringSlice::jstringSlice(JNIEnv *env, jbyteArray jchars) {
+            if (jchars == nullptr) {
+                _slice = kFLSliceNull;
+            } else {
+                size_t length = env->GetArrayLength(jchars);
+                if (length <= 0) {
+                    _slice = kFLSliceNull;
+                } else {
+                    auto *chars = env->GetByteArrayElements(jchars, nullptr);
+                    _slice = {chars, length};
+                }
+            }
+        }
+
         const char *jstringSlice::c_str() {
             return (const char *) _slice.buf;
         };

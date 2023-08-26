@@ -71,7 +71,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
             0
         );
 
-        Replicator repl = makeDefaultRepl();
+        Replicator repl = makeBasicRepl();
         ReplicatorStatus replStatus = new ReplicatorStatus(c4ReplicatorStatus);
         ReplicatorChange repChange = new ReplicatorChange(repl, replStatus);
 
@@ -95,7 +95,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     @Test
     public void testDocumentReplication() {
         List<ReplicatedDocument> docs = new ArrayList<>();
-        Replicator repl = makeDefaultRepl();
+        Replicator repl = makeBasicRepl();
         DocumentReplication doc = new DocumentReplication(repl, true, docs);
         assertTrue(doc.isPush());
         assertEquals(doc.getReplicator(), repl);
@@ -105,16 +105,16 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // https://issues.couchbase.com/browse/CBL-89
     // Thanks to @James Flather for the ready-made test code
     @Test
-    public void testStopBeforeStart() { makeDefaultRepl().stop(); }
+    public void testStopBeforeStart() { makeBasicRepl().stop(); }
 
     // https://issues.couchbase.com/browse/CBL-88
     // Thanks to @James Flather for the ready-made test code
     @Test
-    public void testStatusBeforeStart() { makeDefaultRepl().getStatus(); }
+    public void testStatusBeforeStart() { makeBasicRepl().getStatus(); }
 
     @Test
     public void testDocumentEndListenerTokenRemove() {
-        final Replicator repl = makeDefaultRepl();
+        final Replicator repl = makeBasicRepl();
         assertEquals(0, repl.getDocEndListenerCount());
         ListenerToken token = repl.addDocumentReplicationListener(r -> { });
         assertEquals(1, repl.getDocEndListenerCount());
@@ -126,7 +126,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testReplicationListenerTokenRemove() {
-        final Replicator repl = makeDefaultRepl();
+        final Replicator repl = makeBasicRepl();
         assertEquals(0, repl.getReplicatorListenerCount());
         ListenerToken token = repl.addChangeListener(r -> { });
         assertEquals(1, repl.getReplicatorListenerCount());
@@ -138,7 +138,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testDefaultConnectionOptions() {
-        final Replicator repl = makeDefaultRepl();
+        final Replicator repl = makeBasicRepl();
 
         Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setTestListener(c4Socket -> {
@@ -204,8 +204,35 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     }
 
     @Test
+    public void testBasicAuthOptions() {
+        final ReplicatorConfiguration config = makeBasicConfig();
+        config.setAuthenticator(new BasicAuthenticator("user", "sekrit".toCharArray()));
+        final Replicator repl = new Replicator(config);
+
+        Map<String, Object> options = new HashMap<>();
+        repl.getSocketFactory().setTestListener(c4Socket -> {
+            if (c4Socket == null) { return; }
+            synchronized (options) {
+                Map<String, Object> opts = ((AbstractCBLWebSocket) c4Socket).getOptions();
+                if (opts != null) { options.putAll(opts); }
+            }
+        });
+
+        // the replicator will fail because the endpoint is bogus
+        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
+
+        synchronized (options) {
+            final Object authOpts = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+            assertTrue(authOpts instanceof Map);
+            final Map<?, ?> auth = (Map<?, ?>) authOpts;
+            assertEquals(C4Replicator.AUTH_TYPE_BASIC, auth.get(C4Replicator.REPLICATOR_AUTH_TYPE));
+            assertEquals("sekrit", auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD));
+        }
+    }
+
+    @Test
     public void testStopWhileConnecting() throws InterruptedException {
-        Replicator repl = makeDefaultRepl();
+        Replicator repl = makeBasicRepl();
 
         final CountDownLatch latch = new CountDownLatch(1);
         final ListenerToken token = repl.addChangeListener(status -> {
@@ -252,7 +279,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // CBL-1218
     @Test
     public void testStartReplicatorWithClosedDb() {
-        Replicator repl = makeDefaultRepl();
+        Replicator repl = makeBasicRepl();
 
         closeDb(getTestDatabase());
 
@@ -262,7 +289,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // CBL-1218
     @Test
     public void testIsDocumentPendingWithClosedDb() {
-        Replicator repl = makeDefaultRepl();
+        Replicator repl = makeBasicRepl();
 
         deleteDb(getTestDatabase());
 
@@ -272,7 +299,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     // CBL-1218
     @Test
     public void testGetPendingDocIdsWithClosedDb() {
-        Replicator repl = makeDefaultRepl();
+        Replicator repl = makeBasicRepl();
 
         closeDb(getTestDatabase());
 
@@ -414,9 +441,11 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         return new ReplicatorConfiguration(getMockURLEndpoint()).addCollection(getTestCollection(), null);
     }
 
-    private Replicator makeDefaultRepl() {
+    private ReplicatorConfiguration makeBasicConfig() {
         final ReplicatorConfiguration config = makeDefaultConfig();
         config.setHeartbeat(AbstractReplicatorConfiguration.DISABLE_HEARTBEAT);
-        return testReplicator(makeDefaultConfig());
+        return config;
     }
+
+    private Replicator makeBasicRepl() { return testReplicator(makeBasicConfig()); }
 }

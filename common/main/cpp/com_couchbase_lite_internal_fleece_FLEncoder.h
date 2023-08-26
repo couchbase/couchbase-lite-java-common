@@ -81,6 +81,14 @@ JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_FLEncoder_wri
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Method:    writeStringBytes
+ * Signature: (J[B)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_FLEncoder_writeStringBytes
+        (JNIEnv *, jclass, jlong, jbyteArray);
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLEncoder
  * Method:    writeData
  * Signature: (J[B)Z
  */

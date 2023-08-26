@@ -64,6 +64,8 @@ namespace litecore {
         public:
             jstringSlice(JNIEnv *env, jstring js);
 
+            jstringSlice(JNIEnv *env, jbyteArray jchars);
+
             jstringSlice(jstringSlice &&s)
                     : _str(std::move(s._str)), _slice(s._slice) { s._slice = kFLSliceNull; }
 

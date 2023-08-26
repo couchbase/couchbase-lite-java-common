@@ -31,13 +31,13 @@ import static org.junit.Assert.assertTrue;
 
 
 public class EncodingTest extends BaseTest {
-
     // https://github.com/couchbase/couchbase-lite-android/issues/1453
     @Test
-    public void testFLEncode() throws Exception {
+    public void testFLEncode() throws LiteCoreException {
         testRoundTrip(42L);
         testRoundTrip(Long.MIN_VALUE);
         testRoundTrip("Fleece");
+        testRoundTrip("Goodbye cruel world".toCharArray(), "Goodbye cruel world");
         Map<String, Object> map = new HashMap<>();
         map.put("foo", "bar");
         testRoundTrip(map);
@@ -48,7 +48,7 @@ public class EncodingTest extends BaseTest {
     }
 
     @Test
-    public void testFLEncodeUTF8() throws Exception {
+    public void testFLEncodeUTF8() throws LiteCoreException {
         testRoundTrip("Goodbye cruel world"); // one byte utf-8 chars
         testRoundTrip("Goodbye cruel £ world"); // a two byte utf-8 chars
         testRoundTrip("Goodbye cruel ᘺ world"); // a three byte utf-8 char
@@ -58,14 +58,14 @@ public class EncodingTest extends BaseTest {
     }
 
     @Test
-    public void testFLEncodeBadUTF8() throws Exception {
+    public void testFLEncodeBadUTF8() throws LiteCoreException {
         skipTestWhen("WINDOWS");
         testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world", ""); // a cat and a half
     }
 
     // Oddly windows seems to parse this differently...
     @Test
-    public void testFLEncodeUTF8Win() throws Exception {
+    public void testFLEncodeUTF8Win() throws LiteCoreException {
         skipTestWhen("NOT WINDOWS");
         testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world"); // a cat and a half
     }
