@@ -72,12 +72,29 @@ jstring litecore::jni::UTF8ToJstring(JNIEnv *env, const char *s, size_t size) {
 // ??? Callers can't handle exceptions so we just ignore errors and return an empty string.
 std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
     jsize len = env->GetStringLength(jstr);
-    if (len < 0)
+    if (len <= 0)
         return std::string();
 
+    const jchar *chars = env->GetStringChars(jstr, nullptr);
+    auto ret = litecore::jni::JcharsToUTF8(env, chars, len);
+    env->ReleaseStringChars(jstr, chars);
+    return ret;
+}
+// ??? Callers can't handle exceptions so we just ignore errors and return an empty string.
+std::string litecore::jni::JcharArrayToUTF8(JNIEnv *env, jcharArray jcharArray) {
+    jsize len = env->GetArrayLength(jcharArray);
+    if (len <= 0)
+        return std::string();
+
+    jchar *chars = env->GetCharArrayElements(jcharArray, nullptr);
+    auto ret = litecore::jni::JcharsToUTF8(env, chars, len);
+    env->ReleaseCharArrayElements(jcharArray, chars, JNI_ABORT);
+    return ret;
+}
+
+std::string litecore::jni::JcharsToUTF8(JNIEnv *env, const jchar *chars, jsize len) {
     std::string str;
 
-    const jchar *chars = env->GetStringChars(jstr, nullptr);
     if (chars == nullptr) {
         str = std::string();
     } else {
@@ -97,8 +114,6 @@ std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
             str = std::string();
         }
     }
-
-    env->ReleaseStringChars(jstr, chars);
 
     return str;
 }
@@ -237,32 +252,19 @@ namespace litecore {
             }
         }
 
-        jstringSlice::jstringSlice(JNIEnv *env, jbyteArray jchars)
-                : _env(env)
-                , _jbytes(jchars) {
+        jstringSlice::jstringSlice(JNIEnv *env, jcharArray jchars) {
             assert(env != nullptr);
-            if (jchars == nullptr) {
-                _slice = kFLSliceNull;
+            if (jchars != nullptr) {
+                _str = JcharArrayToUTF8(env, jchars);
+                _slice = FLStr(_str.c_str());
             } else {
-                size_t length = env->GetArrayLength(jchars);
-                if (length <= 0) {
-                    _slice = kFLSliceNull;
-                } else {
-                    _bytes = env->GetByteArrayElements(jchars, nullptr);
-                    _slice = {_bytes, length};
-                }
+                _slice = kFLSliceNull;
             }
         }
 
         const char *jstringSlice::c_str() {
             return (const char *) _slice.buf;
         };
-
-        jstringSlice::~jstringSlice() {
-            if (_bytes) {
-                _env->ReleaseByteArrayElements(_jbytes, _bytes, JNI_ABORT);
-            }
-        }
 
         // ATTN: In critical, should not call any other JNI methods.
         // http://docs.oracle.com/javase/6/docs/technotes/guides/jni/spec/functions.html
