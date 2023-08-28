@@ -237,9 +237,32 @@ namespace litecore {
             }
         }
 
+        jstringSlice::jstringSlice(JNIEnv *env, jbyteArray jchars)
+                : _env(env)
+                , _jbytes(jchars) {
+            assert(env != nullptr);
+            if (jchars == nullptr) {
+                _slice = kFLSliceNull;
+            } else {
+                size_t length = env->GetArrayLength(jchars);
+                if (length <= 0) {
+                    _slice = kFLSliceNull;
+                } else {
+                    _bytes = env->GetByteArrayElements(jchars, nullptr);
+                    _slice = {_bytes, length};
+                }
+            }
+        }
+
         const char *jstringSlice::c_str() {
             return (const char *) _slice.buf;
         };
+
+        jstringSlice::~jstringSlice() {
+            if (_bytes) {
+                _env->ReleaseByteArrayElements(_jbytes, _bytes, JNI_ABORT);
+            }
+        }
 
         // ATTN: In critical, should not call any other JNI methods.
         // http://docs.oracle.com/javase/6/docs/technotes/guides/jni/spec/functions.html

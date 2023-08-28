@@ -347,9 +347,12 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         this.toCore = toCore;
         this.toRemote = toRemote;
         this.uri = uri;
-        this.options = (opts == null) ? null : Collections.unmodifiableMap(FLValue.fromData(opts).asDict());
         this.cookieStore = cookieStore;
         this.serverCertsListener = serverCertsListener;
+        // Despite best practice, this may deserialize a password as a String.
+        // It's there in LiteCore, too. :shrug:
+        // see setupBasicAuthenticator
+        this.options = (opts == null) ? null : Collections.unmodifiableMap(FLValue.fromData(opts).asDict());
     }
 
     @Override

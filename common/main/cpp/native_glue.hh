@@ -64,8 +64,12 @@ namespace litecore {
         public:
             jstringSlice(JNIEnv *env, jstring js);
 
+            jstringSlice(JNIEnv *env, jbyteArray jchars);
+
             jstringSlice(jstringSlice &&s)
                     : _str(std::move(s._str)), _slice(s._slice) { s._slice = kFLSliceNull; }
+
+            ~jstringSlice();
 
             operator FLSlice() { return _slice; }
 
@@ -74,6 +78,9 @@ namespace litecore {
         private:
             std::string _str;
             FLSlice _slice;
+            JNIEnv *_env;
+            jbyte* _bytes {nullptr};
+            jbyteArray _jbytes;
         };
 
         // Creates a temporary slice value from a Java byte[], attempting to avoid copying

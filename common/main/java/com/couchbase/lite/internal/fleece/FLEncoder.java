@@ -18,6 +18,10 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -144,6 +148,12 @@ public abstract class FLEncoder extends C4NativePeer {
 
     public boolean writeString(String value) { return writeString(getPeer(), value); }
 
+    public boolean writeString(char[] value) {
+        final ByteBuffer byteBuffer = StandardCharsets.UTF_8.encode(CharBuffer.wrap(value));
+        byte[] bytes = Arrays.copyOf(byteBuffer.array(), byteBuffer.limit());
+        return writeStringBytes(getPeer(), bytes);
+    }
+
     public boolean writeData(byte[] value) { return writeData(getPeer(), value); }
 
     public boolean beginDict(long reserve) { return beginDict(getPeer(), reserve); }
@@ -185,6 +195,9 @@ public abstract class FLEncoder extends C4NativePeer {
 
         // String
         if (value instanceof String) { return writeString(peer, (String) value); }
+
+        // String (represented as char[])
+        if (value instanceof char[]) { return writeString((char[]) value); }
 
         // byte[]
         if (value instanceof byte[]) { return writeData(peer, (byte[]) value); }
@@ -273,6 +286,8 @@ public abstract class FLEncoder extends C4NativePeer {
     private static native boolean writeDouble(long encoder, double value);
 
     private static native boolean writeString(long encoder, String value);
+
+    private static native boolean writeStringBytes(long encoder, byte[] value);
 
     private static native boolean writeData(long encoder, byte[] value);
 
