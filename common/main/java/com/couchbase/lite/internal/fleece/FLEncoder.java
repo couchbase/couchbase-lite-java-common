@@ -148,11 +148,7 @@ public abstract class FLEncoder extends C4NativePeer {
 
     public boolean writeString(String value) { return writeString(getPeer(), value); }
 
-    public boolean writeString(char[] value) {
-        final ByteBuffer byteBuffer = StandardCharsets.UTF_8.encode(CharBuffer.wrap(value));
-        byte[] bytes = Arrays.copyOf(byteBuffer.array(), byteBuffer.limit());
-        return writeStringBytes(getPeer(), bytes);
-    }
+    public boolean writeString(char[] value) { return writeStringChars(getPeer(), value); }
 
     public boolean writeData(byte[] value) { return writeData(getPeer(), value); }
 
@@ -287,7 +283,7 @@ public abstract class FLEncoder extends C4NativePeer {
 
     private static native boolean writeString(long encoder, String value);
 
-    private static native boolean writeStringBytes(long encoder, byte[] value);
+    private static native boolean writeStringChars(long encoder, char[] value);
 
     private static native boolean writeData(long encoder, byte[] value);
 
