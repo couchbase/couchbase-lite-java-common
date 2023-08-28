@@ -207,7 +207,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
     public void testBasicAuthOptions() {
         final ReplicatorConfiguration config = makeBasicConfig();
         config.setAuthenticator(new BasicAuthenticator("user", "sekrit".toCharArray()));
-        final Replicator repl = new Replicator(config);
+        final Replicator repl = testReplicator(config);
 
         Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setTestListener(c4Socket -> {
