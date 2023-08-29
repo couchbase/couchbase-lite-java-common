@@ -431,10 +431,7 @@ class C4DatabaseTest : C4BaseTest() {
         val col = c4Database.getCollection(Scope.DEFAULT_NAME, Collection.DEFAULT_NAME)
         c4Database.closeDb()
         c4Database = null // prevent @after from closing the database again
-        assertThrowsLiteCoreException(
-            C4Constants.ErrorDomain.LITE_CORE,
-            C4Constants.LiteCoreError.NOT_OPEN
-        ) {
+        assertThrowsLiteCoreException(C4Constants.ErrorDomain.LITE_CORE, C4Constants.LiteCoreError.NOT_OPEN) {
             col?.createDocument("1", null, 0)
         }
     }
@@ -599,17 +596,10 @@ class C4DatabaseTest : C4BaseTest() {
     fun testPurgeDoc() {
         val docID = "purge_me"
         createRev(docID, REV_ID_1, fleeceBody)
-        try {
-            c4Database.defaultCollection?.purgeDocument(docID)
-        } catch (ignore: Exception) {
-        }
-        try {
-            c4Database.defaultCollection?.getDocument(docID)
-        } catch (e: LiteCoreException) {
-            assertEquals(C4Constants.ErrorDomain.LITE_CORE.toLong(), e.domain.toLong())
-            assertEquals(C4Constants.LiteCoreError.NOT_FOUND.toLong(), e.code.toLong())
-            assertTrue(e.message.contains("not found"))
-        }
+
+        c4Collection?.purgeDocument(docID)
+
+        assertNull(c4Database.defaultCollection?.getDocument(docID))
     }
 
     @Test

@@ -1402,7 +1402,7 @@ abstract class AbstractDatabase extends BaseDatabase
         throws CouchbaseLiteException, ConflictResolutionException {
         final Document remoteDoc = Document.getDocumentWithRevisions(collection, docID);
         try {
-            if ((remoteDoc == null) || !remoteDoc.selectConflictingRevision()) {
+            if (!remoteDoc.selectConflictingRevision()) {
                 throw new ConflictResolutionException(
                     "Unable to select conflicting revision for doc '" + docID + "'. Skipping.");
             }

@@ -237,7 +237,7 @@ class ConflictResolutionTests : BaseReplicatorTest() {
 
         val c4doc = testCollection.getC4Document(docID)
         assertNotNull(c4doc)
-        assertTrue(c4doc.isRevDeleted)
+        assertTrue(c4doc?.isRevDeleted ?: false)
     }
 
     /**

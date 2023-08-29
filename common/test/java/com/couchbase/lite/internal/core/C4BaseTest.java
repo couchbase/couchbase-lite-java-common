@@ -51,7 +51,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 
-
 public class C4BaseTest extends BaseTest {
     public static final long MOCK_PEER = 500005L;
     public static final long MOCK_TOKEN = 0xba5eba11;
@@ -59,10 +58,11 @@ public class C4BaseTest extends BaseTest {
     public static final String REV_ID_1 = "1-abcd";
     public static final String REV_ID_2 = "2-c001d00d";
 
-    public static C4Document getDocumentOrEmpty(@Nullable C4Collection collection, @NonNull String docId)
+    @NonNull
+    public static C4Document getOrCreateDocument(@Nullable C4Collection collection, @NonNull String docId)
         throws LiteCoreException {
         assertNotNull(collection);
-        return C4Document.getOrEmpty(collection, docId);
+        return C4Document.getOrCreateDocument(collection, docId);
     }
 
     public static void assertIsLiteCoreException(@Nullable Exception e, int domain, int code) {
@@ -81,7 +81,7 @@ public class C4BaseTest extends BaseTest {
             fail("Expected LiteCore exception (" + domain + ", " + code + ")");
         }
         catch (Exception e) {
-           assertIsLiteCoreException(e, domain, code);
+            assertIsLiteCoreException(e, domain, code);
         }
     }
 
@@ -219,16 +219,19 @@ public class C4BaseTest extends BaseTest {
         C4Database db = coll.getDb();
         db.beginTransaction();
         try {
-            C4Document curDoc = getDocumentOrEmpty(coll, docID);
+            C4Document curDoc = getOrCreateDocument(coll, docID);
             assertNotNull(curDoc);
+
             List<String> revIDs = new ArrayList<>();
             revIDs.add(revID);
             if (curDoc.getRevID() != null) { revIDs.add(curDoc.getRevID()); }
             String[] history = revIDs.toArray(new String[0]);
             C4Document doc = C4TestUtils.create(coll, body, docID, flags, true, false, history, true, 0, 0);
             assertNotNull(doc);
+
             doc.close();
             curDoc.close();
+
             commit = true;
         }
         finally {

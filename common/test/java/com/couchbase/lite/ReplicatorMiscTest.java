@@ -138,7 +138,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     @Test
     public void testDefaultConnectionOptions() {
-        final Replicator repl = makeBasicRepl();
+        final Replicator repl = testReplicator(makeDefaultConfig());
 
         Map<String, Object> options = new HashMap<>();
         repl.getSocketFactory().setTestListener(c4Socket -> {
@@ -435,7 +435,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
     // return a nearly default config.
     // Not using makeSimpleReplConfig, in order to make sure this is pure vanilla
-    // Note that this does not set heartbeat.  These configs are likely to cause flaky tests
+    // Note that this does not set heartbeat.  This config is likely to cause flaky tests
     // when used in test with a live replicator
     private ReplicatorConfiguration makeDefaultConfig() {
         return new ReplicatorConfiguration(getMockURLEndpoint()).addCollection(getTestCollection(), null);

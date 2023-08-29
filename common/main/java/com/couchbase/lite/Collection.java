@@ -567,19 +567,34 @@ public final class Collection extends BaseCollection
     // - Documents:
 
     @NonNull
-    C4Document createC4Document(@NonNull String docID, @Nullable FLSliceResult body, int flags)
-        throws LiteCoreException {
-        synchronized (getDbLock()) { return c4Collection.createDocument(docID, body, flags); }
+    C4Document createC4Document(@NonNull String docId, @Nullable FLSliceResult body, int flags)
+        throws CouchbaseLiteException {
+        try {
+            synchronized (getDbLock()) { return c4Collection.createDocument(docId, body, flags); }
+        }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(e, "Could not create document: " + docId);
+        }
     }
 
-    @NonNull
-    C4Document getC4Document(@NonNull String id) throws LiteCoreException {
-        synchronized (getDbLock()) { return c4Collection.getDocument(id); }
+    @Nullable
+    C4Document getC4Document(@NonNull String docId) throws CouchbaseLiteException {
+        try {
+            synchronized (getDbLock()) { return c4Collection.getDocument(docId); }
+        }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(e, "Failed retrieving document: " + docId);
+        }
     }
 
-    @NonNull
-    C4Document getC4DocumentWithRevs(@NonNull String id) throws LiteCoreException {
-        synchronized (getDbLock()) { return c4Collection.getDocumentWithRevs(id); }
+    @Nullable
+    C4Document getC4DocumentWithRevs(@NonNull String docId) throws CouchbaseLiteException {
+        try {
+            synchronized (getDbLock()) { return c4Collection.getDocumentWithRevs(docId); }
+        }
+        catch (LiteCoreException e) {
+            throw CouchbaseLiteException.convertException(e, "Failed retrieving document: " + docId);
+        }
     }
 
     void saveWithConflictHandler(@NonNull MutableDocument document, @NonNull ConflictHandler handler)
@@ -848,18 +863,9 @@ public final class Collection extends BaseCollection
     private boolean saveConflicted(@NonNull Document document, boolean deleting) throws CouchbaseLiteException {
         final C4Document curDoc;
 
-        try { curDoc = getC4Document(document.getId()); }
-        catch (LiteCoreException e) {
-            // here if deleting and the curDoc doesn't exist.
-            if (deleting
-                && (e.domain == C4Constants.ErrorDomain.LITE_CORE)
-                && (e.code == C4Constants.LiteCoreError.NOT_FOUND)) {
-                return false;
-            }
 
-            // here if the save failed.
-            throw CouchbaseLiteException.convertException(e);
-        }
+        curDoc = getC4Document(document.getId());
+        if (curDoc == null) { return false; }
 
         // here if deleting and the curDoc has already been deleted
         if (deleting && curDoc.isDocDeleted()) {
