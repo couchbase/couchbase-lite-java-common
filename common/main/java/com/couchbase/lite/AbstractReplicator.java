@@ -44,7 +44,6 @@ import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4DocumentEnded;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
-import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.replicator.BaseReplicator;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;
@@ -618,6 +617,11 @@ public abstract class AbstractReplicator extends BaseReplicator
         synchronized (getReplicatorLock()) { return changeListeners.size(); }
     }
 
+    @VisibleForTesting
+    void runTaskConcurrently(@NonNull Runnable task) {
+        CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor().execute(task);
+    }
+
     //---------------------------------------------
     // Private methods
     //---------------------------------------------
@@ -807,8 +811,6 @@ public abstract class AbstractReplicator extends BaseReplicator
             "%s: pulled conflicting version of '%s.%s.%s#%s'",
             this, db.getName(), rDoc.getCollectionScope(), rDoc.getCollectionName(), rDoc.getID());
 
-        final ExecutionService.CloseableExecutor executor
-            = CouchbaseLiteInternal.getExecutionService().getConcurrentExecutor();
         final Fn.NullableConsumer<CouchbaseLiteException> continuation
             = new Fn.NullableConsumer<CouchbaseLiteException>() {
             public void accept(CouchbaseLiteException err) {
@@ -817,8 +819,10 @@ public abstract class AbstractReplicator extends BaseReplicator
             }
         };
 
+        final Runnable task = () -> db.resolveReplicationConflict(resolver, rDoc, continuation);
+
         synchronized (getReplicatorLock()) {
-            executor.execute(() -> db.resolveReplicationConflict(resolver, rDoc, continuation));
+            runTaskConcurrently(task);
             pendingResolutions.add(continuation);
         }
     }

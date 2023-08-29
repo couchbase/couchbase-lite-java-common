@@ -15,6 +15,10 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.ReplicationCollection
+import com.couchbase.lite.internal.core.C4DocumentEnded
+import com.couchbase.lite.internal.core.C4Replicator
+import com.couchbase.lite.internal.replicator.InternalReplicatorTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -22,10 +26,13 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 
 // These tests are largely translations of Jay Vavachan's Obj-C tests
-class SaveConflictResolutionTests : BaseDbTest() {
+class ConflictResolutionTests : BaseReplicatorTest() {
 
     /**
      * 1. Test conflict handler that just returns true without modifying the document.
@@ -353,5 +360,61 @@ class SaveConflictResolutionTests : BaseDbTest() {
             assertEquals(CBLError.Code.NOT_FOUND, err.code)
         }
         assertFalse(succeeded)
+    }
+
+    /**
+     * CBL-1048: Logic bug in Conflict Resolution criteria
+     *
+     * Verify that the only docs subject to conflict resolution are conflicted docs that are being pulled
+     */
+    @Test
+    @Throws(CouchbaseLiteException::class, InterruptedException::class)
+    fun testConflictResolutionCriteria() {
+        // documentsEnded is going to need this.
+        val rc = ReplicationCollection.create(testCollection, null, null, null, null)
+
+        // An instrumented replicator: it counts documentEnded calls.
+        val conflictedCount = AtomicInteger()
+        val unconflictedCount = AtomicInteger()
+        val repl: AbstractReplicator = object :
+            AbstractReplicator(ReplicatorConfiguration(mockURLEndpoint).addCollection(testCollection, null)) {
+            override fun createReplicatorForTarget(target: Endpoint): C4Replicator = TODO("Not implemented")
+            override fun handleOffline(state: ReplicatorActivityLevel, online: Boolean) = TODO("Not implemented")
+
+            // Called to enqueue a conflict resolution: count conflicted docs
+            override fun runTaskConcurrently(task: Runnable) {
+                conflictedCount.getAndIncrement()
+            }
+
+            // Called when conflict resolution is not necessary: count unconflicted documents
+            override fun notifyDocumentEnded(pushing: Boolean, docs: List<ReplicatedDocument>) {
+                unconflictedCount.getAndAdd(docs.size)
+            }
+        }
+
+        val ends = listOf(
+            // A doc with no error
+            C4DocumentEnded(rc.token, rc.name, rc.scope, "foo-1", "22", 0, 2L, 0, 0, 0, true),
+            // A doc with error that is not a conflict
+            C4DocumentEnded(rc.token, rc.name, rc.scope, "foo-2", "22", 0, 2L, 1, 7, 0, true),
+            // This is the only conflicted doc
+            C4DocumentEnded(rc.token, rc.name, rc.scope, "foo-3", "22", 0, 2L, 1, 8, 0, true)
+        )
+
+        // This call to dispatch (pushing) should never enqueue a conflict resolution
+        repl.dispatchDocumentsEnded(ends, true)
+        // This call to dispatch should cause conflicted docs to be queued for resolution
+        repl.dispatchDocumentsEnded(ends, false)
+
+        // The calls to dispatchDocumentsEnded enqueue tasks on a serial queue.
+        // This task is the last thing on the queue: all the previously enqueued
+        // tasks are done when this is done
+        val latch = CountDownLatch(1)
+        InternalReplicatorTest.enqueueOnDispatcher(repl) { latch.countDown() }
+        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
+
+        // A total of 6 docs dispatched; only one of them should have been enqued for CR
+        assertEquals(5, unconflictedCount.get().toLong())
+        assertEquals(1, conflictedCount.get().toLong())
     }
 }
