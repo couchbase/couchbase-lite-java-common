@@ -35,18 +35,6 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    static C4Document get(@NonNull C4Collection coll, @NonNull String docID)
-        throws LiteCoreException {
-        return new C4Document(getFromCollection(coll.getPeer(), docID, true, false));
-    }
-
-    @NonNull
-    static C4Document getWithRevs(@NonNull C4Collection coll, @NonNull String docID)
-        throws LiteCoreException {
-        return new C4Document(getFromCollection(coll.getPeer(), docID, true, true));
-    }
-
-    @NonNull
     static C4Document create(@NonNull C4Collection coll, @NonNull String docID, @Nullable FLSliceResult body, int flags)
         throws LiteCoreException {
         return new C4Document(createFromSlice(
@@ -57,10 +45,37 @@ public final class C4Document extends C4NativePeer {
             flags));
     }
 
+    @Nullable
+    static C4Document get(@NonNull C4Collection coll, @NonNull String docID)
+        throws LiteCoreException {
+        final long doc = getFromCollection(coll.getPeer(), docID, true, false);
+        return (doc == 0) ? null : new C4Document(doc);
+    }
+
+    @Nullable
+    static C4Document getWithRevs(@NonNull C4Collection coll, @NonNull String docID)
+        throws LiteCoreException {
+        final long doc = getFromCollection(coll.getPeer(), docID, true, true);
+        return (doc == 0) ? null : new C4Document(doc);
+    }
+
     @VisibleForTesting
     @NonNull
-    static C4Document getOrEmpty(@NonNull C4Collection coll, @NonNull String docID) throws LiteCoreException {
-        return new C4Document(getFromCollection(coll.getPeer(), docID, false, true));
+    static C4Document getOrCreateDocument(@NonNull C4Collection coll, @NonNull String docID) throws LiteCoreException {
+        final long doc = getFromCollection(coll.getPeer(), docID, false, true);
+
+        // This should never happen.  With "mustExist" set false we should get:
+        // - the existing doc, if there is one
+        // - a new doc if none exists
+        // - an exception other than "not found"
+        if (doc == 0) {
+            throw new LiteCoreException(
+                C4Constants.ErrorDomain.LITE_CORE,
+                C4Constants.LiteCoreError.NOT_FOUND,
+                "Could not create docume: " + docID);
+        }
+
+        return new C4Document(doc);
     }
 
     //-------------------------------------------------------------------------

@@ -165,12 +165,12 @@ public final class C4Collection extends C4NativePeer {
 
     public long getDocumentCount() { return withPeerOrDefault(0L, impl::nGetDocumentCount); }
 
-    @NonNull
+    @Nullable
     public C4Document getDocument(@NonNull String docId) throws LiteCoreException {
         return C4Document.get(this, Preconditions.assertNotNull(docId, "doc ID"));
     }
 
-    @NonNull
+    @Nullable
     public C4Document getDocumentWithRevs(@NonNull String docId) throws LiteCoreException {
         return C4Document.getWithRevs(this, Preconditions.assertNotNull(docId, "doc ID"));
     }

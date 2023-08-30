@@ -48,42 +48,35 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Nullable
     static Document getDocumentOrNull(@NonNull Collection collection, @NonNull String id)
         throws CouchbaseLiteException {
+        Preconditions.assertNotNull(collection, "collection");
         Preconditions.assertNotEmpty(id, "id");
-        try {
-            final C4Document c4Doc = getC4Document(collection, id);
-            if (!c4Doc.isDocDeleted()) { return new Document(collection, id, c4Doc, false); }
-        }
-        catch (CouchbaseLiteException e) {
-            if ((!CBLError.Domain.CBLITE.equals(e.getDomain())) || (e.getCode() != CBLError.Code.NOT_FOUND)) {
-                throw e;
-            }
-        }
-        return null;
+        final C4Document c4Doc = collection.getC4Document(id);
+        if ((c4Doc == null) || (c4Doc.isDocDeleted())) { return null; }
+        return new Document(collection, id, c4Doc, false);
     }
 
     @NonNull
     static Document getDocumentWithDeleted(@NonNull Collection collection, @NonNull String id)
         throws CouchbaseLiteException {
-        return new Document(collection, id, getC4Document(collection, id), false);
+        Preconditions.assertNotNull(collection, "collection");
+        Preconditions.assertNotEmpty(id, "id");
+
+        final C4Document c4Doc = collection.getC4Document(id);
+        if (c4Doc != null) { return new Document(collection, id, c4Doc, false); }
+
+        throw new CouchbaseLiteException("Document not found: " + id, CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
     }
 
     @NonNull
     static Document getDocumentWithRevisions(@NonNull Collection collection, @NonNull String id)
         throws CouchbaseLiteException {
         Preconditions.assertNotNull(collection, "collection");
+        Preconditions.assertNotEmpty(id, "id");
 
-        final C4Document c4Doc;
-        try { c4Doc = collection.getC4DocumentWithRevs(id); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        final C4Document c4Doc = collection.getC4DocumentWithRevs(id);
+        if (c4Doc != null) { return new Document(collection, id, c4Doc, false); }
 
-        return new Document(collection, id, c4Doc, false);
-    }
-
-    @NonNull
-    private static C4Document getC4Document(@NonNull Collection collection, @NonNull String id)
-        throws CouchbaseLiteException {
-        try { return Preconditions.assertNotNull(collection, "collection").getC4Document(id); }
-        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        throw new CouchbaseLiteException("Document not found: " + id, CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND);
     }
 
 

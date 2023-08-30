@@ -50,7 +50,14 @@ Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
             mustExist == JNI_TRUE,
             (allRevs == JNI_TRUE) ? kDocGetAll : kDocGetCurrentRev,
             &error);
-    if (doc == nullptr) {
+
+    if ((doc == nullptr) && (error.code != 0)) {
+
+        // Ignore LiteCore's annoying "not found" error
+        if ((error.domain == LiteCoreDomain) && (error.code == kC4ErrorNotFound)) {
+            return (jlong) doc;
+        }
+
         throwError(env, error);
         return 0;
     }
@@ -331,4 +338,5 @@ Java_com_couchbase_lite_internal_core_C4Document_dictContainsBlobs(
     FLDoc_Release(doc);
     return containsBlobs;
 }
+
 }

@@ -80,6 +80,7 @@ class C4CollectionObserverTest : C4BaseTest() {
                 val otherColl =
                     C4Database.getDatabase(dbParentDirPath, dbName, flags, C4Constants.EncryptionAlgorithm.NONE, null)
                         .getCollection(coll.name, coll.scope)
+                assertNotNull(otherColl)
 
                 createRev(otherColl, "c", "1-cc", fleeceBody)
                 createRev(otherColl, "d", "1-dd", fleeceBody)

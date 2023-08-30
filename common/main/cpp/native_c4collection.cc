@@ -68,7 +68,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection(
 
     C4Error error{};
     C4Collection *coll = c4db_getCollection((C4Database *) db, collSpec, &error);
-    if (!coll && error.code != 0) {
+    if ((coll == nullptr) && (error.code != 0)) {
+
+        // Ignore LiteCore's annoying "not found" error
+        if  ((error.domain == LiteCoreDomain) && (error.code == kC4ErrorNotFound)) {
+            return (jlong) coll;
+        }
+
         throwError(env, error);
         return 0;
     }
