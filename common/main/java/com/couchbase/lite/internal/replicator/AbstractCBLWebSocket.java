@@ -62,12 +62,9 @@ import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.Credentials;
 import okhttp3.HttpUrl;
-import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
-import okhttp3.Protocol;
 import okhttp3.Request;
 import okhttp3.Response;
-import okhttp3.ResponseBody;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -644,6 +641,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         return 0;
     }
 
+    @SuppressWarnings("PMD.AvoidRethrowingException")
     private void setupBasicAuthenticator(@NonNull Map<?, ?> auth, @NonNull OkHttpClient.Builder builder) {
         final Object username = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
         final Object password = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
