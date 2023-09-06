@@ -53,13 +53,11 @@ public class C4TestUtils {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) {
-            releasePeer(domain, C4TestUtils::free);
-        }
+        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4TestUtils::free); }
     }
 
     // managed: Java code is responsible for freeing it
-    private static final class ManagedC4BlobStore extends C4BlobStore {
+    static final class ManagedC4BlobStore extends C4BlobStore {
         ManagedC4BlobStore(@NonNull String dirPath, long flags) throws LiteCoreException {
             super(openStore(dirPath, flags));
         }
@@ -85,15 +83,13 @@ public class C4TestUtils {
 
     // C4BlobStore
 
-    @NonNull
-    public static C4BlobStore open(@NonNull String dirPath, long flags) throws LiteCoreException {
-        return new ManagedC4BlobStore(
-            (dirPath.endsWith(File.separator)) ? dirPath : (dirPath + File.separator),
-            flags);
-    }
-
-    public static void delete(C4BlobStore store) throws LiteCoreException {
-        store.releasePeer(null, C4TestUtils::deleteStore);
+    public static void delete(C4BlobStore store) {
+        try { store.releasePeer(null, C4TestUtils::deleteStore); }
+        catch (LiteCoreException e) {
+            try { store.close(); }
+            catch (Exception ignore) { }
+            throw new IllegalStateException("Failed deleting blob store", e);
+        }
     }
 
     // C4Database

@@ -49,7 +49,7 @@ public class C4BlobStoreTest extends C4BaseTest {
     public final void setUpC4BlobStoreTest() throws CouchbaseLiteException {
         blobDir = new File(getScratchDirectoryPath(getUniqueName("cbl_blobs")));
         try {
-            blobStore = C4TestUtils.open(blobDir.getCanonicalPath(), C4Constants.DatabaseFlags.CREATE);
+            blobStore = new C4TestUtils.ManagedC4BlobStore(blobDir.getCanonicalPath() + File.separator, getTestDbFlags());
             bogusKey = new C4BlobKey("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
@@ -63,14 +63,7 @@ public class C4BlobStoreTest extends C4BaseTest {
         final C4BlobStore store = blobStore;
         blobStore = null;
 
-        if (store != null) {
-            try { C4TestUtils.delete(store); }
-            catch (LiteCoreException e) {
-                try { store.close(); }
-                catch (Exception ignore) { }
-                throw new IllegalStateException("Failed deleting blob store", e);
-            }
-        }
+        if (store != null) { C4TestUtils.delete(store); }
 
         if (blobDir != null) { FileUtils.eraseFileOrDir(blobDir); }
     }

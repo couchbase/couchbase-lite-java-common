@@ -15,9 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 
 import org.junit.Before;
@@ -60,13 +58,20 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                         random.nextLong(),
                         i);
                     String json = String.format("{\"content\":\"%s\"}", content);
-                    List<String> list = new ArrayList<>();
-                    list.add("1-deadbeefcafebabe80081e50");
-                    String[] history = list.toArray(new String[0]);
-                    C4Document doc
-                        = C4TestUtils.create(c4Collection, json2fleece(json), docID, 0, true, false, history, true, 0, 0);
-                    assertNotNull(doc);
-                    doc.close();
+                    String[] history = new String[] { getTestRevId("bbbb", 1) };
+                    try (C4Document doc = C4TestUtils.create(
+                        c4Collection,
+                        json2fleece(json),
+                        docID,
+                        0,
+                        true,
+                        false,
+                        history,
+                        true,
+                        0,
+                        0)) {
+                        assertNotNull(doc);
+                    }
                 }
                 commit = true;
             }
@@ -87,9 +92,9 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
         StopWatch timer = new StopWatch();
 
         // No start or end ID:
-        int iteratorFlags = C4Constants.EnumeratorFlags.DEFAULT;
-        iteratorFlags &= ~C4Constants.EnumeratorFlags.INCLUDE_BODIES;
-        C4TestUtils.C4DocEnumerator e = C4TestUtils.enumerateDocsForCollection(c4Collection, iteratorFlags);
+        C4TestUtils.C4DocEnumerator e = C4TestUtils.enumerateDocsForCollection(
+            c4Collection,
+            C4Constants.EnumeratorFlags.DEFAULT & ~C4Constants.EnumeratorFlags.INCLUDE_BODIES);
         C4Document doc;
         int i = 0;
         while ((doc = nextDocument(e)) != null) {

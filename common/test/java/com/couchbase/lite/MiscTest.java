@@ -15,13 +15,14 @@
 //
 package com.couchbase.lite;
 
-import com.couchbase.lite.internal.utils.JSONUtils;
+import java.util.Date;
 
 import org.junit.Test;
 
-import java.util.Date;
+import com.couchbase.lite.internal.utils.JSONUtils;
 
 import static org.junit.Assert.assertEquals;
+
 
 @SuppressWarnings("ConstantConditions")
 public class MiscTest {

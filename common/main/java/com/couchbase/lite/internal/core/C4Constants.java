@@ -15,9 +15,12 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.VisibleForTesting;
+
+
 @SuppressWarnings({"unused", "LineLength"})
 public final class C4Constants {
-    private C4Constants() {}
+    private C4Constants() { }
 
 
     ////////////////////////////////////
@@ -26,7 +29,7 @@ public final class C4Constants {
 
     // C4LogLevel
     public static final class LogLevel {
-        private LogLevel() {}
+        private LogLevel() { }
 
         public static final int DEBUG = 0;
         public static final int VERBOSE = 1;
@@ -39,7 +42,7 @@ public final class C4Constants {
     // C4LogDomain
     // Core creates these dynamically, so this is just a guess...
     public static final class LogDomain {
-        private LogDomain() {}
+        private LogDomain() { }
 
         public static final String BLIP = "BLIP";
         public static final String BLIP_MESSAGES = "BLIPMessages";
@@ -62,19 +65,25 @@ public final class C4Constants {
 
     // C4DatabaseFlags
     public static final class DatabaseFlags {
-        private DatabaseFlags() {}
+        private DatabaseFlags() { }
+        // why most of these are visible in the LiteCore API is utterly beyond me
 
-        public static final int CREATE = 1;            //< Create the file if it doesn't exist
-        public static final int READ_ONLY = 2;         //< Open file read-only
-        public static final int AUTO_COMPACT = 4;      //< Enable auto-compaction
-        public static final int SHARED_KEYS = 0x10;    //< Enable shared-keys optimization at creation time
-        public static final int NO_UPGRADE = 0x20;     //< Disable upgrading an older-version database
-        public static final int NON_OBSERVABLE = 0x40; //< Disable c4DatabaseObserver
+        // @formatter:off
+        static final int CREATE = 0x01;                 // Create the file if it doesn't exist
+        @VisibleForTesting
+        static final int READ_ONLY = 0x02;              // Open file read-only
+        private static final int AUTO_COMPACT = 0x04;   // Enable auto-compaction [UNIMPLEMENTED]
+        static final int VERSION_VECTORS = 0x08;        // Upgrade DB to version vectors instead of rev trees [EXPERIMENTAL]
+        private static final int NO_UPGRADE = 0x20;     // Disable upgrading an older-version database
+        private static final int NON_OBSERVABLE = 0x40; // Disable database/collection observers, for slightly faster writes
+        @VisibleForTesting
+        static final int FAKE_CLOCK = 0x80;             // Use counters instead of timestamps in version vectors (TESTS ONLY)
+        // @formatter:on
     }
 
     // C4EncryptionAlgorithm
     public static final class EncryptionAlgorithm {
-        private EncryptionAlgorithm() {}
+        private EncryptionAlgorithm() { }
 
         public static final int NONE = 0;      //< No encryption (default)
         public static final int AES256 = 1;    //< AES with 256-bit key
@@ -82,7 +91,7 @@ public final class C4Constants {
 
     // C4EncryptionKeySize
     public static final class EncryptionKeySize {
-        private EncryptionKeySize() {}
+        private EncryptionKeySize() { }
 
         public static final int AES256 = 32;
     }
@@ -95,7 +104,7 @@ public final class C4Constants {
 
     // C4DocumentFlags
     public static final class DocumentFlags {
-        private DocumentFlags() {}
+        private DocumentFlags() { }
 
         public static final int DELETED = 0x01;         // The document's current revision is deleted.
         public static final int CONFLICTED = 0x02;      // The document is in conflict.
@@ -105,7 +114,7 @@ public final class C4Constants {
 
     // C4RevisionFlags
     public static final class RevisionFlags {
-        private RevisionFlags() {}
+        private RevisionFlags() { }
 
         public static final int DELETED = 0x01;         // Is this revision a deletion/tombstone?
         public static final int LEAF = 0x02;            // Is this revision a leaf (no children?)
@@ -124,7 +133,7 @@ public final class C4Constants {
 
     // C4EnumeratorFlags
     public static final class EnumeratorFlags {
-        private EnumeratorFlags() {}
+        private EnumeratorFlags() { }
 
         public static final int DESCENDING = 0x01;
         public static final int UNSORTED = 0x02;
@@ -143,7 +152,7 @@ public final class C4Constants {
 
     // C4IndexType
     public static final class IndexType {
-        private IndexType() {}
+        private IndexType() { }
 
         public static final int VALUE = 0;      //< Regular index of property value
         public static final int FULL_TEXT = 1;  //< Full-text index
@@ -158,7 +167,7 @@ public final class C4Constants {
 
     // C4ErrorDomain: the domains.
     public static final class ErrorDomain {
-        private ErrorDomain() {}
+        private ErrorDomain() { }
 
         public static final int LITE_CORE = 1;    // Couchbase Lite Core error code (see below)
         public static final int POSIX = 2;        // errno (errno.h)
@@ -173,7 +182,7 @@ public final class C4Constants {
 
     // C4ErrorCode, in domain LITE_CORE
     public static final class LiteCoreError {
-        private LiteCoreError() {}
+        private LiteCoreError() { }
 
         // @formatter:off
         public static final int SUCCESS = 0;                 // Couchbase Lite Core error code (see below)
@@ -217,7 +226,7 @@ public final class C4Constants {
     // C4NetworkErrorCode, in domain NETWORK
     // these codes are redundantly defined in WebSocketInterface.hh
     public static final class NetworkError {
-        private NetworkError() {}
+        private NetworkError() { }
 
         // @formatter:off
         public static final int DNS_FAILURE = 1;               // DNS lookup failed
@@ -258,7 +267,7 @@ public final class C4Constants {
 
     // C4NetworkErrorCode, in domain WEB_SOCKET
     public static final class HttpError {
-        private HttpError() {}
+        private HttpError() { }
 
         public static final int STATUS_MIN = 100;
         public static final int SWITCH_PROTOCOL = 101;         // Switch from HTTP protocol (probably to web socket)
@@ -285,7 +294,7 @@ public final class C4Constants {
     // WebSocket close codes start at 1000, so that they cannot be confused with HTTP errors
     // (which are always less than 600)
     public static final class WebSocketError {
-        private WebSocketError() {}
+        private WebSocketError() { }
 
         public static final int NORMAL = 1000;
         public static final int GOING_AWAY = 1001;             // Peer has to close, e.g. host app is quitting
