@@ -19,7 +19,6 @@ class C4CollectionDocObserverTest : C4BaseTest() {
         collName = StringUtils.getUniqueName("C4CollectionDocObserverTest_SCOPE", 4)
     }
 
-
     private val mockCollectionDocObserver = object : C4DocumentObserver.NativeImpl {
         override fun nCreate(coll: Long, docId: String?): Long = 0xd8597341L
         override fun nFree(peer: Long) = Unit
@@ -39,7 +38,7 @@ class C4CollectionDocObserverTest : C4BaseTest() {
     @Test
     fun testDocumentChanged() {
         var i = 0
-        createRev("A", "1-aa", fleeceBody)
+        createRev("A", getTestRevId("aa", 1), fleeceBody)
         C4Collection.create(c4Database, collName, scopeName).use { coll ->
             C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "A", { i++ }).use { obs ->
                 assertEquals(0, i)
@@ -56,15 +55,15 @@ class C4CollectionDocObserverTest : C4BaseTest() {
     @Test
     fun testCollObserverWithCoreCallback() {
         val collection = C4Collection.create(c4Database, collName, scopeName)
-        createRev(collection, "A", "1-aa", fleeceBody)
+        createRev(collection, "A", getTestRevId("aa", 1), fleeceBody)
 
         var i = 0
         C4Collection.create(c4Database, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionDocObserver.newObserver(coll.peer, "A", { i++ }).use {
                 assertEquals(0, i)
 
-                createRev(coll, "A", "2-bb", fleeceBody)
-                createRev(coll, "B", "1-bb", fleeceBody)
+                createRev(coll, "A", getTestRevId("bb", 2), fleeceBody)
+                createRev(coll, "B", getTestRevId("bb", 1), fleeceBody)
 
                 assertEquals(1, i)
             }

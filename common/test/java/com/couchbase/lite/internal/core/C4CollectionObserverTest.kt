@@ -42,30 +42,37 @@ class C4CollectionObserverTest : C4BaseTest() {
      * Functional tests
      */
 
-    //Test simple collection observer
+    // Test simple collection observer
+    // This test will fail on LiteCore using Version Vectors
+    // C4DocumentChange.revId under VV contains not the latest version,
+    // but a semicolon separated list of versions
     @Test
     fun testCollObserver() {
         var i = 0
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(coll.peer, { i++ }).use { obs ->
                 assertEquals(0, i)
-                createRev(coll, "A", "1-aa", fleeceBody)
+                val revId1 = getTestRevId("aa", 1)
+                createRev(coll, "A", revId1, fleeceBody)
                 assertEquals(1, i)
-                createRev(coll, "B", "1-bb", fleeceBody)
+                val revId2 = getTestRevId("bb", 1)
+                createRev(coll, "B", revId2, fleeceBody)
                 assertEquals(1, i)
 
-                checkChanges(obs, arrayListOf("A", "B"), arrayListOf("1-aa", "1-bb"), false)
+                checkChanges(obs, arrayListOf("A", "B"), arrayListOf(revId1, revId2), false)
 
-                createRev(coll, "B", "2-bbbb", fleeceBody)
+                val revId3 = getTestRevId("bbbb", 2)
+                createRev(coll, "B", revId3, fleeceBody)
                 assertEquals(2, i)
-                createRev(coll, "C", "1-cc", fleeceBody)
+                val revId4 = getTestRevId("cc", 1)
+                createRev(coll, "C", revId4, fleeceBody)
                 assertEquals(2, i)
 
-                checkChanges(obs, arrayListOf("B", "C"), arrayListOf("2-bbbb", "1-cc"), false)
+                checkChanges(obs, arrayListOf("B", "C"), arrayListOf(revId3, revId4), false)
             }
 
             // no call back if observer is closed
-            createRev(coll, "A", "2-aaaa", fleeceBody)
+            createRev(coll, "A", getTestRevId("aaaa", 2), fleeceBody)
             assertEquals(2, i)
         }
     }
@@ -77,22 +84,27 @@ class C4CollectionObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(coll.peer, { i++ }).use { obs ->
 
-                val otherColl =
-                    C4Database.getDatabase(dbParentDirPath, dbName, flags, C4Constants.EncryptionAlgorithm.NONE, null)
-                        .getCollection(coll.name, coll.scope)
+                val otherColl = C4Database.getDatabase(dbParentDirPath, dbName, testDbFlags)
+                    .getCollection(coll.name, coll.scope)
                 assertNotNull(otherColl)
 
-                createRev(otherColl, "c", "1-cc", fleeceBody)
-                createRev(otherColl, "d", "1-dd", fleeceBody)
-                createRev(otherColl, "e", "1-ee", fleeceBody)
+                val revId1 = getTestRevId("cc", 1)
+                createRev(otherColl, "c", revId1, fleeceBody)
+                val revId2 = getTestRevId("dd", 1)
+                createRev(otherColl, "d", revId2, fleeceBody)
+                val revId3 = getTestRevId("ee", 1)
+                createRev(otherColl, "e", revId3, fleeceBody)
 
                 assertEquals(1, i)
-                checkChanges(obs, arrayListOf("c", "d", "e"), arrayListOf("1-cc", "1-dd", "1-ee"), true)
+                checkChanges(obs, arrayListOf("c", "d", "e"), arrayListOf(revId1, revId2, revId3), true)
             }
         }
     }
 
-    //Test multiple observers on the same collection
+    // Test multiple observers on the same collection
+    // This test will fail on LiteCore using Version Vectors
+    // C4DocumentChange.revId under VV contains not the latest version,
+    // but a semicolon separated list of versions
     @Test
     fun testMultipleObserversOnTheSameColl() {
         var i = 0
@@ -101,19 +113,21 @@ class C4CollectionObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(coll.peer, { i++ }).use { obs1 ->
                 C4CollectionObserver.newObserver(coll.peer, { j++ }).use { obs2 ->
-                    createRev(coll, "A", "1-aa", fleeceBody)
+                    val revId1 = getTestRevId("aa", 1)
+                    createRev(coll, "A", revId1, fleeceBody)
                     assertEquals(1, i)
                     assertEquals(1, j)
 
-                    checkChanges(obs1, arrayListOf("A"), arrayListOf("1-aa"), false)
-                    checkChanges(obs2, arrayListOf("A"), arrayListOf("1-aa"), false)
+                    checkChanges(obs1, arrayListOf("A"), arrayListOf(revId1), false)
+                    checkChanges(obs2, arrayListOf("A"), arrayListOf(revId1), false)
 
-                    createRev(coll, "A", "2-aaaa", fleeceBody)
+                    val revId2 = getTestRevId("aaaa", 2)
+                    createRev(coll, "A", revId2, fleeceBody)
                     assertEquals(2, i)
                     assertEquals(2, j)
 
-                    checkChanges(obs1, arrayListOf("A"), arrayListOf("2-aaaa"), false)
-                    checkChanges(obs2, arrayListOf("A"), arrayListOf("2-aaaa"), false)
+                    checkChanges(obs1, arrayListOf("A"), arrayListOf(revId2), false)
+                    checkChanges(obs2, arrayListOf("A"), arrayListOf(revId2), false)
                 }
             }
         }

@@ -60,4 +60,10 @@ public final class C4DocumentChange {
     public long getSequence() { return sequence; }
 
     public boolean isExternal() { return external; }
+
+    @Override
+    @NonNull
+    public String toString() {
+        return "C4DocumentChange{" + docID + ", " + revID + ", " + sequence + ", " + external + "}";
+    }
 }

@@ -45,6 +45,7 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.PlatformUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StopWatch;
+import com.couchbase.lite.internal.utils.StringUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -54,9 +55,6 @@ import static org.junit.Assert.fail;
 public class C4BaseTest extends BaseTest {
     public static final long MOCK_PEER = 500005L;
     public static final long MOCK_TOKEN = 0xba5eba11;
-
-    public static final String REV_ID_1 = "1-abcd";
-    public static final String REV_ID_2 = "2-c001d00d";
 
     @NonNull
     public static C4Document getOrCreateDocument(@Nullable C4Collection collection, @NonNull String docId)
@@ -85,6 +83,10 @@ public class C4BaseTest extends BaseTest {
         }
     }
 
+
+    protected final String REV_ID_1 = getTestRevId("abcd", 1);
+    protected final String REV_ID_2 = getTestRevId("c001d00d", 2);
+
     protected C4Database c4Database;
     protected C4Collection c4Collection;
 
@@ -105,12 +107,7 @@ public class C4BaseTest extends BaseTest {
 
             dbName = getUniqueName("c4_test_db");
 
-            c4Database = C4Database.getDatabase(
-                dbParentDirPath,
-                dbName,
-                getFlags(),
-                C4Constants.EncryptionAlgorithm.NONE,
-                null);
+            c4Database = C4Database.getDatabase(dbParentDirPath, dbName, getTestDbFlags());
 
             c4Collection = c4Database.addCollection(
                 getUniqueName("c4_test_collection"),
@@ -118,7 +115,17 @@ public class C4BaseTest extends BaseTest {
 
             Map<String, Object> body = new HashMap<>();
             body.put("ans*wer", 42);
-            fleeceBody = createFleeceBody(body);
+
+            try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
+                enc.beginDict(body.size());
+                for (String key: body.keySet()) {
+                    enc.writeKey(key);
+                    enc.writeValue(body.get(key));
+                }
+
+                enc.endDict();
+                fleeceBody = enc.finish();
+            }
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
@@ -137,11 +144,21 @@ public class C4BaseTest extends BaseTest {
         FileUtils.eraseFileOrDir(dbParentDirPath);
     }
 
-    protected int getFlags() { return C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.SHARED_KEYS; }
-
-    protected long loadJsonAsset(String name) throws LiteCoreException, IOException {
-        return loadJsonAsset(name, "");
+    protected int getTestDbFlags() {
+        return C4Database.DB_FLAGS;
+// Enable the fake clock for Version Vectors
+//            | C4Constants.DatabaseFlags.FAKE_CLOCK;
     }
+
+    protected String getTestRevId(String node, int gen) {
+        return gen + "-" + node;
+// Enable new revId format for Version Vectors
+//        return gen + "@" + PlatformUtils.getEncoder().encodeToString(
+//                StringUtils.getUniqueName(node, 16).substring(0, 16).getBytes(StandardCharsets.US_ASCII))
+//            .substring(0, 22);
+    }
+
+    protected long loadJsonAsset(String name) throws LiteCoreException, IOException { return loadJsonAsset(name, ""); }
 
     protected long loadJsonAsset(String name, String idPrefix) throws LiteCoreException, IOException {
         try (InputStream is = PlatformUtils.getAsset(name)) {
@@ -151,24 +168,7 @@ public class C4BaseTest extends BaseTest {
 
     protected void reopenDB() throws LiteCoreException {
         closeC4Database();
-        c4Database = C4Database.getDatabase(
-            dbParentDirPath,
-            dbName,
-            getFlags(),
-            C4Constants.EncryptionAlgorithm.NONE,
-            null);
-        assertNotNull(c4Database);
-    }
-
-    protected void reopenDBReadOnly() throws LiteCoreException {
-        closeC4Database();
-        int flags = getFlags() & ~C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.READ_ONLY;
-        c4Database = C4Database.getDatabase(
-            dbParentDirPath,
-            dbName,
-            flags,
-            C4Constants.EncryptionAlgorithm.NONE,
-            null);
+        c4Database = C4Database.getDatabase(dbParentDirPath, dbName, getTestDbFlags());
         assertNotNull(c4Database);
     }
 
@@ -210,6 +210,13 @@ public class C4BaseTest extends BaseTest {
     protected void createRev(String docID, String revID, byte[] body, int flags)
         throws LiteCoreException {
         createRev(c4Collection, docID, revID, body, flags);
+    }
+
+    protected void closeC4Database() throws LiteCoreException {
+        if (c4Database != null) {
+            c4Database.closeDb();
+            c4Database = null;
+        }
     }
 
     private void createRev(C4Collection coll, String docID, String revID, byte[] body, int flags)
@@ -286,27 +293,5 @@ public class C4BaseTest extends BaseTest {
         }
 
         return numDocs;
-    }
-
-    private byte[] createFleeceBody(Map<String, Object> body) throws LiteCoreException {
-        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
-            if (body == null) { enc.beginDict(0); }
-            else {
-                enc.beginDict(body.size());
-                for (String key: body.keySet()) {
-                    enc.writeKey(key);
-                    enc.writeValue(body.get(key));
-                }
-            }
-            enc.endDict();
-            return enc.finish();
-        }
-    }
-
-    private void closeC4Database() throws LiteCoreException {
-        if (c4Database != null) {
-            c4Database.closeDb();
-            c4Database = null;
-        }
     }
 }

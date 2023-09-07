@@ -33,17 +33,20 @@ public class C4ObserverTest extends C4BaseTest {
     // - Doc Observer
     @Test
     public void testDocObserver() throws LiteCoreException {
-        createRev("A", "1-aa", fleeceBody);
+        createRev("A", getTestRevId("aa", 1), fleeceBody);
         try (C4DocumentObserver obs = c4Collection.createDocumentObserver("A", callbackCount::incrementAndGet)) {
             assertEquals(0, callbackCount.get());
 
-            createRev("A", "2-bb", fleeceBody);
-            createRev("B", "1-bb", fleeceBody);
+            createRev("A", getTestRevId("bb", 2), fleeceBody);
+            createRev("B", getTestRevId("bb", 1), fleeceBody);
             assertEquals(1, callbackCount.get());
         }
     }
 
     // - DB Observer
+    // This test will fail on LiteCore using Version Vectors
+    // C4DocumentChange.revId under VV contains not the latest version,
+    // but a semicolon separated list of versions
     @Test
     public void testCollectionObserver() throws LiteCoreException {
         C4CollectionObserver collObserver = null;
@@ -51,24 +54,28 @@ public class C4ObserverTest extends C4BaseTest {
             collObserver = c4Collection.createCollectionObserver(callbackCount::incrementAndGet);
             assertEquals(0, callbackCount.get());
 
-            createRev("A", "1-aa", fleeceBody);
+            String revId1 = getTestRevId("aa", 1);
+            createRev("A", revId1, fleeceBody);
             assertEquals(1, callbackCount.get());
-            createRev("B", "1-bb", fleeceBody);
+            String revId2 = getTestRevId("bb", 1);
+            createRev("B", revId2, fleeceBody);
             assertEquals(1, callbackCount.get());
 
-            checkChanges(collObserver, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
+            checkChanges(collObserver, Arrays.asList("A", "B"), Arrays.asList(revId1, revId2), false);
 
-            createRev("B", "2-bbbb", fleeceBody);
+            revId1 = getTestRevId("bbbb", 2);
+            createRev("B", revId1, fleeceBody);
             assertEquals(2, callbackCount.get());
-            createRev("C", "1-cc", fleeceBody);
+            revId2 = getTestRevId("cc", 1);
+            createRev("C", revId2, fleeceBody);
             assertEquals(2, callbackCount.get());
 
-            checkChanges(collObserver, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
+            checkChanges(collObserver, Arrays.asList("B", "C"), Arrays.asList(revId1, revId2), false);
 
             collObserver.close();
             collObserver = null;
 
-            createRev("A", "2-aaaa", fleeceBody);
+            createRev("A", getTestRevId("aaaa", 2), fleeceBody);
             assertEquals(2, callbackCount.get());
         }
         finally {
@@ -84,30 +91,30 @@ public class C4ObserverTest extends C4BaseTest {
             collObserver = c4Collection.createCollectionObserver(callbackCount::incrementAndGet);
             assertEquals(0, callbackCount.get());
 
-            createRev("A", "1-aa", fleeceBody);
+            String revId1 = getTestRevId("aa", 1);
+            createRev("A", revId1, fleeceBody);
             assertEquals(1, callbackCount.get());
-            createRev("B", "1-bb", fleeceBody);
+            String revId2 = getTestRevId("bb", 1);
+            createRev("B", revId2, fleeceBody);
             assertEquals(1, callbackCount.get());
 
-            checkChanges(collObserver, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
+            checkChanges(collObserver, Arrays.asList("A", "B"), Arrays.asList(revId1, revId2), false);
 
-            try (C4Database otherDb = C4Database.getDatabase(
-                dbParentDirPath,
-                dbName,
-                getFlags(),
-                C4Constants.EncryptionAlgorithm.NONE,
-                null)) {
+            try (C4Database otherDb = C4Database.getDatabase(dbParentDirPath, dbName, getTestDbFlags())) {
                 assertNotNull(otherDb);
 
+                revId1 = getTestRevId("cc", 1);
+                revId2 = getTestRevId("dd", 1);
+                String revId3 = getTestRevId("ee", 1);
                 try (C4Collection otherColl = otherDb.getCollection(c4Collection.getScope(), c4Collection.getName())) {
                     assertNotNull(otherColl);
 
                     boolean commit = false;
                     otherDb.beginTransaction();
                     try {
-                        createRev(otherColl, "c", "1-cc", fleeceBody);
-                        createRev(otherColl, "d", "1-dd", fleeceBody);
-                        createRev(otherColl, "e", "1-ee", fleeceBody);
+                        createRev(otherColl, "c", revId1, fleeceBody);
+                        createRev(otherColl, "d", revId2, fleeceBody);
+                        createRev(otherColl, "e", revId3, fleeceBody);
                         commit = true;
                     }
                     finally {
@@ -116,12 +123,12 @@ public class C4ObserverTest extends C4BaseTest {
                 }
 
                 assertEquals(2, callbackCount.get());
-                checkChanges(collObserver, Arrays.asList("c", "d", "e"), Arrays.asList("1-cc", "1-dd", "1-ee"), true);
+                checkChanges(collObserver, Arrays.asList("c", "d", "e"), Arrays.asList(revId1, revId2, revId3), true);
 
                 collObserver.close();
                 collObserver = null;
 
-                createRev("A", "2-aaaa", fleeceBody);
+                createRev("A", getTestRevId("aaaa", 2), fleeceBody);
                 assertEquals(2, callbackCount.get());
             }
         }
@@ -131,6 +138,9 @@ public class C4ObserverTest extends C4BaseTest {
     }
 
     // - Multi-DBObservers
+    // This test will fail on LiteCore using Version Vectors
+    // C4DocumentChange.revId under VV contains not the latest version,
+    // but a semicolon separated list of versions
     @Test
     public void testMultiDBObservers() throws LiteCoreException {
         C4CollectionObserver collObserver = null;
@@ -142,31 +152,35 @@ public class C4ObserverTest extends C4BaseTest {
             try (C4CollectionObserver dbObs = c4Collection.createCollectionObserver(otherCount::incrementAndGet)) {
                 assertEquals(0, otherCount.get());
 
-                createRev("A", "1-aa", fleeceBody);
+                String revId1 = getTestRevId("aa", 1);
+                createRev("A", revId1, fleeceBody);
                 assertEquals(1, this.callbackCount.get());
                 assertEquals(1, otherCount.get());
-                createRev("B", "1-bb", fleeceBody);
+                String revId2 = getTestRevId("bb", 1);
+                createRev("B", revId2, fleeceBody);
                 assertEquals(1, this.callbackCount.get());
                 assertEquals(1, otherCount.get());
 
-                checkChanges(collObserver, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
-                checkChanges(dbObs, Arrays.asList("A", "B"), Arrays.asList("1-aa", "1-bb"), false);
+                checkChanges(collObserver, Arrays.asList("A", "B"), Arrays.asList(revId1, revId2), false);
+                checkChanges(dbObs, Arrays.asList("A", "B"), Arrays.asList(revId1, revId2), false);
 
-                createRev("B", "2-bbbb", fleeceBody);
+                revId1 = getTestRevId("bbbb", 2);
+                createRev("B", revId1, fleeceBody);
                 assertEquals(2, this.callbackCount.get());
                 assertEquals(2, otherCount.get());
-                createRev("C", "1-cc", fleeceBody);
+                revId2 = getTestRevId("cc", 1);
+                createRev("C", revId2, fleeceBody);
                 assertEquals(2, this.callbackCount.get());
                 assertEquals(2, otherCount.get());
 
-                checkChanges(collObserver, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
-                checkChanges(dbObs, Arrays.asList("B", "C"), Arrays.asList("2-bbbb", "1-cc"), false);
+                checkChanges(collObserver, Arrays.asList("B", "C"), Arrays.asList(revId1, revId2), false);
+                checkChanges(dbObs, Arrays.asList("B", "C"), Arrays.asList(revId1, revId2), false);
 
                 collObserver.close();
                 collObserver = null;
             }
 
-            createRev("A", "2-aaaa", fleeceBody);
+            createRev("A", getTestRevId("aaaa", 2), fleeceBody);
             assertEquals(2, this.callbackCount.get());
             assertEquals(2, otherCount.get());
         }

@@ -52,6 +52,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {
     @VisibleForTesting
+    static final int DB_FLAGS = C4Constants.DatabaseFlags.CREATE;
+
+    @VisibleForTesting
     public static final String DB_EXTENSION = ".cblite2";
 
     public interface NativeImpl {
@@ -195,11 +198,17 @@ public abstract class C4Database extends C4NativePeer {
     public static C4Database getDatabase(
         @NonNull String parentDirPath,
         @NonNull String name,
-        int flags,
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        return getDatabase(NATIVE_IMPL, parentDirPath, name, flags, algorithm, encryptionKey);
+        return getDatabase(NATIVE_IMPL, parentDirPath, name, DB_FLAGS, algorithm, encryptionKey);
+    }
+
+    @VisibleForTesting
+    @NonNull
+    static C4Database getDatabase(@NonNull String parentDirPath, @NonNull String name, int flags)
+        throws LiteCoreException {
+        return getDatabase(NATIVE_IMPL, parentDirPath, name, flags, C4Constants.EncryptionAlgorithm.NONE, null);
     }
 
     @VisibleForTesting
@@ -248,6 +257,28 @@ public abstract class C4Database extends C4NativePeer {
         @NonNull String sourcePath,
         @NonNull String parentDir,
         @NonNull String name,
+        int algorithm,
+        @Nullable byte[] encryptionKey)
+        throws LiteCoreException {
+        copyDb(NATIVE_IMPL, sourcePath, parentDir, name, DB_FLAGS, algorithm, encryptionKey);
+    }
+
+    @VisibleForTesting
+    static void copyDb(
+        @NonNull String sourcePath,
+        @NonNull String parentDir,
+        @NonNull String name,
+        int flags)
+        throws LiteCoreException {
+        copyDb(NATIVE_IMPL, sourcePath, parentDir, name, flags, C4Constants.EncryptionAlgorithm.NONE, null);
+    }
+
+    @VisibleForTesting
+    static void copyDb(
+        @NonNull NativeImpl impl,
+        @NonNull String sourcePath,
+        @NonNull String parentDir,
+        @NonNull String name,
         int flags,
         int algorithm,
         @Nullable byte[] encryptionKey)
@@ -256,7 +287,7 @@ public abstract class C4Database extends C4NativePeer {
 
         if (parentDir.charAt(parentDir.length() - 1) != File.separatorChar) { parentDir += File.separator; }
 
-        NATIVE_IMPL.nCopy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
+        impl.nCopy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
     }
 
     // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair

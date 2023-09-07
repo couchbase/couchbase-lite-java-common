@@ -100,11 +100,6 @@ abstract class AbstractDatabase extends BaseDatabase
     private static final int DB_CLOSE_MAX_RETRIES = 5; // random choice: wait for 5 replicators
     private static final int EXECUTOR_CLOSE_MAX_WAIT_SECS = 5;
 
-    private static final int DEFAULT_DATABASE_FLAGS
-        = C4Constants.DatabaseFlags.CREATE
-        | C4Constants.DatabaseFlags.AUTO_COMPACT
-        | C4Constants.DatabaseFlags.SHARED_KEYS;
-
     static class ActiveProcess<T> {
         @NonNull
         private final T process;
@@ -201,7 +196,7 @@ abstract class AbstractDatabase extends BaseDatabase
 
         CouchbaseLiteException err;
         try {
-            C4Database.copyDb(path.getCanonicalPath(), dbDir, name, DEFAULT_DATABASE_FLAGS, algorithm, encryptionKey);
+            C4Database.copyDb(path.getCanonicalPath(), dbDir, name, algorithm, encryptionKey);
             return;
         }
         catch (LiteCoreException e) { err = CouchbaseLiteException.convertException(e); }
@@ -1339,7 +1334,6 @@ abstract class AbstractDatabase extends BaseDatabase
             return C4Database.getDatabase(
                 parentDirPath,
                 name,
-                DEFAULT_DATABASE_FLAGS,
                 getEncryptionAlgorithm(),
                 getEncryptionKey());
         }
