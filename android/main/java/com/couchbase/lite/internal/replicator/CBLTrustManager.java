@@ -30,6 +30,29 @@ import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Fn;
 
 
+/**
+ * The Android version of conscrypt supports Android's extended network configuration feature
+ * by looking for each of two overloaded methods (mmm) checkServerTrusted and checkClientTrusted
+ * with each of three signatures, in order:
+ * <ol>
+ * <li>TrustManager.mmm(X509Certificate[] certChain, String authType, [Socket | SSLEngine])
+ * <li>TrustManager.mmm(X509Certificate[] certChain, String authType, String)
+ * <li>TrustManager.mmm(X509Certificate[] certChain, String authType)
+ * </ol>
+ * The type of the third parameter to the first call depends on type of the object doing the calling:
+ * if it is a Socket, the third parameter to the call the the trust manager will be a socket, and so on.
+ * It will attempt to call each of the three methods, in order, until one succeeds or throws an exception
+ * other than NoSuchMethodException or IllegalAccessException.
+ *
+ * Based on that the design here is as follows:
+ * <ul>
+ * <li>Don't worry about checkClientTrusted: we don't support it.
+ * AbstractCBLTrust manager will ding the call, after two failed calls
+ * <li>Support the <b>second</b> override of checkServerTrusted.  It will be called after one failed call.
+ * CBL validation takes precedence, if configured
+ * </ul>
+ *
+ */
 public final class CBLTrustManager extends AbstractCBLTrustManager {
     public CBLTrustManager(
         @Nullable X509Certificate pinnedServerCert,
