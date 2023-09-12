@@ -22,6 +22,7 @@ import android.support.annotation.VisibleForTesting;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
+import java.io.IOException;
 import java.net.NoRouteToHostException;
 import java.net.PortUnreachableException;
 import java.net.SocketException;
@@ -662,6 +663,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         return builder.build();
     }
 
+    @SuppressWarnings("PMD.AvoidRethrowingException")
     private void setupBasicAuthenticator(@NonNull OkHttpClient.Builder builder) {
         if (options == null) { return; }
 
@@ -684,6 +686,7 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
         // Force pre-authentication
         builder.addInterceptor(chain -> {
             final Request request = chain.request();
+            try {
             return chain.proceed(
                 (chain.connection() != null)
                     ? request
@@ -694,6 +697,18 @@ public abstract class AbstractCBLWebSocket extends C4Socket {
                         .header(HEADER_AUTH, credentials)
                         .method(request.method(), request.body())
                         .build());
+            }
+            // IOExceptions are OkHttp's normal way if failing a connection.
+            // Don't mess with them.
+            catch (IOException e) { throw e; }
+            // Treat unexpected errors as normally failing connections
+            // ...and hope there's enough info here to figure out what went wrong.
+            catch (Exception e) {
+                throw new IOException(
+                    "Unexpected interceptor failure @"
+                        + Thread.currentThread() + ": " + request.method() + " \"" + request.body() + "\"",
+                    e);
+            }
         });
     }
 
