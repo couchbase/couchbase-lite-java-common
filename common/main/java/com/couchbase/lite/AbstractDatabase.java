@@ -174,7 +174,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      */
     public static boolean exists(@NonNull String name, @Nullable File directory) {
         Preconditions.assertNotNull(name, "name");
-        if (directory == null) { directory = CouchbaseLiteInternal.getDefaultDbDir(); }
+        if (directory == null) { directory = CouchbaseLiteInternal.getRootDir(); }
         return C4Database.getDatabaseFile(directory, name).exists();
     }
 

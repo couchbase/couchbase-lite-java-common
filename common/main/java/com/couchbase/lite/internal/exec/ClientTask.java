@@ -42,7 +42,7 @@ import com.couchbase.lite.internal.support.Log;
  */
 public class ClientTask<T> {
     private static final CBLExecutor EXECUTOR
-        = new CBLExecutor("Client worker", 128, 128, new SynchronousQueue<>());
+        = new CBLExecutor("Client worker", 4, 8, new SynchronousQueue<>());
 
     public static void dumpState() {
         EXECUTOR.dumpState();
