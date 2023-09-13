@@ -28,7 +28,6 @@ import java.util.Objects;
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
-import com.couchbase.lite.internal.fleece.JSONEncoder;
 import com.couchbase.lite.internal.fleece.MArray;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
@@ -57,7 +56,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         @Override
         public Object next() {
             if (Array.this.internalArray.getMutationCount() != mutations) {
-                throw new ConcurrentModificationException("Array modifed during iteration");
+                throw new ConcurrentModificationException("Array modified during iteration");
             }
             return getValue(index++);
         }
@@ -308,9 +307,12 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     @NonNull
     @Override
     public String toJSON() {
-        try (JSONEncoder encoder = new JSONEncoder()) {
+        try (FLEncoder.JSONEncoder encoder = FLEncoder.getJSONEncoder()) {
             internalArray.encodeTo(encoder);
             return encoder.finishJSON();
+        }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException("Cannot encode array: " + this, e);
         }
     }
 

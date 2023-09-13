@@ -28,7 +28,6 @@ import java.util.Map;
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
-import com.couchbase.lite.internal.fleece.JSONEncoder;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MDict;
@@ -347,9 +346,12 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     @NonNull
     @Override
     public String toJSON() {
-        try (JSONEncoder encoder = new JSONEncoder()) {
+        try (FLEncoder.JSONEncoder encoder = FLEncoder.getJSONEncoder()) {
             internalDict.encodeTo(encoder);
             return encoder.finishJSON();
+        }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException("Cannot encode dictionary: " + this, e);
         }
     }
 
@@ -363,7 +365,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * A call to the <code>next()</code> method of the returned iterator
      * will throw a ConcurrentModificationException, if the MutableDictionary is
      * modified while it is in use.
-     *     *
+     *
      * @return an iterator over the dictionary's keys.
      */
     @NonNull
