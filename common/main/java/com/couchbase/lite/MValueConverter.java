@@ -27,6 +27,7 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MValue;
+import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -90,9 +91,11 @@ public class MValueConverter {
     // Unfortunately, at this point, we don't know the name of the parent element.
     // Heuristically, we just look for the properties and cross our fingers.
     private boolean isOldAttachment(@NonNull FLDict flDict) {
-        return (flDict.get(Blob.PROP_DIGEST) != null)
+        final boolean ret = (flDict.get(Blob.PROP_DIGEST) != null)
             && (flDict.get(Blob.PROP_LENGTH) != null)
             && (flDict.get(Blob.PROP_STUB) != null)
             && (flDict.get(Blob.PROP_REVPOS) != null);
+        if (ret) { Log.i(LogDomain.DATABASE, "Old style blob: " + flDict.asDict()); }
+        return ret;
     }
 }

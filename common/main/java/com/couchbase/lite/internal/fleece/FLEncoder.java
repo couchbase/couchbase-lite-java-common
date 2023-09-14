@@ -25,6 +25,7 @@ import java.util.Map;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
+import com.couchbase.lite.internal.fleece.impl.NativeFLEncoder;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 
@@ -35,25 +36,38 @@ import com.couchbase.lite.internal.utils.ClassUtils;
  * and must call the close() method to release it. The "unmanaged" version's peer belongs to Core:
  * it will be release by the native code.
  */
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public abstract class FLEncoder extends C4NativePeer {
-    @Nullable
-    public static byte[] encodeMap(@Nullable Map<String, Object> options) {
-        if ((options == null) || options.isEmpty()) { return null; }
-
-        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
-            enc.write(options);
-            return enc.finish();
-        }
-        catch (LiteCoreException e) { Log.w(LogDomain.REPLICATOR, "Failed encoding replicator options", e); }
-
-        return null;
+    public interface NativeImpl {
+        long nCreateFleeceEncoder();
+        long nCreateJSONEncoder();
+        boolean nWriteNull(long peer);
+        boolean nWriteBool(long peer, boolean value);
+        boolean nWriteInt(long peer, long value); // 64bit
+        boolean nWriteFloat(long peer, float value);
+        boolean nWriteDouble(long peer, double value);
+        boolean nWriteString(long peer, @NonNull String value);
+        boolean nWriteStringChars(long peer, @NonNull char[] value);
+        boolean nWriteData(long peer, @NonNull byte[] value);
+        boolean nWriteValue(long peer, long value /*FLValue*/);
+        boolean nBeginArray(long peer, long reserve);
+        boolean nEndArray(long peer);
+        boolean nBeginDict(long peer, long reserve);
+        boolean nEndDict(long peer);
+        boolean nWriteKey(long peer, @NonNull String slice);
+        void nReset(long peer);
+        @NonNull
+        byte[] nFinish(long peer) throws LiteCoreException;
+        @NonNull
+        FLSliceResult nFinish2(long peer) throws LiteCoreException;
+        @NonNull
+        String nFinishJSON(long peer) throws LiteCoreException;
+        void nFree(long peer);
     }
-
 
     // unmanaged: the native code will free it
     static final class UnmanagedFLEncoder extends FLEncoder {
-        UnmanagedFLEncoder(long peer) { super(peer); }
+        UnmanagedFLEncoder(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
 
         @Override
         public void close() {
@@ -61,14 +75,14 @@ public abstract class FLEncoder extends C4NativePeer {
                 null,
                 peer -> {
                     synchronized (arguments) { arguments.clear(); }
-                    reset(peer);
+                    impl.nReset(peer);
                 });
         }
     }
 
     // managed: Java code is responsible for freeing it
     static class ManagedFLEncoder extends FLEncoder {
-        ManagedFLEncoder(long peer) { super(peer); }
+        ManagedFLEncoder(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
 
         @Override
         public void close() { closePeer(null); }
@@ -80,23 +94,65 @@ public abstract class FLEncoder extends C4NativePeer {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, FLEncoder::free); }
+        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
     }
 
+    // special managed flencoder for JSON
+    public static final class JSONEncoder extends ManagedFLEncoder {
+        private JSONEncoder(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
+
+        @NonNull
+        public String finishJSON() throws LiteCoreException { return withPeerOrThrow(impl::nFinishJSON); }
+
+        @Override
+        @NonNull
+        public byte[] finish() {
+            throw new UnsupportedOperationException("finish not supported for JSONEncoders");
+        }
+
+        @Override
+        @NonNull
+        public FLSliceResult finish2() {
+            throw new UnsupportedOperationException("finish2 not supported for JSONEncoders");
+        }
+    }
+
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeFLEncoder();
+
+    @NonNull
+    public static FLEncoder getUnmanagedEncoder(long peer) { return new UnmanagedFLEncoder(NATIVE_IMPL, peer); }
+
+    @NonNull
+    public static FLEncoder getManagedEncoder() {
+        return new ManagedFLEncoder(NATIVE_IMPL, NATIVE_IMPL.nCreateFleeceEncoder());
+    }
+
+    @NonNull
+    public static JSONEncoder getJSONEncoder() {
+        return new JSONEncoder(NATIVE_IMPL, NATIVE_IMPL.nCreateJSONEncoder());
+    }
+
+    @Nullable
+    public static byte[] encodeMap(@Nullable Map<String, Object> options) {
+        if ((options == null) || options.isEmpty()) { return null; }
+
+        try (FLEncoder enc = FLEncoder.getManagedEncoder()) {
+            enc.write(options);
+            return enc.finish();
+        }
+        catch (LiteCoreException e) { Log.w(LogDomain.REPLICATOR, "Failed encoding map: " + options, e); }
+
+        return null;
+    }
+
+
     //-------------------------------------------------------------------------
-    // Factory Methods
+    // Fields
     //-------------------------------------------------------------------------
 
     @NonNull
-    public static FLEncoder getUnmanagedEncoder(long peer) { return new UnmanagedFLEncoder(peer); }
-
-    @NonNull
-    public static FLEncoder getManagedEncoder() { return new ManagedFLEncoder(newFleeceEncoder()); }
-
-
-    //-------------------------------------------------------------------------
-    // Member variables
-    //-------------------------------------------------------------------------
+    protected final NativeImpl impl;
 
     protected final Map<String, Object> arguments = new HashMap<>();
 
@@ -104,7 +160,10 @@ public abstract class FLEncoder extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    private FLEncoder(long peer) { super(peer); }
+    private FLEncoder(@NonNull NativeImpl impl, long peer) {
+        super(peer);
+        this.impl = impl;
+    }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -140,59 +199,59 @@ public abstract class FLEncoder extends C4NativePeer {
         synchronized (arguments) { return arguments.get(key); }
     }
 
-    public boolean writeNull() { return writeNull(getPeer()); }
+    public boolean writeNull() { return impl.nWriteNull(getPeer()); }
 
-    public boolean writeString(String value) { return writeString(getPeer(), value); }
+    public boolean writeString(String value) { return impl.nWriteString(getPeer(), value); }
 
-    public boolean writeString(char[] value) { return writeStringChars(getPeer(), value); }
+    public boolean writeString(char[] value) { return impl.nWriteStringChars(getPeer(), value); }
 
-    public boolean writeData(byte[] value) { return writeData(getPeer(), value); }
+    public boolean writeData(byte[] value) { return impl.nWriteData(getPeer(), value); }
 
-    public boolean beginDict(long reserve) { return beginDict(getPeer(), reserve); }
+    public boolean beginDict(long reserve) { return impl.nBeginDict(getPeer(), reserve); }
 
-    public boolean endDict() { return endDict(getPeer()); }
+    public boolean endDict() { return impl.nEndDict(getPeer()); }
 
-    public boolean beginArray(long reserve) { return beginArray(getPeer(), reserve); }
+    public boolean beginArray(long reserve) { return impl.nBeginArray(getPeer(), reserve); }
 
-    public boolean endArray() { return endArray(getPeer()); }
+    public boolean endArray() { return impl.nEndArray(getPeer()); }
 
-    public boolean writeKey(String slice) { return writeKey(getPeer(), slice); }
+    public boolean writeKey(String slice) { return impl.nWriteKey(getPeer(), slice); }
 
     @SuppressWarnings({"unchecked", "PMD.NPathComplexity"})
     public boolean writeValue(@Nullable Object value) {
         final long peer = getPeer();
         // null
-        if (value == null) { return writeNull(peer); }
+        if (value == null) { return impl.nWriteNull(peer); }
 
         // boolean
-        if (value instanceof Boolean) { return writeBool(peer, (Boolean) value); }
+        if (value instanceof Boolean) { return impl.nWriteBool(peer, (Boolean) value); }
 
         // Number
         if (value instanceof Number) {
             // Integer
-            if (value instanceof Integer) { return writeInt(peer, ((Integer) value).longValue()); }
+            if (value instanceof Integer) { return impl.nWriteInt(peer, ((Integer) value).longValue()); }
 
             // Long
-            if (value instanceof Long) { return writeInt(peer, (Long) value); }
+            if (value instanceof Long) { return impl.nWriteInt(peer, (Long) value); }
 
             // Short
-            if (value instanceof Short) { return writeInt(peer, ((Short) value).longValue()); }
+            if (value instanceof Short) { return impl.nWriteInt(peer, ((Short) value).longValue()); }
 
             // Double
-            if (value instanceof Double) { return writeDouble(peer, (Double) value); }
+            if (value instanceof Double) { return impl.nWriteDouble(peer, (Double) value); }
 
             // Float
-            return writeFloat(peer, (Float) value);
+            return impl.nWriteFloat(peer, (Float) value);
         }
 
         // String
-        if (value instanceof String) { return writeString(peer, (String) value); }
+        if (value instanceof String) { return impl.nWriteString(peer, (String) value); }
 
         // String (represented as char[])
         if (value instanceof char[]) { return writeString((char[]) value); }
 
         // byte[]
-        if (value instanceof byte[]) { return writeData(peer, (byte[]) value); }
+        if (value instanceof byte[]) { return impl.nWriteData(peer, (byte[]) value); }
 
         // List
         if (value instanceof List) { return write((List<?>) value); }
@@ -202,20 +261,20 @@ public abstract class FLEncoder extends C4NativePeer {
 
         // FLValue
         if (value instanceof FLValue) {
-            final Boolean val = ((FLValue) value).withContent(hdl -> writeValue(peer, hdl));
-            return (val != null) && val.booleanValue();
+            final Boolean val = ((FLValue) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
+            return (val != null) && val;
         }
 
         // FLDict
         if (value instanceof FLDict) {
-            final Boolean val = ((FLDict) value).withContent(hdl -> writeValue(peer, hdl));
-            return (val != null) && val.booleanValue();
+            final Boolean val = ((FLDict) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
+            return (val != null) && val;
         }
 
         // FLArray
         if (value instanceof FLArray) {
-            final Boolean val = ((FLArray) value).withContent(hdl -> writeValue(peer, hdl));
-            return (val != null) && val.booleanValue();
+            final Boolean val = ((FLArray) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
+            return (val != null) && val;
         }
 
         // FLEncodable
@@ -228,76 +287,33 @@ public abstract class FLEncoder extends C4NativePeer {
     }
 
     public boolean write(@Nullable Map<String, Object> map) {
-        if (map == null) { beginDict(0); }
+        boolean ok;
+        if (map == null) { ok = beginDict(0); }
         else {
-            beginDict(map.size());
+            ok = beginDict(map.size());
             for (Map.Entry<String, Object> entry: map.entrySet()) {
-                writeKey(entry.getKey());
-                writeValue(entry.getValue());
+                ok = ok && writeKey(entry.getKey());
+                ok = ok && writeValue(entry.getValue());
             }
         }
-        return endDict();
+        return ok && endDict();
     }
 
     public boolean write(@Nullable List<?> list) {
-        if (list == null) { beginArray(0); }
+        boolean ok;
+        if (list == null) { ok = beginArray(0); }
         else {
-            beginArray(list.size());
-            for (Object item: list) { writeValue(item); }
+            ok = beginArray(list.size());
+            for (Object item: list) { ok = ok && writeValue(item); }
         }
-        return endArray();
+        return ok && endArray();
     }
 
-    public void reset() { reset(getPeer()); }
+    public void reset() { impl.nReset(getPeer()); }
 
     @NonNull
-    public byte[] finish() throws LiteCoreException { return finish(getPeer()); }
+    public byte[] finish() throws LiteCoreException { return impl.nFinish(getPeer()); }
 
     @NonNull
-    public FLSliceResult finish2() throws LiteCoreException { return finish2(getPeer()); }
-
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    static native long newFleeceEncoder();
-
-    static native void free(long encoder);
-
-    static native void reset(long encoder);
-
-    private static native boolean writeNull(long encoder);
-
-    private static native boolean writeBool(long encoder, boolean value);
-
-    private static native boolean writeInt(long encoder, long value); // 64bit
-
-    private static native boolean writeFloat(long encoder, float value);
-
-    private static native boolean writeDouble(long encoder, double value);
-
-    private static native boolean writeString(long encoder, String value);
-
-    private static native boolean writeStringChars(long encoder, char[] value);
-
-    private static native boolean writeData(long encoder, byte[] value);
-
-    private static native boolean writeValue(long encoder, long value /*FLValue*/);
-
-    private static native boolean beginArray(long encoder, long reserve);
-
-    private static native boolean endArray(long encoder);
-
-    private static native boolean beginDict(long encoder, long reserve);
-
-    private static native boolean endDict(long encoder);
-
-    private static native boolean writeKey(long encoder, String slice);
-
-    @NonNull
-    private static native byte[] finish(long encoder) throws LiteCoreException;
-
-    @NonNull
-    private static native FLSliceResult finish2(long encoder) throws LiteCoreException;
+    public FLSliceResult finish2() throws LiteCoreException { return impl.nFinish2(getPeer()); }
 }

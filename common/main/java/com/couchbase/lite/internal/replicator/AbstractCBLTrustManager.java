@@ -146,6 +146,11 @@ public abstract class AbstractCBLTrustManager implements X509TrustManager {
 
     /**
      * Get the default trust manager.
+     * This code duplicates the code in org.conscrypt.SSLParametersImpl.createDefaultX509TrustManager
+     * I believe that this will, properly, return an X509ExtendedTrustManager, on Androids > 24
+     * because Platform.createEngineSocket does the right thing.  I have not, however, been able to
+     * verify the connection between that method and the TrustManagerFactory.
+     * Empirically, on the test Nexus 4a, Android 33, it is returning an X509ExtendedTrustManager
      */
     @NonNull
     protected final X509TrustManager getDefaultTrustManager() {

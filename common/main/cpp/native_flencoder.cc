@@ -16,7 +16,7 @@
 // limitations under the License.
 //
 #include "native_glue.hh"
-#include "com_couchbase_lite_internal_fleece_FLEncoder.h"
+#include "com_couchbase_lite_internal_fleece_impl_NativeFLEncoder.h"
 
 using namespace litecore;
 using namespace litecore::jni;
@@ -27,42 +27,42 @@ extern "C" {
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    init
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_newFleeceEncoder(JNIEnv *env, jclass ignore) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_newFleeceEncoder(JNIEnv *env, jclass ignore) {
     return (jlong) FLEncoder_New();
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    free
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_free(JNIEnv *env, jclass ignore, jlong jenc) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_free(JNIEnv *env, jclass ignore, jlong jenc) {
     FLEncoder_Free((FLEncoder) jenc);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeNull
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeNull(JNIEnv *env, jclass ignore, jlong jenc) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeNull(JNIEnv *env, jclass ignore, jlong jenc) {
     return (jboolean) FLEncoder_WriteNull((FLEncoder) jenc);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeBool
  * Signature: (JZ)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeBool(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeBool(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -71,12 +71,12 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeBool(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeInt
  * Signature: (JJ)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeInt(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeInt(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -85,12 +85,12 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeInt(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeFloat
  * Signature: (JF)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeFloat(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeFloat(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -99,12 +99,12 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeFloat(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeDouble
  * Signature: (JD)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeDouble(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeDouble(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -113,12 +113,12 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeDouble(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeString
  * Signature: (JLjava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeString(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeString(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -128,11 +128,11 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeString(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeStringChars
  * Signature: (J[C)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_FLEncoder_writeStringChars(
+JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeStringChars(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -142,12 +142,12 @@ JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_fleece_FLEncoder_wri
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeData
  * Signature: (J[B)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeData(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeData(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -157,12 +157,12 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeData(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeValue
  * Signature: (JJ)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeValue(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeValue(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -171,12 +171,12 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeValue(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    beginArray
  * Signature: (JJ)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_beginArray(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_beginArray(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -185,22 +185,22 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_beginArray(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    endArray
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_endArray(JNIEnv *env, jclass ignore, jlong jenc) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_endArray(JNIEnv *env, jclass ignore, jlong jenc) {
     return (jboolean) FLEncoder_EndArray((FLEncoder) jenc);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    beginDict
  * Signature: (JJ)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_beginDict(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_beginDict(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -209,22 +209,22 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_beginDict(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    endDict
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_endDict(JNIEnv *env, jclass ignore, jlong jenc) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_endDict(JNIEnv *env, jclass ignore, jlong jenc) {
     return (jboolean) FLEncoder_EndDict((FLEncoder) jenc);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    writeKey
  * Signature: (J[B)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_writeKey(
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeKey(
         JNIEnv *env,
         jclass ignore,
         jlong jenc,
@@ -236,12 +236,12 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_writeKey(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    finish
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_finish(JNIEnv *env, jclass ignore, jlong jenc) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish(JNIEnv *env, jclass ignore, jlong jenc) {
     FLError error = kFLNoError;
     FLSliceResult result = FLEncoder_Finish((FLEncoder) jenc, &error);
     if (error != kFLNoError) {
@@ -255,12 +255,12 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_finish(JNIEnv *env, jclass ign
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    finish2
  * Signature: (J)Lcom/couchbase/lite/internal/fleece/FLSliceResult
  */
 JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_finish2(JNIEnv *env, jclass ignore, jlong jenc) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish2(JNIEnv *env, jclass ignore, jlong jenc) {
     FLError error = kFLNoError;
     FLSliceResult res = FLEncoder_Finish((FLEncoder) jenc, &error);
     if (error != kFLNoError) {
@@ -271,12 +271,15 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_finish2(JNIEnv *env, jclass ig
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    reset
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_FLEncoder_reset(JNIEnv *env, jclass ignore, jlong jenc) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_reset(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jenc) {
     FLEncoder_Reset((FLEncoder) jenc);
 }
 
@@ -285,22 +288,27 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_reset(JNIEnv *env, jclass igno
 // ----------------------------------------------------------------------------
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
- * Method:    init
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
+ * Method:    newJSONEncoder
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_JSONEncoder_newJSONEncoder(JNIEnv *env, jclass ignore) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_newJSONEncoder(
+        JNIEnv *env,
+        jclass ignore) {
     return (jlong) FLEncoder_NewWithOptions(kFLEncodeJSON, 0, false);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_fleece_FLEncoder
- * Method:    init
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
+ * Method:    finishJSON
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_JSONEncoder_finishJSON(JNIEnv *env, jclass ignore, jlong jenc) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finishJSON(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jenc) {
     FLError error = kFLNoError;
     FLSliceResult result = FLEncoder_Finish((FLEncoder) jenc, &error);
     if (error != kFLNoError) {

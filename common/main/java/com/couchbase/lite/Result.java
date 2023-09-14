@@ -29,8 +29,8 @@ import java.util.Map;
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
+import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
-import com.couchbase.lite.internal.fleece.JSONEncoder;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -463,7 +463,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     public String toJSON() {
         final int nVals = values.size();
 
-        try (JSONEncoder enc = new JSONEncoder()) {
+        try (FLEncoder.JSONEncoder enc = FLEncoder.getJSONEncoder()) {
             enc.beginDict(nVals);
             for (String columnName: rs.getColumnNames()) {
                 final int i = indexForColumnName(columnName);
@@ -474,6 +474,9 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
             }
             enc.endDict();
             return enc.finishJSON();
+        }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException("Cannot encode result: " + this, e);
         }
     }
 

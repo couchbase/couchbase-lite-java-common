@@ -22,7 +22,7 @@
 #include "com_couchbase_lite_internal_fleece_impl_NativeFLDict.h"
 #include "com_couchbase_lite_internal_fleece_FLDictIterator.h"
 #include "com_couchbase_lite_internal_fleece_FLValue.h"
-#include "com_couchbase_lite_internal_fleece_FLEncoder.h"
+#include "com_couchbase_lite_internal_fleece_impl_NativeFLEncoder.h"
 #include "com_couchbase_lite_internal_fleece_FLSliceResult.h"
 
 using namespace litecore;
