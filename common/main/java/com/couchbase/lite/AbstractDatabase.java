@@ -169,7 +169,7 @@ abstract class AbstractDatabase extends BaseDatabase {
      * Checks whether a database of the given name exists in the given directory or not.
      *
      * @param name      the database's name
-     * @param directory the path where the database is located.
+     * @param directory the path where the database is located. If null, the default db directory will be used.
      * @return true if exists, false otherwise.
      */
     public static boolean exists(@NonNull String name, @Nullable File directory) {
