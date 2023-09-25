@@ -785,13 +785,21 @@ public class DatabaseTest extends BaseDbTest {
             () -> Database.delete(baseTestDb.getName(), new File(getScratchDirectoryPath("nowhere"))));
     }
 
-    // NOTE: Android/Java does not allow to use null as directory parameters
-    @Test(expected = IllegalArgumentException.class)
-    public void testDatabaseExistsWithDefaultDir() { Database.exists(baseTestDb.getName(), null); }
-
     //---------------------------------------------
     //  Database Existing
     //---------------------------------------------
+
+    @Test
+    public void testDatabaseExistsWithDefaultDir() throws CouchbaseLiteException {
+        Database db = null;
+        try {
+            db = new Database(getUniqueName("defaultDb"));
+            assertTrue(Database.exists(db.getName(), null));
+        }
+        finally {
+            deleteDb(db);
+        }
+    }
 
     @Test
     public void testDatabaseExistsWithDir() throws CouchbaseLiteException {
