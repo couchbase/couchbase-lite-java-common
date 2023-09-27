@@ -30,7 +30,16 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public class FLDict {
     public interface NativeImpl {
         long nCount(long dict);
-        long nGet(long dict, byte[] keyString);
+        long nGet(long dict, @NonNull byte[] keyString);
+
+        // Iterator
+        long nInit(long dict);
+        long nGetCount(long itr);
+        boolean nNext(long itr);
+        @Nullable
+        String nGetKey(long itr);
+        long nGetValue(long itr);
+        void nFree(long itr);
     }
 
     private static final NativeImpl NATIVE_IMPL = new NativeFLDict();
@@ -38,8 +47,13 @@ public class FLDict {
     @NonNull
     public static FLDict create(long peer) { return new FLDict(NATIVE_IMPL, peer); }
 
-    private final long peer; // hold pointer to FLDict
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
+
     private final NativeImpl impl;
+    private final long peer; // hold pointer to FLDict
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -55,7 +69,7 @@ public class FLDict {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public FLValue toFLValue() { return new FLValue(peer); }
+    public FLValue toFLValue() { return FLValue.getFLValue(peer); }
 
     public long count() { return impl.nCount(peer); }
 
@@ -65,22 +79,25 @@ public class FLDict {
 
         final long hValue = impl.nGet(peer, key.getBytes(StandardCharsets.UTF_8));
 
-        return hValue != 0L ? new FLValue(hValue) : null;
+        return hValue != 0L ? FLValue.getFLValue(hValue) : null;
     }
 
     @NonNull
     public Map<String, Object> asDict() {
         final Map<String, Object> results = new HashMap<>();
-        try (FLDictIterator itr = new FLDictIterator(this)) {
+        try (FLDictIterator itr = iterator()) {
             String key;
             while ((key = itr.getKey()) != null) {
                 final FLValue val = itr.getValue();
-                results.put(key, (val == null) ? null : val.asObject());
+                results.put(key, val.asObject());
                 itr.next();
             }
         }
         return results;
     }
+
+    @NonNull
+    public FLDictIterator iterator() { return new FLDictIterator(impl, this); }
 
     //-------------------------------------------------------------------------
     // protected methods

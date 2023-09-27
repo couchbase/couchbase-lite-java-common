@@ -1,5 +1,6 @@
-#include <jni.h>
 /* Header for class com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver */
+
+#include <jni.h>
 
 #ifndef _Included_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver
 #define _Included_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver
@@ -15,7 +16,7 @@ extern "C" {
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create
-    (JNIEnv *, jclass, jlong, jstring);
+        (JNIEnv *, jclass, jlong, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver
@@ -24,7 +25,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_free
-    (JNIEnv*, jclass, jlong);
+        (JNIEnv*, jclass, jlong);
 
 #ifdef __cplusplus
 }

@@ -22,7 +22,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Query;
 
 
-public class NativeC4Query implements C4Query.NativeImpl {
+public final class NativeC4Query implements C4Query.NativeImpl {
     @Override
     public long nCreateQuery(long db, int language, @NonNull String params) throws LiteCoreException {
         return createQuery(db, language, params);

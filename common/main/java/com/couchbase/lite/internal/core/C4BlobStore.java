@@ -17,38 +17,84 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.core.impl.NativeC4Blob;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
 /**
  * Blob Store API
  */
-public abstract class C4BlobStore extends C4NativePeer {
+public class C4BlobStore extends C4NativePeer {
+    public interface NativeImpl {
+        long nGetBlobStore(long db) throws LiteCoreException;
+        long nGetSize(long peer, long key);
+        @NonNull
+        FLSliceResult nGetContents(long peer, long key) throws LiteCoreException;
+        @NonNull
+        String nGetFilePath(long peer, long key) throws LiteCoreException;
+        long nCreate(long peer, byte[] data) throws LiteCoreException;
+        void nDelete(long peer, long key) throws LiteCoreException;
+        long nOpenReadStream(long peer, long key) throws LiteCoreException;
+        long nOpenWriteStream(long peer) throws LiteCoreException;
 
-    // unmanaged: the native code will free it
+        // BlobReadStream
+        int nRead(long peer, byte[] data, int offset, long len) throws LiteCoreException;
+        long nGetLength(long peer) throws LiteCoreException;
+        void nSeek(long peer, long pos) throws LiteCoreException;
+        void nCloseWriteStream(long peer);
+
+        // BlobReadStream
+        void nWrite(long peer, byte[] data, int len) throws LiteCoreException;
+        long nComputeBlobKey(long peer) throws LiteCoreException;
+        void nInstall(long peer) throws LiteCoreException;
+        void nCloseReadStream(long peer);
+    }
+
+    // All of the blob stores used in production code are
+    // managed by LiteCore: it will free them
+    // Tests create blob stores that are managed by Java.
+    // See C4TestUtils.ManagedC4BlobStore
     private static final class UnmanagedC4BlobStore extends C4BlobStore {
-        UnmanagedC4BlobStore(long peer) throws LiteCoreException { super(getBlobStore(peer)); }
+        UnmanagedC4BlobStore(@NonNull NativeImpl impl, long peer) throws LiteCoreException {
+            super(impl, impl.nGetBlobStore(peer));
+        }
 
         @Override
         public void close() { releasePeer(null, null); }
     }
+
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Blob();
 
     //-------------------------------------------------------------------------
     // Factory Methods
     //-------------------------------------------------------------------------
 
     @NonNull
-    public static C4BlobStore getUnmanagedBlobStore(long peer) throws LiteCoreException {
-        return new C4BlobStore.UnmanagedC4BlobStore(peer);
+    public static C4BlobStore create(long peer) throws LiteCoreException {
+        return new UnmanagedC4BlobStore(NATIVE_IMPL, NATIVE_IMPL.nGetBlobStore(peer));
     }
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
+
+    private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4BlobStore(long peer) { super(peer); }
+    private C4BlobStore(@NonNull NativeImpl impl, long peer) {
+        super(peer);
+        this.impl = impl;
+    }
+
+    @VisibleForTesting
+    C4BlobStore(long peer) { this(NATIVE_IMPL, peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -60,7 +106,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      * be up to 16 bytes larger than the actual size.
      */
     public long getSize(@NonNull C4BlobKey blobKey) {
-        return withPeerOrDefault(-1L, peer -> getSize(peer, blobKey.getHandle()));
+        return withPeerOrDefault(-1L, peer -> impl.nGetSize(peer, blobKey.getHandle()));
     }
 
     /**
@@ -68,7 +114,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public FLSliceResult getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return withPeerOrThrow(peer -> getContents(peer, blobKey.getHandle()));
+        return withPeerOrThrow(peer -> impl.nGetContents(peer, blobKey.getHandle()));
     }
 
     /**
@@ -82,7 +128,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @Nullable
     public String getFilePath(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return withPeerOrNull(peer -> getFilePath(peer, blobKey.getHandle()));
+        return withPeerOrNull(peer -> impl.nGetFilePath(peer, blobKey.getHandle()));
     }
 
     /**
@@ -90,14 +136,14 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobKey create(@NonNull byte[] contents) throws LiteCoreException {
-        return new C4BlobKey(this.<Long, LiteCoreException>withPeerOrThrow(peer -> create(peer, contents)));
+        return C4BlobKey.create(this.<Long, LiteCoreException>withPeerOrThrow(peer -> impl.nCreate(peer, contents)));
     }
 
     /**
      * Deletes a blob from the store given its key.
      */
     public void delete(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        withPeer(peer -> delete(peer, blobKey.getHandle()));
+        withPeer(peer -> impl.nDelete(peer, blobKey.getHandle()));
     }
 
     /**
@@ -105,7 +151,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobReadStream openReadStream(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return new C4BlobReadStream(withPeerOrThrow(peer -> openReadStream(peer, blobKey.getHandle())));
+        return new C4BlobReadStream(impl, withPeerOrThrow(peer -> impl.nOpenReadStream(peer, blobKey.getHandle())));
     }
 
     /**
@@ -115,31 +161,9 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobWriteStream openWriteStream() throws LiteCoreException {
-        return new C4BlobWriteStream(withPeerOrThrow(C4BlobStore::openWriteStream));
+        return new C4BlobWriteStream(impl, withPeerOrThrow(impl::nOpenWriteStream));
     }
 
     @Override
-    public abstract void close();
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    private static native long getBlobStore(long db) throws LiteCoreException;
-
-    private static native long getSize(long peer, long blobKey);
-
-    @NonNull
-    private static native FLSliceResult getContents(long peer, long blobKey) throws LiteCoreException;
-
-    @NonNull
-    private static native String getFilePath(long peer, long blobKey) throws LiteCoreException;
-
-    private static native long create(long peer, byte[] contents) throws LiteCoreException;
-
-    private static native void delete(long peer, long blobKey) throws LiteCoreException;
-
-    private static native long openReadStream(long peer, long blobKey) throws LiteCoreException;
-
-    private static native long openWriteStream(long peer) throws LiteCoreException;
+    public void close() { releasePeer(null, null); }
 }

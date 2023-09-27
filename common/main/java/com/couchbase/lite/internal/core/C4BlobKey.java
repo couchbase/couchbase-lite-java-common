@@ -18,9 +18,11 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.impl.NativeC4Blob;
 
 
 /**
@@ -29,6 +31,33 @@ import com.couchbase.lite.LogDomain;
  * A raw SHA-1 digest used as the unique identifier of a blob.
  */
 public class C4BlobKey extends C4NativePeer {
+    public interface NativeImpl {
+        long nFromString(@Nullable String str) throws LiteCoreException;
+        @Nullable
+        String nToString(long peer);
+        void nFree(long peer);
+    }
+
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Blob();
+
+    //-------------------------------------------------------------------------
+    // Factory method
+    //-------------------------------------------------------------------------
+
+    @NonNull
+    public static C4BlobKey create(@Nullable String str) throws LiteCoreException {
+        return new C4BlobKey(NATIVE_IMPL, str);
+    }
+
+    @NonNull
+    public static C4BlobKey create(long peer) { return new C4BlobKey(NATIVE_IMPL, peer); }
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
+
+    private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -37,9 +66,15 @@ public class C4BlobKey extends C4NativePeer {
     /**
      * Decodes a string of the form "sha1-"+base64 into a raw key.
      */
-    public C4BlobKey(@Nullable String str) throws LiteCoreException { this(fromString(str)); }
+    @VisibleForTesting
+    public C4BlobKey(@NonNull NativeImpl impl, @Nullable String str) throws LiteCoreException {
+        this(impl, impl.nFromString(str));
+    }
 
-    C4BlobKey(long peer) { super(peer); }
+    private C4BlobKey(@NonNull NativeImpl impl, long peer) {
+        super(peer);
+        this.impl = impl;
+    }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -54,7 +89,7 @@ public class C4BlobKey extends C4NativePeer {
      */
     @NonNull
     @Override
-    public String toString() { return withPeerOrDefault("unknown", C4BlobKey::toString); }
+    public String toString() { return withPeerOrDefault("unknown", impl::nToString); }
 
     //-------------------------------------------------------------------------
     // protected methods
@@ -78,25 +113,12 @@ public class C4BlobKey extends C4NativePeer {
     // private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4BlobKey::free); }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Decode a string of the form "sha1-"+base64 into a raw key
-     */
-    private static native long fromString(@Nullable String str) throws LiteCoreException;
-
-    /**
-     * Encodes a blob key to a string of the form "sha1-"+base64.
-     */
-    @Nullable
-    private static native String toString(long peer);
-
-    /**
-     * Release C4BlobKey
-     */
-    private static native void free(long peer);
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(peer); }
+            });
+    }
 }

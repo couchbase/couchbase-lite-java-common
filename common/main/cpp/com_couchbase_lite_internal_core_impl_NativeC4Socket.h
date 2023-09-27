@@ -1,4 +1,5 @@
 /* Header for class com_couchbase_lite_internal_core_C4Socket */
+
 #include <jni.h>
 
 #ifndef _Included_com_couchbase_lite_internal_core_C4Socket

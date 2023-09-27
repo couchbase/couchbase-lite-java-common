@@ -1,5 +1,6 @@
-#include <jni.h>
 /* Header for class com_couchbase_lite_internal_core_impl_NativeC4Key */
+
+#include <jni.h>
 
 #ifndef _Included_com_couchbase_lite_internal_core_impl_NativeC4Key
 #define _Included_com_couchbase_lite_internal_core_impl_NativeC4Key

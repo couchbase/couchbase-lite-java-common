@@ -3,7 +3,7 @@ package com.couchbase.lite.internal.core.impl;
 import com.couchbase.lite.internal.core.C4Log;
 
 
-public class NativeC4Log implements C4Log.NativeImpl {
+public final class NativeC4Log implements C4Log.NativeImpl {
 
     @Override
     public void nLog(String domain, int level, String message) { log(domain, level, message); }
@@ -15,9 +15,7 @@ public class NativeC4Log implements C4Log.NativeImpl {
     public void nSetCallbackLevel(int level) { setCallbackLevel(level); }
 
     @Override
-    public int nGetBinaryFileLevel() {
-        return getBinaryFileLevel();
-    }
+    public int nGetBinaryFileLevel() { return getBinaryFileLevel(); }
 
     @Override
     public void nSetBinaryFileLevel(int level) { setBinaryFileLevel(level); }

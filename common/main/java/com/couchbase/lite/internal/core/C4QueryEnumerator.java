@@ -23,6 +23,7 @@ import androidx.annotation.VisibleForTesting;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4QueryEnumerator;
+import com.couchbase.lite.internal.fleece.FLArray;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -86,7 +87,7 @@ public class C4QueryEnumerator extends C4NativePeer {
      */
     @NonNull
     public FLArrayIterator getColumns() {
-        return FLArrayIterator.getUnmanagedArrayIterator(impl.nGetColumns(getPeer()));
+        return FLArray.unmanagedIterator(impl.nGetColumns(getPeer()));
     }
 
     /**
@@ -115,5 +116,12 @@ public class C4QueryEnumerator extends C4NativePeer {
     // Private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(peer); }
+            });
+    }
 }

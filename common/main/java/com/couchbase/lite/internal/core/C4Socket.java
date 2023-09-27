@@ -237,8 +237,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         Log.w(LOG_DOMAIN, "C4Socket.%s@%x: No socket for peer", op, peer);
     }
 
-    private static void releaseSocket(@NonNull NativeImpl impl, long peer, int domain, int code, @Nullable String msg) {
-        impl.nClosed(peer, domain, code, msg);
+    private static void releaseSocket(
+        @Nullable NativeImpl impl,
+        long peer,
+        int domain,
+        int code,
+        @Nullable String msg) {
+        if (impl != null) { impl.nClosed(peer, domain, code, msg); }
     }
 
     //-------------------------------------------------------------------------

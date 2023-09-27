@@ -17,27 +17,78 @@ package com.couchbase.lite.internal.fleece;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.List;
 import java.util.Map;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.fleece.impl.NativeFLValue;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.ExcessivePublicCount"})
 public class FLValue {
+    public interface NativeImpl {
+        long nFromTrustedData(byte[] data);
+        long nFromData(long ptr, long size);
+        int nGetType(long value);
+        boolean nIsInteger(long value);
+        boolean nIsUnsigned(long value);
+        boolean nIsDouble(long value);
+        @Nullable
+        String nToString(long handle);
+        @Nullable
+        String nToJSON(long handle);
+        @Nullable
+        String nToJSON5(long handle);
+        @NonNull
+        byte[] nAsData(long value);
+        boolean nAsBool(long value);
+        long nAsUnsigned(long value);
+        long nAsInt(long value);
+        float nAsFloat(long value);
+        double nAsDouble(long value);
+        @NonNull
+        String nAsString(long value);
+        long nAsArray(long value);
+        long nAsDict(long value);
+        @Nullable
+        String nJson5toJson(@Nullable String json5) throws LiteCoreException;
+    }
+
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeFLValue();
 
     //-------------------------------------------------------------------------
     // public static methods
     //-------------------------------------------------------------------------
 
+    @NonNull
+    public static FLValue getFLValue(long peer) { return new FLValue(NATIVE_IMPL, peer); }
+
     @Nullable
-    public static FLValue fromData(@Nullable FLSliceResult slice) {
+    public static Object toObject(@NonNull FLValue flValue) { return flValue.asObject(); }
+
+    @Nullable
+    public static FLValue fromData(@Nullable FLSliceResult slice) { return fromData(NATIVE_IMPL, slice); }
+
+    @VisibleForTesting
+    @Nullable
+    public static FLValue fromData(@NonNull NativeImpl impl, @Nullable FLSliceResult slice) {
         if (slice == null) { return null; }
-        final long value = fromData(slice.getBase(), slice.getSize());
-        return value == 0 ? null : new FLValue(value);
+        final long value = impl.nFromData(slice.getBase(), slice.getSize());
+        return value == 0 ? null : FLValue.getFLValue(value);
+    }
+
+    @NonNull
+    public static FLValue fromData(@NonNull byte[] data) { return fromData(NATIVE_IMPL, data); }
+
+    @VisibleForTesting
+    @NonNull
+    public static FLValue fromData(@NonNull NativeImpl impl, @NonNull byte[] data) {
+        return FLValue.getFLValue(impl.nFromTrustedData(data));
     }
 
     /**
@@ -48,28 +99,31 @@ public class FLValue {
      * @throws LiteCoreException on parse failure
      */
     @Nullable
-    public static String getJSONForJSON5(@Nullable String json5) throws LiteCoreException { return json5toJson(json5); }
+    public static String getJSONForJSON5(@Nullable String json5) throws LiteCoreException {
+        return getJSONForJSON5(NATIVE_IMPL, json5);
+    }
 
-    @NonNull
-    public static FLValue fromData(@NonNull byte[] data) { return new FLValue(fromTrustedData(data)); }
-
+    @VisibleForTesting
     @Nullable
-    public static Object toObject(@NonNull FLValue flValue) { return flValue.asObject(); }
-
+    public static String getJSONForJSON5(@NonNull NativeImpl impl, @Nullable String json5) throws LiteCoreException {
+        return impl.nJson5toJson(json5);
+    }
 
     //-------------------------------------------------------------------------
     // Member Variables
     //-------------------------------------------------------------------------
 
-    private final long handle; // pointer to FLValue
+    private final NativeImpl impl;
+    private final long peer; // pointer to FLValue
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    public FLValue(long handle) {
-        Preconditions.assertNotZero(handle, "handle");
-        this.handle = handle;
+    @VisibleForTesting
+    public FLValue(@NonNull NativeImpl impl, long peer) {
+        this.impl = Preconditions.assertNotNull(impl, "impl");
+        this.peer = Preconditions.assertNotZero(peer, "peer");
     }
 
     //-------------------------------------------------------------------------
@@ -81,7 +135,7 @@ public class FLValue {
      *
      * @return int (FLValueType)
      */
-    public int getType() { return getType(handle); }
+    public int getType() { return impl.nGetType(peer); }
 
     /**
      * Is this value a number?
@@ -95,7 +149,7 @@ public class FLValue {
      *
      * @return true if value is a number
      */
-    public boolean isInteger() { return isInteger(handle); }
+    public boolean isInteger() { return impl.nIsInteger(peer); }
 
     /**
      * Returns true if the value is non-nullptr and represents an _unsigned_ integer that can only
@@ -103,14 +157,14 @@ public class FLValue {
      *
      * @return boolean
      */
-    public boolean isUnsigned() { return isUnsigned(handle); }
+    public boolean isUnsigned() { return impl.nIsUnsigned(peer); }
 
     /**
      * Is this a 64-bit floating-point value?
      *
      * @return true if value is a double
      */
-    public boolean isDouble() { return isDouble(handle); }
+    public boolean isDouble() { return impl.nIsDouble(peer); }
 
     /**
      * Returns the string representation.
@@ -118,7 +172,7 @@ public class FLValue {
      * @return string rep
      */
     @Nullable
-    public String toStr() { return toString(handle); }
+    public String toStr() { return impl.nToString(peer); }
 
     /**
      * Returns the json representation.
@@ -126,7 +180,7 @@ public class FLValue {
      * @return json rep
      */
     @Nullable
-    public String toJSON() { return toJSON(handle); }
+    public String toJSON() { return impl.nToJSON(peer); }
 
     /**
      * Returns the string representation.
@@ -134,7 +188,7 @@ public class FLValue {
      * @return json5 rep
      */
     @Nullable
-    public String toJSON5() { return toJSON5(handle); }
+    public String toJSON5() { return impl.nToJSON5(peer); }
 
     /**
      * Returns the exact contents of a data value, or null for all other types.
@@ -142,14 +196,14 @@ public class FLValue {
      * @return byte[]
      */
     @NonNull
-    public byte[] asData() { return asData(handle); }
+    public byte[] asData() { return impl.nAsData(peer); }
 
     /**
      * Returns a value coerced to boolean.
      *
      * @return boolean
      */
-    public boolean asBool() { return asBool(handle); }
+    public boolean asBool() { return impl.nAsBool(peer); }
 
     /**
      * Returns a value coerced to an integer.
@@ -157,28 +211,28 @@ public class FLValue {
      *
      * @return long
      */
-    public long asInt() { return asInt(handle); }
+    public long asInt() { return impl.nAsInt(peer); }
 
     /**
      * Returns a value coerced to an unsigned integer.
      *
      * @return long
      */
-    public long asUnsigned() { return asUnsigned(handle); }
+    public long asUnsigned() { return impl.nAsUnsigned(peer); }
 
     /**
      * Returns a value coerced to a 32-bit floating point number.
      *
      * @return float
      */
-    public float asFloat() { return asFloat(handle); }
+    public float asFloat() { return impl.nAsFloat(peer); }
 
     /**
      * Returns a value coerced to a 64-bit floating point number.
      *
      * @return double
      */
-    public double asDouble() { return asDouble(handle); }
+    public double asDouble() { return impl.nAsDouble(peer); }
 
     /**
      * Returns the exact contents of a string value, or null for all other types.
@@ -187,7 +241,7 @@ public class FLValue {
      * @return String
      */
     @NonNull
-    public String asString() { return asString(handle); }
+    public String asString() { return impl.nAsString(peer); }
 
     @NonNull
     public List<Object> asArray() { return asFLArray().asArray(); }
@@ -201,7 +255,7 @@ public class FLValue {
      * @return String
      */
     @NonNull
-    public FLDict asFLDict() { return FLDict.create(asDict(handle)); }
+    public FLDict asFLDict() { return FLDict.create(impl.nAsDict(peer)); }
 
     /**
      * If a FLValue represents an array, returns it cast to FLDict, else nullptr.
@@ -218,7 +272,7 @@ public class FLValue {
      */
     @Nullable
     public Object asObject() {
-        switch (getType(handle)) {
+        switch (impl.nGetType(peer)) {
             case FLConstants.ValueType.BOOLEAN:
                 return Boolean.valueOf(asBool());
             case FLConstants.ValueType.NUMBER:
@@ -240,63 +294,9 @@ public class FLValue {
     }
 
     @Nullable
-    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(handle); }
+    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
 
     @NonNull
-    FLArray asFLArray() { return FLArray.create(asArray(handle)); }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Returns a pointer to the root value in the encoded data
-     *
-     * @param data FLSlice (same with slice)
-     * @return long (FLValue - const struct _FLValue*)
-     */
-    private static native long fromTrustedData(byte[] data);
-
-    private static native long fromData(long ptr, long size);
-
-    private static native int getType(long value);
-
-    private static native boolean isInteger(long value);
-
-    private static native boolean isUnsigned(long value);
-
-    private static native boolean isDouble(long value);
-
-    @Nullable
-    private static native String toString(long handle);
-
-    @Nullable
-    private static native String toJSON(long handle);
-
-    @Nullable
-    private static native String toJSON5(long handle);
-
-    @NonNull
-    private static native byte[] asData(long value);
-
-    private static native boolean asBool(long value);
-
-    private static native long asUnsigned(long value);
-
-    private static native long asInt(long value);
-
-    private static native float asFloat(long value);
-
-    private static native double asDouble(long value);
-
-    @NonNull
-    private static native String asString(long value);
-
-    private static native long asArray(long value);
-
-    private static native long asDict(long value);
-
-    @Nullable
-    private static native String json5toJson(@Nullable String json5) throws LiteCoreException;
+    FLArray asFLArray() { return FLArray.create(impl.nAsArray(peer)); }
 }
 

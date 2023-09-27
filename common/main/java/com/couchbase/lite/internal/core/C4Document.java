@@ -21,6 +21,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.impl.NativeC4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -29,6 +30,47 @@ import com.couchbase.lite.internal.support.Log;
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public final class C4Document extends C4NativePeer {
+    public interface NativeImpl {
+        //// Creating and Updating Documents
+        long nGetFromCollection(long coll, String docID, boolean mustExist, boolean getAllRevs)
+            throws LiteCoreException;
+        long nCreateFromSlice(long coll, String docID, long bodyPtr, long bodySize, int flags)
+            throws LiteCoreException;
+        //// Properties
+        int nGetFlags(long doc);
+        @NonNull
+        String nGetRevID(long doc);
+        long nGetSequence(long doc);
+        //// Revisions
+        int nGetSelectedFlags(long doc);
+        @NonNull
+        String nGetSelectedRevID(long doc);
+        long nGetSelectedSequence(long doc);
+        long nGetGenerationForId(@NonNull String doc);
+        // return pointer to FLValue
+        long nGetSelectedBody2(long doc);
+        //// Conflict Resolution
+        void nSelectNextLeafRevision(long doc, boolean includeDeleted, boolean withBody) throws LiteCoreException;
+        void nResolveConflict(
+            long doc,
+            String winningRevID,
+            String losingRevID,
+            byte[] mergeBody,
+            int mergedFlags)
+            throws LiteCoreException;
+        long nUpdate(long doc, long bodyPtr, long bodySize, int flags) throws LiteCoreException;
+        void nSave(long doc, int maxRevTreeDepth) throws LiteCoreException;
+        //// Fleece-related
+        @Nullable
+        String nBodyAsJSON(long doc, boolean canonical) throws LiteCoreException;
+        //// Lifecycle
+        void nFree(long doc);
+        //// Utility
+        boolean nDictContainsBlobs(long dictPtr, long dictSize, long sk);
+    }
+
+    @NonNull
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Document();
 
     //-------------------------------------------------------------------------
     // Static Factory Methods
@@ -37,32 +79,34 @@ public final class C4Document extends C4NativePeer {
     @NonNull
     static C4Document create(@NonNull C4Collection coll, @NonNull String docID, @Nullable FLSliceResult body, int flags)
         throws LiteCoreException {
-        return new C4Document(createFromSlice(
-            coll.getPeer(),
-            docID,
-            (body == null) ? 0 : body.getBase(),
-            (body == null) ? 0 : body.getSize(),
-            flags));
+        return new C4Document(
+            NATIVE_IMPL,
+            NATIVE_IMPL.nCreateFromSlice(
+                coll.getPeer(),
+                docID,
+                (body == null) ? 0 : body.getBase(),
+                (body == null) ? 0 : body.getSize(),
+                flags));
     }
 
     @Nullable
     static C4Document get(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final long doc = getFromCollection(coll.getPeer(), docID, true, false);
-        return (doc == 0) ? null : new C4Document(doc);
+        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, true, false);
+        return (doc == 0) ? null : new C4Document(NATIVE_IMPL, doc);
     }
 
     @Nullable
     static C4Document getWithRevs(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final long doc = getFromCollection(coll.getPeer(), docID, true, true);
-        return (doc == 0) ? null : new C4Document(doc);
+        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, true, true);
+        return (doc == 0) ? null : new C4Document(NATIVE_IMPL, doc);
     }
 
     @VisibleForTesting
     @NonNull
     static C4Document getOrCreateDocument(@NonNull C4Collection coll, @NonNull String docID) throws LiteCoreException {
-        final long doc = getFromCollection(coll.getPeer(), docID, false, true);
+        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, false, true);
 
         // This should never happen.  With "mustExist" set false we should get:
         // - the existing doc, if there is one
@@ -72,10 +116,10 @@ public final class C4Document extends C4NativePeer {
             throw new LiteCoreException(
                 C4Constants.ErrorDomain.LITE_CORE,
                 C4Constants.LiteCoreError.NOT_FOUND,
-                "Could not create docume: " + docID);
+                "Could not create document: " + docID);
         }
 
-        return new C4Document(doc);
+        return new C4Document(NATIVE_IMPL, doc);
     }
 
     //-------------------------------------------------------------------------
@@ -83,74 +127,85 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     public static boolean dictContainsBlobs(@NonNull FLSliceResult dict, @NonNull FLSharedKeys sk) {
-        return dictContainsBlobs(dict.getBase(), dict.getSize(), sk.getHandle());
+        return NATIVE_IMPL.nDictContainsBlobs(dict.getBase(), dict.getSize(), sk.getHandle());
     }
 
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
+
+    private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4Document(long peer) { super(peer); }
+    private C4Document(@NonNull NativeImpl impl, long peer) {
+        super(peer);
+        this.impl = impl;
+    }
+
+    @VisibleForTesting
+    C4Document(long peer) { this(NATIVE_IMPL, peer); }
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
 
     // - Properties
-
     @Nullable
-    public String getRevID() { return withPeerOrNull(C4Document::getRevID); }
+    public String getRevID() { return withPeerOrNull(impl::nGetRevID); }
 
-    public long getSequence() { return withPeerOrDefault(0L, C4Document::getSequence); }
+    public long getSequence() { return withPeerOrDefault(0L, impl::nGetSequence); }
 
-    public int getSelectedFlags() { return withPeerOrDefault(0, C4Document::getSelectedFlags); }
+    public int getSelectedFlags() { return withPeerOrDefault(0, impl::nGetSelectedFlags); }
 
     // - Revisions
 
     @Nullable
-    public String getSelectedRevID() { return withPeerOrNull(C4Document::getSelectedRevID); }
+    public String getSelectedRevID() { return withPeerOrNull(impl::nGetSelectedRevID); }
 
-    public long getSelectedSequence() { return withPeerOrDefault(0L, C4Document::getSelectedSequence); }
+    public long getSelectedSequence() { return withPeerOrDefault(0L, impl::nGetSelectedSequence); }
 
     @Nullable
     public FLDict getSelectedBody2() {
-        final long value = withPeerOrThrow(C4Document::getSelectedBody2);
+        final long value = withPeerOrThrow(impl::nGetSelectedBody2);
         return value == 0 ? null : FLDict.create(value);
     }
 
-    public long getGeneration(String id) { return getGenerationForId(id); }
+    public long getGeneration(String id) { return impl.nGetGenerationForId(id); }
 
     // - Conflict resolution
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
-        selectNextLeafRevision(getPeer(), includeDeleted, withBody);
+        impl.nSelectNextLeafRevision(getPeer(), includeDeleted, withBody);
     }
 
     public void resolveConflict(String winningRevID, String losingRevID, byte[] mergeBody, int mergedFlags)
         throws LiteCoreException {
-        resolveConflict(getPeer(), winningRevID, losingRevID, mergeBody, mergedFlags);
+        impl.nResolveConflict(getPeer(), winningRevID, losingRevID, mergeBody, mergedFlags);
     }
 
     @Nullable
     public C4Document update(@Nullable FLSliceResult body, int flags) throws LiteCoreException {
         final long newDoc = withPeerOrDefault(
             0L,
-            h -> update2(
+            h -> impl.nUpdate(
                 h,
                 (body == null) ? 0 : body.getBase(),
                 (body == null) ? 0 : body.getSize(),
                 flags));
-        return (newDoc == 0) ? null : new C4Document(newDoc);
+        return (newDoc == 0) ? null : new C4Document(impl, newDoc);
     }
 
-    public void save(int maxRevTreeDepth) throws LiteCoreException { save(getPeer(), maxRevTreeDepth); }
+    public void save(int maxRevTreeDepth) throws LiteCoreException { impl.nSave(getPeer(), maxRevTreeDepth); }
 
     // - Fleece
 
     @Nullable
     public String bodyAsJSON(boolean canonical) throws LiteCoreException {
-        return withPeerOrNull(h -> bodyAsJSON(h, canonical));
+        return withPeerOrNull(h -> impl.nBodyAsJSON(h, canonical));
     }
 
     // - Helper methods
@@ -209,82 +264,28 @@ public final class C4Document extends C4NativePeer {
     protected void finalize() throws Throwable {
         // Since there is no good way to free these suckers explicitly,
         // we leave them to the finalizer and don't squawk about it.
-        try { releasePeer(null, C4Document::free); }
+        try { closePeer(null); }
         finally { super.finalize(); }
     }
 
     //-------------------------------------------------------------------------
-    // package protected methods
+    // private methods
     //-------------------------------------------------------------------------
 
-    private int getFlags() { return withPeerOrDefault(0, C4Document::getFlags); }
+    private int getFlags() { return withPeerOrDefault(0, impl::nGetFlags); }
 
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    // - Creating and Updating Documents
-
-    private static native long getFromCollection(long coll, String docID, boolean mustExist, boolean getAllRevs)
-        throws LiteCoreException;
-
-    private static native long createFromSlice(long coll, String docID, long bodyPtr, long bodySize, int flags)
-        throws LiteCoreException;
-
-    // - Properties
-
-    private static native int getFlags(long doc);
-
-    @NonNull
-    private static native String getRevID(long doc);
-
-    private static native long getSequence(long doc);
-
-    // - Revisions
-
-    private static native int getSelectedFlags(long doc);
-
-    @NonNull
-    private static native String getSelectedRevID(long doc);
-
-    private static native long getSelectedSequence(long doc);
-
-    private static native long getGenerationForId(@NonNull String doc);
-
-    // return pointer to FLValue
-    private static native long getSelectedBody2(long doc);
-
-    // - Conflict Resolution
-
-    private static native void selectNextLeafRevision(
-        long doc,
-        boolean includeDeleted,
-        boolean withBody)
-        throws LiteCoreException;
-
-    private static native void resolveConflict(
-        long doc,
-        String winningRevID,
-        String losingRevID,
-        byte[] mergeBody,
-        int mergedFlags)
-        throws LiteCoreException;
-
-    private static native long update2(long doc, long bodyPtr, long bodySize, int flags) throws LiteCoreException;
-
-    private static native void save(long doc, int maxRevTreeDepth) throws LiteCoreException;
-
-    // - Fleece-related
-
-    // doc -> pointer to C4Document
-    @Nullable
-    private static native String bodyAsJSON(long doc, boolean canonical) throws LiteCoreException;
-
-    // - Lifecycle
-
-    private static native void free(long doc);
-
-    // - Utility
-
-    private static native boolean dictContainsBlobs(long dictPtr, long dictSize, long sk);
+    // This idiom, which you will see in many places in this code,
+    // may protect against a failure that both customers and I have seen:
+    // the ART runtime frees (and nulls) a member reference before freeing the
+    // object that refers to it it: impl may be null.
+    // If that happens, we are going to leak memory.  This idiom, though
+    // may prevent an NPE on the finalizer thread.
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(peer); }
+            });
+    }
 }

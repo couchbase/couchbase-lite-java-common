@@ -144,5 +144,12 @@ public class C4QueryObserver extends C4NativePeer {
         return withPeerOrNull(h -> c4QueryEnumeratorFactory.apply(impl.nGetEnumerator(h, false)));
     }
 
-    private void closePeer(LogDomain domain) { releasePeer(domain, impl::nFree); }
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(peer); }
+            });
+    }
 }

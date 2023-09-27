@@ -22,7 +22,7 @@ import com.couchbase.lite.internal.core.C4CollectionObserver;
 import com.couchbase.lite.internal.core.C4DocumentChange;
 
 
-public class NativeC4CollectionObserver implements C4CollectionObserver.NativeImpl {
+public final class NativeC4CollectionObserver implements C4CollectionObserver.NativeImpl {
 
     @Override
     public long nCreate(long coll) throws LiteCoreException { return create(coll); }

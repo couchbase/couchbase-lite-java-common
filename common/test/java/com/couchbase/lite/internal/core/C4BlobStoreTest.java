@@ -49,8 +49,10 @@ public class C4BlobStoreTest extends C4BaseTest {
     public final void setUpC4BlobStoreTest() throws CouchbaseLiteException {
         blobDir = new File(getScratchDirectoryPath(getUniqueName("cbl_blobs")));
         try {
-            blobStore = new C4TestUtils.ManagedC4BlobStore(blobDir.getCanonicalPath() + File.separator, getTestDbFlags());
-            bogusKey = new C4BlobKey("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");
+            blobStore = new C4TestUtils.ManagedC4BlobStore(
+                blobDir.getCanonicalPath() + File.separator,
+                getTestDbFlags());
+            bogusKey = C4BlobKey.create("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
@@ -71,7 +73,7 @@ public class C4BlobStoreTest extends C4BaseTest {
     // - parse blob keys
     @Test
     public void testParseBlobKeys() throws LiteCoreException {
-        try (C4BlobKey key = new C4BlobKey("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=")) {
+        try (C4BlobKey key = C4BlobKey.create("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=")) {
             assertEquals("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=", key.toString());
         }
     }
@@ -315,7 +317,7 @@ public class C4BlobStoreTest extends C4BaseTest {
     }
 
     private void parseInvalidBlobKeys(String str) {
-        try (C4BlobKey ignore = new C4BlobKey(str)) { fail(); }
+        try (C4BlobKey ignore = C4BlobKey.create(str)) { fail(); }
         catch (LiteCoreException ignore) { }
     }
 }

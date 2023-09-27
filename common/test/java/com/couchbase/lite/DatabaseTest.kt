@@ -818,6 +818,18 @@ class DatabaseTest : BaseDbTest() {
     //---------------------------------------------
     //  Database Existence
     //---------------------------------------------
+
+    @Test
+    fun testDatabaseExistsWithDefaultDir() {
+        var db: Database? = null
+        try {
+            db = Database(getUniqueName("defaultDb"))
+            assertTrue(Database.exists(db.name, null))
+        } finally {
+            db?.let { deleteDb(db) }
+        }
+    }
+
     @Test
     fun testDatabaseExistsWithDir() {
         val dirName = getUniqueName("test-exists-dir")

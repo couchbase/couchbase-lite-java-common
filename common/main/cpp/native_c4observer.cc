@@ -19,7 +19,7 @@
 #include "com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4QueryObserver.h"
-#include "com_couchbase_lite_internal_core_C4DocumentObserver.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver.h"
 
 using namespace litecore;
 using namespace litecore::jni;
@@ -182,7 +182,7 @@ c4DocChangesToJavaArray(JNIEnv *env, C4CollectionChange changes[], uint32_t nCha
 }
 
 // ----------------------------------------------------------------------------
-// com_couchbase_lite_internal_core_impl_C4QueryObserver
+// com_couchbase_lite_internal_core_impl_NativeC4QueryObserver
 // ----------------------------------------------------------------------------
 
 /**
@@ -204,11 +204,13 @@ c4QueryObserverCallback(C4QueryObserver *ignore1, C4Query *ignore2, void *ctx) {
     }
 }
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-/*
- * Collection observer
- */
+// ----------------------------------------------------------------------------
+// com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
+// ----------------------------------------------------------------------------
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
@@ -220,7 +222,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
         JNIEnv *env,
         jclass ignore,
         jlong coll) {
-
     C4Error error{};
     auto res = (jlong) c4dbobs_createOnCollection(
             (C4Collection *) coll,
@@ -272,9 +273,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_free(
         c4dbobs_free((C4CollectionObserver *) observer);
 }
 
-/*
- * Collection document observer
- */
+// ----------------------------------------------------------------------------
+// com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver
+// ----------------------------------------------------------------------------
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver
@@ -318,9 +319,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_free(
         c4docobs_free((C4DocumentObserver *) observer);
 }
 
-/*
- * Query observer
- */
+// ----------------------------------------------------------------------------
+// com_couchbase_lite_internal_core_impl_NativeC4QueryObserver
+// ----------------------------------------------------------------------------
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryObserver
@@ -381,4 +382,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_free(
         jlong handle) {
     c4queryobs_free((C4QueryObserver *) handle);
 }
+#ifdef __cplusplus
 }
+#endif

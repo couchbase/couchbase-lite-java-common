@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import androidx.annotation.CallSuper;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
@@ -26,12 +27,17 @@ import com.couchbase.lite.LogDomain;
  * An open stream for reading data from a blob.
  */
 public class C4BlobReadStream extends C4NativePeer {
+    @NonNull
+    private final C4BlobStore.NativeImpl impl;
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    C4BlobReadStream(long peer) { super(peer); }
+    C4BlobReadStream(@NonNull C4BlobStore.NativeImpl impl, long peer) {
+        super(peer);
+        this.impl = impl;
+    }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -43,19 +49,19 @@ public class C4BlobReadStream extends C4NativePeer {
      * @param maxBytesToRead The maximum number of bytes to read to the buffer
      */
     public int read(byte[] b, int offset, long maxBytesToRead) throws LiteCoreException {
-        return withPeerOrDefault(0, peer -> read(peer, b, offset, maxBytesToRead));
+        return withPeerOrDefault(0, peer -> impl.nRead(peer, b, offset, maxBytesToRead));
     }
 
     /**
      * Returns the exact length in bytes of the stream.
      */
-    public long getLength() throws LiteCoreException { return withPeerOrDefault(0L, C4BlobReadStream::getLength); }
+    public long getLength() throws LiteCoreException { return withPeerOrDefault(0L, impl::nGetLength); }
 
     /**
      * Moves to a random location in the stream; the next c4stream_read call will read from that
      * location.
      */
-    public void seek(long position) throws LiteCoreException { withPeer(peer -> seek(peer, position)); }
+    public void seek(long position) throws LiteCoreException { withPeer(peer -> impl.nSeek(peer, position)); }
 
     /**
      * Closes a read-stream.
@@ -78,16 +84,12 @@ public class C4BlobReadStream extends C4NativePeer {
     // private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, C4BlobReadStream::close); }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-    private static native int read(long peer, byte[] b, int offset, long maxBytesToRead) throws LiteCoreException;
-
-    private static native long getLength(long peer) throws LiteCoreException;
-
-    private static native void seek(long peer, long position) throws LiteCoreException;
-
-    private static native void close(long peer);
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                final C4BlobStore.NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nCloseReadStream(peer); }
+            });
+    }
 }

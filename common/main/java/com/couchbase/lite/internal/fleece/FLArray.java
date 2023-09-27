@@ -26,17 +26,36 @@ import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public class FLArray {
-
+public final class FLArray {
     public interface NativeImpl {
         long nCount(long array);
         long nGet(long array, long index);
+
+        // iterator
+        long nInit(long array);
+        long nGetValue(long peer);
+        long nGetValueAt(long peer, int offset);
+        boolean nNext(long peer);
+        void nFree(long peer);
     }
 
     private static final NativeImpl NATIVE_IMPL = new NativeFLArray();
 
+    //-------------------------------------------------------------------------
+    // Factory Method
+    //-------------------------------------------------------------------------
+
     @NonNull
     public static FLArray create(long peer) { return new FLArray(NATIVE_IMPL, peer); }
+
+    @NonNull
+    public static FLArrayIterator unmanagedIterator(long peer) {
+        return new FLArrayIterator.UnmanagedFLArrayIterator(NATIVE_IMPL, peer);
+    }
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
 
     private final long peer; // pointer to FLArray
     private final NativeImpl impl;
@@ -45,7 +64,7 @@ public class FLArray {
     // constructor
     //-------------------------------------------------------------------------
 
-    FLArray(@NonNull NativeImpl impl, long peer) {
+    private FLArray(@NonNull NativeImpl impl, long peer) {
         Preconditions.assertNotZero(peer, "peer");
         this.peer = peer;
         this.impl = impl;
@@ -69,7 +88,7 @@ public class FLArray {
      * @return the FLValue at index
      */
     @NonNull
-    public FLValue get(long index) { return new FLValue(impl.nGet(peer, index)); }
+    public FLValue get(long index) { return FLValue.getFLValue(impl.nGet(peer, index)); }
 
     @NonNull
     public List<Object> asArray() { return asTypedArray(); }
@@ -78,15 +97,19 @@ public class FLArray {
     @SuppressWarnings("unchecked")
     public <T> List<T> asTypedArray() {
         final List<T> results = new ArrayList<>();
-        final FLArrayIterator itr = FLArrayIterator.getManagedArrayIterator(this);
-        FLValue value;
-        while ((value = itr.getValue()) != null) {
-            results.add((T) value.asObject());
-            if (!itr.next()) { break; }
+        try (FLArrayIterator itr = iterator()) {
+            FLValue value;
+            while ((value = itr.getValue()) != null) {
+                results.add((T) value.asObject());
+                if (!itr.next()) { break; }
+            }
         }
 
         return results;
     }
+
+    @NonNull
+    public FLArrayIterator iterator() { return new FLArrayIterator.ManagedFLArrayIterator(impl, this); }
 
     //-------------------------------------------------------------------------
     // package level access

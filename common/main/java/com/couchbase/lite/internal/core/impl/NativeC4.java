@@ -7,7 +7,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4;
 
 
-public class NativeC4 implements C4.NativeImpl{
+public final class NativeC4 implements C4.NativeImpl{
     @Override
     public void nSetenv(@NonNull String name, @NonNull String value, int overwrite) { setenv(name, value, overwrite); }
 

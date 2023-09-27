@@ -22,7 +22,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 @SuppressWarnings("PMD.TooManyMethods")
-public class NativeFLEncoder implements FLEncoder.NativeImpl {
+public final class NativeFLEncoder implements FLEncoder.NativeImpl {
     @Override
     public long nCreateFleeceEncoder() { return newFleeceEncoder(); }
 

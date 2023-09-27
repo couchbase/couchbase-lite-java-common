@@ -98,7 +98,7 @@ public final class MDict extends MCollection {
         }
 
         if ((baseDict != null) && (baseDict.count() > 0)) {
-            try (FLDictIterator itr = new FLDictIterator(baseDict)) {
+            try (FLDictIterator itr = baseDict.iterator()) {
                 String key;
                 while ((key = itr.getKey()) != null) {
                     if (!values.containsKey(key)) { keys.add(key); }
@@ -171,7 +171,7 @@ public final class MDict extends MCollection {
         values.clear();
 
         if ((baseDict != null) && (baseDict.count() > 0)) {
-            try (FLDictIterator itr = new FLDictIterator(baseDict)) {
+            try (FLDictIterator itr = baseDict.iterator()) {
                 String key;
                 while ((key = itr.getKey()) != null) {
                     values.put(key, MValue.EMPTY);
@@ -208,7 +208,7 @@ public final class MDict extends MCollection {
         }
 
         if ((baseDict != null) && (baseDict.count() > 0)) {
-            try (FLDictIterator itr = new FLDictIterator(baseDict)) {
+            try (FLDictIterator itr = baseDict.iterator()) {
                 String key;
                 while ((key = itr.getKey()) != null) {
                     if (!values.containsKey(key)) {

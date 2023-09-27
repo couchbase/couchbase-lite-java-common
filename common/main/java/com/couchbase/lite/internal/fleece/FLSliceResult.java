@@ -17,15 +17,29 @@ package com.couchbase.lite.internal.fleece;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+
+import com.couchbase.lite.internal.fleece.impl.NativeFLSliceResult;
 
 
 /**
- * This is an interesting object. It frames a piece of mamory that LiteCore owns:
+ * This is an interesting object. It frames a piece of memory that LiteCore owns:
  * it just passes us this view: `base` points at the start of the block, base + size is its end.
  * Its C companion is a struct so there is no memory for Java to manage.
  * The JNI just creates one of these whenever LiteCore returns a native FLSliceResult.
  */
 public class FLSliceResult {
+    public interface NativeImpl {
+        @Nullable
+        byte[] nGetBuf(long base, long size);
+    }
+
+    private static final FLSliceResult.NativeImpl NATIVE_IMPL = new NativeFLSliceResult();
+
+
+    @NonNull
+    private final NativeImpl impl;
+
     // These fields are accessed by reflection.  Don't change them.
     final long base;
     final long size;
@@ -33,9 +47,12 @@ public class FLSliceResult {
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
-
     // This method is called by reflection.  Don't change its signature.
-    public FLSliceResult(long base, long size) {
+    public FLSliceResult(long base, long size) { this(NATIVE_IMPL, base, size); }
+
+    @VisibleForTesting
+    public FLSliceResult(@NonNull NativeImpl impl, long base, long size) {
+        this.impl = impl;
         this.base = base;
         this.size = size;
     }
@@ -54,12 +71,5 @@ public class FLSliceResult {
     public long getSize() { return size; }
 
     @Nullable
-    public byte[] getContent() { return getBuf(base, size); }
-
-    //-------------------------------------------------------------------------
-    // Native methods
-    //-------------------------------------------------------------------------
-
-    @Nullable
-    private static native byte[] getBuf(long base, long size);
+    public byte[] getContent() { return impl.nGetBuf(base, size); }
 }

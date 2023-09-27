@@ -230,7 +230,7 @@ public final class C4Collection extends C4NativePeer {
 
     @NonNull
     public FLValue getIndexesInfo() throws LiteCoreException {
-        return new FLValue(withPeerOrThrow(impl::nGetIndexesInfo));
+        return FLValue.getFLValue(withPeerOrThrow(impl::nGetIndexesInfo));
     }
 
     public void deleteIndex(String name) throws LiteCoreException {
@@ -260,5 +260,12 @@ public final class C4Collection extends C4NativePeer {
         finally { super.finalize(); }
     }
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(peer); }
+            });
+    }
 }
