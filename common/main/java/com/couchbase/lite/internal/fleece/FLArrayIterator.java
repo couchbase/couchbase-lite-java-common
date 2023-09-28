@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -23,10 +24,9 @@ import com.couchbase.lite.internal.core.C4NativePeer;
 
 
 public abstract class FLArrayIterator extends C4NativePeer {
-
     // unmanaged: the native code will free it
     static final class UnmanagedFLArrayIterator extends FLArrayIterator {
-        UnmanagedFLArrayIterator(long peer) { super(peer); }
+        UnmanagedFLArrayIterator(@NonNull FLArray.NativeImpl impl, long peer) { super(impl, peer); }
 
         @Override
         public void close() { releasePeer(null, null); }
@@ -38,11 +38,12 @@ public abstract class FLArrayIterator extends C4NativePeer {
         @SuppressWarnings({"FieldCanBeLocal", "unused, PMD.SingularField", "PMD.UnusedPrivateField"})
         private final FLArray array;
 
-        ManagedFLArrayIterator(@NonNull FLArray array) {
-            super(array.withContent(FLArrayIterator::init));
+        ManagedFLArrayIterator(@NonNull FLArray.NativeImpl impl, @NonNull FLArray array) {
+            super(impl, array.withContent(impl::nInit));
             this.array = array;
         }
 
+        @CallSuper
         @Override
         public void close() { closePeer(null); }
 
@@ -53,86 +54,50 @@ public abstract class FLArrayIterator extends C4NativePeer {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, FLArrayIterator::free); }
-    }
-
-    //-------------------------------------------------------------------------
-    // Factory Methods
-    //-------------------------------------------------------------------------
-
-    @NonNull
-    public static FLArrayIterator getUnmanagedArrayIterator(long peer) {
-        return new FLArrayIterator.UnmanagedFLArrayIterator(peer);
-    }
-
-    @NonNull
-    public static FLArrayIterator getManagedArrayIterator(@NonNull FLArray flArray) {
-        return new FLArrayIterator.ManagedFLArrayIterator(flArray);
+        private void closePeer(@Nullable LogDomain domain) {
+            releasePeer(
+                domain,
+                (peer) -> {
+                    final FLArray.NativeImpl nativeImpl = impl;
+                    if (nativeImpl != null) { nativeImpl.nFree(peer); }
+                });
+        }
     }
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
 
-    public FLArrayIterator(@Nullable Long peer) { super(peer); }
+    protected final FLArray.NativeImpl impl;
 
-    public FLArrayIterator(long peer) { super(peer); }
+    FLArrayIterator(@NonNull FLArray.NativeImpl impl, @Nullable Long peer) {
+        super(peer);
+        this.impl = impl;
+    }
+
+    FLArrayIterator(@NonNull FLArray.NativeImpl impl, long peer) {
+        super(peer);
+        this.impl = impl;
+    }
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
 
+    // Our close doesn't throw.
+    public abstract void close();
+
     @Nullable
     public FLValue getValueAt(int index) {
-        final long hValue = getValueAt(getPeer(), index);
-        return hValue == 0L ? null : new FLValue(hValue);
+        final long hValue = impl.nGetValueAt(getPeer(), index);
+        return hValue == 0L ? null : FLValue.getFLValue(hValue);
     }
 
-    public boolean next() { return next(getPeer()); }
+    public boolean next() { return impl.nNext(getPeer()); }
 
     @Nullable
     public FLValue getValue() {
-        final long hValue = getValue(getPeer());
-        return hValue == 0L ? null : new FLValue(hValue);
+        final long hValue = impl.nGetValue(getPeer());
+        return hValue == 0L ? null : FLValue.getFLValue(hValue);
     }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Create FLArrayIterator instance
-     *
-     * @return long (FLArrayIterator *)
-     */
-    static native long init(long array);
-
-    /**
-     * Returns the current value being iterated over.
-     *
-     * @param peer (FLArrayIterator *)
-     * @return long (FLValue)
-     */
-    private static native long getValue(long peer);
-
-    /**
-     * @param peer   (FLArrayIterator *)
-     * @param offset Array offset
-     * @return long (FLValue)
-     */
-    private static native long getValueAt(long peer, int offset);
-
-    /**
-     * Advances the iterator to the next value, or returns false if at the end.
-     *
-     * @param peer (FLArrayIterator *)
-     */
-    private static native boolean next(long peer);
-
-    /**
-     * Free FLArrayIterator instance
-     *
-     * @param peer (FLArrayIterator *)
-     */
-    static native void free(long peer);
 }

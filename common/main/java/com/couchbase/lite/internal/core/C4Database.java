@@ -166,7 +166,14 @@ public abstract class C4Database extends C4NativePeer {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
+        private void closePeer(@Nullable LogDomain domain) {
+            releasePeer(
+                domain,
+                (peer) -> {
+                    final NativeImpl nativeImpl = impl;
+                    if (nativeImpl != null) { nativeImpl.nFree(peer); }
+                });
+        }
     }
 
     @NonNull
@@ -397,7 +404,7 @@ public abstract class C4Database extends C4NativePeer {
     // - Blobs
 
     @NonNull
-    public C4BlobStore getBlobStore() throws LiteCoreException { return C4BlobStore.getUnmanagedBlobStore(getPeer()); }
+    public C4BlobStore getBlobStore() throws LiteCoreException { return C4BlobStore.create(getPeer()); }
 
     // - Transactions
 

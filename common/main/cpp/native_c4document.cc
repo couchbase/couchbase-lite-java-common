@@ -19,7 +19,7 @@
 #include <vector>
 #include "c4Base.h"
 #include "native_glue.hh"
-#include "com_couchbase_lite_internal_core_C4Document.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Document.h"
 
 using namespace litecore;
 using namespace litecore::jni;
@@ -29,12 +29,12 @@ extern "C" {
 // - Collection Constructors:
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getFromCollection
  * Signature: (JLjava/lang/String;ZZ)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFromCollection(
         JNIEnv *env,
         jclass ignore,
         jlong coll,
@@ -66,12 +66,12 @@ Java_com_couchbase_lite_internal_core_C4Document_getFromCollection(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    createFromSLice
  * Signature: (JLjava/lang/String;JJI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_createFromSlice(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_createFromSlice(
         JNIEnv *env,
         jclass ignore,
         jlong jcollection,
@@ -94,34 +94,34 @@ Java_com_couchbase_lite_internal_core_C4Document_createFromSlice(
 // - Properties
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getFlags
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getFlags(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return doc->flags;
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getRevID
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getRevID(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevID(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return toJString(env, doc->revID);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSequence
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getSequence(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSequence(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return doc->sequence;
 }
@@ -130,45 +130,45 @@ Java_com_couchbase_lite_internal_core_C4Document_getSequence(JNIEnv *env, jclass
 // - Revisions
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedFlags
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getSelectedFlags(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedFlags(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return doc->selectedRev.flags;
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedRevID
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getSelectedRevID(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return toJString(env, doc->selectedRev.revID);
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedSequence
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getSelectedSequence(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return doc->selectedRev.sequence;
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getGenerationForId
  * Signature: (Ljava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getGenerationForId(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getGenerationForId(
         JNIEnv *env,
         jclass ignore,
         jstring jrevId) {
@@ -177,12 +177,12 @@ Java_com_couchbase_lite_internal_core_C4Document_getGenerationForId(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedBody2
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_getSelectedBody2(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2(JNIEnv *env, jclass ignore, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     FLDict root = nullptr;
     C4Slice body = c4doc_getRevisionBody(doc);
@@ -194,12 +194,12 @@ Java_com_couchbase_lite_internal_core_C4Document_getSelectedBody2(JNIEnv *env, j
 // - Conflict resolution
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    selectNextLeafRevision
  * Signature: (JZZ)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_selectNextLeafRevision(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectNextLeafRevision(
         JNIEnv *env,
         jclass ignore,
         jlong jdoc,
@@ -211,12 +211,12 @@ Java_com_couchbase_lite_internal_core_C4Document_selectNextLeafRevision(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    resolveConflict
  * Signature: (JLjava/lang/String;Ljava/lang/String;[BI)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_resolveConflict(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_resolveConflict(
         JNIEnv *env,
         jclass ignore,
         jlong jdoc,
@@ -234,12 +234,12 @@ Java_com_couchbase_lite_internal_core_C4Document_resolveConflict(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    update2
  * Signature: (JJJI)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_update2(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_update2(
         JNIEnv *env,
         jclass ignore,
         jlong jdoc,
@@ -265,12 +265,12 @@ Java_com_couchbase_lite_internal_core_C4Document_update2(
 }
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    save
  * Signature: (JI)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_save(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_save(
         JNIEnv *env,
         jclass ignore,
         jlong jdoc,
@@ -283,12 +283,12 @@ Java_com_couchbase_lite_internal_core_C4Document_save(
 // - Fleece
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    bodyAsJSON
  * Signature: (JZ)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_bodyAsJSON(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON(
         JNIEnv *env,
         jclass ignore,
         jlong jdoc,
@@ -308,24 +308,24 @@ Java_com_couchbase_lite_internal_core_C4Document_bodyAsJSON(
 // - Lifecycle
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    free
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_free(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free(JNIEnv *env, jclass ignore, jlong jdoc) {
     c4doc_release((C4Document *) jdoc);
 }
 
 // - Utility
 
 /*
- * Class:     com_couchbase_lite_internal_core_C4Document
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    dictContainsBlobs
  * Signature: (JJJ)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_C4Document_dictContainsBlobs(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_dictContainsBlobs(
         JNIEnv *env,
         jclass ignore,
         jlong jbodyPtr,

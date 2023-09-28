@@ -6,7 +6,7 @@ import androidx.annotation.Nullable;
 import com.couchbase.lite.internal.core.C4Key;
 
 
-public class NativeC4Key implements C4Key.NativeImpl {
+public final class NativeC4Key implements C4Key.NativeImpl {
 
     @Override
     @Nullable

@@ -549,7 +549,7 @@ public final class Blob implements FLEncodable {
 
     long updateSize() {
         if (database == null) { return -1; }
-        try (C4BlobStore store = database.getBlobStore(); C4BlobKey key = new C4BlobKey(blobDigest)) {
+        try (C4BlobStore store = database.getBlobStore(); C4BlobKey key = C4BlobKey.create(blobDigest)) {
             final long storedSize = store.getSize(key);
             if (storedSize >= 0) { blobLength = storedSize; }
             return storedSize;
@@ -621,7 +621,7 @@ public final class Blob implements FLEncodable {
         Preconditions.assertNotNull(database, "database");
 
         final byte[] newContent;
-        try (C4BlobStore blobStore = database.getBlobStore(); C4BlobKey key = new C4BlobKey(blobDigest)) {
+        try (C4BlobStore blobStore = database.getBlobStore(); C4BlobKey key = C4BlobKey.create(blobDigest)) {
             newContent = blobStore.getContents(key).getContent();
         }
         catch (LiteCoreException e) {
@@ -638,7 +638,7 @@ public final class Blob implements FLEncodable {
 
     @NonNull
     private InputStream getStreamFromDatabase(@NonNull BaseDatabase db) {
-        try { return new BlobInputStream(new C4BlobKey(blobDigest), db.getBlobStore()); }
+        try { return new BlobInputStream(C4BlobKey.create(blobDigest), db.getBlobStore()); }
         catch (IllegalArgumentException | LiteCoreException e) {
             throw new IllegalStateException("Failed opening blobContent stream.", e);
         }

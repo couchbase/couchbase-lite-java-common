@@ -18,10 +18,8 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import java.util.Objects;
-
 
 class C4FullTextMatch extends C4NativePeer {
     private static final long MOCK_PEER = 0x0cab00d1eL;

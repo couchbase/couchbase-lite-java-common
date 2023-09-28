@@ -23,7 +23,7 @@ import com.couchbase.lite.internal.core.C4Collection;
 
 
 @SuppressWarnings({"PMD.UnusedPrivateMethod", "PMD.TooManyMethods"})
-public class NativeC4Collection implements C4Collection.NativeImpl {
+public final class NativeC4Collection implements C4Collection.NativeImpl {
 
     // Collections
 

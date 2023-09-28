@@ -700,8 +700,11 @@ public abstract class C4Replicator extends C4NativePeer {
                 BOUND_REPLICATORS.unbind(token);
 
                 // It might be better to queue this stuff to be done on another thread...
-                impl.nStop(peer);
-                impl.nFree(peer);
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) {
+                    nativeImpl.nStop(peer);
+                    nativeImpl.nFree(peer);
+                }
             });
     }
 }

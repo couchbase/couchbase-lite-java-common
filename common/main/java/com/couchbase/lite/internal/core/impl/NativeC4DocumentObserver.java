@@ -4,7 +4,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4DocumentObserver;
 
 
-public class NativeC4DocumentObserver implements C4DocumentObserver.NativeImpl {
+public final class NativeC4DocumentObserver implements C4DocumentObserver.NativeImpl {
     @Override
     public long nCreate(long coll, String docId) throws LiteCoreException { return create(coll, docId); }
 

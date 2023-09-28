@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,7 +23,9 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 
 
-public class FLDictIterator extends C4NativePeer {
+public final class FLDictIterator extends C4NativePeer {
+    private final FLDict.NativeImpl impl;
+
     // Hold a reference to the object over which we iterate.
     @SuppressWarnings({"PMD.SingularField", "PMD.UnusedPrivateField", "FieldCanBeLocal", "unused"})
     private final FLDict dict;
@@ -33,8 +34,9 @@ public class FLDictIterator extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    public FLDictIterator(@NonNull FLDict dict) {
-        super(dict.withContent(FLDictIterator::init));
+    FLDictIterator(@NonNull FLDict.NativeImpl impl, @NonNull FLDict dict) {
+        super(dict.withContent(impl::nInit));
+        this.impl = impl;
         this.dict = dict;
     }
 
@@ -42,15 +44,15 @@ public class FLDictIterator extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    public long getCount() { return getCount(getPeer()); }
+    public long getCount() { return impl.nGetCount(getPeer()); }
 
-    public boolean next() { return next(getPeer()); }
-
-    @Nullable
-    public String getKey() { return getKey(getPeer()); }
+    public boolean next() { return impl.nNext(getPeer()); }
 
     @Nullable
-    public FLValue getValue() { return new FLValue(getValue(getPeer())); }
+    public String getKey() { return impl.nGetKey(getPeer()); }
+
+    @NonNull
+    public FLValue getValue() { return FLValue.getFLValue(impl.nGetValue(getPeer())); }
 
     @CallSuper
     @Override
@@ -71,54 +73,12 @@ public class FLDictIterator extends C4NativePeer {
     // Private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, FLDictIterator::free); }
-
-    //-------------------------------------------------------------------------
-    // native methods
-    //-------------------------------------------------------------------------
-
-    /**
-     * Initialize a FLDictIterator instance
-     *
-     * @return long (FLDictIterator *)
-     */
-    private static native long init(long dict);
-
-    /**
-     * Returns the number of items remaining to be iterated, including the current one.
-     *
-     * @param itr (FLDictIterator *)
-     */
-    private static native long getCount(long itr);
-
-    /**
-     * Advances the iterator to the next value, or returns false if at the end.
-     *
-     * @param itr (FLDictIterator *)
-     */
-    private static native boolean next(long itr);
-
-    /**
-     * Returns the key's string value.
-     *
-     * @param itr (FLDictIterator *)
-     * @return key string
-     */
-    @Nullable
-    private static native String getKey(long itr);
-
-    /**
-     * Returns the current value being iterated over.
-     *
-     * @param itr (FLDictIterator *)
-     * @return long (FLValue)
-     */
-    private static native long getValue(long itr);
-
-    /**
-     * Free FLDictIterator instance
-     *
-     * @param itr (FLDictIterator *)
-     */
-    private static native void free(long itr);
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                final FLDict.NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(peer); }
+            });
+    }
 }

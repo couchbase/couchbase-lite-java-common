@@ -10,7 +10,7 @@ import com.couchbase.lite.internal.core.C4Database;
 
 
 @SuppressWarnings("PMD.TooManyMethods")
-public class NativeC4Database implements C4Database.NativeImpl {
+public final class NativeC4Database implements C4Database.NativeImpl {
 
     @Override
     public long nOpen(@NonNull String parentDir, @NonNull String name, int flags, int algorithm, byte[] encryptionKey)

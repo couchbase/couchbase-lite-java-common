@@ -118,7 +118,8 @@ public final class C4CollectionObserver extends C4NativePeer {
             domain,
             (peer) -> {
                 BOUND_OBSERVERS.unbind(peer);
-                impl.nFree(peer);
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(peer); }
             });
     }
 }

@@ -1,5 +1,6 @@
-#include <jni.h>
 /* Header for class com_couchbase_lite_internal_core_impl_NativeC4Log */
+
+#include <jni.h>
 
 #ifndef _Included_com_couchbase_lite_internal_core_impl_NativeC4Log
 #define _Included_com_couchbase_lite_internal_core_impl_NativeC4Log

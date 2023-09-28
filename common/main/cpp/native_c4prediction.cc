@@ -17,7 +17,7 @@
 //
 
 #include "native_glue.hh"
-#include "com_couchbase_lite_internal_core_NativeC4Prediction.h"
+#include "com_couchbase_lite_internal_core_impl_NativeC4Prediction.h"
 
 using namespace litecore;
 using namespace litecore::jni;
