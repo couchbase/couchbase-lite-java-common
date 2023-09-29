@@ -58,9 +58,7 @@ public class C4BlobStore extends C4NativePeer {
     // Tests create blob stores that are managed by Java.
     // See C4TestUtils.ManagedC4BlobStore
     private static final class UnmanagedC4BlobStore extends C4BlobStore {
-        UnmanagedC4BlobStore(@NonNull NativeImpl impl, long peer) throws LiteCoreException {
-            super(impl, impl.nGetBlobStore(peer));
-        }
+        UnmanagedC4BlobStore(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
 
         @Override
         public void close() { releasePeer(null, null); }
