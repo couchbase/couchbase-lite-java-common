@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 
-abstract class WeakPeerBinding<T> extends PeerBinding<T> {
+public abstract class WeakPeerBinding<T> extends PeerBinding<T> {
     @GuardedBy("this")
     @NonNull
     private final Map<Long, WeakReference<T>> bindings = new HashMap<>();

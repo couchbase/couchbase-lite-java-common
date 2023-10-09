@@ -26,7 +26,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Fn;
 
 

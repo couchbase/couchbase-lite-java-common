@@ -12,12 +12,9 @@ package com.couchbase.lite.internal.core
 
 
 import com.couchbase.lite.BaseTest
-import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding
 import org.junit.Assert
 import org.junit.Test
-import java.lang.IllegalArgumentException
-import java.lang.IllegalStateException
 
 class PeerBindingTest {
     /**
@@ -44,8 +41,9 @@ class PeerBindingTest {
             binding.bind(key, mockObject)
             Assert.assertEquals(1, binding.size())
             Assert.assertEquals(mockObject, binding.getBinding(key))
+        } finally {
+            binding.clear()
         }
-        finally { binding.clear() }
     }
 
     // Trying to bind an object to a key that's not reserved leads to exception
@@ -54,8 +52,9 @@ class PeerBindingTest {
         val binding = TaggedWeakPeerBinding<Any>()
         try {
             BaseTest.assertThrows(IllegalStateException::class.java) { binding.bind(4345, object {}) }
+        } finally {
+            binding.clear()
         }
-        finally { binding.clear() }
     }
 
     // Rebinding an existing mapping with a different object results in exception
@@ -69,16 +68,20 @@ class PeerBindingTest {
 
             binding.bind(keyReserve, object1)
             BaseTest.assertThrows(IllegalStateException::class.java) { binding.bind(keyReserve, object2) }
+        } finally {
+            binding.clear()
         }
-        finally { binding.clear() }
     }
 
     // Getting a binding that doesn't exist returns null
     @Test
     fun testGetNonExistingBinding() {
         val binding = TaggedWeakPeerBinding<Any>()
-        try { Assert.assertNull(binding.getBinding(234)) }
-        finally { binding.clear() }
+        try {
+            Assert.assertNull(binding.getBinding(234))
+        } finally {
+            binding.clear()
+        }
     }
 
     // Getting an out of bound key for lookup should throw an exception right away
@@ -87,8 +90,9 @@ class PeerBindingTest {
         val binding = TaggedWeakPeerBinding<Any>()
         try {
             BaseTest.assertThrows(IllegalArgumentException::class.java) { binding.getBinding(-1) }
+        } finally {
+            binding.clear()
         }
-        finally { binding.clear() }
     }
 
     // Unbinding a key should remove the mapping of that key
@@ -112,41 +116,9 @@ class PeerBindingTest {
             binding.unbind(key1)
             Assert.assertEquals(2, binding.size())
             Assert.assertNull(binding.getBinding(key1))
+        } finally {
+            binding.clear()
         }
-        finally { binding.clear() }
-    }
-
-    /**
-     * Tests for NativeRefPeerBinding.
-     * Overall, NativeRefPeerBinding behaves the same way as TaggedWeakPeerBinding with a few distinctions
-     */
-
-    // NativeRefPeerBinding binds object to its native peer address directly, thus there should be no need to reserve a key
-    @Test
-    fun testNativeRefPeerBinding() {
-        val nativeBinding = NativeRefPeerBinding<Any>()
-        val bindObject = object {}
-        val key: Long = 12341
-        try {
-            nativeBinding.bind(key, bindObject)
-            Assert.assertEquals(1, nativeBinding.size())
-            Assert.assertEquals(bindObject, nativeBinding.getBinding(key))
-        }
-        finally { nativeBinding.clear() }
-    }
-
-    // Native address has no int bound
-    @Test
-    fun testGetNativeAddress() {
-        val nativeBinding = NativeRefPeerBinding<Any>()
-        val key: Long = -213415
-        val bindObject = object {}
-        try {
-            nativeBinding.bind(key, bindObject)
-            Assert.assertEquals(1, nativeBinding.size())
-            Assert.assertEquals(bindObject, nativeBinding.getBinding(key))
-        }
-        finally { nativeBinding.clear() }
     }
 }
 

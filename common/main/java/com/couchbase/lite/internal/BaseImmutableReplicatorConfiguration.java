@@ -35,8 +35,8 @@ import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.CBLVersion;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 

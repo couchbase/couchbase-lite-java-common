@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 
 
 /**

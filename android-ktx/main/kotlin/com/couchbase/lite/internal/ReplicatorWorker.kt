@@ -27,7 +27,7 @@ import com.couchbase.lite.Replicator
 import com.couchbase.lite.ReplicatorActivityLevel
 import com.couchbase.lite.ReplicatorStatus
 import com.couchbase.lite.WorkManagerReplicatorFactory
-import com.couchbase.lite.internal.support.Log
+import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.replicatorChangesFlow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.takeWhile

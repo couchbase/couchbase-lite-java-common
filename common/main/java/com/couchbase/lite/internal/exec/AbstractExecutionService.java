@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 

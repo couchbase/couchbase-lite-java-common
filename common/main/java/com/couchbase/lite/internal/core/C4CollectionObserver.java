@@ -23,13 +23,13 @@ import androidx.annotation.VisibleForTesting;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4CollectionObserver;
-import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
+import com.couchbase.lite.internal.logging.Log;
 
 
 public final class C4CollectionObserver extends C4NativePeer {
     public interface NativeImpl {
-        long nCreate(long coll) throws LiteCoreException;
+        long nCreate(long token, long coll) throws LiteCoreException;
         @NonNull
         C4DocumentChange[] nGetChanges(long peer, int maxChanges);
         void nFree(long peer);
@@ -38,17 +38,17 @@ public final class C4CollectionObserver extends C4NativePeer {
     @NonNull
     private static final NativeImpl NATIVE_IMPL = new NativeC4CollectionObserver();
 
-    private static final NativeRefPeerBinding<C4CollectionObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
+    private static final TaggedWeakPeerBinding<C4CollectionObserver> BOUND_OBSERVERS = new TaggedWeakPeerBinding<>();
 
     //-------------------------------------------------------------------------
     // JNI callback methods
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    static void callback(long peer) {
-        Log.d(LogDomain.DATABASE, "C4CollectionObserver.callback @%x", peer);
+    static void callback(long token) {
+        Log.d(LogDomain.DATABASE, "C4CollectionObserver.callback @%x", token);
 
-        final C4CollectionObserver observer = BOUND_OBSERVERS.getBinding(peer);
+        final C4CollectionObserver observer = BOUND_OBSERVERS.getBinding(token);
         if (observer == null) { return; }
 
         observer.listener.run();
@@ -67,9 +67,10 @@ public final class C4CollectionObserver extends C4NativePeer {
     @NonNull
     static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener)
         throws LiteCoreException {
-        final long peer = impl.nCreate(c4Coll);
-        final C4CollectionObserver observer = new C4CollectionObserver(impl, peer, listener);
-        BOUND_OBSERVERS.bind(peer, observer);
+        final long token = BOUND_OBSERVERS.reserveKey();
+        final long peer = impl.nCreate(token, c4Coll);
+        final C4CollectionObserver observer = new C4CollectionObserver(impl, token, peer, listener);
+        BOUND_OBSERVERS.bind(token, observer);
         return observer;
     }
 
@@ -78,6 +79,8 @@ public final class C4CollectionObserver extends C4NativePeer {
     // Member Variables
     //-------------------------------------------------------------------------
 
+    @VisibleForTesting
+    final long token;
     @NonNull
     private final Runnable listener;
     @NonNull
@@ -87,9 +90,10 @@ public final class C4CollectionObserver extends C4NativePeer {
     // Constructor
     //-------------------------------------------------------------------------
 
-    private C4CollectionObserver(@NonNull NativeImpl impl, long peer, @NonNull Runnable listener) {
+    private C4CollectionObserver(@NonNull NativeImpl impl, long token, long peer, @NonNull Runnable listener) {
         super(peer);
         this.impl = impl;
+        this.token = token;
         this.listener = listener;
     }
 
@@ -117,7 +121,7 @@ public final class C4CollectionObserver extends C4NativePeer {
         releasePeer(
             domain,
             (peer) -> {
-                BOUND_OBSERVERS.unbind(peer);
+                BOUND_OBSERVERS.unbind(token);
                 final NativeImpl nativeImpl = impl;
                 if (nativeImpl != null) { nativeImpl.nFree(peer); }
             });

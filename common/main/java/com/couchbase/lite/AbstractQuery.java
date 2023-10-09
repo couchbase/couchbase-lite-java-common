@@ -33,7 +33,7 @@ import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.core.C4QueryObserver;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 

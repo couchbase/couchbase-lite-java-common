@@ -22,13 +22,14 @@ public final class C4CollectionDocObserver extends C4DocumentObserver {
         @NonNull String id,
         @NonNull Runnable listener)
     throws LiteCoreException {
-        final long peer = impl.nCreate(c4Coll, id);
-        final C4CollectionDocObserver observer = new C4CollectionDocObserver(impl, peer, listener);
-        BOUND_OBSERVERS.bind(peer, observer);
+        final long token = BOUND_OBSERVERS.reserveKey();
+        final C4CollectionDocObserver observer
+            = new C4CollectionDocObserver(impl, token, impl.nCreate(token, c4Coll, id), listener);
+        BOUND_OBSERVERS.bind(token, observer);
         return observer;
     }
 
-    private C4CollectionDocObserver(@NonNull NativeImpl impl, long peer, @NonNull Runnable listener) {
-        super(impl, peer, listener);
+    private C4CollectionDocObserver(@NonNull NativeImpl impl, long token, long peer, @NonNull Runnable listener) {
+        super(impl, token, peer, listener);
     }
 }

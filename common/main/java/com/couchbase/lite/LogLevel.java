@@ -19,7 +19,7 @@ import androidx.annotation.NonNull;
 
 import java.util.EnumMap;
 
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 
 
 /**

@@ -28,13 +28,13 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.BaseSocketFactory;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.impl.NativeC4Socket;
-import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
+import com.couchbase.lite.internal.core.peers.WeakPeerBinding;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.sockets.CBLSocketException;
 import com.couchbase.lite.internal.sockets.CloseStatus;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 import com.couchbase.lite.internal.sockets.SocketFromCore;
 import com.couchbase.lite.internal.sockets.SocketToCore;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -78,6 +78,19 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     interface SocketTask {
         void accept(C4Socket socket, SocketFromCore fromCore);
     }
+
+    /**
+     * Email exchange, 2022/5/17
+     *
+     * Blake:
+     * Is the reference that the JNI gets when it creates [such an] object (which the Java code stores as
+     * a `long`) *always* the same reference that that object will pass as a parameter when it does a callback
+     * to the Java code e.g. kSocketFactory.write or C4ReplicatorParameters.C4ReplicatorDocumentsEndedCallback.
+     *
+     * Jim:
+     * Yes this is a safe assumption
+     */
+    public static class NativeRefPeerBinding<T> extends WeakPeerBinding<T> { }
 
     //-------------------------------------------------------------------------
     // Static fields

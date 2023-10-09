@@ -12,11 +12,11 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver
  * Method:    create
- * Signature: (JLjava/lang/String;)J
+ * Signature: (JJLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create
-        (JNIEnv *, jclass, jlong, jstring);
+        (JNIEnv *, jclass, jlong, jlong, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver

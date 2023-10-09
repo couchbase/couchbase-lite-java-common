@@ -38,7 +38,7 @@ import okhttp3.internal.Util;
 
 import com.couchbase.lite.internal.BaseReplicatorConfiguration;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
