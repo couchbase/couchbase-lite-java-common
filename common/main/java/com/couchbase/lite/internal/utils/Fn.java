@@ -28,15 +28,16 @@ import java.util.Set;
 
 public interface Fn {
     @FunctionalInterface
-    interface NullableFunctionThrows<T, R, E extends Exception> {
+    interface NullableFunction<T, R> {
         @Nullable
-        R apply(@NonNull T x) throws E;
+        R apply(@NonNull T x);
     }
 
+    @Deprecated
     @FunctionalInterface
-    interface FunctionThrows<T, R, E extends Exception> {
-        @NonNull
-        R apply(@NonNull T x) throws E;
+    interface Function<T, R> {
+        @Nullable
+        R apply(@NonNull T x);
     }
 
     @FunctionalInterface
@@ -45,11 +46,23 @@ public interface Fn {
         R apply(@NonNull T x);
     }
 
+    @FunctionalInterface
+    interface NullableFunctionThrows<T, R, E extends Exception> {
+        @Nullable
+        R apply(@NonNull T x) throws E;
+    }
 
     @FunctionalInterface
-    interface Function<T, R> {
-        @Nullable
-        R apply(@NonNull T x);
+    interface NonNullFunctionThrows<T, R, E extends Exception> {
+        @NonNull
+        R apply(@NonNull T x) throws E;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    interface FunctionThrows<T, R, E extends Exception> {
+        @NonNull
+        R apply(@NonNull T x) throws E;
     }
 
     @FunctionalInterface
@@ -84,11 +97,6 @@ public interface Fn {
     }
 
     @FunctionalInterface
-    interface ConsumerThrows<T, E extends Exception> {
-        void accept(@NonNull T x) throws E;
-    }
-
-    @FunctionalInterface
     interface Consumer<T> {
         void accept(@NonNull T x);
     }
@@ -96,6 +104,11 @@ public interface Fn {
     @FunctionalInterface
     interface NullableConsumer<T> {
         void accept(@Nullable T x);
+    }
+
+    @FunctionalInterface
+    interface ConsumerThrows<T, E extends Exception> {
+        void accept(@NonNull T x) throws E;
     }
 
     @FunctionalInterface
@@ -148,7 +161,7 @@ public interface Fn {
     @NonNull
     static <T, R, E extends Exception> List<R> mapToList(
         @NonNull Collection<? extends T> l,
-        @NonNull FunctionThrows<T, R, E> fn)
+        @NonNull NonNullFunctionThrows<T, R, E> fn)
         throws E {
         final List<R> r = new ArrayList<>(l.size());
         for (T e: l) { r.add(fn.apply(e)); }
@@ -158,7 +171,7 @@ public interface Fn {
     @NonNull
     static <T, R, E extends Exception> Set<R> mapToSet(
         @NonNull Collection<? extends T> s,
-        @NonNull FunctionThrows<T, R, E> fn)
+        @NonNull NonNullFunctionThrows<T, R, E> fn)
         throws E {
         final Set<R> r = new HashSet<>(s.size());
         for (T e: s) { r.add(fn.apply(e)); }

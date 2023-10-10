@@ -52,9 +52,18 @@ public class CBLExecutor extends ThreadPoolExecutor {
     public CBLExecutor(@NonNull String name) { this(name, POOL_SIZE, POOL_SIZE, new LinkedBlockingQueue<>()); }
 
     public CBLExecutor(@NonNull String name, int min, int max, @NonNull BlockingQueue<Runnable> workQueue) {
+        this(name, min, max, 30, workQueue);  // unused threads die after 30 sec
+    }
+
+    public CBLExecutor(
+        @NonNull String name,
+        int min,
+        int max,
+        long ttlSecs,
+        @NonNull BlockingQueue<Runnable> queue) {
         super(min, max,
-            30, TimeUnit.SECONDS,        // if there are more than min threads, idle ones will die after 30 sec
-            workQueue,
+            ttlSecs, TimeUnit.SECONDS,
+            queue,
             new ThreadFactory() {        // thread factory that gives our threads nice recognizable names
                 private final String threadName = name + " #";
                 private final AtomicInteger threadId = new AtomicInteger(0);
