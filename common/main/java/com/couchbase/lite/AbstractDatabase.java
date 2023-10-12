@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableDatabaseConfiguration;
-import com.couchbase.lite.internal.Listenable;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4Constants;
@@ -51,6 +50,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.listener.ChangeListenerToken;
+import com.couchbase.lite.internal.listener.Listenable;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.replicator.ConflictResolutionException;
 import com.couchbase.lite.internal.sockets.MessageFraming;

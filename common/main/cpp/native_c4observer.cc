@@ -70,7 +70,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
         if (!cls_C4DocObs)
             return false;
 
-        m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback", "(JLjava/lang/String;)V");
+        m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback", "(JJLjava/lang/String;)V");
         if (!m_C4DocObs_callback)
             return false;
     }
@@ -139,18 +139,29 @@ c4CollectionObsCallback(C4CollectionObserver *observer, void *context) {
  * Callback method from LiteCore C4DocumentObserver
  * @param ign1 ref for the C4Document observer: ignored
  * @param ign2 ref for the C4Collection: ignored
- * @param ign3 the doc id: ignored
+ * @param docID the id of the changed document
+ * @param seq the doc sequence number: ignored
  * @param context the token bound to the observer instance.
  */
 static void
-c4DocObsCallback(C4DocumentObserver *ign1, C4Collection *ign2, C4Slice docID, C4SequenceNumber ign3, void *context) {
+c4DocObsCallback(C4DocumentObserver *ign1, C4Collection *ign2, C4Slice docID, C4SequenceNumber seq, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) context, toJString(env, docID));
+        env->CallStaticVoidMethod(
+                cls_C4DocObs,
+                m_C4DocObs_callback,
+                (jlong) context,
+                (jlong) seq,
+                toJString(env, docID));
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) context, toJString(env, docID));
+            env->CallStaticVoidMethod(
+                    cls_C4DocObs,
+                    m_C4DocObs_callback,
+                    (jlong) context,
+                    (jlong) seq,
+                    toJString(env, docID));
             gJVM->DetachCurrentThread();
         }
     }

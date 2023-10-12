@@ -37,7 +37,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.ImmutableReplicatorConfiguration;
-import com.couchbase.lite.internal.Listenable;
 import com.couchbase.lite.internal.ReplicationCollection;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.C4Constants;
@@ -45,6 +44,7 @@ import com.couchbase.lite.internal.core.C4DocumentEnded;
 import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.listener.Listenable;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.replicator.BaseReplicator;
 import com.couchbase.lite.internal.replicator.CBLCookieStore;

@@ -50,10 +50,10 @@ public class C4DocumentObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    static void callback(long token, @Nullable String docId) {
+    static void callback(long token, long seq, @Nullable String docId) {
         Log.d(
             LogDomain.DATABASE,
-            "C4CollectionDocObserver.callback @0x%x: %s", token, docId);
+            "C4CollectionDocObserver.callback @0x%x: %s (5d)", token, docId, seq);
 
         final C4DocumentObserver observer = BOUND_OBSERVERS.getBinding(token);
         if (observer == null) { return; }
