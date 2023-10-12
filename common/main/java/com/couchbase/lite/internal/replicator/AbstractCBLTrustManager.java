@@ -30,7 +30,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.StringUtils;
 

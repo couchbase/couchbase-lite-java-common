@@ -27,7 +27,7 @@ import java.util.Map;
 import org.json.JSONException;
 
 import com.couchbase.lite.internal.core.C4Query;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JSONUtils;
 

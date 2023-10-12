@@ -25,7 +25,7 @@ import java.lang.ref.WeakReference;
 
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 
 
 /**

@@ -39,8 +39,8 @@ import com.couchbase.lite.R;
 import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
-import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 

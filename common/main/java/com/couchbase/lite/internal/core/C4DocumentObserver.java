@@ -18,19 +18,20 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4DocumentObserver;
-import com.couchbase.lite.internal.core.peers.NativeRefPeerBinding;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
+import com.couchbase.lite.internal.logging.Log;
 
 
 // Class has package protected static factory methods
 @SuppressWarnings("PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal")
 public class C4DocumentObserver extends C4NativePeer {
     public interface NativeImpl {
-        long nCreate(long coll, String docId) throws LiteCoreException;
+        long nCreate(long token, long coll, String docId) throws LiteCoreException;
         void nFree(long peer);
     }
 
@@ -41,7 +42,7 @@ public class C4DocumentObserver extends C4NativePeer {
     @NonNull
     protected static final NativeImpl NATIVE_IMPL = new NativeC4DocumentObserver();
 
-    protected static final NativeRefPeerBinding<C4DocumentObserver> BOUND_OBSERVERS = new NativeRefPeerBinding<>();
+    protected static final TaggedWeakPeerBinding<C4DocumentObserver> BOUND_OBSERVERS = new TaggedWeakPeerBinding<>();
 
 
     //-------------------------------------------------------------------------
@@ -49,12 +50,12 @@ public class C4DocumentObserver extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     // This method is called by reflection.  Don't change its signature.
-    static void callback(long peer, @Nullable String docId) {
+    static void callback(long token, long seq, @Nullable String docId) {
         Log.d(
             LogDomain.DATABASE,
-            "C4CollectionDocObserver.callback @0x%x: %s", peer, docId);
+            "C4CollectionDocObserver.callback @0x%x: %s (5d)", token, docId, seq);
 
-        final C4DocumentObserver observer = BOUND_OBSERVERS.getBinding(peer);
+        final C4DocumentObserver observer = BOUND_OBSERVERS.getBinding(token);
         if (observer == null) { return; }
 
         observer.listener.run();
@@ -64,18 +65,22 @@ public class C4DocumentObserver extends C4NativePeer {
     // Member Variables
     //-------------------------------------------------------------------------
 
+    @VisibleForTesting
+    final long token;
     @NonNull
     private final Runnable listener;
     @NonNull
     private final NativeImpl impl;
 
+
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    protected C4DocumentObserver(@NonNull NativeImpl impl, long peer, @NonNull Runnable listener) {
+    protected C4DocumentObserver(@NonNull NativeImpl impl, long token, long peer, @NonNull Runnable listener) {
         super(peer);
         this.impl = impl;
+        this.token = token;
         this.listener = listener;
     }
 
@@ -92,7 +97,7 @@ public class C4DocumentObserver extends C4NativePeer {
         releasePeer(
             domain,
             (peer) -> {
-                BOUND_OBSERVERS.unbind(peer);
+                BOUND_OBSERVERS.unbind(token);
                 final NativeImpl nativeImpl = impl;
                 if (nativeImpl != null) { nativeImpl.nFree(peer); }
             });

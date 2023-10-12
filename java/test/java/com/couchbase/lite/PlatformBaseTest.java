@@ -30,7 +30,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.JavaExecutionService;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 

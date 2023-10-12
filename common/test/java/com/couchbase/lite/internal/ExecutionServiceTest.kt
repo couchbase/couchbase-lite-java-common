@@ -21,7 +21,7 @@ import com.couchbase.lite.internal.exec.CBLExecutor
 import com.couchbase.lite.internal.exec.ClientTask
 import com.couchbase.lite.internal.exec.ExecutionService
 import com.couchbase.lite.internal.exec.InstrumentedTask
-import com.couchbase.lite.internal.support.Log
+import com.couchbase.lite.internal.logging.Log
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

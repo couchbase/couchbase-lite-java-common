@@ -25,7 +25,7 @@ import com.couchbase.lite.internal.core.C4DocumentChange;
 public final class NativeC4CollectionObserver implements C4CollectionObserver.NativeImpl {
 
     @Override
-    public long nCreate(long coll) throws LiteCoreException { return create(coll); }
+    public long nCreate(long token, long coll) throws LiteCoreException { return create(token, coll); }
 
     @Override
     @NonNull
@@ -39,7 +39,7 @@ public final class NativeC4CollectionObserver implements C4CollectionObserver.Na
     // native methods
     //-------------------------------------------------------------------------
 
-    private static native long create(long coll) throws LiteCoreException;
+    private static native long create(long token, long coll) throws LiteCoreException;
 
     @NonNull
     private static native C4DocumentChange[] getChanges(long peer, int maxChanges);

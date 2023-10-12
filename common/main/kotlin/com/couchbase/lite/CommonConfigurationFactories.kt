@@ -16,7 +16,7 @@
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.getCollectionConfigs
-import com.couchbase.lite.internal.support.Log
+import com.couchbase.lite.internal.logging.Log
 
 
 /**

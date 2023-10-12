@@ -26,7 +26,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 import com.couchbase.lite.internal.fleece.impl.NativeFLEncoder;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 
 

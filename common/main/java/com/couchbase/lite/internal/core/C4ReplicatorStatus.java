@@ -20,7 +20,7 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 
 
 /**

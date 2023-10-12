@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
 import com.couchbase.lite.internal.fleece.MValue;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 

@@ -24,7 +24,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4Database;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 

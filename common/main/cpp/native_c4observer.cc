@@ -70,7 +70,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
         if (!cls_C4DocObs)
             return false;
 
-        m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback", "(JLjava/lang/String;)V");
+        m_C4DocObs_callback = env->GetStaticMethodID(cls_C4DocObs, "callback", "(JJLjava/lang/String;)V");
         if (!m_C4DocObs_callback)
             return false;
     }
@@ -119,17 +119,17 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
 /**
  * Callback method from LiteCore C4CollectionObserver
  * @param observer reference to the C4CollectionObserver
- * @param ignore "context". Ignored.
+ * @param context the token bound to the observer instance.
  */
 static void
-c4CollectionObsCallback(C4CollectionObserver *observer, void *ignore) {
+c4CollectionObsCallback(C4CollectionObserver *observer, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) observer);
+        env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) context);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) observer);
+            env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) context);
             gJVM->DetachCurrentThread();
         }
     }
@@ -137,18 +137,31 @@ c4CollectionObsCallback(C4CollectionObserver *observer, void *ignore) {
 
 /**
  * Callback method from LiteCore C4DocumentObserver
- * @param docID
- * @param seq
+ * @param ign1 ref for the C4Document observer: ignored
+ * @param ign2 ref for the C4Collection: ignored
+ * @param docID the id of the changed document
+ * @param seq the doc sequence number: ignored
+ * @param context the token bound to the observer instance.
  */
 static void
-c4DocObsCallback(C4DocumentObserver *obs, C4Collection *ign1, C4Slice docID, C4SequenceNumber ign2, void *ign3) {
+c4DocObsCallback(C4DocumentObserver *ign1, C4Collection *ign2, C4Slice docID, C4SequenceNumber seq, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs, toJString(env, docID));
+        env->CallStaticVoidMethod(
+                cls_C4DocObs,
+                m_C4DocObs_callback,
+                (jlong) context,
+                (jlong) seq,
+                toJString(env, docID));
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs, toJString(env, docID));
+            env->CallStaticVoidMethod(
+                    cls_C4DocObs,
+                    m_C4DocObs_callback,
+                    (jlong) context,
+                    (jlong) seq,
+                    toJString(env, docID));
             gJVM->DetachCurrentThread();
         }
     }
@@ -215,19 +228,19 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver
  * Method:    create
- * Signature: (J)J
+ * Signature: (JJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
         JNIEnv *env,
         jclass ignore,
+        jlong token,
         jlong coll) {
     C4Error error{};
     auto res = (jlong) c4dbobs_createOnCollection(
             (C4Collection *) coll,
             c4CollectionObsCallback,
-            (void *)
-            0L,
+            (void *) token,
             &error);
     if (!res && error.code != 0) {
         throwError(env, error);
@@ -280,12 +293,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_free(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver
  * Method:    create
- * Signature: (JLjava/lang/String;)J
+ * Signature: (JJLjava/lang/String;)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create(
         JNIEnv *env,
         jclass ignore,
+        jlong token,
         jlong coll,
         jstring jdocID) {
     jstringSlice docID(env, jdocID);
@@ -295,7 +309,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create(
             (C4Collection *) coll,
             docID,
             c4DocObsCallback,
-            (void *) 0L,
+            (void *) token,
             &error);
     if (!res && error.code != 0) {
         throwError(env, error);

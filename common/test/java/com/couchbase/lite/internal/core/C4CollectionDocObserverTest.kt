@@ -20,7 +20,7 @@ class C4CollectionDocObserverTest : C4BaseTest() {
     }
 
     private val mockCollectionDocObserver = object : C4DocumentObserver.NativeImpl {
-        override fun nCreate(coll: Long, docId: String?): Long = 0xd8597341L
+        override fun nCreate(token: Long, coll: Long, docId: String?): Long = 0xd8597341L
         override fun nFree(peer: Long) = Unit
     }
 
@@ -43,9 +43,9 @@ class C4CollectionDocObserverTest : C4BaseTest() {
             C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "A", { i++ }).use { obs ->
                 assertEquals(0, i)
 
-                C4CollectionDocObserver.callback(obs.peer, "A")
-                C4CollectionDocObserver.callback(obs.peer, "A")
-                C4CollectionDocObserver.callback(obs.peer, "A")
+                C4CollectionDocObserver.callback(obs.token, 43L, "A")
+                C4CollectionDocObserver.callback(obs.token, 43L, "A")
+                C4CollectionDocObserver.callback(obs.token, 43L, "A")
 
                 assertEquals(3, i)
             }

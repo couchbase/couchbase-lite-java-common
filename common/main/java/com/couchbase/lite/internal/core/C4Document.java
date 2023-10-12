@@ -25,7 +25,7 @@ import com.couchbase.lite.internal.core.impl.NativeC4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})

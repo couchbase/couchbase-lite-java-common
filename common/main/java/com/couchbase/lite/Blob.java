@@ -36,7 +36,7 @@ import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4BlobWriteStream;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Preconditions;

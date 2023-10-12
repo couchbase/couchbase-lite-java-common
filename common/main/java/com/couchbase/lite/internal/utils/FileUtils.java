@@ -26,7 +26,7 @@ import java.io.OutputStream;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
+import com.couchbase.lite.internal.logging.Log;
 
 
 public final class FileUtils {

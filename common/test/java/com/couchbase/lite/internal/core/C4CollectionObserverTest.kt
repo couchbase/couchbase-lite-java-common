@@ -7,7 +7,7 @@ import org.junit.Test
 
 class C4CollectionObserverTest : C4BaseTest() {
     private val mockCollectionObserver = object : C4CollectionObserver.NativeImpl {
-        override fun nCreate(coll: Long): Long = 0xac6b2ed7L
+        override fun nCreate(token: Long, coll: Long): Long = 0xac6b2ed7L
         override fun nGetChanges(peer: Long, maxChanges: Int): Array<C4DocumentChange> {
             return arrayOf()
         }
@@ -29,9 +29,9 @@ class C4CollectionObserverTest : C4BaseTest() {
         var i = 0
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(mockCollectionObserver, coll.peer, { i++ }).use { obs ->
-                C4CollectionObserver.callback(obs.peer)
-                C4CollectionObserver.callback(obs.peer)
-                C4CollectionObserver.callback(obs.peer)
+                C4CollectionObserver.callback(obs.token)
+                C4CollectionObserver.callback(obs.token)
+                C4CollectionObserver.callback(obs.token)
             }
         }
 
