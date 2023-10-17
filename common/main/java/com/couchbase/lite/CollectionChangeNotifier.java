@@ -68,7 +68,7 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
             boolean external = false;
             List<String> docIDs = new ArrayList<>();
             while (true) {
-                // Read changes in batches of REQUESTED_CHANGES
+                // Read changes in REQUESTED_CHANGES sized batches
                 final List<C4DocumentChange> changes = getChanges(observer);
 
                 // if core doesn't have anything more, we're done:
@@ -102,16 +102,27 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
         postChange(new CollectionChange(collection, docIds));
     }
 
-    // Read in a batch of changes.
+    // Read in one batch of changes.
+    // Pasin pointed out a bug in the original implementation:
+    // c4DocChangesToJavaArray will put nulls into the c4Changes array
+    // if the doc change is bad.  When that happens, LiteCore may *not* be
+    // done posting changes (it has not yet returned an empty list of changes)
+    // but if this method sees only nulls it would return an empty list,
+    // and the caller *think* that LiteCore is done.
+    // The fix is to return the empty list only if c4Changes is empty.
     @NonNull
     private List<C4DocumentChange> getChanges(@NonNull C4CollectionObserver observer) {
-        final C4DocumentChange[] c4Changes = observer.getChanges(REQUESTED_CHANGES);
+        while (true) {
+            final C4DocumentChange[] c4Changes = observer.getChanges(REQUESTED_CHANGES);
 
-        final List<C4DocumentChange> changes = new ArrayList<>();
-        for (C4DocumentChange change: c4Changes) {
-            if (change != null) { changes.add(change); }
+            final List<C4DocumentChange> changes = new ArrayList<>();
+            if (c4Changes.length <= 0) { return changes; }
+
+            for (C4DocumentChange change: c4Changes) {
+                if (change != null) { changes.add(change); }
+            }
+
+            if (!changes.isEmpty()) { return changes; }
         }
-
-        return changes;
     }
 }

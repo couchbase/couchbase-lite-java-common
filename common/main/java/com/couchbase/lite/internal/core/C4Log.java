@@ -81,7 +81,7 @@ public class C4Log {
         final Map<String, LogDomain> m = new HashMap<>();
         m.put(C4Constants.LogDomain.BLIP, LogDomain.NETWORK);
         m.put(C4Constants.LogDomain.BLIP_MESSAGES, LogDomain.NETWORK);
-        m.put(C4Constants.LogDomain.CHANGES, LogDomain.REPLICATOR);
+        m.put(C4Constants.LogDomain.CHANGES, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.DATABASE, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.LISTENER, LogDomain.LISTENER);
         m.put(C4Constants.LogDomain.QUERY, LogDomain.QUERY);
