@@ -171,7 +171,13 @@ public abstract class C4Database extends C4NativePeer {
             finally { super.finalize(); }
         }
 
-        private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
+        // Some versions of ART will GC the final field, before finalizing this object.
+        private void closePeer(@Nullable LogDomain domain) {
+            releasePeer(domain, (db) -> {
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(db); }
+            });
+        }
     }
 
     @NonNull
