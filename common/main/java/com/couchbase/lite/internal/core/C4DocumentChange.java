@@ -30,21 +30,21 @@ public final class C4DocumentChange {
         @Nullable String revId,
         long seq,
         boolean ext) {
-        if ((docId != null) && (revId != null)) { return new C4DocumentChange(docId, revId, seq, ext); }
+        if (docId != null) { return new C4DocumentChange(docId, revId, seq, ext); }
 
-        Log.i(LogDomain.DATABASE, "Bad db change notification: (%s, %s)", docId, revId);
+        Log.i(LogDomain.DATABASE, "Doc id is null in createC4DocumentChange");
         return null;
     }
 
 
     @NonNull
     private final String docID;
-    @NonNull
+    @Nullable
     private final String revID;
     private final long sequence;
     private final boolean external;
 
-    private C4DocumentChange(@NonNull String docID, @NonNull String revID, long seq, boolean ext) {
+    private C4DocumentChange(@NonNull String docID, @Nullable String revID, long seq, boolean ext) {
         this.docID = docID;
         this.revID = revID;
         this.sequence = seq;
@@ -54,7 +54,7 @@ public final class C4DocumentChange {
     @NonNull
     public String getDocID() { return docID; }
 
-    @NonNull
+    @Nullable
     public String getRevID() { return revID; }
 
     public long getSequence() { return sequence; }
