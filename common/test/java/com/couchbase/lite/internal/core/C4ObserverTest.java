@@ -194,13 +194,15 @@ public class C4ObserverTest extends C4BaseTest {
         List<String> expectedDocIDs,
         List<String> expectedRevIDs,
         boolean expectedExternal) {
-        C4DocumentChange[] changes = observer.getChanges(100);
+        List<C4DocumentChange> changes = observer.getChanges(100);
         assertNotNull(changes);
-        assertEquals(expectedDocIDs.size(), changes.length);
-        for (int i = 0; i < changes.length; i++) {
-            assertEquals(expectedDocIDs.get(i), changes[i].getDocID());
-            assertEquals(expectedRevIDs.get(i), changes[i].getRevID());
-            assertEquals(expectedExternal, changes[i].isExternal());
+
+        int n = changes.size();
+        assertEquals(expectedDocIDs.size(), n);
+        for (int i = 0; i < n; i++) {
+            assertEquals(expectedDocIDs.get(i), changes.get(i).getDocID());
+            assertEquals(expectedRevIDs.get(i), changes.get(i).getRevID());
+            assertEquals(expectedExternal, changes.get(i).isExternal());
         }
     }
 }

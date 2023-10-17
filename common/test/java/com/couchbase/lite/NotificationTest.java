@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -24,6 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
+import com.couchbase.lite.internal.core.C4DocumentChange;
+import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.utils.Fn;
 
 import static org.junit.Assert.assertEquals;
@@ -275,6 +278,59 @@ public class NotificationTest extends BaseDbTest {
 
         t2.remove();
         assertEquals(0, changeNotifier.getListenerCount());
+    }
+
+    // CBL-4989 and CBL-4991: Check a few DocumentChange corner cases:
+    // - null is a legal rev id
+    // - null is not a legal doc id
+    // - a list of changes that contains only nulls does not prevent further processing
+    // - an empty change list does stop further processing
+    @Test
+    public void testCollectionChanged() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicInteger changeCount = new AtomicInteger(0);
+        AtomicInteger callCount = new AtomicInteger(0);
+
+        ChangeNotifier.C4ChangeProducer<C4DocumentChange> mockProducer
+            = new ChangeNotifier.C4ChangeProducer<C4DocumentChange>() {
+            @Override
+            public List<C4DocumentChange> getChanges(int maxChanges) {
+                int n = callCount.incrementAndGet();
+                switch (n) {
+                    case 1:
+                        return Arrays.asList(C4DocumentChange.createC4DocumentChange("A", "r1", 0L, true));
+                    case 2:
+                        return Arrays.asList(C4DocumentChange.createC4DocumentChange("B", null, 0L, true));
+                    case 3:
+                        return Arrays.asList(C4DocumentChange.createC4DocumentChange(null, null, 0L, true));
+                    case 4:
+                        return Arrays.asList();
+                    case 5:
+                        return Arrays.asList(C4DocumentChange.createC4DocumentChange("C", "r1", 0L, true));
+                    case 6:
+                        return null;
+                    default:
+                        return Arrays.asList(C4DocumentChange.createC4DocumentChange("D", "r1", 0L, true));
+                }
+            }
+
+            @Override
+            public void close() { }
+        };
+
+        CollectionChangeNotifier notifier = new CollectionChangeNotifier(getTestCollection());
+        notifier.addChangeListener(
+            null,
+            ch -> {
+                changeCount.addAndGet(ch.getDocumentIDs().size());
+                latch.countDown();
+            },
+            ign -> { });
+        notifier.run(mockProducer);
+
+        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
+        assertEquals(3, changeCount.get());
+        assertEquals(6, callCount.get());
     }
 
     @SuppressWarnings("deprecation")

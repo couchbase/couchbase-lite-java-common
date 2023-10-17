@@ -18,11 +18,11 @@ package com.couchbase.lite;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.couchbase.lite.internal.core.C4CollectionObserver;
 import com.couchbase.lite.internal.core.C4DocumentChange;
 import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.utils.Fn;
@@ -34,13 +34,12 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
     private static final int REQUESTED_CHANGES = 100;
     private static final int MAX_CHANGES = 1000;
 
-
     @NonNull
     private final Collection collection;
 
     @GuardedBy("collection.getDbLock()")
     @Nullable
-    private C4CollectionObserver c4Observer;
+    private C4ChangeProducer<C4DocumentChange> c4Observer;
 
     CollectionChangeNotifier(@NonNull Collection collection) {
         this.collection = Preconditions.assertNotNull(collection, "collection");
@@ -60,23 +59,34 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
         }
     }
 
+    @VisibleForTesting
+    void run(@NonNull C4ChangeProducer<C4DocumentChange> observer) {
+        synchronized (collection.getDbLock()) { c4Observer = observer; }
+        collectionChanged();
+    }
+
     private void collectionChanged() {
         synchronized (collection.getDbLock()) {
-            final C4CollectionObserver observer = c4Observer;
+            final C4ChangeProducer<C4DocumentChange> observer = c4Observer;
             if (!collection.isOpenLocked() || (observer == null)) { return; }
 
             boolean external = false;
             List<String> docIDs = new ArrayList<>();
             while (true) {
-                // Read changes in batches of REQUESTED_CHANGES
-                final List<C4DocumentChange> changes = getChanges(observer);
+                // Read changes in REQUESTED_CHANGES sized batches
+                List<C4DocumentChange> changes = observer.getChanges(REQUESTED_CHANGES);
 
                 // if core doesn't have anything more, we're done:
                 // post anything that's cached and get outta here.
-                if (changes.isEmpty()) {
+                if (changes == null) {
                     postChanges(docIDs);
                     return;
                 }
+
+                // there may be nulls in the list: filter them out
+                // if the filtered list is empty, go back for more
+                changes = Fn.filterToList(changes, ch -> ch != null);
+                if (changes.isEmpty()) { continue; }
 
                 final boolean newExternal = changes.get(0).isExternal();
 
@@ -100,18 +110,5 @@ final class CollectionChangeNotifier extends ChangeNotifier<CollectionChange> im
     private void postChanges(@NonNull List<String> docIds) {
         if (docIds.isEmpty()) { return; }
         postChange(new CollectionChange(collection, docIds));
-    }
-
-    // Read in a batch of changes.
-    @NonNull
-    private List<C4DocumentChange> getChanges(@NonNull C4CollectionObserver observer) {
-        final C4DocumentChange[] c4Changes = observer.getChanges(REQUESTED_CHANGES);
-
-        final List<C4DocumentChange> changes = new ArrayList<>();
-        for (C4DocumentChange change: c4Changes) {
-            if (change != null) { changes.add(change); }
-        }
-
-        return changes;
     }
 }
