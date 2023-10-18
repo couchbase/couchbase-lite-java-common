@@ -273,7 +273,7 @@ public class LiveQueryTest extends BaseDbTest {
         final List<QueryChangeListener> listeners = new ArrayList<>();
         final List<ListenerToken> tokens = new ArrayList<>();
         for (int i = 0; i < 7; i++) {
-            QueryChangeListener listener = (change) -> { };
+            QueryChangeListener listener = change -> { };
             listeners.add(listener);
             tokens.add(query.addChangeListener(listener));
         }

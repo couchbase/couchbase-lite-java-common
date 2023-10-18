@@ -141,7 +141,7 @@ class C4CollectionObserverTest : C4BaseTest() {
         external: Boolean,
     ) {
         val changes = observer.getChanges(100)
-        assertNotNull(changes)
+        assertNotNull(changes!!)
         assertEquals(expectedDocIds.size, changes.size)
         for (i in changes.indices) {
             assertEquals(expectedDocIds[i], changes[i].docID)

@@ -20,14 +20,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4CollectionObserver;
 import com.couchbase.lite.internal.core.peers.TaggedWeakPeerBinding;
+import com.couchbase.lite.internal.listener.ChangeNotifier;
 import com.couchbase.lite.internal.logging.Log;
 
 
-public final class C4CollectionObserver extends C4NativePeer {
+public final class C4CollectionObserver
+    extends C4NativePeer
+    implements ChangeNotifier.C4ChangeProducer<C4DocumentChange> {
     public interface NativeImpl {
         long nCreate(long token, long coll) throws LiteCoreException;
         @NonNull
@@ -101,9 +107,11 @@ public final class C4CollectionObserver extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    @NonNull
-    public C4DocumentChange[] getChanges(int maxChanges) {
-        return withPeerOrThrow((peer) -> impl.nGetChanges(peer, maxChanges));
+    @Override
+    @Nullable
+    public List<C4DocumentChange> getChanges(int maxChanges) {
+        final C4DocumentChange[] changes = withPeerOrThrow((peer) -> impl.nGetChanges(peer, maxChanges));
+        return (changes.length <= 0) ? null : Arrays.asList(changes);
     }
 
     @CallSuper

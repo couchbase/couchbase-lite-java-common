@@ -20,12 +20,14 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 
 import com.couchbase.lite.ChangeListener;
 import com.couchbase.lite.ListenerToken;
 import com.couchbase.lite.internal.utils.Fn;
+
 
 // Used for Document and Collection (and MessageEndpoint) change notification.
 // When used for a collection, we register a single callback with Core.
@@ -49,6 +51,14 @@ import com.couchbase.lite.internal.utils.Fn;
 // free their companions in their finalizers, releasing the replicator will
 // correctly free all this stuff... eventually.
 public abstract class ChangeNotifier<T> {
+
+    // a factory for changes.
+    public interface C4ChangeProducer<T1> extends AutoCloseable {
+        @Nullable
+        List<T1> getChanges(int maxChanges);
+        void close();
+    }
+
     @NonNull
     private final Object lock = new Object();
     @NonNull
