@@ -172,6 +172,10 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         return (idx == null) ? -1 : idx;
     }
 
+    boolean isClosed() {
+        synchronized (lock) { return c4enum == null; }
+    }
+
     //---------------------------------------------
     // Private level access
     //---------------------------------------------
