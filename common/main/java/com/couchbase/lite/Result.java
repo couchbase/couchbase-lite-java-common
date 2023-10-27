@@ -38,6 +38,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * Result represents a row of result set returned by a Query.
+ *
+ * A Result may be referenced <b>only</b> while the ResultSet that contains it is open.
+ * An Attempt to reference a Result after calling ResultSet.close on the ResultSet that
+ * contains it will throw and IllegalStateException
  */
 public final class Result implements ArrayInterface, DictionaryInterface, Iterable<String> {
 
@@ -74,7 +78,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      * @return the number of the values in the result.
      */
     @Override
-    public int count() { return rs.getColumnCount(); }
+    public int count() {
+        assertOpen();
+        return rs.getColumnCount();
+    }
 
     //---------------------------------------------
     // implementation of ReadOnlyArrayInterface
@@ -89,7 +96,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Object getValue(int index) {
-        assertInBounds(index);
+        assertValid(index);
         return fleeceValueToObject(index);
     }
 
@@ -102,7 +109,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public String getString(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final Object obj = fleeceValueToObject(index);
         return !(obj instanceof String) ? null : (String) obj;
     }
@@ -117,7 +124,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Number getNumber(int index) {
-        assertInBounds(index);
+        assertValid(index);
         return CBLConverter.asNumber(fleeceValueToObject(index));
     }
 
@@ -130,7 +137,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public int getInt(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final FLValue flValue = values.get(index);
         return (flValue == null) ? 0 : (int) flValue.asInt();
     }
@@ -144,7 +151,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public long getLong(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final FLValue flValue = values.get(index);
         return (flValue == null) ? 0L : flValue.asInt();
     }
@@ -158,7 +165,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public float getFloat(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final FLValue flValue = values.get(index);
         return (flValue == null) ? 0.0F : flValue.asFloat();
     }
@@ -172,7 +179,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public double getDouble(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final FLValue flValue = values.get(index);
         return (flValue == null) ? 0.0 : flValue.asDouble();
     }
@@ -186,7 +193,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public boolean getBoolean(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final FLValue flValue = values.get(index);
         return (flValue != null) && flValue.asBool();
     }
@@ -201,7 +208,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Blob getBlob(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final Object obj = fleeceValueToObject(index);
         return !(obj instanceof Blob) ? null : (Blob) obj;
     }
@@ -216,7 +223,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Date getDate(int index) {
-        assertInBounds(index);
+        assertValid(index);
         return JSONUtils.toDate(getString(index));
     }
 
@@ -230,7 +237,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Array getArray(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final Object obj = fleeceValueToObject(index);
         return !(obj instanceof Array) ? null : (Array) obj;
     }
@@ -245,7 +252,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Dictionary getDictionary(int index) {
-        assertInBounds(index);
+        assertValid(index);
         final Object obj = fleeceValueToObject(index);
         return !(obj instanceof Dictionary) ? null : (Dictionary) obj;
     }
@@ -259,6 +266,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public List<Object> toList() {
+        assertOpen();
         final int nVals = count();
         final List<Object> array = new ArrayList<>(nVals);
         for (int i = 0; i < nVals; i++) { array.add(values.get(i).asObject()); }
@@ -274,7 +282,10 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @NonNull
     @Override
-    public List<String> getKeys() { return rs.getColumnNames(); }
+    public List<String> getKeys() {
+        assertOpen();
+        return rs.getColumnNames();
+    }
 
     /**
      * The result value for the given key as an Object
@@ -286,6 +297,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Object getValue(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? null : getValue(index);
     }
@@ -300,6 +312,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public String getString(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? null : getString(index);
     }
@@ -314,6 +327,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Number getNumber(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? null : getNumber(index);
     }
@@ -327,6 +341,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public int getInt(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? 0 : getInt(index);
     }
@@ -340,6 +355,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public long getLong(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? 0L : getLong(index);
     }
@@ -353,6 +369,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public float getFloat(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? 0.0F : getFloat(index);
     }
@@ -366,19 +383,21 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public double getDouble(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? 0.0 : getDouble(index);
     }
 
     /**
      * The result value for the given key as a boolean
-     * Returns null if the key doesn't exist or if the value is not a boolean
+     * Returns false if the key doesn't exist or if the value is not a boolean
      *
      * @param key The select result key.
      * @return The boolean value.
      */
     @Override
     public boolean getBoolean(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return isInBounds(index) && getBoolean(index);
     }
@@ -393,6 +412,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Blob getBlob(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? null : getBlob(index);
     }
@@ -407,6 +427,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Date getDate(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? null : getDate(index);
     }
@@ -421,6 +442,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Array getArray(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? null : getArray(index);
     }
@@ -435,6 +457,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Nullable
     @Override
     public Dictionary getDictionary(@NonNull String key) {
+        assertOpen();
         final int index = indexForColumnName(Preconditions.assertNotNull(key, "key"));
         return (!isInBounds(index)) ? null : getDictionary(index);
     }
@@ -448,6 +471,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public Map<String, Object> toMap() {
+        assertOpen();
         final int nVals = values.size();
         final Map<String, Object> dict = new HashMap<>(nVals);
         for (String name: rs.getColumnNames()) {
@@ -461,6 +485,8 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     @Override
     public String toJSON() {
+        assertOpen();
+
         final int nVals = values.size();
 
         try (JSONEncoder enc = new JSONEncoder()) {
@@ -485,6 +511,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
      */
     @Override
     public boolean contains(@NonNull String key) {
+        assertOpen();
         return isInBounds(indexForColumnName(Preconditions.assertNotNull(key, "key")));
     }
 
@@ -530,9 +557,20 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
 
     private boolean isInBounds(int index) { return (index >= 0) && (index < count()); }
 
+    private void assertValid(int index) {
+        assertOpen();
+        assertInBounds(index);
+    }
+
     private void assertInBounds(int index) {
         if (!isInBounds(index)) {
             throw new ArrayIndexOutOfBoundsException("index " + index + " must be between 0 and " + count());
+        }
+    }
+
+    private void assertOpen() {
+        if (rs.isClosed()) {
+            throw new IllegalStateException("Attempt to use a result after its containing ResultSet has been closed");
         }
     }
 }
