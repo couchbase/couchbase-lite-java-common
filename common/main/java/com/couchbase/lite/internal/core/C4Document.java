@@ -45,8 +45,8 @@ public final class C4Document extends C4NativePeer {
         int nGetSelectedFlags(long doc);
         @NonNull
         String nGetSelectedRevID(long doc);
+        long nGetTimestamp(long doc);
         long nGetSelectedSequence(long doc);
-        long nGetGenerationForId(@NonNull String doc);
         // return pointer to FLValue
         long nGetSelectedBody2(long doc);
         //// Conflict Resolution
@@ -67,6 +67,10 @@ public final class C4Document extends C4NativePeer {
         void nFree(long doc);
         //// Utility
         boolean nDictContainsBlobs(long dictPtr, long dictSize, long sk);
+
+        // remove when version vectors are enabled
+        @Deprecated
+        long nGetGenerationForId(@NonNull String doc);
     }
 
     @NonNull
@@ -174,9 +178,13 @@ public final class C4Document extends C4NativePeer {
         return value == 0 ? null : FLDict.create(value);
     }
 
+    // Remove when version vectors are enabled
+    @Deprecated
     public long getGeneration(String id) { return impl.nGetGenerationForId(id); }
 
     // - Conflict resolution
+
+    public long getTimestamp() { return withPeerOrDefault(-1L, impl::nGetTimestamp); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
         impl.nSelectNextLeafRevision(getPeer(), includeDeleted, withBody);

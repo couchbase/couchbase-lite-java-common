@@ -56,10 +56,10 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     public String nGetSelectedRevID(long doc) { return getSelectedRevID(doc); }
 
     @Override
-    public long nGetSelectedSequence(long doc) { return getSelectedSequence(doc); }
+    public long nGetTimestamp(long doc) { return getTimestamp(doc); }
 
     @Override
-    public long nGetGenerationForId(@NonNull String doc) { return getGenerationForId(doc); }
+    public long nGetSelectedSequence(long doc) { return getSelectedSequence(doc); }
 
     // return pointer to FLValue
     @Override
@@ -107,6 +107,11 @@ public final class NativeC4Document implements C4Document.NativeImpl {
         return dictContainsBlobs(dictPtr, dictSize, sk);
     }
 
+    // Remove when Version Vectors are enabled
+    @Deprecated
+    @Override
+    public long nGetGenerationForId(@NonNull String doc) { return getGenerationForId(doc); }
+
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
@@ -133,9 +138,9 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     @NonNull
     private static native String getSelectedRevID(long doc);
 
-    private static native long getSelectedSequence(long doc);
+    private static native long getTimestamp(long doc);
 
-    private static native long getGenerationForId(@NonNull String doc);
+    private static native long getSelectedSequence(long doc);
 
     private static native long getSelectedBody2(long doc);
 
@@ -164,4 +169,8 @@ public final class NativeC4Document implements C4Document.NativeImpl {
 
     //// Utility
     private static native boolean dictContainsBlobs(long dictPtr, long dictSize, long sk);
+
+    // Remove when Version Vectors are enabled
+    @Deprecated
+    private static native long getGenerationForId(@NonNull String doc);
 }

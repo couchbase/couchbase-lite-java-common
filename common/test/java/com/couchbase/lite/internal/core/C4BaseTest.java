@@ -145,17 +145,17 @@ public class C4BaseTest extends BaseTest {
     }
 
     protected int getTestDbFlags() {
-        return C4Database.DB_FLAGS;
-// Enable the fake clock for Version Vectors
-//            | C4Constants.DatabaseFlags.FAKE_CLOCK;
+        int flags = C4Database.DB_FLAGS;
+        if (C4Database.VERSION_VECTORS_ENABLED) { flags |= C4Constants.DatabaseFlags.FAKE_CLOCK; }
+        return flags;
     }
 
     protected String getTestRevId(String node, int gen) {
-        return gen + "-" + node;
-// Enable new revId format for Version Vectors
-//        return gen + "@" + PlatformUtils.getEncoder().encodeToString(
-//                StringUtils.getUniqueName(node, 16).substring(0, 16).getBytes(StandardCharsets.US_ASCII))
-//            .substring(0, 22);
+        return (!C4Database.VERSION_VECTORS_ENABLED)
+            ? gen + "-" + node
+            : gen + "@" + PlatformUtils.getEncoder().encodeToString(
+                    StringUtils.getUniqueName(node, 16).substring(0, 16).getBytes(StandardCharsets.US_ASCII))
+                .substring(0, 22);
     }
 
     protected long loadJsonAsset(String name) throws LiteCoreException, IOException { return loadJsonAsset(name, ""); }

@@ -99,7 +99,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_createFromSlice(
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags(JNIEnv *ignore1, jclass ignore2, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return doc->flags;
 }
@@ -121,7 +121,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevID(JNIEnv *env
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSequence(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSequence(JNIEnv *ignore1, jclass ignore2, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return doc->sequence;
 }
@@ -135,7 +135,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSequence(JNIEnv *
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedFlags(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedFlags(JNIEnv *ignore1, jclass ignore2, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return doc->selectedRev.flags;
 }
@@ -153,16 +153,30 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID(JNI
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
+ * Method:    getSelectedRevID
+ * Signature: (J)J;
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getTimestamp(JNIEnv *ignore1, jclass ignore2, jlong jdoc) {
+    auto doc = (C4Document *) jdoc;
+    auto revId = doc->selectedRev.revID;
+    return  c4rev_getTimestamp(revId);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedSequence
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence(JNIEnv *ignore1, jclass ignore2, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     return doc->selectedRev.sequence;
 }
 
 /*
+ * DEPRECATED: remove when version vectors are enabled
+ *
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getGenerationForId
  * Signature: (Ljava/lang/String;)J
@@ -182,7 +196,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getGenerationForId(
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2(JNIEnv *ignore1, jclass ignore2, jlong jdoc) {
     auto doc = (C4Document *) jdoc;
     FLDict root = nullptr;
     C4Slice body = c4doc_getRevisionBody(doc);
@@ -313,7 +327,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON(
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free(JNIEnv *env, jclass ignore, jlong jdoc) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free(JNIEnv *ignore1, jclass ignore2, jlong jdoc) {
     c4doc_release((C4Document *) jdoc);
 }
 
@@ -326,14 +340,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free(JNIEnv *env, jc
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Document_dictContainsBlobs(
-        JNIEnv *env,
-        jclass ignore,
+        JNIEnv *ignore1,
+        jclass ignore2,
         jlong jbodyPtr,
         jlong jbodySize,
         jlong jsk) {
     FLSliceResult body{(const void *) jbodyPtr, (size_t) jbodySize};
     FLDoc doc = FLDoc_FromResultData(body, kFLTrusted, (FLSharedKeys) jsk, kFLSliceNull);
-    auto dict = (FLDict) FLDoc_GetRoot(doc);
+    const auto *const dict = (FLDict) FLDoc_GetRoot(doc);
     bool containsBlobs = c4doc_dictContainsBlobs(dict);
     FLDoc_Release(doc);
     return containsBlobs;

@@ -73,6 +73,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
+ * Method:    getSelectedRevID
+ * Signature: (J)J;
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getTimestamp
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedFlags
  * Signature: (J)I
  */
@@ -90,6 +99,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence
         (JNIEnv *, jclass, jlong);
 
 /*
+ * DEPRECATED: remove when version vectors are enabled
+ *
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getGenerationForId
  * Signature: (Ljava/lang/String;)J
