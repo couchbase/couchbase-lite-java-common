@@ -44,10 +44,13 @@ public final class C4Constants {
     public static final class LogDomain {
         private LogDomain() { }
 
+        public static final String ACTOR = "Actor";
         public static final String BLIP = "BLIP";
         public static final String BLIP_MESSAGES = "BLIPMessages";
+        public static final String BLOB = "Blob";
         public static final String CHANGES = "Changes";
         public static final String DATABASE = "DB";
+        public static final String ENUM = "Enum";
         public static final String LISTENER = "Listener";
         public static final String QUERY = "Query";
         public static final String SQL = "SQL";
