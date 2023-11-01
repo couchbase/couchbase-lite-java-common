@@ -34,6 +34,21 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * The representation of a query result. The result set is an iterator over
  * {@code Result} objects.
+ * Note: This object retains the Results it contains: closing it will
+ * free the Results, too.  Referencing a Result after closing the ResultSet
+ * that contains it will cause a crash.
+ * This code, for instance will fail.  DO NOT DO THIS:
+ * <code>
+ * final List&lt;Result> results;
+ * try (ResultSet rs = QueryBuilder.select(SelectResult.expression(Meta.id).as("id"))
+ * .from(DataSource.collection(someCollectin))
+ * .execute()) { results = rs.allResults(); }
+ * catch (CouchbaseLiteException err) {
+ * throw new RuntimeException("Failed querying docs in collection: " + someCollection, err);
+ * }
+ * final List&lt;String> docs = new ArrayList&lt;>();
+ * for (Result result: results) { docs.addt(result.getString("id")); } // SIGSEGV!!!
+ * </code>
  */
 public class ResultSet implements Iterable<Result>, AutoCloseable {
     //---------------------------------------------
@@ -171,6 +186,10 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     int getColumnIndex(@NonNull String name) {
         final Integer idx = columnNames.get(name);
         return (idx == null) ? -1 : idx;
+    }
+
+    boolean isClosed() {
+        synchronized (lock) { return c4enum == null; }
     }
 
     //---------------------------------------------
