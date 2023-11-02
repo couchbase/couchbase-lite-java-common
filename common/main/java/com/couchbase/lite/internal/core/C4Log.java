@@ -183,9 +183,9 @@ public class C4Log {
                 case DATABASE:
                     setLevels(
                         c4Level,
+                        C4Constants.LogDomain.BLOB,
                         C4Constants.LogDomain.DATABASE,
-                        C4Constants.LogDomain.SQL,
-                        C4Constants.LogDomain.ZIP);
+                        C4Constants.LogDomain.SQL);
                     break;
 
                 case LISTENER:
@@ -198,16 +198,21 @@ public class C4Log {
                         C4Constants.LogDomain.BLIP,
                         C4Constants.LogDomain.BLIP_MESSAGES,
                         C4Constants.LogDomain.TLS,
-                        C4Constants.LogDomain.WEB_SOCKET);
+                        C4Constants.LogDomain.WEB_SOCKET,
+                        C4Constants.LogDomain.ZIP);
                     break;
 
                 case QUERY:
-                    setLevels(c4Level, C4Constants.LogDomain.QUERY);
+                    setLevels(
+                        c4Level,
+                        C4Constants.LogDomain.ENUM,
+                        C4Constants.LogDomain.QUERY);
                     break;
 
                 case REPLICATOR:
                     setLevels(
                         c4Level,
+                        C4Constants.LogDomain.ACTOR,
                         C4Constants.LogDomain.CHANGES,
                         C4Constants.LogDomain.SYNC,
                         C4Constants.LogDomain.SYNC_BUSY);
