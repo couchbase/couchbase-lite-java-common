@@ -412,7 +412,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames(
     auto collections = c4db_collectionNames((C4Database *) db, scope, &error);
     if (!collections && error.code != 0) {
         throwError(env, error);
-        return 0;
+        return nullptr;
     }
 
     jobject collectionsSet = toStringSet(env, collections);

@@ -188,6 +188,15 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     /**
+     * Get the document's timestamp.
+     *
+     * @return the document's timestamp
+     */
+    public long getTimestamp() {
+        synchronized (lock) { return (c4Document == null) ? -1 : c4Document.getTimestamp(); }
+    }
+
+    /**
      * Return the sequence number of the document in the database.
      * The sequence number indicates how recently the document has been changed.  Every time a document
      * is updated, the database assigns it the next sequential sequence number.  Thus, when a document's
@@ -497,6 +506,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     final boolean isMutable() { return mutable; }
 
+    // Remove when VersionVectors are enabled
+    @Deprecated
     long generation() {
         final String revId = getRevisionID();
         if (revId == null) { return 0; }

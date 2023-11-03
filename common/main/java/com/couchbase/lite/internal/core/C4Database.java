@@ -51,6 +51,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {
+    public static boolean VERSION_VECTORS_ENABLED = false;
+
     @VisibleForTesting
     static final int DB_FLAGS = C4Constants.DatabaseFlags.CREATE;
 
@@ -244,6 +246,8 @@ public abstract class C4Database extends C4NativePeer {
                 C4Constants.LiteCoreError.WRONG_FORMAT,
                 "Parent directory does not exist or is not a directory: " + parentDirPath);
         }
+
+        if (VERSION_VECTORS_ENABLED) { flags |= C4Constants.DatabaseFlags.VERSION_VECTORS; }
 
         return new ManagedC4Database(
             impl,

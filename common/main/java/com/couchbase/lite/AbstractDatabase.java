@@ -85,7 +85,6 @@ abstract class AbstractDatabase extends BaseDatabase
     //---------------------------------------------
     // Constants
     //---------------------------------------------
-
     private static final String ERROR_RESOLVER_FAILED = "Conflict resolution failed for document '%s': %s";
     private static final String WARN_WRONG_ID
         = "A conflict resolution for document for document '%s' produced a new document whose id not match"

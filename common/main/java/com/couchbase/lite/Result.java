@@ -38,10 +38,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * Result represents a row of result set returned by a Query.
- *
+ * <p>
  * A Result may be referenced <b>only</b> while the ResultSet that contains it is open.
- * An Attempt to reference a Result after calling ResultSet.close on the ResultSet that
- * contains it will throw and IllegalStateException
+ * An attempt to reference a Result after calling ResultSet.close on the ResultSet that
+ * contains it will throw an IllegalStateException
  */
 public final class Result implements ArrayInterface, DictionaryInterface, Iterable<String> {
 
