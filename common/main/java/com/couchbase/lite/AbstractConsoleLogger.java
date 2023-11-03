@@ -87,7 +87,7 @@ abstract class AbstractConsoleLogger implements Logger {
      */
     public void setDomains(@NonNull LogDomain... domains) {
         Preconditions.assertNotNull(domains, "domains");
-        setDomains(EnumSet.copyOf(Arrays.asList(domains)));
+        setDomains((domains.length <= 0) ? EnumSet.noneOf(LogDomain.class) : EnumSet.copyOf(Arrays.asList(domains)));
     }
 
     protected abstract void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message);
