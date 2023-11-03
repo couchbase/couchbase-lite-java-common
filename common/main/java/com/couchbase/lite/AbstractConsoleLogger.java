@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.Arrays;
@@ -29,7 +30,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * The base console logger class.
  */
 abstract class AbstractConsoleLogger implements Logger {
-    @NonNull
+    // nullable for testing
+    @Nullable
     private final C4Log c4Log;
     @NonNull
     private EnumSet<LogDomain> logDomains = LogDomain.ALL_DOMAINS;
@@ -37,7 +39,7 @@ abstract class AbstractConsoleLogger implements Logger {
     private LogLevel logLevel = LogLevel.WARNING;
 
     // Singleton instance accessible from Database.log.getConsole()
-    protected AbstractConsoleLogger(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
+    protected AbstractConsoleLogger(@Nullable C4Log c4Log) { this.c4Log = c4Log; }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
@@ -60,7 +62,7 @@ abstract class AbstractConsoleLogger implements Logger {
         if (logLevel == level) { return; }
 
         logLevel = level;
-        c4Log.setCallbackLevel(logLevel);
+        if (c4Log != null) { c4Log.setCallbackLevel(logLevel); }
     }
 
     /**
@@ -86,8 +88,7 @@ abstract class AbstractConsoleLogger implements Logger {
      * @param domains The domains to make active (vararg)
      */
     public void setDomains(@NonNull LogDomain... domains) {
-        Preconditions.assertNotNull(domains, "domains");
-        setDomains(EnumSet.copyOf(Arrays.asList(domains)));
+        setDomains((domains.length <= 0) ? EnumSet.noneOf(LogDomain.class) : EnumSet.copyOf(Arrays.asList(domains)));
     }
 
     protected abstract void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message);
