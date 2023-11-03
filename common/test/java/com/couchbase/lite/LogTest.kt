@@ -101,6 +101,18 @@ class LogTest : BaseDbTest() {
         fun reset() { minLevel = C4Constants.LogLevel.NONE }
     }
 
+    private class TestConsoleLogger() : AbstractConsoleLogger(null) {
+        private val content = StringBuilder()
+
+        override fun doLog(level: LogLevel, domain: LogDomain, message: String) {
+            content.append(message)
+        }
+
+        fun getContent() = content.toString()
+
+        fun clearContent() = content.clear()
+    }
+
     companion object {
         @JvmStatic
         @AfterClass
@@ -132,6 +144,58 @@ class LogTest : BaseDbTest() {
     fun tearDownLogTest() {
         Database.log.custom = null
         reloadStandardErrorMessages()
+    }
+
+    @Test
+    fun testConsoleLoggerDomains() {
+        val consoleLogger = TestConsoleLogger()
+
+        consoleLogger.setDomains()
+        for (level in LogLevel.values()) {
+            consoleLogger.setLevel(level)
+            consoleLogger.log(LogLevel.DEBUG, LogDomain.DATABASE, "D")
+            consoleLogger.log(LogLevel.VERBOSE, LogDomain.DATABASE, "V")
+            consoleLogger.log(LogLevel.INFO, LogDomain.DATABASE, "I")
+            consoleLogger.log(LogLevel.WARNING, LogDomain.DATABASE, "W")
+            consoleLogger.log(LogLevel.ERROR, LogDomain.DATABASE, "E")
+        }
+        assertEquals(consoleLogger.getContent(), "")
+        consoleLogger.clearContent()
+
+        consoleLogger.setDomains(LogDomain.NETWORK, LogDomain.QUERY)
+        for (level in LogLevel.values()) {
+            consoleLogger.setLevel(level)
+            consoleLogger.log(LogLevel.DEBUG, LogDomain.DATABASE, "D")
+            consoleLogger.log(LogLevel.VERBOSE, LogDomain.DATABASE, "V")
+            consoleLogger.log(LogLevel.INFO, LogDomain.DATABASE, "I")
+            consoleLogger.log(LogLevel.WARNING, LogDomain.DATABASE, "W")
+            consoleLogger.log(LogLevel.ERROR, LogDomain.DATABASE, "E")
+        }
+        assertEquals(consoleLogger.getContent(), "")
+
+        consoleLogger.setDomains(LogDomain.ALL_DOMAINS)
+        consoleLogger.setLevel(LogLevel.DEBUG,)
+        consoleLogger.log(LogLevel.DEBUG, LogDomain.NETWORK, "N")
+        consoleLogger.log(LogLevel.DEBUG, LogDomain.QUERY, "Q")
+        consoleLogger.log(LogLevel.DEBUG, LogDomain.DATABASE, "D")
+        assertEquals(consoleLogger.getContent(), "NQD")
+    }
+
+    @Test
+    fun testConsoleLoggerLevel() {
+        val consoleLogger = TestConsoleLogger()
+
+        consoleLogger.setDomains(LogDomain.DATABASE)
+        for (level in LogLevel.values()) {
+            consoleLogger.setLevel(level)
+            consoleLogger.log(LogLevel.DEBUG, LogDomain.DATABASE, "D")
+            consoleLogger.log(LogLevel.VERBOSE, LogDomain.DATABASE, "V")
+            consoleLogger.log(LogLevel.INFO, LogDomain.DATABASE, "I")
+            consoleLogger.log(LogLevel.WARNING, LogDomain.DATABASE, "W")
+            consoleLogger.log(LogLevel.ERROR, LogDomain.DATABASE, "E")
+        }
+
+        assertEquals(consoleLogger.getContent(), "DVIWEVIWEIWEWEE")
     }
 
     @Test
