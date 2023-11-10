@@ -21,7 +21,7 @@ import androidx.annotation.Nullable;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Document;
 
-
+@SuppressWarnings("PMD.TooManyMethods")
 public final class NativeC4Document implements C4Document.NativeImpl {
     //// Creating and Updating Documents
     @Override
