@@ -237,7 +237,7 @@ public class C4BaseTest extends BaseTest {
             assertNotNull(doc);
 
             doc.close();
-            curDoc.close();
+            // dont try to close the C4Document
 
             commit = true;
         }
