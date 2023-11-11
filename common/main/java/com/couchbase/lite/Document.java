@@ -201,7 +201,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      * The sequence number indicates how recently the document has been changed.  Every time a document
      * is updated, the database assigns it the next sequential sequence number.  Thus, when a document's
      * sequence number changes it means that the document been updated (on-disk).  If one document's sequence
-     * is different than another's, the document with the larger sequence number was changed more recently.
+     * is different from another's, the document with the larger sequence number was changed more recently.
      * Sequence numbers are not available for documents obtained from a replication filter.  This method
      * will always return 0 for such documents.
      *
@@ -239,7 +239,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     //---------------------------------------------
 
     /**
-     * Get an List containing all keys, or an empty List if the document has no properties.
+     * Get a List containing all keys, or an empty List if the document has no properties.
      *
      * @return all keys
      */
@@ -293,7 +293,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public int getInt(@NonNull String key) { return getContent().getInt(key); }
 
     /**
-     * Gets a property's value as an long.
+     * Gets a property's value as a long.
      * Floating point values will be rounded. The value `true` is returned as 1, `false` as 0.
      * Returns 0 if the value doesn't exist or does not have a numeric value.
      *
@@ -304,7 +304,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public long getLong(@NonNull String key) { return getContent().getLong(key); }
 
     /**
-     * Gets a property's value as an float.
+     * Gets a property's value as a float.
      * Integers will be converted to float. The value `true` is returned as 1.0, `false` as 0.0.
      * Returns 0.0 if the value doesn't exist or does not have a numeric value.
      *
@@ -315,7 +315,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public float getFloat(@NonNull String key) { return getContent().getFloat(key); }
 
     /**
-     * Gets a property's value as an double.
+     * Gets a property's value as a double.
      * Integers will be converted to double. The value `true` is returned as 1.0, `false` as 0.0.
      * Returns 0.0 if the property doesn't exist or does not have a numeric value.
      *
@@ -362,8 +362,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public Date getDate(@NonNull String key) { return getContent().getDate(key); }
 
     /**
-     * Get a property's value as a Array.
-     * Returns null if the property doesn't exists, or its value is not an Array.
+     * Get a property's value as an Array.
+     * Returns null if the property doesn't exist, or its value is not an Array.
      *
      * @param key the key
      * @return The Array object or null.
@@ -374,7 +374,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     /**
      * Get a property's value as a Dictionary.
-     * Returns null if the property doesn't exists, or its value is not a Dictionary.
+     * Returns null if the property doesn't exist, or its value is not a Dictionary.
      *
      * @param key the key
      * @return The Dictionary object or null.
@@ -384,7 +384,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public Dictionary getDictionary(@NonNull String key) { return getContent().getDictionary(key); }
 
     /**
-     * Gets content of the current object as an Map. The values contained in the returned
+     * Gets content of the current object as a Map. The values contained in the returned
      * Map object are all JSON based values.
      *
      * @return the Map object representing the content of the current object in the JSON format.
@@ -506,15 +506,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
 
     final boolean isMutable() { return mutable; }
 
-    // Remove when VersionVectors are enabled
-    @Deprecated
-    long generation() {
-        final String revId = getRevisionID();
-        if (revId == null) { return 0; }
-        final C4Document c4Doc = getC4doc();
-        if (c4Doc == null) { return 0; }
-        return c4Doc.getGeneration(revId);
-    }
+    int compareAge(@NonNull Document target) { return Long.compare(getTimestamp(), target.getTimestamp()); }
 
     final boolean isEmpty() { return getContent().isEmpty(); }
 
@@ -632,3 +624,4 @@ public class Document implements DictionaryInterface, Iterable<String> {
         root = newRoot;
     }
 }
+

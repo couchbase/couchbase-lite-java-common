@@ -18,8 +18,6 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.couchbase.lite.internal.core.C4Database;
-
 
 /**
  * Custom conflict resolution strategies implement this interface.
@@ -58,19 +56,9 @@ class DefaultConflictResolver implements ConflictResolver {
         if ((localDoc == null) || (remoteDoc == null)) { return null; }
 
         // if one of the docs is newer, return it
-        if (C4Database.VERSION_VECTORS_ENABLED) {
-            final long localTimestamp = localDoc.getTimestamp();
-            final long remoteTimestamp = remoteDoc.getTimestamp();
-            if (localTimestamp > remoteTimestamp) { return localDoc; }
-            else if (localTimestamp < remoteTimestamp) { return remoteDoc; }
-        }
-        // remove when version vectors are enabled
-        else {
-            final long localGen = localDoc.generation();
-            final long remoteGen = remoteDoc.generation();
-            if (localGen > remoteGen) { return localDoc; }
-            else if (localGen < remoteGen) { return remoteDoc; }
-        }
+        final int cmp = localDoc.compareAge(remoteDoc);
+        if (cmp > 0) { return localDoc; }
+        else if (cmp < 0) { return remoteDoc; }
 
         // otherwise, choose one randomly, but deterministically.
         final String localRevId = localDoc.getRevisionID();

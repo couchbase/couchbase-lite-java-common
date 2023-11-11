@@ -99,17 +99,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence
         (JNIEnv *, jclass, jlong);
 
 /*
- * DEPRECATED: remove when version vectors are enabled
- *
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
- * Method:    getGenerationForId
- * Signature: (Ljava/lang/String;)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getGenerationForId
-        (JNIEnv *, jclass, jstring);
-
-/*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedBody2
  * Signature: (J)J

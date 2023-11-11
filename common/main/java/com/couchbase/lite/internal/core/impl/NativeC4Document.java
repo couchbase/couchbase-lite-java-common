@@ -107,11 +107,6 @@ public final class NativeC4Document implements C4Document.NativeImpl {
         return dictContainsBlobs(dictPtr, dictSize, sk);
     }
 
-    // Remove when Version Vectors are enabled
-    @Deprecated
-    @Override
-    public long nGetGenerationForId(@NonNull String doc) { return getGenerationForId(doc); }
-
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
