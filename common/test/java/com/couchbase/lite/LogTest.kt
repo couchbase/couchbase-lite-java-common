@@ -234,10 +234,10 @@ class LogTest : BaseDbTest() {
             Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
         }
 
-        assertEquals(0, customLogger.getLineCount(LogLevel.VERBOSE).toLong())
-        assertEquals(3, customLogger.getLineCount(LogLevel.INFO).toLong())
-        assertEquals(4, customLogger.getLineCount(LogLevel.WARNING).toLong())
-        assertEquals(5, customLogger.getLineCount(LogLevel.ERROR).toLong())
+        assertEquals(0, customLogger.getLineCount(LogLevel.VERBOSE))
+        assertEquals(3, customLogger.getLineCount(LogLevel.INFO))
+        assertEquals(4, customLogger.getLineCount(LogLevel.WARNING))
+        assertEquals(5, customLogger.getLineCount(LogLevel.ERROR))
     }
 
     @Test
@@ -250,14 +250,14 @@ class LogTest : BaseDbTest() {
         Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
         Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
         Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
-        assertEquals(0, customLogger.lineCount.toLong())
+        assertEquals(0, customLogger.lineCount)
 
         customLogger.setLevel(LogLevel.VERBOSE)
         Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
         Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
         Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
         Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
-        assertEquals(3, customLogger.lineCount.toLong())
+        assertEquals(3, customLogger.lineCount)
     }
 
     @Test
@@ -287,10 +287,10 @@ class LogTest : BaseDbTest() {
 
                 val logPath = log.canonicalPath
                 when {
-                    logPath.contains("verbose") -> assertEquals(0, lineCount.toLong())
-                    logPath.contains("info") -> assertEquals(3, lineCount.toLong())
-                    logPath.contains("warning") -> assertEquals(4, lineCount.toLong())
-                    logPath.contains("error") -> assertEquals(5, lineCount.toLong())
+                    logPath.contains("verbose") -> assertEquals(0, lineCount)
+                    logPath.contains("info") -> assertEquals(3, lineCount)
+                    logPath.contains("warning") -> assertEquals(4, lineCount)
+                    logPath.contains("error") -> assertEquals(5, lineCount)
                 }
             }
         }
@@ -308,7 +308,7 @@ class LogTest : BaseDbTest() {
             assertNotNull(lastModifiedFile)
 
             val bytes = ByteArray(4)
-            FileInputStream(lastModifiedFile!!).use { inStr -> assertEquals(4, inStr.read(bytes).toLong()) }
+            FileInputStream(lastModifiedFile!!).use { inStr -> assertEquals(4, inStr.read(bytes)) }
             assertEquals(bytes[0], 0xCF.toByte())
             assertEquals(bytes[1], 0xB2.toByte())
             assertEquals(bytes[2], 0xAB.toByte())
@@ -326,7 +326,7 @@ class LogTest : BaseDbTest() {
             }
 
             assertNotNull(files)
-            assertEquals(1, files?.size?.toLong() ?: 0)
+            assertEquals(1, files?.size ?: 0)
 
             val file = getMostRecent(files)
             assertNotNull(file)
@@ -510,14 +510,14 @@ class LogTest : BaseDbTest() {
             .setMaxSize(maxSize)
             .setUsePlaintext(usePlainText)
 
-        assertEquals(config.maxRotateCount.toLong(), rotateCount.toLong())
+        assertEquals(config.maxRotateCount, rotateCount)
         assertEquals(config.maxSize, maxSize)
         assertEquals(config.usesPlaintext(), usePlainText)
         assertEquals(config.directory, scratchDirPath)
 
         val tempDir2 = getScratchDirectoryPath(getUniqueName("logtest2"))
         val newConfig = LogFileConfiguration(tempDir2, config)
-        assertEquals(newConfig.maxRotateCount.toLong(), rotateCount.toLong())
+        assertEquals(newConfig.maxRotateCount, rotateCount)
         assertEquals(newConfig.maxSize, maxSize)
         assertEquals(newConfig.usesPlaintext(), usePlainText)
         assertEquals(newConfig.directory, tempDir2)
@@ -646,14 +646,14 @@ class LogTest : BaseDbTest() {
                 .from(DataSource.collection(testCollection))
                 .execute()
             // If level > maxLevel, should be no logs
-            assertEquals(C4Constants.LogLevel.NONE.toLong(), testC4Logger.minLevel.toLong())
+            assertEquals(C4Constants.LogLevel.NONE, testC4Logger.minLevel)
 
             testC4Logger.reset()
             testC4Logger.setLevels(C4TestUtils.getLogLevel(c4Domain), c4Domain)
             QueryBuilder.select(SelectResult.expression(Meta.id))
                 .from(DataSource.collection(testCollection))
                 .execute()
-            assertEquals(actualMinLevel.toLong(), testC4Logger.minLevel.toLong())
+            assertEquals(actualMinLevel, testC4Logger.minLevel)
         } finally {
             testC4Logger.setLevels(C4TestUtils.getLogLevel(c4Domain), c4Domain)
             C4Log.LOGGER.set(oldLogger)
@@ -698,7 +698,7 @@ class LogTest : BaseDbTest() {
     private fun getLogContents(log: File): String {
         val b = ByteArray(log.length().toInt())
         val fileInputStream = FileInputStream(log)
-        assertEquals(b.size.toLong(), fileInputStream.read(b).toLong())
+        assertEquals(b.size, fileInputStream.read(b))
         return String(b, StandardCharsets.US_ASCII)
     }
 

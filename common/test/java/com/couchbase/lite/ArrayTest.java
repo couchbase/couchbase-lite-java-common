@@ -1843,6 +1843,22 @@ public class ArrayTest extends BaseDbTest {
             assertTrue(array.getBoolean(3));
     }
 
+    ///////////////  Error Case test
+
+    private class Unserializable{}
+
+    @Test
+    public void testAddValueUnexpectedObject() {
+        assertThrows(IllegalArgumentException.class, () -> new MutableArray().addValue(new Unserializable()));
+    }
+
+    @Test
+    public void testSetValueUnExpectedObject() {
+        MutableArray mArray = new MutableArray();
+        mArray.addValue(0);
+        assertThrows(IllegalArgumentException.class, () -> mArray.setValue(0, new Unserializable()));
+    }
+
     ///////////////  JSON tests
 
     // JSON 3.4
