@@ -304,7 +304,6 @@ namespace litecore {
         FLSliceResult jbyteArraySlice::copy(JNIEnv *env, jbyteArray jbytes) {
             jbyteArraySlice bytes(env, jbytes, true);
             return FLSlice_Copy(bytes);
-
         }
 
         void throwError(JNIEnv *env, C4Error error) {
@@ -347,8 +346,7 @@ namespace litecore {
             return toJByteArray(env, (C4Slice) s);
         }
 
-        bool getEncryptionKey(JNIEnv *env, jint keyAlg, jbyteArray jKeyBytes,
-                              C4EncryptionKey *outKey) {
+        bool getEncryptionKey(JNIEnv *env, jint keyAlg, jbyteArray jKeyBytes, C4EncryptionKey *outKey) {
             outKey->algorithm = (C4EncryptionAlgorithm) keyAlg;
             if (keyAlg != kC4EncryptionNone) {
                 jbyteArraySlice keyBytes(env, jKeyBytes);

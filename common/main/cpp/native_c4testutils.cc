@@ -167,7 +167,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON(
         jclass ignore,
         jlong db,
         jbyteArray jbody) {
-    jbyteArraySlice body(env, jbody, false);
+    jbyteArraySlice body(env, jbody);
 
     C4Error error{};
     C4SliceResult res = c4db_encodeJSON((C4Database *) db, (C4Slice) body, &error);
@@ -214,7 +214,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put(
 
     auto collection = (C4Collection *) jcollection;
     jstringSlice docID(env, jdocID);
-    jbyteArraySlice body(env, jbody, false);
+    jbyteArraySlice body(env, jbody);
 
     C4DocPutRequest rq{};
     rq.body = body;                         ///< Revision's body

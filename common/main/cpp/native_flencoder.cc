@@ -152,7 +152,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeData(
         jclass ignore,
         jlong jenc,
         jbyteArray jvalue) {
-    jbyteArraySlice value(env, jvalue, true);
+    jbyteArraySlice value(env, jvalue);
     return (jboolean) FLEncoder_WriteData((FLEncoder) jenc, value);
 }
 
