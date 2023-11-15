@@ -58,8 +58,9 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                         random.nextLong(),
                         i);
                     String json = String.format("{\"content\":\"%s\"}", content);
-                    String[] history = new String[] { getTestRevId("bbbb", 1) };
-                    try (C4Document doc = C4TestUtils.create(
+                    String[] history = new String[] {getTestRevId("bbbb", 1)};
+                    // don't try to free the C4 Document
+                    C4Document doc = C4TestUtils.create(
                         c4Collection,
                         json2fleece(json),
                         docID,
@@ -69,9 +70,8 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                         history,
                         true,
                         0,
-                        0)) {
-                        assertNotNull(doc);
-                    }
+                        0);
+                    assertNotNull(doc);
                 }
                 commit = true;
             }
@@ -97,10 +97,7 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
             C4Constants.EnumeratorFlags.DEFAULT & ~C4Constants.EnumeratorFlags.INCLUDE_BODIES);
         C4Document doc;
         int i = 0;
-        while ((doc = nextDocument(e)) != null) {
-            try { i++; }
-            finally { doc.close(); }
-        }
+        while ((doc = nextDocument(e)) != null) { i++; }
         assertEquals(DOC_NUM, i);
 
         double elapsed = timer.getElapsedTimeMillis();

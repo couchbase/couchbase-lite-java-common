@@ -121,8 +121,8 @@ public class C4Log {
     private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
 
     // This class and this method are referenced by name, from native code.
-    public static void logCallback(@NonNull String c4Domain, int c4Level, @NonNull String message) {
-        get().logInternal(c4Domain, c4Level, message);
+    public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
+        get().logInternal((c4Domain == null) ? "???" : c4Domain, c4Level, (message == null) ? "" : message);
     }
 
     @NonNull

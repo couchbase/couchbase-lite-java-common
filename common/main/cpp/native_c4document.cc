@@ -240,7 +240,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_resolveConflict(
         jint jMergedFlags) {
     jstringSlice winningRevID(env, jWinningRevID);
     jstringSlice losingRevID(env, jLosingRevID);
-    jbyteArraySlice mergedBody(env, jMergedBody, false);
+    jbyteArraySlice mergedBody(env, jMergedBody);
     auto revisionFlag = (C4RevisionFlags) jMergedFlags;
     C4Error error{};
     if (!c4doc_resolveConflict((C4Document *) jdoc, winningRevID, losingRevID, mergedBody, revisionFlag, &error))

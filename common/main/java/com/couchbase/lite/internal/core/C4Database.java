@@ -51,7 +51,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {
-    public static boolean VERSION_VECTORS_ENABLED = false;
+    public static final boolean VERSION_VECTORS_ENABLED = false;
 
     @VisibleForTesting
     static final int DB_FLAGS = C4Constants.DatabaseFlags.CREATE;

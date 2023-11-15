@@ -299,7 +299,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_gotHTTPResponse(
         jlong socket,
         jint httpStatus,
         jbyteArray jresponseHeadersFleece) {
-    jbyteArraySlice responseHeadersFleece(env, jresponseHeadersFleece, false);
+    jbyteArraySlice responseHeadersFleece(env, jresponseHeadersFleece);
     c4socket_gotHTTPResponse((C4Socket *) socket, httpStatus, responseHeadersFleece);
 }
 
@@ -331,7 +331,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_received(
         jlong jSocket,
         jbyteArray jdata) {
     auto socket = (C4Socket *) jSocket;
-    jbyteArraySlice data(env, jdata, false);
+    jbyteArraySlice data(env, jdata);
     c4socket_received(socket, data);
 }
 

@@ -16,6 +16,7 @@
 package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.time.LocalDateTime;
@@ -52,7 +53,7 @@ public class ConsoleLogger extends AbstractConsoleLogger {
             + message;
     }
 
-    ConsoleLogger(@NonNull C4Log c4Log) { super(c4Log); }
+    ConsoleLogger(@Nullable C4Log c4Log) { super(c4Log); }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {

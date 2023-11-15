@@ -451,7 +451,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
     jstringSlice host(env, jhost);
     jstringSlice path(env, jpath);
     jstringSlice remoteDBName(env, jremoteDBName);
-    jbyteArraySlice options(env, joptions, false);
+    jbyteArraySlice options(env, joptions);
 
     C4Address c4Address{};
     c4Address.scheme = scheme;
@@ -523,7 +523,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
     throwError(env, error);
     return 0;
 #else
-    jbyteArraySlice options(env, joptions, false);
+    jbyteArraySlice options(env, joptions);
 
     C4ReplicatorParameters params{};
     params.optionsDictFleece = options;
@@ -577,7 +577,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
         jlong jopenSocket,
         jbyteArray joptions,
         jlong replicatorToken) {
-    jbyteArraySlice options(env, joptions, false);
+    jbyteArraySlice options(env, joptions);
     auto *db = (C4Database *) jdb;
     auto openSocket = (C4Socket *) jopenSocket;
 
@@ -661,7 +661,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setOptions(
         jclass ignored,
         jlong repl,
         jbyteArray joptions) {
-    jbyteArraySlice options(env, joptions, false);
+    jbyteArraySlice options(env, joptions);
     c4repl_setOptions((C4Replicator *) repl, options);
 }
 

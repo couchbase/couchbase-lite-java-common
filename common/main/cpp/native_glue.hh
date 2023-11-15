@@ -87,6 +87,7 @@ namespace litecore {
         public:
             // Warning: If `critical` is true, you cannot make any further JNI calls (except other
             // critical accesses) until this object goes out of scope or is deleted.
+            // That includes any attempt to log anything.
             jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, bool critical = false);
 
             jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, size_t length, bool critical = false);

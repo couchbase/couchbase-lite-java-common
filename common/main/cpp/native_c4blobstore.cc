@@ -155,7 +155,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_create(
         jclass ignore,
         jlong jblobstore,
         jbyteArray jcontents) {
-    jbyteArraySlice ccontents(env, jcontents, true);
+    jbyteArraySlice ccontents(env, jcontents);
 
     C4BlobKey blobKey;
     C4Error error{};
@@ -312,7 +312,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_write(
         jlong jstream,
         jbyteArray jbytes,
         jint jsize) {
-    jbyteArraySlice bytes(env, jbytes, (size_t) jsize, true);
+    jbyteArraySlice bytes(env, jbytes, (size_t) jsize);
     auto slice = (C4Slice) bytes;
     C4Error error{};
     if (!c4stream_write((C4WriteStream *) jstream, slice.buf, slice.size, &error))

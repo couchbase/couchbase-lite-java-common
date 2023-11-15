@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit
 // The rules in this test are:
 // testDatabase is managed by the superclass
 // If a test creates a new database it guarantees that it is deleted.
-// If a test opens a copy of the testDatabase, it close (but does NOT delete) it
+// If a test opens a copy of the testDatabase, it closes (but does NOT delete) it
 class DatabaseTest : BaseDbTest() {
 
     //---------------------------------------------
@@ -287,7 +287,7 @@ class DatabaseTest : BaseDbTest() {
             assertNotSame(otherCollection, testCollection)
             assertEquals(n + 1, testCollection.count)
 
-            // Delete from the the wrong db
+            // Delete from the wrong db
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
         } finally {
             eraseDb(otherDb)
@@ -1286,7 +1286,7 @@ class DatabaseTest : BaseDbTest() {
 
     @Test
     fun testCreateIndex() {
-        assertEquals(0, testCollection.indexes.size.toLong())
+        assertEquals(0, testCollection.indexes.size)
 
         testCollection.createIndex(
             "index1",
@@ -1295,17 +1295,17 @@ class DatabaseTest : BaseDbTest() {
                 ValueIndexItem.property("lastName")
             )
         )
-        assertEquals(1, testCollection.indexes.size.toLong())
+        assertEquals(1, testCollection.indexes.size)
 
         // Create FTS index:
         testCollection.createIndex("index2", IndexBuilder.fullTextIndex(FullTextIndexItem.property("detail")))
-        assertEquals(2, testCollection.indexes.size.toLong())
+        assertEquals(2, testCollection.indexes.size)
 
         testCollection.createIndex(
             "index3",
             IndexBuilder.fullTextIndex(FullTextIndexItem.property("es-detail")).ignoreAccents(true).setLanguage("es")
         )
-        assertEquals(3, testCollection.indexes.size.toLong())
+        assertEquals(3, testCollection.indexes.size)
 
         // Create value index with expression() instead of property()
         testCollection.createIndex(
@@ -1315,23 +1315,23 @@ class DatabaseTest : BaseDbTest() {
                 ValueIndexItem.expression(Expression.property("lastName"))
             )
         )
-        assertEquals(4, testCollection.indexes.size.toLong())
+        assertEquals(4, testCollection.indexes.size)
 
         assertContents(testCollection.indexes, "index1", "index2", "index3", "index4")
     }
 
     @Test
     fun testCreateIndexWithConfig() {
-        assertEquals(0, testCollection.indexes.size.toLong())
+        assertEquals(0, testCollection.indexes.size)
 
         testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
-        assertEquals(1, testCollection.indexes.size.toLong())
+        assertEquals(1, testCollection.indexes.size)
 
         testCollection.createIndex(
             "index2",
             FullTextIndexConfiguration("detail").ignoreAccents(true).setLanguage("es")
         )
-        assertEquals(2, testCollection.indexes.size.toLong())
+        assertEquals(2, testCollection.indexes.size)
 
         assertContents(testCollection.indexes, "index1", "index2")
     }
@@ -1351,11 +1351,11 @@ class DatabaseTest : BaseDbTest() {
         // Create index with first name:
         val index: Index = IndexBuilder.valueIndex(ValueIndexItem.property("firstName"))
         testCollection.createIndex("myindex", index)
-        assertEquals(1, testCollection.indexes.size.toLong())
+        assertEquals(1, testCollection.indexes.size)
 
         // Call create index again:
         testCollection.createIndex("myindex", index)
-        assertEquals(1, testCollection.indexes.size.toLong())
+        assertEquals(1, testCollection.indexes.size)
 
         assertContents(testCollection.indexes, "myindex")
     }
@@ -1364,11 +1364,11 @@ class DatabaseTest : BaseDbTest() {
     fun testCreateSameNameIndexes() {
         // Create value index with first name:
         testCollection.createIndex("myindex", IndexBuilder.valueIndex(ValueIndexItem.property("firstName")))
-        assertEquals(1, testCollection.indexes.size.toLong())
+        assertEquals(1, testCollection.indexes.size)
 
         // Create value index with last name:
         testCollection.createIndex("myindex", IndexBuilder.valueIndex(ValueIndexItem.property("lastName")))
-        assertEquals(1, testCollection.indexes.size.toLong())
+        assertEquals(1, testCollection.indexes.size)
 
         assertContents(testCollection.indexes, "myindex")
 
@@ -1385,19 +1385,19 @@ class DatabaseTest : BaseDbTest() {
 
         // Delete indexes:
         testCollection.deleteIndex("index4")
-        assertEquals(3, testCollection.indexes.size.toLong())
+        assertEquals(3, testCollection.indexes.size)
         assertContents(testCollection.indexes, "index1", "index2", "index3")
 
         testCollection.deleteIndex("index1")
-        assertEquals(2, testCollection.indexes.size.toLong())
+        assertEquals(2, testCollection.indexes.size)
         assertContents(testCollection.indexes, "index2", "index3")
 
         testCollection.deleteIndex("index2")
-        assertEquals(1, testCollection.indexes.size.toLong())
+        assertEquals(1, testCollection.indexes.size)
         assertContents(testCollection.indexes, "index3")
 
         testCollection.deleteIndex("index3")
-        assertEquals(0, testCollection.indexes.size.toLong())
+        assertEquals(0, testCollection.indexes.size)
         assertTrue(testCollection.indexes.isEmpty())
     }
 
@@ -1782,8 +1782,126 @@ class DatabaseTest : BaseDbTest() {
         }
     }
 
+    @Test
+    fun testDeleteSameDocTwice() {
+        // Store doc:
+        val docID = "doc1"
+        val doc: Document = saveDocInTestCollection(MutableDocument(docID))
+
+        // First time deletion:
+        testCollection.delete(doc)
+        assertEquals(0, testCollection.count)
+        assertNull(testCollection.getDocument(docID))
+
+        // Second time deletion:
+        // NOTE: doc is pointing to old revision. This causes a conflict but generates the same revision
+        testCollection.delete(doc)
+        assertNull(testCollection.getDocument(docID))
+    }
+
+    // -- DatabaseTest
+    @Test
+    fun testDeleteUnsavedDocument() {
+        val doc = MutableDocument("doc1")
+        doc.setValue("name", "Scott Tiger")
+        try {
+            testCollection.delete(doc)
+            fail()
+        } catch (e: CouchbaseLiteException) {
+            if (e.code != CBLError.Code.NOT_FOUND) {
+                fail()
+            }
+        }
+        assertEquals("Scott Tiger", doc.getValue("name"))
+    }
+
+    @Test
+    fun testSaveSavedMutableDocument() {
+        val mDoc = MutableDocument("doc1")
+        mDoc.setValue("name", "Scott Tiger")
+        val doc1 = saveDocInTestCollection(mDoc)
+        mDoc.setValue("age", 20)
+        val doc2 = saveDocInTestCollection(mDoc)
+        assertEquals(2, doc2.generation());
+        assertEquals(20, doc2.getInt("age"))
+        assertEquals("Scott Tiger", doc2.getString("name"))
+    }
+
+    @Test
+    fun testDeleteSavedMutableDocument() {
+        val doc = MutableDocument("doc1")
+        doc.setValue("name", "Scott Tiger")
+        saveDocInTestCollection(doc)
+        testCollection.delete(doc)
+        assertNull(testCollection.getDocument("doc1"))
+    }
+
+    @Test
+    fun testDeleteDocAfterPurgeDoc() {
+        val doc = MutableDocument("doc1")
+        doc.setValue("name", "Scott Tiger")
+        val saved: Document = saveDocInTestCollection(doc)
+
+        // purge doc
+        testCollection.purge(saved)
+        try {
+            testCollection.delete(saved)
+            fail()
+        } catch (e: CouchbaseLiteException) {
+            assertEquals(CBLError.Code.NOT_FOUND, e.code)
+        }
+    }
+
+    @Test
+    fun testDeleteDocAfterDeleteDoc() {
+        val doc = MutableDocument("doc1")
+        doc.setValue("name", "Scott Tiger")
+        val saved: Document = saveDocInTestCollection(doc)
+
+        // delete doc
+        testCollection.delete(saved)
+
+        // delete doc -> conflict resolver -> no-op
+        testCollection.delete(saved)
+    }
+
+    @Test
+    fun testPurgeDocAfterDeleteDoc() {
+        val doc = MutableDocument("doc1")
+        doc.setValue("name", "Scott Tiger")
+        val saved: Document = saveDocInTestCollection(doc)
+
+        // delete doc
+        testCollection.delete(saved)
+
+        // purge doc
+        testCollection.purge(saved)
+    }
+
+    @Test
+    fun testPurgeDocAfterPurgeDoc() {
+        val doc = MutableDocument("doc1")
+        doc.setValue("name", "Scott Tiger")
+        val saved: Document = saveDocInTestCollection(doc)
+
+        // purge doc
+        testCollection.purge(saved)
+        try {
+            testCollection.purge(saved)
+            fail()
+        } catch (e: CouchbaseLiteException) {
+            if (e.code != CBLError.Code.NOT_FOUND) {
+                fail()
+            }
+        }
+    }
+
 
     /////////////////////////////////   H E L P E R S   //////////////////////////////////////
+
+    private fun saveDocInTestCollection(doc: MutableDocument): Document {
+        return saveDocInCollection(doc, testCollection)
+    }
 
     // helper method to create a bunch of indices.
     private fun createTestIndexes() {
@@ -1871,7 +1989,7 @@ class DatabaseTest : BaseDbTest() {
         assertEquals(expected, doc1a.toMap())
         assertEquals(2, doc1a.sequence)
 
-        // Modify doc1b and delete, result to conflict when delete:
+        // Modify doc1b and delete.  This results in a conflict when deleted:
         doc1b.setString("lastName", "Lion")
         when (cc) {
             ConcurrencyControl.LAST_WRITE_WINS -> {
