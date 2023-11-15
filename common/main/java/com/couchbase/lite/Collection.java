@@ -369,10 +369,9 @@ public final class Collection extends BaseCollection
      *
      * @param listener the observer
      * @return token used to cancel the listener
-     * @throws IllegalStateException if the default collection doesn’t exist.
      */
     @NonNull
-    public ListenerToken addChangeListener(@NonNull CollectionChangeListener listener) throws CouchbaseLiteException {
+    public ListenerToken addChangeListener(@NonNull CollectionChangeListener listener) {
         return addChangeListener(null, listener);
     }
 
@@ -384,7 +383,6 @@ public final class Collection extends BaseCollection
      * @param executor the executor on which to run the listener.
      * @param listener the observer
      * @return token used to cancel the listener
-     * @throws IllegalStateException if the default collection doesn’t exist.
      */
     @NonNull
     public ListenerToken addChangeListener(@Nullable Executor executor, @NonNull CollectionChangeListener listener) {
@@ -460,18 +458,18 @@ public final class Collection extends BaseCollection
      * @param config index configuration
      * @throws CouchbaseLiteException on failure
      */
-    public void createIndex(String name, IndexConfiguration config) throws CouchbaseLiteException {
+    public void createIndex(@NonNull String name, @NonNull IndexConfiguration config) throws CouchbaseLiteException {
         createIndexInternal(name, config);
     }
 
-    /**
+     /**
      * Add an index to the collection.
      *
      * @param name  index name
      * @param index index configuration
      * @throws CouchbaseLiteException on failure
      */
-    public void createIndex(String name, Index index) throws CouchbaseLiteException {
+    public void createIndex(@NonNull String name, @NonNull Index index) throws CouchbaseLiteException {
         createIndexInternal(name, index);
     }
 
@@ -481,7 +479,7 @@ public final class Collection extends BaseCollection
      * @param name name of the index to delete
      * @throws CouchbaseLiteException on failure
      */
-    public void deleteIndex(String name) throws CouchbaseLiteException {
+    public void deleteIndex(@NonNull String name) throws CouchbaseLiteException {
         try { c4Collection.deleteIndex(name); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
@@ -678,11 +676,17 @@ public final class Collection extends BaseCollection
             }
 
             // Conflict
-            if (concurrencyControl.equals(ConcurrencyControl.FAIL_ON_CONFLICT)) {
-                throw new CouchbaseLiteException("Conflict", CBLError.Domain.CBLITE, CBLError.Code.CONFLICT);
-            }
+            switch (concurrencyControl) {
+                case FAIL_ON_CONFLICT:
+                    throw new CouchbaseLiteException("Conflict", CBLError.Domain.CBLITE, CBLError.Code.CONFLICT);
 
-            commit = saveConflicted(document, deleting);
+                case LAST_WRITE_WINS:
+                    commit = saveConflicted(document, deleting);
+                    break;
+
+                default:
+                    throw new CouchbaseLiteException("Unrecognized concurrency control: " + concurrencyControl);
+            }
         }
         finally {
             db.endTransaction(commit);
@@ -862,7 +866,6 @@ public final class Collection extends BaseCollection
     @GuardedBy("getDbLock()")
     private boolean saveConflicted(@NonNull Document document, boolean deleting) throws CouchbaseLiteException {
         final C4Document curDoc;
-
 
         curDoc = getC4Document(document.getId());
         if (curDoc == null) { return false; }

@@ -1203,27 +1203,23 @@ class DatabaseTest : BaseDbTest() {
     // REF: https://github.com/couchbase/couchbase-lite-android/issues/1231
     @Test
     fun testOverwriteDocWithNewDocInstance() {
-        val mDoc1 = MutableDocument("abc")
-        mDoc1.setValue("someKey", "someVal")
-        val doc1 = saveDocInCollection(mDoc1)
+        val docId = getUniqueName("conflict")
 
-        // This causes a conflict, DefaultConflictResolver should be applied.
-        val mDoc2 = MutableDocument("abc")
-        mDoc2.setValue("someKey", "newVal")
-        val doc2 = saveDocInCollection(mDoc2)
+        var mDoc = MutableDocument(docId)
+        mDoc.setValue("someKey", "someVal")
+        saveDocInCollection(mDoc)
 
-        // Both doc1 and doc2 are now generation 1. Higher revision one should win
+        // This is a conflict: last write should win
+        mDoc = MutableDocument(docId)
+        mDoc.setValue("someKey", "newVal")
+        saveDocInCollection(mDoc)
+
         assertEquals(1, testCollection.count)
-        val doc = testCollection.getDocument("abc")
+
+        val doc = testCollection.getDocument(docId)
         assertNotNull(doc)
-        // doc1 -> theirs, doc2 -> mine
-        if (doc2.revisionID!! > doc1.revisionID!!) {
-            // mine -> doc 2 win
-            assertEquals("newVal", doc!!.getString("someKey"))
-        } else {
-            // their -> doc 1 win
-            assertEquals("someVar", doc!!.getString("someKey"))
-        }
+        doc!!
+        assertEquals("newVal", doc.getString("someKey"))
     }
 
     @Test
