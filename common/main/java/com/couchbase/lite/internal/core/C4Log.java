@@ -78,6 +78,7 @@ public class C4Log {
     private static final Map<String, LogDomain> LOGGING_DOMAINS_FROM_C4;
     static {
         final Map<String, LogDomain> m = new HashMap<>();
+        m.put(C4Constants.LogDomain.DEFAULT, LogDomain.DATABASE);
         m.put(C4Constants.LogDomain.ACTOR, LogDomain.REPLICATOR);
         m.put(C4Constants.LogDomain.BLIP, LogDomain.NETWORK);
         m.put(C4Constants.LogDomain.BLIP_MESSAGES, LogDomain.NETWORK);
@@ -183,7 +184,9 @@ public class C4Log {
                 case DATABASE:
                     setLevels(
                         c4Level,
+                        C4Constants.LogDomain.DEFAULT,
                         C4Constants.LogDomain.BLOB,
+                        C4Constants.LogDomain.CHANGES,
                         C4Constants.LogDomain.DATABASE,
                         C4Constants.LogDomain.SQL);
                     break;
@@ -213,7 +216,6 @@ public class C4Log {
                     setLevels(
                         c4Level,
                         C4Constants.LogDomain.ACTOR,
-                        C4Constants.LogDomain.CHANGES,
                         C4Constants.LogDomain.SYNC,
                         C4Constants.LogDomain.SYNC_BUSY);
                     break;
