@@ -33,39 +33,19 @@ public final class Report {
 
     private static final String DOMAIN = "CouchbaseLite/TEST";
 
-    public static void log(@NonNull String message) {
-        Report.log(LogLevel.INFO, message, (Throwable) null);
-    }
+    public static void log(@NonNull String message) { Log.i(DOMAIN, message); }
 
     public static void log(@Nullable Throwable err, @NonNull String message) {
-        Report.log(LogLevel.INFO, message, err);
+        Log.i(DOMAIN, message, err);
     }
 
     public static void log(@NonNull String template, Object... args) {
-        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args), null);
+        Log.i(DOMAIN, String.format(Locale.ENGLISH, template, args), null);
     }
 
     public static void log(@Nullable Throwable err, @NonNull String template, Object... args) {
-        Report.log(LogLevel.INFO, String.format(Locale.ENGLISH, template, args), err);
+        Log.i(DOMAIN, String.format(Locale.ENGLISH, template, args), err);
     }
 
-    public static void log(@NonNull LogLevel level, @NonNull String message, @Nullable Throwable err) {
-        switch (level) {
-            case DEBUG:
-                Log.d(DOMAIN, message, err);
-                break;
-            case VERBOSE:
-                Log.v(DOMAIN, message, err);
-                break;
-            case INFO:
-                Log.i(DOMAIN, message, err);
-                break;
-            case WARNING:
-                Log.w(DOMAIN, message, err);
-                break;
-            case ERROR:
-                Log.e(DOMAIN, message, err);
-                break;
-        }
-    }
+    public static void warn(@Nullable Throwable err, @NonNull String message) { Log.w(DOMAIN, message, err); }
 }

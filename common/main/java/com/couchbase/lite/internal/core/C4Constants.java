@@ -44,6 +44,7 @@ public final class C4Constants {
     public static final class LogDomain {
         private LogDomain() { }
 
+        public static final String DEFAULT = "";
         public static final String ACTOR = "Actor";
         public static final String BLIP = "BLIP";
         public static final String BLIP_MESSAGES = "BLIPMessages";
