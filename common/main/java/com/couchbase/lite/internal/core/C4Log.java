@@ -144,7 +144,7 @@ public class C4Log {
 
     public final int getFileLogLevel() { return impl.nGetBinaryFileLevel(); }
 
-    public final void setFileFileLevel(LogLevel level) { impl.nSetBinaryFileLevel(getC4LevelForLogLevel(level)); }
+    public final void setFileLogLevel(LogLevel level) { impl.nSetBinaryFileLevel(getC4LevelForLogLevel(level)); }
 
     public final void initFileLogger(
         String path,
@@ -277,10 +277,7 @@ public class C4Log {
         return (c4level != null) ? c4level : C4Constants.LogLevel.INFO;
     }
 
-    private void setCoreCallbackLevel() {
-        final LogLevel logLevel = CALLBACK_LEVEL.get();
-        impl.nSetCallbackLevel(getC4LevelForLogLevel(logLevel));
-    }
+    private void setCoreCallbackLevel() { impl.nSetCallbackLevel(getC4LevelForLogLevel(CALLBACK_LEVEL.get())); }
 
     @NonNull
     private LogLevel getCallbackLevel(@NonNull LogLevel consoleLevel, @Nullable Logger customLogger) {

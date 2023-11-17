@@ -45,9 +45,6 @@ public interface PlatformTest {
     /* get a scratch directory */
     File getTmpDir();
 
-    /* Reload the cross-platform error messages. */
-    void reloadStandardErrorMessages();
-
     /* Skip the test on some platforms */
     Exclusion getExclusions(@NonNull String tag);
 

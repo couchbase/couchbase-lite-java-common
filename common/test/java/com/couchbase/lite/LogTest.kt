@@ -22,8 +22,6 @@ import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.core.impl.NativeC4Log
 import com.couchbase.lite.internal.logging.Log
 import com.couchbase.lite.utils.KotlinHelpers
-import org.junit.After
-import org.junit.AfterClass
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -70,14 +68,6 @@ class LogTest : BaseDbTest() {
         private var level: LogLevel? = null
         val content
             get() = buf.toString()
-        val lineCount: Int
-            get() {
-                var total = 0
-                for (level in LogLevel.values()) {
-                    total += getLineCount(level)
-                }
-                return total
-            }
 
         override fun log(level: LogLevel, domain: LogDomain, message: String) {
             if ((prefix != null) && (!message.startsWith(Log.LOG_HEADER + prefix))) {
@@ -91,10 +81,6 @@ class LogTest : BaseDbTest() {
         }
 
         override fun getLevel() = level!!
-
-        fun setLevel(level: LogLevel?) {
-            this.level = level
-        }
 
         fun getLineCount(level: LogLevel) = lineCounts[level] ?: 0
     }
@@ -129,12 +115,6 @@ class LogTest : BaseDbTest() {
         fun clearContent() = buf.clear()
     }
 
-    companion object {
-        @JvmStatic
-        @AfterClass
-        fun tearDownLogTestClass() = Database.log.reset()
-    }
-
     private var scratchDirPath: String? = null
 
     private val tempDir: File?
@@ -153,13 +133,6 @@ class LogTest : BaseDbTest() {
     @Before
     fun setUpLogTest() {
         scratchDirPath = getScratchDirectoryPath(getUniqueName("log-dir"))
-        Database.log.reset()
-    }
-
-    @After
-    fun tearDownLogTest() {
-        Database.log.custom = null
-        reloadStandardErrorMessages()
     }
 
     @Test
@@ -220,44 +193,6 @@ class LogTest : BaseDbTest() {
         assertEquals(Defaults.LogFile.MAX_SIZE, config.maxSize)
         assertEquals(Defaults.LogFile.MAX_ROTATE_COUNT, config.maxRotateCount)
         assertEquals(Defaults.LogFile.USE_PLAIN_TEXT, config.usesPlaintext())
-    }
-
-    @Test
-    fun testCustomLoggingLevels() {
-        val customLogger = TestCustomLogger("$$\$TEST ")
-        Database.log.custom = customLogger
-        for (level in LogLevel.values()) {
-            customLogger.setLevel(level)
-            Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
-            Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
-            Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
-            Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
-        }
-
-        assertEquals(0, customLogger.getLineCount(LogLevel.VERBOSE))
-        assertEquals(3, customLogger.getLineCount(LogLevel.INFO))
-        assertEquals(4, customLogger.getLineCount(LogLevel.WARNING))
-        assertEquals(5, customLogger.getLineCount(LogLevel.ERROR))
-    }
-
-    @Test
-    fun testEnableAndDisableCustomLogging() {
-        val customLogger = TestCustomLogger("$$\$TEST ")
-        Database.log.custom = customLogger
-
-        customLogger.setLevel(LogLevel.NONE)
-        Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
-        Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
-        Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
-        Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
-        assertEquals(0, customLogger.lineCount)
-
-        customLogger.setLevel(LogLevel.VERBOSE)
-        Log.d(LogDomain.DATABASE, "$$\$TEST DEBUG")
-        Log.i(LogDomain.DATABASE, "$$\$TEST INFO")
-        Log.w(LogDomain.DATABASE, "$$\$TEST WARNING")
-        Log.e(LogDomain.DATABASE, "$$\$TEST ERROR")
-        assertEquals(3, customLogger.lineCount)
     }
 
     @Test
@@ -476,7 +411,7 @@ class LogTest : BaseDbTest() {
 
         testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             Log.d(LogDomain.DATABASE, message, error, uuid2)
-            Log.testLog(LogLevel.VERBOSE, LogDomain.DATABASE, message, error, uuid2)
+            Log.v(LogDomain.DATABASE, message, error, uuid2)
             Log.i(LogDomain.DATABASE, message, error, uuid2)
             Log.w(LogDomain.DATABASE, message, error, uuid2)
             Log.e(LogDomain.DATABASE, message, error, uuid2)
@@ -546,18 +481,86 @@ class LogTest : BaseDbTest() {
         assertEquals(fileLogger.config, LogFileConfiguration("$scratchDirPath/foo"))
     }
 
+    @Test
+    fun testLogStandardErrorWithFormatting() {
+        val nl = System.lineSeparator()
+
+        var prevStdErr: MutableMap<String, String>? = null
+        try {
+            prevStdErr = Log.setStandardErrorMessages(mapOf("FOO" to "$$\$TEST DEBUG %2\$s %1\$d %3$.2f"))
+
+            val logger = SingleLineLogger("$$\$TEST DEBUG")
+            Database.log.custom = logger
+
+            // After initLogging, log level is WARN
+            Log.w(LogDomain.DATABASE, "FOO", Exception("whoops"), 1, "arg", 3.0f)
+
+            val msg = logger.message
+            assertNotNull(msg)
+            assertTrue(
+                msg!!.startsWith(Log.LOG_HEADER + "$$\$TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl)
+            )
+        } finally {
+            Log.setStandardErrorMessages(prevStdErr!!)
+        }
+    }
+
+    @Test
+    fun testLookupStandardMessage() {
+        var prevStdErr: MutableMap<String, String>? = null
+        try {
+            prevStdErr = Log.setStandardErrorMessages(mapOf("FOO" to "$$\$TEST DEBUG"))
+            assertEquals("$$\$TEST DEBUG", Log.lookupStandardMessage("FOO"))
+        } finally {
+            Log.setStandardErrorMessages(prevStdErr!!)
+        }
+    }
+
+    @Test
+    fun testFormatStandardMessage() {
+        var prevStdErr: MutableMap<String, String>? = null
+        try {
+            prevStdErr = Log.setStandardErrorMessages(mapOf("FOO" to "$$\$TEST DEBUG %2\$s %1\$d %3$.2f"))
+            assertEquals("$$\$TEST DEBUG arg 1 3.00", Log.formatStandardMessage("FOO", 1, "arg", 3.0f))
+        } finally {
+            Log.setStandardErrorMessages(prevStdErr!!)
+        }
+    }
+
+    // brittle:  will break when the wording of the error message is changed
+    @Test
+    fun testStandardCBLException() {
+        var prevStdErr: MutableMap<String, String>? = null
+        try {
+            prevStdErr = Log.setStandardErrorMessages(mapOf("FOO" to "$$\$TEST DEBUG"))
+            val msg = CouchbaseLiteException("FOO", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
+            assertNotNull(msg)
+            assertTrue(msg.contains("$$\$TEST DEBUG"))
+        } finally {
+            Log.setStandardErrorMessages(prevStdErr!!)
+        }
+    }
+
+    @Test
+    fun testNonStandardCBLException() {
+        var prevStdErr: MutableMap<String, String>? = null
+        try {
+            prevStdErr = Log.setStandardErrorMessages(mapOf("FOO" to "$$\$TEST DEBUG"))
+            val msg = CouchbaseLiteException("bork", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
+            assertNotNull(msg)
+            assertTrue(msg.contains("bork"))
+        } finally {
+            Log.setStandardErrorMessages(prevStdErr!!)
+        }
+    }
+
     @Ignore("Need a way to coax LiteCore into logging a non-ascii string")
     @Test
     fun testNonASCII() {
         val hebrew = "מזג האוויר נחמד היום" // The weather is nice today.
 
         val customLogger = TestCustomLogger(null)
-        customLogger.setLevel(LogLevel.DEBUG)
-
         Database.log.custom = customLogger
-
-        // hack: The console logger sets the C4 callback level
-        Database.log.console.level = LogLevel.DEBUG
 
         val doc = MutableDocument()
         doc.setString("hebrew", hebrew)
@@ -571,62 +574,8 @@ class LogTest : BaseDbTest() {
         assertTrue(customLogger.content.contains("[{\"hebrew\":\"$hebrew\"}]"))
     }
 
-    @Test
-    fun testLogStandardErrorWithFormatting() {
-        val nl = System.lineSeparator()
-
-        val stdErr = HashMap<String, String>()
-        stdErr["FOO"] = "$$\$TEST DEBUG %2\$s %1\$d %3$.2f"
-
-        Log.initLogging(stdErr)
-        val logger = SingleLineLogger("$$\$TEST DEBUG")
-        Database.log.custom = logger
-
-        // After initLogging, log level is WARN
-        Log.w(LogDomain.DATABASE, "FOO", Exception("whoops"), 1, "arg", 3.0f)
-
-        val msg = logger.message
-        assertNotNull(msg)
-        assertTrue(
-            msg!!.startsWith(Log.LOG_HEADER + "$$\$TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl)
-        )
-    }
-
-    @Test
-    fun testLookupStandardMessage() {
-        val stdErr = HashMap<String, String>()
-        stdErr["FOO"] = "$$\$TEST DEBUG"
-        Log.initLogging(stdErr)
-        assertEquals("$$\$TEST DEBUG", Log.lookupStandardMessage("FOO"))
-    }
-
-    @Test
-    fun testFormatStandardMessage() {
-        val stdErr = HashMap<String, String>()
-        stdErr["FOO"] = "$$\$TEST DEBUG %2\$s %1\$d %3$.2f"
-        Log.initLogging(stdErr)
-        assertEquals("$$\$TEST DEBUG arg 1 3.00", Log.formatStandardMessage("FOO", 1, "arg", 3.0f))
-    }
-
-    // brittle:  will break when the wording of the error message is changed
-    @Test
-    fun testStandardCBLException() {
-        Log.initLogging(mapOf("FOO" to "$$\$TEST DEBUG"))
-        val msg = CouchbaseLiteException("FOO", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
-        assertNotNull(msg)
-        assertTrue(msg.contains("$$\$TEST DEBUG"))
-    }
-
-    @Test
-    fun testNonStandardCBLException() {
-        Log.initLogging(mapOf("FOO" to "$$\$TEST DEBUG"))
-        val msg = CouchbaseLiteException("bork", CBLError.Domain.CBLITE, CBLError.Code.UNIMPLEMENTED).message
-        assertNotNull(msg)
-        assertTrue(msg.contains("bork"))
-    }
-
     // Verify that we can set the level for log domains that the platform doesn't recognize.
-    // !!! I don't think this test is acutally testing anything.
+    // !!! I don't think this test is actually testing anything.
     @Test
     fun testInternalLogging() {
         val c4Domain = "foo"
@@ -689,7 +638,7 @@ class LogTest : BaseDbTest() {
 
     private fun writeAllLogs(message: String) {
         Log.d(LogDomain.DATABASE, message)
-        Log.testLog(LogLevel.VERBOSE, LogDomain.DATABASE, message)
+        Log.v(LogDomain.DATABASE, message, null)
         Log.i(LogDomain.DATABASE, message)
         Log.w(LogDomain.DATABASE, message)
         Log.e(LogDomain.DATABASE, message)
