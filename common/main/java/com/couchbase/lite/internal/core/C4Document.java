@@ -67,10 +67,6 @@ public final class C4Document extends C4NativePeer {
         void nFree(long doc);
         //// Utility
         boolean nDictContainsBlobs(long dictPtr, long dictSize, long sk);
-
-        // remove when version vectors are enabled
-        @Deprecated
-        long nGetGenerationForId(@NonNull String doc);
     }
 
     @NonNull
@@ -178,10 +174,6 @@ public final class C4Document extends C4NativePeer {
         return value == 0 ? null : FLDict.create(value);
     }
 
-    // Remove when version vectors are enabled
-    @Deprecated
-    public long getGeneration(String id) { return impl.nGetGenerationForId(id); }
-
     // - Conflict resolution
 
     public long getTimestamp() { return withPeerOrDefault(-1L, impl::nGetTimestamp); }
@@ -285,7 +277,7 @@ public final class C4Document extends C4NativePeer {
     // This idiom, which you will see in many places in this code,
     // may protect against a failure that both customers and I have seen:
     // the ART runtime frees (and nulls) a member reference before freeing the
-    // object that refers to it it: impl may be null.
+    // object that refers to it: impl may be null.
     // If that happens, we are going to leak memory.  This idiom, though
     // may prevent an NPE on the finalizer thread.
     private void closePeer(@Nullable LogDomain domain) {

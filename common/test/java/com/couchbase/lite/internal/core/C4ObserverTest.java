@@ -16,7 +16,6 @@
 package com.couchbase.lite.internal.core;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
@@ -43,10 +42,6 @@ public class C4ObserverTest extends C4BaseTest {
         }
     }
 
-    // - DB Observer
-    // This test will fail on LiteCore using Version Vectors
-    // C4DocumentChange.revId under VV contains not the latest version,
-    // but a semicolon separated list of versions
     @Test
     public void testCollectionObserver() throws LiteCoreException {
         C4CollectionObserver collObserver = null;
@@ -137,10 +132,6 @@ public class C4ObserverTest extends C4BaseTest {
         }
     }
 
-    // - Multi-DBObservers
-    // This test will fail on LiteCore using Version Vectors
-    // C4DocumentChange.revId under VV contains not the latest version,
-    // but a semicolon separated list of versions
     @Test
     public void testMultiDBObservers() throws LiteCoreException {
         C4CollectionObserver collObserver = null;
@@ -186,23 +177,6 @@ public class C4ObserverTest extends C4BaseTest {
         }
         finally {
             if (collObserver != null) { collObserver.close(); }
-        }
-    }
-
-    private void checkChanges(
-        C4CollectionObserver observer,
-        List<String> expectedDocIDs,
-        List<String> expectedRevIDs,
-        boolean expectedExternal) {
-        List<C4DocumentChange> changes = observer.getChanges(100);
-        assertNotNull(changes);
-
-        int n = changes.size();
-        assertEquals(expectedDocIDs.size(), n);
-        for (int i = 0; i < n; i++) {
-            assertEquals(expectedDocIDs.get(i), changes.get(i).getDocID());
-            assertEquals(expectedRevIDs.get(i), changes.get(i).getRevID());
-            assertEquals(expectedExternal, changes.get(i).isExternal());
         }
     }
 }

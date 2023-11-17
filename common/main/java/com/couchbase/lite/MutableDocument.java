@@ -352,17 +352,8 @@ public final class MutableDocument extends Document implements MutableDictionary
     public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
 
     //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
-    @Override
-    long generation() { return super.generation() + (isChanged() ? 1 : 0); }
-
-    //---------------------------------------------
     // Private access
     //---------------------------------------------
-
-    private boolean isChanged() { return getMutableContent().isChanged(); }
 
     @NonNull
     private MutableDictionary getMutableContent() { return (MutableDictionary) getContent(); }

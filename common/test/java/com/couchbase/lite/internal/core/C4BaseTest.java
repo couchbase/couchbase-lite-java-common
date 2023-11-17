@@ -47,9 +47,7 @@ import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StopWatch;
 import com.couchbase.lite.internal.utils.StringUtils;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 
 public class C4BaseTest extends BaseTest {
@@ -144,6 +142,23 @@ public class C4BaseTest extends BaseTest {
         FileUtils.eraseFileOrDir(dbParentDirPath);
     }
 
+    protected void checkChanges(
+        C4CollectionObserver observer,
+        List<String> expectedDocIds,
+        List<String> expectedRevIds,
+        boolean external) {
+        final List<C4DocumentChange> changes = observer.getChanges(100);
+        assertNotNull(changes);
+        final int n = expectedDocIds.size();
+        assertEquals(n, changes.size());
+        for (int i = 0; i < n; i++) {
+            final C4DocumentChange ch = changes.get(i);
+            assertEquals(expectedDocIds.get(i), ch.getDocID());
+            assertEquals(trimRevId(expectedRevIds.get(i)), trimRevId(ch.getRevID()));
+            assertEquals(external, ch.isExternal());
+        }
+    }
+
     protected int getTestDbFlags() {
         int flags = C4Database.DB_FLAGS;
         if (C4Database.VERSION_VECTORS_ENABLED) { flags |= C4Constants.DatabaseFlags.FAKE_CLOCK; }
@@ -156,6 +171,11 @@ public class C4BaseTest extends BaseTest {
             : gen + "@" + PlatformUtils.getEncoder().encodeToString(
                     StringUtils.getUniqueName(node, 16).substring(0, 16).getBytes(StandardCharsets.US_ASCII))
                 .substring(0, 22);
+    }
+
+    protected String trimRevId(String revId) {
+        if (revId == null) { return null; }
+        return (!revId.matches(".*[@;].*")) ? revId : revId.split("[@;]", 2)[0];
     }
 
     protected long loadJsonAsset(String name) throws LiteCoreException, IOException { return loadJsonAsset(name, ""); }
@@ -237,7 +257,7 @@ public class C4BaseTest extends BaseTest {
             assertNotNull(doc);
 
             doc.close();
-            // dont try to close the C4Document
+            // don't try to close the C4Document
 
             commit = true;
         }

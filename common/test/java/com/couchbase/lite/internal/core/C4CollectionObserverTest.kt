@@ -132,21 +132,4 @@ class C4CollectionObserverTest : C4BaseTest() {
             }
         }
     }
-
-    //helper method
-    private fun checkChanges(
-        observer: C4CollectionObserver,
-        expectedDocIds: List<String>,
-        expectedRevIds: List<String>,
-        external: Boolean,
-    ) {
-        val changes = observer.getChanges(100)
-        assertNotNull(changes!!)
-        assertEquals(expectedDocIds.size, changes.size)
-        for (i in changes.indices) {
-            assertEquals(expectedDocIds[i], changes[i].docID)
-            assertEquals(expectedRevIds[i], changes[i].revID)
-            assertEquals(external, changes[i].isExternal)
-        }
-    }
 }

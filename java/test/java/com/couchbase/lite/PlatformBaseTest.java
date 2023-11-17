@@ -34,6 +34,7 @@ import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 
+import com.couchbase.lite.internal.core.C4Database;
 
 /**
  * Platform test class for Java.

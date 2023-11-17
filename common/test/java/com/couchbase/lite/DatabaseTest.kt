@@ -1818,7 +1818,7 @@ class DatabaseTest : BaseDbTest() {
         val doc1 = saveDocInTestCollection(mDoc)
         mDoc.setValue("age", 20)
         val doc2 = saveDocInTestCollection(mDoc)
-        assertEquals(2, doc2.generation());
+        assertEquals(1, doc2.compareAge(doc1))
         assertEquals(20, doc2.getInt("age"))
         assertEquals("Scott Tiger", doc2.getString("name"))
     }

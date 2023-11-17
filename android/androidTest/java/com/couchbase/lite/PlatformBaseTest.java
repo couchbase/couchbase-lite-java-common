@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
