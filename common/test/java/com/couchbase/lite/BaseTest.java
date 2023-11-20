@@ -73,7 +73,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
     @BeforeClass
-    public static void setUpPlatformSuite() { Report.log(">>>>>>>>>>>> Suite started"); }
+    public static void setUpPlatformSuite() { setupLogging(">>>>>>>>>>>> Suite started"); }
 
     @AfterClass
     public static void tearDownBaseTestSuite() {
@@ -142,6 +142,19 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
     }
 
+    private static void setupLogging(String msg) {
+        Log.initLoggingInternal();
+
+        Database.log.reset();
+
+        final ConsoleLogger console = Database.log.getConsole();
+        console.setLevel(LogLevel.DEBUG);
+        console.setDomains(LogDomain.ALL_DOMAINS);
+
+        Report.log(msg);
+    }
+
+
     protected ExecutionService.CloseableExecutor testSerialExecutor;
     private String testName;
     private long startTime;
@@ -153,8 +166,7 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     @Before
     public final void setUpBaseTest() {
-        Report.log(">>>>>>>> Test started: %s", testName);
-        Log.initLogging();
+        setupLogging(">>>>>>>> Test started: " + testName);
 
         setupPlatform();
 

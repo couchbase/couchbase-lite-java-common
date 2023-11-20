@@ -23,6 +23,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
 import java.util.FormatterClosedException;
+import java.util.HashMap;
 import java.util.IllegalFormatException;
 import java.util.Locale;
 import java.util.Map;
@@ -65,21 +66,15 @@ public final class Log {
      * Setup logging.
      */
     public static void initLogging(@NonNull Map<String, String> errorMessages) {
-        initLogging();
-        Log.errorMessages = Collections.unmodifiableMap(errorMessages);
+        initLoggingInternal();
+
+        setStandardErrorMessages(Collections.unmodifiableMap(errorMessages));
 
         // Init the console logger.  The FileLogger will take care of itself.
         final ConsoleLogger logger = Database.log.getConsole();
         logger.setLevel(LogLevel.INFO);
         Log.i(LogDomain.DATABASE, "CBL-ANDROID Initialized: " + CBLVersion.getVersionInfo());
         logger.setLevel(LogLevel.WARNING);
-    }
-
-    @VisibleForTesting
-    public static void initLogging() {
-        final C4Log c4Log = C4Log.get();
-        c4Log.forceCallbackLevel(Database.log.getConsole().getLevel());
-        c4Log.setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
     }
 
     /**
@@ -282,7 +277,8 @@ public final class Log {
     }
 
     public static void warn() {
-        if (WARNED.getAndSet(true) || Database.log.getFile().getConfig() != null) { return; }
+        final FileLogger fl = Database.log.getFile();
+        if (WARNED.getAndSet(true) || ((fl.getConfig() != null) && (fl.getLevel() != LogLevel.NONE))) { return; }
         Log.w(
             LogDomain.DATABASE,
             "Database.log.getFile().getConfig() is now null: logging is disabled.  "
@@ -290,12 +286,18 @@ public final class Log {
     }
 
     @VisibleForTesting
-    public static void testLog(
-        @NonNull LogLevel level,
-        @NonNull LogDomain domain,
-        @NonNull String msg,
-        @Nullable Object... args) {
-        log(level, domain, null, msg, args);
+    public static void initLoggingInternal() {
+        final C4Log c4Log = C4Log.get();
+        c4Log.forceCallbackLevel(Database.log.getConsole().getLevel());
+        c4Log.setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
+    }
+
+    @VisibleForTesting
+    @NonNull
+    public static Map<String, String> setStandardErrorMessages(@NonNull Map<String, String> stdErrMsgs) {
+        final Map<String, String> prevMessages = errorMessages;
+        errorMessages = Collections.unmodifiableMap(new HashMap<>(stdErrMsgs));
+        return prevMessages;
     }
 
     private static void log(
@@ -316,7 +318,7 @@ public final class Log {
         if (err != null) {
             final StringWriter sw = new StringWriter();
             err.printStackTrace(new PrintWriter(sw));
-            message += System.lineSeparator() + sw.toString();
+            message += System.lineSeparator() + sw;
         }
 
         sendToLoggers(level, domain, LOG_HEADER + message);

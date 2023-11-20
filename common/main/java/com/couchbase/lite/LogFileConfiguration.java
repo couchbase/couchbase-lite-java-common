@@ -197,10 +197,10 @@ public final class LogFileConfiguration {
         if (this == o) { return true; }
         if (!(o instanceof LogFileConfiguration)) { return false; }
         final LogFileConfiguration that = (LogFileConfiguration) o;
-        return (maxRotateCount == that.maxRotateCount)
-            && directory.equals(that.directory)
-            && (maxSize == that.maxSize)
-            && (usePlaintext == that.usePlaintext);
+        return (maxSize == that.maxSize)
+            && (maxRotateCount == that.maxRotateCount)
+            && (usePlaintext == that.usePlaintext)
+            && directory.equals(that.directory);
     }
 
     @Override

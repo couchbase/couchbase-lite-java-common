@@ -20,6 +20,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.io.File;
+import java.util.Objects;
 
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
@@ -42,17 +43,11 @@ public final class FileLogger implements Logger {
     private final C4Log c4Log;
     @Nullable
     private volatile LogFileConfiguration config;
-    @Nullable
-    private volatile String initializedPath;
     @NonNull
-    private volatile LogLevel logLevel;
+    private volatile LogLevel logLevel = LogLevel.NONE;
 
     // The singleton instance is available from Database.log.getFile()
-    FileLogger(@NonNull C4Log c4Log) {
-        this.c4Log = c4Log;
-        logLevel = LogLevel.NONE;
-        reset();
-    }
+    FileLogger(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
@@ -70,14 +65,12 @@ public final class FileLogger implements Logger {
      * @param level The maximum level to include in the logs
      */
     public void setLevel(@NonNull LogLevel level) {
-        if (config == null) {
-            throw new IllegalStateException(Log.lookupStandardMessage("CannotSetLogLevel"));
-        }
+        if (config == null) { throw new IllegalStateException(Log.lookupStandardMessage("CannotSetLogLevel")); }
 
         if (logLevel == level) { return; }
-        logLevel = level;
 
-        if (!initLog()) { c4Log.setFileFileLevel(level); }
+        c4Log.setFileLogLevel(level);
+        logLevel = level;
 
         if (level == LogLevel.NONE) { Log.warn(); }
     }
@@ -99,60 +92,51 @@ public final class FileLogger implements Logger {
      * @param newConfig The configuration to use
      */
     public void setConfig(@Nullable LogFileConfiguration newConfig) {
-        if (config == newConfig) { return; }
+        final LogFileConfiguration oldConfig = config;
+        if (Objects.equals(newConfig, oldConfig)) { return; }
 
-        if (newConfig == null) {
-            config = null;
+        if ((newConfig == null) || newConfig.getDirectory().isEmpty()) {
+            reset(oldConfig != null);
             Log.warn();
             return;
         }
 
-        final File logDir = new File(newConfig.getDirectory());
-        String errMsg = null;
+        final String logDirPath = newConfig.getDirectory();
+        final File logDir = new File(logDirPath);
         if (!logDir.exists()) {
-            if (!logDir.mkdirs()) { errMsg = "Cannot create log directory: " + logDir.getAbsolutePath(); }
+            if (!logDir.mkdirs()) {
+                Log.w(LogDomain.DATABASE, "Cannot create log directory: " + logDir.getAbsolutePath());
+                return;
+            }
         }
         else {
-            if (!logDir.isDirectory()) { errMsg = logDir.getAbsolutePath() + " is not a directory"; }
-            else if (!logDir.canWrite()) { errMsg = logDir.getAbsolutePath() + " is not writable"; }
+            if (!logDir.isDirectory()) {
+                Log.w(LogDomain.DATABASE, logDir.getAbsolutePath() + " is not a directory");
+                return;
+            }
+
+            if (!logDir.canWrite()) {
+                Log.w(LogDomain.DATABASE, logDir.getAbsolutePath() + " is not writable");
+                return;
+            }
         }
 
-        if (errMsg != null) {
-            Log.w(LogDomain.DATABASE, errMsg);
-            return;
-        }
-
-        config = new LogFileConfiguration(newConfig.getDirectory(), newConfig, true);
-
-        initLog();
-    }
-
-    @VisibleForTesting
-    void reset() {
-        config = null;
-        initializedPath = null;
-        logLevel = LogLevel.NONE;
-    }
-
-    private boolean initLog() {
-        final LogLevel level = logLevel;
-        final LogFileConfiguration cfg = config;
-
-        if ((cfg == null) || (level == LogLevel.NONE)) { return false; }
-
-        final String logDirPath = cfg.getDirectory();
-        if (logDirPath.equals(initializedPath)) { return false; }
-        initializedPath = logDirPath;
-
+        final LogFileConfiguration cfg = new LogFileConfiguration(logDirPath, newConfig, true);
         c4Log.initFileLogger(
             logDirPath,
-            level,
+            logLevel,
             cfg.getMaxRotateCount(),
             cfg.getMaxSize(),
             cfg.usesPlaintext(),
             CBLVersion.getVersionInfo());
 
-        return true;
+        config = cfg;
+    }
+
+    @VisibleForTesting
+    void reset(boolean hard) {
+        config = null;
+        logLevel = LogLevel.NONE;
+        if (hard) { c4Log.initFileLogger("", LogLevel.NONE, 0, 0, false, ""); }
     }
 }
-

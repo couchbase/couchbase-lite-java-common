@@ -83,7 +83,7 @@ public final class Log {
     @VisibleForTesting
     void reset() {
         consoleLogger.reset();
-        fileLogger.reset();
+        fileLogger.reset(true);
         customLogger = null;
     }
 }

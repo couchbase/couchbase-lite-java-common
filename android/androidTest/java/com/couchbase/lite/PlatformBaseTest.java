@@ -31,10 +31,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 
 
@@ -70,20 +68,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
 
     @Override
-    public final void setupPlatform() {
-        final ConsoleLogger console = Database.log.getConsole();
-        console.setLevel(LogLevel.DEBUG);
-        console.setDomains(LogDomain.ALL_DOMAINS);
-    }
+    public final void setupPlatform() { }
 
     @Override
     public final File getTmpDir() {
         return FileUtils.verifyDir(new File(getAppContext().getFilesDir(), SCRATCH_DIR_NAME));
-    }
-
-    @Override
-    public final void reloadStandardErrorMessages() {
-        Log.initLogging(CouchbaseLiteInternal.loadErrorMessages(getAppContext()));
     }
 
     @Override

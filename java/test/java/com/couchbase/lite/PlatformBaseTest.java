@@ -73,40 +73,14 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     private static LogFileConfiguration logConfig;
     static { CouchbaseLite.init(true); }
-    // set up the file logger...
+
     @Override
-    public final void setupPlatform() {
-        if (logConfig == null) {
-            final String logDirPath;
-            try {
-                logDirPath
-                    = FileUtils.verifyDir(new File(new File("").getCanonicalFile(), LOG_DIR)).getCanonicalPath();
-            }
-            catch (IOException e) { throw new IllegalStateException("Could not find log directory", e); }
-
-            logConfig = new LogFileConfiguration(logDirPath)
-                .setUsePlaintext(true)
-                .setMaxSize(MAX_LOG_FILE_BYTES)
-                .setMaxRotateCount(MAX_LOG_FILES);
-        }
-
-        final com.couchbase.lite.Log logger = Database.log;
-        final FileLogger fileLogger = logger.getFile();
-        if (!logConfig.equals(fileLogger.getConfig())) { fileLogger.setConfig(logConfig); }
-        fileLogger.setLevel(LogLevel.DEBUG);
-
-        final ConsoleLogger consoleLogger = logger.getConsole();
-        consoleLogger.setLevel(LogLevel.DEBUG);
-        consoleLogger.setDomains(LogDomain.ALL_DOMAINS);
-    }
+    public final void setupPlatform() { }
 
     @Override
     public final File getTmpDir() {
         return FileUtils.verifyDir(new File(FileUtils.getCurrentDirectory(), SCRATCH_DIR_NAME));
     }
-
-    @Override
-    public final void reloadStandardErrorMessages() { Log.initLogging(CouchbaseLiteInternal.loadErrorMessages()); }
 
     @Override
     public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {

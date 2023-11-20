@@ -46,6 +46,6 @@ public class PreInitTest extends BaseTest {
 
     @Test
     public void testCreateDBConfigBeforeInit() {
-        assertThrows(IllegalStateException.class, () -> new DatabaseConfiguration());
+        assertThrows(IllegalStateException.class, DatabaseConfiguration::new);
     }
 }
