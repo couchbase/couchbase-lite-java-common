@@ -265,8 +265,8 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         assertEquals(replicatedDoc.getID(), docId);
 
-        assertEquals(getTargetCollection().getScope().getName(), replicatedDoc.getCollectionScope());
-        assertEquals(getTargetCollection().getName(), replicatedDoc.getCollectionName());
+        assertEquals(getTargetCollection().getScope().getName(), replicatedDoc.getScope());
+        assertEquals(getTargetCollection().getName(), replicatedDoc.getCollection());
 
         assertTrue(replicatedDoc.getFlags().contains(DocumentFlag.DELETED));
 
