@@ -1179,8 +1179,8 @@ abstract class AbstractDatabase extends BaseDatabase
                     break;
                 }
 
-                final String scope = rDoc.getCollectionScope();
-                final String name = rDoc.getCollectionName();
+                final String scope = rDoc.getScope();
+                final String name = rDoc.getCollection();
                 try {
                     final Collection collection = Collection.getCollection(this.getDatabase(), scope, name);
                     if (collection == null) {

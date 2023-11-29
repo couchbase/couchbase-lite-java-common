@@ -809,7 +809,7 @@ public abstract class AbstractReplicator extends BaseReplicator
         Log.i(
             DOMAIN,
             "%s: pulled conflicting version of '%s.%s.%s#%s'",
-            this, db.getName(), rDoc.getCollectionScope(), rDoc.getCollectionName(), rDoc.getID());
+            this, db.getName(), rDoc.getScope(), rDoc.getCollection(), rDoc.getID());
 
         final Fn.NullableConsumer<CouchbaseLiteException> continuation
             = new Fn.NullableConsumer<CouchbaseLiteException>() {
