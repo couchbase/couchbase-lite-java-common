@@ -71,15 +71,33 @@ public final class ReplicatedDocument {
 
     /**
      * The scope of the collection to which the changed document belongs.
+     *
+     * @deprecated Use getScope()
      */
+    @Deprecated
     @NonNull
     public String getCollectionScope() { return scope; }
+
+    /**
+     * The scope of the collection to which the changed document belongs.
+     */
+    @NonNull
+    public String getScope() { return scope; }
+
+    /**
+     * The name of the collection to which the changed document belongs.
+     *
+     * @deprecated Use getCollection()
+     */
+    @Deprecated
+    @NonNull
+    public String getCollectionName() { return name; }
 
     /**
      * The name of the collection to which the changed document belongs.
      */
     @NonNull
-    public String getCollectionName() { return name; }
+    public String getCollection() { return name; }
 
     /**
      * The id document of the changed document.
