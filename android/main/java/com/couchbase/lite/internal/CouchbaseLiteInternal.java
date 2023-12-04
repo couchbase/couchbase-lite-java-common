@@ -41,6 +41,7 @@ import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LoggersImpl;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -96,7 +97,7 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging();
+        LoggersImpl.initLogging();
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
     }
@@ -148,18 +149,6 @@ public final class CouchbaseLiteInternal {
         return defaultDbDir.getAbsolutePath();
     }
 
-    @VisibleForTesting
-    public static void reset() {
-        debugging = false;
-        defaultDbDir = null;
-
-        CONTEXT.set(null);
-        EXECUTION_SERVICE.set(null);
-        CONNECTIVITY_MANAGER.set(null);
-
-        INITIALIZED.set(false);
-    }
-
     @NonNull
     public static Map<String, String> loadErrorMessages() {
         final Map<String, String> errorMessages = new HashMap<>();
@@ -174,6 +163,18 @@ public final class CouchbaseLiteInternal {
         }
 
         return errorMessages;
+    }
+
+    @VisibleForTesting
+    public static void reset() {
+        debugging = false;
+        defaultDbDir = null;
+
+        CONTEXT.set(null);
+        EXECUTION_SERVICE.set(null);
+        CONNECTIVITY_MANAGER.set(null);
+
+        INITIALIZED.set(false);
     }
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {

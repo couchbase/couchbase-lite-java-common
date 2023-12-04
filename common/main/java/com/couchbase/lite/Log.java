@@ -17,15 +17,41 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.logging.BaseLogger;
+import com.couchbase.lite.logging.Loggers;
 
 
 /**
  * Holder for the three Couchbase Lite loggers:  console, file, and custom.
+ *
+ * @deprecated Use com.couchbase.lite.logging.Loggers
  */
+@SuppressWarnings({"PMD.UnnecessaryFullyQualifiedName", "DeprecatedIsStillUsed"})
+@Deprecated
 public final class Log {
+    private final class ShimLogger extends BaseLogger {
+        ShimLogger(@NonNull LogLevel level) { super(level); }
+
+        @Override
+        protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+            final BaseLogger curLogger = Loggers.get().getCustomLogger();
+            if (this != curLogger) { return; }
+
+            final Logger logger = customLogger;
+            if (logger == null) { return; }
+
+            logger.log(level, domain, message);
+
+            // if the custom logger has changed its level since the last log, install a new one.
+            // NOTE: this may call back into lite core!
+            // If it was called on a LiteCore thread it may deadlock
+            if (getLevel() != logger.getLevel()) { installLogger(logger); }
+        }
+    }
+
+
     // Singleton instance.
     private final ConsoleLogger consoleLogger = new ConsoleLogger();
 
@@ -43,7 +69,9 @@ public final class Log {
      * Gets the logger that writes to the system console
      *
      * @return The logger that writes to the system console
+     * @deprecated Use com.couchbase.lite.logging.Loggers.getConsoleLogger
      */
+    @Deprecated
     @NonNull
     public ConsoleLogger getConsole() {
         CouchbaseLiteInternal.requireInit("Console logging not initialized");
@@ -54,7 +82,9 @@ public final class Log {
      * Gets the logger that writes to log files
      *
      * @return The logger that writes to log files
+     * @deprecated Use com.couchbase.lite.logging.Loggers.getFileLogger
      */
+    @Deprecated
     @NonNull
     public FileLogger getFile() {
         CouchbaseLiteInternal.requireInit("File logging not initialized");
@@ -67,7 +97,9 @@ public final class Log {
      *
      * @return The custom logger that was registered by
      * the application, or null.
+     * @deprecated Use com.couchbase.lite.logging.Loggers.getCustomLogger
      */
+    @Deprecated
     @Nullable
     public Logger getCustom() { return customLogger; }
 
@@ -75,14 +107,17 @@ public final class Log {
      * Sets an application specific logging method
      *
      * @param customLogger A Logger implementation that will receive logging messages
+     * @deprecated Use com.couchbase.lite.logging.Loggers.getCustomLogger
      */
-    public void setCustom(@Nullable Logger customLogger) { this.customLogger = customLogger; }
+    @Deprecated
+    public void setCustom(@Nullable Logger customLogger) {
+        this.customLogger = customLogger;
+        installLogger(customLogger);
+    }
 
-    // Damn singletons...
-    @VisibleForTesting
-    void reset() {
-        consoleLogger.reset();
-        fileLogger.reset(true);
-        customLogger = null;
+    private void installLogger(@Nullable Logger logger) {
+        Loggers.get().setCustomLogger((logger == null)
+            ? null
+            : new ShimLogger(logger.getLevel()));
     }
 }
