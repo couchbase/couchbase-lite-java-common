@@ -68,7 +68,7 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
 
     @Override
-    public final void setupPlatform() { }
+    public final void setupPlatform(@NonNull String testName) { }
 
     @Override
     public final File getTmpDir() {

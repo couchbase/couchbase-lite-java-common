@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2023 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,29 +13,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.logging;
 
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-import com.couchbase.lite.internal.core.C4Log;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.LogLevel;
+import com.couchbase.lite.internal.logging.AbstractLogger;
+import com.couchbase.lite.internal.utils.Internal;
 
 
 /**
- * A class that sends log messages to Android's system log, available via 'adb logcat'.
+ * Do not subclass!
+ * This class will be final in future version of Couchbase Lite
  */
-public final class ConsoleLogger extends AbstractConsoleLogger {
-    ConsoleLogger(@Nullable C4Log c4Log) { super(c4Log); }
+public class ConsoleLogger extends AbstractLogger {
+    public ConsoleLogger(@NonNull LogLevel level) { super(level); }
 
+    @Internal
     @Override
-    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        super.log(level, domain, message);
-    }
-
-    @Override
-    protected void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+    protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         final String tag = "CouchbaseLite/" + domain.toString();
         switch (level) {
             case DEBUG:

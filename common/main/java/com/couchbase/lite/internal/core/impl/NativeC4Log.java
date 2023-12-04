@@ -15,16 +15,19 @@ public final class NativeC4Log implements C4Log.NativeImpl {
     public void nSetCallbackLevel(int level) { setCallbackLevel(level); }
 
     @Override
-    public int nGetBinaryFileLevel() { return getBinaryFileLevel(); }
-
-    @Override
     public void nSetBinaryFileLevel(int level) { setBinaryFileLevel(level); }
 
     @Override
     public void nWriteToBinaryFile(
-        String path, int level, int maxRotateCount, long maxSize, boolean usePlaintext, String header) {
+        String path,
+        int level,
+        int maxRotateCount,
+        long maxSize,
+        boolean usePlaintext,
+        String header) {
         writeToBinaryFile(path, level, maxRotateCount, maxSize, usePlaintext, header);
     }
+
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
@@ -34,8 +37,6 @@ public final class NativeC4Log implements C4Log.NativeImpl {
     private static native void setLevel(String domain, int level);
 
     private static native void setCallbackLevel(int level);
-
-    private static native int getBinaryFileLevel();
 
     private static native void setBinaryFileLevel(int level);
 

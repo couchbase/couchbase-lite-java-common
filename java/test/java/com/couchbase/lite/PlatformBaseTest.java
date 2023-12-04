@@ -30,11 +30,11 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.JavaExecutionService;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
+import com.couchbase.lite.logging.FileLogger;
+import com.couchbase.lite.logging.Loggers;
 
-import com.couchbase.lite.internal.core.C4Database;
 
 /**
  * Platform test class for Java.
@@ -44,8 +44,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     public static final String SCRATCH_DIR_NAME = "cbl_test_scratch";
 
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%&'()_+{}][=-.,;'ABCDEabcde";
-
-    public static final String LOG_DIR = "logs";
 
     private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
     private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
@@ -71,11 +69,24 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    private static LogFileConfiguration logConfig;
     static { CouchbaseLite.init(true); }
+    // instance
+
 
     @Override
-    public final void setupPlatform() { }
+    public final void setupPlatform(@NonNull String testName) {
+        final String logDirPath;
+        try { logDirPath = new File(new File(new File("").getCanonicalPath(), "logs"), testName).getCanonicalPath(); }
+        catch (IOException e) { throw new IllegalStateException("Could not find log directory", e); }
+
+        FileUtils.verifyDir(logDirPath);
+
+        Loggers.get().setFileLogger(new FileLogger.Builder(logDirPath)
+            .setLevel(LogLevel.DEBUG)
+            .setMaxFileSize(MAX_LOG_FILE_BYTES)
+            .setMaxKeptFiles(MAX_LOG_FILES)
+            .build());
+    }
 
     @Override
     public final File getTmpDir() {

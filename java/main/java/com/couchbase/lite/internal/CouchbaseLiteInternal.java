@@ -31,6 +31,7 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LoggersImpl;
 import com.couchbase.lite.internal.utils.FileUtils;
 
 
@@ -77,7 +78,7 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging(loadErrorMessages());
+        LoggersImpl.initLogging();
 
         setC4TmpDirPath(tmpDir);
     }

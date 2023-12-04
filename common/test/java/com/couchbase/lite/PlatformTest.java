@@ -40,7 +40,7 @@ public interface PlatformTest {
     }
 
     /* initialize the platform */
-    void setupPlatform();
+    void setupPlatform(@NonNull String testName);
 
     /* get a scratch directory */
     File getTmpDir();

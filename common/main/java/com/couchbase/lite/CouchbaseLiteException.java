@@ -31,7 +31,6 @@ import com.couchbase.lite.internal.logging.Log;
  * Misfortune: The little fox gets its tail wet.
  */
 public final class CouchbaseLiteException extends Exception {
-
     @NonNull
     public static CouchbaseLiteException convertException(@Nullable LiteCoreException e) {
         return (e == null)

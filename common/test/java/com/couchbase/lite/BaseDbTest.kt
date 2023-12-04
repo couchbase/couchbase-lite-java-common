@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.fleece.FLEncoder
 import com.couchbase.lite.internal.utils.JSONUtils
 import com.couchbase.lite.internal.utils.PlatformUtils
 import com.couchbase.lite.internal.utils.Report
@@ -126,10 +125,12 @@ fun assertSameContent(mDoc: MutableDocument, doc: Document?) {
 
 fun readJSONResource(name: String?): String {
     val buf = StringBuilder()
-    BufferedReader(InputStreamReader(PlatformUtils.getAsset(name))).use { src ->
-        while (true) {
-            val l = src.readLine() ?: break
-            if (l.trim().isNotEmpty()) buf.append(l)
+    PlatformUtils.getAsset(name)?.use {
+        BufferedReader(InputStreamReader(it)).use { src ->
+            while (true) {
+                val l = src.readLine() ?: break
+                if (l.trim().isNotEmpty()) buf.append(l)
+            }
         }
     }
     return buf.toString()
@@ -154,8 +155,7 @@ abstract class BaseDbTest : BaseTest() {
         Report.log("Created base test DB: $testDatabase")
         assertNotNull(testDatabase)
         assertTrue(testDatabase.isOpen)
-        testCol =
-            testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
+        testCol = testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
         Report.log("Created base test Collection: $testCollection")
         testTg = getUniqueName("db_test_tag")
     }
@@ -261,13 +261,15 @@ abstract class BaseDbTest : BaseTest() {
         collection: Collection = testCollection
     ) {
         try {
-            BufferedReader(InputStreamReader(PlatformUtils.getAsset(resName))).use { src ->
-                var n = 1
-                while (true) {
-                    val l = src.readLine() ?: break
-                    val doc = MutableDocument(String.format(Locale.ENGLISH, idTemplate, n++))
-                    doc.setData(JSONUtils.fromJSON(JSONObject(l)))
-                    saveDocInCollection(doc, collection)
+            PlatformUtils.getAsset(resName)?.use {
+                BufferedReader(InputStreamReader(it)).use { src ->
+                    var n = 1
+                    while (true) {
+                        val l = src.readLine() ?: break
+                        val doc = MutableDocument(String.format(Locale.ENGLISH, idTemplate, n++))
+                        doc.setData(JSONUtils.fromJSON(JSONObject(l)))
+                        saveDocInCollection(doc, collection)
+                    }
                 }
             }
         } catch (e: java.lang.Exception) {

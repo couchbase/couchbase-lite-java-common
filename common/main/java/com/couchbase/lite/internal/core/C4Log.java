@@ -20,18 +20,15 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.couchbase.lite.ConsoleLogger;
-import com.couchbase.lite.Database;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.LogLevel;
-import com.couchbase.lite.Logger;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.impl.NativeC4Log;
+import com.couchbase.lite.internal.logging.LoggersImpl;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class C4Log {
@@ -39,7 +36,6 @@ public class C4Log {
         void nLog(String domain, int level, String message);
         void nSetLevel(String domain, int level);
         void nSetCallbackLevel(int level);
-        int nGetBinaryFileLevel();
         void nSetBinaryFileLevel(int level);
         void nWriteToBinaryFile(
             String path,
@@ -109,42 +105,34 @@ public class C4Log {
         LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
 
-    // Must initialize this before initializing LOGGER
     @NonNull
-    @VisibleForTesting
-    static volatile C4Log.NativeImpl nativeImpl = new NativeC4Log();
-
-    @VisibleForTesting
-    @NonNull
-    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(create());
-
-    @NonNull
-    private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
+    private static final AtomicReference<C4Log> LOGGER = new AtomicReference<>();
 
     // This class and this method are referenced by name, from native code.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
-        get().logInternal((c4Domain == null) ? "???" : c4Domain, c4Level, (message == null) ? "" : message);
+        get().logFromCore(c4Domain, c4Level, message);
     }
 
     @NonNull
-    public static C4Log create() { return new C4Log(nativeImpl); }
+    public static C4Log init() {
+        final C4Log logger = new C4Log(new NativeC4Log());
+        LOGGER.set(logger);
+        return logger;
+    }
+
+    @VisibleForTesting
+    @NonNull
+    public static C4Log get() { return Preconditions.assertNotNull(LOGGER.get(), "C4 logger"); }
+
 
     @NonNull
-    public static C4Log get() { return LOGGER.get(); }
-
-
-    @NonNull
-    private final C4Log.NativeImpl impl;
+    private final NativeImpl impl;
 
     public C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
 
-    public final void logToCore(LogDomain domain, LogLevel level, String message) {
+    public final void logToCore(@NonNull LogDomain domain, @NonNull LogLevel level, @NonNull String message) {
         impl.nLog(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
     }
-
-    public final int getFileLogLevel() { return impl.nGetBinaryFileLevel(); }
-
-    public final void setFileLogLevel(LogLevel level) { impl.nSetBinaryFileLevel(getC4LevelForLogLevel(level)); }
 
     public final void initFileLogger(
         String path,
@@ -156,102 +144,35 @@ public class C4Log {
         impl.nWriteToBinaryFile(path, getC4LevelForLogLevel(level), maxRotate, maxSize, plainText, header);
     }
 
-    public final void setLevels(int level, @Nullable String... domains) {
-        if ((domains == null) || (domains.length <= 0)) { return; }
-        for (String domain: domains) { impl.nSetLevel(domain, level); }
+    public final void setFileLogLevel(@NonNull LogLevel newLevel) {
+        impl.nSetBinaryFileLevel(getC4LevelForLogLevel(newLevel));
     }
 
-    public final void setCallbackLevel(@NonNull LogLevel consoleLevel) {
-        final LogLevel newLogLevel = getCallbackLevel(consoleLevel, Database.log.getCustom());
-        if (CALLBACK_LEVEL.getAndSet(newLogLevel) == newLogLevel) { return; }
-        setCoreCallbackLevel();
+    public final void setCallbackLevel(@NonNull LogLevel newLevel) {
+        impl.nSetCallbackLevel(getC4LevelForLogLevel(newLevel));
     }
 
-    @NonNull
-    public final LogLevel getCallbackLevel() { return CALLBACK_LEVEL.get(); }
-
-    @VisibleForTesting
-    public final void forceCallbackLevel(@NonNull LogLevel logLevel) {
-        CALLBACK_LEVEL.set(logLevel);
-        setCoreCallbackLevel();
-    }
-
-    // This, apparently, should be the inverse of LOGGING_DOMAINS_FROM_C4
-    public final void setC4LogLevel(@NonNull EnumSet<LogDomain> domains, @NonNull LogLevel level) {
-        final int c4Level = getC4LevelForLogLevel(level);
-        for (LogDomain domain: domains) {
-            switch (domain) {
-                case DATABASE:
-                    setLevels(
-                        c4Level,
-                        C4Constants.LogDomain.DEFAULT,
-                        C4Constants.LogDomain.BLOB,
-                        C4Constants.LogDomain.CHANGES,
-                        C4Constants.LogDomain.DATABASE,
-                        C4Constants.LogDomain.SQL);
-                    break;
-
-                case LISTENER:
-                    setLevels(c4Level, C4Constants.LogDomain.LISTENER);
-                    break;
-
-                case NETWORK:
-                    setLevels(
-                        c4Level,
-                        C4Constants.LogDomain.BLIP,
-                        C4Constants.LogDomain.BLIP_MESSAGES,
-                        C4Constants.LogDomain.TLS,
-                        C4Constants.LogDomain.WEB_SOCKET,
-                        C4Constants.LogDomain.ZIP);
-                    break;
-
-                case QUERY:
-                    setLevels(
-                        c4Level,
-                        C4Constants.LogDomain.ENUM,
-                        C4Constants.LogDomain.QUERY);
-                    break;
-
-                case REPLICATOR:
-                    setLevels(
-                        c4Level,
-                        C4Constants.LogDomain.ACTOR,
-                        C4Constants.LogDomain.SYNC,
-                        C4Constants.LogDomain.SYNC_BUSY);
-                    break;
-
-                default:
-                    logInternal(
-                        getC4DomainForLoggingDomain(LogDomain.DATABASE),
-                        c4Level,
-                        "Unexpected log domain: " + domain);
-                    break;
-            }
-        }
+    public final void setLogLevel(@NonNull LogLevel newLevel) {
+        final int level = getC4LevelForLogLevel(newLevel);
+        // !!! this loop might be pushed into the JNI
+        // when the legacy API is removed.
+        for (String domain: LOGGING_DOMAINS_FROM_C4.keySet()) { setLogLevel(domain, level); }
     }
 
     @VisibleForTesting
-    protected void logInternal(@NonNull String c4Domain, int c4Level, @NonNull String message) {
-        final LogLevel level = getLogLevelForC4Level(c4Level);
-        final LogDomain domain = getLoggingDomainForC4Domain(c4Domain);
+    public final void setLogLevel(@NonNull LogDomain domain, @NonNull LogLevel level) {
+        setLogLevel(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level));
+    }
 
-        final com.couchbase.lite.Log logger = Database.log;
+    @VisibleForTesting
+    public final void setLogLevel(@NonNull String domain, int level) { impl.nSetLevel(domain, level); }
 
-        final ConsoleLogger console = logger.getConsole();
-        console.log(level, domain, message);
-
-        final Logger custom = logger.getCustom();
-        if (custom != null) { custom.log(level, domain, message); }
-
-        // This is necessary because there is no way to tell when the log level is set on a custom logger.
-        // The only way to find out is to ask it.  As each new message comes in from Core,
-        // we find the min level for the console and custom loggers and, if necessary, reset the callback level.
-        final LogLevel newCallbackLevel = getCallbackLevel(console.getLevel(), custom);
-        if (CALLBACK_LEVEL.getAndSet(newCallbackLevel) == newCallbackLevel) { return; }
-
-        // This cannot be done synchronously because it will deadlock
-        // on the same mutex that is being held for this callback
-        CouchbaseLiteInternal.getExecutionService().getDefaultExecutor().execute(this::setCoreCallbackLevel);
+    @VisibleForTesting
+    public void logFromCore(@Nullable String c4Domain, int c4Level, @Nullable String message) {
+        LoggersImpl.getLoggers().writeToLocalLoggers(
+            getLogLevelForC4Level(c4Level),
+            getLoggingDomainForC4Domain(c4Domain),
+            message);
     }
 
     @NonNull
@@ -261,7 +182,7 @@ public class C4Log {
     }
 
     @NonNull
-    private LogDomain getLoggingDomainForC4Domain(@NonNull String c4Domain) {
+    private LogDomain getLoggingDomainForC4Domain(@Nullable String c4Domain) {
         final LogDomain domain = LOGGING_DOMAINS_FROM_C4.get(c4Domain);
         return (domain != null) ? domain : LogDomain.DATABASE;
     }
@@ -275,15 +196,5 @@ public class C4Log {
     private int getC4LevelForLogLevel(@NonNull LogLevel logLevel) {
         final Integer c4level = LOG_LEVEL_TO_C4.get(logLevel);
         return (c4level != null) ? c4level : C4Constants.LogLevel.INFO;
-    }
-
-    private void setCoreCallbackLevel() { impl.nSetCallbackLevel(getC4LevelForLogLevel(CALLBACK_LEVEL.get())); }
-
-    @NonNull
-    private LogLevel getCallbackLevel(@NonNull LogLevel consoleLevel, @Nullable Logger customLogger) {
-        if (customLogger == null) { return consoleLevel; }
-
-        final LogLevel customLogLevel = customLogger.getLevel();
-        return (customLogLevel.compareTo(consoleLevel) > 0) ? consoleLevel : customLogLevel;
     }
 }

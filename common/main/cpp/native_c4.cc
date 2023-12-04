@@ -14,7 +14,9 @@
 // limitations under the License.
 //
 #if defined(__ANDROID__)
+
 #include <android/log.h>
+
 #elif defined(__linux__) || defined(__APPLE__)
 #include <sys/time.h>
 #endif
@@ -214,7 +216,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_getMessage(
         jint jdomain,
         jint jcode,
         jint jinfo) {
-    C4Error c4err = {(C4ErrorDomain) jdomain, (int) jcode,  (unsigned) jinfo};
+    C4Error c4err = {(C4ErrorDomain) jdomain, (int) jcode, (unsigned) jinfo};
     C4StringResult msg = c4error_getMessage(c4err);
     jstring result = toJString(env, msg);
     c4slice_free(msg);
@@ -257,7 +259,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setLevel(
         jstring jdomain,
         jint jlevel) {
     jstringSlice domain(env, jdomain);
-    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), true);
+    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), false);
+
+    // !!! Workaround:  There is a bug in LiteCore that causes it to get wonky
+    // setting the level on a domain that is created dynamically.
+    // Since LiteCore doesn't log to those domains, this is probably pretty safe.
+    if (!logDomain)
+        return;
+
     c4log_setLevel(logDomain, (C4LogLevel) jlevel);
 }
 
@@ -278,16 +287,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_log(
     C4LogDomain logDomain = c4log_getDomain(domain, true);
     c4slog(logDomain, (C4LogLevel) jlevel, message);
     env->ReleaseStringUTFChars(jdomain, domain);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
- * Method:    getBinaryFileLevel
- * Signature: (V)I
- */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Log_getBinaryFileLevel(JNIEnv *env, jclass ignore) {
-    return c4log_binaryFileLevel();
 }
 
 /*

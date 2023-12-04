@@ -286,8 +286,9 @@ public class ConcurrencyTest extends BaseDbTest {
         AtomicReference<Exception> error = new AtomicReference<>();
 
 
-        try (ListenerToken ignore = getTestCollection()
-            .addChangeListener(testSerialExecutor, change -> latch.countDown())) {
+        try (ListenerToken ignore = getTestCollection().addChangeListener(
+            testSerialExecutor,
+            change -> latch.countDown())) {
             testSerialExecutor.execute(() -> {
                 try { getTestCollection().save(new MutableDocument()); }
                 catch (Exception e) { error.compareAndSet(null, e); }
@@ -307,9 +308,10 @@ public class ConcurrencyTest extends BaseDbTest {
         final CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Exception> error = new AtomicReference<>();
 
-
-        try (ListenerToken ignore
-                 = getTestCollection().addDocumentChangeListener(mDoc.getId(), change -> latch.countDown())) {
+        try (ListenerToken ignore = getTestCollection().addDocumentChangeListener(
+            mDoc.getId(),
+            testSerialExecutor,
+            change -> latch.countDown())) {
             testSerialExecutor.execute(() -> {
                 try { getTestCollection().save(mDoc); }
                 catch (Exception e) { error.compareAndSet(null, e); }

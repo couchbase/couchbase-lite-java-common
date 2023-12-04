@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2023 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,18 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.utils;
+package com.couchbase.lite.logging;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import androidx.annotation.NonNull;
+
+import com.couchbase.lite.LogLevel;
+import com.couchbase.lite.internal.logging.AbstractLogger;
 
 
-@Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.METHOD})
-@Documented
-public @interface Internal {
-    String value() default "";
+public abstract class CustomLogger extends AbstractLogger {
+    protected CustomLogger(@NonNull LogLevel level) { super(level); }
 }

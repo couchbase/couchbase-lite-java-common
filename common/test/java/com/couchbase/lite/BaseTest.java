@@ -42,16 +42,22 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LoggersImpl;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
+import com.couchbase.lite.logging.ConsoleLogger;
+import com.couchbase.lite.logging.Loggers;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
-@SuppressWarnings("ConstantConditions")
 public abstract class BaseTest extends PlatformBaseTest {
     public static final long STD_TIMEOUT_SEC = 10;
     public static final long LONG_TIMEOUT_SEC = 60;
@@ -139,14 +145,8 @@ public abstract class BaseTest extends PlatformBaseTest {
     }
 
     private static void setupLogging(String msg) {
-        Log.initLoggingInternal();
-
-        Database.log.reset();
-
-        final ConsoleLogger console = Database.log.getConsole();
-        console.setLevel(LogLevel.DEBUG);
-        console.setDomains(LogDomain.ALL_DOMAINS);
-
+        LoggersImpl.initLogging();
+        Loggers.get().setConsoleLogger(new ConsoleLogger(LogLevel.DEBUG));
         Report.log(msg);
     }
 
@@ -164,7 +164,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     public final void setUpBaseTest() {
         setupLogging(">>>>>>>> Test started: " + testName);
 
-        setupPlatform();
+        setupPlatform(testName);
 
         testSerialExecutor = new ExecutionService.CloseableExecutor() {
             final ThreadPoolExecutor executor = new ThreadPoolExecutor(
@@ -187,6 +187,9 @@ public abstract class BaseTest extends PlatformBaseTest {
                 });
 
             @Override
+            public int getPending() { return executor.getQueue().size(); }
+
+            @Override
             public void execute(@NonNull Runnable task) {
                 Report.log("task enqueued: %s", task);
                 executor.execute(() -> {
@@ -195,9 +198,6 @@ public abstract class BaseTest extends PlatformBaseTest {
                     Report.log("task finished: %s", task);
                 });
             }
-
-            @Override
-            public int getPending() { return executor.getQueue().size(); }
 
             @Override
             public boolean stop(long timeout, @NonNull TimeUnit unit) {

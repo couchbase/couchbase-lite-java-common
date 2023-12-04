@@ -26,7 +26,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
 public final class CouchbaseLite {
     // Utility class
-    private CouchbaseLite() {}
+    private CouchbaseLite() { }
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
