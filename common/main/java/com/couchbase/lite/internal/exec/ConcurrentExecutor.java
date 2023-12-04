@@ -55,6 +55,13 @@ class ConcurrentExecutor implements ExecutionService.CloseableExecutor {
     }
 
     /**
+     * Get the number of tasks awaiting execution.
+     *
+     * @return the number of tasks awaiting execution.
+     */
+    public int getPending() { return executor.getQueue().size(); }
+
+    /**
      * Schedule a task for concurrent execution.
      * There are absolutely no guarantees about execution order, on this executor.
      *

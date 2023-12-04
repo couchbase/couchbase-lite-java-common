@@ -20,8 +20,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -48,7 +48,7 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
 
     @GuardedBy("this")
     @NonNull
-    private final Queue<InstrumentedTask> pendingTasks = new LinkedList<>();
+    private final Deque<InstrumentedTask> pendingTasks = new LinkedList<>();
 
     // a non-null stop latch is the flag that this executor has been stopped
     @GuardedBy("this")
@@ -58,6 +58,15 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
     SerialExecutor(@NonNull ThreadPoolExecutor executor) {
         Preconditions.assertNotNull(executor, "executor");
         this.executor = executor;
+    }
+
+    /**
+     * Get the number of tasks awaiting execution.
+     *
+     * @return the number of tasks awaiting execution.
+     */
+    public int getPending() {
+        synchronized (this) { return pendingTasks.size(); }
     }
 
     /**
@@ -127,7 +136,7 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
 
         if (executor instanceof CBLExecutor) { ((CBLExecutor) executor).dumpState(); }
 
-         AbstractExecutionService.dumpThreads();
+        AbstractExecutionService.dumpThreads();
     }
 
 
