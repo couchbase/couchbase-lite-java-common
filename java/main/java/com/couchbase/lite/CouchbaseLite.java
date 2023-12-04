@@ -21,6 +21,7 @@ import java.io.File;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.utils.FileUtils;
+import com.couchbase.lite.internal.utils.Internal;
 
 
 /**
@@ -53,6 +54,7 @@ public final class CouchbaseLite {
      * @param debug true if debugging
      * @throws CouchbaseLiteError on initialization failure
      */
+    @Internal
     public static void init(boolean debug) {
         final File curDir = FileUtils.getCurrentDirectory();
         init(debug, curDir, new File(curDir, CouchbaseLiteInternal.SCRATCH_DIR_NAME));
@@ -72,6 +74,7 @@ public final class CouchbaseLite {
      * @param scratchDir scratch directory for SQLite
      * @throws CouchbaseLiteError on initialization failure
      */
+    @Internal
     public static void init(boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
         CouchbaseLiteInternal.init(debug, rootDir, scratchDir);
     }

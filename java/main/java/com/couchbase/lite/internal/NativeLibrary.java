@@ -274,8 +274,7 @@ final class NativeLibrary {
         if (targetFile.exists()) { return targetPath; }
 
         final String resPath = resDirPath + JAVA_PATH_SEPARATOR + lib;
-        // !!! Can't log here: the logger isn't initialized
-        //  Log.d(LogDomain.DATABASE, "Extracting library %s from %s to %s", lib, resPath, targetPath);
+        Log.d(LogDomain.DATABASE, "Extracting library %s from %s to %s", lib, resPath, targetPath);
         try (InputStream in = NativeLibrary.class.getResourceAsStream(resPath)) {
             if (in == null) { throw new IOException("Cannot find resource for native library at " + resPath); }
 

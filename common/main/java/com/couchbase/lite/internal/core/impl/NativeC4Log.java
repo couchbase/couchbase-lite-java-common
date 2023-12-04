@@ -21,9 +21,15 @@ public final class NativeC4Log implements C4Log.NativeImpl {
 
     @Override
     public void nWriteToBinaryFile(
-        String path, int level, int maxRotateCount, long maxSize, boolean usePlaintext, String header) {
+        String path,
+        int level,
+        int maxRotateCount,
+        long maxSize,
+        boolean usePlaintext,
+        String header) {
         writeToBinaryFile(path, level, maxRotateCount, maxSize, usePlaintext, header);
     }
+
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------

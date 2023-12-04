@@ -13,6 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+@file:Suppress("DEPRECATION")
+
 package com.couchbase.lite
 
 import com.couchbase.lite.internal.core.C4Constants
@@ -20,7 +22,10 @@ import com.couchbase.lite.internal.core.C4Log
 import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.core.CBLVersion
 import com.couchbase.lite.internal.logging.Log
+import com.couchbase.lite.internal.logging.LoggersImpl
 import com.couchbase.lite.internal.utils.Report
+import com.couchbase.lite.logging.BaseLogger
+import com.couchbase.lite.logging.Loggers
 import com.couchbase.lite.utils.KotlinHelpers
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -36,6 +41,7 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileReader
 import java.nio.charset.StandardCharsets
+import java.util.EnumSet
 import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
@@ -72,16 +78,18 @@ private class SingleLineLogger(private val prefix: String?) : Logger {
     }
 }
 
-private class TestConsoleLogger : AbstractConsoleLogger() {
+private class TestDeprecatedConsoleLogger : ConsoleLogger() {
     private val buf = StringBuilder()
     val content
         get() = buf.toString()
 
-    override fun doLog(level: LogLevel, domain: LogDomain, message: String) {
-        buf.append(message)
+    override fun shimFactory(level: LogLevel, domain: EnumSet<LogDomain>): ShimLogger {
+        return object : ShimLogger(level, domain) {
+            override fun doWriteLog(level: LogLevel, domain: LogDomain, message: String) {
+                buf.append(message)
+            }
+        }
     }
-
-    override fun setC4Level(level: LogLevel) = Unit
 
     fun clearContent() = buf.clear()
 }
@@ -116,7 +124,7 @@ private class TestC4Logger(private val domainFilter: String) : C4Log.NativeImpl 
     ) = Unit
 }
 
-class LogTest : BaseDbTest() {
+class LogTest : BaseTest() {
     private var scratchDirPath: String? = null
 
     private val tempDir: File?
@@ -138,14 +146,73 @@ class LogTest : BaseDbTest() {
     }
 
     @After
-    fun tearDownLogTest() {
-        Database.log.reset()
-        Log.initLogging()
+    fun tearDownLogTest() = LoggersImpl.initLogging()
+
+    @Test
+    fun testC4LogLevel() {
+        val mark = "$$$ ${UUID.randomUUID()}"
+
+        val c4Log = LoggersImpl.getLoggers()!!.c4Log
+        c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$ TEST")
+
+        for (level in LogLevel.values()) {
+            if (level == LogLevel.NONE) {
+                continue
+            }
+            c4Log.setLogLevel(LogDomain.DATABASE, level)
+
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.DEBUG, mark)
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.VERBOSE, mark)
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.INFO, mark)
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.WARNING, mark)
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.ERROR, mark)
+        }
+
+        for (log in logFiles) {
+            var lineCount = 0
+            BufferedReader(FileReader(log)).use {
+                while (true) {
+                    val l = it.readLine() ?: break
+                    if (l.contains(mark)) {
+                        lineCount++
+                    }
+                }
+            }
+
+            val logPath = log.canonicalPath
+            when {
+                logPath.contains("error") -> assertEquals(5, lineCount)
+                logPath.contains("warning") -> assertEquals(4, lineCount)
+                logPath.contains("info") -> assertEquals(3, lineCount)
+                logPath.contains("verbose") -> assertEquals(2, lineCount)
+                logPath.contains("debug") -> assertEquals(1, lineCount)
+            }
+        }
+    }
+
+    @Test
+    fun testC4MaxFileSize() {
+        val c4Log = LoggersImpl.getLoggers()!!.c4Log
+        c4Log.initFileLogger(scratchDirPath, LogLevel.DEBUG, 10, 1024, true, "$$$$ TEST")
+        c4Log.setLogLevel(LogDomain.DATABASE, LogLevel.DEBUG)
+
+        val message = "11223344556677889900" // ~43 bytes
+        // 24 * 43 = 1032
+        // ... should cause each level to roll over once
+        for (i in 0..23) {
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.DEBUG, message)
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.VERBOSE, message)
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.INFO, message)
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.WARNING, message)
+            c4Log.logToCore(LogDomain.DATABASE, LogLevel.ERROR, message)
+        }
+
+        assertEquals((2 * 5), logFiles.size)
     }
 
     @Test
     fun testConsoleLoggerDomains() {
-        val consoleLogger = TestConsoleLogger()
+        val consoleLogger = TestDeprecatedConsoleLogger()
 
         consoleLogger.setDomains()
         for (level in LogLevel.values()) {
@@ -186,7 +253,7 @@ class LogTest : BaseDbTest() {
 
     @Test
     fun testConsoleLoggerLevel() {
-        val consoleLogger = TestConsoleLogger()
+        val consoleLogger = TestDeprecatedConsoleLogger()
 
         consoleLogger.setDomains(LogDomain.DATABASE)
         for (level in LogLevel.values()) {
@@ -311,10 +378,10 @@ class LogTest : BaseDbTest() {
     fun testFileLoggingMaxSize() {
         val config = LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true).setMaxSize(1024)
         testWithConfiguration(LogLevel.DEBUG, config) {
-            // This should create two files for each of the 5 levels (debug, verbose, info, warning, error):
-            // 1k of logs plus the headers.
+            // This should create two files for each of the 5 levels except verbose (debug, info, warning, error):
+            // 1k of logs plus the headers. There should be only one file at the verbose level (just the headers)
             write1KBToLog()
-            assertEquals(5 * 2, logFiles.size)
+            assertEquals((4 * 2) + 1, logFiles.size)
         }
     }
 
@@ -435,7 +502,6 @@ class LogTest : BaseDbTest() {
 
         testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(scratchDirPath!!).setUsePlaintext(true)) {
             Log.d(LogDomain.DATABASE, message, error, uuid2)
-            Log.v(LogDomain.DATABASE, message, error, uuid2)
             Log.i(LogDomain.DATABASE, message, error, uuid2)
             Log.w(LogDomain.DATABASE, message, error, uuid2)
             Log.e(LogDomain.DATABASE, message, error, uuid2)
@@ -557,17 +623,15 @@ class LogTest : BaseDbTest() {
     @Ignore("Need a way to coax LiteCore into logging a non-ascii string")
     @Test
     fun testNonASCII() {
-        val customLogger = object : Logger {
+        val customLogger = object : BaseLogger(LogLevel.DEBUG) {
             var text: String = ""
 
-            override fun getLevel() = LogLevel.DEBUG
-
-            override fun log(level: LogLevel, domain: LogDomain, message: String) {
+            override fun writeLog(level: LogLevel, domain: LogDomain, message: String) {
                 text += "\n $message"
             }
         }
 
-        Database.log.custom = customLogger
+        Loggers.get().customLogger = customLogger
 
         val hebrew = "מזג האוויר נחמד היום" // The weather is nice today.
 
@@ -600,7 +664,8 @@ class LogTest : BaseDbTest() {
         val c4Domain = "foo"
         val testNativeC4Logger = TestC4Logger(c4Domain)
         val testC4Logger = C4Log(testNativeC4Logger)
-        C4Log.set(testC4Logger)
+
+        LoggersImpl.getLoggers()!!.c4Log = testC4Logger
 
         testNativeC4Logger.reset()
         QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -610,7 +675,7 @@ class LogTest : BaseDbTest() {
         assertTrue(actualMinLevel >= C4TestUtils.getLogLevel(c4Domain))
 
         testNativeC4Logger.reset()
-        testC4Logger.setLevels(actualMinLevel + 1, c4Domain)
+        testC4Logger.setLogLevel(c4Domain, actualMinLevel + 1)
         QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
             .execute()
@@ -618,7 +683,7 @@ class LogTest : BaseDbTest() {
         assertEquals(C4Constants.LogLevel.NONE, testNativeC4Logger.minLevel)
 
         testNativeC4Logger.reset()
-        testC4Logger.setLevels(C4TestUtils.getLogLevel(c4Domain), c4Domain)
+        testC4Logger.setLogLevel(c4Domain, C4TestUtils.getLogLevel(c4Domain))
         QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
             .execute()
@@ -647,7 +712,6 @@ class LogTest : BaseDbTest() {
 
     private fun writeAllLogs(message: String) {
         Log.d(LogDomain.DATABASE, message)
-        Log.v(LogDomain.DATABASE, message, null)
         Log.i(LogDomain.DATABASE, message)
         Log.w(LogDomain.DATABASE, message)
         Log.e(LogDomain.DATABASE, message)
@@ -655,8 +719,7 @@ class LogTest : BaseDbTest() {
 
     private fun getLogContents(log: File): String {
         val b = ByteArray(log.length().toInt())
-        val fileInputStream = FileInputStream(log)
-        assertEquals(b.size, fileInputStream.read(b))
+        FileInputStream(log).use { assertEquals(b.size, it.read(b)) }
         return String(b, StandardCharsets.US_ASCII)
     }
 
