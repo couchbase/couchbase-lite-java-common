@@ -25,10 +25,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.JavaExecutionService;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
-import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 
@@ -58,12 +56,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    static { CouchbaseLite.init(true); }
+    static { setupPlatform(); }
     // instance methods
 
+    public static void setupPlatform() { CouchbaseLite.init(true); }
 
-    @Override
-    public final void setupPlatform() { }
 
     @Override
     public final File getTmpDir() {
@@ -73,12 +70,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
     @Override
     public final AbstractExecutionService getExecutionService(ThreadPoolExecutor executor) {
         return new JavaExecutionService(executor);
-    }
-
-    @Override
-    public final void executeAsync(long delayMs, Runnable task) {
-        ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
-        executionService.postDelayedOnExecutor(delayMs, executionService.getDefaultExecutor(), task);
     }
 
     @Override

@@ -17,14 +17,12 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
-import java.io.File;
 import java.util.Objects;
 
-import com.couchbase.lite.internal.core.C4Log;
-import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.logging.Loggers;
 
 
 /**
@@ -32,32 +30,44 @@ import com.couchbase.lite.internal.logging.Log;
  * that log messages can persist durably after the application has
  * stopped or encountered a problem.  Each log level is written to
  * a separate file.
- * <p>
- * Threading policy: This class is certain to be used from multiple
- * threads.  As long as it, itself, is thread safe, the various race conditions
- * are unlikely and the penalties very small.  "Volatile" ensures
- * the thread safety and the several races are tolerable.
+ *
+ * @deprecated Use com.couchbase.lite.logging.FileLogger
  */
+@SuppressWarnings("PMD.UnnecessaryFullyQualifiedName")
+@Deprecated
 public final class FileLogger implements Logger {
-    @NonNull
-    private final C4Log c4Log;
-    @Nullable
-    private volatile LogFileConfiguration config;
-    @NonNull
-    private volatile LogLevel logLevel = LogLevel.NONE;
+    private static final class ShimLogger extends com.couchbase.lite.logging.FileLogger {
+        ShimLogger(boolean plainText, @NonNull com.couchbase.lite.logging.FileLogger.Builder builder) {
+            super(plainText, builder);
+        }
 
-    // The singleton instance is available from Database.log.getFile()
-    FileLogger(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
+        @Override
+        protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+            final com.couchbase.lite.logging.FileLogger curLogger = Loggers.get().getFileLogger();
+            if (this == curLogger) { super.writeLog(level, domain, message); }
+        }
 
-    @Override
-    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        if ((config == null) || (level.compareTo(logLevel) < 0)) { return; }
-        c4Log.logToCore(domain, level, message);
+        void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+            super.log(level, domain, message);
+        }
     }
 
-    @NonNull
+    @Nullable
+    private LogFileConfiguration configuration;
+    @Nullable
+    private ShimLogger logger;
+
+    /**
+     * Gets the level that will be logged via this logger.
+     *
+     * @return The maximum level to log
+     */
     @Override
-    public LogLevel getLevel() { return logLevel; }
+    @NonNull
+    public LogLevel getLevel() {
+        final com.couchbase.lite.logging.FileLogger curLogger = Loggers.get().getFileLogger();
+        return (curLogger == null) ? LogLevel.NONE : curLogger.getLevel();
+    }
 
     /**
      * Sets the overall logging level that will be written to the logging files.
@@ -65,26 +75,37 @@ public final class FileLogger implements Logger {
      * @param level The maximum level to include in the logs
      */
     public void setLevel(@NonNull LogLevel level) {
+        final LogFileConfiguration config = configuration;
         if (config == null) { throw new CouchbaseLiteError(Log.lookupStandardMessage("CannotSetLogLevel")); }
 
-        if (logLevel == level) { return; }
+        Preconditions.assertNotNull(level, "level");
 
-        c4Log.setFileLogLevel(level);
-        logLevel = level;
+        // if the logging level has changed, install a new logger with the new level
+        final LogLevel curLevel = getLevel();
+        if (curLevel == level) { return; }
 
-        if (level == LogLevel.NONE) { Log.warn(); }
+        installLogger(config, level);
     }
 
     /**
      * Gets the configuration currently in use by the file logger.
-     * Note that once a configuration has been installed in a logger,
-     * it is read-only and can no longer be modified.
-     * An attempt to modify the configuration returned by this method will cause an exception.
+     * Note the configuration returned from this method is read-only
+     * and cannot be modified.  An attempt to modify it will throw an exception.
      *
      * @return The configuration currently in use
      */
     @Nullable
-    public LogFileConfiguration getConfig() { return config; }
+    public LogFileConfiguration getConfig() {
+        final com.couchbase.lite.logging.FileLogger fileLogger = Loggers.get().getFileLogger();
+        return (fileLogger == null)
+            ? null
+            : new LogFileConfiguration(
+                fileLogger.getDirectory(),
+                fileLogger.getMaxFileSize(),
+                fileLogger.getMaxKeptFiles(),
+                fileLogger.isPlainText(),
+                true);
+    }
 
     /**
      * Sets the configuration for use by the file logger.
@@ -92,51 +113,27 @@ public final class FileLogger implements Logger {
      * @param newConfig The configuration to use
      */
     public void setConfig(@Nullable LogFileConfiguration newConfig) {
-        final LogFileConfiguration oldConfig = config;
-        if (Objects.equals(newConfig, oldConfig)) { return; }
-
-        if ((newConfig == null) || newConfig.getDirectory().isEmpty()) {
-            reset(oldConfig != null);
-            Log.warn();
-            return;
-        }
-
-        final String logDirPath = newConfig.getDirectory();
-        final File logDir = new File(logDirPath);
-        if (!logDir.exists()) {
-            if (!logDir.mkdirs()) {
-                Log.w(LogDomain.DATABASE, "Cannot create log directory: " + logDir.getAbsolutePath());
-                return;
-            }
-        }
-        else {
-            if (!logDir.isDirectory()) {
-                Log.w(LogDomain.DATABASE, logDir.getAbsolutePath() + " is not a directory");
-                return;
-            }
-
-            if (!logDir.canWrite()) {
-                Log.w(LogDomain.DATABASE, logDir.getAbsolutePath() + " is not writable");
-                return;
-            }
-        }
-
-        final LogFileConfiguration cfg = new LogFileConfiguration(logDirPath, newConfig, true);
-        c4Log.initFileLogger(
-            logDirPath,
-            logLevel,
-            cfg.getMaxRotateCount(),
-            cfg.getMaxSize(),
-            cfg.usesPlaintext(),
-            CBLVersion.getVersionInfo());
-
-        config = cfg;
+        if (Objects.equals(getConfig(), newConfig)) { return; }
+        final LogFileConfiguration config = (newConfig == null) ? null : new LogFileConfiguration(newConfig);
+        installLogger(config, getLevel());
+        configuration = config;
     }
 
-    @VisibleForTesting
-    void reset(boolean hard) {
-        config = null;
-        logLevel = LogLevel.NONE;
-        if (hard) { c4Log.initFileLogger("", LogLevel.NONE, 0, 0, false, ""); }
+    @Override
+    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+        if (logger != null) { logger.doLog(level, domain, message); }
+    }
+
+    private void installLogger(@Nullable LogFileConfiguration config, @NonNull LogLevel level) {
+        final ShimLogger newLogger = (config == null)
+            ? null
+            : new ShimLogger(
+                config.usesPlaintext(),
+                new com.couchbase.lite.logging.FileLogger.Builder(config.getDirectory())
+                    .setLevel(level)
+                    .setMaxKeptFiles(config.getMaxRotateCount())
+                    .setMaxFileSize(config.getMaxSize()));
+        Loggers.get().setFileLogger(newLogger);
+        this.logger = newLogger;
     }
 }

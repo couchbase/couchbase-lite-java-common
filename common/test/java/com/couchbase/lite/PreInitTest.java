@@ -24,10 +24,13 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
 public class PreInitTest extends BaseTest {
     @Before
-    public void setUpPreInitTest() { CouchbaseLiteInternal.reset(false); }
+    public void setUpPreInitTest() { CouchbaseLiteInternal.reset(); }
 
     @After
-    public void tearDownPreInitTest() { CouchbaseLiteInternal.reset(true); }
+    public void tearDownPreInitTest() {
+        CouchbaseLiteInternal.reset();
+        setupPlatform();
+    }
 
     @Test
     public void testCreateDatabaseBeforeInit() {

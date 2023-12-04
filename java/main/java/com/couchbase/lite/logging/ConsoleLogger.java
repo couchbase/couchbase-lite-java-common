@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2023 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,24 +13,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.logging;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.core.C4Log;
+import com.couchbase.lite.internal.logging.AbstractLogger;
 
 
 /**
  * A class for sending log messages to the console.
  */
-public class ConsoleLogger extends AbstractConsoleLogger {
+public class ConsoleLogger extends AbstractLogger {
     private static final String LOG_TAG = "/CouchbaseLite/";
     private static final int THREAD_FIELD_LEN = 7;
     private static final String THREAD_FIELD_PAD = String.join("", Collections.nCopies(THREAD_FIELD_LEN, " "));
@@ -53,16 +54,10 @@ public class ConsoleLogger extends AbstractConsoleLogger {
             + message;
     }
 
-
-    ConsoleLogger(@Nullable C4Log c4Log) { super(c4Log); }
-
-    @Override
-    public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-        super.log(level, domain, message);
-    }
+    public ConsoleLogger(@NonNull LogLevel level) { super(level); }
 
     @Override
-    protected void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+    protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         getLogStream(level).println(formatLog(level, domain.name(), message));
     }
 }

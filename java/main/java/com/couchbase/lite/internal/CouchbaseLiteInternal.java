@@ -32,6 +32,7 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LoggersImpl;
 import com.couchbase.lite.internal.utils.FileUtils;
 
 
@@ -79,7 +80,7 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging(debugging, loadErrorMessages());
+        LoggersImpl.initLogging();
 
         setC4TmpDirPath(tmpDir);
     }
@@ -110,7 +111,10 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
-    public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
+    public static String getDefaultDbDirPath() {
+        requireInit("Can't get default database directory");
+        return defaultDbDir.getAbsolutePath();
+    }
 
     @VisibleForTesting
     @NonNull
@@ -120,7 +124,15 @@ public final class CouchbaseLiteInternal {
     }
 
     @VisibleForTesting
-    public static void reset(boolean state) { INITIALIZED.set(state); }
+    public static void reset() {
+        debugging = false;
+        defaultDbDir = null;
+        scratchDir = null;
+
+        EXECUTION_SERVICE.set(null);
+
+        INITIALIZED.set(false);
+    }
 
     @VisibleForTesting
     @SuppressWarnings({"unchecked", "rawtypes"})

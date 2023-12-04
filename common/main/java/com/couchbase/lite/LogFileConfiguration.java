@@ -24,7 +24,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * an attempt to mutate it will cause an exception.
  * To change the configuration of a logger, copy its configuration, mutate the
  * copy and then use it to replace the loggers current configuration.
+ *
+ * @deprecated Use FileLogger.Builder
  */
+@Deprecated
 public final class LogFileConfiguration {
     //---------------------------------------------
     // member variables
@@ -92,6 +95,28 @@ public final class LogFileConfiguration {
         this.readonly = readonly;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof LogFileConfiguration)) { return false; }
+        final LogFileConfiguration that = (LogFileConfiguration) o;
+        return (maxSize == that.maxSize)
+            && (maxRotateCount == that.maxRotateCount)
+            && (usePlaintext == that.usePlaintext)
+            && directory.equals(that.directory);
+    }
+
+    @Override
+    public int hashCode() { return Objects.hash(directory); }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "LogFileConfig{"
+            + ((readonly) ? "" : "!")
+            + ((usePlaintext) ? "+" : "")
+            + directory + ", " + maxSize + ", " + maxRotateCount + "}";
+    }
 
     //---------------------------------------------
     // Setters
@@ -187,22 +212,4 @@ public final class LogFileConfiguration {
      * @return Whether or not CBL is logging in plaintext
      */
     public boolean usesPlaintext() { return usePlaintext; }
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (!(o instanceof LogFileConfiguration)) { return false; }
-        final LogFileConfiguration that = (LogFileConfiguration) o;
-        return (maxSize == that.maxSize)
-            && (maxRotateCount == that.maxRotateCount)
-            && (usePlaintext == that.usePlaintext)
-            && directory.equals(that.directory);
-    }
-
-    @Override
-    public int hashCode() { return Objects.hash(directory); }
 }

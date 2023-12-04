@@ -41,6 +41,7 @@ import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.logging.LoggersImpl;
 import com.couchbase.lite.internal.replicator.NetworkConnectivityManager;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -70,11 +71,13 @@ public final class CouchbaseLiteInternal {
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
+    @NonNull
     static final Object LOCK = new Object();
 
-    private static volatile boolean debugging;
-
+    @NonNull
     private static volatile File defaultDbDir;
+
+    private static volatile boolean debugging;
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
@@ -97,11 +100,12 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging(debugging, loadErrorMessages(ctxt));
+        LoggersImpl.initLogging();
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
     }
 
+    // DO NOT HOLD A REFERENCE TO THE CONTEXT!
     @NonNull
     public static Context getContext() {
         requireInit("Application context not initialized");
@@ -146,15 +150,11 @@ public final class CouchbaseLiteInternal {
     @NonNull
     public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
 
-    @VisibleForTesting
-    public static void reset(boolean state) { INITIALIZED.set(state); }
-
-    @VisibleForTesting
     @NonNull
-    public static Map<String, String> loadErrorMessages(@NonNull Context ctxt) {
+    public static Map<String, String> loadErrorMessages() {
         final Map<String, String> errorMessages = new HashMap<>();
 
-        try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
+        try (InputStream is = getContext().getResources().openRawResource(R.raw.errors)) {
             final JSONObject root = new JSONObject(new Scanner(is, "UTF-8").useDelimiter("\\A").next());
             final Iterable<String> errors = root::keys;
             for (String error: errors) { errorMessages.put(error, root.getString(error)); }
@@ -164,6 +164,18 @@ public final class CouchbaseLiteInternal {
         }
 
         return errorMessages;
+    }
+
+    @VisibleForTesting
+    public static void reset() {
+        debugging = false;
+        defaultDbDir = null;
+
+        CONTEXT.set(null);
+        EXECUTION_SERVICE.set(null);
+        CONNECTIVITY_MANAGER.set(null);
+
+        INITIALIZED.set(false);
     }
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {
