@@ -66,6 +66,9 @@ public class Scope {
     }
 
     @NonNull
+    public Database getDatabase() { return db; }
+
+    @NonNull
     @Override
     public String toString() { return db.getName() + "." + name; }
 
@@ -79,7 +82,4 @@ public class Scope {
 
     @Override
     public int hashCode() { return Objects.hash(name, db); }
-
-    @NonNull
-    Database getDb() { return db; }
 }
