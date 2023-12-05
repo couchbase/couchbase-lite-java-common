@@ -93,6 +93,12 @@ public final class Preconditions {
         return obj;
     }
 
+    @NonNull
+    public static char[] assertNotEmpty(@Nullable char[] str, @NonNull String name) {
+        if ((str == null) || (str.length <= 0)) { throw new IllegalArgumentException(name + " must not be empty"); }
+        return str;
+    }
+
     public static void assertThat(boolean condition, @NonNull String msg) {
         if (!condition) { throw new IllegalArgumentException(msg); }
     }

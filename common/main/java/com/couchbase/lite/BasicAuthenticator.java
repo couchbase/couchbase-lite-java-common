@@ -98,10 +98,13 @@ public final class BasicAuthenticator extends BaseAuthenticator {
 
     @Override
     protected void authenticate(@NonNull Map<String, Object> options) {
-        final Map<String, Object> auth = new HashMap<>();
+        Map<String, Object> auth = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+        if (auth == null) {
+            auth = new HashMap<>();
+            options.put(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION, auth);
+        }
         auth.put(C4Replicator.REPLICATOR_AUTH_TYPE, C4Replicator.AUTH_TYPE_BASIC);
         auth.put(C4Replicator.REPLICATOR_AUTH_USER_NAME, username);
         auth.put(C4Replicator.REPLICATOR_AUTH_PASSWORD, password);
-        options.put(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION, auth);
     }
 }
