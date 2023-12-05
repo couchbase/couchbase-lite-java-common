@@ -53,6 +53,7 @@ public class ConsoleLogger extends AbstractConsoleLogger {
             + message;
     }
 
+
     ConsoleLogger(@Nullable C4Log c4Log) { super(c4Log); }
 
     @Override

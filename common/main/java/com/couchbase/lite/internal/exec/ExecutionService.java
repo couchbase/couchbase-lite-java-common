@@ -31,9 +31,12 @@ public interface ExecutionService {
      */
     interface CloseableExecutor extends Executor {
         class ExecutorClosedException extends RejectedExecutionException {
-            public ExecutorClosedException() {}
+            public ExecutorClosedException() { }
+
             public ExecutorClosedException(@Nullable String msg) { super(msg); }
+
             public ExecutorClosedException(@Nullable String msg, @Nullable Throwable err) { super(msg, err); }
+
             public ExecutorClosedException(@Nullable Throwable err) { super(err); }
         }
 
@@ -47,6 +50,13 @@ public interface ExecutionService {
          * @return true if all scheduled tasks have been completed
          */
         boolean stop(long timeout, @NonNull TimeUnit unit);
+
+        /**
+         * Get the number of tasks awaiting execution.
+         *
+         * @return the number of tasks awaiting execution.
+         */
+        int getPending();
     }
 
     /**

@@ -22,9 +22,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -48,11 +48,7 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -92,7 +88,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     // Run a boolean function every `waitMs` until it is true
     // If it is not true within `maxWaitMs` fail.
     @SuppressWarnings({"BusyWait", "ConditionalBreakInInfiniteLoop"})
-    public static void waitUntil(long maxWaitMs, Fn.Provider<Boolean> test) {
+    public static void waitUntil(long maxWaitMs, @NonNull Fn.Provider<Boolean> test) {
         final long waitMs = 100L;
         final long endTime = System.currentTimeMillis() + maxWaitMs - waitMs;
         while (true) {
@@ -171,8 +167,12 @@ public abstract class BaseTest extends PlatformBaseTest {
         setupPlatform();
 
         testSerialExecutor = new ExecutionService.CloseableExecutor() {
-            final ExecutorService executor = Executors.newSingleThreadExecutor(
-                new ThreadFactory() {        // thread factory that gives our threads nice recognizable names
+            final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+                1, 1,
+                30, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                // thread factory that gives our threads nice recognizable names
+                new ThreadFactory() {
                     private final AtomicInteger threadId = new AtomicInteger(0);
 
                     @NonNull
@@ -194,6 +194,9 @@ public abstract class BaseTest extends PlatformBaseTest {
                     Report.log("task finished: %s", task);
                 });
             }
+
+            @Override
+            public int getPending() { return executor.getQueue().size(); }
 
             @Override
             public boolean stop(long timeout, @NonNull TimeUnit unit) {
