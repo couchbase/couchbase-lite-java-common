@@ -177,7 +177,10 @@ public final class Collection extends BaseCollection
     public String getName() { return c4Collection.getName(); }
 
     @NonNull
-    String getFullName() { return c4Collection.getScope() + "." + c4Collection.getName(); }
+    public String getFullName() { return c4Collection.getScope() + "." + c4Collection.getName(); }
+
+    @NonNull
+    public Database getDatabase() { return db; }
 
     // - Documents
 
@@ -462,7 +465,7 @@ public final class Collection extends BaseCollection
         createIndexInternal(name, config);
     }
 
-     /**
+    /**
      * Add an index to the collection.
      *
      * @param name  index name
@@ -541,9 +544,6 @@ public final class Collection extends BaseCollection
                 "Invalid collection: it has either been deleted or its database closed");
         }
     }
-
-    @NonNull
-    Database getDatabase() { return db; }
 
     boolean isValid() { return c4Collection.isValid(); }
 
