@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,9 +34,12 @@ import com.couchbase.lite.internal.core.C4Replicator;
 import com.couchbase.lite.internal.core.C4ReplicatorStatus;
 import com.couchbase.lite.internal.replicator.AbstractCBLWebSocket;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -426,6 +431,102 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         assertFalse(((Map<?, ?>) httpHeaders).containsKey(AbstractCBLWebSocket.HEADER_COOKIES));
     }
 
+
+    // 3.1 TestCreateProxyAuthenticator
+    //    Create a new ProxyAuthenticator object with a username and password.
+    //    Get a username from the object and check if the returned value is correct.
+    //    Get a password from the object and check if the returned value is correct.
+    //    Check that the returned password object is a new copy.
+    //    Get a password from the object again and check that the returned password object is a new copy.
+    @Test
+    public void testCreateProxyAuthenticator() {
+        final char[] password = "Xakk".toCharArray();
+
+        final char[] pwd = new char[password.length];
+        System.arraycopy(password, 0, pwd, 0, password.length);
+        final ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Stewart", pwd);
+
+        final char[] pwd1 = proxyAuth.getPassword();
+        assertArrayEquals(password, pwd1);
+        assertNotSame(pwd, pwd1);
+
+        pwd[0] = 'Y';
+        final char[] pwd2 = proxyAuth.getPassword();
+        assertArrayEquals(password, pwd2);
+        assertNotSame(pwd1, pwd2);
+    }
+
+    // 3.2 TestGetDefaultProxyAuthenticator
+    //    Create a ReplicatorConfiguration object.
+    //    Get the proxy authenticator object and check that the returned object is null.
+    @Test
+    public void testGetDefaultProxyAuthenticator() throws URISyntaxException {
+        assertNull(new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com"))).getProxyAuthenticator());
+    }
+
+    // 3.3 TestSetNewProxyAuthenticator
+    //    Create a ReplicatorConfiguration object.
+    //    Create a new ProxyAuthenticator object with a username and password.
+    //    Set the ProxyAuthenticator object to the ReplicatorConfiguration object.
+    //    Get the ProxyAuthenticator object from the ReplicatorConfiguration object.
+    //    Check that the returned ProxyAuthenticator object has the correct username and password.
+    @Test
+    public void testSetNewProxyAuthenticator() throws URISyntaxException {
+        final ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
+        assertEquals(
+            proxyAuth,
+            new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")))
+                .setProxyAuthenticator(proxyAuth)
+                .getProxyAuthenticator());
+    }
+
+    // 3.4 TestSetNullProxyAuthenticator
+    //    Create a ReplicatorConfiguration object.
+    //    Set null ProxyAuthenticator to the ReplicatorConfiguration object.
+    //    Get the ProxyAuthenticator object from the ReplicatorConfiguration object.
+    //    Check that the returned ProxyAuthenticator is null.
+    @Test
+    public void testSetNullProxyAuthenticator() throws URISyntaxException {
+        assertNull(new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")))
+            .setProxyAuthenticator(null)
+            .getProxyAuthenticator());
+    }
+
+    // 3.5 TestUpdateProxyAuthenticator
+    //    Create a ReplicatorConfiguration object.
+    //    Create a new ProxyAuthenticator object with a username and password.
+    //    Set the ProxyAuthenticator object to the ReplicatorConfiguration object.
+    //    Get the ProxyAuthenticator object from the ReplicatorConfiguration object.
+    //    Check that the returned ProxyAuthenticator object has the correct username and password.
+    //    Create a new ProxyAuthenticator object with a different username and password.
+    //    Set the new ProxyAuthenticator object to the ReplicatorConfiguration object.
+    //    Get the ProxyAuthenticator object from the ReplicatorConfiguration object.
+    //    Check that the returned ProxyAuthenticator object has the updated correct username and password.
+    @Test
+    public void testUpdateProxyAuthenticator() throws URISyntaxException {
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")));
+        ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
+        assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
+        proxyAuth = new ProxyAuthenticator("Matheson", "Charlie".toCharArray());
+        assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
+    }
+
+    // 3.6 TestResetProxyAuthenticator
+    //    Create a ReplicatorConfiguration object.
+    //    Create a new ProxyAuthenticator object with a username and password.
+    //    Set the ProxyAuthenticator object to the ReplicatorConfiguration object.
+    //    Get the ProxyAuthenticator object from the ReplicatorConfiguration object.
+    //    Check that the returned ProxyAuthenticator object has the correct username and password.
+    //    Set null ProxyAuthenticator to the ReplicatorConfiguration object.
+    //    Get the ProxyAuthenticator object from the ReplicatorConfiguration object.
+    //    Check that the returned ProxyAuthenticator is null.
+    @Test
+    public void testResetProxyAuthenticator() throws URISyntaxException {
+        final ReplicatorConfiguration config = new ReplicatorConfiguration(new URLEndpoint(new URI("ws://foo.com")));
+        final ProxyAuthenticator proxyAuth = new ProxyAuthenticator("Wilson", "Vince".toCharArray());
+        assertEquals(proxyAuth, config.setProxyAuthenticator(proxyAuth).getProxyAuthenticator());
+        assertNull(config.setProxyAuthenticator(null).getProxyAuthenticator());
+    }
 
     ///////// Utility functions
 

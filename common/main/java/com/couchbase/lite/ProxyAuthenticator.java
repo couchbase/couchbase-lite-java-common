@@ -34,7 +34,11 @@ public final class ProxyAuthenticator extends BaseAuthenticator {
 
     public ProxyAuthenticator(@NonNull String username, @NonNull char[] password) {
         this.username = Preconditions.assertNotEmpty(username, "user name");
-        this.password = Preconditions.assertNotEmpty(password, "password");
+        final int n = (password == null) ? 0 : password.length;
+        if (n <= 0) { throw new IllegalArgumentException("empty password"); }
+        final char[] pwd = new char[n];
+        System.arraycopy(password, 0, pwd, 0, n);
+        this.password = pwd;
     }
 
     /**
@@ -59,6 +63,18 @@ public final class ProxyAuthenticator extends BaseAuthenticator {
         return pwd;
     }
 
+    @Override
+    public int hashCode() { return username.hashCode(); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof ProxyAuthenticator)) { return false; }
+        final ProxyAuthenticator other = (ProxyAuthenticator) o;
+        return username.equals(other.username) && Arrays.equals(password, other.password);
+    }
+
+
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
@@ -67,6 +83,7 @@ public final class ProxyAuthenticator extends BaseAuthenticator {
     }
 
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void authenticate(@NonNull Map<String, Object> options) {
         Map<String, Object> auth = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);

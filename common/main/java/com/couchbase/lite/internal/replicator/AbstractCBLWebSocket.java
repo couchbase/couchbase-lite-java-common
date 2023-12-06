@@ -654,9 +654,10 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         if (((proxyUser instanceof String) && (proxyPass instanceof String))) {
             proxyCredentials = Credentials.basic((String) proxyUser, (String) proxyPass);
         }
+        final String proxyCred = proxyCredentials;
 
         String endpointCredentials = null;
-        if (!C4Replicator.AUTH_TYPE_BASIC.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) {
+        if (C4Replicator.AUTH_TYPE_BASIC.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) {
             final Object endptUser = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
             final Object endptPass = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
             if (((endptUser instanceof String) && (endptPass instanceof String))) {
@@ -664,12 +665,11 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
                 forcePreAuth(builder, endpointCredentials);
             }
         }
-
-        if ((proxyCredentials == null) && (endpointCredentials == null)) { return; }
-
         final String endptCred = endpointCredentials;
-        final String proxyCred = proxyCredentials;
-        builder.authenticator((route, resp) -> authenticate(resp, endptCred, proxyCred));
+
+        if ((proxyCredentials != null) || (endpointCredentials != null)) {
+            builder.authenticator((route, resp) -> authenticate(resp, endptCred, proxyCred));
+        }
     }
 
     @SuppressWarnings("PMD.AvoidRethrowingException")

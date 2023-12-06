@@ -96,6 +96,7 @@ public final class BasicAuthenticator extends BaseAuthenticator {
     // Authenticator abstract method implementation
     //---------------------------------------------
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void authenticate(@NonNull Map<String, Object> options) {
         Map<String, Object> auth = (Map<String, Object>) options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
