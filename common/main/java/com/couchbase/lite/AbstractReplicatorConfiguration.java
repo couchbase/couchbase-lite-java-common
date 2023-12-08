@@ -112,6 +112,8 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @Nullable
     private Authenticator authenticator;
     @Nullable
+    private ProxyAuthenticator proxyAuthenticator;
+    @Nullable
     private Map<String, String> headers;
     private boolean acceptParentCookies;
     @Nullable
@@ -140,6 +142,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             Defaults.Replicator.CONTINUOUS,
             null,
             null,
+            null,
             Defaults.Replicator.ACCEPT_PARENT_COOKIES,
             null,
             Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT,
@@ -156,6 +159,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             config.type,
             config.continuous,
             config.authenticator,
+            config.proxyAuthenticator,
             config.headers,
             config.acceptParentCookies,
             config.pinnedServerCertificate,
@@ -173,6 +177,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             config.getType(),
             config.isContinuous(),
             config.getAuthenticator(),
+            config.getProxyAuthenticator(),
             config.getHeaders(),
             config.isAcceptParentCookies(),
             config.getPinnedServerCertificate(),
@@ -194,6 +199,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         @NonNull com.couchbase.lite.ReplicatorType type,
         boolean continuous,
         @Nullable Authenticator authenticator,
+        @Nullable ProxyAuthenticator proxyAuthenticator,
         @Nullable Map<String, String> headers,
         boolean acceptParentCookies,
         @Nullable X509Certificate pinnedServerCertificate,
@@ -207,6 +213,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         this.type = type;
         this.continuous = continuous;
         this.authenticator = authenticator;
+        this.proxyAuthenticator = proxyAuthenticator;
         this.headers = headers;
         this.acceptParentCookies = acceptParentCookies;
         this.pinnedServerCertificate = pinnedServerCertificate;
@@ -351,6 +358,19 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     @NonNull
     public final ReplicatorConfiguration setAuthenticator(@Nullable Authenticator authenticator) {
         this.authenticator = authenticator;
+        return getReplicatorConfiguration();
+    }
+
+    /**
+     * Sets the proxy authenticator to authenticate with the HTTP Proxy.
+     * The default is no authenticator.
+     *
+     * @param authenticator The authenticator.
+     * @return this.
+     */
+    @NonNull
+    public ReplicatorConfiguration setProxyAuthenticator(@Nullable ProxyAuthenticator authenticator) {
+        proxyAuthenticator = authenticator;
         return getReplicatorConfiguration();
     }
 
@@ -633,6 +653,14 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
      */
     @Nullable
     public final Authenticator getAuthenticator() { return authenticator; }
+
+    /**
+     * Returns the proxy authenticator.
+     *
+     * @return the proxy authenticator or null.
+     */
+    @Nullable
+    public ProxyAuthenticator getProxyAuthenticator() { return proxyAuthenticator; }
 
     /**
      * Return the remote target's SSL certificate.

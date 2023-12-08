@@ -31,6 +31,7 @@ import com.couchbase.lite.Database;
 import com.couchbase.lite.Defaults;
 import com.couchbase.lite.Endpoint;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.ProxyAuthenticator;
 import com.couchbase.lite.ReplicatorConfiguration;
 import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.core.C4Replicator;
@@ -60,6 +61,8 @@ public class BaseImmutableReplicatorConfiguration {
     private final boolean continuous;
     @Nullable
     private final Authenticator authenticator;
+    @Nullable
+    private final ProxyAuthenticator proxyAuthenticator;
     @Nullable
     private final Map<String, String> headers;
 
@@ -92,6 +95,7 @@ public class BaseImmutableReplicatorConfiguration {
         this.type = Preconditions.assertNotNull(config.getType(), "replicator type");
         this.continuous = config.isContinuous();
         this.authenticator = config.getAuthenticator();
+        this.proxyAuthenticator = config.getProxyAuthenticator();
         this.headers = config.getHeaders();
         this.acceptParentCookies = config.isAcceptParentDomainCookies();
         this.pinnedServerCertificate = config.getPinnedServerX509Certificate();
@@ -131,6 +135,9 @@ public class BaseImmutableReplicatorConfiguration {
     public final Authenticator getAuthenticator() { return authenticator; }
 
     @Nullable
+    public final ProxyAuthenticator getProxyAuthenticator() { return proxyAuthenticator; }
+
+    @Nullable
     public final Map<String, String> getHeaders() { return headers; }
 
     public boolean isAcceptParentCookies() { return acceptParentCookies; }
@@ -155,6 +162,9 @@ public class BaseImmutableReplicatorConfiguration {
         final Map<String, Object> options = new HashMap<>();
 
         if (authenticator != null) { ((BaseAuthenticator) authenticator).authenticate(options); }
+
+        // Add the proxy authenticator, if any:
+        if (proxyAuthenticator != null) { ((BaseAuthenticator) proxyAuthenticator).authenticate(options); }
 
         // Add the pinned certificate if any:
         if (pinnedServerCertificate != null) {
@@ -184,7 +194,7 @@ public class BaseImmutableReplicatorConfiguration {
                 : ((continuous)
                     ? Defaults.Replicator.MAX_ATTEMPTS_CONTINUOUS
                     : (Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT)))
-            - 1); // subtract 1 from max attempts to get what LiteCore wants: number of retries.
+                - 1); // subtract 1 from max attempts to get what LiteCore wants: number of retries.
 
 
         options.put(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES, acceptParentCookies);

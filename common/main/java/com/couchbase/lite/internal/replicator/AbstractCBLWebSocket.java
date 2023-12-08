@@ -138,10 +138,10 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     public static final String HEADER_COOKIES = "Cookies"; // client customized cookies
     public static final String HEADER_USER_AGENT = "User-Agent";
     public static final String HEADER_AUTH = "Authorization";
-    // public static final String HEADER_PROXY_AUTH = "Proxy-Authorization";
+    public static final String HEADER_PROXY_AUTH = "Proxy-Authorization";
 
     private static final String CHALLENGE_BASIC = "Basic";
-    // private static final String CHALLENGE_PREEMPTIVE = "OkHttp-Preemptive";
+    private static final String CHALLENGE_PREEMPTIVE = "OkHttp-Preemptive";
 
     // OkHttp Interceptor failure message
     public static final String ERROR_INTERCEPTOR = "Interceptor Failure";
@@ -456,35 +456,33 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // Set up the remote socket factory
     @Override
     public void setupRemoteSocketFactory(@NonNull OkHttpClient.Builder builder) {
+        Map<?, ?> auth = null;
         boolean acceptParentDomainCookies = false;
 
-        // Heartbeat
         if (options != null) {
+            // Auth options
+            final Object opt = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
+            if (opt instanceof Map) { auth = (Map<?, ?>) opt; }
+
             // Heartbeat
             final Object heartbeat = options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL);
             builder.pingInterval(
                 (heartbeat instanceof Number) ? ((long) heartbeat) : DEFAULT_HEARTBEAT_SEC,
                 TimeUnit.SECONDS);
 
-            // Basic Auth
-            final Object authOpts = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-            if ((authOpts instanceof Map)) {
-                final Map<?, ?> auth = (Map<?, ?>) authOpts;
-                if (C4Replicator.AUTH_TYPE_BASIC.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) {
-                    setupBasicAuthenticator(auth, builder);
-                }
-            }
-
             // Accept Parent Domain Cookies
             final Object acceptParentCookies = options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES);
             if (acceptParentCookies instanceof Boolean) { acceptParentDomainCookies = (Boolean) acceptParentCookies; }
         }
 
+        // Authentication
+        if (auth != null) { setupAuthentication(builder, auth); }
+
         // Cookies
         builder.cookieJar(new AbstractCBLWebSocket.WebSocketCookieJar(acceptParentDomainCookies));
 
         // Setup SSLFactory and trusted certificate (pinned certificate)
-        setupSSLSocketFactory(builder);
+        setupSSLSocketFactory(builder, auth);
     }
 
     @Override
@@ -649,17 +647,34 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
         return 0;
     }
 
+    private void setupAuthentication(@NonNull OkHttpClient.Builder builder, @NonNull Map<?, ?> auth) {
+        String proxyCredentials = null;
+        final Object proxyUser = auth.get(C4Replicator.REPLICATOR_OPTION_PROXY_USER);
+        final Object proxyPass = auth.get(C4Replicator.REPLICATOR_OPTION_PROXY_PASS);
+        if (((proxyUser instanceof String) && (proxyPass instanceof String))) {
+            proxyCredentials = Credentials.basic((String) proxyUser, (String) proxyPass);
+        }
+        final String proxyCred = proxyCredentials;
+
+        String endpointCredentials = null;
+        if (C4Replicator.AUTH_TYPE_BASIC.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) {
+            final Object endptUser = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
+            final Object endptPass = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
+            if (((endptUser instanceof String) && (endptPass instanceof String))) {
+                endpointCredentials = Credentials.basic((String) endptUser, (String) endptPass);
+                forcePreAuth(builder, endpointCredentials);
+            }
+        }
+        final String endptCred = endpointCredentials;
+
+        if ((proxyCredentials != null) || (endpointCredentials != null)) {
+            builder.authenticator((route, resp) -> authenticate(resp, endptCred, proxyCred));
+        }
+    }
+
     @SuppressWarnings("PMD.AvoidRethrowingException")
-    private void setupBasicAuthenticator(@NonNull Map<?, ?> auth, @NonNull OkHttpClient.Builder builder) {
-        final Object username = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
-        final Object password = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
-        if (!((password instanceof String) && (username instanceof String))) { return; }
-
-        final String credentials = Credentials.basic((String) username, (String) password);
-
-        builder.authenticator((route, resp) -> authenticate(resp, credentials));
-
-        // Force pre-authentication
+    private void forcePreAuth(@NonNull OkHttpClient.Builder builder, @NonNull final String endptCred) {
+        // Force basic authentication pre-auth
         builder.addInterceptor(chain -> {
             final Request req = chain.request();
             try {
@@ -668,7 +683,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
                         ? req
                         // This should happen only when there is no existing connection: the first request.
                         : req.newBuilder()
-                            .header(HEADER_AUTH, credentials)
+                            .header(HEADER_AUTH, endptCred)
                             .method(req.method(), req.body())
                             .build());
             }
@@ -687,7 +702,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     }
 
     @SuppressWarnings("PMD.NPathComplexity")
-    private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder) {
+    private void setupSSLSocketFactory(@NonNull OkHttpClient.Builder builder, @Nullable Map<?, ?> auth) {
         X509Certificate pinnedServerCert = null;
         boolean acceptOnlySelfSignedServerCert = false;
         KeyManager[] keyManagers = null;
@@ -708,8 +723,9 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
             if (opt instanceof Boolean) { acceptOnlySelfSignedServerCert = (boolean) opt; }
 
             // KeyManager for client cert authentication:
-            final KeyManager clientCertAuthKeyManager = getAuthenticator();
+            final KeyManager clientCertAuthKeyManager = getKeyManager(auth);
             if (clientCertAuthKeyManager != null) { keyManagers = new KeyManager[] {clientCertAuthKeyManager}; }
+
 
             opt = options.get(C4Replicator.SOCKET_OPTIONS_NETWORK_INTERFACE);
             if (opt instanceof String) { iFace = getSelectedInterface((String) opt); }
@@ -746,15 +762,11 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     }
 
     @Nullable
-    private KeyManager getAuthenticator() {
-        if (options == null) { return null; }
-
-        final Object opt = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
-        if (!(opt instanceof Map)) { return null; }
-        final Map<?, ?> auth = (Map<?, ?>) opt;
-
-        if (!C4Replicator.AUTH_TYPE_CLIENT_CERT.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) { return null; }
-
+    private KeyManager getKeyManager(@Nullable Map<?, ?> auth) {
+        if ((auth == null)
+            || (!C4Replicator.AUTH_TYPE_CLIENT_CERT.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE)))) {
+            return null;
+        }
         KeyManager keyManager = null;
         final Object certKey = auth.get(C4Replicator.REPLICATOR_AUTH_CLIENT_CERT_KEY);
         if (certKey instanceof Long) { keyManager = KEY_MANAGERS.getBinding((long) certKey); }
@@ -768,7 +780,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // http://www.ietf.org/rfc/rfc2617.txt
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @Nullable
-    private Request authenticate(@NonNull Response resp, @NonNull String credentials) {
+    private Request authenticate(@NonNull Response resp, @Nullable String endptCred, @Nullable String proxyCred) {
         Log.d(LOG_DOMAIN, "%s.authenticate: %s", this, resp);
 
         // If failed 3 times, give up.
@@ -780,20 +792,24 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
         for (Challenge challenge: challenges) {
             if (CHALLENGE_BASIC.equalsIgnoreCase(challenge.scheme())) {
-                return resp.request()
-                    .newBuilder()
-                    .header(HEADER_AUTH, credentials)
-                    .build();
+                return (endptCred == null)
+                    ? null
+                    : resp.request()
+                        .newBuilder()
+                        .header(HEADER_AUTH, endptCred)
+                        .build();
             }
-            // CBL-3976: We probably need to handle this but I am not sure how.
+
             // This is the challenge we will get if OkHttp determines that it
             // is talking to a proxy and needs to authenticate with it.
-//            else if (CHALLENGE_PREEMPTIVE.equalsIgnoreCase(challenge.scheme())) {
-//                return resp.request()
-//                    .newBuilder()
-//                    .header(HEADER_PROXY_AUTH, ??)
-//                    .build();
-//            }
+            if (CHALLENGE_PREEMPTIVE.equalsIgnoreCase(challenge.scheme())) {
+                return (proxyCred == null)
+                    ? null
+                    : resp.request()
+                        .newBuilder()
+                        .header(HEADER_PROXY_AUTH, proxyCred)
+                        .build();
+            }
         }
 
         return null;

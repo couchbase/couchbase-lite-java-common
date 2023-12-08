@@ -135,7 +135,6 @@ public abstract class C4Replicator extends C4NativePeer {
     // Auth settings: Dict
     public static final String REPLICATOR_OPTION_AUTHENTICATION = "auth";
     // Proxy settings (Dict); see [3]]
-    public static final String REPLICATOR_OPTION_PROXY_SERVER = "proxy";
 
     //// WebSocket options
     // Interval in secs to send a keep-alive: ping
@@ -163,6 +162,10 @@ public abstract class C4Replicator extends C4NativePeer {
     public static final String REPLICATOR_AUTH_CLIENT_CERT_KEY = "clientCertKey";
     // Session cookie or auth token (string)
     public static final String REPLICATOR_AUTH_TOKEN = "token";
+    // Proxy authentications: user
+    public static final String REPLICATOR_OPTION_PROXY_USER = "user";
+    // Proxy authentications: password
+    public static final String REPLICATOR_OPTION_PROXY_PASS = "pass";
 
     ////// auth.type values:
     // HTTP Basic (the default)
