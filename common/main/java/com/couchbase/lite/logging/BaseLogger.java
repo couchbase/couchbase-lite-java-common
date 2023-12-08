@@ -21,6 +21,6 @@ import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.logging.AbstractLogger;
 
 
-public abstract class CustomLogger extends AbstractLogger {
-    protected CustomLogger(@NonNull LogLevel level) { super(level); }
+public abstract class BaseLogger extends AbstractLogger {
+    protected BaseLogger(@NonNull LogLevel level) { super(level); }
 }

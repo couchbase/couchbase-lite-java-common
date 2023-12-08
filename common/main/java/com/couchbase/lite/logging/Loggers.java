@@ -35,6 +35,6 @@ public interface Loggers {
     void setConsoleLogger(@Nullable ConsoleLogger newLogger);
 
     @Nullable
-    CustomLogger getCustomLogger();
-    void setCustomLogger(@Nullable CustomLogger newLogger);
+    BaseLogger getCustomLogger();
+    void setCustomLogger(@Nullable BaseLogger newLogger);
 }

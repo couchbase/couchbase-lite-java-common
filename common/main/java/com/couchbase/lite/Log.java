@@ -19,7 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.logging.CustomLogger;
+import com.couchbase.lite.logging.BaseLogger;
 import com.couchbase.lite.logging.Loggers;
 
 
@@ -31,12 +31,12 @@ import com.couchbase.lite.logging.Loggers;
 @SuppressWarnings({"PMD.UnnecessaryFullyQualifiedName", "DeprecatedIsStillUsed"})
 @Deprecated
 public final class Log {
-    private final class ShimLogger extends CustomLogger {
+    private final class ShimLogger extends BaseLogger {
         ShimLogger(@NonNull LogLevel level) { super(level); }
 
         @Override
         protected void writeLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
-            final com.couchbase.lite.logging.CustomLogger curLogger = Loggers.get().getCustomLogger();
+            final BaseLogger curLogger = Loggers.get().getCustomLogger();
             if (this != curLogger) { return; }
 
             final Logger logger = customLogger;

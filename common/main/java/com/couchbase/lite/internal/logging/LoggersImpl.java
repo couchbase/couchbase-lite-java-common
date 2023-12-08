@@ -29,8 +29,8 @@ import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.utils.Preconditions;
+import com.couchbase.lite.logging.BaseLogger;
 import com.couchbase.lite.logging.ConsoleLogger;
-import com.couchbase.lite.logging.CustomLogger;
 import com.couchbase.lite.logging.FileLogger;
 import com.couchbase.lite.logging.Loggers;
 
@@ -93,12 +93,13 @@ public final class LoggersImpl implements Loggers {
     private ConsoleLogger consoleLogger;
 
     @Nullable
-    private CustomLogger customLogger;
+    private BaseLogger customLogger;
 
     private LoggersImpl(@NonNull C4Log c4Log) {
         this.c4Log = c4Log;
         customLogQueue = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
     }
+
 
     @Override
     @Nullable
@@ -145,10 +146,10 @@ public final class LoggersImpl implements Loggers {
 
     @Override
     @Nullable
-    public CustomLogger getCustomLogger() { return customLogger; }
+    public BaseLogger getCustomLogger() { return customLogger; }
 
     @Override
-    public void setCustomLogger(@Nullable CustomLogger newLogger) {
+    public void setCustomLogger(@Nullable BaseLogger newLogger) {
         customLogger = newLogger;
         setLogLevel();
     }
@@ -173,7 +174,7 @@ public final class LoggersImpl implements Loggers {
         catch (Exception e) { System.err.println("Console logger failure" + Log.formatStackTrace(e)); }
 
         // A custom logger is client code: give it 1 second on a safe thread
-        final CustomLogger custom = customLogger;
+        final BaseLogger custom = customLogger;
         if ((custom != null) && ((custom.getLevel().compareTo(level) <= 0))) {
             if (customLogQueue.getPending() > LOG_QUEUE_MAX) {
                 log(console, LogLevel.WARNING, LogDomain.DATABASE, "Log queue overflow: Logs dropped");
