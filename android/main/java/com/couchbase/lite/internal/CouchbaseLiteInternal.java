@@ -57,6 +57,8 @@ public final class CouchbaseLiteInternal {
     // Utility class
     private CouchbaseLiteInternal() { }
 
+    public static final String PLATFORM = "CBL-ANDROID";
+
     public static final String SCRATCH_DIR_NAME = "CouchbaseLiteTemp";
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";

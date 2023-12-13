@@ -73,7 +73,7 @@ public final class Log {
         // Init the console logger.  The FileLogger will take care of itself.
         final ConsoleLogger logger = Database.log.getConsole();
         logger.setLevel(LogLevel.INFO);
-        Log.i(LogDomain.DATABASE, "CBL-ANDROID Initialized: " + CBLVersion.getVersionInfo());
+        Log.i(LogDomain.DATABASE, CouchbaseLiteInternal.PLATFORM + " Initialized: " + CBLVersion.getVersionInfo());
         logger.setLevel(LogLevel.WARNING);
     }
 

@@ -57,6 +57,7 @@ public class CBLExecutor extends ThreadPoolExecutor {
                     final int id = threadId.incrementAndGet();
 
                     final Thread thread = new Thread(r, threadName + id);
+                    thread.setDaemon(true);
                     thread.setUncaughtExceptionHandler((t, e) ->
                         Log.e(LogDomain.DATABASE, "Uncaught exception on thread %s", e, thread.getName()));
 

@@ -87,7 +87,7 @@ public final class ReplicatedDocument {
     /**
      * The name of the collection to which the changed document belongs.
      *
-     * @deprecated Use getName()
+     * @deprecated Use getCollection()
      */
     @Deprecated
     @NonNull
