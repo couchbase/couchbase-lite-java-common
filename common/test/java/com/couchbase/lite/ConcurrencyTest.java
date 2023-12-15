@@ -451,6 +451,7 @@ public class ConcurrencyTest extends BaseDbTest {
                 },
                 name + "-" + id);
 
+            worker.setDaemon(true);
             worker.setUncaughtExceptionHandler((t, e) -> {
                 Report.log(e, "Unexpected exception in test %s on thread %s", t.getName());
                 error.compareAndSet(null, e);

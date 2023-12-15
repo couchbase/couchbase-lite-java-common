@@ -178,6 +178,7 @@ public abstract class BaseTest extends PlatformBaseTest {
                     @NonNull
                     public Thread newThread(@NonNull Runnable r) {
                         final Thread thread = new Thread(r, "TEST-THREAD #" + threadId.incrementAndGet());
+                        thread.setDaemon(true);
                         thread.setUncaughtExceptionHandler((t, e) ->
                             Report.log(e, "Uncaught exception on test thread %s", thread.getName()));
                         Report.log("New test thread: %s", thread.getName());

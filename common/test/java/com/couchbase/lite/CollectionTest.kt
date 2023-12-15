@@ -1066,7 +1066,7 @@ class CollectionTest : BaseDbTest() {
     fun testGetFullNameFromExistingCollectionInCustomScope() {
         val scopeName = getUniqueName("oscilli")
         val collectionName = getUniqueName("dry_flies")
-        val collection = testDatabase.createCollection(collectionName, scopeName)
+        testDatabase.createCollection(collectionName, scopeName)
         assertEquals("${scopeName}.${collectionName}", testDatabase.getCollection(collectionName, scopeName)?.fullName)
     }
 
@@ -1099,7 +1099,7 @@ class CollectionTest : BaseDbTest() {
     fun testGetDatabaseFromScopeObtainedFromCollection() {
         val collectionName = getUniqueName("dry_flies")
         val collection = testDatabase.createCollection(collectionName)
-        assertEquals(testDatabase, collection?.scope?.database)
+        assertEquals(testDatabase, collection.scope.database)
     }
 
     // 3.4 TestGetDatabaseFromScopeObtainedFromDatabase
