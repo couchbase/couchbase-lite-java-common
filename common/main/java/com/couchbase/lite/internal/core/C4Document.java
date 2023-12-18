@@ -15,6 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
+import android.annotation.SuppressLint;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -26,10 +28,11 @@ import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
-public final class C4Document extends C4NativePeer {
+public final class C4Document extends C4Peer {
     public interface NativeImpl {
         //// Creating and Updating Documents
         long nGetFromCollection(long coll, String docID, boolean mustExist, boolean getAllRevs)
@@ -142,7 +145,7 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private C4Document(@NonNull NativeImpl impl, long peer) {
-        super(peer);
+        super(peer, impl::nFree);
         this.impl = impl;
     }
 
@@ -179,12 +182,16 @@ public final class C4Document extends C4NativePeer {
     public long getTimestamp() { return withPeerOrDefault(-1L, impl::nGetTimestamp); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
-        impl.nSelectNextLeafRevision(getPeer(), includeDeleted, withBody);
+        withPeerOrThrow((Fn.ConsumerThrows<Long, LiteCoreException>) peer ->
+            impl.nSelectNextLeafRevision(peer, includeDeleted, withBody)
+        );
     }
 
     public void resolveConflict(String winningRevID, String losingRevID, byte[] mergeBody, int mergedFlags)
         throws LiteCoreException {
-        impl.nResolveConflict(getPeer(), winningRevID, losingRevID, mergeBody, mergedFlags);
+        withPeerOrThrow((Fn.ConsumerThrows<Long, LiteCoreException>) peer ->
+            impl.nResolveConflict(peer, winningRevID, losingRevID, mergeBody, mergedFlags)
+        );
     }
 
     @Nullable
@@ -199,7 +206,11 @@ public final class C4Document extends C4NativePeer {
         return (newDoc == 0) ? null : new C4Document(impl, newDoc);
     }
 
-    public void save(int maxRevTreeDepth) throws LiteCoreException { impl.nSave(getPeer(), maxRevTreeDepth); }
+    public void save(int maxRevTreeDepth) throws LiteCoreException {
+        withPeerOrThrow((Fn.ConsumerThrows<Long, LiteCoreException>) peer ->
+            impl.nSave(peer, maxRevTreeDepth)
+        );
+    }
 
     // - Fleece
 
@@ -236,7 +247,7 @@ public final class C4Document extends C4NativePeer {
     // will cause crashes. Apparently, there may be multiple active references
     // to a single C4Document, making it very hard to figure out when they can be
     // closed, explicitly.  Just log the call: don't actually close it.
-    // See finalize() below.
+    @SuppressLint("MissingSuperCall")
     @Override
     public void close() {
         Log.w(LogDomain.DATABASE, "Unsafe call to C4Database.close()", new Exception("Unsafe call at:"));
@@ -247,45 +258,8 @@ public final class C4Document extends C4NativePeer {
     public String toString() { return "C4Document@" + super.toString(); }
 
     //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    // As noted above (close()) and in Document.updateC4DocumentLocked it seems that there
-    // may be several live reference to a single C4Document (see MutableDocument.<init>).
-    // That means that it is pretty difficult to figure how to release them, explicitly.
-    // Attempts to close the C4Document, e.g. in Document.updateC4DocumentLocked resulted
-    // in many failed tests and even some native crashes in Database.saveInTransaction.
-    // That is just a huge shame, since it means that every single document created by
-    // client code, eventually ends up on the finalizer queue. A lot of code that seems
-    // to work -- some of it fairly mysterious -- would have to change to fix this.
-    // I'm quite reluctant to make such big changes without a clear benefit from doing so.
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        // Since there is no good way to free these suckers explicitly,
-        // we leave them to the finalizer and don't squawk about it.
-        try { closePeer(null); }
-        finally { super.finalize(); }
-    }
-
-    //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
 
     private int getFlags() { return withPeerOrDefault(0, impl::nGetFlags); }
-
-    // This idiom, which you will see in many places in this code,
-    // may protect against a failure that both customers and I have seen:
-    // the ART runtime frees (and nulls) a member reference before freeing the
-    // object that refers to it: impl may be null.
-    // If that happens, we are going to leak memory.  This idiom, though
-    // may prevent an NPE on the finalizer thread.
-    private void closePeer(@Nullable LogDomain domain) {
-        releasePeer(
-            domain,
-            (peer) -> {
-                final NativeImpl nativeImpl = impl;
-                if (nativeImpl != null) { nativeImpl.nFree(peer); }
-            });
-    }
 }
