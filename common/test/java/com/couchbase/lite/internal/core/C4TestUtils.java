@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 
 import com.couchbase.lite.CBLError;
-import com.couchbase.lite.Collection;
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
@@ -106,7 +105,8 @@ public class C4TestUtils {
         return encodeJSON(db.getPeer(), data.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static String idForDoc(@NonNull C4Document doc) { return getDocID(doc.getPeer()); }
+    @Nullable
+    public static String idForDoc(@NonNull C4Document doc) { return doc.nullableWithPeerOrNull(C4TestUtils::getDocID); }
 
     public static int getFlags(@NonNull C4Database db) throws LiteCoreException { return getFlags(db.getPeer()); }
 
