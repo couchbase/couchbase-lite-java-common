@@ -27,6 +27,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
+
 // It is worth considering breaking this up.  You know, OOP and all...
 public class C4TestUtils {
     public static class C4DocEnumerator extends C4NativePeer {
@@ -104,7 +105,7 @@ public class C4TestUtils {
         return encodeJSON(db.getPeer(), data.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static String idForDoc(C4Document doc) { return getDocID(doc.getPeer()); }
+    public static String idForDoc(C4Document doc) { return doc.withPeerOrThrow(C4TestUtils::getDocID); }
 
     // C4Document
 
