@@ -21,15 +21,14 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_create(
 
 /*
  * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver
- * Method:    setEnabled
- * Signature: (JZ)V
+ * Method:    enable
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_setEnabled(
+Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_enable(
         JNIEnv *,
         jclass,
-        jlong,
-        jboolean);
+        jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver
@@ -41,17 +40,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_free(
         JNIEnv *,
         jclass,
         jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_NativeC4QueryObserver
- * Method:    getEnumerator
- * Signature: (JZ)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_getEnumerator(
-        JNIEnv *,
-        jclass,
-        jlong,
-        jboolean);
 
 #ifdef __cplusplus
 }

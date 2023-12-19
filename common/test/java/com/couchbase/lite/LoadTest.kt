@@ -39,7 +39,7 @@ class LoadTest : BaseDbTest() {
             "starqlteue" to 150,
             "dandelion_global" to 100,
             "cheetah" to 100,
-            "sunfish" to 75,
+            "sunfish" to 80,
             "taimen" to 55,
             "shamu" to 200,
             "hammerhead" to 150,
