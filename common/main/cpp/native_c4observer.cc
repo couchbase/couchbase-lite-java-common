@@ -225,7 +225,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
             (C4Collection *) coll,
             c4CollectionObsCallback,
             (void *)
-            0L,
+                    0L,
             &error);
     if (!res && error.code != 0) {
         throwError(env, error);
@@ -378,6 +378,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_free(
         JNIEnv *env,
         jclass clazz,
         jlong handle) {
+    c4queryobs_setEnabled((C4QueryObserver *) handle, false);
     c4queryobs_free((C4QueryObserver *) handle);
 }
 }
