@@ -197,13 +197,15 @@ public final class C4Collection extends C4NativePeer {
 
     @NonNull
     public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) throws LiteCoreException {
-        return withPeerOrThrow(peer -> C4CollectionObserver.newObserver(peer, listener));
+        return this.<C4CollectionObserver, LiteCoreException>withPeerOrThrow(peer ->
+            C4CollectionObserver.newObserver(peer, listener));
     }
 
     @NonNull
     public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener)
         throws LiteCoreException {
-        return withPeerOrThrow(peer -> C4CollectionDocObserver.newObserver(peer, docID, listener));
+        return this.<C4DocumentObserver, LiteCoreException>withPeerOrThrow(peer ->
+            C4CollectionDocObserver.newObserver(peer, docID, listener));
     }
 
     // - Indexes

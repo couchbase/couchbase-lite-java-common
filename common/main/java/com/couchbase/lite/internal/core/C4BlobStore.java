@@ -112,7 +112,8 @@ public class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public FLSliceResult getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return withPeerOrThrow(peer -> impl.nGetContents(peer, blobKey.getHandle()));
+        return this.<FLSliceResult, LiteCoreException>withPeerOrThrow(peer ->
+            impl.nGetContents(peer, blobKey.getHandle()));
     }
 
     /**
@@ -149,7 +150,9 @@ public class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobReadStream openReadStream(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return new C4BlobReadStream(impl, withPeerOrThrow(peer -> impl.nOpenReadStream(peer, blobKey.getHandle())));
+        return new C4BlobReadStream(
+            impl,
+            this.<Long, LiteCoreException>withPeerOrThrow(peer -> impl.nOpenReadStream(peer, blobKey.getHandle())));
     }
 
     /**
