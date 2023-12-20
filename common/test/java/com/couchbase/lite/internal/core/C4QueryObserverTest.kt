@@ -11,11 +11,16 @@
 package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.AbstractIndex
+import com.couchbase.lite.internal.core.impl.NativeC4QueryObserver
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.TimeUnit
 
 
 const val JSON_QUERY =
@@ -30,9 +35,8 @@ val mockMockQueryEnumerator = object : C4QueryEnumerator.NativeImpl {
 
 val mockNativeQueryObserver = object : C4QueryObserver.NativeImpl {
     override fun nCreate(token: Long, c4Query: Long): Long = 0xdeadbea7L
-    override fun nSetEnabled(peer: Long, enabled: Boolean) = Unit
+    override fun nEnable(peer: Long) = Unit
     override fun nFree(peer: Long) = Unit
-    override fun nGetEnumerator(peer: Long, forget: Boolean): Long = 0x0L
 }
 
 class C4QueryObserverTest : C4BaseTest() {
@@ -67,10 +71,36 @@ class C4QueryObserverTest : C4BaseTest() {
                 result?.close()
             })
 
-        obs.queryChanged()
-        obs.queryChanged()
-        obs.queryChanged()
+        obs.queryChanged(5L, 0, 0, null)
+        obs.queryChanged(5L, 0, 0, null)
+        obs.queryChanged(5L, 0, 0, null)
 
         assertEquals(3, i)
+    }
+
+    // Check that concurrent create and close don't cause obvious crashes.
+    @Test
+    fun testConcurrentCreateAndRelease() {
+        val dbLock = Any()
+        val nativeImpl = NativeC4QueryObserver()
+        val latch = CountDownLatch(10)
+        val barrier = CyclicBarrier(10)
+        (0..9).map {
+            Thread {
+                val q = C4Query.create(c4Database, AbstractIndex.QueryLanguage.JSON, query)
+
+                barrier.await()
+                val obs = C4QueryObserver.create(nativeImpl, { mockQEnum }, q, { _, _ -> })
+                // C4QueryObserver.enable is not thread safe: mock the dbLock
+                synchronized(dbLock) { obs.enable(); }
+
+                barrier.await()
+                obs.close()
+
+                latch.countDown()
+            }
+        }.forEach { it.start() }
+
+        assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
     }
 }

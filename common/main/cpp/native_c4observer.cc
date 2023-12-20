@@ -103,7 +103,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
         if (!cls_C4QueryObs)
             return false;
 
-        m_C4QueryObs_callback = env->GetStaticMethodID(cls_C4QueryObs, "onQueryChanged", "(J)V");
+        m_C4QueryObs_callback = env->GetStaticMethodID(cls_C4QueryObs, "onQueryChanged", "(JJIILjava/lang/String;)V");
         if (!m_C4QueryObs_callback)
             return false;
     }
@@ -198,20 +198,47 @@ c4DocChangesToJavaArray(JNIEnv *env, C4CollectionChange changes[], uint32_t nCha
 // com_couchbase_lite_internal_core_impl_NativeC4QueryObserver
 // ----------------------------------------------------------------------------
 
+static void
+doC4QueryObserverCallback(JNIEnv *env, C4QueryObserver *observer, void *ctx) {
+    jstring errMsg = nullptr;
+    C4Error error{};
+
+    C4QueryEnumerator *results = c4queryobs_getEnumerator(observer, false, &error);
+
+    if (error.code != 0) {
+        C4SliceResult msgSlice = c4error_getMessage(error);
+        errMsg = toJString(env, msgSlice);
+        c4slice_free(msgSlice);
+    }
+
+    env->CallStaticVoidMethod(
+            cls_C4QueryObs,
+            m_C4QueryObs_callback,
+            (jlong) ctx,
+            (jlong) results,
+            (jint) error.domain,
+            (jint) error.code,
+            errMsg);
+}
+
 /**
  * Callback method from LiteCore C4QueryObserverCallback
- * @param
+ * @param observer
  * @param ctx
  */
 static void
-c4QueryObserverCallback(C4QueryObserver *ignore1, C4Query *ignore2, void *ctx) {
+c4QueryObserverCallback(C4QueryObserver *observer, C4Query *ignore, void *ctx) {
+    if (!observer)
+        return;
+
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+
     if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4QueryObs, m_C4QueryObs_callback, (jlong) ctx);
+        doC4QueryObserverCallback(env, observer, ctx);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4QueryObs, m_C4QueryObs_callback, (jlong) ctx);
+            doC4QueryObserverCallback(env, observer, ctx);
             gJVM->DetachCurrentThread();
         }
     }
@@ -353,35 +380,15 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_create(
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryObserver
- * Method:    setEnabled
- * Signature: (JZ)V
+ * Method:    enable
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_setEnabled(
+Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_enable(
         JNIEnv *env,
         jclass clazz,
-        jlong handle,
-        jboolean enabled) {
-    c4queryobs_setEnabled((C4QueryObserver *) handle, (bool) enabled);
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4QueryObserver
- * Method:    getEnumerator
- * Signature: (JZ)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_getEnumerator(
-        JNIEnv *env, jclass clazz,
-        jlong handle,
-        jboolean forget) {
-    C4Error error{};
-    C4QueryEnumerator *results = c4queryobs_getEnumerator((C4QueryObserver *) handle, (bool) forget, &error);
-    if (!results) {
-        throwError(env, error);
-        return 0;
-    }
-    return (jlong) results;
+        jlong handle) {
+    c4queryobs_setEnabled((C4QueryObserver *) handle, true);
 }
 
 /*

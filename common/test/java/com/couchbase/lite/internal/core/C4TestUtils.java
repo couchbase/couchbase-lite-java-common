@@ -18,7 +18,6 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 
 import com.couchbase.lite.CBLError;

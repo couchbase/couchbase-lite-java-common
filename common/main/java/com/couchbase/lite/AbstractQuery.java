@@ -65,7 +65,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
         public void start(@NonNull ChangeListenerToken<QueryChange> token) {
             synchronized (liveQueries) {
                 final C4QueryObserver observer = liveQueries.get(token);
-                if (observer != null) { observer.setEnabled(true); }
+                if (observer != null) { observer.enable(); }
             }
         }
 
