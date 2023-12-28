@@ -2785,7 +2785,7 @@ public class DocumentTest extends BaseDbTest {
         try {
             if (validator != null) { validator.accept(mDoc); }
             Document doc = saveDocInCollection(mDoc, getTestCollection());
-            if (validator != null) { validator.accept(mDoc); }
+            if (validator != null) { validator.accept(doc); }
             return doc;
         }
         catch (Exception e) {
