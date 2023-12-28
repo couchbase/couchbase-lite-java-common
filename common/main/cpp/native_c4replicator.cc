@@ -178,24 +178,32 @@ static jobject toJavaReplStatus(JNIEnv *env, C4ReplicatorStatus status) {
 }
 
 static jobject toJavaDocumentEnded(JNIEnv *env, const C4DocumentEnded *document) {
-    jstring scope = toJString(env, document->collectionSpec.scope);
-    jstring name = toJString(env, document->collectionSpec.name);
-    jstring docID = toJString(env, document->docID);
-    jstring revID = toJString(env, document->docID);
-    return env->NewObject(
+    jstring _scope = toJString(env, document->collectionSpec.scope);
+    jstring _name = toJString(env, document->collectionSpec.name);
+    jstring _docID = toJString(env, document->docID);
+    jstring _revID = toJString(env, document->docID);
+
+    jobject _docEnd = env->NewObject(
             cls_C4DocEnded,
             m_C4DocEnded_init,
             (jlong) document->collectionContext,
-            scope,
-            name,
-            docID,
-            revID,
+            _scope,
+            _name,
+            _docID,
+            _revID,
             (jint) document->flags,
             (jlong) document->sequence,
             (jint) document->error.domain,
             (jint) document->error.code,
             (jint) document->error.internal_info,
             (jboolean) document->errorIsTransient);
+
+    env->DeleteLocalRef(_scope);
+    env->DeleteLocalRef(_name);
+    env->DeleteLocalRef(_docID);
+    env->DeleteLocalRef(_revID);
+
+    return _docEnd;
 }
 
 static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C4DocumentEnded *array[]) {
@@ -245,9 +253,9 @@ static int fromJavaReplColls(
         collOptions.push_back(pOptions);
         colls[i].optionsDictFleece = *pOptions;
 
-        if (env->GetObjectField(replColl, f_ReplColl_pushFilter) != NULL)
+        if (env->GetObjectField(replColl, f_ReplColl_pushFilter) != nullptr)
             colls[i].pushFilter = &pushFilterFunction;
-        if (env->GetObjectField(replColl, f_ReplColl_pullFilter) != NULL)
+        if (env->GetObjectField(replColl, f_ReplColl_pullFilter) != nullptr)
             colls[i].pullFilter = &pullFilterFunction;
 
         colls[i].callbackContext = (void *) env->GetLongField(replColl, f_ReplColl_token);
@@ -297,15 +305,18 @@ static void statusChangedCallback(C4Replicator *ignored, C4ReplicatorStatus stat
  * @param documentEnded
  * @param token
  */
-static void documentEndedCallback(C4Replicator *ignored,
+static void documentEndedCallback(C4Replicator *ignore,
                                   bool pushing,
                                   size_t numDocs,
                                   const C4DocumentEnded *documentEnded[],
                                   void *token) {
+    assert(numDocs < 16384);
+    int nDocs = (int) numDocs;
+
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
-        jobjectArray docs = toJavaDocumentEndedArray(env, numDocs, documentEnded);
+        jobjectArray docs = toJavaDocumentEndedArray(env, nDocs, documentEnded);
         env->CallStaticVoidMethod(cls_C4Replicator,
                                   m_C4Replicator_documentEndedCallback,
                                   (jlong) token,
@@ -314,7 +325,7 @@ static void documentEndedCallback(C4Replicator *ignored,
         env->DeleteLocalRef(docs);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            jobjectArray docs = toJavaDocumentEndedArray(env, numDocs, documentEnded);
+            jobjectArray docs = toJavaDocumentEndedArray(env, nDocs, documentEnded);
             env->CallStaticVoidMethod(cls_C4Replicator,
                                       m_C4Replicator_documentEndedCallback,
                                       (jlong) token,
@@ -342,30 +353,43 @@ static jboolean replicationFilter(
         bool isPush) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+
     bool res = false;
     if (getEnvStat == JNI_OK) {
-        res = env->CallStaticBooleanMethod(cls_ReplColl,
-                                           m_ReplColl_filterCallback,
-                                           (jlong) token,
-                                           toJString(env, coll.scope),
-                                           toJString(env, coll.name),
-                                           toJString(env, docID),
-                                           toJString(env, revID),
-                                           flags,
-                                           (jlong) dict,
-                                           isPush);
+        jstring _scope = toJString(env, coll.scope);
+        jstring _name = toJString(env, coll.name);
+        jstring _docID = toJString(env, docID);
+        jstring _revID = toJString(env, revID);
+
+        res = (jboolean) env->CallStaticBooleanMethod(
+                cls_ReplColl,
+                m_ReplColl_filterCallback,
+                (jlong) token,
+                _scope,
+                _name,
+                _docID,
+                _revID,
+                flags,
+                (jlong) dict,
+                isPush);
+
+        env->DeleteLocalRef(_scope);
+        env->DeleteLocalRef(_name);
+        env->DeleteLocalRef(_docID);
+        env->DeleteLocalRef(_revID);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            res = env->CallStaticBooleanMethod(cls_ReplColl,
-                                               m_ReplColl_filterCallback,
-                                               (jlong) token,
-                                               toJString(env, coll.scope),
-                                               toJString(env, coll.name),
-                                               toJString(env, docID),
-                                               toJString(env, revID),
-                                               flags,
-                                               (jlong) dict,
-                                               isPush);
+            res = (jboolean) env->CallStaticBooleanMethod(
+                    cls_ReplColl,
+                    m_ReplColl_filterCallback,
+                    (jlong) token,
+                    toJString(env, coll.scope),
+                    toJString(env, coll.name),
+                    toJString(env, docID),
+                    toJString(env, revID),
+                    flags,
+                    (jlong) dict,
+                    isPush);
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
         } else {
@@ -374,6 +398,7 @@ static jboolean replicationFilter(
     } else {
         C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
+
     return (jboolean) res;
 }
 

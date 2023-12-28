@@ -34,14 +34,6 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listen
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
- * Method:    shareDb
- * Signature: (JLjava/lang/String;J)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDb
-  (JNIEnv *, jclass, jlong, jstring, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Listener
  * Method:    shareCollection
  * Signature: (JLjava/lang/String;J[J)V
  */

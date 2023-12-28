@@ -99,6 +99,7 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
+
     if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) != 0) {
             logError("logCallback(): Failed to attach the current thread to a Java VM)");
@@ -124,8 +125,6 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
     jstring domainName = UTF8ToJstring(env, domainNameRaw, strlen(domainNameRaw));
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    // Because this method might run on a thread that was previously attached
-    // but was called from some long running method, we need to release the local refs.
     env->DeleteLocalRef(message);
     if (domainName)
         env->DeleteLocalRef(domainName);
