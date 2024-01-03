@@ -241,10 +241,8 @@ static bool doSignCallback(JNIEnv *env, void *extKey, C4SignatureDigestAlgorithm
         return false;
 
     jsize sigSize = env->GetArrayLength(sig);
-    if (sigSize > 16384) {// !!! We need a real size limit here!!
-        env->DeleteLocalRef(sig);
-        return false;
-    }
+    // The signature is the same size as the key.
+    // This check happens in Java
 
     jbyte *sigData = env->GetByteArrayElements(sig, nullptr);
     memcpy(outSig, sigData, sigSize);
