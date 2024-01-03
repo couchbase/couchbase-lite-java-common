@@ -107,7 +107,7 @@ class CollectionListenerTest : BaseDbTest() {
         } finally {
             token.remove()
 
-            eraseDb(otherDb)
+            otherDb.close()
         }
     }
 
@@ -140,7 +140,7 @@ class CollectionListenerTest : BaseDbTest() {
         } finally {
             token.remove()
 
-            eraseDb(otherDb)
+            otherDb.close()
         }
     }
 

@@ -70,14 +70,12 @@ class DatabaseTest : BaseDbTest() {
 
         // open db with same db name and default option
         val (otherDb, otherCollection) = duplicateTestDb()
-        try {
+        otherDb.use {
             assertNotSame(testDatabase, otherDb)
 
             // get doc from other DB.
             assertEquals(1, otherCollection.count)
             verifyDocInCollection(doc.id)
-        } finally {
-            eraseDb(otherDb)
         }
     }
 
@@ -174,7 +172,7 @@ class DatabaseTest : BaseDbTest() {
 
         // Create db with default
         val (otherDb, otherCollection) = duplicateTestDb()
-        try {
+        otherDb.use {
             assertNotSame(otherDb, testDatabase)
             assertNotSame(otherCollection, testCollection)
             assertEquals(n + 1, otherCollection.count)
@@ -182,8 +180,6 @@ class DatabaseTest : BaseDbTest() {
             // Attempt to save the doc in the wrong db
             doc.setValue(TEST_DOC_TAG_KEY, "bam!!!")
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
-        } finally {
-            eraseDb(otherDb)
         }
     }
 
@@ -282,15 +278,13 @@ class DatabaseTest : BaseDbTest() {
         // Create db with same name:
         // Create db with default
         val (otherDb, otherCollection) = duplicateTestDb()
-        try {
+        otherDb.use {
             assertNotSame(otherDb, testDatabase)
             assertNotSame(otherCollection, testCollection)
             assertEquals(n + 1, testCollection.count)
 
             // Delete from the wrong db
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
-        } finally {
-            eraseDb(otherDb)
         }
     }
 
@@ -388,15 +382,13 @@ class DatabaseTest : BaseDbTest() {
 
         // Create db with default:
         val (otherDb, otherCollection) = duplicateTestDb()
-        try {
+        otherDb.use {
             assertNotSame(otherDb, testDatabase)
             assertNotSame(otherCollection, testCollection)
             assertEquals(n + 1, otherCollection.count)
 
             // purge document against other db instance:
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
-        } finally {
-            eraseDb(otherDb)
         }
     }
 
@@ -735,15 +727,13 @@ class DatabaseTest : BaseDbTest() {
         assertTrue(path.exists())
 
         val (otherDb, otherCollection) = duplicateTestDb()
-        try {
+        otherDb.use {
             assertNotSame(testDatabase, otherDb)
             assertNotSame(testCollection, otherCollection)
             assertEquals(n, otherCollection.count)
 
             // delete db
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { testDatabase.delete() }
-        } finally {
-            eraseDb(otherDb)
         }
     }
 
@@ -919,31 +909,33 @@ class DatabaseTest : BaseDbTest() {
         collection.save(doc)
 
         // delete the collection in a different database
-        duplicateDb(testDatabase).deleteCollection("bobblehead", "horo")
-        assertNull(testDatabase.getCollection("bobblehead", "horo"))
+        duplicateDb(testDatabase).use { otherDb ->
+            otherDb.deleteCollection("bobblehead", "horo")
+            assertNull(testDatabase.getCollection("bobblehead", "horo"))
 
-        assertEquals("horo", collection.scope.name)
-        assertEquals("bobblehead", collection.name)
+            assertEquals("horo", collection.scope.name)
+            assertEquals("bobblehead", collection.name)
 
-        // These two calls should generate warnings, but should not fail
-        collection.addChangeListener { }
-        collection.addDocumentChangeListener("docId") { }
+            // These two calls should generate warnings, but should not fail
+            collection.addChangeListener { }
+            collection.addDocumentChangeListener("docId") { }
 
-        // All of these things should throw
-        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
+            // All of these things should throw
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
 
-        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
 
-        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
 
-        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.purge(doc.id) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.purge(doc.id) }
 
-        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.indexes }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.indexes }
 
-        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.deleteIndex("foo") }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.deleteIndex("foo") }
 
-        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
-            collection.createIndex("index", IndexBuilder.valueIndex(ValueIndexItem.property("firstName")))
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+                collection.createIndex("index", IndexBuilder.valueIndex(ValueIndexItem.property("firstName")))
+            }
         }
     }
 
@@ -1128,27 +1120,28 @@ class DatabaseTest : BaseDbTest() {
         collectionNames.forEach { assertNotNull(testDatabase.getCollection(it, scope.name)) }
 
         // delete the collections from a different database
-        val otherDatabase = Database(testDatabase.name)
-        val otherScope = otherDatabase.getScope(scope.name)
-        assertNotNull(otherScope!!)
+        Database(testDatabase.name).use { otherDatabase ->
+            val otherScope = otherDatabase.getScope(scope.name)
+            assertNotNull(otherScope!!)
 
-        // verify that the collections exist in the other view of the db
-        collectionNames.forEach { assertNotNull(otherDatabase.getCollection(it, scope.name)) }
+            // verify that the collections exist in the other view of the db
+            collectionNames.forEach { assertNotNull(otherDatabase.getCollection(it, scope.name)) }
 
-        // delete the collections
-        collectionNames.forEach { otherDatabase.deleteCollection(it, otherScope.name) }
+            // delete the collections
+            collectionNames.forEach { otherDatabase.deleteCollection(it, otherScope.name) }
 
-        // verify that the collections no longer exist in the other db
-        collectionNames.forEach { assertNull(otherDatabase.getCollection(it, otherScope.name)) }
-        val otherCollections = otherScope.collections
-        assertNotNull(otherCollections)
-        assertTrue(otherCollections.isEmpty())
+            // verify that the collections no longer exist in the other db
+            collectionNames.forEach { assertNull(otherDatabase.getCollection(it, otherScope.name)) }
+            val otherCollections = otherScope.collections
+            assertNotNull(otherCollections)
+            assertTrue(otherCollections.isEmpty())
 
-        // verify that the collections no longer exist in the original db
-        collectionNames.forEach { assertNull(scope.getCollection(it)) }
-        val collections = scope.collections
-        assertNotNull(collections)
-        assertTrue(collections.isEmpty())
+            // verify that the collections no longer exist in the original db
+            collectionNames.forEach { assertNull(scope.getCollection(it)) }
+            val collections = scope.collections
+            assertNotNull(collections)
+            assertTrue(collections.isEmpty())
+        }
     }
 
     //---------------------------------------------
