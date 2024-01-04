@@ -39,14 +39,15 @@ import kotlinx.coroutines.runBlocking
  *
  * Android does not support daemon processes. Although it is less likely to happen on modern phones
  * with lots of memory, Android will still kill off a running application if it needs the memory space
- * to run a new app. Under these circumstance, CouchbaseLite continuous replication makes sense only
+ * to run a new app. Under these circumstance, CouchbaseLite's continuous replication makes sense only
  * while an application is in the foreground. Once an application is put in the background, it will,
  * eventually, get killed and replicators will be stopped with prejudice. They will not be restarted
  * until a user manually restarts the app and the replication.
  *
  * In addition to this issue, continuous replication is incredibly wasteful of battery. It will force
  * a mobile device to keep its radio on: the second most expensive thing a device can do, battery-wise.
- * Android provides a facility managing long running processes: the `WorkManager`. Jobs scheduled
+ *
+ * Android provides a facility for managing long running processes: the `WorkManager`. Jobs scheduled
  * with the `WorkManager` are persistent. They are also batched across applications in order to
  * optimize radio use. This package integrates replication into the `WorkManage`. It works like this:
  * Client code schedules replication work using normal `WorkManager` code, like this:

@@ -428,7 +428,7 @@ public abstract class AbstractReplicator extends BaseReplicator
         }
 
         // there is the potential for a race here...
-        super.close();
+        closeC4Replicator();
 
         if ((listeners == null) || listeners.isEmpty()) { return; }
 

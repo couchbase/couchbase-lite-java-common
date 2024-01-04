@@ -16,7 +16,6 @@
 
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -646,9 +645,8 @@ public abstract class C4Replicator extends C4NativePeer {
 
     public void stop() { withPeer(impl::nStop); }
 
-    @CallSuper
     @Override
-    public void close() {
+    public final void close() {
         for (ReplicationCollection coll: colls) { coll.close(); }
         closePeer(null);
     }

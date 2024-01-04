@@ -87,11 +87,11 @@ abstract class AbstractDatabase extends BaseDatabase
     //---------------------------------------------
     private static final String ERROR_RESOLVER_FAILED = "Conflict resolution failed for document '%s': %s";
     private static final String WARN_WRONG_ID
-        = "A conflict resolution for document for document '%s' produced a new document whose id not match"
-        + " the ID of the conflicting documents (%s)";
+        = "Conflict resolution for a document produced a new document with ID '%s', "
+        + "which does not match the IDs of the conflicting documents (%s)";
     private static final String WARN_WRONG_COLLECTION
-        = "A conflict resolution for document '%s' produced a new document that belongs to collection '%s',"
-        + " which is not the one in which it would be stored (%s)";
+        = "Conflict resolution for document '%s' produced a new document belonging to collection '%s', "
+        + "not the collection into which it would be stored (%s)";
 
     private static final LogDomain DOMAIN = LogDomain.DATABASE;
 

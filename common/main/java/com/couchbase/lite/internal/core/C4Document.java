@@ -179,12 +179,16 @@ public final class C4Document extends C4NativePeer {
     public long getTimestamp() { return withPeerOrDefault(-1L, impl::nGetTimestamp); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
-        impl.nSelectNextLeafRevision(getPeer(), includeDeleted, withBody);
+        this.<LiteCoreException>withPeerOrThrow(peer ->
+            impl.nSelectNextLeafRevision(peer, includeDeleted, withBody)
+        );
     }
 
     public void resolveConflict(String winningRevID, String losingRevID, byte[] mergeBody, int mergedFlags)
         throws LiteCoreException {
-        impl.nResolveConflict(getPeer(), winningRevID, losingRevID, mergeBody, mergedFlags);
+        this.<LiteCoreException>withPeerOrThrow(peer ->
+            impl.nResolveConflict(peer, winningRevID, losingRevID, mergeBody, mergedFlags)
+        );
     }
 
     @Nullable
@@ -199,7 +203,9 @@ public final class C4Document extends C4NativePeer {
         return (newDoc == 0) ? null : new C4Document(impl, newDoc);
     }
 
-    public void save(int maxRevTreeDepth) throws LiteCoreException { impl.nSave(getPeer(), maxRevTreeDepth); }
+    public void save(int maxRevTreeDepth) throws LiteCoreException {
+        this.<LiteCoreException>withPeerOrThrow(peer -> impl.nSave(peer, maxRevTreeDepth));
+    }
 
     // - Fleece
 

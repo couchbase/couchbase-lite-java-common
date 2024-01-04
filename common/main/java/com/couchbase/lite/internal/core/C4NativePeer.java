@@ -134,6 +134,18 @@ public abstract class C4NativePeer implements AutoCloseable {
         return def;
     }
 
+    protected final <E extends Exception> void withPeerOrThrow(@NonNull Fn.ConsumerThrows<Long, E> fn) throws E {
+        synchronized (getPeerLock()) {
+            if (open) {
+                fn.accept(this.peer);
+                return;
+            }
+        }
+
+        logBadCall();
+        throw new IllegalStateException("Closed peer");
+    }
+
     @NonNull
     protected final <R, E extends Exception> R withPeerOrThrow(@NonNull Fn.FunctionThrows<Long, R, E> fn) throws E {
         synchronized (getPeerLock()) {
