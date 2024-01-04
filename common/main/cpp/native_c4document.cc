@@ -380,6 +380,7 @@ Java_com_couchbase_lite_internal_core_C4Document_put(
     for (jsize i = 0; i < n; i++) {
         auto js = (jstring) env->GetObjectArrayElement(jhistory, i);
         auto item = new jstringSlice(env, js);
+        env->DeleteLocalRef(js);
         historyAlloc.push_back(item); // so its memory won't be freed
         history[i] = *item;
     }
@@ -450,6 +451,7 @@ Java_com_couchbase_lite_internal_core_C4Document_put2(
         for (jsize i = 0; i < n; i++) {
             auto js = (jstring) env->GetObjectArrayElement(jhistory, i);
             auto item = new jstringSlice(env, js);
+            env->DeleteLocalRef(js);
             historyAlloc.push_back(item); // so its memory won't be freed
             history[i] = *item;
         }

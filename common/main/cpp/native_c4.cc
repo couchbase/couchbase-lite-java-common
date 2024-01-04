@@ -14,7 +14,9 @@
 // limitations under the License.
 //
 #if defined(__ANDROID__)
+
 #include <android/log.h>
+
 #elif defined(__linux__) || defined(__APPLE__)
 #include <sys/time.h>
 #endif
@@ -126,16 +128,13 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    // Because this method might run on a thread that was previously attached
-    // but was called from some long running method, we need to release the local refs.
-    env->DeleteLocalRef(message);
-    if (domainName)
-        env->DeleteLocalRef(domainName);
-
     if (getEnvStat == JNI_EDETACHED) {
         if (gJVM->DetachCurrentThread() != 0) {
             C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
         }
+    } else {
+        env->DeleteLocalRef(message);
+        env->DeleteLocalRef(domainName);
     }
 }
 
@@ -216,7 +215,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_getMessage(
         jint jdomain,
         jint jcode,
         jint jinfo) {
-    C4Error c4err = {(C4ErrorDomain) jdomain, (int) jcode,  (unsigned) jinfo};
+    C4Error c4err = {(C4ErrorDomain) jdomain, (int) jcode, (unsigned) jinfo};
     C4StringResult msg = c4error_getMessage(c4err);
     jstring result = toJString(env, msg);
     c4slice_free(msg);
