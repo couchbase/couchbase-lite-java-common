@@ -60,6 +60,8 @@ class DatabaseTest : LegacyBaseDbTest() {
         verifyGetDocument(docID, 1)
     }
 
+
+    @SlowTest
     @Test
     fun testGetExistingDocWithIDFromDifferentDBInstance() {
         // store doc
@@ -68,14 +70,12 @@ class DatabaseTest : LegacyBaseDbTest() {
 
         // open db with same db name and default option
         val otherDb = duplicateBaseTestDb()
-        try {
+        otherDb.use {
             assertNotSame(baseTestDb, otherDb)
 
             // get doc from other DB.
             assertEquals(1, otherDb.count)
             verifyGetDocument(otherDb, docID, 1)
-        } finally {
-            discardDb(otherDb)
         }
     }
 
@@ -152,6 +152,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         verifyGetDocument(docID, 2)
     }
 
+    @SlowTest
     @Test
     fun testSaveDocInDifferentDBInstance() {
         // Store doc
@@ -160,15 +161,13 @@ class DatabaseTest : LegacyBaseDbTest() {
 
         // Create db with default
         val otherDb = duplicateBaseTestDb()
-        try {
+        otherDb.use {
             assertNotSame(otherDb, baseTestDb)
             assertEquals(1, otherDb.count)
 
             // Update doc & store it into different instance
             doc.setValue("key", 2)
             assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.save(doc) }
-        } finally {
-            discardDb(otherDb)
         }
     }
 
@@ -246,6 +245,8 @@ class DatabaseTest : LegacyBaseDbTest() {
         assertNull(baseTestDb.getDocument(docID))
     }
 
+
+    @SlowTest
     @Test
     fun testDeleteDocInDifferentDBInstance() {
         // Store doc:
@@ -255,14 +256,12 @@ class DatabaseTest : LegacyBaseDbTest() {
         // Create db with same name:
         // Create db with default
         val otherDb = duplicateBaseTestDb()
-        try {
+        otherDb.use {
             assertNotSame(otherDb, baseTestDb)
             assertEquals(1, otherDb.count)
 
             // Delete from the different db instance:
             assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.delete(doc) }
-        } finally {
-            discardDb(otherDb)
         }
     }
 
@@ -345,6 +344,7 @@ class DatabaseTest : LegacyBaseDbTest() {
         assertEquals(0, baseTestDb.count)
     }
 
+    @SlowTest
     @Test
     fun testPurgeDocInDifferentDBInstance() {
         // Store doc:
@@ -353,14 +353,12 @@ class DatabaseTest : LegacyBaseDbTest() {
 
         // Create db with default:
         val otherDb = duplicateBaseTestDb()
-        try {
+        otherDb.use {
             assertNotSame(otherDb, baseTestDb)
             assertEquals(1, otherDb.count)
 
             // purge document against other db instance:
             assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherDb.purge(doc) }
-        } finally {
-            discardDb(otherDb)
         }
     }
 
@@ -646,14 +644,12 @@ class DatabaseTest : LegacyBaseDbTest() {
     @Test
     fun testDeleteDBOpenedByOtherInstance() {
         val otherDb = duplicateBaseTestDb()
-        try {
+        otherDb.use {
             assertEquals(0, otherDb.count)
             assertNotSame(baseTestDb, otherDb)
 
             // delete db
             assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { baseTestDb.delete() }
-        } finally {
-            discardDb(otherDb)
         }
     }
 
@@ -799,20 +795,20 @@ class DatabaseTest : LegacyBaseDbTest() {
     fun testUseScopeWhenDatabaseIsDeleted1() {
         baseTestDb.createCollection("bobblehead", "horo")
         val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
-        discardDb(baseTestDb)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope!!.collections }
+        assertNotNull(scope!!)
+        assertNotNull(scope.collections)
+        baseTestDb.delete()
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.collections }
     }
 
     @Test
     fun testUseScopeWhenDatabaseIsDeleted2() {
         baseTestDb.createCollection("bobblehead", "horo")
         val scope = baseTestDb.getScope("horo")
-        assertNotNull(scope)
-        discardDb(baseTestDb)
-        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
-            scope!!.getCollection("bobblehead")
-        }
+        assertNotNull(scope!!)
+        assertNotNull(scope.collections)
+        baseTestDb.delete()
+        assertThrowsCBL(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { scope.getCollection("bobblehead") }
     }
 
     //---------------------------------------------

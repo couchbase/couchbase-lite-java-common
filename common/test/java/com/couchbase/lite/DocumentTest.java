@@ -1760,34 +1760,36 @@ public class DocumentTest extends BaseDbTest {
 
     @Test
     public void testSetExpirationOnDeletedDoc() throws CouchbaseLiteException {
-        final String id = "test_doc";
+        final Collection testCollection = getTestCollection();
+
+        MutableDocument doc1a = new MutableDocument();
+        doc1a.setInt("answer", 12);
+        doc1a.setValue("question", "What is six plus six?");
+        testCollection.save(doc1a);
+        assertEquals(1, testCollection.getCount());
+
         final Query queryDeleted = QueryBuilder.select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(testCollection))
             .where(Meta.deleted);
 
-        MutableDocument doc1a = new MutableDocument(id);
-        doc1a.setInt("answer", 12);
-        doc1a.setValue("question", "What is six plus six?");
-        testCollection.save(doc1a);
-
-        assertEquals(1, testCollection.getCount());
-        assertEquals(0, queryDeleted.execute().allResults().size());
+        int n;
+        try (ResultSet rs = queryDeleted.execute()) { n = rs.allResults().size(); }
+        assertEquals(0, n);
 
         testCollection.delete(doc1a);
-
         assertEquals(0, testCollection.getCount());
-        assertEquals(1, queryDeleted.execute().allResults().size());
+        try (ResultSet rs = queryDeleted.execute()) { n = rs.allResults().size(); }
+        assertEquals(1, n);
 
-        testCollection.setDocumentExpiration(id, new Date(System.currentTimeMillis() + 100L));
+        testCollection.setDocumentExpiration(doc1a.getId(), new Date(System.currentTimeMillis() + 100L));
 
         waitUntil(
             STD_TIMEOUT_MS,
             () -> {
-                try { return (0 == testCollection.getCount()) && (0 == queryDeleted.execute().allResults().size()); }
-                catch (CouchbaseLiteException e) {
-                    Report.log("Unexpected exception", e);
-                    return false;
-                }
+                if (0 != testCollection.getCount()) { return false; }
+                try (ResultSet rs = queryDeleted.execute()) { return 0 == rs.allResults().size(); }
+                catch (CouchbaseLiteException e) { Report.log(e, "Unexpected exception"); }
+                return false;
             });
     }
 
@@ -2292,7 +2294,7 @@ public class DocumentTest extends BaseDbTest {
             assertEquals(sDoc1a, anotherDoc1a);
         }
         finally {
-            discardDb(dupDb);
+            if (dupDb != null) dupDb.close();
             eraseDb(otherDB);
         }
     }
