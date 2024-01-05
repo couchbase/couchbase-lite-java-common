@@ -38,8 +38,8 @@ class CollectionCrossDbTest : BaseTest() {
 
     @After
     fun tearDownBaseReplicatorTest() {
+        dbB.close()
         eraseDb(dbA)
-        eraseDb(dbB)
     }
 
     // 8.3.1 Test that creating a collection from a database instance is visible to the other database instance.

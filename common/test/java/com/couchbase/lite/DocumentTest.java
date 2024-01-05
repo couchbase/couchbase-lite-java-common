@@ -2268,7 +2268,7 @@ public class DocumentTest extends BaseDbTest {
     @VerySlowTest
     @Test
     public void testEqualityDifferentDB() throws CouchbaseLiteException {
-        Database dupDb;
+        Database dupDb = null;
         Database otherDB = createDb("equ-diff-db");
         Collection otherCollection = BaseDbTestKt.createSimilarCollection(otherDB, getTestCollection());
         try {
@@ -2302,6 +2302,7 @@ public class DocumentTest extends BaseDbTest {
             assertEquals(sDoc1a, anotherDoc1a);
         }
         finally {
+            if (dupDb != null) dupDb.close();
             eraseDb(otherDB);
         }
     }
