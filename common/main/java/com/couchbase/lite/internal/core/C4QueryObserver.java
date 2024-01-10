@@ -55,7 +55,7 @@ public class C4QueryObserver extends C4NativePeer {
     }
 
     @NonNull
-    public static C4QueryObserver create(
+    static C4QueryObserver create(
         @NonNull C4QueryObserver.NativeImpl impl,
         @NonNull Fn.Function<Long, C4QueryEnumerator> queryEnumeratorFactory,
         @NonNull C4Query query,

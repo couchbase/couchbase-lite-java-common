@@ -36,6 +36,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+// Tests for the Dictionary Iterator tests are in IteratorTest
 @SuppressWarnings("ConstantConditions")
 public class DictionaryTest extends BaseDbTest {
     @Test
@@ -338,39 +339,6 @@ public class DictionaryTest extends BaseDbTest {
         }
         assertEquals(finalContent.size(), count);
         assertEquals(finalContent, result);
-    }
-
-    @Test
-    public void testDictionaryEnumerationWithDataModification1() {
-        MutableDictionary dict = new MutableDictionary();
-        for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
-
-        assertEquals(3, dict.count());
-
-        assertThrows(ConcurrentModificationException.class, () -> {
-            int n = 0;
-            for (Iterator<String> itr = dict.iterator(); itr.hasNext(); itr.next()) {
-                if (n++ == 1) { dict.setValue("key-3", 3); }
-            }
-        });
-    }
-
-    @Test
-    public void testDictionaryEnumerationWithDataModification2() {
-        MutableDictionary dict = new MutableDictionary();
-        for (int i = 0; i <= 2; i++) { dict.setValue("key-" + i, i); }
-
-        assertEquals(3, dict.count());
-
-        MutableDocument doc = new MutableDocument("doc1").setValue("dict", dict);
-        final MutableDictionary savedDict = saveDocInTestCollection(doc).toMutable().getDictionary("dict");
-
-        assertThrows(ConcurrentModificationException.class, () -> {
-            int n = 0;
-            for (Iterator<String> itr = savedDict.iterator(); itr.hasNext(); itr.next()) {
-                if (n++ == 1) { savedDict.setValue("key-3", 3); }
-            }
-        });
     }
 
     // https://github.com/couchbase/couchbase-lite-core/issues/230
