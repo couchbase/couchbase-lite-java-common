@@ -27,7 +27,7 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 /**
  * Blob Store API
  */
-public class C4BlobStore extends C4NativePeer {
+public abstract class C4BlobStore extends C4NativePeer {
     public interface NativeImpl {
         long nGetBlobStore(long db) throws LiteCoreException;
         long nGetSize(long peer, long key);

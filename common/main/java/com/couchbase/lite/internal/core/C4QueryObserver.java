@@ -10,7 +10,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 
@@ -25,7 +24,7 @@ import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
 
 
-public class C4QueryObserver extends C4NativePeer {
+public final class C4QueryObserver extends C4NativePeer {
     @FunctionalInterface
     public interface QueryChangeCallback {
         void onQueryChanged(@Nullable C4QueryEnumerator results, @Nullable LiteCoreException err);
@@ -107,7 +106,6 @@ public class C4QueryObserver extends C4NativePeer {
         this.callback = callback;
     }
 
-    @CallSuper
     @Override
     public void close() {
         QUERY_OBSERVER_CONTEXT.unbind(token);

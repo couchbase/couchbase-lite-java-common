@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite
 
-import com.couchbase.lite.internal.fleece.FLEncoder
 import com.couchbase.lite.internal.utils.JSONUtils
 import com.couchbase.lite.internal.utils.PlatformUtils
 import com.couchbase.lite.internal.utils.Report

@@ -34,6 +34,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.impl.NativeC4Log;
 
 
+// Not final for testing
 public class C4Log {
     public interface NativeImpl {
         void nLog(String domain, int level, String message);
@@ -109,14 +110,9 @@ public class C4Log {
         LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
 
-    // Must initialize this before initializing LOGGER
-    @NonNull
-    @VisibleForTesting
-    static volatile C4Log.NativeImpl nativeImpl = new NativeC4Log();
-
     @VisibleForTesting
     @NonNull
-    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(create());
+    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(new C4Log(new NativeC4Log()));
 
     @NonNull
     private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
@@ -127,24 +123,17 @@ public class C4Log {
     }
 
     @NonNull
-    public static C4Log create() { return new C4Log(nativeImpl); }
-
-    @NonNull
     public static C4Log get() { return LOGGER.get(); }
 
 
     @NonNull
     private final C4Log.NativeImpl impl;
 
-    public C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
+    protected C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
 
     public final void logToCore(LogDomain domain, LogLevel level, String message) {
         impl.nLog(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
     }
-
-    public final int getFileLogLevel() { return impl.nGetBinaryFileLevel(); }
-
-    public final void setFileLogLevel(LogLevel level) { impl.nSetBinaryFileLevel(getC4LevelForLogLevel(level)); }
 
     public final void initFileLogger(
         String path,
@@ -156,23 +145,21 @@ public class C4Log {
         impl.nWriteToBinaryFile(path, getC4LevelForLogLevel(level), maxRotate, maxSize, plainText, header);
     }
 
+    public final int getFileLogLevel() { return impl.nGetBinaryFileLevel(); }
+
+    public final void setFileLogLevel(LogLevel level) { impl.nSetBinaryFileLevel(getC4LevelForLogLevel(level)); }
+
     public final void setLevels(int level, @Nullable String... domains) {
         if ((domains == null) || (domains.length <= 0)) { return; }
         for (String domain: domains) { impl.nSetLevel(domain, level); }
     }
 
-    public final void setCallbackLevel(@NonNull LogLevel consoleLevel) {
-        final LogLevel newLogLevel = getCallbackLevel(consoleLevel, Database.log.getCustom());
-        if (CALLBACK_LEVEL.getAndSet(newLogLevel) == newLogLevel) { return; }
-        setCoreCallbackLevel();
-    }
-
     @NonNull
     public final LogLevel getCallbackLevel() { return CALLBACK_LEVEL.get(); }
 
-    @VisibleForTesting
-    public final void forceCallbackLevel(@NonNull LogLevel logLevel) {
-        CALLBACK_LEVEL.set(logLevel);
+    public final void setCallbackLevel(@NonNull LogLevel consoleLevel) {
+        final LogLevel newLogLevel = getCallbackLevel(consoleLevel, Database.log.getCustom());
+        if (CALLBACK_LEVEL.getAndSet(newLogLevel) == newLogLevel) { return; }
         setCoreCallbackLevel();
     }
 
@@ -228,6 +215,12 @@ public class C4Log {
                     break;
             }
         }
+    }
+
+    @VisibleForTesting
+    public final void forceCallbackLevel(@NonNull LogLevel logLevel) {
+        CALLBACK_LEVEL.set(logLevel);
+        setCoreCallbackLevel();
     }
 
     @VisibleForTesting

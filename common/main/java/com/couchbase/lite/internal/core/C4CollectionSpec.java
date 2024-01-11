@@ -19,7 +19,7 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 
 
-public class C4CollectionSpec {
+public final class C4CollectionSpec {
     @NonNull
     private final String scopeName;
     @NonNull

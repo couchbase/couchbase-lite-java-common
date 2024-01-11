@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -26,7 +25,7 @@ import com.couchbase.lite.LogDomain;
 /**
  * An open stream for reading data from a blob.
  */
-public class C4BlobReadStream extends C4NativePeer {
+public final class C4BlobReadStream extends C4NativePeer {
     @NonNull
     private final C4BlobStore.NativeImpl impl;
 
@@ -66,7 +65,6 @@ public class C4BlobReadStream extends C4NativePeer {
     /**
      * Closes a read-stream.
      */
-    @CallSuper
     @Override
     public void close() { closePeer(null); }
 

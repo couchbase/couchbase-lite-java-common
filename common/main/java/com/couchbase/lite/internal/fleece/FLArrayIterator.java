@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -43,7 +42,6 @@ public abstract class FLArrayIterator extends C4NativePeer {
             this.array = array;
         }
 
-        @CallSuper
         @Override
         public void close() { closePeer(null); }
 

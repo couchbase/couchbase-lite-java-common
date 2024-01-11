@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -30,7 +29,7 @@ import com.couchbase.lite.internal.core.impl.NativeC4Blob;
  * <p>
  * A raw SHA-1 digest used as the unique identifier of a blob.
  */
-public class C4BlobKey extends C4NativePeer {
+public final class C4BlobKey extends C4NativePeer {
     public interface NativeImpl {
         long nFromString(@Nullable String str) throws LiteCoreException;
         @Nullable
@@ -80,7 +79,6 @@ public class C4BlobKey extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    @CallSuper
     @Override
     public void close() { closePeer(null); }
 

@@ -22,7 +22,7 @@ import androidx.annotation.NonNull;
  * WARNING!
  * This class and its members are referenced by name, from native code.
  */
-public class C4DocumentEnded {
+public final class C4DocumentEnded {
     public final long token;
     @NonNull
     public final String scope;

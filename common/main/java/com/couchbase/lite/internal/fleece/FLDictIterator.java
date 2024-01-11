@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -54,7 +53,6 @@ public final class FLDictIterator extends C4NativePeer {
     @NonNull
     public FLValue getValue() { return FLValue.getFLValue(impl.nGetValue(getPeer())); }
 
-    @CallSuper
     @Override
     public void close() { closePeer(null); }
 

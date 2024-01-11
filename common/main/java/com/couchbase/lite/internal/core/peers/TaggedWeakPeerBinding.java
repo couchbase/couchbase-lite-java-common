@@ -11,7 +11,6 @@
 package com.couchbase.lite.internal.core.peers;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.couchbase.lite.internal.utils.MathUtils;
 
@@ -61,9 +60,8 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
      * @param obj the object to be bound to the token.
      */
     @Override
-    public synchronized void bind(long key, @NonNull T obj) {
+    public void preBind(long key, @NonNull T obj) {
         if (!exists(key)) { throw new IllegalStateException("attempt to use un-reserved key"); }
-        super.bind(key, obj);
     }
 
     /**
@@ -74,13 +72,10 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
      * @param key a token created by <code>reserveKey()</code>
      * @return the bound object, or null if none exists.
      */
-    @Nullable
     @Override
-    public synchronized T getBinding(long key) {
+    public void preGetBinding(long key) {
         if ((key < 0) || (key > Integer.MAX_VALUE)) {
             throw new IllegalArgumentException("Key out of bounds: " + key);
         }
-
-        return super.getBinding(key);
     }
 }

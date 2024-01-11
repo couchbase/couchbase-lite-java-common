@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.core.peers;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,14 +30,17 @@ abstract class PeerBinding<T> {
      * @param key a unique long value
      * @param obj the object to be bound to the key.
      */
-    @CallSuper
-    public synchronized void bind(long key, @NonNull T obj) {
+    public final synchronized void bind(long key, @NonNull T obj) {
+        preBind(key, obj);
+
         final T currentBinding = get(key);
         if (currentBinding == obj) { return; }
+
         if (currentBinding == null) {
             set(key, obj);
             return;
         }
+
         throw new IllegalStateException("Attempt to rebind peer @x" + Long.toHexString(key));
     }
 
@@ -49,9 +51,11 @@ abstract class PeerBinding<T> {
      * @param key a unique long value
      * @return the bound object or null if none exists.
      */
-    @CallSuper
     @Nullable
-    public synchronized T getBinding(long key) { return get(key); }
+    public final synchronized T getBinding(long key) {
+        preGetBinding(key);
+        return get(key);
+    }
 
     /**
      * Remove the binding for a key
@@ -59,8 +63,7 @@ abstract class PeerBinding<T> {
      *
      * @param key the key to be unbound.
      */
-    @CallSuper
-    public synchronized void unbind(long key) { remove(key); }
+    public final synchronized void unbind(long key) { remove(key); }
 
     @VisibleForTesting
     public abstract int size();
@@ -68,17 +71,26 @@ abstract class PeerBinding<T> {
     @VisibleForTesting
     public abstract void clear();
 
-    @NonNull
     @VisibleForTesting
+    @NonNull
     public abstract Set<Long> keySet();
+
+    @GuardedBy("this")
+    protected abstract void preBind(long key, @NonNull T obj);
+
+    @GuardedBy("this")
+    protected abstract void preGetBinding(long key);
 
     @GuardedBy("this")
     @Nullable
     protected abstract T get(long key);
+
     @GuardedBy("this")
     protected abstract boolean exists(long key);
+
     @GuardedBy("this")
     protected abstract void set(long key, @Nullable T obj);
+
     @GuardedBy("this")
     protected abstract void remove(long key);
 }

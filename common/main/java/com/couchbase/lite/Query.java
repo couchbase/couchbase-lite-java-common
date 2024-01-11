@@ -65,9 +65,9 @@ public interface Query {
      * As currently implemented, the result is two or more lines separated by newline characters:
      * * The first line is the SQLite SELECT statement.
      * * The subsequent lines are the output of SQLite's "EXPLAIN QUERY PLAN" command applied to that
-     * statement; for help interpreting this, see https://www.sqlite.org/eqp.html . The most
-     * important thing to know is that if you see "SCAN TABLE", it means that SQLite is doing a
-     * slow linear scan of the documents instead of using an index.
+     * statement; for help interpreting this, see <a href="https://www.sqlite.org/eqp.html">eqp</a>.
+     * The most important thing to know is that if you see "SCAN TABLE", it means that SQLite is
+     * doing a slow linear scan of the documents instead of using an index.
      *
      * @return a string describing the implementation of the compiled query.
      * @throws CouchbaseLiteException if an error occurs
