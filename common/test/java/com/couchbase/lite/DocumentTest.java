@@ -51,7 +51,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
+// Tests for the Document Iterator tests are in IteratorTest
 @SuppressWarnings("ConstantConditions")
 public class DocumentTest extends BaseDbTest {
     @FunctionalInterface

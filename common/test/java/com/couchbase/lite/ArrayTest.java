@@ -42,6 +42,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
+// Tests for the Array Iterator tests are in IteratorTest
 @SuppressWarnings({"ConstantConditions", "SameParameterValue"})
 public class ArrayTest extends BaseDbTest {
 
@@ -548,7 +549,6 @@ public class ArrayTest extends BaseDbTest {
         }
     }
 
-    // ??? Fails on Nexus 4
     @Test
     public void testGetNumber() {
         for (int i = 0; i < 2; i++) {
@@ -1011,46 +1011,6 @@ public class ArrayTest extends BaseDbTest {
             }
             assertEquals(c.toString(), r.toString());
         });
-    }
-
-    @Test
-    public void testArrayEnumerationWithDataModification1() {
-        final MutableArray array = new MutableArray();
-        for (int i = 0; i <= 2; i++) { array.addValue(i); }
-
-        assertEquals(3, array.count());
-        assertArrayEquals(new Object[] {0, 1, 2}, array.toList().toArray());
-
-        assertThrows(
-            ConcurrentModificationException.class,
-            () -> {
-                int n = 0;
-                for (Iterator<Object> itr = array.iterator(); itr.hasNext(); itr.next()) {
-                    if (n++ == 1) { array.addValue(3); }
-                }
-            });
-    }
-
-    @Test
-    public void testArrayEnumerationWithDataModification2() {
-        final MutableArray array = new MutableArray();
-        for (int i = 0; i <= 2; i++) { array.addValue(i); }
-
-        assertEquals(3, array.count());
-        assertArrayEquals(new Object[] {0, 1, 2}, array.toList().toArray());
-
-        MutableDocument doc = new MutableDocument("doc1").setValue("array", array);
-        final MutableArray savedArray = saveDocInTestCollection(doc).toMutable().getArray("array");
-        assertNotNull(savedArray);
-
-        assertThrows(
-            ConcurrentModificationException.class,
-            () -> {
-                int n = 0;
-                for (Iterator<Object> itr = savedArray.iterator(); itr.hasNext(); itr.next()) {
-                    if (n++ == 1) { savedArray.addValue(3); }
-                }
-            });
     }
 
     @Test
