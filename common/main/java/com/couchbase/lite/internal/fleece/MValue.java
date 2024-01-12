@@ -18,8 +18,6 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.couchbase.lite.MValueConverter;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -46,6 +44,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * <p>
  * The regrettable upside-down dependency on MValueConverter provides access to package
  * visible symbols in com.couchbase.lite.
+ * <p>
+ * It worries me that this isn't thread safe... but, as I say, I've never seen it be a problem.
  */
 public class MValue extends MValueConverter implements Encodable {
 
@@ -109,9 +109,8 @@ public class MValue extends MValueConverter implements Encodable {
     public Object asNative(@Nullable MCollection parent) {
         if ((value != null) || (flValue == null)) { return value; }
 
-        final AtomicBoolean cacheIt = new AtomicBoolean(false);
-        final Object obj = toNative(this, parent, cacheIt);
-        if (cacheIt.get()) { value = obj; }
-        return obj;
+        final NativeValue<?> val = toNative(this, parent);
+        if (val.cacheIt) { value = val.nVal; }
+        return val.nVal;
     }
 }

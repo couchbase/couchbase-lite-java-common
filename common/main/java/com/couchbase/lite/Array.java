@@ -47,7 +47,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         private final long mutations;
         private int index;
 
-        ArrayIterator() { this.mutations = Array.this.internalArray.getMutationCount(); }
+        ArrayIterator() { this.mutations = Array.this.internalArray.getLocalMutationCount(); }
 
         @Override
         public boolean hasNext() { return index < Array.this.count(); }
@@ -55,7 +55,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         @Nullable
         @Override
         public Object next() {
-            if (Array.this.internalArray.getMutationCount() != mutations) {
+            if (Array.this.internalArray.getLocalMutationCount() != mutations) {
                 throw new ConcurrentModificationException("Array modified during iteration");
             }
             return getValue(index++);
@@ -75,13 +75,13 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Constructors
     //---------------------------------------------
 
-    // Construct an empty mutable Array
+    // Construct a new empty Array
     protected Array() { this(new MArray()); }
 
     // Slot(??) constructor
     Array(@NonNull MValue val, @Nullable MCollection parent) { this(new MArray(val, parent)); }
 
-    // Copy constructor
+    // Construct a new array with the passed content
     protected Array(@NonNull MArray array) {
         internalArray = array;
         final MContext context = array.getContext();
@@ -106,7 +106,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @NonNull
     public MutableArray toMutable() {
-        synchronized (lock) { return new MutableArray(new MArray(internalArray, true)); }
+        synchronized (lock) { return new MutableArray(this); }
     }
 
     /**
@@ -367,14 +367,10 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         return h;
     }
 
-    @SuppressWarnings("PMD.ConsecutiveLiteralAppends")
     @NonNull
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder("Array{(")
-            .append((internalArray.isMutable()) ? '+' : '.')
-            .append((internalArray.isMutated()) ? '!' : '.')
-            .append(')');
+        final StringBuilder buf = new StringBuilder("Array{(").append(internalArray.getStateString()).append(')');
 
         final int n = count();
         for (int i = 0; i < n; i++) {

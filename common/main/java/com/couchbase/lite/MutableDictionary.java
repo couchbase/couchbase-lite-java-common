@@ -17,6 +17,7 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.Date;
 import java.util.Map;
@@ -40,7 +41,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     //---------------------------------------------
 
     /**
-     * Construct a new empty Dictionary object.
+     * Construct a new empty MutableDictionary.
      */
     public MutableDictionary() { }
 
@@ -60,8 +61,8 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     public MutableDictionary(@NonNull String json) { setJSON(json); }
 
-    // create a mutable copy
-    MutableDictionary(@NonNull MDict dict) { super(dict); }
+    // Create a MutableDictionary that is a copy of the passed Dictionary
+    MutableDictionary(@NonNull Dictionary dict) { super(new MDict(dict.internalDict, true)); }
 
     // Called from the MValueConverter.
     MutableDictionary(@NonNull MValue val, @Nullable MCollection parent) { super(val, parent); }
@@ -296,6 +297,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
 
+    @VisibleForTesting
     boolean isChanged() {
         synchronized (lock) { return internalDict.isMutated(); }
     }

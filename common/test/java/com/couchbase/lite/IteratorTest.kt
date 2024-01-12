@@ -99,7 +99,6 @@ class IteratorTest : BaseDbTest() {
         }
     }
 
-    @Ignore("Bug: Inconsistent implementation")
     @Test
     fun testConcurrentModOfSavedArrayIteratorArrayMember1() {
         val array = MutableArray().addValue(MutableArray())
@@ -212,7 +211,6 @@ class IteratorTest : BaseDbTest() {
         }
     }
 
-    @Ignore("Bug: Inconsistent implementation")
     @Test
     fun testConcurrentModOfSavedArrayIteratorDictMember1() {
         val array = MutableArray().addValue(MutableDictionary())
@@ -388,7 +386,6 @@ class IteratorTest : BaseDbTest() {
         }
     }
 
-    @Ignore("Bug: Inconsistent implementation")
     @Test
     fun testConcurrentModOfSavedDictionaryIteratorArrayMember1() {
         val dict = MutableDictionary().setValue("0", MutableArray())
@@ -501,7 +498,6 @@ class IteratorTest : BaseDbTest() {
         }
     }
 
-    @Ignore("Bug: Inconsistent implementation")
     @Test
     fun testConcurrentModOfSavedDictionaryIteratorDictMember1() {
         val dict = MutableDictionary().setValue("0", MutableDictionary())
@@ -601,7 +597,6 @@ class IteratorTest : BaseDbTest() {
 
     ///// Document Iterator Tests
 
-    @Ignore("Bug: Inconsistent implementation")
     @Test
     fun testConcurrentModOfMutableDocumentIterator() {
         val doc = MutableDocument()
@@ -619,7 +614,6 @@ class IteratorTest : BaseDbTest() {
         }
     }
 
-    @Ignore("Bug: Inconsistent implementation")
     @Test
     fun testConcurrentModOfSavedDocumentIterator() {
         val doc = MutableDocument()
@@ -639,7 +633,6 @@ class IteratorTest : BaseDbTest() {
         }
     }
 
-    @Ignore("Bug: Inconsistent implementation")
     @Test
     fun testConcurrentModOfMutatedSavedDocumentIterator() {
         val doc = MutableDocument()

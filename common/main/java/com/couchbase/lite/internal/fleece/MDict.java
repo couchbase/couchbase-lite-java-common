@@ -39,8 +39,11 @@ public final class MDict extends MCollection {
     // Constructors
     //---------------------------------------------
 
-    // Dictionary constructor
-    public MDict() { baseDict = null; }
+    // Construct a new empty MDict
+    public MDict() {
+        super(MContext.NULL, true);
+        baseDict = null;
+    }
 
     // Copy constructor
     public MDict(@NonNull MDict dict, boolean isMutable) {
