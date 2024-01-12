@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -35,7 +34,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * The fields of this struct represent the current matched index row.
  * They are valid until the next call to c4queryenum_next or c4queryenum_free.
  */
-public class C4QueryEnumerator extends C4NativePeer {
+public final class C4QueryEnumerator extends C4NativePeer {
     public interface NativeImpl {
         boolean nNext(long peer) throws LiteCoreException;
         void nFree(long peer);
@@ -97,7 +96,6 @@ public class C4QueryEnumerator extends C4NativePeer {
      */
     public long getMissingColumns() { return impl.nGetMissingColumns(getPeer()); }
 
-    @CallSuper
     @Override
     public void close() { closePeer(null); }
 

@@ -18,10 +18,8 @@ package com.couchbase.lite;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.ConcurrentModificationException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -1805,7 +1803,7 @@ public class ArrayTest extends BaseDbTest {
 
     ///////////////  Error Case test
 
-    private class Unserializable{}
+    private static class Unserializable{}
 
     @Test
     public void testAddValueUnexpectedObject() {

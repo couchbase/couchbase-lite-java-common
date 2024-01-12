@@ -41,7 +41,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
     protected static final LogDomain DOMAIN = LogDomain.QUERY;
 
     // This class has two reasons for existence:
-    // - put/remove execute onFirst and onLast lambdas, respectively
+    // - put and remove execute the onFirst and onLast Runnables, respectively
     // - it prevents starting an observer that has been removed.
     private static class LiveQueries {
         private final Map<ListenerToken, C4QueryObserver> liveQueries = new HashMap<>();

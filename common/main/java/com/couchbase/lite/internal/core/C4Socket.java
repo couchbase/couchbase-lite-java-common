@@ -81,16 +81,22 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     /**
      * Email exchange, 2022/5/17
-     *
+     * <p>
      * Blake:
      * Is the reference that the JNI gets when it creates [such an] object (which the Java code stores as
      * a `long`) *always* the same reference that that object will pass as a parameter when it does a callback
      * to the Java code e.g. kSocketFactory.write or C4ReplicatorParameters.C4ReplicatorDocumentsEndedCallback.
-     *
+     * <p>
      * Jim:
      * Yes this is a safe assumption
      */
-    public static class NativeRefPeerBinding<T> extends WeakPeerBinding<T> { }
+    public static class NativeRefPeerBinding<T> extends WeakPeerBinding<T> {
+        @Override
+        protected void preBind(long key, @NonNull T obj) { }
+
+        @Override
+        protected void preGetBinding(long key) { }
+    }
 
     //-------------------------------------------------------------------------
     // Static fields

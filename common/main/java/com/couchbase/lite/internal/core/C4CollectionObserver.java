@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -115,7 +114,6 @@ public final class C4CollectionObserver
         return (changes.length <= 0) ? null : Arrays.asList(changes);
     }
 
-    @CallSuper
     @Override
     public void close() { closePeer(null); }
 

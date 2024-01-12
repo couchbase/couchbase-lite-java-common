@@ -15,10 +15,8 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.LiteCoreException;
@@ -42,17 +40,7 @@ public final class C4Query extends C4NativePeer {
     }
 
     @NonNull
-    @VisibleForTesting
-    private static final NativeImpl NATIVE_IMPL = new NativeC4Query();
-
-    @NonNull
-    public static C4Query create(
-        @NonNull C4Collection collection,
-        @NonNull AbstractIndex.QueryLanguage language,
-        @NonNull String expression)
-        throws LiteCoreException {
-        return create(collection.getDb(), language, expression);
-    }
+     private static final NativeImpl NATIVE_IMPL = new NativeC4Query();
 
     @NonNull
     public static C4Query create(
@@ -88,12 +76,9 @@ public final class C4Query extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    @CallSuper
+    // Documentation recommends that this call be made while holding the database lock
     @Override
-    public void close() {
-        // ??? Documentation recommends that this call be made while holding the database lock
-        closePeer(null);
-    }
+    public void close() { closePeer(null); }
 
     public void setParameters(@NonNull FLSliceResult params) {
         impl.nSetParameters(getPeer(), params.getBase(), params.getSize());
@@ -104,8 +89,7 @@ public final class C4Query extends C4NativePeer {
 
     @Nullable
     public C4QueryEnumerator run(@NonNull FLSliceResult params) throws LiteCoreException {
-        return withPeerOrNull(h -> C4QueryEnumerator.create(
-            impl.nRun(h, params.getBase(), params.getSize())));
+        return withPeerOrNull(h -> C4QueryEnumerator.create(impl.nRun(h, params.getBase(), params.getSize())));
     }
 
     public int getColumnCount() { return withPeerOrDefault(0, impl::nColumnCount); }

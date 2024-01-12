@@ -15,7 +15,6 @@
 //
 package com.couchbase.lite.internal.core;
 
-import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -27,7 +26,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * An open stream for writing data to a blob.
  */
-public class C4BlobWriteStream extends C4NativePeer {
+public final class C4BlobWriteStream extends C4NativePeer {
     @NonNull
     private final C4BlobStore.NativeImpl impl;
 
@@ -89,7 +88,6 @@ public class C4BlobWriteStream extends C4NativePeer {
      * Closes a blob write-stream. If c4stream_install was not already called, the temporary file
      * will be deleted without adding the blob to the store.
      */
-    @CallSuper
     @Override
     public void close() { closePeer(null); }
 
