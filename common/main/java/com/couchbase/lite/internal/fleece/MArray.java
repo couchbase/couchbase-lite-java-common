@@ -101,7 +101,7 @@ public final class MArray extends MCollection {
 
         if ((index < 0) || (index >= count())) { return false; }
 
-        mutate();
+        mutate(true);
         values.set((int) index, new MValue(value));
 
         return true;
@@ -114,7 +114,7 @@ public final class MArray extends MCollection {
 
         if (index < count()) { populateValues(); }
 
-        mutate();
+        mutate(true);
         values.add((int) index, new MValue(value));
 
         return true;
@@ -131,7 +131,7 @@ public final class MArray extends MCollection {
 
         if (end < count) { populateValues(); }
 
-        mutate();
+        mutate(true);
         values.subList((int) start, (int) end).clear();
 
         return true;
@@ -142,7 +142,7 @@ public final class MArray extends MCollection {
 
         if (values.isEmpty()) { return; }
 
-        mutate();
+        mutate(true);
         values.clear();
     }
 
