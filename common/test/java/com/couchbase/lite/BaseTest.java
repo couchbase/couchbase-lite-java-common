@@ -48,7 +48,11 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -99,6 +103,17 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
     }
 
+    // See if the container contains an item that matches using the passed comparitor
+    public static <T extends Throwable> boolean containsWithComparator(
+        java.util.Collection<T> collection,
+        T target,
+        Fn.BiFunction<T, T, Boolean> comp) {
+        if (collection.isEmpty()) { return false; }
+        for (T obj: collection) {
+            if (comp.apply(target, obj)) { return true; }
+        }
+        return false;
+    }
 
     ///////////////////////////////   E X C E P T I O N   A S S E R T I O N S   ///////////////////////////////
 
@@ -136,6 +151,16 @@ public abstract class BaseTest extends PlatformBaseTest {
         catch (Exception e) {
             assertIsCBLException(e, domain, code);
         }
+    }
+
+    public static boolean compareExceptions(Throwable e1, Throwable e2) {
+        if (!(e1 instanceof CouchbaseLiteException) || !(e2 instanceof CouchbaseLiteException)) {
+            return e1.getClass().equals(e2.getClass());
+        }
+
+        CouchbaseLiteException cbl1 = (CouchbaseLiteException) e1;
+        CouchbaseLiteException cbl2 = (CouchbaseLiteException) e2;
+        return (cbl1.getCode() == cbl2.getCode()) && (cbl1.getDomain().equals(cbl2.getDomain()));
     }
 
     private static void setupLogging(String msg) {

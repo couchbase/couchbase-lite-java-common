@@ -16,7 +16,6 @@
 package com.couchbase.lite
 
 import org.junit.Assert.assertNotNull
-import org.junit.Ignore
 import org.junit.Test
 
 class IteratorTest : BaseDbTest() {
