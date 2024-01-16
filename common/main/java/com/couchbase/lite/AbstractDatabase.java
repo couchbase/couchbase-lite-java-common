@@ -498,7 +498,7 @@ abstract class AbstractDatabase extends BaseDatabase
 
     /**
      * Delete a collection by name  in the default scope. If the collection doesn't exist, the operation
-     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
+     * will be no-ops.
      *
      * @param name the collection to be deleted
      * @throws CouchbaseLiteException on failure
@@ -509,7 +509,7 @@ abstract class AbstractDatabase extends BaseDatabase
 
     /**
      * Delete a collection by name  in the specified scope. If the collection doesn't exist, the operation
-     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
+     * will be no-ops.
      *
      * @param collectionName the collection to be deleted
      * @param scopeName      the scope from which to delete the collection
@@ -656,12 +656,12 @@ abstract class AbstractDatabase extends BaseDatabase
     /**
      * Gets an existing Document with the given ID from the default collection.
      * If the document with the given ID doesn't exist in the default collection,
-     * the method will return null.  If the default collection does not exist or if
-     * the database is closed, the method will throw an IllegalStateException
+     * the method will return null. If the database is closed the method will
+     * throw an IllegalStateException
      *
      * @param id the document ID
      * @return the Document object or null
-     * @throws IllegalStateException when the database is closed or the default collection has been deleted
+     * @throws IllegalStateException when the database is closed
      * @deprecated Use getDefaultCollection().getDocument()
      */
     @SuppressWarnings("PMD.PreserveStackTrace")
