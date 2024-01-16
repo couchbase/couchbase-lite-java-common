@@ -497,8 +497,8 @@ abstract class AbstractDatabase extends BaseDatabase
     }
 
     /**
-     * Delete a collection by name  in the default scope. If the collection doesn't exist, the operation
-     * will be no-ops.
+     * Delete a collection by name in the default scope. If the collection doesn't exist, the operation
+     * will be no-ops. Note: the default collection cannot be deleted.
      *
      * @param name the collection to be deleted
      * @throws CouchbaseLiteException on failure
@@ -508,8 +508,8 @@ abstract class AbstractDatabase extends BaseDatabase
     }
 
     /**
-     * Delete a collection by name  in the specified scope. If the collection doesn't exist, the operation
-     * will be no-ops.
+     * Delete a collection by name in the specified scope. If the collection doesn't exist, the operation
+     * will be no-ops. Note: the default collection cannot be deleted.
      *
      * @param collectionName the collection to be deleted
      * @param scopeName      the scope from which to delete the collection
