@@ -197,19 +197,9 @@ public final class CouchbaseLiteException extends Exception {
      * @param domain  the error domain
      * @param code    the error code
      */
-    public CouchbaseLiteException(
-        @NonNull String message,
-        @NonNull Exception cause,
-        @NonNull String domain,
-        int code) {
+    public CouchbaseLiteException(@NonNull String message, @NonNull Exception cause, @NonNull String domain, int code) {
         this(message, cause, domain, code, null);
     }
-
-    /**
-     * This method is not part of the public API.
-     * Do not use it.  It may change or disappear at any time.
-     */
-    public CouchbaseLiteException() { this(null, null, null, 0, null); }
 
     /**
      * This method is not part of the public API.
@@ -249,5 +239,20 @@ public final class CouchbaseLiteException extends Exception {
     @Override
     public String getMessage() {
         return super.getMessage() + " (" + domain + ", " + code + ")" + "  [" + CBLVersion.getVersionInfo() + "]";
+    }
+
+    @NonNull
+    @Override
+    public String toString() { return "CouchbaseLiteException{" + domain + ", " + code + ": " + super.getMessage(); }
+
+    @Override
+    public int hashCode() { return (37 * domain.hashCode()) + code; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof CouchbaseLiteException)) { return false; }
+        final CouchbaseLiteException e = (CouchbaseLiteException) o;
+        return (code == e.code) && domain.equals(e.domain);
     }
 }

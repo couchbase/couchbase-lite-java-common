@@ -35,8 +35,11 @@ public final class MArray extends MCollection {
     // Constructors
     //---------------------------------------------
 
-    // Array constructor
-    public MArray() { baseArray = null; }
+    // Construct a new empty MArray
+    public MArray() {
+        super(MContext.NULL, true);
+        baseArray = null;
+    }
 
     // Copy constructor
     public MArray(@NonNull MArray array, boolean isMutable) {

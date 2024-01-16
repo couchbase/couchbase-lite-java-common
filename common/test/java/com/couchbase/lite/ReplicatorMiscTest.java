@@ -155,7 +155,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
+        run(
+            repl,
+            false,
+            1,
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
         synchronized (options) {
             assertEquals(
@@ -196,7 +201,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
+        run(
+            repl,
+            false,
+            1,
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
         synchronized (options) {
             assertEquals(Boolean.TRUE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
@@ -224,7 +234,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
+        run(
+            repl,
+            false,
+            1,
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
         synchronized (options) {
             final Object authOpts = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);

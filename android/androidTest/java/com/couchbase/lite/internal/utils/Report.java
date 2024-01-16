@@ -22,8 +22,6 @@ import androidx.annotation.Nullable;
 
 import java.util.Locale;
 
-import com.couchbase.lite.LogLevel;
-
 
 /**
  * Platform console logging utility for tests

@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 
 
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
+@Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR, ElementType.METHOD})
 @Documented
 public @interface Internal {
     String value() default "";

@@ -49,7 +49,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         private final Iterator<String> iterator;
 
         DictionaryIterator() {
-            this.mutations = Dictionary.this.internalDict.getMutationCount();
+            this.mutations = Dictionary.this.internalDict.getLocalMutationCount();
             this.iterator = Dictionary.this.getKeys().iterator();
         }
 
@@ -59,7 +59,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         @Nullable
         @Override
         public String next() {
-            if (Dictionary.this.internalDict.getMutationCount() != mutations) {
+            if (Dictionary.this.internalDict.getLocalMutationCount() != mutations) {
                 throw new ConcurrentModificationException("Dictionary modified during iteration");
             }
             return iterator.next();
@@ -78,13 +78,13 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Constructors
     //-------------------------------------------------------------------------
 
-    // Construct an empty mutable Dictionary
+    // Construct a new empty Dictionary
     Dictionary() { this(new MDict()); }
 
     // Slot(??) constructor
     Dictionary(@NonNull MValue val, @Nullable MCollection parent) { this(new MDict(val, parent)); }
 
-    // Copy constructor
+    // Construct a new dictionary with the passed content
     protected Dictionary(@NonNull MDict dict) {
         internalDict = dict;
 
@@ -111,7 +111,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @NonNull
     public MutableDictionary toMutable() {
-        synchronized (lock) { return new MutableDictionary(new MDict(internalDict, true)); }
+        synchronized (lock) { return new MutableDictionary(this); }
     }
 
     /**
@@ -414,14 +414,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         return h;
     }
 
-    @SuppressWarnings("PMD.ConsecutiveLiteralAppends")
     @NonNull
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder("Dictionary{(")
-            .append((internalDict.isMutable()) ? '+' : '.')
-            .append((internalDict.isMutated()) ? '!' : '.')
-            .append(')');
+        final StringBuilder buf = new StringBuilder("Dictionary{(").append(internalDict.getStateString()).append(')');
 
         boolean first = true;
         for (String key: getKeys()) {

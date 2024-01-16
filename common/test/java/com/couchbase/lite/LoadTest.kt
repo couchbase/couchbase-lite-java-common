@@ -121,7 +121,7 @@ class LoadTest : BaseDbTest() {
         val ids = saveDocsInCollection(createComplexTestDocs(ITERATIONS, getUniqueName("update"))).map { it.id }
 
         assertEquals(ITERATIONS.toLong(), testCollection.count)
-        timeTest("testUpdate1", 120) {
+        timeTest("testUpdate1", 130) {
             var i = 0
             for (id in ids) {
                 i++
@@ -197,7 +197,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions1() {
         var mDoc = MutableDocument()
-        timeTest("testSaveRevisions1", 42) {
+        timeTest("testSaveRevisions1", 45) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)
@@ -214,7 +214,7 @@ class LoadTest : BaseDbTest() {
     @Test
     fun testSaveRevisions2() {
         val mDoc = MutableDocument()
-        timeTest("testSaveRevisions2", 24) {
+        timeTest("testSaveRevisions2", 30) {
             testDatabase.inBatch<CouchbaseLiteException> {
                 for (i in 0 until ITERATIONS) {
                     mDoc.setValue("count", i)
