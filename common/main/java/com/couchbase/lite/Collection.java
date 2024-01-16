@@ -116,11 +116,11 @@ public final class Collection extends BaseCollection
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
-    @Nullable
+    @NonNull
     static Collection getDefaultCollection(@NonNull Database db) throws CouchbaseLiteException {
         try {
             final C4Collection c4Coll = db.getDefaultC4Collection();
-            return (c4Coll == null) ? null : new Collection(db, c4Coll);
+            return new Collection(db, c4Coll);
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }

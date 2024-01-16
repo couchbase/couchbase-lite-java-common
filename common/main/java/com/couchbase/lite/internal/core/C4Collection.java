@@ -73,7 +73,7 @@ public final class C4Collection extends C4NativePeer {
         return get(NATIVE_IMPL, c4db, scope, collection);
     }
 
-    @Nullable
+    @NonNull
     public static C4Collection getDefault(@NonNull C4Database c4db) throws LiteCoreException {
         return getDefault(NATIVE_IMPL, c4db);
     }
@@ -107,12 +107,10 @@ public final class C4Collection extends C4NativePeer {
     }
 
     @VisibleForTesting
-    @Nullable
+    @NonNull
     static C4Collection getDefault(@NonNull NativeImpl impl, @NonNull C4Database c4db) throws LiteCoreException {
         final long c4collection = impl.nGetDefaultCollection(c4db.getPeer());
-        return (c4collection == 0)
-            ? null
-            : new C4Collection(impl, c4collection, c4db, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME);
+        return new C4Collection(impl, c4collection, c4db, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME);
     }
 
 
