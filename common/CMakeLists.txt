@@ -36,6 +36,7 @@ message( STATUS "ABI: "                   ${ANDROID_ABI} )
 message( STATUS "SOURCE DIR: "            "${PROJECT_SOURCE_DIR}" )
 message( STATUS "OUTPUT DIR: "            ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
 message( STATUS "FLAG: "                  ${WHOLE_LIBRARY_FLAG} )
+message( STATUS "===== Using ASAN")
 
 set(JNI_SRC main/cpp)
 
@@ -46,6 +47,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 
+get_filename_component(HINT_PATH ${ANDROID_C_COMPILER} DIRECTORY)
+set(ARCH_STR ${CMAKE_ANDROID_ARCH})
+if ("${CMAKE_ANDROID_ARCH_ABI}" STREQUAL "arm64-v8a")
+		set(ARCH_STR "aarch64")
+elseif ("${CMAKE_ANDROID_ARCH_ABI}" STREQUAL "armeabi")
+		set(ARCH_STR "arm")
+elseif ("${CMAKE_ANDROID_ARCH_ABI}" STREQUAL "armeabi-v7a")
+		set(ARCH_STR "arm")
+elseif ("${CMAKE_ANDROID_ARCH_ABI}" STREQUAL "x86")
+		set(ARCH_STR "i686")
+elseif ("${CMAKE_ANDROID_ARCH_ABI}" STREQUAL "x86_64")
+		set(ARCH_STR "x86_64")
+endif()
+
 if(BUILD_ENTERPRISE)
     add_definitions(-DCOUCHBASE_ENTERPRISE)
 endif()
@@ -54,6 +69,14 @@ add_library( LiteCore SHARED IMPORTED )
 set_property( TARGET LiteCore PROPERTY
     IMPORTED_LOCATION "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/lib/libLiteCore.so"
 )
+
+file(GLOB ASAN_GLOB "${HINT_PATH}/../lib64/clang/*/lib/linux")
+find_file(ASAN
+    NAMES libclang_rt.asan-${ARCH_STR}-android.so
+    PATHS ${ASAN_GLOB})
+
+add_library( Asan SHARED IMPORTED )
+set_property( TARGET Asan PROPERTY IMPORTED_LOCATION ${ASAN})
 
 add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4.cc
@@ -76,6 +99,10 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_glue.cc
 )
 
+target_compile_options(LiteCoreJNI PUBLIC -fsanitize=address -fno-omit-frame-pointer)
+set_target_properties(LiteCoreJNI PROPERTIES LINK_FLAGS -fsanitize=address)
+target_link_options(LiteCoreJNI  PUBLIC -fsanitize=address)
+
 target_include_directories( LiteCoreJNI PUBLIC
     ${JNI_SRC}/
     "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/include"
@@ -83,6 +110,7 @@ target_include_directories( LiteCoreJNI PUBLIC
 
 target_link_libraries( LiteCoreJNI
     LiteCore
+    Asan
     "log"
 )
 

@@ -177,7 +177,7 @@ public final class Collection extends BaseCollection
     public String getName() { return c4Collection.getName(); }
 
     @NonNull
-    String getFullName() { return c4Collection.getScope() + "." + c4Collection.getName(); }
+    public String getFullName() { return c4Collection.getScope() + "." + c4Collection.getName(); }
 
     // - Documents
 
@@ -546,7 +546,7 @@ public final class Collection extends BaseCollection
     }
 
     @NonNull
-    Database getDatabase() { return db; }
+    public Database getDatabase() { return db; }
 
     boolean isValid() { return c4Collection.isValid(); }
 
