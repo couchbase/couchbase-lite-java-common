@@ -10,7 +10,7 @@
 //
 package com.couchbase.lite.internal.core
 
-import com.couchbase.lite.AbstractIndex
+import com.couchbase.lite.internal.QueryLanguage
 import com.couchbase.lite.internal.core.impl.NativeC4QueryObserver
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -45,7 +45,7 @@ class C4QueryObserverTest : C4BaseTest() {
 
     @Test
     fun testCreateC4QueryObserver() {
-        val c4Query = C4Query.create(c4Database, AbstractIndex.QueryLanguage.JSON, query)
+        val c4Query = C4Query.create(c4Database, QueryLanguage.JSON, query)
         assertNotNull(
             C4QueryObserver.create(
                 mockNativeQueryObserver,
@@ -59,7 +59,7 @@ class C4QueryObserverTest : C4BaseTest() {
     fun testQueryChanged() {
         var i = 0
 
-        val c4Query = C4Query.create(c4Database, AbstractIndex.QueryLanguage.JSON, query)
+        val c4Query = C4Query.create(c4Database, QueryLanguage.JSON, query)
         val obs = C4QueryObserver.create(
             mockNativeQueryObserver,
             { mockQEnum },
@@ -87,7 +87,7 @@ class C4QueryObserverTest : C4BaseTest() {
         val barrier = CyclicBarrier(10)
         (0..9).map {
             Thread {
-                val q = C4Query.create(c4Database, AbstractIndex.QueryLanguage.JSON, query)
+                val q = C4Query.create(c4Database, QueryLanguage.JSON, query)
 
                 barrier.await()
                 val obs = C4QueryObserver.create(nativeImpl, { mockQEnum }, q, { _, _ -> })

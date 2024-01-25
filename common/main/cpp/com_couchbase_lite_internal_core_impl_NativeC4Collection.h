@@ -101,12 +101,39 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    createIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;II[B)V
+ * Method:    createValueIndex
+ * Signature: (JLjava/lang/String;ILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex
-        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jstring, jboolean);
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createValueIndex
+        (JNIEnv *, jclass, jlong, jstring, jint, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    createFullTextIndex
+ * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;B)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextIndex
+        (JNIEnv *, jclass, jlong, jstring, jint, jstring, jstring, jboolean);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    createPredictiveIndex
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createPredictiveIndex
+        (JNIEnv *, jclass, jlong, jstring, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    createVectoreIndex
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IIIIIIJJ)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex
+        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jint, jint, jint, jint, jint, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection

@@ -23,21 +23,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import com.couchbase.lite.internal.QueryLanguage;
+import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
  * Index for Full-Text search
  */
-public class FullTextIndex extends Index {
+public final class FullTextIndex extends Index {
     @NonNull
     private final List<FullTextIndexItem> indexItems;
     @Nullable
     private String language = Locale.getDefault().getLanguage();
-    private boolean ignoreDiacritics = Defaults.FullTextIndex.IGNORE_ACCENTS;
+    private boolean ignoreDiacrits = Defaults.FullTextIndex.IGNORE_ACCENTS;
 
     FullTextIndex(@NonNull FullTextIndexItem... indexItems) {
-        super(IndexType.FULL_TEXT);
         this.indexItems = Arrays.asList(indexItems);
     }
 
@@ -53,21 +54,19 @@ public class FullTextIndex extends Index {
         return this;
     }
 
+    @Nullable
+    public String getLanguage() { return language; }
+
     /**
      * Set true to ignore accents/diacritical marks. The default is false.
      */
     @NonNull
     public FullTextIndex ignoreAccents(boolean ignoreAccents) {
-        this.ignoreDiacritics = ignoreAccents;
+        this.ignoreDiacrits = ignoreAccents;
         return this;
     }
 
-    @Nullable
-    @Override
-    public String getLanguage() { return language; }
-
-    @Override
-    public boolean isIgnoringAccents() { return ignoreDiacritics; }
+    public boolean isIgnoringAccents() { return ignoreDiacrits; }
 
     @NonNull
     @Override
@@ -75,5 +74,11 @@ public class FullTextIndex extends Index {
         final List<Object> items = new ArrayList<>();
         for (FullTextIndexItem item: indexItems) { items.add(item.expression.asJSON()); }
         return items;
+    }
+
+    @Override
+    void createIndex(@NonNull String name, @NonNull C4Collection c4Collection)
+        throws LiteCoreException, CouchbaseLiteException {
+        c4Collection.createFullTextIndex(name, QueryLanguage.JSON.getCode(), getIndexSpec(), language, ignoreDiacrits);
     }
 }

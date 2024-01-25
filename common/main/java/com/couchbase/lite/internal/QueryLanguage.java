@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2024 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite;
+package com.couchbase.lite.internal;
 
-import androidx.annotation.NonNull;
+public enum QueryLanguage {
+    JSON(0), N1QL(1);
 
-import com.couchbase.lite.internal.core.C4Collection;
+    private final int code;
 
+    QueryLanguage(int code) { this.code = code; }
 
-abstract class AbstractIndex {
-    protected AbstractIndex() { }
-
-    @NonNull
-    abstract String getIndexSpec() throws CouchbaseLiteException;
-
-    abstract void createIndex(@NonNull String name, @NonNull C4Collection c4Collection)
-        throws LiteCoreException, CouchbaseLiteException;
+    public int getCode() { return code; }
 }

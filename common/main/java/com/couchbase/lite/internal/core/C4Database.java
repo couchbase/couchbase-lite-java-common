@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.AbstractReplicator;
 import com.couchbase.lite.Collection;
 import com.couchbase.lite.CollectionConfiguration;
@@ -36,6 +35,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.MaintenanceType;
 import com.couchbase.lite.ReplicatorType;
+import com.couchbase.lite.internal.QueryLanguage;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Database;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -562,12 +562,12 @@ public abstract class C4Database extends C4NativePeer {
 
     @NonNull
     public C4Query createJsonQuery(@NonNull String expression) throws LiteCoreException {
-        return C4Query.create(this, AbstractIndex.QueryLanguage.JSON, expression);
+        return C4Query.create(this, QueryLanguage.JSON, expression);
     }
 
     @NonNull
     public C4Query createN1qlQuery(@NonNull String expression) throws LiteCoreException {
-        return C4Query.create(this, AbstractIndex.QueryLanguage.N1QL, expression);
+        return C4Query.create(this, QueryLanguage.N1QL, expression);
     }
 
     //-------------------------------------------------------------------------

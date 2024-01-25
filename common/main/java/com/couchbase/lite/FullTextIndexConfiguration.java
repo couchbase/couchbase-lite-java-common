@@ -23,20 +23,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import com.couchbase.lite.internal.QueryLanguage;
+import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.utils.StringUtils;
 
 
 /**
  * Full Text Index Configuration
  */
-public class FullTextIndexConfiguration extends IndexConfiguration {
+public final class FullTextIndexConfiguration extends IndexConfiguration {
     @Nullable
     private String language = Locale.getDefault().getLanguage();
     private boolean ignoreDiacrits = Defaults.FullTextIndex.IGNORE_ACCENTS;
 
     public FullTextIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
-    FullTextIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.FULL_TEXT, expressions); }
+    FullTextIndexConfiguration(@NonNull List<String> expressions) { super(expressions); }
 
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.
@@ -51,7 +53,6 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
     }
 
     @Nullable
-    @Override
     public String getLanguage() { return language; }
 
     /**
@@ -63,6 +64,10 @@ public class FullTextIndexConfiguration extends IndexConfiguration {
         return this;
     }
 
-    @Override
     public boolean isIgnoringAccents() { return ignoreDiacrits; }
+
+    @Override
+    void createIndex(@NonNull String name, @NonNull C4Collection c4Collection) throws LiteCoreException {
+        c4Collection.createFullTextIndex(name, QueryLanguage.N1QL.getCode(), getIndexSpec(), language, ignoreDiacrits);
+    }
 }
