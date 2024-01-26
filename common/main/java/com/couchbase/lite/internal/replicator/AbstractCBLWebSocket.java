@@ -423,7 +423,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     public final void coreRequestsClose(@NonNull CloseStatus status) {
         Log.d(LOG_DOMAIN, "%s.coreRequestsClose: %s", this, status);
 
-        if (!assertState(SocketState.OPEN, SocketState.CLOSING)) { return; }
+        if (!assertState(SocketState.OPENING, SocketState.OPEN, SocketState.CLOSING)) { return; }
 
         // We've told Core to leave the connection to us, so it might pass us the HTTP status
         // If it does, we need to convert it to a WS status for the other side.

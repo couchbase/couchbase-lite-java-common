@@ -58,7 +58,9 @@ internal class ListenerAwaiter(
 
         if (e != null) err.compareAndSet(null, e)
 
-        if (stopStates.contains(level)) latch.countDown()
+        if (stopStates.contains(level)) {
+            latch.countDown()
+        }
     }
 
     fun awaitCompletion(maxWait: Long = BaseTest.LONG_TIMEOUT_SEC, units: TimeUnit = TimeUnit.SECONDS): Boolean =
@@ -87,8 +89,12 @@ internal class DelayFilter(val name: String, private val barrier: CyclicBarrier)
 
     override fun filtered(doc: Document, flags: EnumSet<DocumentFlag>): Boolean {
         if (shouldWait.getAndSet(false)) {
-            Report.log("${name} waiting with doc: ${doc.id}")
-            barrier.await(BaseTest.LONG_TIMEOUT_MS, TimeUnit.SECONDS)
+            Report.log("${name} in delay with doc: ${doc.id}")
+            try {
+                barrier.await(BaseTest.LONG_TIMEOUT_SEC, TimeUnit.SECONDS)
+            } catch (e: Exception) {
+                Report.log("${name} delay interrupted", e)
+            }
         }
 
         Report.log("${name} filtered doc: ${doc.id}")

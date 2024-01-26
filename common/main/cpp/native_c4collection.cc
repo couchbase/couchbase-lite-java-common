@@ -22,6 +22,31 @@ using namespace litecore::jni;
 
 extern "C" {
 
+static void createIndex(
+        JNIEnv *env,
+        jlong coll,
+        C4IndexType type,
+        jstring jName,
+        C4QueryLanguage language,
+        jstring jqueryExpressions,
+        C4IndexOptions const &options) {
+    jstringSlice name(env, jName);
+    jstringSlice queryExpressions(env, jqueryExpressions);
+
+    C4Error error{};
+    bool res = c4coll_createIndex(
+            (C4Collection *) coll,
+            name,
+            queryExpressions,
+            language,
+            type,
+            &options,
+            &error);
+
+    if (!res && error.code != 0)
+        throwError(env, error);
+}
+
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createCollection
@@ -71,7 +96,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getCollection(
     if ((coll == nullptr) && (error.code != 0)) {
 
         // Ignore LiteCore's annoying "not found" error
-        if  ((error.domain == LiteCoreDomain) && (error.code == kC4ErrorNotFound)) {
+        if ((error.domain == LiteCoreDomain) && (error.code == kC4ErrorNotFound)) {
             return (jlong) coll;
         }
 
@@ -222,41 +247,98 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo(
     return (jlong) FLValue_FromData({data.buf, data.size}, kFLTrusted);
 }
 
+
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
- * Method:    createIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;II[B)V
+ * Method:    createValueIndex
+ * Signature: (JLjava/lang/String;ILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createIndex(
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createValueIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jName,
+        jint qLanguage,
+        jstring jqueryExpressions) {
+    C4IndexOptions options = {};
+    createIndex(env, coll, kC4ValueIndex, jName, (C4QueryLanguage) qLanguage, jqueryExpressions, options);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    createFullTextIndex
+ * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;B)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jName,
+        jint qLanguage,
+        jstring jqueryExpressions,
+        jstring jlanguage,
+        jboolean ignoreDiacritics) {
+    C4IndexOptions options = {};
+
+    jstringSlice language(env, jlanguage);
+
+    options.language = language.c_str();
+    options.ignoreDiacritics = ignoreDiacritics == JNI_TRUE;
+
+    createIndex(env, coll, kC4FullTextIndex, jName, (C4QueryLanguage) qLanguage, jqueryExpressions, options);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    createPredictiveIndex
+ * Signature: (JLjava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createPredictiveIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jName,
+        jstring jqueryExpressions) {
+    C4IndexOptions options = {};
+    createIndex(env, coll, kC4PredictiveIndex, jName, kC4JSONQuery, jqueryExpressions, options);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    createVectorIndex
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IJIIIIJJ)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
         JNIEnv *env,
         jclass ignore,
         jlong coll,
         jstring jName,
         jstring jqueryExpressions,
-        jint queryLanguage,
-        jint indexType,
-        jstring jlanguage,
-        jboolean ignoreDiacritics) {
-    jstringSlice name(env, jName);
-    jstringSlice queryExpressions(env, jqueryExpressions);
-    jstringSlice language(env, jlanguage);
-
+        jint dimensions,
+        jlong centroids,
+        jint encoding,
+        jint bits,
+        jint subquantizers,
+        jint metric,
+        jlong minTrainingSize,
+        jlong maxTrainingSize) {
     C4IndexOptions options = {};
-    options.language = language.c_str();
-    options.ignoreDiacritics = ignoreDiacritics == JNI_TRUE;
+    options.vector = {};
 
-    C4Error error{};
-    bool res = c4coll_createIndex(
-            (C4Collection *) coll,
-            name,
-            (C4Slice) queryExpressions,
-            (C4QueryLanguage) queryLanguage,
-            (C4IndexType) indexType,
-            &options,
-            &error);
-    if (!res && error.code != 0)
-        throwError(env, error);
+    options.vector.encoding = kC4VectorEncodingSQ8; // !!! fix me
+    // options.vector.dimensions = dimensions;
+    // options.vector.encoding = { encoding, subquantizers, bits }
+
+    options.vector.numCentroids = centroids;
+    options.vector.metric = (C4VectorMetric) metric;
+    options.vector.minTrainingSize = minTrainingSize;
+    options.vector.maxTrainingSize = maxTrainingSize;
+
+    createIndex(env, coll, kC4VectorIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
 }
 
 /*

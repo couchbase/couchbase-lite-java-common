@@ -136,6 +136,9 @@ public final class CouchbaseLiteInternal {
         }
     }
 
+    public static void setExtensionPath(@NonNull String path) {
+    }
+
     @NonNull
     public static File getDefaultDbDir() {
         requireInit("Can't create DB path");

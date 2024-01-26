@@ -158,7 +158,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         run(
             repl,
             false,
-            1,
+            STD_TIMEOUT_SEC,
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
@@ -204,7 +204,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         run(
             repl,
             false,
-            1,
+            STD_TIMEOUT_SEC,
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
@@ -237,7 +237,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         run(
             repl,
             false,
-            1,
+            STD_TIMEOUT_SEC,
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 

@@ -75,6 +75,13 @@ public final class Preconditions {
         return n;
     }
 
+    public static long assertUnsigned(long n, @NonNull String name) {
+        if ((n < 0) || (n >= (1L << 32))) {
+            throw new IllegalArgumentException(name + " must be 0 <= " + n + " < 2^32");
+        }
+        return n;
+    }
+
     @NonNull
     public static <T> T assertNotNull(@Nullable T obj, @NonNull String name) {
         if (obj == null) { throw new IllegalArgumentException(name + " must not be null"); }

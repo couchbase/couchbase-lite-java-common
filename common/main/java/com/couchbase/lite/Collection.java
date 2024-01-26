@@ -772,21 +772,13 @@ public final class Collection extends BaseCollection
 
     // - Indices:
 
-    void createIndexInternal(@NonNull String name, @NonNull AbstractIndex config)
+    void createIndexInternal(@NonNull String name, @NonNull AbstractIndex index)
         throws CouchbaseLiteException {
         Preconditions.assertNotNull(name, "name");
-        Preconditions.assertNotNull(config, "config");
+        Preconditions.assertNotNull(index, "index");
 
         synchronized (getDbLock()) {
-            try {
-                c4Collection.createIndex(
-                    name,
-                    config.getIndexSpec(),
-                    config.getQueryLanguage(),
-                    config.getIndexType(),
-                    config.getLanguage(),
-                    config.isIgnoringAccents());
-            }
+            try { index.createIndex(name, c4Collection); }
             catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
         }
     }

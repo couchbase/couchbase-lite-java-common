@@ -21,18 +21,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.couchbase.lite.internal.QueryLanguage;
+import com.couchbase.lite.internal.core.C4Collection;
+
 
 /**
  * A Standard query index.
  */
-public class ValueIndex extends Index {
+public final class ValueIndex extends Index {
     @NonNull
-    protected final List<ValueIndexItem> indexItems;
+    private final List<ValueIndexItem> indexItems;
 
-    ValueIndex(@NonNull ValueIndexItem... indexItems) {
-        super(IndexType.VALUE);
-        this.indexItems = Arrays.asList(indexItems);
-    }
+    ValueIndex(@NonNull ValueIndexItem... indexItems) { this.indexItems = Arrays.asList(indexItems); }
 
     @NonNull
     @Override
@@ -40,5 +40,11 @@ public class ValueIndex extends Index {
         final List<Object> items = new ArrayList<>();
         for (ValueIndexItem item: indexItems) { items.add(item.viExpression.asJSON()); }
         return items;
+    }
+
+    @Override
+    void createIndex(@NonNull String name, @NonNull C4Collection c4Collection)
+        throws LiteCoreException, CouchbaseLiteException {
+        c4Collection.createValueIndex(name, QueryLanguage.JSON.getCode(), getIndexSpec());
     }
 }
