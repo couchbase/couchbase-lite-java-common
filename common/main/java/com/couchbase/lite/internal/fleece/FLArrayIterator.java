@@ -91,7 +91,12 @@ public abstract class FLArrayIterator extends C4NativePeer {
         return hValue == 0L ? null : FLValue.getFLValue(hValue);
     }
 
-    public boolean next() { return impl.nNext(getPeer()); }
+    /**
+     * Advances the iterator to the next value.
+     * NOTE: It is illegal to call this when the iterator is already at the end.
+     * In particular, calling this when the array is empty is always illegal
+     */
+    public void next() { impl.nNext(getPeer()); }
 
     @Nullable
     public FLValue getValue() {

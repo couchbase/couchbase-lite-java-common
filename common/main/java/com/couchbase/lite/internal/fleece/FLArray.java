@@ -101,7 +101,7 @@ public final class FLArray {
             FLValue value;
             while ((value = itr.getValue()) != null) {
                 results.add((T) value.asObject());
-                if (!itr.next()) { break; }
+                itr.next();
             }
         }
 

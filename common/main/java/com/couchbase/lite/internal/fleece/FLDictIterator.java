@@ -45,7 +45,12 @@ public final class FLDictIterator extends C4NativePeer {
 
     public long getCount() { return impl.nGetCount(getPeer()); }
 
-    public boolean next() { return impl.nNext(getPeer()); }
+    /**
+     * Advances the iterator to the next key/value.
+     * NOTE: It is illegal to call this when the iterator is already at the end.
+     * In particular, calling this when the dict is empty is always illegal
+     */
+    public void next() { impl.nNext(getPeer()); }
 
     @Nullable
     public String getKey() { return impl.nGetKey(getPeer()); }
