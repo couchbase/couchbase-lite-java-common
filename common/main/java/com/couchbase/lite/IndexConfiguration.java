@@ -34,7 +34,7 @@ public abstract class IndexConfiguration extends AbstractIndex {
 
     IndexConfiguration(@NonNull List<String> expressions) {
         this.expressions = Preconditions.assertNotEmpty(
-            Fn.filterToList(expressions, i -> (i != null)),
+            Fn.filterToList(expressions, s -> !StringUtils.isEmpty(s)),
             "expression list");
     }
 

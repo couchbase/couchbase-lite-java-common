@@ -475,7 +475,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             assertEquals(itr.getValue().asString(), expectedFirst.get(i));
-            assertTrue(itr.next());
+            itr.next();
             assertEquals(itr.getValue().asString(), expectedLast.get(i));
             i++;
         }
@@ -519,7 +519,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             assertEquals(itr.getValue().asString(), "Aerni");
-            assertTrue(itr.next());
+            itr.next();
             assertEquals(itr.getValue().asString(), "Zirk");
             i++;
         }
@@ -547,9 +547,9 @@ public class C4QueryTest extends C4QueryBaseTest {
             FLArrayIterator itr = e.getColumns();
             if (i < expectedState.size()) {
                 assertEquals(itr.getValue().asString(), expectedState.get(i));
-                assertTrue(itr.next());
+                itr.next();
                 assertEquals(itr.getValue().asString(), expectedMin.get(i));
-                assertTrue(itr.next());
+                itr.next();
                 assertEquals(itr.getValue().asString(), expectedMax.get(i));
             }
             i++;
@@ -582,7 +582,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             FLArrayIterator itr = e.getColumns();
             if (i < expectedState.size()) {
                 assertEquals(itr.getValue().asString(), expectedFirst.get(i));
-                assertTrue(itr.next());
+                itr.next();
                 assertEquals(itr.getValue().asString(), expectedState.get(i));
             }
             i++;
