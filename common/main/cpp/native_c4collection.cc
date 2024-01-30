@@ -309,7 +309,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createPredictiveIn
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createVectorIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;IJIIIIJJ)V
+ * Signature: (JLjava/lang/String;Ljava/lang/String;JIJIJJJJ)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
@@ -318,28 +318,28 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
         jlong coll,
         jstring jName,
         jstring jqueryExpressions,
-        jint dimensions,
+        jlong dimensions,
+        jint metric,
         jlong centroids,
         jint encoding,
-        jint bits,
-        jint subquantizers,
-        jint metric,
+        jlong subquantizers,
+        jlong bits,
         jlong minTrainingSize,
         jlong maxTrainingSize) {
     C4IndexOptions options = {};
+
     options.vector = {};
-
-    options.vector.encoding = kC4VectorEncodingSQ8; // !!! fix me
-    // options.vector.dimensions = dimensions;
-    // options.vector.encoding = { encoding, subquantizers, bits }
-
-    options.vector.numCentroids = centroids;
-    options.vector.metric = (C4VectorMetric) metric;
-    options.vector.minTrainingSize = minTrainingSize;
-    options.vector.maxTrainingSize = maxTrainingSize;
+    options.vector.dimensions = (unsigned) dimensions;
+    options.vector.metric = (C4VectorMetricType) metric;
+    options.vector.clustering = {kC4VectorClusteringFlat, (unsigned) centroids, 0, 0};
+    options.vector.encoding = { (C4VectorEncodingType) encoding, (unsigned) subquantizers, (unsigned) bits };
+    options.vector.minTrainingSize = (unsigned) minTrainingSize;
+    options.vector.maxTrainingSize = (unsigned) maxTrainingSize;
+    options.vector.numProbes = 0;
 
     createIndex(env, coll, kC4VectorIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
 }
+
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection

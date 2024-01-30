@@ -97,26 +97,26 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     public void nCreateVectorIndex(
         long peer,
         String name,
-        String indexSpec,
-        int dimensions,
-        long centroids,
-        int encodingType,
-        int bits,
-        int subquantizers,
+        String queryExpressions,
+        long dimensions,
         int metric,
+        long centroids,
+        int encoding,
+        long subquantizers,
+        long bits,
         long minTrainingSize,
         long maxTrainingSize)
         throws LiteCoreException {
         createVectorIndex(
             peer,
             name,
-            indexSpec,
+            queryExpressions,
             dimensions,
-            centroids,
-            encodingType,
-            bits,
-            subquantizers,
             metric,
+            centroids,
+            encoding,
+            subquantizers,
+            bits,
             minTrainingSize,
             maxTrainingSize);
     }
@@ -172,13 +172,13 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     private static native void createVectorIndex(
         long peer,
         String name,
-        String indexSpec,
-        int dimensions,
-        long centroids,
-        int encodingType,
-        int bits,
-        int subquantizers,
+        String queryExpressions,
+        long dimensions,
         int metric,
+        long centroids,
+        int encoding,
+        long subquantizers,
+        long bits,
         long minTrainingSize,
         long maxTrainingSize)
         throws LiteCoreException;
