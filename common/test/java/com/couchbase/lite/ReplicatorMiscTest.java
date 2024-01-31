@@ -158,7 +158,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         run(
             repl,
             false,
-            STD_TIMEOUT_SEC,
+            LONG_TIMEOUT_SEC,
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
             new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 

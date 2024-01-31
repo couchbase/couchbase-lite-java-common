@@ -88,7 +88,7 @@ abstract class AbstractDatabase extends BaseDatabase
     private static final String ERROR_RESOLVER_FAILED = "Conflict resolution failed for document '%s': %s";
     private static final String WARN_WRONG_ID
         = "Conflict resolution for a document produced a new document with ID '%s', "
-        + "which does not match the IDs of the conflicting documents (%s)";
+        + "which does not match the IDs of the conflicting document (%s)";
     private static final String WARN_WRONG_COLLECTION
         = "Conflict resolution for document '%s' produced a new document belonging to collection '%s', "
         + "not the collection into which it would be stored (%s)";
