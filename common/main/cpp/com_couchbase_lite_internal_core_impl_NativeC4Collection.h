@@ -129,11 +129,22 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createPredictiveIn
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createVectoreIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;IJIIIIJJ)V
+ * Signature: (JLjava/lang/String;Ljava/lang/String;JIJIJJJJ)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex
-        (JNIEnv *, jclass, jlong, jstring, jstring, jint, jlong, jint, jint, jint, jint, jlong, jlong);
+        (JNIEnv *, jclass,
+         jlong,
+         jstring,
+         jstring,
+         jlong,
+         jint,
+         jlong,
+         jint,
+         jlong,
+         jlong,
+         jlong,
+         jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection

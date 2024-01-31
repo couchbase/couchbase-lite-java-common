@@ -63,13 +63,13 @@ public final class C4Collection extends C4NativePeer {
         void nCreateVectorIndex(
             long peer,
             String name,
-            String indexSpec,
-            int dimensions,
-            long centroids,
-            int encodingType,
-            int bits,
-            int subquantizers,
+            String queryExpressions,
+            long dimensions,
             int metric,
+            long centroids,
+            int encoding,
+            long subquantizers,
+            long bits,
             long minTrainingSize,
             long maxTrainingSize)
             throws LiteCoreException;
@@ -259,26 +259,26 @@ public final class C4Collection extends C4NativePeer {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     public void createVectorIndex(
         String name,
-        String indexSpec,
-        int dimensions,
-        long centroids,
-        int encodingType,
-        int bits,
-        int subquantizers,
+        String queryExpressions,
+        long dimensions,
         int metric,
+        long centroids,
+        int encoding,
+        long subquantizers,
+        long bits,
         long minTrainingSize,
         long maxTrainingSize)
         throws LiteCoreException {
         withPeer(peer -> impl.nCreateVectorIndex(
             peer,
             name,
-            indexSpec,
+            queryExpressions,
             dimensions,
-            centroids,
-            encodingType,
-            bits,
-            subquantizers,
             metric,
+            centroids,
+            encoding,
+            subquantizers,
+            bits,
             minTrainingSize,
             maxTrainingSize));
     }
