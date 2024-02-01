@@ -337,9 +337,6 @@ public final class C4Document extends C4NativePeer {
     // - Testing
     // None of these methods may be used in production code.
 
-    // !!! Deprecated
-    private static native long create(long db, String docID, byte[] body, int flags) throws LiteCoreException;
-
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private static native long put(
         long db,
