@@ -153,7 +153,7 @@ public final class MDict extends MCollection {
             }
         }
 
-        mutate();
+        mutate(true);
         values.put(key, value);
     }
 
@@ -167,7 +167,7 @@ public final class MDict extends MCollection {
 
         if (valCount == 0) { return; }
 
-        mutate();
+        mutate(true);
         values.clear();
 
         if ((baseDict != null) && (baseDict.count() > 0)) {

@@ -430,7 +430,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @NonNull
     @Override
-    public Iterator<String> iterator() { return getKeys().iterator(); }
+    public Iterator<String> iterator() { return internalDict.iterator(); }
 
     //---------------------------------------------
     // Override

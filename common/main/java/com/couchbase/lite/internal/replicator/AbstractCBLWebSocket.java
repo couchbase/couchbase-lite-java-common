@@ -413,7 +413,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // Core wants to break the connection
     @Override
     public final void coreRequestsClose(@NonNull CloseStatus status) {
-        Log.d(LOG_DOMAIN, "%s.coreRequestsClose%s", this, status);
+        Log.d(LOG_DOMAIN, "%s.coreRequestsClose: %s", this, status);
 
         if (!assertState(SocketState.OPEN, SocketState.CLOSING)) { return; }
 
@@ -488,7 +488,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     @Override
     public void remoteWrites(@NonNull byte[] data) {
-        Log.d(LOG_DOMAIN, "%s.remoteWrites(%d)", this, data.length);
+        Log.d(LOG_DOMAIN, "%s.remoteWrites: %d", this, data.length);
         if (!assertState(SocketState.OPEN, SocketState.CLOSING)) { return; }
         toCore.writeToCore(data);
     }
@@ -502,7 +502,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
     @Override
     public void remoteClosed(@NonNull CloseStatus status) {
-        Log.d(LOG_DOMAIN, "%s.remoteClosed(%d): %s", this, status);
+        Log.d(LOG_DOMAIN, "%s.remoteClosed: %s", this, status);
         if (!changeState(SocketState.CLOSED)) { return; }
         if (status.code == C4Constants.WebSocketError.NORMAL) {
             status = new CloseStatus(
