@@ -38,7 +38,6 @@ import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
@@ -266,18 +265,56 @@ public abstract class BaseTest extends PlatformBaseTest {
     @NonNull
     protected final Database createDb(@NonNull String name) { return createDb(name, null); }
 
-    // Prefer this method to any other way of creating a new database
+    // Prefer this method to any other way of creating a new database (ceptin, of course, the method above)
     @NonNull
     protected final Database createDb(@NonNull String name, @Nullable DatabaseConfiguration config) {
+        if (config == null) { config = new DatabaseConfiguration(); }
+
         final String dbName = getUniqueName(name);
-        final File dbDir = new File(
-            (config != null) ? config.getDirectory() : CouchbaseLiteInternal.getDefaultDbDirPath(),
-            dbName + C4Database.DB_EXTENSION);
+        final File dbDir = new File(config.getDirectory(), dbName + C4Database.DB_EXTENSION);
         assertFalse(dbDir.exists());
-        Database db;
+
+        final Database db;
         try { db = (config == null) ? new Database(dbName) : new Database(dbName, config); }
         catch (Exception e) { throw new AssertionError("Failed creating database " + name, e); }
+
         assertTrue(dbDir.exists());
+        return db;
+    }
+
+    // Prefer this method to any other way of copying a database
+    @NonNull
+    protected final Database copyDb(
+        @NonNull String srcDbPath,
+        @NonNull String srcDbName,
+        @NonNull String dstDbName) {
+        return copyDb(srcDbPath, srcDbName, dstDbName, null);
+    }
+
+    // Prefer this method to any other way of copying a database (ceptin, of course, the method above)
+    @NonNull
+    protected final Database copyDb(
+        @NonNull String srcDbPath,
+        @NonNull String srcDbName,
+        @NonNull String dstDbName,
+        @Nullable DatabaseConfiguration config) {
+        if (config == null) { config = new DatabaseConfiguration(); }
+
+        final File srcDbFile = new File(srcDbPath, srcDbName + C4Database.DB_EXTENSION);
+        assertTrue(srcDbFile.exists());
+
+        final String dbName = getUniqueName(dstDbName);
+        final File dstDbFile = new File(config.getDirectory(), dbName + C4Database.DB_EXTENSION);
+        assertFalse(dstDbFile.exists());
+
+        final Database db;
+        try {
+            Database.copy(srcDbFile, dbName, config);
+            db = new Database(dbName, config);
+        }
+        catch (Exception e) { throw new AssertionError("Failed creating database " + dstDbFile.getPath(), e); }
+
+        assertTrue(dstDbFile.exists());
         return db;
     }
 

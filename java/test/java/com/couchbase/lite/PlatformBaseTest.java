@@ -68,6 +68,11 @@ public abstract class PlatformBaseTest implements PlatformTest {
             new Exclusion(
                 "Swedish locale not supported",
                 () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
+        m.put(
+            "32-BIT",
+            new Exclusion(
+                "Requires 64-bit arch",
+                () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
