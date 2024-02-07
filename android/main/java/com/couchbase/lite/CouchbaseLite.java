@@ -26,7 +26,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
 public final class CouchbaseLite {
     // Utility class
-    private CouchbaseLite() {}
+    private CouchbaseLite() { }
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
@@ -59,14 +59,6 @@ public final class CouchbaseLite {
      * @throws IllegalStateException on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
-        CouchbaseLiteInternal.init(debug, rootDir, scratchDir, ctxt);
-    }
-
-    /**
-     * Register a directory path from which to load extension libraries.
-     * Must be called before using CouchbaseLite but only when using extensions
-     */
-    public static void setExtensionPath(String extensionPath) {
-        CouchbaseLiteInternal.setExtensionPath(extensionPath);
+        CouchbaseLiteInternal.init(ctxt, debug, rootDir, scratchDir);
     }
 }

@@ -48,6 +48,14 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setTe
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4
+ * Method:    setExtPath
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setExtPath
+        (JNIEnv *, jclass, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    getMessage
  * Signature: (III)Ljava/lang/String;
  */

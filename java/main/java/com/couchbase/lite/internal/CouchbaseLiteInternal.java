@@ -43,11 +43,12 @@ import com.couchbase.lite.internal.utils.FileUtils;
  */
 public final class CouchbaseLiteInternal {
     // Utility class
-    private CouchbaseLiteInternal() {}
+    private CouchbaseLiteInternal() { }
 
     public static final String PLATFORM = "CBL-JAVA";
 
     public static final String SCRATCH_DIR_NAME = "CouchbaseLiteTemp";
+    public static final String VS_EXTENSION_NAME = "CouchbaseLiteVectorSearch";
 
     private static final String ERRORS_PROPERTIES_PATH = "/errors.properties";
 
@@ -62,6 +63,7 @@ public final class CouchbaseLiteInternal {
     private static volatile File defaultDbDir;
 
     public static void init(
+        @NonNull File extDir,
         boolean debug,
         @NonNull File defaultDbDir,
         @NonNull File scratchDir) {
@@ -80,6 +82,8 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(loadErrorMessages());
 
         setC4TmpDirPath(tmpDir);
+
+        setExtensionPath(extDir, scratchDir);
     }
 
     public static boolean debugging() { return debugging; }
@@ -123,6 +127,10 @@ public final class CouchbaseLiteInternal {
         }
         catch (IOException e) { Log.i(LogDomain.DATABASE, "Failed to load error messages!", e); }
         return (Map<String, String>) (Map) errors;
+    }
+
+    @VisibleForTesting
+    public static void setExtensionPath(@NonNull File extDir, @NonNull File scratchDir) {
     }
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {
