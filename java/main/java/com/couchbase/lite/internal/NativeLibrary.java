@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -61,7 +62,7 @@ final class NativeLibrary {
 
     private static final String DIGEST_MD5 = ".MD5";
 
-    private static final AtomicBoolean LOADED = new AtomicBoolean(false);
+    private static final AtomicBoolean LOADED = new AtomicBoolean();
 
     /**
      * Extracts the two native libraries from the jar file, puts them on the file system and loads them.
@@ -74,13 +75,29 @@ final class NativeLibrary {
         final String os = System.getProperty("os.name");
         final String arch = System.getProperty("os.arch");
 
-        // get the resource path
-        final String libRootDir
-            = JAVA_PATH_SEPARATOR + RESOURCE_BASE_DIR + JAVA_PATH_SEPARATOR + getOsDir(os) + JAVA_PATH_SEPARATOR;
+        loadLibrary(LIB_LITE_CORE, getCoreArchDir(os, arch), os, arch, scratchDir);
 
-        loadLibrary(LIB_LITE_CORE, getCoreArchDir(libRootDir, os, arch), os, arch, scratchDir);
+        loadLibrary(LIB_JNI, getJniArchDir(os, arch), os, arch, scratchDir);
+    }
 
-        loadLibrary(LIB_JNI, getJniArchDir(libRootDir, os, arch), os, arch, scratchDir);
+    /**
+     * Extracts the named librarie from the jar file, puts it on the file system
+     * and returns the path of the containing directory.
+     */
+    @Nullable
+    public static String loadExtension(@NonNull String libName, @NonNull File scratchDir) {
+        final String os = System.getProperty("os.name");
+        final String extLib = libName + getLibExtension(os);
+
+        final String resDirPath = getCoreArchDir(os, System.getProperty("os.arch"));
+        try {
+            final File targetDir = computeTargetDirectory(scratchDir, resDirPath, extLib);
+            extract(libName, resDirPath, targetDir);
+            return targetDir.getCanonicalPath();
+        }
+        catch (Exception ignore) { }
+
+        return null;
     }
 
     /**
@@ -155,7 +172,8 @@ final class NativeLibrary {
     //  - Linux; x86_64 (unchecked)
     //  - Mac: universal (unchecked)
     @NonNull
-    private static String getCoreArchDir(@NonNull String rootPath, @NonNull String osName, @NonNull String archName) {
+    private static String getCoreArchDir(@NonNull String osName, @NonNull String archName) {
+        final String rootPath = getRootPath(osName);
         if (isWindows(osName) || isLinux(osName)) { return rootPath + ARCH_X86 + LIB_DIR; }
         if (isMacOS(osName)) { return rootPath + ARCH_UNIVERSAL + LIB_DIR; }
         throw new IllegalStateException("Unsupported LiteCore architecture: " + osName + "/" + archName);
@@ -166,7 +184,9 @@ final class NativeLibrary {
     //  - Linux; x86_64 (unchecked)
     //  - Mac: x86_64 and aarch64
     @NonNull
-    private static String getJniArchDir(@NonNull String rootPath, @NonNull String osName, @NonNull String archName) {
+    private static String getJniArchDir(@NonNull String osName, @NonNull String archName) {
+        final String rootPath = getRootPath(osName);
+
         if (isWindows(osName) || isLinux(osName)) { return rootPath + ARCH_X86 + LIB_DIR; }
 
         final String arch = archName.toLowerCase(Locale.getDefault());
@@ -175,6 +195,14 @@ final class NativeLibrary {
         }
 
         throw new IllegalStateException("Unsupported JNI architecture: " + osName + "/" + archName);
+    }
+
+    @NonNull
+    private static String getLibExtension(@NonNull String osName) {
+        if (isWindows(osName)) { return ".dll"; }
+        if (isMacOS(osName)) { return ".dylib"; }
+        if (isLinux(osName)) { return ".so"; }
+        throw new IllegalStateException("Unsupported OS: " + osName);
     }
 
     private static void setPermissions(String targetPath) throws IOException {
@@ -192,7 +220,7 @@ final class NativeLibrary {
     /**
      * Copy a native library from a resource into the target directory.
      * <p>
-     * If the native library already exists in the target library, the existing native library will be used.
+     * If the native library already exists in the target library, use it.
      */
     @NonNull
     private static String extract(
@@ -200,22 +228,24 @@ final class NativeLibrary {
         @NonNull String resDirPath,
         @NonNull File targetDir)
         throws IOException {
-        final File targetFile = new File(targetDir, lib);
-        final String targetPath = targetFile.getCanonicalPath();
-        if (targetFile.exists()) { return targetPath; }
-
         if (!targetDir.exists() && !targetDir.mkdirs()) {
             throw new IOException("Cannot create target directory: " + targetDir.getCanonicalPath());
         }
 
+        final File targetFile = new File(targetDir, lib);
+        final String targetPath = targetFile.getCanonicalPath();
+
+        if (targetFile.exists()) { return targetPath; }
+
         final String resPath = resDirPath + JAVA_PATH_SEPARATOR + lib;
-        try (InputStream in = NativeLibrary.class.getResourceAsStream(resPath);
-             OutputStream out = Files.newOutputStream(targetFile.toPath())) {
+        try (InputStream in = NativeLibrary.class.getResourceAsStream(resPath)) {
             if (in == null) { throw new IOException("Cannot find resource for native library at " + resPath); }
 
-            final byte[] buf = new byte[1024];
-            int bytesRead;
-            while ((bytesRead = in.read(buf)) != -1) { out.write(buf, 0, bytesRead); }
+            try (OutputStream out = Files.newOutputStream(targetFile.toPath())) {
+                final byte[] buf = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = in.read(buf)) != -1) { out.write(buf, 0, bytesRead); }
+            }
         }
 
         return targetPath;
@@ -233,5 +263,10 @@ final class NativeLibrary {
 
     private static boolean isLinux(@NonNull String sysOs) {
         return sysOs.toLowerCase(Locale.getDefault()).contains(OS_LINUX);
+    }
+
+    @NonNull
+    private static String getRootPath(@NonNull String os) {
+        return JAVA_PATH_SEPARATOR + RESOURCE_BASE_DIR + JAVA_PATH_SEPARATOR + getOsDir(os) + JAVA_PATH_SEPARATOR;
     }
 }

@@ -48,7 +48,6 @@ public final class CouchbaseLiteInternal {
     public static final String PLATFORM = "CBL-JAVA";
 
     public static final String SCRATCH_DIR_NAME = "CouchbaseLiteTemp";
-    public static final String VS_EXTENSION_NAME = "CouchbaseLiteVectorSearch";
 
     private static final String ERRORS_PROPERTIES_PATH = "/errors.properties";
 
@@ -61,19 +60,19 @@ public final class CouchbaseLiteInternal {
     private static volatile boolean debugging;
 
     private static volatile File defaultDbDir;
+    private static volatile File scratchDir;
 
-    public static void init(
-        @NonNull File extDir,
-        boolean debug,
-        @NonNull File defaultDbDir,
-        @NonNull File scratchDir) {
+
+    public static void init(boolean debug, @NonNull File defaultDbDir, @NonNull File tempDir) {
         if (INITIALIZED.getAndSet(true)) { return; }
 
         // set early to catch initialization errors
         debugging = debug;
 
         CouchbaseLiteInternal.defaultDbDir = FileUtils.verifyDir(defaultDbDir);
-        final File tmpDir = FileUtils.verifyDir(scratchDir);
+
+        final File tmpDir = FileUtils.verifyDir(tempDir);
+        scratchDir = tmpDir;
 
         NativeLibrary.load(tmpDir);
 
@@ -83,7 +82,7 @@ public final class CouchbaseLiteInternal {
 
         setC4TmpDirPath(tmpDir);
 
-        setExtensionPath(extDir, scratchDir);
+        CBLVariantExtensions.initVariant(LOCK, tmpDir);
     }
 
     public static boolean debugging() { return debugging; }
@@ -107,12 +106,19 @@ public final class CouchbaseLiteInternal {
 
     @NonNull
     public static File getDefaultDbDir() {
-        requireInit("Can't create DB path");
+        requireInit("Can't get default database directory");
         return defaultDbDir;
     }
 
     @NonNull
     public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
+
+    @VisibleForTesting
+    @NonNull
+    public static File getScratchDir() {
+        requireInit("Can't get scratch directory");
+        return scratchDir;
+    }
 
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }
@@ -127,10 +133,6 @@ public final class CouchbaseLiteInternal {
         }
         catch (IOException e) { Log.i(LogDomain.DATABASE, "Failed to load error messages!", e); }
         return (Map<String, String>) (Map) errors;
-    }
-
-    @VisibleForTesting
-    public static void setExtensionPath(@NonNull File extDir, @NonNull File scratchDir) {
     }
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {

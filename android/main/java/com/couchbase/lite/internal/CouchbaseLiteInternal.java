@@ -62,7 +62,6 @@ public final class CouchbaseLiteInternal {
     public static final String SCRATCH_DIR_NAME = "CouchbaseLiteTemp";
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
-    private static final String VECTOR_SEARCH_LIBRARY = "CouchbaseLiteVectorSearch.so";
 
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
@@ -101,7 +100,7 @@ public final class CouchbaseLiteInternal {
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
 
-        setExtensionPath(ctxt);
+        CBLVariantExtensions.initVariant(LOCK, ctxt);
     }
 
     @NonNull
@@ -166,13 +165,6 @@ public final class CouchbaseLiteInternal {
         }
 
         return errorMessages;
-    }
-
-    @VisibleForTesting
-    public static void setExtensionPath(@NonNull Context ctxt) {
-        final String nativeLibPath = ctxt.getApplicationInfo().nativeLibraryDir;
-        if (!new File(nativeLibPath, VECTOR_SEARCH_LIBRARY).exists()) { return; }
-        synchronized (LOCK) { C4.setExtPath(nativeLibPath); }
     }
 
     private static void setC4TmpDirPath(@NonNull File scratchDir) {

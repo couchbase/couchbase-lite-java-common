@@ -30,7 +30,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testStopReplicatorAfterOffline() throws InterruptedException {
         // this test crashes the test suite on Android <21
-        skipTestWhen("android<21");
+        skipTestWhen("ANDROID<21");
 
         final CountDownLatch offline = new CountDownLatch(1);
         final CountDownLatch stopped = new CountDownLatch(1);
@@ -62,7 +62,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
     @Test
     public void testStartSingleShotReplicatorInOffline() throws InterruptedException {
         // this test crashes the test suite on Android <21
-        skipTestWhen("android<21");
+        skipTestWhen("ANDROID<21");
 
         final CountDownLatch stopped = new CountDownLatch(1);
         Replicator repl = makeRepl(makeConfig().setContinuous(false));
