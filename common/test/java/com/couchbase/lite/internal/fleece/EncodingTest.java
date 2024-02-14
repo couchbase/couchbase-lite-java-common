@@ -66,7 +66,7 @@ public class EncodingTest extends BaseTest {
     // Oddly windows seems to parse this differently...
     @Test
     public void testFLEncodeUTF8Win() throws LiteCoreException {
-        skipTestWhen("NOT WINDOWS");
+        skipTestUnless("WINDOWS");
         testRoundTrip("Goodbye cruel \uD83D\uDE3A\uDE3A world"); // a cat and a half
     }
 

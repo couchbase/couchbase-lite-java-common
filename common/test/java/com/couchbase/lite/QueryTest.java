@@ -2940,40 +2940,40 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testStringToUTC() throws ParseException {
+    public void testStringToUTC() {
         createDateDocs();
 
         ArrayList<String> expectedLocal = new ArrayList<>();
-        expectedLocal.add(localToUTC("yyyy-MM-dd", "1985-10-26"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm", "1985-10-26 01:21"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss", "1985-10-26 01:21:30"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.500"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.550"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.555"));
+        expectedLocal.add("1985-10-26");
+        expectedLocal.add("1985-10-26 08:21:00");
+        expectedLocal.add("1985-10-26 08:21:30");
+        expectedLocal.add("1985-10-26 08:21:30.500");
+        expectedLocal.add("1985-10-26 08:21:30.550");
+        expectedLocal.add("1985-10-26 08:21:30.555");
 
         ArrayList<String> expectedJST = new ArrayList<>();
         expectedJST.add(null);
-        expectedJST.add("1985-10-25T16:21:00Z");
-        expectedJST.add("1985-10-25T16:21:30Z");
-        expectedJST.add("1985-10-25T16:21:30.500Z");
-        expectedJST.add("1985-10-25T16:21:30.550Z");
-        expectedJST.add("1985-10-25T16:21:30.555Z");
+        expectedJST.add("1985-10-25 16:21:00Z");
+        expectedJST.add("1985-10-25 16:21:30Z");
+        expectedJST.add("1985-10-25 16:21:30.500Z");
+        expectedJST.add("1985-10-25 16:21:30.550Z");
+        expectedJST.add("1985-10-25 16:21:30.555Z");
 
         ArrayList<String> expectedPST = new ArrayList<>();
         expectedPST.add(null);
-        expectedPST.add("1985-10-26T09:21:00Z");
-        expectedPST.add("1985-10-26T09:21:30Z");
-        expectedPST.add("1985-10-26T09:21:30.500Z");
-        expectedPST.add("1985-10-26T09:21:30.550Z");
-        expectedPST.add("1985-10-26T09:21:30.555Z");
+        expectedPST.add("1985-10-26 09:21:00Z");
+        expectedPST.add("1985-10-26 09:21:30Z");
+        expectedPST.add("1985-10-26 09:21:30.500Z");
+        expectedPST.add("1985-10-26 09:21:30.550Z");
+        expectedPST.add("1985-10-26 09:21:30.555Z");
 
         ArrayList<String> expectedUTC = new ArrayList<>();
         expectedUTC.add(null);
-        expectedUTC.add("1985-10-26T01:21:00Z");
-        expectedUTC.add("1985-10-26T01:21:30Z");
-        expectedUTC.add("1985-10-26T01:21:30.500Z");
-        expectedUTC.add("1985-10-26T01:21:30.550Z");
-        expectedUTC.add("1985-10-26T01:21:30.555Z");
+        expectedUTC.add("1985-10-26 01:21:00Z");
+        expectedUTC.add("1985-10-26 01:21:30Z");
+        expectedUTC.add("1985-10-26 01:21:30.500Z");
+        expectedUTC.add("1985-10-26 01:21:30.550Z");
+        expectedUTC.add("1985-10-26 01:21:30.555Z");
 
         Query query = QueryBuilder.select(
                 SelectResult.expression(Function.stringToUTC(Expression.property("local"))),
@@ -3289,16 +3289,6 @@ public class QueryTest extends BaseQueryTest {
         doc.setString("title", title);
         doc.setBoolean("complete", complete);
         return saveDocInTestCollection(doc);
-    }
-
-    private String localToUTC(String format, String dateStr) throws ParseException {
-        TimeZone tz = TimeZone.getDefault();
-        SimpleDateFormat df = new SimpleDateFormat(format);
-        df.setTimeZone(tz);
-        Date date = df.parse(dateStr);
-        df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return df.format(date).replace(".000", "");
     }
 
     private void liveQueryNoUpdate(Fn.Consumer<QueryChange> test) throws InterruptedException {

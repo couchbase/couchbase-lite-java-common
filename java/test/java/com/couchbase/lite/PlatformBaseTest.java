@@ -18,7 +18,6 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,15 +25,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import com.couchbase.lite.internal.CBLVariantExtensions;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.JavaExecutionService;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 
-import com.couchbase.lite.internal.core.C4Database;
 
 /**
  * Platform test class for Java.
@@ -45,39 +43,30 @@ public abstract class PlatformBaseTest implements PlatformTest {
 
     public static final String LEGAL_FILE_NAME_CHARS = "`~@#$%&'()_+{}][=-.,;'ABCDEabcde";
 
-    public static final String LOG_DIR = "logs";
-
-    private static final long MAX_LOG_FILE_BYTES = Long.MAX_VALUE; // lots
-    private static final int MAX_LOG_FILES = Integer.MAX_VALUE; // lots
-
     private static final Map<String, Exclusion> PLATFORM_DEPENDENT_TESTS;
     static {
         final Map<String, Exclusion> m = new HashMap<>();
-        m.put(
-            "NOT WINDOWS",
-            new Exclusion(
-                "Supported only on Windows",
-                () -> !System.getProperty("os.name").toLowerCase().contains("windows")));
         m.put(
             "WINDOWS",
             new Exclusion(
                 "Not supported on Windows",
                 () -> System.getProperty("os.name").toLowerCase().contains("windows")));
         m.put(
+            "VECTORSEARCH",
+            new Exclusion(
+                "Requires the VectorSarch Library",
+                () -> CBLVariantExtensions.setExtensionPath(new Object(), CouchbaseLiteInternal.getScratchDir())));
+        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
+        m.put(
             "SWEDISH UNSUPPORTED",
             new Exclusion(
                 "Swedish locale not supported",
                 () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
-        m.put(
-            "32-BIT",
-            new Exclusion(
-                "Requires 64-bit arch",
-                () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
-        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    private static LogFileConfiguration logConfig;
     static { CouchbaseLite.init(true); }
+    // instance methods
+
 
     @Override
     public final void setupPlatform() { }

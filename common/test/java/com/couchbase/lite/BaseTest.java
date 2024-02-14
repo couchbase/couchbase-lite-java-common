@@ -250,6 +250,11 @@ public abstract class BaseTest extends PlatformBaseTest {
         if (exclusion != null) { Assume.assumeFalse(exclusion.msg, exclusion.test.get()); }
     }
 
+    protected final void skipTestUnless(@NonNull String tag) {
+        final Exclusion exclusion = getExclusions(tag);
+        if (exclusion != null) { Assume.assumeTrue(exclusion.msg, exclusion.test.get()); }
+    }
+
     protected final String getScratchDirectoryPath(@NonNull String name) {
         try {
             String path = FileUtils.verifyDir(new File(getTmpDir(), name)).getCanonicalPath();
