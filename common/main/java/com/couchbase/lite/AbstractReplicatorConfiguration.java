@@ -830,6 +830,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
         if (authenticator != null) { buf.append('@'); }
         if (pinnedServerCertificate != null) { buf.append('^'); }
+        buf.append(' ');
 
         return "ReplicatorConfig{" + buf + target + '}';
     }
