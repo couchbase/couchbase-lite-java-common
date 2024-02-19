@@ -36,6 +36,8 @@ message( STATUS "ABI: "                   ${ANDROID_ABI} )
 message( STATUS "SOURCE DIR: "            "${PROJECT_SOURCE_DIR}" )
 message( STATUS "OUTPUT DIR: "            ${CMAKE_LIBRARY_OUTPUT_DIRECTORY} )
 message( STATUS "FLAG: "                  ${WHOLE_LIBRARY_FLAG} )
+message( STATUS "===== Using HWASAN")
+
 
 set(JNI_SRC main/cpp)
 
@@ -75,6 +77,9 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_flencoder.cc
     ${JNI_SRC}/native_glue.cc
 )
+
+target_compile_options(LiteCoreJNI PUBLIC -fsanitize=hwaddress -fno-omit-frame-pointer)
+target_link_options(LiteCoreJNI PUBLIC -fsanitize=hwaddress)
 
 target_include_directories( LiteCoreJNI PUBLIC
     ${JNI_SRC}/
