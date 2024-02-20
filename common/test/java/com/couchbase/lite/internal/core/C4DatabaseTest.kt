@@ -647,7 +647,7 @@ class C4DatabaseTest : C4BaseTest() {
         )
 
         assertNotNull(doc)
-        doc.close()
+
         return keys
     }
 
