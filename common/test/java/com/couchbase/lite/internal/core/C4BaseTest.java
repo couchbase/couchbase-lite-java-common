@@ -188,9 +188,7 @@ public class C4BaseTest extends BaseTest {
     }
 
     /**
-     * @param flags C4RevisionFlags
-     *              <p>
-     *              !!! CONVERT TO BE COLLECTION SAVVY
+     * !!! CONVERT TO BE COLLECTION SAVVY
      */
     private void createRev(C4Database db, String docID, String revID, byte[] body, int flags)
         throws LiteCoreException {
@@ -205,8 +203,6 @@ public class C4BaseTest extends BaseTest {
             String[] history = revIDs.toArray(new String[0]);
             C4Document doc = C4Document.create(db, body, docID, flags, true, false, history, true, 0, 0);
             assertNotNull(doc);
-            doc.close();
-            curDoc.close();
             commit = true;
         }
         finally {

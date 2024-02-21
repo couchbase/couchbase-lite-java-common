@@ -68,7 +68,6 @@ public class C4AllDocsPerformanceTest extends C4BaseTest {
                     C4Document doc
                         = C4Document.create(c4Database, json2fleece(json), docID, 0, true, false, history, true, 0, 0);
                     assertNotNull(doc);
-                    doc.close();
                 }
                 commit = true;
             }

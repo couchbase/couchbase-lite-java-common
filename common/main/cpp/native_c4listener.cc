@@ -65,12 +65,14 @@ bool litecore::jni::initC4Listener(JNIEnv *env) {
 static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    bool res = false;
+    jboolean res = false;
     if (getEnvStat == JNI_OK) {
+        jstring _header = toJString(env, authHeader);
         res = env->CallStaticBooleanMethod(cls_C4Listener,
                                            m_C4Listener_httpAuthCallback,
                                            (jlong) context,
-                                           toJString(env, authHeader));
+                                           _header);
+        env->DeleteLocalRef(_header);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             res = env->CallStaticBooleanMethod(cls_C4Listener,
@@ -78,12 +80,12 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
                                                (jlong) context,
                                                toJString(env, authHeader));
             if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
+                C4Warn("httpAuthCallback(): Failed to detach the current thread from a Java VM");
         } else {
-            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
+            C4Warn("httpAuthCallback(): Failed to attaches the current thread to a Java VM");
         }
     } else {
-        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        C4Warn("httpAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
     return res;
 }
@@ -93,10 +95,12 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     bool res = false;
     if (getEnvStat == JNI_OK) {
+        jbyteArray _data = toJByteArray(env, clientCertData);
         res = env->CallStaticBooleanMethod(cls_C4Listener,
                                            m_C4Listener_certAuthCallback,
                                            (jlong) context,
-                                           toJByteArray(env, clientCertData));
+                                           _data);
+        env->DeleteLocalRef(_data);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             res = env->CallStaticBooleanMethod(cls_C4Listener,
@@ -104,12 +108,12 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
                                                (jlong) context,
                                                toJByteArray(env, clientCertData));
             if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
+                C4Warn("certAuthCallback(): Failed to detach the current thread from a Java VM");
         } else {
-            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
+            C4Warn("certAuthCallback(): Failed to attaches the current thread to a Java VM");
         }
     } else {
-        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        C4Warn("certAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
     return res;
 }
@@ -125,12 +129,15 @@ static bool doKeyDataCallback(JNIEnv *env, void *externalKey, void *output, size
 
     jsize keyDataSize = env->GetArrayLength(key);
 
-    if (keyDataSize > outputMaxLen)
+    if (keyDataSize > outputMaxLen) {
+        env->DeleteLocalRef(key);
         return false;
+    }
 
     jbyte *keyData = env->GetByteArrayElements(key, nullptr);
     memcpy(output, keyData, keyDataSize);
     env->ReleaseByteArrayElements(key, keyData, 0);
+    env->DeleteLocalRef(key);
 
     *outputLen = keyDataSize;
 
@@ -148,12 +155,12 @@ static bool publicKeyDataCallback(void *externalKey, void *output, size_t output
         if (attachCurrentThread(&env) == 0) {
             res = doKeyDataCallback(env, externalKey, output, outputMaxLen, outputLen);
             if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
+                C4Warn("publicKeyDataCallback(): Failed to detach the current thread from a Java VM");
         } else {
-            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
+            C4Warn("publicKeyDataCallback(): Failed to attaches the current thread to a Java VM");
         }
     } else {
-        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        C4Warn("publicKeyDataCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
     return res;
 }
@@ -168,23 +175,30 @@ static bool doDecryptCallback(
         void *output,
         size_t outputMaxLen,
         size_t *outputLen) {
-    jbyteArray encryptedData = env->NewByteArray(input.size);
-    env->SetByteArrayRegion(encryptedData, 0, input.size, (jbyte *) input.buf);
+    assert(input.size < 16384);
+    int n = (int) input.size;
+
+    jbyteArray encryptedData = env->NewByteArray(n);
+    env->SetByteArrayRegion(encryptedData, 0, n, (jbyte *) input.buf);
 
     auto decryptedData = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair,
                                                                    m_C4KeyPair_decryptCallback,
                                                                    (jlong) externalKey,
                                                                    encryptedData));
+    env->DeleteLocalRef(encryptedData);
     if (!decryptedData)
         return false;
 
     jsize dataSize = env->GetArrayLength(decryptedData);
-    if (dataSize > outputMaxLen)
+    if (dataSize > outputMaxLen) {
+        env->DeleteLocalRef(decryptedData);
         return false;
+    }
 
     jbyte *data = env->GetByteArrayElements(decryptedData, nullptr);
     memcpy(output, data, dataSize);
     env->ReleaseByteArrayElements(decryptedData, data, 0);
+    env->DeleteLocalRef(decryptedData);
 
     *outputLen = dataSize;
 
@@ -202,12 +216,12 @@ static bool decryptKeyCallback(void *externalKey, C4Slice input, void *output, s
         if (attachCurrentThread(&env) == 0) {
             res = doDecryptCallback(env, externalKey, input, output, outputMaxLen, outputLen);
             if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
+                C4Warn("decryptKeyCallback(): Failed to detach the current thread from a Java VM");
         } else {
-            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
+            C4Warn("decryptKeyCallback(): Failed to attaches the current thread to a Java VM");
         }
     } else {
-        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        C4Warn("decryptKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
     return res;
 }
@@ -220,22 +234,29 @@ static bool doSignCallback(JNIEnv *env,
                            C4SignatureDigestAlgorithm digestAlgorithm,
                            C4Slice inputData,
                            void *outSignature) {
-    jbyteArray data = env->NewByteArray(inputData.size);
-    env->SetByteArrayRegion(data, 0, inputData.size, (jbyte *) inputData.buf);
+    assert(inputData.size < 16384);
+    int n = (int) inputData.size;
+
+    jbyteArray data = env->NewByteArray(n);
+    env->SetByteArrayRegion(data, 0, n, (jbyte *) inputData.buf);
 
     auto signature = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair,
                                                                m_C4KeyPair_signCallback,
                                                                (jlong) externalKey,
                                                                (int) digestAlgorithm,
                                                                data));
+    env->DeleteLocalRef(data);
     if (!signature)
         return false;
 
     jsize sigSize = env->GetArrayLength(signature);
+    // The signature is the same size as the key.
+    // This check happens in Java
 
     jbyte *sigData = env->GetByteArrayElements(signature, nullptr);
     memcpy(outSignature, sigData, sigSize);
     env->ReleaseByteArrayElements(signature, sigData, 0);
+    env->DeleteLocalRef(signature);
 
     return true;
 }
@@ -255,12 +276,12 @@ static bool signKeyCallback(
         if (attachCurrentThread(&env) == 0) {
             res = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
             if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
+                C4Warn("signKeyCallback(): Failed to detach the current thread from a Java VM");
         } else {
-            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
+            C4Warn("signKeyCallback(): Failed to attaches the current thread to a Java VM");
         }
     } else {
-        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        C4Warn("signKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
     return res;
 }
@@ -279,12 +300,12 @@ static void freeKeyCallback(void *externalKey) {
                                       m_C4KeyPair_freeCallback,
                                       (jlong) externalKey);
             if (gJVM->DetachCurrentThread() != 0)
-                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
+                C4Warn("freeKeyCallback(): Failed to detach the current thread from a Java VM");
         } else {
-            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
+            C4Warn("freeKeyCallback(): Failed to attaches the current thread to a Java VM");
         }
     } else {
-        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        C4Warn("freeKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 }
 
@@ -642,28 +663,28 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listen
         jlongArray c4Collections) {
     jstringSlice name(env, dbName);
 
-    C4Error error{};
-    auto ok = c4listener_shareDB(
+    C4Error error1{};
+    auto ok1 = c4listener_shareDB(
             reinterpret_cast<C4Listener *>(c4Listener),
             name,
             reinterpret_cast<C4Database *>(c4db),
-            &error);
-    if (!ok && error.code != 0) {
-        throwError(env, error);
+            &error1);
+    if (!ok1 && error1.code != 0) {
+        throwError(env, error1);
         return;
     }
 
     jsize n = env->GetArrayLength(c4Collections);
-    jlong *colls = env->GetLongArrayElements(c4Collections, 0);
+    jlong *colls = env->GetLongArrayElements(c4Collections, nullptr);
     for (int i = 0; i < n; i++) {
-        C4Error error{};
-        auto ok = c4listener_shareCollection(
+        C4Error error2{};
+        auto ok2 = c4listener_shareCollection(
                 reinterpret_cast<C4Listener *>(c4Listener),
                 name,
                 reinterpret_cast<C4Collection *>(colls[i]),
-                &error);
-        if (!ok && error.code != 0) {
-            throwError(env, error);
+                &error2);
+        if (!ok2 && error2.code != 0) {
+            throwError(env, error2);
             break;
         }
     }
@@ -766,11 +787,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
     std::vector<jstringSlice *> attrs;
     for (int i = 0; i < size; ++i) {
         auto component = (jobjectArray) env->GetObjectArrayElement(nameComponents, i);
-        auto key = (jstring) env->GetObjectArrayElement(component, 0);
-        auto value = (jstring) env->GetObjectArrayElement(component, 1);
 
+        auto key = (jstring) env->GetObjectArrayElement(component, 0);
         auto keySlice = new jstringSlice(env, key);
+        env->DeleteLocalRef(key);
+
+        auto value = (jstring) env->GetObjectArrayElement(component, 1);
         auto valueSlice = new jstringSlice(env, value);
+        env->DeleteLocalRef(value);
+
+        env->DeleteLocalRef(component);
 
         attrs.push_back(keySlice);
         attrs.push_back(valueSlice);
@@ -780,15 +806,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
 
     C4Error error{};
     auto csr = c4cert_createRequest(subjectName, size, usage, keys, &error);
+
+    // Release cert's attributes and values:
     delete[] subjectName;
+    for (int i = 0; i < attrs.size(); i++) {
+        delete attrs.at(i);
+    }
+
     if (!csr) {
         throwError(env, error);
         return nullptr;
-    }
-
-    // Release cert's attributes and values:
-    for (int i = 0; i < attrs.size(); i++) {
-        delete attrs.at(i);
     }
 
     C4CertIssuerParameters issuerParams = kDefaultCertIssuerParameters;

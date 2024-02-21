@@ -261,5 +261,12 @@ public class C4Collection extends C4NativePeer {
         finally { super.finalize(); }
     }
 
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, impl::nFree); }
+    private void closePeer(@Nullable LogDomain domain) {
+        releasePeer(
+            domain,
+            (peer) -> {
+                final NativeImpl nativeImpl = impl;
+                if (nativeImpl != null) { nativeImpl.nFree(peer); }
+            });
+    }
 }

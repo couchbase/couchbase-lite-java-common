@@ -50,30 +50,40 @@ bool litecore::jni::initC4Prediction(JNIEnv *env) {
 }
 
 static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4Error *error) {
+    C4SliceResult res = {nullptr, 0};
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-    if (getEnvStat == JNI_EDETACHED)
-        attachCurrentThread(&env);
+    if (getEnvStat == JNI_OK) {
+        // this call returns null when there is no prediction.
+        jobject sliceResult = env->CallStaticObjectMethod(
+                cls_C4Prediction,
+                m_C4Prediction_prediction,
+                (jlong) token,
+                (jlong) input,
+                (jlong) c4db);
+        if (sliceResult)
+            res = fromJavaFLSliceResult(env, sliceResult);
+        env->DeleteLocalRef(sliceResult);
+    } else if (getEnvStat == JNI_EDETACHED) {
+        if (attachCurrentThread(&env) == 0) {
+            jobject sliceResult = env->CallStaticObjectMethod(
+                    cls_C4Prediction,
+                    m_C4Prediction_prediction,
+                    (jlong) token,
+                    (jlong) input,
+                    (jlong) c4db);
+            if (sliceResult)
+                res = fromJavaFLSliceResult(env, sliceResult);
+            if (gJVM->DetachCurrentThread() != 0)
+                C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");
+        } else {
+            C4Warn("doRequestClose(): Failed to attaches the current thread to a Java VM");
+        }
+    } else {
+        C4Warn("doClose(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+    }
 
-    // this call returns null when there is no prediction.
-    jobject sliceResult = env->CallStaticObjectMethod(
-            cls_C4Prediction,
-            m_C4Prediction_prediction,
-            (jlong) token,
-            (jlong) input,
-            (jlong) c4db);
-
-    // if the call returned a nullptr, just give the caller an empty result.
-    FLSliceResult result;
-    if (!sliceResult)
-        result = {nullptr, 0};
-    else
-        result = fromJavaFLSliceResult(env, sliceResult);
-
-    if (getEnvStat == JNI_EDETACHED)
-        gJVM->DetachCurrentThread();
-
-    return result;
+    return res;
 }
 
 #endif

@@ -78,12 +78,14 @@ namespace litecore {
 
         // Creates a temporary slice value from a Java byte[], attempting to avoid copying
         class jbyteArraySlice {
+        // Warning: If `critical` is true, you cannot make any further JNI calls (except other
+        // critical accesses) until this object goes out of scope or is deleted.
         public:
-            // Warning: If `critical` is true, you cannot make any further JNI calls (except other
-            // critical accesses) until this object goes out of scope or is deleted.
             jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, bool critical = false);
 
-            jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, size_t length, bool critical = false);
+            jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, bool critical = false);
+
+            jbyteArraySlice(JNIEnv *env,  bool delRef, jbyteArray jbytes, size_t length, bool critical = false);
 
             ~jbyteArraySlice();
 
@@ -101,6 +103,7 @@ namespace litecore {
             JNIEnv *_env;
             jbyteArray _jbytes;
             bool _critical;
+            bool _delRef;
         };
 
         // Creates a Java String from the contents of a C4Slice.

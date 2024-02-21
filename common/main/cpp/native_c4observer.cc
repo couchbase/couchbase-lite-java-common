@@ -129,8 +129,13 @@ c4CollectionObsCallback(C4CollectionObserver *observer, void *ignore) {
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(cls_C4CollObs, m_C4CollObs_callback, (jlong) observer);
-            gJVM->DetachCurrentThread();
+            if (gJVM->DetachCurrentThread() != 0)
+                C4Warn("c4CollectionObsCallback(): Failed to detach the current thread from a Java VM");
+        } else {
+            C4Warn("c4CollectionObsCallback(): Failed to attaches the current thread to a Java VM");
         }
+    } else {
+        C4Warn("c4CollectionObsCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 }
 
@@ -144,12 +149,19 @@ c4DocObsCallback(C4DocumentObserver *obs, C4Collection *ign1, C4Slice docID, C4S
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
     if (getEnvStat == JNI_OK) {
-        env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs, toJString(env, docID));
+        jstring _docID = toJString(env, docID);
+        env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs, _docID);
+        env->DeleteLocalRef(_docID);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) obs, toJString(env, docID));
-            gJVM->DetachCurrentThread();
+            if (gJVM->DetachCurrentThread() != 0)
+                C4Warn("c4DocObsCallback(): Failed to detach the current thread from a Java VM");
+        } else {
+            C4Warn("c4DocObsCallback(): Failed to attaches the current thread to a Java VM");
         }
+    } else {
+        C4Warn("c4DocObsCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 }
 
@@ -166,15 +178,23 @@ static jobjectArray
 c4DocChangesToJavaArray(JNIEnv *env, C4CollectionChange changes[], uint32_t nChanges, bool external) {
     jobjectArray array = env->NewObjectArray((jsize) nChanges, cls_C4DocChange, nullptr);
     for (size_t i = 0; i < nChanges; i++) {
+        jstring _docId = toJString(env, changes[i].docID);
+        jstring _revId = toJString(env, changes[i].revID);
         jobject obj = env->CallStaticObjectMethod(
                 cls_C4DocChange,
                 m_C4DocChange_create,
-                toJString(env, changes[i].docID),
-                toJString(env, changes[i].revID),
+                _docId,
+                _revId,
                 (jlong) changes[i].sequence,
                 (jboolean) external);
-        if (obj != nullptr)
+
+        env->DeleteLocalRef(_docId);
+        env->DeleteLocalRef(_revId);
+
+        if (obj != nullptr) {
             env->SetObjectArrayElement(array, (jsize) i, obj);
+            env->DeleteLocalRef(obj);
+        }
     }
 
     return array;
@@ -187,7 +207,6 @@ c4DocChangesToJavaArray(JNIEnv *env, C4CollectionChange changes[], uint32_t nCha
 /**
  * Callback method from LiteCore C4QueryObserverCallback
  * @param
- * @param ctx
  */
 static void
 c4QueryObserverCallback(C4QueryObserver *ignore1, C4Query *ignore2, void *ctx) {
@@ -198,12 +217,19 @@ c4QueryObserverCallback(C4QueryObserver *ignore1, C4Query *ignore2, void *ctx) {
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(cls_C4QueryObs, m_C4QueryObs_callback, (jlong) ctx);
-            gJVM->DetachCurrentThread();
+            if (gJVM->DetachCurrentThread() != 0)
+                C4Warn("c4QueryObserverCallback(): Failed to detach the current thread from a Java VM");
+        } else {
+            C4Warn("c4QueryObserverCallback(): Failed to attaches the current thread to a Java VM");
         }
+    } else {
+        C4Warn("c4QueryObserverCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 }
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
 /*
  * Collection observer
@@ -224,8 +250,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create(
     auto res = (jlong) c4dbobs_createOnCollection(
             (C4Collection *) coll,
             c4CollectionObsCallback,
-            (void *)
-            0L,
+            (void *) 0L,
             &error);
     if (!res && error.code != 0) {
         throwError(env, error);
@@ -380,4 +405,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_free(
         jlong handle) {
     c4queryobs_free((C4QueryObserver *) handle);
 }
+#ifdef __cplusplus
 }
+#endif
