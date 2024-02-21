@@ -70,10 +70,11 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
     if (getEnvStat == JNI_OK) {
         jstring _header = toJString(env, authHeader);
         res = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_httpAuthCallback, (jlong) context, _header);
-        env->DeleteLocalRef(_header);
+        if (_header != nullptr) env->DeleteLocalRef(_header);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            res = env->CallStaticBooleanMethod(cls_C4Listener,
+            res = env->CallStaticBooleanMethod(
+                    cls_C4Listener,
                     m_C4Listener_httpAuthCallback,
                     (jlong) context,
                     toJString(env, authHeader));
@@ -98,7 +99,7 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
     if (getEnvStat == JNI_OK) {
         jbyteArray _data = toJByteArray(env, clientCertData);
         res = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_certAuthCallback, (jlong) context, _data);
-        env->DeleteLocalRef(_data);
+        if (_data != nullptr) env->DeleteLocalRef(_data);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             res = env->CallStaticBooleanMethod(
@@ -114,6 +115,7 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
     } else {
         C4Warn("certAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
+
     return res;
 }
 
@@ -177,6 +179,7 @@ static bool doDecryptCallback(
     int n = (int) input.size;
 
     jbyteArray encData = env->NewByteArray(n);
+    if (encData == nullptr) return false;
     env->SetByteArrayRegion(encData, 0, n, (jbyte *) input.buf);
 
     auto decData = (jbyteArray)
@@ -232,6 +235,7 @@ static bool doSignCallback(JNIEnv *env, void *extKey, C4SignatureDigestAlgorithm
     int n = (int) inData.size;
 
     jbyteArray data = env->NewByteArray(n);
+    if (data == nullptr) return false;
     env->SetByteArrayRegion(data, 0, n, (jbyte *) inData.buf);
 
     auto sig = (jbyteArray)
@@ -755,11 +759,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
     std::vector<jstringSlice *> attrs;
     for (int i = 0; i < size; ++i) {
         auto component = (jobjectArray) env->GetObjectArrayElement(nameComponents, i);
-        auto key = (jstring) env->GetObjectArrayElement(component, 0);
-        auto value = (jstring) env->GetObjectArrayElement(component, 1);
 
+        auto key = (jstring) env->GetObjectArrayElement(component, 0);
         auto keySlice = new jstringSlice(env, key);
+        env->DeleteLocalRef(key);
+
+        auto value = (jstring) env->GetObjectArrayElement(component, 1);
         auto valueSlice = new jstringSlice(env, value);
+        env->DeleteLocalRef(value);
+
+        env->DeleteLocalRef(component);
 
         attrs.push_back(keySlice);
         attrs.push_back(valueSlice);
@@ -769,15 +778,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
 
     C4Error error{};
     auto csr = c4cert_createRequest(subjectName, size, usage, keys, &error);
+
+    // Release cert's attributes and values:
     delete[] subjectName;
+    for (int i = 0; i < attrs.size(); i++) {
+        delete attrs.at(i);
+    }
+
     if (!csr) {
         throwError(env, error);
         return nullptr;
-    }
-
-    // Release cert's attributes and values:
-    for (int i = 0; i < attrs.size(); i++) {
-        delete attrs.at(i);
     }
 
     C4CertIssuerParameters issuerParams = kDefaultCertIssuerParameters;
