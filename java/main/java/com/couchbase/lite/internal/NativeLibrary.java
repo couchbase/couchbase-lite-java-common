@@ -92,7 +92,7 @@ final class NativeLibrary {
         final String resDirPath = getCoreArchDir(os, System.getProperty("os.arch"));
         try {
             final File targetDir = computeTargetDirectory(scratchDir, resDirPath, extLib);
-            extract(libName, resDirPath, targetDir);
+            extract(extLib, resDirPath, targetDir);
             return targetDir.getCanonicalPath();
         }
         catch (Exception ignore) { }
