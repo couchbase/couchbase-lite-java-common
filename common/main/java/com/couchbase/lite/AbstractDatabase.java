@@ -484,11 +484,11 @@ abstract class AbstractDatabase extends BaseDatabase
     }
 
     /**
-     * Get the default collection. If the default collection has been deleted the function will return null.
+     * Get the default collection.
      *
-     * @return the default collection or null if it does not exist.
+     * @return the default collection.
      */
-    @Nullable
+    @NonNull
     public final Collection getDefaultCollection() throws CouchbaseLiteException {
         synchronized (getDbLock()) {
             assertOpenChecked();
@@ -497,8 +497,8 @@ abstract class AbstractDatabase extends BaseDatabase
     }
 
     /**
-     * Delete a collection by name  in the default scope. If the collection doesn't exist, the operation
-     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
+     * Delete a collection by name in the default scope. If the collection doesn't exist, the operation
+     * will be no-ops. Note: the default collection cannot be deleted.
      *
      * @param name the collection to be deleted
      * @throws CouchbaseLiteException on failure
@@ -508,8 +508,8 @@ abstract class AbstractDatabase extends BaseDatabase
     }
 
     /**
-     * Delete a collection by name  in the specified scope. If the collection doesn't exist, the operation
-     * will be no-ops. Note: the default collection can be deleted but cannot be recreated.
+     * Delete a collection by name in the specified scope. If the collection doesn't exist, the operation
+     * will be no-ops. Note: the default collection cannot be deleted.
      *
      * @param collectionName the collection to be deleted
      * @param scopeName      the scope from which to delete the collection
@@ -656,12 +656,12 @@ abstract class AbstractDatabase extends BaseDatabase
     /**
      * Gets an existing Document with the given ID from the default collection.
      * If the document with the given ID doesn't exist in the default collection,
-     * the method will return null.  If the default collection does not exist or if
-     * the database is closed, the method will throw an IllegalStateException
+     * the method will return null. If the database is closed the method will
+     * throw an IllegalStateException
      *
      * @param id the document ID
      * @return the Document object or null
-     * @throws IllegalStateException when the database is closed or the default collection has been deleted
+     * @throws IllegalStateException when the database is closed
      * @deprecated Use getDefaultCollection().getDocument()
      */
     @SuppressWarnings("PMD.PreserveStackTrace")
@@ -1024,9 +1024,6 @@ abstract class AbstractDatabase extends BaseDatabase
         final Collection defaultCollection;
         try { defaultCollection = Collection.getDefaultCollection(this.getDatabase()); }
         catch (CouchbaseLiteException e) { throw new IllegalStateException("Can't get default collection", e); }
-        if (defaultCollection == null) {
-            throw new IllegalArgumentException("Database " + getName() + "has no default collection");
-        }
         final HashSet<Collection> collections = new HashSet<>();
         collections.add(defaultCollection);
         return collections;
@@ -1044,7 +1041,7 @@ abstract class AbstractDatabase extends BaseDatabase
         synchronized (getDbLock()) { return getOpenC4DbLocked().getCollection(scopeName, collectionName); }
     }
 
-    @Nullable
+    @NonNull
     C4Collection getDefaultC4Collection() throws LiteCoreException {
         synchronized (getDbLock()) { return getOpenC4DbLocked().getDefaultCollection(); }
     }
@@ -1311,14 +1308,12 @@ abstract class AbstractDatabase extends BaseDatabase
         throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), err);
     }
 
-    @Nullable
+    @NonNull
     private Collection getDefaultCollectionLocked() throws CouchbaseLiteException {
-        if (noDefaultCollection) { return null; }
-
         if (defaultCollection == null) { defaultCollection = Collection.getDefaultCollection(getDatabase()); }
-        else if (!defaultCollection.isValid()) { defaultCollection = null; }
-
-        noDefaultCollection = defaultCollection == null;
+        else if (!defaultCollection.isValid()) {
+            throw new IllegalArgumentException("Database " + getName() + " default collection is invalid");
+        }
 
         return defaultCollection;
     }
