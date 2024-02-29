@@ -38,8 +38,10 @@ public final class CouchbaseLite {
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     * Debugging mode is not supported for client code.  Please use it only when advised to do
+     * so by Couchbase Support Engineering
      *
-     * @param debug true to enable debugging
+     * @param debug true to enable debugging (Unsupported)
      * @throws IllegalStateException on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug) {
@@ -48,9 +50,10 @@ public final class CouchbaseLite {
 
     /**
      * Initialize CouchbaseLite library.
+     * Debugging mode is not supported for client code.  Please use it only when advised to do
+     * so by Couchbase Support ENgineering
      * This method allows specifying a default root directory for database files,
-     * and the scratch directory used for SQLite temporary files.
-     * Use it with great caution.
+     * and the scratch directory used for SQLite temporary files. Use it with great caution.
      *
      * @param ctxt       Application context
      * @param debug      to enable debugging

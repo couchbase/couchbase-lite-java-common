@@ -190,7 +190,7 @@ public abstract class C4NativePeer implements AutoCloseable {
             // here (domain != null) if we expect the peer to have been closed
 
             // it wasn't: this probably happens a lot (object is being finalized)
-            if (peer != 0L) { logCall(domain, "Not closed"); }
+            if (peer != 0L) { logCall(domain, "Expected this peer to have been closed previously"); }
         }
 
         updateHistory(peer, "Released at:");

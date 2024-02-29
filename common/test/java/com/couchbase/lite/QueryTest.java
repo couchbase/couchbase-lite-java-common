@@ -17,8 +17,6 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -1641,67 +1638,54 @@ public class QueryTest extends BaseQueryTest {
     public void testJoinWithEmptyArgs1() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .join((Join[]) null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .join((Join[]) null));
     }
 
     @Test
     public void testJoinWithEmptyArgs2() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .where(null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .where(null));
     }
 
     @Test
     public void testJoinWithEmptyArgs3() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .groupBy((Expression[]) null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .groupBy((Expression[]) null));
     }
 
     @Test
     public void testJoinWithEmptyArgs4() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .orderBy((Ordering[]) null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .orderBy((Ordering[]) null));
     }
 
     @Test
     public void testJoinWithEmptyArgs5() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .limit(null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .limit(null));
     }
 
     @Test
     public void testJoinWithEmptyArgs6() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .limit(null, null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .limit(null, null));
     }
 
     //https://github.com/couchbase/couchbase-lite-android/issues/1785

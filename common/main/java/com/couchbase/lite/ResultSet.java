@@ -132,7 +132,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Return a List of all Results.
-     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#iterator} and {@link ResultSet#iterator}
+     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#allResults} and {@link ResultSet#iterator}
      * method share same data structure. They cannot be used together.</p>
      *
      * @return List of Results
@@ -151,7 +151,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Return Iterator of Results.
-     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#iterator} and {@link ResultSet#iterator}
+     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#allResults} and {@link ResultSet#iterator}
      * method share same data structure. They cannot be used together.</p>
      *
      * @return an iterator over the elements in this list in proper sequence

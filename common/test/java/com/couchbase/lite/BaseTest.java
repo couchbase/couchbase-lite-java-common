@@ -33,6 +33,7 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
@@ -71,15 +72,27 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
+    private static final class ClassWatcher extends TestWatcher {
+        public String className = BaseTest.class.getSimpleName();
+
+        @Override
+        protected void starting(Description description) {
+            className = description.getTestClass().getSimpleName();
+        }
+    }
+
+    @ClassRule
+    public static final ClassWatcher CLASS_WATCHER = new ClassWatcher();
+
     @BeforeClass
-    public static void setUpPlatformSuite() { setupLogging(">>>>>>>>>>>> Suite started"); }
+    public static void setUpPlatformSuite() { setupLogging(">>>>>>>>>>>> Suite started: " + CLASS_WATCHER.className); }
 
     @AfterClass
     public static void tearDownBaseTestSuite() {
         for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
         SCRATCH_DIRS.clear();
 
-        Report.log("<<<<<<<<<<<< Suite completed");
+        Report.log("<<<<<<<<<<<< Suite completed: " + CLASS_WATCHER.className);
     }
 
     // Make this package protected method visible
