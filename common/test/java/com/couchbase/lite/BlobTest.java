@@ -358,7 +358,7 @@ public class BlobTest extends BaseDbTest {
     // 3.1.c
     @Test
     public void testUnsavedBlobToJSON() {
-        assertThrows(IllegalStateException.class, () -> makeBlob().toJSON());
+        assertThrows(CouchbaseLiteError.class, () -> makeBlob().toJSON());
     }
 
     // 3.1.d

@@ -199,7 +199,7 @@ public final class Parameters {
     @NonNull
     public Parameters setValue(@NonNull String name, @Nullable Object value) {
         Preconditions.assertNotNull(name, "name");
-        if (readonly) { throw new IllegalStateException("Parameters is readonly mode."); }
+        if (readonly) { throw new CouchbaseLiteError("Parameters is readonly mode."); }
         map.put(name, value);
         return this;
     }

@@ -65,7 +65,7 @@ public final class FileLogger implements Logger {
      * @param level The maximum level to include in the logs
      */
     public void setLevel(@NonNull LogLevel level) {
-        if (config == null) { throw new IllegalStateException(Log.lookupStandardMessage("CannotSetLogLevel")); }
+        if (config == null) { throw new CouchbaseLiteError(Log.lookupStandardMessage("CannotSetLogLevel")); }
 
         if (logLevel == level) { return; }
 

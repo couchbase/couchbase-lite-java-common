@@ -69,7 +69,7 @@ public abstract class BaseDatabase {
     @GuardedBy("dbLock")
     protected void assertOpenUnchecked() {
         if (!isOpenLocked()) {
-            throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"));
+            throw new CouchbaseLiteError(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"));
         }
     }
 

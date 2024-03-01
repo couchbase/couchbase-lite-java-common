@@ -35,9 +35,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     }
 
     @Test
-    fun testMaxAttemptsZero() {
-        makeSimpleReplConfig(maxAttempts = 0)
-    }
+    fun testMaxAttemptsZero() { makeSimpleReplConfig(maxAttempts = 0) }
 
     @Test
     fun testIllegalAttemptsWaitTime() {
@@ -45,9 +43,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     }
 
     @Test
-    fun testMaxAttemptsWaitTimeZero() {
-        makeSimpleReplConfig(maxAttemptWaitTime = 0)
-    }
+    fun testMaxAttemptsWaitTimeZero() { makeSimpleReplConfig(maxAttemptWaitTime = 0) }
 
     @Test
     fun testIllegalHeartbeatMin() {
@@ -55,9 +51,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     }
 
     @Test
-    fun testHeartbeatZero() {
-        makeSimpleReplConfig().heartbeat = 0
-    }
+    fun testHeartbeatZero() { makeSimpleReplConfig().heartbeat = 0 }
 
     @Test
     fun testIllegalHeartbeatMax() {
@@ -403,7 +397,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
     @Test
     fun testCreateConfigWithEndpointOnly2() {
         val replConfig1 = ReplicatorConfiguration(mockURLEndpoint)
-        assertThrows(IllegalStateException::class.java) { replConfig1.database }
+        assertThrows(CouchbaseLiteError::class.java) { replConfig1.database }
     }
 
     // 8.13.7 Create Collection "colA" and "colB" in the scope "scopeA".

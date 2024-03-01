@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.couchbase.lite.CouchbaseLiteError;
+
 
 /**
  * Please see the comments in MValue
@@ -95,12 +97,12 @@ public final class MArray extends MCollection {
     }
 
     public boolean append(Object value) {
-        if (!isMutable()) { throw new IllegalStateException("Cannot append items to a non-mutable MArray"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot append items to a non-mutable MArray"); }
         return insert(count(), value);
     }
 
     public boolean set(long index, Object value) {
-        if (!isMutable()) { throw new IllegalStateException("Cannot set items in a non-mutable MArray"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot set items in a non-mutable MArray"); }
 
         if ((index < 0) || (index >= count())) { return false; }
 
@@ -111,7 +113,7 @@ public final class MArray extends MCollection {
     }
 
     public boolean insert(long index, Object value) {
-        if (!isMutable()) { throw new IllegalStateException("Cannot insert items in a non-mutable MArray"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot insert items in a non-mutable MArray"); }
 
         if ((index < 0) || (index > count())) { return false; }
 
@@ -124,7 +126,7 @@ public final class MArray extends MCollection {
     }
 
     public boolean remove(long start, long num) {
-        if (!isMutable()) { throw new IllegalStateException("Cannot remove items in a non-mutable MArray"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot remove items in a non-mutable MArray"); }
 
         final long end = start + num;
         if (end <= start) { return end == start; }
@@ -141,7 +143,7 @@ public final class MArray extends MCollection {
     }
 
     public void clear() {
-        if (!isMutable()) { throw new IllegalStateException("Cannot clear items in a non-mutable MArray"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot clear items in a non-mutable MArray"); }
 
         if (values.isEmpty()) { return; }
 

@@ -22,6 +22,8 @@ import androidx.annotation.VisibleForTesting;
 
 import java.util.Set;
 
+import com.couchbase.lite.CouchbaseLiteError;
+
 
 abstract class PeerBinding<T> {
     /**
@@ -41,7 +43,7 @@ abstract class PeerBinding<T> {
             return;
         }
 
-        throw new IllegalStateException("Attempt to rebind peer @x" + Long.toHexString(key));
+        throw new CouchbaseLiteError("Attempt to rebind peer @x" + Long.toHexString(key));
     }
 
     /**

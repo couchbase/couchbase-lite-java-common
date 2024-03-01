@@ -19,6 +19,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.logging.Log;
@@ -85,7 +86,7 @@ public abstract class C4NativePeer implements AutoCloseable {
      * can use it after the peer has been disposed.
      *
      * @return the handle to the native peer.
-     * @throws IllegalStateException if the peer has been closed.
+     * @throws CouchbaseLiteError if the peer has been closed.
      */
     protected final long getPeer() {
         synchronized (getPeerLock()) {
@@ -93,7 +94,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         }
 
         logBadCall();
-        throw new IllegalStateException("Operation on closed peer");
+        throw new CouchbaseLiteError("Operation on closed peer");
     }
 
     protected final <E extends Exception> void withPeer(@NonNull Fn.ConsumerThrows<Long, E> fn) throws E {
@@ -143,7 +144,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         }
 
         logBadCall();
-        throw new IllegalStateException("Closed peer");
+        throw new CouchbaseLiteError("Closed peer");
     }
 
     @NonNull
@@ -153,7 +154,7 @@ public abstract class C4NativePeer implements AutoCloseable {
         }
 
         logBadCall();
-        throw new IllegalStateException("Closed peer");
+        throw new CouchbaseLiteError("Closed peer");
     }
 
     /**

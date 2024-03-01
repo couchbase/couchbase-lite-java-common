@@ -409,7 +409,7 @@ public abstract class AbstractReplicator extends BaseReplicator
      * We recommend the use of this method on Replicators that are in the STOPPED state.  If the
      * replicator is not stopped, this method will make a best effort attempt to stop it but
      * will not wait to confirm that it was stopped cleanly.
-     * Any attempt to restart a closed replicator will result in an IllegalStateException.
+     * Any attempt to restart a closed replicator will result in an CouchbaseLiteError.
      * This includes calls to getPendingDocIds and isDocPending.
      */
     public void close() {
@@ -685,7 +685,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     private C4Replicator getOrCreateC4Replicator() {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
         synchronized (getDatabase().getDbLock()) {
-            if (closed) { throw new IllegalStateException("Attempt to operate on a closed replicator"); }
+            if (closed) { throw new CouchbaseLiteError("Attempt to operate on a closed replicator"); }
 
             C4Replicator c4Repl = getC4Replicator();
 
@@ -707,7 +707,7 @@ public abstract class AbstractReplicator extends BaseReplicator
                 return c4Repl;
             }
             catch (LiteCoreException e) {
-                throw new IllegalStateException(
+                throw new CouchbaseLiteError(
                     "Could not create replicator",
                     CouchbaseLiteException.convertException(e));
             }
@@ -862,7 +862,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     @NonNull
     private Database getDatabase() {
         final Database db = config.getDatabase();
-        if (db == null) { throw new IllegalStateException("No database in Replicator"); }
+        if (db == null) { throw new CouchbaseLiteError("No database in Replicator"); }
         return db;
     }
 

@@ -312,7 +312,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
             return encoder.finishJSON();
         }
         catch (LiteCoreException e) {
-            throw new IllegalStateException("Cannot encode array: " + this, e);
+            throw new CouchbaseLiteError("Cannot encode array: " + this, e);
         }
     }
 

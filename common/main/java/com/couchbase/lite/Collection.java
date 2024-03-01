@@ -68,11 +68,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
  *
  * <code>Collection</code> objects are only valid during the time the database that
  * contains them is open.  An attempt to use a collection that belongs to a closed
- * database will throw an <code>IllegalStateException</code>.
+ * database will throw an <code>CouchbaseLiteError</code>.
  * An application can hold references to multiple instances of a single database.
  * Under these circumstances, it is possible that a collection will be deleted in
  * one instance before an attempt to use it in another.  Such an attempt will
- * also cause an <code>IllegalStateException</code> to be thrown.
+ * also cause an <code>CouchbaseLiteError</code> to be thrown.
  * <p><code>Collection</code>s are <code>AutoCloseable</code>.  While garbage
  * collection will manage them correctly, developers are strongly encouraged to
  * to use them in try-with-resources blocks or to close them explicitly, after use.
@@ -898,7 +898,7 @@ public final class Collection extends BaseCollection
             else {
                 final Collection collection = document.getCollection();
                 if (collection == null) {
-                    throw new IllegalStateException("Attempt to save document in null collection");
+                    throw new CouchbaseLiteError("Attempt to save document in null collection");
                 }
                 c4Doc = collection.createC4Document(document.getId(), body, revFlags);
             }

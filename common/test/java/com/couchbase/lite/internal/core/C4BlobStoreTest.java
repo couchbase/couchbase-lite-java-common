@@ -26,6 +26,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -55,7 +56,7 @@ public class C4BlobStoreTest extends C4BaseTest {
             bogusKey = C4BlobKey.create("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
+        catch (IOException e) { throw new CouchbaseLiteError("IO error setting up directories", e); }
     }
 
     @After

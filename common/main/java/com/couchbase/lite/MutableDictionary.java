@@ -295,7 +295,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
 
     @NonNull
     @Override
-    public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
+    public String toJSON() { throw new CouchbaseLiteError("Mutable objects may not be encoded as JSON"); }
 
     @VisibleForTesting
     boolean isChanged() {

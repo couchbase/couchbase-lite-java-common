@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.sockets
 
 import com.couchbase.lite.BaseTest
+import com.couchbase.lite.CouchbaseLiteError
 import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.utils.Fn.TaskThrows
 import okhttp3.MediaType.Companion.toMediaType
@@ -133,7 +134,7 @@ class OkHttpSocketTest : BaseTest() {
     // Core request to open a socket before it is initialized, fails
     @Test
     fun testOpenRemoteBeforeInit() {
-        assertThrows(IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().openRemote(URI("https://foo.com"), null)
         }
     }
@@ -217,7 +218,7 @@ class OkHttpSocketTest : BaseTest() {
     // Core request to write to a socket before it is initialized, fails
     @Test
     fun testWriteToRemoteBeforeInit() {
-        assertThrows(java.lang.IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().writeToRemote(ByteArray(1))
         }
     }
@@ -333,7 +334,7 @@ class OkHttpSocketTest : BaseTest() {
     // Core request to close a socket before it is initialized, fails
     @Test
     fun testCloseRemoteBeforeInit() {
-        assertThrows(java.lang.IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().closeRemote(CloseStatus(1, ""))
         }
     }
@@ -585,7 +586,7 @@ class OkHttpSocketTest : BaseTest() {
     // Remote attempt to open an uninitialized socket fails
     @Test
     fun testOnOpenBeforeInit() {
-        assertThrows(java.lang.IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onOpen(MockWS(), mockResponse)
         }
     }
@@ -698,7 +699,7 @@ class OkHttpSocketTest : BaseTest() {
     // Remote attempt to send to an uninitialized socket fails
     @Test
     fun testOnMessageBeforeInit() {
-        assertThrows(IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onMessage(MockWS(), "booya")
         }
     }
@@ -847,7 +848,7 @@ class OkHttpSocketTest : BaseTest() {
     // Remote request to close an uninitialized socket fails
     @Test
     fun testOnClosingBeforeInit() {
-        assertThrows(IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onClosing(MockWS(), 47, "xyzzy")
         }
     }
@@ -961,7 +962,7 @@ class OkHttpSocketTest : BaseTest() {
     // Remote confirm close on an uninitialized socket fails
     @Test
     fun testOnClosedBeforeInit() {
-        assertThrows(java.lang.IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onClosed(MockWS(), 47, "xyzzy")
         }
     }
@@ -1086,7 +1087,7 @@ class OkHttpSocketTest : BaseTest() {
     // Remote failure on an uninitialized socket fails
     @Test
     fun testOnFailureBeforeInit() {
-        assertThrows(java.lang.IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             OkHttpSocket().onFailure(MockWS(), Exception(), null)
         }
     }

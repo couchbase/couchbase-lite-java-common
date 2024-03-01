@@ -254,7 +254,7 @@ public abstract class Expression {
                     break;
 
                 default:
-                    throw new IllegalStateException("Unexpected unary type: " + op);
+                    throw new CouchbaseLiteError("Unexpected unary type: " + op);
             }
 
             return json;

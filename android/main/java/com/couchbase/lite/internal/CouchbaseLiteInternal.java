@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.R;
@@ -109,7 +110,7 @@ public final class CouchbaseLiteInternal {
         final SoftReference<Context> contextRef = CONTEXT.get();
 
         final Context ctxt = contextRef.get();
-        if (ctxt == null) { throw new IllegalStateException("Context is null"); }
+        if (ctxt == null) { throw new CouchbaseLiteError("Context is null"); }
 
         return ctxt;
     }
@@ -134,7 +135,7 @@ public final class CouchbaseLiteInternal {
 
     public static void requireInit(String message) {
         if (!INITIALIZED.get()) {
-            throw new IllegalStateException(message + ".  Did you forget to call CouchbaseLite.init()?");
+            throw new CouchbaseLiteError(message + ".  Did you forget to call CouchbaseLite.init()?");
         }
     }
 

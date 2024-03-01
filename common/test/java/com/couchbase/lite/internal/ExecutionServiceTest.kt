@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal
 
 import com.couchbase.lite.BaseTest
+import com.couchbase.lite.CouchbaseLiteError
 import com.couchbase.lite.LogDomain
 import com.couchbase.lite.internal.exec.CBLExecutor
 import com.couchbase.lite.internal.exec.ClientTask
@@ -349,7 +350,7 @@ class ExecutionServiceTest : BaseTest() {
         barrier.reset()
         exec.execute(runnable)
         barrier.await()
-        assertTrue(fail is IllegalStateException)
+        assertTrue(fail is CouchbaseLiteError)
     }
 
     // If this test fails, it may bring down the entire test process

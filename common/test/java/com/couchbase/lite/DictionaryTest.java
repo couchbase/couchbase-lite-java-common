@@ -717,7 +717,7 @@ public class DictionaryTest extends BaseDbTest {
     // JSON 3.6.?
     @Test
     public void testDictToJSONBeforeSave() {
-        assertThrows(IllegalStateException.class, () -> new MutableDictionary().toJSON());
+        assertThrows(CouchbaseLiteError.class, () -> new MutableDictionary().toJSON());
     }
 
     // JSON 3.5.a-b

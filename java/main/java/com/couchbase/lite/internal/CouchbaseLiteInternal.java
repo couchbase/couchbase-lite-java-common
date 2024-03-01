@@ -26,6 +26,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4;
@@ -100,7 +101,7 @@ public final class CouchbaseLiteInternal {
 
     public static void requireInit(String message) {
         if (!INITIALIZED.get()) {
-            throw new IllegalStateException(message + ".  Did you forget to call CouchbaseLite.init()?");
+            throw new CouchbaseLiteError(message + ".  Did you forget to call CouchbaseLite.init()?");
         }
     }
 

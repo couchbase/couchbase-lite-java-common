@@ -213,7 +213,7 @@ abstract class BaseDbTest : BaseTest() {
         collection.database.inBatch<CouchbaseLiteException> {
             docs = mDocs.map { saveDocInCollection(it, collection) }
         }
-        return docs ?: throw IllegalStateException("doc list is null")
+        return docs ?: throw CouchbaseLiteError("doc list is null")
     }
 
     protected fun createDocInCollection(
