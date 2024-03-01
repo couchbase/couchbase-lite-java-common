@@ -15,12 +15,14 @@
 //
 package com.couchbase.lite;
 
-public class CouchbaseLiteError extends IllegalStateException {
-    public CouchbaseLiteError(String msg) {
-        this(msg, null);
-    }
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-    public CouchbaseLiteError(String msg, Exception e) {
+
+public class CouchbaseLiteError extends IllegalStateException {
+    public CouchbaseLiteError(@NonNull String msg) { this(msg, null); }
+
+    public CouchbaseLiteError(@NonNull String msg, @Nullable Exception e) {
         super(CouchbaseLiteException.getErrorMessage(msg, e), e);
     }
 }

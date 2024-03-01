@@ -113,7 +113,7 @@ public abstract class C4Database extends C4NativePeer {
         void nSetCookie(long db, String url, String setCookieHeader, boolean acceptParentDomain)
             throws LiteCoreException;
 
-        @NonNull
+        @Nullable
         String nGetCookies(long db, @NonNull String url) throws LiteCoreException;
 
         // - Utilities

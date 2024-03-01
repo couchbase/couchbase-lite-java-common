@@ -20,7 +20,6 @@ import androidx.annotation.Nullable;
 
 import java.util.Map;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.CBLVersion;

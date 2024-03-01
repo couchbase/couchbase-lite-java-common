@@ -21,6 +21,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
+
 @SuppressWarnings("PMD.TooManyMethods")
 public final class NativeFLEncoder implements FLEncoder.NativeImpl {
     @Override

@@ -51,7 +51,7 @@ public final class CouchbaseLite {
     /**
      * Initialize CouchbaseLite library.
      * Debugging mode is not supported for client code.  Please use it only when advised to do
-     * so by Couchbase Support ENgineering
+     * so by Couchbase Support Engineering
      * This method allows specifying a default root directory for database files,
      * and the scratch directory used for SQLite temporary files. Use it with great caution.
      *

@@ -48,7 +48,7 @@ public final class CouchbaseLite {
      * and will throw an <code>IllegalStateException</code> if it is not.
      * Use <code>init(boolean, File, File)</code> to specify alternative root and scratch directories.
      * Debugging mode is not supported for client code.  Please use it only when advised to do
-     * so by Couchbase Support ENgineering
+     * so by Couchbase Support Engineering
      *
      * @param debug true if debugging
      * @throws IllegalStateException on initialization failure
@@ -65,7 +65,7 @@ public final class CouchbaseLite {
      * and the scratch directory used for temporary files (the native library, etc).
      * Both directories must be writable by this process.
      * Debugging mode is not supported for client code.  Please use it only when advised to do
-     * so by Couchbase Support ENgineering
+     * so by Couchbase Support Engineering
      *
      * @param debug      true if debugging
      * @param rootDir    default directory for databases

@@ -30,7 +30,7 @@ public final class C4Query extends C4NativePeer {
     public interface NativeImpl {
         long nCreateQuery(long db, int language, @NonNull String params) throws LiteCoreException;
         void nSetParameters(long peer, long paramPtr, long paramSize);
-        @NonNull
+        @Nullable
         String nExplain(long peer);
         long nRun(long peer, long paramPtr, long paramSize) throws LiteCoreException;
         int nColumnCount(long peer);
