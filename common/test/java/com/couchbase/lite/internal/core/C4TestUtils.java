@@ -206,7 +206,7 @@ public class C4TestUtils {
     @NonNull
     private static native FLSliceResult encodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
 
-    @NonNull
+    @Nullable
     private static native String getDocID(long doc);
 
     // C4Document

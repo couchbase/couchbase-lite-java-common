@@ -33,7 +33,7 @@ public abstract class C4BlobStore extends C4NativePeer {
         long nGetSize(long peer, long key);
         @NonNull
         FLSliceResult nGetContents(long peer, long key) throws LiteCoreException;
-        @NonNull
+        @Nullable
         String nGetFilePath(long peer, long key) throws LiteCoreException;
         long nCreate(long peer, byte[] data) throws LiteCoreException;
         void nDelete(long peer, long key) throws LiteCoreException;
@@ -59,9 +59,6 @@ public abstract class C4BlobStore extends C4NativePeer {
     // See C4TestUtils.ManagedC4BlobStore
     private static final class UnmanagedC4BlobStore extends C4BlobStore {
         UnmanagedC4BlobStore(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
-
-        @Override
-        public void close() { releasePeer(null, null); }
     }
 
     @NonNull

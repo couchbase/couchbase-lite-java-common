@@ -208,11 +208,11 @@ public abstract class FLEncoder extends C4NativePeer {
 
     public boolean writeNull() { return impl.nWriteNull(getPeer()); }
 
-    public boolean writeString(String value) { return impl.nWriteString(getPeer(), value); }
+    public boolean writeString(@NonNull String value) { return impl.nWriteString(getPeer(), value); }
 
-    public boolean writeString(char[] value) { return impl.nWriteStringChars(getPeer(), value); }
+    public boolean writeString(@NonNull char[] value) { return impl.nWriteStringChars(getPeer(), value); }
 
-    public boolean writeData(byte[] value) { return impl.nWriteData(getPeer(), value); }
+    public boolean writeData(@NonNull byte[] value) { return impl.nWriteData(getPeer(), value); }
 
     public boolean beginDict(long reserve) { return impl.nBeginDict(getPeer(), reserve); }
 

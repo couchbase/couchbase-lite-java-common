@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 
 /**
@@ -24,13 +25,13 @@ import androidx.annotation.NonNull;
  */
 public final class C4DocumentEnded {
     public final long token;
-    @NonNull
+    @Nullable
     public final String scope;
-    @NonNull
+    @Nullable
     public final String collection;
-    @NonNull
+    @Nullable
     public final String docId;
-    @NonNull
+    @Nullable
     public final String revId;
     public final int flags;
     public final long sequence;
@@ -43,10 +44,10 @@ public final class C4DocumentEnded {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     public C4DocumentEnded(
         long token,
-        @NonNull String scope,
-        @NonNull String collection,
-        @NonNull String docId,
-        @NonNull String revId,
+        @Nullable String scope,
+        @Nullable String collection,
+        @Nullable String docId,
+        @Nullable String revId,
         int flags,
         long sequence,
         int errorDomain,

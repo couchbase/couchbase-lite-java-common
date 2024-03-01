@@ -753,6 +753,11 @@ public abstract class AbstractReplicator extends BaseReplicator
         final List<ReplicatedDocument> unconflictedDocs = new ArrayList<>();
 
         for (C4DocumentEnded docEnd: docEnds) {
+            if (docEnd.docId == null) {
+                Log.w(LogDomain.REPLICATOR, "DocId is null in document end: " + docEnd);
+                continue;
+            }
+
             final ReplicationCollection coll = ReplicationCollection.getBinding(docEnd.token);
             if (coll == null) {
                 Log.w(LogDomain.REPLICATOR, "No collection for document end: " + docEnd);
