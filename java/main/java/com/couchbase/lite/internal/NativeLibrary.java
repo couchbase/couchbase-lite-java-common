@@ -32,6 +32,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.couchbase.lite.CouchbaseLiteError;
+
 
 /**
  * Extract and load the native libraries.
@@ -104,7 +106,10 @@ final class NativeLibrary {
      * Copy the named library from a resource to the file system and load it.
      * Each library must have a corresponding .MD5 digest file
      */
-    @SuppressWarnings("PMD.AvoidCatchingThrowable")
+    @SuppressWarnings({
+        "PMD.AvoidCatchingThrowable",
+        "PMD.AvoidInstanceofChecksInCatchClause",
+        "PMD.PreserveStackTrace"})
     private static void loadLibrary(
         @NonNull String libName,
         @NonNull String resDirPath,
@@ -122,14 +127,15 @@ final class NativeLibrary {
             if (!isWindows(os)) { setPermissions(libPath); }
         }
         catch (IOException e) {
-            throw new IllegalStateException("Failed extracting library resource: " + lib + " to " + targetDir, e);
+            throw new CouchbaseLiteError("Failed extracting library resource: " + lib + " to " + targetDir, e);
         }
 
         try { System.load(libPath); }
         catch (Throwable e) {
-            throw new IllegalStateException(
+            final Exception err = (e instanceof Exception) ? (Exception) e : new Exception(e);
+            throw new CouchbaseLiteError(
                 "Failed loading native library " + lib + " @" + libPath + " (" + os + "/" + arch + ")",
-                e);
+                err);
         }
     }
 
@@ -154,7 +160,7 @@ final class NativeLibrary {
             return new File(scratchDir, hash.trim()).getCanonicalFile();
         }
         catch (IOException e) {
-            throw new IllegalStateException("Cannot read digest file: " + path, e);
+            throw new CouchbaseLiteError("Cannot read digest file: " + path, e);
         }
     }
 
@@ -164,7 +170,7 @@ final class NativeLibrary {
         if (isWindows(osName)) { return WINDOWS_OS_DIR; }
         if (isLinux(osName)) { return LINUX_OS_DIR; }
         if (isMacOS(osName)) { return MAC_OS_DIR; }
-        throw new IllegalStateException("Unsupported OS: " + osName);
+        throw new CouchbaseLiteError("Unsupported OS: " + osName);
     }
 
     // Per the support matrix:
@@ -176,7 +182,7 @@ final class NativeLibrary {
         final String rootPath = getRootPath(osName);
         if (isWindows(osName) || isLinux(osName)) { return rootPath + ARCH_X86 + LIB_DIR; }
         if (isMacOS(osName)) { return rootPath + ARCH_UNIVERSAL + LIB_DIR; }
-        throw new IllegalStateException("Unsupported LiteCore architecture: " + osName + "/" + archName);
+        throw new CouchbaseLiteError("Unsupported LiteCore architecture: " + osName + "/" + archName);
     }
 
     // Per the support matrix:
@@ -194,7 +200,7 @@ final class NativeLibrary {
             return rootPath + arch + LIB_DIR;
         }
 
-        throw new IllegalStateException("Unsupported JNI architecture: " + osName + "/" + archName);
+        throw new CouchbaseLiteError("Unsupported JNI architecture: " + osName + "/" + archName);
     }
 
     @NonNull
@@ -202,7 +208,7 @@ final class NativeLibrary {
         if (isWindows(osName)) { return ".dll"; }
         if (isMacOS(osName)) { return ".dylib"; }
         if (isLinux(osName)) { return ".so"; }
-        throw new IllegalStateException("Unsupported OS: " + osName);
+        throw new CouchbaseLiteError("Unsupported OS: " + osName);
     }
 
     private static void setPermissions(String targetPath) throws IOException {

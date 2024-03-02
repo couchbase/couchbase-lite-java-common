@@ -203,7 +203,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
             final AbstractDatabase db = q.getDatabase();
             if (db != null) { return db.getDbLock(); }
         }
-        throw new IllegalStateException("Could not obtain db lock");
+        throw new CouchbaseLiteError("Could not obtain db lock");
     }
 }
 

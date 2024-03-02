@@ -12,6 +12,7 @@ package com.couchbase.lite.internal.core.peers;
 
 import androidx.annotation.NonNull;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.internal.utils.MathUtils;
 
 
@@ -61,7 +62,7 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
      */
     @Override
     public void preBind(long key, @NonNull T obj) {
-        if (!exists(key)) { throw new IllegalStateException("attempt to use un-reserved key"); }
+        if (!exists(key)) { throw new CouchbaseLiteError("attempt to use un-reserved key"); }
     }
 
     /**

@@ -409,7 +409,7 @@ public final class Blob implements FLEncodable {
     @NonNull
     public String toJSON() {
         if (blobDigest == null) {
-            throw new IllegalStateException("A Blob may be encoded as JSON only after it has been saved in a database");
+            throw new CouchbaseLiteError("A Blob may be encoded as JSON only after it has been saved in a database");
         }
 
         final Map<String, Object> json = new HashMap<>();
@@ -420,7 +420,7 @@ public final class Blob implements FLEncodable {
         json.put(PROP_CONTENT_TYPE, contentType);
 
         try { return JSONUtils.toJSON(json).toString(); }
-        catch (JSONException e) { throw new IllegalStateException("Could not parse Blob JSON", e); }
+        catch (JSONException e) { throw new CouchbaseLiteError("Could not parse Blob JSON", e); }
     }
 
     /**
@@ -563,11 +563,11 @@ public final class Blob implements FLEncodable {
         if (database != null) {
             // attempt to save the blob in the wrong db;
             if ((db != null) && (!database.equals(db))) {
-                throw new IllegalStateException(Log.lookupStandardMessage("BlobDifferentDatabase"));
+                throw new CouchbaseLiteError(Log.lookupStandardMessage("BlobDifferentDatabase"));
             }
 
             // saved but no digest???
-            if (blobDigest == null) { throw new IllegalStateException("Blob has no digest"); }
+            if (blobDigest == null) { throw new CouchbaseLiteError("Blob has no digest"); }
 
             // blob has already been saved.
             return;
@@ -584,7 +584,7 @@ public final class Blob implements FLEncodable {
         catch (Exception e) {
             database = null;
             blobDigest = null;
-            throw new IllegalStateException("Failed reading blob content from database", e);
+            throw new CouchbaseLiteError("Failed reading blob content from database", e);
         }
     }
 
@@ -611,7 +611,7 @@ public final class Blob implements FLEncodable {
     private void installInDatabase(@Nullable Object dbArg) {
         // blob has not been saved: dbArg must be a db in which to save it.
         if ((database == null) && (!(dbArg instanceof Database))) {
-            throw new IllegalStateException("No database for Blob save");
+            throw new CouchbaseLiteError("No database for Blob save");
         }
         installInDatabase((Database) dbArg);
     }
@@ -627,7 +627,7 @@ public final class Blob implements FLEncodable {
         catch (LiteCoreException e) {
             final String msg = "Failed to read content from database for digest: " + blobDigest;
             Log.e(DOMAIN, msg, e);
-            throw new IllegalStateException(msg, e);
+            throw new CouchbaseLiteError(msg, e);
         }
 
         // cache content if less than 8K
@@ -640,7 +640,7 @@ public final class Blob implements FLEncodable {
     private InputStream getStreamFromDatabase(@NonNull BaseDatabase db) {
         try { return new BlobInputStream(C4BlobKey.create(blobDigest), db.getBlobStore()); }
         catch (IllegalArgumentException | LiteCoreException e) {
-            throw new IllegalStateException("Failed opening blobContent stream.", e);
+            throw new CouchbaseLiteError("Failed opening blobContent stream.", e);
         }
     }
 
@@ -648,7 +648,7 @@ public final class Blob implements FLEncodable {
     private C4BlobKey getBlobKey(@NonNull C4BlobStore store) throws LiteCoreException, IOException {
         if (blobContent != null) { return store.create(blobContent); }
         if (blobContentStream != null) { return writeDatabaseFromInitStream(store); }
-        throw new IllegalStateException(Log.lookupStandardMessage("BlobContentNull"));
+        throw new CouchbaseLiteError(Log.lookupStandardMessage("BlobContentNull"));
     }
 
     @SuppressFBWarnings("DE_MIGHT_IGNORE")
@@ -660,7 +660,7 @@ public final class Blob implements FLEncodable {
             while ((n = in.read(buff)) >= 0) { out.write(buff, 0, n); }
         }
         catch (IOException e) {
-            throw new IllegalStateException("Failed reading blob content stream", e);
+            throw new CouchbaseLiteError("Failed reading blob content stream", e);
         }
         finally {
             blobContentStream = null;
@@ -673,7 +673,7 @@ public final class Blob implements FLEncodable {
     @SuppressFBWarnings("DE_MIGHT_IGNORE")
     @NonNull
     private C4BlobKey writeDatabaseFromInitStream(@NonNull C4BlobStore store) throws LiteCoreException, IOException {
-        if (blobContentStream == null) { throw new IllegalStateException("Blob stream is null"); }
+        if (blobContentStream == null) { throw new CouchbaseLiteError("Blob stream is null"); }
 
         final C4BlobKey key;
 

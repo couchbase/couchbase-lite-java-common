@@ -20,6 +20,8 @@ import androidx.annotation.Nullable;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.couchbase.lite.CouchbaseLiteError;
+
 
 public class InstrumentedTask implements Runnable {
     private static final AtomicLong ID = new AtomicLong(0);
@@ -51,7 +53,7 @@ public class InstrumentedTask implements Runnable {
     public void run() {
         synchronized (this) {
             if (startedAt != 0L) {
-                throw new IllegalStateException("Attempt to execute a task multiple times");
+                throw new CouchbaseLiteError("Attempt to execute a task multiple times");
             }
             startedAt = System.currentTimeMillis();
         }

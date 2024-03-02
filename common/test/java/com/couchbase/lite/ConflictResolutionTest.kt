@@ -276,7 +276,7 @@ class ConflictResolutionTests : BaseReplicatorTest() {
         var succeeded = false
         try {
             succeeded = testCollection.save(doc1b) { _: MutableDocument, _: Document? ->
-                throw IllegalStateException("freak out!")
+                throw CouchbaseLiteError("freak out!")
             }
             fail("save should not succeed!")
         } catch (err: CouchbaseLiteException) {

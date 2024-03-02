@@ -41,7 +41,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * <p>
  * A Result may be referenced <b>only</b> while the ResultSet that contains it is open.
  * An attempt to reference a Result after calling ResultSet.close on the ResultSet that
- * contains it will throw an IllegalStateException
+ * contains it will throw an CouchbaseLiteError
  */
 public final class Result implements ArrayInterface, DictionaryInterface, Iterable<String> {
 
@@ -502,7 +502,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
             return enc.finishJSON();
         }
         catch (LiteCoreException e) {
-            throw new IllegalStateException("Cannot encode result: " + this, e);
+            throw new CouchbaseLiteError("Cannot encode result: " + this, e);
         }
     }
 
@@ -573,7 +573,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
 
     private void assertOpen() {
         if (rs.isClosed()) {
-            throw new IllegalStateException("Attempt to use a result after its containing ResultSet has been closed");
+            throw new CouchbaseLiteError("Attempt to use a result after its containing ResultSet has been closed");
         }
     }
 }

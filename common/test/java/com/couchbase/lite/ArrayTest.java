@@ -1829,7 +1829,7 @@ public class ArrayTest extends BaseDbTest {
     // JSON 3.7.?
     @Test
     public void testArrayToJSONBeforeSave() {
-        assertThrows(IllegalStateException.class, () -> new MutableArray().toJSON());
+        assertThrows(CouchbaseLiteError.class, () -> new MutableArray().toJSON());
     }
 
     // JSON 3.7.a-b

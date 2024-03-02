@@ -2668,7 +2668,7 @@ public class DocumentTest extends BaseDbTest {
     // JSON 3.5.?
     @Test
     public void testMutableDocToJSONBeforeSave() {
-        assertThrows(IllegalStateException.class, () -> new MutableDocument().toJSON());
+        assertThrows(CouchbaseLiteError.class, () -> new MutableDocument().toJSON());
     }
 
     // JSON 3.5.a

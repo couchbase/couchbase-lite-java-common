@@ -77,7 +77,7 @@ public abstract class MValueConverter {
     @NonNull
     private NativeValue<?> mValueToDictionary(@NonNull MValue mv, @NonNull MCollection parent) {
         final MContext ctxt = parent.getContext();
-        if (!(ctxt instanceof DbContext)) { throw new IllegalStateException("Context is not DbContext: " + ctxt); }
+        if (!(ctxt instanceof DbContext)) { throw new CouchbaseLiteError("Context is not DbContext: " + ctxt); }
         final DbContext context = (DbContext) ctxt;
 
         final FLDict flDict = Preconditions.assertNotNull(mv.getValue(), "MValue").asFLDict();

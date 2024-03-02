@@ -55,11 +55,11 @@ abstract class AbstractDatabaseConfiguration {
     /**
      * Set the canonical path of the directory in which to store the database.
      * If the directory doesn't already exist it will be created.
-     * If it cannot be created an IllegalStateException will be thrown.
+     * If it cannot be created an CouchbaseLiteError will be thrown.
      *
      * @param directory the directory
      * @return this.
-     * @throws IllegalStateException if the directory does not exist and cannot be created
+     * @throws CouchbaseLiteError if the directory does not exist and cannot be created
      */
     @NonNull
     public DatabaseConfiguration setDirectory(@NonNull String directory) {

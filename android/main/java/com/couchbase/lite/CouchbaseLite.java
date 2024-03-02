@@ -32,7 +32,7 @@ public final class CouchbaseLite {
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      *
      * @param ctxt the ApplicationContext.
-     * @throws IllegalStateException on initialization failure
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init(@NonNull Context ctxt) { init(ctxt, BuildConfig.CBL_DEBUG); }
 
@@ -42,7 +42,7 @@ public final class CouchbaseLite {
      * so by Couchbase Support Engineering
      *
      * @param debug true to enable debugging (Unsupported)
-     * @throws IllegalStateException on initialization failure
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug) {
         init(ctxt, debug, ctxt.getFilesDir(), new File(ctxt.getFilesDir(), CouchbaseLiteInternal.SCRATCH_DIR_NAME));
@@ -59,7 +59,7 @@ public final class CouchbaseLite {
      * @param debug      to enable debugging
      * @param rootDir    default directory for databases
      * @param scratchDir scratch directory for SQLite
-     * @throws IllegalStateException on initialization failure
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
         CouchbaseLiteInternal.init(ctxt, debug, rootDir, scratchDir);

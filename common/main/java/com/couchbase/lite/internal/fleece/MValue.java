@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.MValueConverter;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -86,7 +87,7 @@ public class MValue extends MValueConverter implements Encodable {
 
     @Override
     public void encodeTo(@NonNull FLEncoder enc) {
-        if (isEmpty()) { throw new IllegalStateException("MValue is empty."); }
+        if (isEmpty()) { throw new CouchbaseLiteError("MValue is empty."); }
 
         if (flValue != null) { enc.writeValue(flValue); }
         else if (value != null) { enc.writeValue(value); }

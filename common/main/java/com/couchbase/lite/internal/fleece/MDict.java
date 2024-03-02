@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.CouchbaseLiteError;
+
 
 /**
  * Please see the comments in MValue
@@ -128,7 +130,7 @@ public final class MDict extends MCollection {
     }
 
     public void set(String key, @NonNull MValue value) {
-        if (!isMutable()) { throw new IllegalStateException("Cannot set items in a non-mutable MDict"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot set items in a non-mutable MDict"); }
 
         final boolean hasVal = !value.isEmpty();
 
@@ -161,12 +163,12 @@ public final class MDict extends MCollection {
     }
 
     public void remove(String key) {
-        if (!isMutable()) { throw new IllegalStateException("Cannot remove items in a non-mutable MDict"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot remove items in a non-mutable MDict"); }
         set(key, MValue.EMPTY);
     }
 
     public void clear() {
-        if (!isMutable()) { throw new IllegalStateException("Cannot clear items from a non-mutable MDict"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot clear items from a non-mutable MDict"); }
 
         if (valCount == 0) { return; }
 

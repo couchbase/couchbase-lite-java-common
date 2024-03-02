@@ -126,7 +126,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
      * Set query parameters.
      * Setting new parameters will re-execute a query if there is at least one listener listening for changes.
      *
-     * @throws IllegalStateException    on failure to create the query (e.g., database closed)
+     * @throws CouchbaseLiteError    on failure to create the query (e.g., database closed)
      * @throws IllegalArgumentException on failure to encode the parameters (e.g., parameter value not supported)
      */
     @Override
@@ -139,7 +139,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
             if (parameters == null) { return; }
 
             try { getC4QueryLocked().setParameters(parameters.encode()); }
-            catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query", e); }
+            catch (CouchbaseLiteException e) { throw new CouchbaseLiteError("Failed creating query", e); }
             catch (LiteCoreException e) { throw new IllegalArgumentException("Failed encoding parameters", e); }
         }
     }
@@ -226,7 +226,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
      * @param executor The executor object that calls listener. If null, use default executor.
      * @param listener The listener to post changes.
      * @return An opaque listener token object for removing the listener.
-     * @throws IllegalStateException on failure to create the query (e.g., database closed)
+     * @throws CouchbaseLiteError on failure to create the query (e.g., database closed)
      */
     @NonNull
     @Override
@@ -276,7 +276,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
         if (c4query != null) { return c4query; }
 
         final AbstractDatabase db = getDatabase();
-        if (db == null) { throw new IllegalStateException("Attempt to prep query with no database"); }
+        if (db == null) { throw new CouchbaseLiteError("Attempt to prep query with no database"); }
 
         final C4Query c4Q = prepQueryLocked(db);
 
@@ -325,7 +325,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
     private C4QueryObserver getObserver(@NonNull ChangeListenerToken<QueryChange> token) {
         synchronized (lock) {
             try { return C4QueryObserver.create(getC4QueryLocked(), (r, err) -> onQueryChanged(token, r, err)); }
-            catch (CouchbaseLiteException e) { throw new IllegalStateException("Failed creating query listener", e); }
+            catch (CouchbaseLiteException e) { throw new CouchbaseLiteError("Failed creating query listener", e); }
         }
     }
 
@@ -345,6 +345,6 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
     private Object getDbLock() {
         final BaseDatabase db = getDatabase();
         if (db != null) { return db.getDbLock(); }
-        throw new IllegalStateException("Cannot seize DB lock");
+        throw new CouchbaseLiteError("Cannot seize DB lock");
     }
 }

@@ -36,7 +36,7 @@ public class DatabaseChange {
             if (defaultCollection != null) { return defaultCollection; }
         }
         catch (CouchbaseLiteException e) { fail = e; }
-        throw new IllegalStateException("Database " + database.getName() + " has no default collection", fail);
+        throw new CouchbaseLiteError("Database " + database.getName() + " has no default collection", fail);
     }
 
     @NonNull

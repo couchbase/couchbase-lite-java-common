@@ -303,7 +303,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(getTestDatabase());
 
-        assertThrows(IllegalStateException.class, repl::start);
+        assertThrows(CouchbaseLiteError.class, repl::start);
     }
 
     // CBL-1218
@@ -313,7 +313,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         deleteDb(getTestDatabase());
 
-        assertThrows(IllegalStateException.class, () -> repl.getPendingDocumentIds(getTestCollection()));
+        assertThrows(CouchbaseLiteError.class, () -> repl.getPendingDocumentIds(getTestCollection()));
     }
 
     // CBL-1218
@@ -323,7 +323,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(getTestDatabase());
 
-        assertThrows(IllegalStateException.class, () -> repl.isDocumentPending("who-cares", getTestCollection()));
+        assertThrows(CouchbaseLiteError.class, () -> repl.isDocumentPending("who-cares", getTestCollection()));
     }
 
     // CBL-1441

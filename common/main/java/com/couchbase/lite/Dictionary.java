@@ -351,7 +351,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
             return encoder.finishJSON();
         }
         catch (LiteCoreException e) {
-            throw new IllegalStateException("Cannot encode dictionary: " + this, e);
+            throw new CouchbaseLiteError("Cannot encode dictionary: " + this, e);
         }
     }
 

@@ -34,10 +34,10 @@ public final class CouchbaseLite {
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      * <p>
      * This method expects the current directory to be writeable
-     * and will throw an <code>IllegalStateException</code> if it is not.
+     * and will throw an <code>CouchbaseLiteError</code> if it is not.
      * Use <code>init(boolean, File, File)</code> to specify alternative root and scratch directories.
      *
-     * @throws IllegalStateException on initialization failure
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init() { init(false); }
 
@@ -45,13 +45,13 @@ public final class CouchbaseLite {
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      * <p>
      * This method expects the current directory to be writeable
-     * and will throw an <code>IllegalStateException</code> if it is not.
+     * and will throw an <code>CouchbaseLiteError</code> if it is not.
      * Use <code>init(boolean, File, File)</code> to specify alternative root and scratch directories.
      * Debugging mode is not supported for client code.  Please use it only when advised to do
      * so by Couchbase Support Engineering
      *
      * @param debug true if debugging
-     * @throws IllegalStateException on initialization failure
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init(boolean debug) {
         final File curDir = FileUtils.getCurrentDirectory();
@@ -70,7 +70,7 @@ public final class CouchbaseLite {
      * @param debug      true if debugging
      * @param rootDir    default directory for databases
      * @param scratchDir scratch directory for SQLite
-     * @throws IllegalStateException on initialization failure
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init(boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
         CouchbaseLiteInternal.init(debug, rootDir, scratchDir);

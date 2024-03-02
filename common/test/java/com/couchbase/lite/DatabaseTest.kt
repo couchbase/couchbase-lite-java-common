@@ -558,7 +558,7 @@ class DatabaseTest : BaseDbTest() {
         assertNotNull(blob)
 
         // trying to get the content, however, should fail
-        assertThrows(java.lang.IllegalStateException::class.java) { blob!!.content }
+        assertThrows(CouchbaseLiteError::class.java) { blob!!.content }
     }
 
     @Test
@@ -584,7 +584,7 @@ class DatabaseTest : BaseDbTest() {
         assertTrue(testDatabase.isOpen)
         testDatabase.close()
         assertFalse(testDatabase.isOpen)
-        assertThrows(java.lang.IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             testDatabase.inBatch<RuntimeException> { }
         }
     }
@@ -602,7 +602,7 @@ class DatabaseTest : BaseDbTest() {
         assertTrue(testDatabase.isOpen)
         testDatabase.close()
         assertFalse(testDatabase.isOpen)
-        assertThrows(java.lang.IllegalStateException::class.java) { testDatabase.delete() }
+        assertThrows(CouchbaseLiteError::class.java) { testDatabase.delete() }
     }
 
     //---------------------------------------------
@@ -626,7 +626,7 @@ class DatabaseTest : BaseDbTest() {
         assertFalse(path.exists())
 
         // second delete should fail
-        assertThrows(java.lang.IllegalStateException::class.java) { testDatabase.delete() }
+        assertThrows(CouchbaseLiteError::class.java) { testDatabase.delete() }
     }
 
     @Test
@@ -704,7 +704,7 @@ class DatabaseTest : BaseDbTest() {
         assertTrue(path.exists())
         testDatabase.delete()
         assertFalse(path.exists())
-        assertThrows(java.lang.IllegalStateException::class.java) {
+        assertThrows(CouchbaseLiteError::class.java) {
             testDatabase.inBatch<RuntimeException> { }
         }
     }

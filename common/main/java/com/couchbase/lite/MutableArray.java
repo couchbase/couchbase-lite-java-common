@@ -555,7 +555,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
 
     @NonNull
     @Override
-    public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
+    public String toJSON() { throw new CouchbaseLiteError("Mutable objects may not be encoded as JSON"); }
 
     @Nullable
     private Object checkSelf(@Nullable Object value) {
