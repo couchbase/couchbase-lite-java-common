@@ -12,30 +12,34 @@ extern "C" {
  * Method:    setenv
  * Signature: (Ljava/lang/String;Ljava/lang/String;I)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setenv
-  (JNIEnv *, jclass, jstring, jstring, jint);
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setenv
+        (JNIEnv *, jclass, jstring, jstring, jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    getBuildInfo
  * Signature: ()Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_getBuildInfo
-  (JNIEnv *, jclass);
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_getBuildInfo
+        (JNIEnv *, jclass);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    getVersion
  * Signature: ()Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_getVersion
-  (JNIEnv *, jclass);
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_getVersion
+        (JNIEnv *, jclass);
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    debug
  * Signature: (Z)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_debug
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_debug
         (JNIEnv *, jclass, jboolean);
 
 /*
@@ -43,7 +47,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_debug
  * Method:    setTempDir
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir
         (JNIEnv *, jclass, jstring);
 
 /*
@@ -51,7 +56,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setTe
  * Method:    setExtPath
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setExtPath
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setExtPath
         (JNIEnv *, jclass, jstring);
 
 /*
@@ -59,7 +65,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setEx
  * Method:    getMessage
  * Signature: (III)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_getMessage
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_getMessage
         (JNIEnv *, jclass, jint, jint, jint);
 
 #ifdef __cplusplus
