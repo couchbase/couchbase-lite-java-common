@@ -8,12 +8,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
  * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
  * Method:    dataSource
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -21,7 +23,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_da
  * Method:    property
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_property
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_property
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -29,7 +32,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_pr
  * Method:    term
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_term
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_term
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -37,7 +41,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_te
  * Method:    start
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_start
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_start
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -45,7 +50,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_st
  * Method:    length
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_length
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_length
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -53,23 +59,18 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_le
  * Method:    getFullTextMatchCount
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatchCount(
-        JNIEnv *,
-        jclass,
-        jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatchCount
+        (JNIEnv *, jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_core_C4FullTextMatch
  * Method:    getFullTextMatch
  * Signature: (JI)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatch(
-        JNIEnv *,
-        jclass,
-        jlong,
-        jint);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatch
+        (JNIEnv *, jclass, jlong, jint);
 
 #ifdef __cplusplus
 }

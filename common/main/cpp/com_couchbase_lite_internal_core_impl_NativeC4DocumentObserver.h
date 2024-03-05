@@ -14,8 +14,8 @@ extern "C" {
  * Method:    create
  * Signature: (JJLjava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create
         (JNIEnv *, jclass, jlong, jlong, jstring);
 
 /*
@@ -23,8 +23,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create
  * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_free
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_free
         (JNIEnv*, jclass, jlong);
 
 #ifdef __cplusplus

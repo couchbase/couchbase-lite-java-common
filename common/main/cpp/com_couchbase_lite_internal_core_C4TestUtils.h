@@ -16,7 +16,8 @@ extern "C" {
  * Method:    enumerateAllDocs
  * Signature: (JI)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_enumerateAllDocs
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_enumerateAllDocs
         (JNIEnv *, jclass, jlong, jint);
 
 /*
@@ -24,7 +25,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_enumer
  * Method:    next
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_next
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_next
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -32,7 +34,8 @@ JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_nex
  * Method:    getDocument
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getDocument
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getDocument
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -40,7 +43,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getDoc
  * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_free
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_free
         (JNIEnv *, jclass, jlong);
 
 // C4BlobStore
@@ -50,7 +54,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_free
  * Method:    openStore
  * Signature: (Ljava/lang/String;J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_openStore
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_openStore
         (JNIEnv *, jclass, jstring, jlong);
 
 /*
@@ -58,7 +63,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_openSt
  * Method:    deleteStore
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_deleteStore
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_deleteStore
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -66,7 +72,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_deleteS
  * Method:    freeStore
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_freeStore
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_freeStore
         (JNIEnv *, jclass, jlong);
 
 // C4Database
@@ -76,7 +83,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_freeSto
  * Method:    getPrivateUUID
  * Signature: (J)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID
+JNIEXPORT jbyteArray
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -84,7 +92,8 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_g
  * Method:    encodeJSON
  * Signature: (J[B)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */
-JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON
         (JNIEnv *, jclass, jlong, jbyteArray);
 
 // C4Document
@@ -94,8 +103,8 @@ JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_enco
  * Method:    getDocID
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_C4TestUtils_getDocID
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getDocID
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -103,8 +112,8 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getDocID
  * Method:    put
  * Signature: (J[BLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4TestUtils_put
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_put
         (JNIEnv *, jclass, jlong, jbyteArray, jstring, jint, jboolean, jboolean, jobjectArray, jboolean, jint, jint);
 
 /*
@@ -112,8 +121,8 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put
  * Method:    put2
  * Signature: (JJLjava/lang/String;IZZ[Ljava/lang/String;ZII)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_C4TestUtils_put2
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_put2
         (JNIEnv *, jclass, jlong, jlong, jlong, jstring, jint, jboolean, jboolean, jobjectArray, jboolean, jint, jint);
 
 // C4Key
@@ -123,7 +132,8 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put2
  * Method:    deriveKeyFromPassword
  * Signature: (Ljava/lang/String;)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_deriveKeyFromPassword
+JNIEXPORT jbyteArray
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_deriveKeyFromPassword
         (JNIEnv *, jclass, jstring);
 
 // C4Log
@@ -133,7 +143,8 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_d
  * Method:    getLogLevel
  * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel
+JNIEXPORT jint
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel
         (JNIEnv *, jclass, jstring);
 
 #ifdef __cplusplus

@@ -14,7 +14,8 @@ extern "C" {
 * Method:    fromString
 * Signature: (Ljava/lang/String;)J
 */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_fromString
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_fromString
         (JNIEnv *, jclass, jstring);
 
 /*
@@ -22,7 +23,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_
  * Method:    toString
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_toString
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_toString
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -30,7 +32,8 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blo
  * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_free
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_free
         (JNIEnv *, jclass, jlong);
 
 
@@ -40,7 +43,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_f
  * Method:    getBlobStore
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getBlobStore
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getBlobStore
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -48,7 +52,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_
  * Method:    getSize
  * Signature: (JJ)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getSize
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getSize
         (JNIEnv *, jclass, jlong, jlong);
 
 /*
@@ -56,7 +61,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_
  * Method:    getContents
  * Signature: (JJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
  */
-JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getContents
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getContents
         (JNIEnv *, jclass, jlong, jlong);
 
 /*
@@ -64,7 +70,8 @@ JNIEXPORT jobject JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blo
  * Method:    getFilePath
  * Signature: (JJ)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getFilePath
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getFilePath
         (JNIEnv *, jclass, jlong, jlong);
 
 /*
@@ -72,7 +79,8 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blo
  * Method:    create
  * Signature: (J[B)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_create
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_create
         (JNIEnv *, jclass, jlong, jbyteArray);
 
 /*
@@ -80,7 +88,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_
  * Method:    delete
  * Signature: (JJ)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_delete
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_delete
         (JNIEnv *, jclass, jlong, jlong);
 
 /*
@@ -88,7 +97,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_d
  * Method:    openReadStream
  * Signature: (JJ)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_openReadStream
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_openReadStream
         (JNIEnv *, jclass, jlong, jlong);
 
 /*
@@ -96,7 +106,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_
  * Method:    openWriteStream
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_openWriteStream
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_openWriteStream
         (JNIEnv *, jclass, jlong);
 
 //// BlobReadStream
@@ -105,7 +116,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_
  * Method:    read
  * Signature: (J[BIJ)I
  */
-JNIEXPORT jint JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_read
+JNIEXPORT jint
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_read
         (JNIEnv *, jclass, jlong, jbyteArray, jint, jlong);
 
 /*
@@ -113,7 +125,8 @@ JNIEXPORT jint JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_r
  * Method:    getLength
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getLength
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getLength
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -121,7 +134,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_
  * Method:    seek
  * Signature: (JJ)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_seek
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_seek
         (JNIEnv *, jclass, jlong, jlong);
 
 /*
@@ -129,7 +143,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_s
  * Method:    close
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_closeReadStream
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_closeReadStream
         (JNIEnv *, jclass, jlong);
 
 //// BlobWriteStream
@@ -138,7 +153,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_c
  * Method:    write
  * Signature: (J[BI)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_write
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_write
         (JNIEnv *, jclass, jlong, jbyteArray, jint);
 
 /*
@@ -146,7 +162,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_w
  * Method:    computeBlobKey
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_computeBlobKey
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_computeBlobKey
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -154,7 +171,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_
  * Method:    install
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_install
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_install
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -162,7 +180,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_i
  * Method:    closeWriteStream
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_closeWriteStream
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_closeWriteStream
         (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
