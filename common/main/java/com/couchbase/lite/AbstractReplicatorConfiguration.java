@@ -146,7 +146,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             Defaults.Replicator.ACCEPT_PARENT_COOKIES,
             null,
             Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT,
-            Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
+            Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME,
             Defaults.Replicator.HEARTBEAT,
             Defaults.Replicator.ENABLE_AUTO_PURGE,
             db);

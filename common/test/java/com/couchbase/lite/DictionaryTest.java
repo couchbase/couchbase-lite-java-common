@@ -726,7 +726,7 @@ public class DictionaryTest extends BaseDbTest {
         MutableDictionary mDict = new MutableDictionary(BaseDbTestKt.readJSONResource("dictionary.json"));
         MutableDocument mDoc = new MutableDocument().setDictionary("dict", mDict);
         Dictionary dbDict = saveDocInTestCollection(mDoc).getDictionary("dict");
-        verifyDict(dbDict);
+        verifyDict(dbDict, true);
         verifyDict(new JSONObject(dbDict.toJSON()));
     }
 

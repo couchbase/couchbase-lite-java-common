@@ -1838,7 +1838,7 @@ public class ArrayTest extends BaseDbTest {
         MutableArray mArray = new MutableArray(BaseDbTestKt.readJSONResource("array.json"));
         MutableDocument mDoc = new MutableDocument().setArray("array", mArray);
         Array dbArray = saveDocInTestCollection(mDoc).getArray("array");
-        verifyArray(dbArray);
+        verifyArray(dbArray, true);
         verifyArray(new JSONArray(dbArray.toJSON()));
     }
 

@@ -43,6 +43,7 @@ open class MockNativeSocket : C4Socket.NativeImpl {
 
 open class MockNativeReplicator : C4Replicator.NativeImpl {
     override fun nCreate(
+        id: String,
         collections: Array<out ReplicationCollection>,
         db: Long,
         scheme: String?,
@@ -60,6 +61,7 @@ open class MockNativeReplicator : C4Replicator.NativeImpl {
     ) = C4BaseTest.MOCK_PEER
 
     override fun nCreateLocal(
+        id: String,
         collections: Array<out ReplicationCollection>,
         db: Long,
         targetDb: Long,
@@ -71,6 +73,7 @@ open class MockNativeReplicator : C4Replicator.NativeImpl {
     ) = C4BaseTest.MOCK_PEER
 
     override fun nCreateWithSocket(
+        id: String,
         collections: Array<out ReplicationCollection>,
         db: Long,
         openSocket: Long,

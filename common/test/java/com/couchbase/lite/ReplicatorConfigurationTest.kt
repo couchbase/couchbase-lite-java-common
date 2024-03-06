@@ -71,7 +71,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         val opts = immutableConfig.connectionOptions
         assertEquals(Defaults.Replicator.HEARTBEAT, opts[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
         assertEquals(Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRIES])
-        assertEquals(Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
+        assertEquals(Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME, opts[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL])
         assertEquals(Defaults.Replicator.ENABLE_AUTO_PURGE, opts[C4Replicator.REPLICATOR_OPTION_ENABLE_AUTO_PURGE])
         assertEquals(
             Defaults.Replicator.ACCEPT_PARENT_COOKIES,
@@ -101,7 +101,7 @@ class ReplicatorConfigurationTest : BaseReplicatorTest() {
         val opts2 = ImmutableReplicatorConfiguration(config).connectionOptions
         assertEquals(Defaults.Replicator.HEARTBEAT, opts2[C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL])
         assertEquals(
-            Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
+            Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME,
             opts2[C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL]
         )
         assertEquals(

@@ -88,7 +88,7 @@ public final class LogFileConfiguration {
         this.directory = Preconditions.assertNotNull(directory, "directory");
         this.maxSize = (maxSize != null) ? maxSize : Defaults.LogFile.MAX_SIZE;
         this.maxRotateCount = (maxRotateCount != null) ? maxRotateCount : Defaults.LogFile.MAX_ROTATE_COUNT;
-        this.usePlaintext = (usePlaintext != null) ? usePlaintext : Defaults.LogFile.USE_PLAIN_TEXT;
+        this.usePlaintext = (usePlaintext != null) ? usePlaintext : Defaults.LogFile.USE_PLAINTEXT;
         this.readonly = readonly;
     }
 
