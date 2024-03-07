@@ -47,6 +47,10 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * visible symbols in com.couchbase.lite.
  * <p>
  * It worries me that this isn't thread safe... but, as I say, I've never seen it be a problem.
+ * <p>
+ * 3/2024 (CBL-5486): I've seen a problem!
+ * If the parent, the object holding the Fleece reference, is closed, the Fleece object backing
+ * all of the contained objects, is freed.
  */
 public class MValue extends MValueConverter implements Encodable {
 
