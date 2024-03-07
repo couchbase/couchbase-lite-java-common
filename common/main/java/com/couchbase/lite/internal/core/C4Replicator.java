@@ -13,7 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
 package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
@@ -175,6 +174,8 @@ public abstract class C4Replicator extends C4NativePeer {
     public static final String AUTH_TYPE_FACEBOOK = "Facebook";
     public static final String AUTH_TYPE_CLIENT_CERT = "Client Cert";
 
+    private static final String ID = "JRepl@";
+
     //-------------------------------------------------------------------------
     // Types
     //-------------------------------------------------------------------------
@@ -194,6 +195,7 @@ public abstract class C4Replicator extends C4NativePeer {
     public interface NativeImpl {
         @SuppressWarnings("PMD.ExcessiveParameterList")
         long nCreate(
+            @NonNull String id,
             @NonNull ReplicationCollection[] collections,
             long db,
             @Nullable String scheme,
@@ -211,6 +213,7 @@ public abstract class C4Replicator extends C4NativePeer {
             throws LiteCoreException;
 
         long nCreateLocal(
+            @NonNull String id,
             @NonNull ReplicationCollection[] collections,
             long db,
             long targetDb,
@@ -222,6 +225,7 @@ public abstract class C4Replicator extends C4NativePeer {
             throws LiteCoreException;
 
         long nCreateWithSocket(
+            @NonNull String id,
             @NonNull ReplicationCollection[] collections,
             long db,
             long openSocket,
@@ -268,14 +272,13 @@ public abstract class C4Replicator extends C4NativePeer {
 
         @Override
         protected void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
-            Log.d(LOG_DOMAIN, "Unsupported call to doc ended for MessageEndpoint");
+            Log.d(LOG_DOMAIN, "%s: Unsupported call to doc ended for MessageEndpoint", getReplId());
         }
 
         @NonNull
         @Override
         public String toString() {
-            return "C4MessageEndpointRepl{" + ClassUtils.objId(this) + "/" + super.toString()
-                + ", " + statusListener + "'}";
+            return "C4MessageEndpointRepl{" + getReplId() + "/" + super.toString() + ", " + statusListener + "'}";
         }
     }
 
@@ -348,17 +351,10 @@ public abstract class C4Replicator extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void statusChangedCallback(long token, @Nullable C4ReplicatorStatus status) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
-        Log.d(LOG_DOMAIN, "C4Replicator.statusChangedCallback(0x%x) %s: %s", token, c4Repl, status);
+        final String id = (c4Repl == null) ? "???@" + token : c4Repl.getReplId();
+        Log.d(LOG_DOMAIN, "C4Replicator(%s).statusChangedCallback: %s", id, status);
 
-        if (c4Repl == null) {
-            Log.w(LOG_DOMAIN, "No such replicator");
-            return;
-        }
-
-        if (status == null) {
-            Log.w(LOG_DOMAIN, "Empty status");
-            return;
-        }
+        if ((c4Repl == null)  || (status == null)) { return; }
 
         c4Repl.statusChanged(c4Repl, status);
     }
@@ -366,20 +362,12 @@ public abstract class C4Replicator extends C4NativePeer {
     // This method is called by reflection.  Don't change its signature.
     static void documentEndedCallback(long token, boolean pushing, @Nullable C4DocumentEnded... docEnds) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
-
+        final String id = (c4Repl == null) ? "???@" + token : c4Repl.getReplId();
         final int nDocs = (docEnds == null) ? 0 : docEnds.length;
 
-        Log.d(LOG_DOMAIN, "C4Replicator.documentEndedCallback %s@0x%x: %d (%s)", c4Repl, token, nDocs, pushing);
+        Log.d(LOG_DOMAIN, "C4Replicator(%s).documentEndedCallback: %d (%s)", id, nDocs, pushing);
 
-        if (c4Repl == null) {
-            Log.w(LOG_DOMAIN, "No such replicator");
-            return;
-        }
-
-        if (nDocs <= 0) {
-            Log.w(LOG_DOMAIN, "Empty doc ends");
-            return;
-        }
+        if ((c4Repl == null)  || (nDocs <= 0)) { return; }
 
         c4Repl.documentsEnded(Arrays.asList(docEnds), pushing);
     }
@@ -453,6 +441,7 @@ public abstract class C4Replicator extends C4NativePeer {
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
         final long peer = impl.nCreate(
+            ID + replToken,
             colls,
             db,
             scheme,
@@ -529,6 +518,7 @@ public abstract class C4Replicator extends C4NativePeer {
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
         final long peer = impl.nCreateLocal(
+            ID + token,
             colls,
             db,
             targetDb.getHandle(),
@@ -582,21 +572,22 @@ public abstract class C4Replicator extends C4NativePeer {
         @Nullable Map<String, Object> options,
         @NonNull StatusListener statusListener)
         throws LiteCoreException {
-        final long replToken = BOUND_REPLICATORS.reserveKey();
+        final long token = BOUND_REPLICATORS.reserveKey();
 
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
         final long peer = impl.nCreateWithSocket(
+            ID + token,
             colls,
             db,
             c4Socket.getPeerHandle(),
             ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
-            replToken);
+            token);
 
         final C4Replicator c4Replicator
-            = new C4MessageEndpointReplicator(impl, peer, replToken, c4Socket, Arrays.asList(colls), statusListener);
+            = new C4MessageEndpointReplicator(impl, peer, token, c4Socket, Arrays.asList(colls), statusListener);
 
-        BOUND_REPLICATORS.bind(replToken, c4Replicator);
+        BOUND_REPLICATORS.bind(token, c4Replicator);
 
         return c4Replicator;
     }
@@ -650,6 +641,9 @@ public abstract class C4Replicator extends C4NativePeer {
         for (ReplicationCollection coll: colls) { coll.close(); }
         closePeer(null);
     }
+
+    @NonNull
+    public String getReplId() { return ID + token; }
 
     public void setOptions(@Nullable byte[] options) { withPeer(peer -> impl.nSetOptions(peer, options)); }
 

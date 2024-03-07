@@ -42,7 +42,6 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings("ConstantConditions")
 public class ResultTest extends BaseQueryTest {
 
-
     @Test
     public void testGetValueByKey() {
         runTest((query) -> {

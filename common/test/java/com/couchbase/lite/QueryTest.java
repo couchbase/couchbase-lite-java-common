@@ -1108,7 +1108,7 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(50.5F, (float) result.getValue(0), 0.0F);
+                assertEquals(50.5, (Double) result.getValue(0), 0.0F);
                 assertEquals(100L, (long) result.getValue(1));
                 assertEquals(1L, (long) result.getValue(2));
                 assertEquals(100L, (long) result.getValue(3));

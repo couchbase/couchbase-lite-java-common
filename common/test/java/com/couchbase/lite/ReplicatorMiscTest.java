@@ -173,7 +173,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
                 Defaults.Replicator.HEARTBEAT,
                 ((Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL)).intValue());
             assertEquals(
-                Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
+                Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME,
                 ((Number) options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL)).intValue());
             assertEquals(
                 Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1,

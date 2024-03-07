@@ -452,12 +452,13 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZZZ[BJJ)J
+ * Signature: (Ljava/lang/String;[Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;IZZZ[BJJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
         JNIEnv *env,
         jclass ignored,
+        jstring jid,
         jobjectArray jCollDescs,
         jlong jdb,
         jstring jscheme,
@@ -472,6 +473,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
         jbyteArray joptions,
         jlong replicatorToken,
         jlong socketFactoryToken) {
+    jstringSlice id(env, jid);
     jstringSlice scheme(env, jscheme);
     jstringSlice host(env, jhost);
     jstringSlice path(env, jpath);
@@ -517,7 +519,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
     params.collections = collectionDescs.data();
 
     C4Error error{};
-    C4Replicator *repl = c4repl_new((C4Database *) jdb, c4Address, remoteDBName, params, &error);
+    C4Replicator *repl = c4repl_new((C4Database *) jdb, c4Address, remoteDBName, params, id, &error);
     if (!repl && error.code != 0) {
         throwError(env, error);
         return 0;
@@ -529,12 +531,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    create
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZZZ[BJ)J
+ * Signature: (Ljava/lang/String;[Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJZZZ[BJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
         JNIEnv *env,
         jclass ignored,
+        jstring jid,
         jobjectArray jCollDescs,
         jlong jdb,
         jlong targetDb,
@@ -548,6 +551,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
     throwError(env, error);
     return 0;
 #else
+    jstringSlice id(env, jid);
     jbyteArraySlice options(env, joptions);
 
     C4ReplicatorParameters params{};
@@ -578,7 +582,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
     params.collections = collectionDescs.data();
 
     C4Error error{};
-    C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) targetDb, params, &error);
+    C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) targetDb, params, id, &error);
     if (!repl && error.code != 0) {
         throwError(env, error);
         return 0;
@@ -591,17 +595,19 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Replicator
  * Method:    createWithSocket
- * Signature: ([Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJ[BJ)J
+ * Signature: (Ljava/lang/String;[Lcom.couchbase.lite.internal.core.C4ReplicationCollection;JJ[BJ)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
         JNIEnv *env,
         jclass ignored,
+        jstring jid,
         jobjectArray jCollDescs,
         jlong jdb,
         jlong jopenSocket,
         jbyteArray joptions,
         jlong replicatorToken) {
+    jstringSlice id(env, jid);
     jbyteArraySlice options(env, joptions);
     auto *db = (C4Database *) jdb;
     auto openSocket = (C4Socket *) jopenSocket;
@@ -631,7 +637,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
     params.collections = collectionDescs.data();
 
     C4Error error{};
-    C4Replicator *repl = c4repl_newWithSocket(db, openSocket, params, &error);
+    C4Replicator *repl = c4repl_newWithSocket(db, openSocket, params, id, &error);
     if (!repl && error.code != 0) {
         throwError(env, error);
         return 0;

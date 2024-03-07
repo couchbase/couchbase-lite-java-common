@@ -29,6 +29,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     @SuppressWarnings("PMD.ExcessiveParameterList")
     @Override
     public long nCreate(
+        @NonNull String id,
         @NonNull ReplicationCollection[] collections,
         long db,
         @Nullable String scheme,
@@ -45,6 +46,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         long socketFactoryToken)
         throws LiteCoreException {
         return create(
+            id,
             collections,
             db,
             scheme,
@@ -64,6 +66,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     @Override
     public long nCreateLocal(
+        @NonNull String id,
         @NonNull ReplicationCollection[] collections,
         long db,
         long targetDb,
@@ -74,6 +77,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
         long replicatorToken)
         throws LiteCoreException {
         return createLocal(
+            id,
             collections,
             db,
             targetDb,
@@ -86,13 +90,14 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
 
     @Override
     public long nCreateWithSocket(
+        @NonNull String id,
         @NonNull ReplicationCollection[] collections,
         long db,
         long openSocket,
         @Nullable byte[] options,
         long replicatorToken)
         throws LiteCoreException {
-        return createWithSocket(collections, db, openSocket, options, replicatorToken);
+        return createWithSocket(id, collections, db, openSocket, options, replicatorToken);
     }
 
     @Override
@@ -141,6 +146,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      */
     @SuppressWarnings("PMD.ExcessiveParameterList")
     private static native long create(
+        @NonNull String id,
         @NonNull ReplicationCollection[] collections,
         long db,
         @Nullable String scheme,
@@ -161,6 +167,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      * Creates a new local replicator.
      */
     private static native long createLocal(
+        @NonNull String id,
         @NonNull ReplicationCollection[] collections,
         long db,
         long targetDb,
@@ -177,6 +184,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      * start a passive replication to service them.
      */
     private static native long createWithSocket(
+        @NonNull String id,
         @NonNull ReplicationCollection[] collections,
         long db,
         long openSocket,

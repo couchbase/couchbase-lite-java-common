@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.replicator;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -31,17 +32,23 @@ public abstract class BaseReplicator implements AutoCloseable {
     private final Object lock = new Object();
     protected final Executor dispatcher = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
 
+    @GuardedBy("lock")
     @Nullable
     private C4Replicator c4Replicator;
 
-    protected BaseReplicator() { }
+    @GuardedBy("lock")
+    @NonNull
+    private String id;
+
+    protected BaseReplicator() { id = getReplId(null) + ClassUtils.objId(this); }
 
     protected final void setC4Replicator(@NonNull C4Replicator newC4Repl) {
-        Log.d(
-            LogDomain.REPLICATOR,
-            "Setting c4 replicator %s for replicator %s",
-            ClassUtils.objId(newC4Repl), ClassUtils.objId(this));
         setC4ReplicatorInternal(newC4Repl);
+    }
+
+    @NonNull
+    protected final String getId() {
+        synchronized (getReplicatorLock()) { return id; }
     }
 
     @Nullable
@@ -55,12 +62,25 @@ public abstract class BaseReplicator implements AutoCloseable {
     protected final Object getReplicatorLock() { return lock; }
 
     private void setC4ReplicatorInternal(@Nullable C4Replicator newC4Repl) {
+        final String oldReplId;
+        final String newReplId;
         final C4Replicator oldC4Repl;
         synchronized (getReplicatorLock()) {
+            oldReplId = id;
             oldC4Repl = c4Replicator;
+
+            newReplId = getReplId(newC4Repl);
+            id = newReplId + ClassUtils.objId(this);
+
             c4Replicator = newC4Repl;
         }
+        Log.d(LogDomain.REPLICATOR, "%s: new c4Repl: %s", oldReplId, newReplId, this);
 
         if (oldC4Repl != null) { oldC4Repl.close(); }
+    }
+
+    @NonNull
+    private String getReplId(@Nullable C4Replicator repl) {
+        return (repl == null) ? "unattached" : repl.getReplId();
     }
 }
