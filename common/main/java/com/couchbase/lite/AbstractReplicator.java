@@ -721,7 +721,10 @@ public abstract class AbstractReplicator extends BaseReplicator
             Log.i(
                 LOG_DOMAIN,
                 "%s: status changed: (%d, %d) @%s",
-                getId(), pendingResolutions.size(), pendingStatusNotifications.size(), c4Status);
+                getId(),
+                pendingResolutions.size(),
+                pendingStatusNotifications.size(),
+                c4Status);
 
             if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !isOffline(c4Status)); }
 

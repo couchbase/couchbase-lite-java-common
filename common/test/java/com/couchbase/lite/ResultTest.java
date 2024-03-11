@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Fn;
@@ -957,9 +958,29 @@ public class ResultTest extends BaseQueryTest {
             assertNotNull(result);
             assertNull(results.next());
 
-            verifyDocument(result);
+            verifyDocument(result, false);
             verifyDocument(new JSONObject(result.toJSON()));
         }
+    }
+
+    @Ignore("CBL-5486: Native crash using contents of a ResultSet after the ResultSet is released")
+    @Test
+    public void testResultRefAfterClose() throws CouchbaseLiteException {
+        MutableDocument mDoc = makeDocument();
+        saveDocInTestCollection(mDoc);
+
+        Array array;
+        try (ResultSet results = QueryBuilder.select(SelectResult.property("doc-25"))
+            .from(DataSource.collection(getTestCollection()))
+            .execute()) {
+
+            Result result = results.next();
+            assertNotNull(result);
+
+            array = result.getArray(0);
+        }
+
+        array.getValue(26);
     }
 
 

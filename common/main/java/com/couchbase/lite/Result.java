@@ -567,7 +567,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
 
     private void assertInBounds(int index) {
         if (!isInBounds(index)) {
-            throw new ArrayIndexOutOfBoundsException("index " + index + " must be between 0 and " + count());
+            throw new ArrayIndexOutOfBoundsException(index + " is not 0 <= i < " + count());
         }
     }
 
