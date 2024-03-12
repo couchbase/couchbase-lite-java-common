@@ -17,13 +17,15 @@ package com.couchbase.lite.internal.fleece;
 
 import androidx.annotation.NonNull;
 
+import com.couchbase.lite.LiteCoreException;
+
 
 public final class JSONEncoder extends FLEncoder.ManagedFLEncoder {
 
     public JSONEncoder() { super(newJSONEncoder()); }
 
     @NonNull
-    public String finishJSON() { return withPeerOrThrow(JSONEncoder::finishJSON); }
+    public String finishJSON() throws LiteCoreException { return withPeerOrThrow(JSONEncoder::finishJSON); }
 
     @NonNull
     public byte[] finish() {
@@ -44,5 +46,5 @@ public final class JSONEncoder extends FLEncoder.ManagedFLEncoder {
     static native long newJSONEncoder();
 
     @NonNull
-    static native String finishJSON(long peer);
+    static native String finishJSON(long peer) throws LiteCoreException;
 }

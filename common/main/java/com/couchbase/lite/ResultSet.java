@@ -25,7 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.DbContext;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -53,11 +54,11 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @NonNull
     private final Map<String, Integer> columnNames;
     @NonNull
-    private final DbContext context;
+    private final ResultContext context;
 
     @GuardedBy("lock")
     @Nullable
-    private C4QueryEnumerator c4enum;
+    private final C4QueryEnumerator c4enum;
 
     @GuardedBy("lock")
     private boolean isAllEnumerated;
@@ -73,7 +74,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         @NonNull Map<String, Integer> cols) {
         this.query = query;
         this.columnNames = cols;
-        this.context = new DbContext(query.getDatabase());
+        this.context = new ResultContext(query.getDatabase(), this);
         this.c4enum = c4enum;
     }
 
@@ -104,7 +105,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
                     return null;
                 }
 
-                return new Result(this, c4enum, context);
+                return new Result(context, c4enum);
             }
             catch (LiteCoreException e) { err = e; }
         }
@@ -145,14 +146,29 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     public Iterator<Result> iterator() { return allResults().iterator(); }
 
     @Override
-    public void close() {
-        final C4QueryEnumerator qEnum;
-        synchronized (lock) {
+    public void close() { }
+
+    // This is just freaking insane...
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
+    @Override
+    protected void finalize()  throws Throwable {
+        try {
+            final C4QueryEnumerator qEnum;
+            Object llock = lock;
+            if (llock == null) { qEnum = c4enum; }
+            else {
+                synchronized (llock) { qEnum = c4enum; }
+            }
             if (c4enum == null) { return; }
-            qEnum = c4enum;
-            c4enum = null;
+            llock = getDbLock();
+            if (llock == null) { qEnum.close(); }
+            else {
+                synchronized (llock) { qEnum.close(); }
+            }
         }
-        synchronized (getDbLock()) { qEnum.close(); }
+        finally {
+            super.finalize();
+        }
     }
 
     //---------------------------------------------
@@ -180,14 +196,15 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     // Private level access
     //---------------------------------------------
 
-    @NonNull
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
+    @Nullable
     private Object getDbLock() {
         final AbstractQuery q = query;
-        if (q != null) {
-            final AbstractDatabase db = q.getDatabase();
-            if (db != null) { return db.getDbLock(); }
-        }
-        throw new IllegalStateException("Could not obtain db lock");
+        if (q == null) { return null; }
+        final AbstractDatabase db = q.getDatabase();
+        if (db == null) { return null; }
+        return db.getDbLock();
     }
 }
+
 

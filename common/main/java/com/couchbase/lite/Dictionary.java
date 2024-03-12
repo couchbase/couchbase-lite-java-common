@@ -351,6 +351,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
             internalDict.encodeTo(encoder);
             return encoder.finishJSON();
         }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException("Cannot encode array: " + this, e);
+        }
     }
 
     //---------------------------------------------
