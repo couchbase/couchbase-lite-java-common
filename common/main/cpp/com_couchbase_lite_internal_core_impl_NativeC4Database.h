@@ -82,24 +82,6 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPath
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    getDocumentCount
- * Signature: (J)J
- */
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getDocumentCount
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    purgeDoc
- * Signature: (JLjava/lang/String;)V
- */
-JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_purgeDoc
-        (JNIEnv *, jclass, jlong, jstring);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    getPublicUUID
  * Signature: (J)[B
  */
