@@ -69,7 +69,6 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_free;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getDocumentCount;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getFLSharedKeys;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPath;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPublicUUID;
@@ -78,7 +77,6 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_hasScope;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4Database_purgeDoc;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_rekey;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie;
         Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create;
@@ -87,7 +85,6 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_createFromSlice;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_dictContainsBlobs;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getDocID;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFromCollection;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevID;
@@ -100,7 +97,6 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_resolveConflict;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_save;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectNextLeafRevision;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectParentRevision;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_update2;
         Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_free;
         Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_fromExternal;

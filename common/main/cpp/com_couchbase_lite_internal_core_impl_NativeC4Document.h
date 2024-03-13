@@ -37,15 +37,6 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
- * Method:    getDocID
- * Signature: (J)Ljava/lang/String;
- */
-JNIEXPORT jstring
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getDocID
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getRevID
  * Signature: (J)Ljava/lang/String;
  */
@@ -123,15 +114,6 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_save
  */
 JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
- * Method:    selectParentRevision
- * Signature: (J)Z
- */
-JNIEXPORT jboolean
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectParentRevision
         (JNIEnv *, jclass, jlong);
 
 /*
