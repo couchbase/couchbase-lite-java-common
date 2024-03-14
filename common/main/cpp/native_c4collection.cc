@@ -326,6 +326,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
         jlong bits,
         jlong minTrainingSize,
         jlong maxTrainingSize) {
+#ifdef COUCHBASE_ENTERPRISE
     C4IndexOptions options = {};
 
     options.vector = {};
@@ -338,6 +339,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
     options.vector.numProbes = 0;
 
     createIndex(env, coll, kC4VectorIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
+#endif
 }
 
 

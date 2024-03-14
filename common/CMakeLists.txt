@@ -82,7 +82,7 @@ target_include_directories( LiteCoreJNI PUBLIC
 
 set_target_properties(
     LiteCoreJNI PROPERTIES LINK_FLAGS
-    "-Wl,--version-script=${PROJECT_SOURCE_DIR}/jni_gnu.ld"
+    "-Wl,--version-script=${PROJECT_SOURCE_DIR}/jni_android.ld"
 )
 
 target_link_libraries( LiteCoreJNI
