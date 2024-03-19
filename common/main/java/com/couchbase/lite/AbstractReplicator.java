@@ -173,7 +173,9 @@ public abstract class AbstractReplicator extends BaseReplicator
 
         getDatabase().addActiveReplicator(this);
 
-        final C4Replicator c4Repl = getOrCreateC4Replicator();
+        final C4Replicator c4Repl;
+        try { c4Repl = getOrCreateC4Replicator(); }
+        catch (LiteCoreException e) { throw new CouchbaseLiteError("Failed to create replicator", e); }
         synchronized (getReplicatorLock()) {
             c4Repl.start(resetCheckpoint);
 
@@ -682,7 +684,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     @NonNull
-    private C4Replicator getOrCreateC4Replicator() {
+    private C4Replicator getOrCreateC4Replicator() throws LiteCoreException {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
         synchronized (getDatabase().getDbLock()) {
             if (closed) { throw new CouchbaseLiteError("Attempt to operate on a closed replicator"); }
@@ -698,19 +700,13 @@ public abstract class AbstractReplicator extends BaseReplicator
                 return c4Repl;
             }
 
-            try {
-                c4Repl = createReplicatorForTarget(config.getTarget());
-                synchronized (getReplicatorLock()) {
-                    setC4Replicator(c4Repl);
-                    setProgressLevel();
-                }
-                return c4Repl;
+            c4Repl = createReplicatorForTarget(config.getTarget());
+            synchronized (getReplicatorLock()) {
+                setC4Replicator(c4Repl);
+                setProgressLevel();
             }
-            catch (LiteCoreException e) {
-                throw new CouchbaseLiteError(
-                    "Could not create replicator",
-                    CouchbaseLiteException.convertException(e));
-            }
+
+            return c4Repl;
         }
     }
 
@@ -751,7 +747,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     private void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
-        Log.i(LOG_DOMAIN, "%s: documents ended: %d",  getId(), docEnds.size());
+        Log.i(LOG_DOMAIN, "%s: documents ended: %d", getId(), docEnds.size());
 
         final List<ReplicatedDocument> unconflictedDocs = new ArrayList<>();
 

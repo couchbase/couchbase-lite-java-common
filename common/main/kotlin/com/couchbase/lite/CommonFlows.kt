@@ -13,16 +13,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// !!! REVIEW BEFORE RELEASE
-@file:OptIn(ExperimentalStdlibApi::class)
-
 package com.couchbase.lite
 
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import java.util.concurrent.Executor
-import kotlinx.coroutines.asExecutor
+import kotlin.coroutines.ContinuationInterceptor
 
 
 /**
@@ -34,8 +32,11 @@ import kotlinx.coroutines.asExecutor
  * @see com.couchbase.lite.Collection.addChangeListener
  */
 fun Collection.collectionChangeFlow(executor: Executor? = null) = callbackFlow {
-    val listenerExecutor = executor ?: coroutineContext[CoroutineDispatcher]?.asExecutor()
-    val token = this@collectionChangeFlow.addChangeListener(listenerExecutor) { trySend(it) }
+    val token = this@collectionChangeFlow.addChangeListener(
+        executor ?: (coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher)?.asExecutor()
+    ) {
+        trySend(it)
+    }
     awaitClose { token.remove() }
 }
 
@@ -48,8 +49,12 @@ fun Collection.collectionChangeFlow(executor: Executor? = null) = callbackFlow {
  * @see com.couchbase.lite.Collection.addDocumentChangeListener
  */
 fun Collection.documentChangeFlow(documentId: String, executor: Executor? = null) = callbackFlow {
-    val listenerExecutor = executor ?: coroutineContext[CoroutineDispatcher]?.asExecutor()
-    val token = this@documentChangeFlow.addDocumentChangeListener(documentId, listenerExecutor) { trySend(it) }
+    val token = this@documentChangeFlow.addDocumentChangeListener(
+        documentId,
+        executor ?: (coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher)?.asExecutor()
+    ) {
+        trySend(it)
+    }
     awaitClose { token.remove() }
 }
 
@@ -62,8 +67,11 @@ fun Collection.documentChangeFlow(documentId: String, executor: Executor? = null
  * @see com.couchbase.lite.Replicator.addChangeListener
  */
 fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow {
-    val listenerExecutor = executor ?: coroutineContext[CoroutineDispatcher]?.asExecutor()
-    val token = this@replicatorChangesFlow.addChangeListener(listenerExecutor) { trySend(it) }
+    val token = this@replicatorChangesFlow.addChangeListener(
+        executor ?: (coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher)?.asExecutor()
+    ) {
+        trySend(it)
+    }
     awaitClose { token.remove() }
 }
 
@@ -76,8 +84,11 @@ fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow 
  * @see com.couchbase.lite.Replicator.addDocumentReplicationListener
  */
 fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlow {
-    val listenerExecutor = executor ?: coroutineContext[CoroutineDispatcher]?.asExecutor()
-    val token = this@documentReplicationFlow.addDocumentReplicationListener(listenerExecutor) { trySend(it) }
+    val token = this@documentReplicationFlow.addDocumentReplicationListener(
+        executor ?: (coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher)?.asExecutor()
+    ) {
+        trySend(it)
+    }
     awaitClose { token.remove() }
 }
 
@@ -91,8 +102,11 @@ fun Replicator.documentReplicationFlow(executor: Executor? = null) = callbackFlo
  */
 
 fun Query.queryChangeFlow(executor: Executor? = null) = callbackFlow {
-    val listenerExecutor = executor ?: coroutineContext[CoroutineDispatcher]?.asExecutor()
-    val token = this@queryChangeFlow.addChangeListener(listenerExecutor) { trySend(it) }
+    val token = this@queryChangeFlow.addChangeListener(
+        executor ?: (coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher)?.asExecutor()
+    ) {
+        trySend(it)
+    }
     awaitClose { token.remove() }
 }
 
@@ -111,8 +125,11 @@ fun Query.queryChangeFlow(executor: Executor? = null) = callbackFlow {
     replaceWith = ReplaceWith("getCollection(String, String?).collectionChangeFlow(executor)")
 )
 fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow {
-    val listenerExecutor = executor ?: coroutineContext[CoroutineDispatcher]?.asExecutor()
-    val token = this@databaseChangeFlow.addChangeListener(listenerExecutor) { trySend(it) }
+    val token = this@databaseChangeFlow.addChangeListener(
+        executor ?: (coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher)?.asExecutor()
+    ) {
+        trySend(it)
+    }
     awaitClose { this@databaseChangeFlow.removeChangeListener(token) }
 }
 
@@ -131,7 +148,11 @@ fun Database.databaseChangeFlow(executor: Executor? = null) = callbackFlow {
     replaceWith = ReplaceWith("getCollection(String, String?).documentChangeFlow(documentId, executor)")
 )
 fun Database.documentChangeFlow(documentId: String, executor: Executor? = null) = callbackFlow {
-    val listenerExecutor = executor ?: coroutineContext[CoroutineDispatcher]?.asExecutor()
-    val token = this@documentChangeFlow.addDocumentChangeListener(documentId, listenerExecutor) { trySend(it) }
+    val token = this@documentChangeFlow.addDocumentChangeListener(
+        documentId,
+        executor ?: (coroutineContext[ContinuationInterceptor] as? CoroutineDispatcher)?.asExecutor()
+    ) {
+        trySend(it)
+    }
     awaitClose { this@documentChangeFlow.removeChangeListener(token) }
 }
