@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 // Here to make it visible from other test packages
@@ -143,6 +144,7 @@ abstract class BaseDbTest : BaseTest() {
         get() = testTg
 
 
+    private var inited = AtomicBoolean(false)
     private lateinit var testDb: Database
     private lateinit var testCol: Collection
     private lateinit var testTg: String
@@ -157,10 +159,12 @@ abstract class BaseDbTest : BaseTest() {
             testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
         Report.log("Created base test Collection: $testCollection")
         testTg = getUniqueName("db_test_tag")
+        inited.set(true)
     }
 
     @After
     fun tearDownBaseDbTest() {
+        if (!inited.getAndSet(false)) { return; }
         testCol.close()
         Report.log("Test collection closed: ${testCol.fullName}")
         eraseDb(testDb)

@@ -57,6 +57,10 @@ abstract class AbstractDatabaseConfiguration {
      * If the directory doesn't already exist it will be created.
      * If it cannot be created an CouchbaseLiteError will be thrown.
      *
+     * Note: The directory set by this method is the canonical path to the
+     * directory whose path is passed.  It is *NOT* necessarily the case that
+     * dir = config.setDirectory(dir).getDirectory()
+     *
      * @param directory the directory
      * @return this.
      * @throws CouchbaseLiteError if the directory does not exist and cannot be created
@@ -75,6 +79,10 @@ abstract class AbstractDatabaseConfiguration {
      * Returns the path to the directory that contains the database.
      * If this path has not been set explicitly (see: <code>setDirectory</code> below),
      * then it is the system default.
+     *
+     * Note: The directory returned by this method is the canonical path to the
+     * directory whose path was set.  It is *NOT* necessarily the case that
+     * dir = config.setDirectory(dir).getDirectory()
      *
      * @return the database directory
      */
