@@ -33,6 +33,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.couchbase.lite.CouchbaseLiteError;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.logging.Log;
 
 
 /**
@@ -234,6 +236,8 @@ final class NativeLibrary {
         @NonNull String resDirPath,
         @NonNull File targetDir)
         throws IOException {
+        Log.i(LogDomain.DATABASE, "Copying lib %s from %s to %s", lib, resDirPath, targetDir);
+
         if (!targetDir.exists() && !targetDir.mkdirs()) {
             throw new IOException("Cannot create target directory: " + targetDir.getCanonicalPath());
         }
@@ -241,7 +245,10 @@ final class NativeLibrary {
         final File targetFile = new File(targetDir, lib);
         final String targetPath = targetFile.getCanonicalPath();
 
-        if (targetFile.exists()) { return targetPath; }
+        if (targetFile.exists()) {
+            Log.i(LogDomain.DATABASE, "Extension library previously installed at: %s", targetPath);
+            return targetPath;
+        }
 
         final String resPath = resDirPath + JAVA_PATH_SEPARATOR + lib;
         try (InputStream in = NativeLibrary.class.getResourceAsStream(resPath)) {
@@ -254,6 +261,7 @@ final class NativeLibrary {
             }
         }
 
+        Log.i(LogDomain.DATABASE, "Extension library installed at: %s", targetPath);
         return targetPath;
     }
 
