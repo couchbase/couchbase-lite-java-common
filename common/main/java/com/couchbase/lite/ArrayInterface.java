@@ -66,5 +66,5 @@ public interface ArrayInterface {
     List<Object> toList();
 
     @NonNull
-    String toJSON();
+    String toJSON() throws CouchbaseLiteException;
 }
