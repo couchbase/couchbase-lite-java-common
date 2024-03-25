@@ -482,9 +482,15 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         return dict;
     }
 
+    /**
+     * Encode a Result as a JSON string
+     *
+     * @return JSON encoded representation of the Result
+     * @throws CouchbaseLiteException on encoder failure.
+     */
     @NonNull
     @Override
-    public String toJSON() {
+    public String toJSON() throws CouchbaseLiteException {
         assertOpen();
 
         final int nVals = values.size();
@@ -502,7 +508,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
             return enc.finishJSON();
         }
         catch (LiteCoreException e) {
-            throw new CouchbaseLiteError("Cannot encode result: " + this, e);
+            throw CouchbaseLiteException.convertException(e, "Cannot encode result: " + this);
         }
     }
 

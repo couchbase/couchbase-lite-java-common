@@ -116,7 +116,8 @@ abstract class BuilderQuery extends AbstractQuery {
         this.having = query.having;
         this.orderBy = query.orderBy;
         this.limit = query.limit;
-        this.setParameters(query.getParameters());
+        try { this.setParameters(query.getParameters()); }
+        catch (CouchbaseLiteException e) { throw new IllegalArgumentException("Failed copying query parameters", e); }
     }
 
     //---------------------------------------------

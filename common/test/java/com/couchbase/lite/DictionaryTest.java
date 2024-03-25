@@ -709,7 +709,7 @@ public class DictionaryTest extends BaseDbTest {
 
     // JSON 3.3
     @Test
-    public void testDictToJSON() throws JSONException {
+    public void testDictToJSON() throws JSONException, CouchbaseLiteException {
         MutableDocument mDoc = new MutableDocument().setDictionary("dict", makeDict());
         verifyDict(new JSONObject(saveDocInTestCollection(mDoc).getDictionary("dict").toJSON()));
     }
@@ -722,7 +722,7 @@ public class DictionaryTest extends BaseDbTest {
 
     // JSON 3.5.a-b
     @Test
-    public void testDictFromJSON() throws JSONException {
+    public void testDictFromJSON() throws JSONException, CouchbaseLiteException {
         MutableDictionary mDict = new MutableDictionary(BaseDbTestKt.readJSONResource("dictionary.json"));
         MutableDocument mDoc = new MutableDocument().setDictionary("dict", mDict);
         Dictionary dbDict = saveDocInTestCollection(mDoc).getDictionary("dict");

@@ -343,15 +343,21 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         return result;
     }
 
+    /**
+     * Encode a Dictionary as a JSON string
+     *
+     * @return JSON encoded representation of the Dictionary
+     * @throws CouchbaseLiteException on encoder failure.
+     */
     @NonNull
     @Override
-    public String toJSON() {
+    public String toJSON() throws CouchbaseLiteException {
         try (FLEncoder.JSONEncoder encoder = FLEncoder.getJSONEncoder()) {
             internalDict.encodeTo(encoder);
             return encoder.finishJSON();
         }
         catch (LiteCoreException e) {
-            throw new CouchbaseLiteError("Cannot encode dictionary: " + this, e);
+            throw CouchbaseLiteException.convertException(e, "Cannot encode dictionary: " + this);
         }
     }
 

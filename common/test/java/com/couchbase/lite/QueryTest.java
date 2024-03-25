@@ -784,7 +784,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testParameters() {
+    public void testParameters() throws CouchbaseLiteException {
         loadDocuments(100);
 
         Query query = QueryBuilder
@@ -921,7 +921,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLimit() {
+    public void testLimit() throws CouchbaseLiteException {
         loadDocuments(10);
 
         Query query = QueryBuilder
@@ -959,7 +959,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLimitOffset() {
+    public void testLimitOffset() throws CouchbaseLiteException {
         loadDocuments(10);
 
         Query query = QueryBuilder

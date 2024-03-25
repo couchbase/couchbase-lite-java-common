@@ -230,9 +230,10 @@ public abstract class C4NativePeer implements AutoCloseable {
         final long peer = this.peer; // unsynchronized access: prolly ok for logging.
         Log.d(
             domain,
-            "%s@0x%x: " + message,
+            "%s@0x%x: %s",
             new Exception("At: ", history),
             getClass().getSimpleName(),
-            peer);
+            peer,
+            message);
     }
 }

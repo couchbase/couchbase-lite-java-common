@@ -126,11 +126,10 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
      * Set query parameters.
      * Setting new parameters will re-execute a query if there is at least one listener listening for changes.
      *
-     * @throws CouchbaseLiteError    on failure to create the query (e.g., database closed)
-     * @throws IllegalArgumentException on failure to encode the parameters (e.g., parameter value not supported)
+     * @throws CouchbaseLiteException on failure to encode the parameters (e.g., parameter value not supported)
      */
     @Override
-    public void setParameters(@Nullable Parameters parameters) {
+    public void setParameters(@Nullable Parameters parameters) throws CouchbaseLiteException {
         synchronized (lock) {
             if (parameters != null) { parameters = parameters.readonlyCopy(); }
 
@@ -139,8 +138,9 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
             if (parameters == null) { return; }
 
             try { getC4QueryLocked().setParameters(parameters.encode()); }
-            catch (CouchbaseLiteException e) { throw new CouchbaseLiteError("Failed creating query", e); }
-            catch (LiteCoreException e) { throw new IllegalArgumentException("Failed encoding parameters", e); }
+            catch (LiteCoreException e) {
+                throw CouchbaseLiteException.convertException(e, "Failed encoding parameters");
+            }
         }
     }
 
@@ -276,7 +276,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
         if (c4query != null) { return c4query; }
 
         final AbstractDatabase db = getDatabase();
-        if (db == null) { throw new CouchbaseLiteError("Attempt to prep query with no database"); }
+        if (db == null) { throw new CouchbaseLiteException("Attempt to prep query with no database"); }
 
         final C4Query c4Q = prepQueryLocked(db);
 

@@ -304,15 +304,21 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         }
     }
 
+    /**
+     * Encode an Array as a JSON string
+     *
+     * @return JSON encoded representation of the Array
+     * @throws CouchbaseLiteException on encoder failure.
+     */
     @NonNull
     @Override
-    public String toJSON() {
+    public String toJSON() throws CouchbaseLiteException {
         try (FLEncoder.JSONEncoder encoder = FLEncoder.getJSONEncoder()) {
             internalArray.encodeTo(encoder);
             return encoder.finishJSON();
         }
         catch (LiteCoreException e) {
-            throw new CouchbaseLiteError("Cannot encode array: " + this, e);
+            throw CouchbaseLiteException.convertException(e, "Cannot encode array: " + this);
         }
     }
 
