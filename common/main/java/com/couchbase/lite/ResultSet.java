@@ -151,20 +151,10 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     // This is just freaking insane...
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @Override
-    protected void finalize()  throws Throwable {
+    protected void finalize() throws Throwable {
         try {
-            final C4QueryEnumerator qEnum;
-            Object llock = lock;
-            if (llock == null) { qEnum = c4enum; }
-            else {
-                synchronized (llock) { qEnum = c4enum; }
-            }
-            if (c4enum == null) { return; }
-            llock = getDbLock();
-            if (llock == null) { qEnum.close(); }
-            else {
-                synchronized (llock) { qEnum.close(); }
-            }
+            final C4QueryEnumerator qEnum = c4enum;
+            if (c4enum != null) { qEnum.close(); }
         }
         finally {
             super.finalize();
@@ -190,20 +180,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     boolean isClosed() {
         synchronized (lock) { return c4enum == null; }
-    }
-
-    //---------------------------------------------
-    // Private level access
-    //---------------------------------------------
-
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
-    @Nullable
-    private Object getDbLock() {
-        final AbstractQuery q = query;
-        if (q == null) { return null; }
-        final AbstractDatabase db = q.getDatabase();
-        if (db == null) { return null; }
-        return db.getDbLock();
     }
 }
 
