@@ -79,7 +79,7 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging(loadErrorMessages());
+        Log.initLogging(debugging, loadErrorMessages());
 
         setC4TmpDirPath(tmpDir);
 

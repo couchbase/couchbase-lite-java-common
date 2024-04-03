@@ -97,7 +97,7 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging(loadErrorMessages(ctxt));
+        Log.initLogging(debugging, loadErrorMessages(ctxt));
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
 

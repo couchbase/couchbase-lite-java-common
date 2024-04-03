@@ -65,7 +65,7 @@ public final class Log {
     /**
      * Setup logging.
      */
-    public static void initLogging(@NonNull Map<String, String> errorMessages) {
+    public static void initLogging(boolean debugging, @NonNull Map<String, String> errorMessages) {
         initLoggingInternal();
 
         setStandardErrorMessages(Collections.unmodifiableMap(errorMessages));
@@ -74,7 +74,7 @@ public final class Log {
         final ConsoleLogger logger = Database.log.getConsole();
         logger.setLevel(LogLevel.INFO);
         Log.i(LogDomain.DATABASE, CouchbaseLiteInternal.PLATFORM + " Initialized: " + CBLVersion.getVersionInfo());
-        logger.setLevel(LogLevel.WARNING);
+        logger.setLevel(debugging ? LogLevel.DEBUG : LogLevel.WARNING);
     }
 
     /**
