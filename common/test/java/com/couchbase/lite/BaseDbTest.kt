@@ -136,16 +136,16 @@ fun readJSONResource(name: String?): String {
 
 abstract class BaseDbTest : BaseTest() {
     protected val testDatabase: Database
-        get() = testDb
+        get() = testDb!!
     protected val testCollection: Collection
-        get() = testCol
+        get() = testCol!!
     protected val testTag: String
-        get() = testTg
+        get() = testTg!!
 
 
-    private lateinit var testDb: Database
-    private lateinit var testCol: Collection
-    private lateinit var testTg: String
+    private var testDb: Database? = null
+    private var testCol: Collection? = null
+    private var testTg: String? = null
 
     @Before
     fun setUpBaseDbTest() {
@@ -153,18 +153,22 @@ abstract class BaseDbTest : BaseTest() {
         Report.log("Created base test DB: $testDatabase")
         assertNotNull(testDatabase)
         assertTrue(testDatabase.isOpen)
-        testCol =
-            testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
+        testCol = testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
         Report.log("Created base test Collection: $testCollection")
         testTg = getUniqueName("db_test_tag")
     }
 
     @After
     fun tearDownBaseDbTest() {
-        testCol.close()
-        Report.log("Test collection closed: ${testCol.fullName}")
-        eraseDb(testDb)
-        Report.log("Test db erased: ${testDb.name}")
+        testCol?.let {
+            it.close()
+            Report.log("Test collection closed: ${it.fullName}")
+        }
+
+        testDb?.let {
+            eraseDb(it)
+            Report.log("Test db erased: ${it.name}")
+        }
     }
 
     protected fun reopenTestDb() {
@@ -175,7 +179,7 @@ abstract class BaseDbTest : BaseTest() {
         testDb = reopenDb(testDatabase)
 
         testCol = testDatabase.getCollection(cName, cScope)
-            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb.name}")
+            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb!!.name}")
     }
 
     protected fun recreateTestDb() {
@@ -188,7 +192,7 @@ abstract class BaseDbTest : BaseTest() {
         testDb = createDb("base_db")
 
         testCol = testDatabase.getCollection(cName, cScope)
-            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb.name}")
+            ?: throw AssertionError("Could not create collection ${cScope}.${cName} in database ${testDb!!.name}")
     }
 
     protected fun duplicateTestDb(): Pair<Database, Collection> {
