@@ -28,11 +28,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.couchbase.lite.CouchbaseLiteError;
+import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.logging.Log;
 
 
 /**
@@ -66,6 +69,12 @@ final class NativeLibrary {
 
     private static final AtomicBoolean LOADED = new AtomicBoolean();
 
+    public static boolean isWindows() { return isWindows(System.getProperty("os.name")); }
+
+    public static boolean isMacOS() { return isMacOS(System.getProperty("os.name")); }
+
+    public static boolean isLinux() { return isLinux(System.getProperty("os.name")); }
+
     /**
      * Extracts the two native libraries from the jar file, puts them on the file system and loads them.
      */
@@ -83,23 +92,46 @@ final class NativeLibrary {
     }
 
     /**
-     * Extracts the named librarie from the jar file, puts it on the file system
-     * and returns the path of the containing directory.
+     * Extracts the named library and its support libraries from the jar file,
+     * puts them on the file system, and returns the path of the containing directory.
      */
     @Nullable
-    public static String loadExtension(@NonNull String libName, @NonNull File scratchDir) {
+    static String loadExtension(
+        @NonNull String libName,
+        @NonNull File scratchDir,
+        @Nullable List<String> supportLibNames) {
+        try { return loadExtensionInternal(libName, scratchDir, supportLibNames); }
+        catch (Exception err) {
+            Log.d(LogDomain.DATABASE, "Could not load extension lib: %s", err, libName);
+            return null;
+        }
+    }
+
+    @NonNull
+    private static String loadExtensionInternal(
+        @NonNull String libName,
+        @NonNull File scratchDir,
+        @Nullable List<String> supportLibNames)
+        throws IOException {
         final String os = System.getProperty("os.name");
-        final String extLib = libName + getLibExtension(os);
+        final String libExtension = getLibExtension(os);
+        final String extLib = libName + libExtension;
 
         final String resDirPath = getCoreArchDir(os, System.getProperty("os.arch"));
-        try {
-            final File targetDir = computeTargetDirectory(scratchDir, resDirPath, extLib);
-            extract(extLib, resDirPath, targetDir);
-            return targetDir.getCanonicalPath();
-        }
-        catch (Exception ignore) { }
+        final File targetDir = computeTargetDirectory(scratchDir, resDirPath, extLib);
 
-        return null;
+        extract(extLib, resDirPath, targetDir);
+
+        if (supportLibNames != null) {
+            for (String supportLib: supportLibNames) {
+                try { extract(supportLib + libExtension, resDirPath, targetDir); }
+                catch (IOException err) {
+                    Log.d(LogDomain.DATABASE, "Failed loading extension support lib: %s", err, supportLib);
+                }
+            }
+        }
+
+        return targetDir.getCanonicalPath();
     }
 
     /**
@@ -118,10 +150,10 @@ final class NativeLibrary {
         @NonNull File scratchDir) {
         final String lib = System.mapLibraryName(libName);
 
-        final File targetDir = computeTargetDirectory(scratchDir, resDirPath, lib);
-
         final String libPath;
+        File targetDir = null;
         try {
+            targetDir = computeTargetDirectory(scratchDir, resDirPath, lib);
             libPath = extract(lib, resDirPath, targetDir);
             // On non-windows systems set up permissions for the extracted native library.
             if (!isWindows(os)) { setPermissions(libPath); }
@@ -146,7 +178,8 @@ final class NativeLibrary {
     private static File computeTargetDirectory(
         @NonNull File scratchDir,
         @NonNull String resDirPath,
-        @NonNull String lib) {
+        @NonNull String lib)
+        throws IOException {
         final String path = resDirPath + JAVA_PATH_SEPARATOR + lib + DIGEST_MD5;
         try (InputStream rezStream = NativeLibrary.class.getResourceAsStream(path)) {
             if (rezStream == null) { throw new IOException("Cannot find digest resource"); }
@@ -158,9 +191,6 @@ final class NativeLibrary {
             if (hash == null) { throw new IOException("Digest file is empty"); }
 
             return new File(scratchDir, hash.trim()).getCanonicalFile();
-        }
-        catch (IOException e) {
-            throw new CouchbaseLiteError("Cannot read digest file: " + path, e);
         }
     }
 
@@ -244,6 +274,7 @@ final class NativeLibrary {
         if (targetFile.exists()) { return targetPath; }
 
         final String resPath = resDirPath + JAVA_PATH_SEPARATOR + lib;
+        Log.d(LogDomain.DATABASE, "Extracting library %s from %s to %s", lib, resPath, targetPath);
         try (InputStream in = NativeLibrary.class.getResourceAsStream(resPath)) {
             if (in == null) { throw new IOException("Cannot find resource for native library at " + resPath); }
 
