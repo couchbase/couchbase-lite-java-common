@@ -59,10 +59,10 @@ abstract class AbstractDatabaseConfiguration {
      *
      * Note: The directory set by this method is the canonical path to the
      * directory whose path is passed.  It is *NOT* necessarily the case that
-     * dir = config.setDirectory(dir).getDirectory()
+     * directory.equals(config.setDirectory(directory).getDirectory())
      *
      * @param directory the directory
-     * @return this.
+     * @return this
      * @throws CouchbaseLiteError if the directory does not exist and cannot be created
      */
     @NonNull
@@ -82,7 +82,7 @@ abstract class AbstractDatabaseConfiguration {
      *
      * Note: The directory returned by this method is the canonical path to the
      * directory whose path was set.  It is *NOT* necessarily the case that
-     * dir = config.setDirectory(dir).getDirectory()
+     * directory.equals(config.setDirectory(directory).getDirectory())
      *
      * @return the database directory
      */
