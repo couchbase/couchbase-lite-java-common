@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -68,7 +67,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @NonNull
     private final Map<String, Integer> columnNames;
     @NonNull
-    private final DbContext context;
+    private final ResultContext context;
 
     @GuardedBy("lock")
     @Nullable
@@ -88,7 +87,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         @NonNull Map<String, Integer> cols) {
         this.query = query;
         this.columnNames = cols;
-        this.context = new DbContext(query.getDatabase());
+        this.context = new ResultContext(query.getDatabase(), this);
         this.c4enum = c4enum;
     }
 
@@ -120,7 +119,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
                     return null;
                 }
 
-                return new Result(this, c4enum, context);
+                return new Result(context, c4enum);
             }
             catch (LiteCoreException e) { err = e; }
         }
