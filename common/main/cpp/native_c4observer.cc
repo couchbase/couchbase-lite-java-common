@@ -403,7 +403,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_free(
         JNIEnv *env,
         jclass clazz,
         jlong handle) {
-    c4queryobs_free((C4QueryObserver *) handle);
+    if (handle != 0) {
+        auto obs = (C4QueryObserver *) handle;
+        c4queryobs_setEnabled(obs, false);
+        c4queryobs_free(obs);
+    }
 }
 #ifdef __cplusplus
 }
