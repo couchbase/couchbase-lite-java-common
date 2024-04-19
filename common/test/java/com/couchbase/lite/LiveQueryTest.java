@@ -152,7 +152,8 @@ public class LiveQueryTest extends BaseDbTest {
                 }
             });
              ListenerToken ignore2 = query.addChangeListener(
-                 testSerialExecutor, change -> {
+                 testSerialExecutor,
+                 change -> {
                      // even if the other listener finishes running first and iterates through doc-11,
                      // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
                      try (ResultSet rs = change.getResults()) {

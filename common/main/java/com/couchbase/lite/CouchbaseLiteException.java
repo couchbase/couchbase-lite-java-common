@@ -100,12 +100,8 @@ public final class CouchbaseLiteException extends Exception {
     }
 
     @NonNull
-    static String getErrorMessage(@Nullable String msg, @Nullable Exception e) {
-        String errMsg = msg;
-
-        if ((msg == null) && (e != null)) { errMsg = e.getMessage(); }
-
-        return Log.lookupStandardMessage(errMsg);
+    static String getErrorMessage(@Nullable String msg, @Nullable Throwable t) {
+        return Log.lookupStandardMessage(((msg != null) || (t == null)) ? msg : t.getMessage());
     }
 
     private final int code;

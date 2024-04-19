@@ -22,7 +22,7 @@ import androidx.annotation.Nullable;
 public class CouchbaseLiteError extends IllegalStateException {
     public CouchbaseLiteError(@NonNull String msg) { this(msg, null); }
 
-    public CouchbaseLiteError(@NonNull String msg, @Nullable Exception e) {
+    public CouchbaseLiteError(@NonNull String msg, @Nullable Throwable e) {
         super(CouchbaseLiteException.getErrorMessage(msg, e), e);
     }
 }
