@@ -832,9 +832,19 @@ public abstract class Expression {
      * @return an IN expression.
      */
     @NonNull
-    public Expression in(@NonNull Expression... expressions) {
-        if (expressions.length <= 0) { throw new IllegalArgumentException("empty 'IN'."); }
-        final Expression aggr = new AggregateExpression(Arrays.asList(expressions));
+    public Expression in(@NonNull Expression... expressions) { return in(Arrays.asList(expressions)); }
+
+    /**
+     * Create an IN expression that evaluates whether or not the current expression is in the
+     * given expressions.
+     *
+     * @param expressions the expression array to evaluate with.
+     * @return an IN expression.
+     */
+    @NonNull
+    public Expression in(@NonNull List<Expression> expressions) {
+        if (expressions.size() <= 0) { throw new IllegalArgumentException("empty 'IN'."); }
+        final Expression aggr = new AggregateExpression(expressions);
         return new BinaryExpression(this, aggr, BinaryExpression.OP_IN);
     }
 

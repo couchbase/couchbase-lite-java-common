@@ -15,11 +15,22 @@
 //
 package com.couchbase.lite;
 
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.Ignore;
 import org.junit.Test;
+
+import com.couchbase.lite.internal.utils.Fn;
 
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -50,13 +61,14 @@ public class QueryChangeTest extends BaseQueryTest {
         final CountDownLatch latch = new CountDownLatch(1);
         final Object lock = new Object();
         final QueryChangeListener listener = change -> {
-            ResultSet rs = change.getResults();
-            if ((rs == null) || (rs.next() == null)) { return; }
-            synchronized (lock) {
-                ListenerToken t = token.getAndSet(null);
-                if (t != null) { t.remove(); }
+            try (ResultSet rs = change.getResults()) {
+                if ((rs == null) || (rs.next() == null)) { return; }
+                synchronized (lock) {
+                    ListenerToken t = token.getAndSet(null);
+                    if (t != null) { t.remove(); }
+                }
+                latch.countDown();
             }
-            latch.countDown();
         };
 
         // Removing the listener while inside the listener itself needs be done carefully.
@@ -71,5 +83,49 @@ public class QueryChangeTest extends BaseQueryTest {
         }
 
         assertNull(token.get());
+    }
+
+    // https://issues.couchbase.com/browse/CBL-5647
+    // This test is utterly non-deterministic.  Passing it doesn't prove anything.
+    @Ignore("Failing: CBL-5647")
+    @Test
+    public void testQueryObserverRace() {
+        final List<Expression> ids = Fn.mapToList(loadDocuments(10), d -> Expression.string(d.getId())).subList(3, 7);
+
+        final Query query = QueryBuilder
+            .select(SelectResult.expression(Meta.id))
+            .from(DataSource.collection(getTestCollection()))
+            .where(Meta.id.in(ids));
+
+        final ExecutorService exec = Executors.newFixedThreadPool(1000);
+        final Deque<ListenerToken> tokens = new LinkedList<>();
+        final CyclicBarrier barrier = new CyclicBarrier(1000);
+        for (int i = 0; i < 1000; i++) {
+            final boolean add = i % 2 == 0;
+            exec.submit(() -> {
+                try { barrier.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS); }
+                catch (BrokenBarrierException | InterruptedException | TimeoutException e) {
+                    throw new AssertionError(e);
+                }
+                if (add) {
+                    ListenerToken token = query.addChangeListener(change -> { });
+                    synchronized (tokens) { tokens.push(token); }
+                }
+                else {
+                    final ListenerToken token;
+                    synchronized (tokens) { token = (tokens.size() <= 0) ? null : tokens.pop(); }
+                    if (token != null) { token.close(); }
+                }
+            });
+        }
+
+        exec.shutdown();
+        try { assertTrue(exec.awaitTermination(LONG_TIMEOUT_SEC, TimeUnit.SECONDS)); }
+        catch (InterruptedException e) { throw new AssertionError(e); }
+        finally {
+            synchronized (tokens) {
+                while (tokens.size() > 0) { tokens.pop().close(); }
+            }
+        }
     }
 }

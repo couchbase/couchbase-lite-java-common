@@ -77,6 +77,7 @@ public class QueryTest extends BaseQueryTest {
         }
     }
 
+
     @Test
     public void testQueryGetColumnNameAfter32Items() throws CouchbaseLiteException {
         final String value = getUniqueName("value");
