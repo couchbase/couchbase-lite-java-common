@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.fleece.FLValue;
@@ -38,7 +37,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 /**
  * Result represents a row of result set returned by a Query.
- *
+ * <p>
  * A Result may be referenced <b>only</b> while the ResultSet that contains it is open.
  * An Attempt to reference a Result after calling ResultSet.close on the ResultSet that
  * contains it will throw and IllegalStateException
@@ -49,21 +48,18 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     // member variables
     //---------------------------------------------
     @NonNull
-    private final ResultSet rs;
+    private final ResultContext context;
     @NonNull
     private final List<FLValue> values;
-    @NonNull
-    private final DbContext context;
     private final long missingColumns;
 
     //---------------------------------------------
     // constructors
     //---------------------------------------------
-    Result(@NonNull ResultSet rs, @NonNull C4QueryEnumerator c4enum, @NonNull DbContext context) {
-        this.rs = rs;
+    Result(@NonNull ResultContext context, @NonNull C4QueryEnumerator c4enum) {
+        this.context = context;
         this.values = extractColumns(c4enum.getColumns());
         this.missingColumns = c4enum.getMissingColumns();
-        this.context = context;
     }
 
     //---------------------------------------------
@@ -80,7 +76,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public int count() {
         assertOpen();
-        return rs.getColumnCount();
+        return getColumnCount();
     }
 
     //---------------------------------------------
@@ -284,7 +280,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @Override
     public List<String> getKeys() {
         assertOpen();
-        return rs.getColumnNames();
+        return getColumnNames();
     }
 
     /**
@@ -474,7 +470,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         assertOpen();
         final int nVals = values.size();
         final Map<String, Object> dict = new HashMap<>(nVals);
-        for (String name: rs.getColumnNames()) {
+        for (String name: getColumnNames()) {
             final int i = indexForColumnName(name);
             if ((i < 0) || (i >= nVals)) { continue; }
             dict.put(name, values.get(i).asObject());
@@ -491,7 +487,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
 
         try (JSONEncoder enc = new JSONEncoder()) {
             enc.beginDict(nVals);
-            for (String columnName: rs.getColumnNames()) {
+            for (String columnName: getColumnNames()) {
                 final int i = indexForColumnName(columnName);
                 if ((i < 0) || (i >= nVals)) { continue; }
 
@@ -535,17 +531,12 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     // private access
     //---------------------------------------------
 
-    private int indexForColumnName(@NonNull String name) {
-        final int index = rs.getColumnIndex(name);
-        if (index < 0) { return -1; }
-        return ((missingColumns & (1L << index)) == 0) ? index : -1;
-    }
 
     @Nullable
     private Object fleeceValueToObject(int index) {
         final FLValue value = values.get(index);
         if (value == null) { return null; }
-        final AbstractDatabase db = Preconditions.assertNotNull(rs.getQuery().getDatabase(), "db");
+        final AbstractDatabase db = Preconditions.assertNotNull(context.getDatabase(), "db");
         final MRoot root = new MRoot(context, value, false);
         synchronized (db.getDbLock()) { return root.asNative(); }
     }
@@ -553,27 +544,34 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     @NonNull
     private List<FLValue> extractColumns(@NonNull FLArrayIterator columns) {
         final List<FLValue> values = new ArrayList<>();
-        final int count = rs.getColumnCount();
+        final int count = getColumnCount();
         for (int i = 0; i < count; i++) { values.add(columns.getValueAt(i)); }
         return values;
     }
 
-    private boolean isInBounds(int index) { return (index >= 0) && (index < count()); }
+    private int getColumnCount() { return context.getResultSet().getColumnCount(); }
 
-    private void assertValid(int index) {
-        assertOpen();
-        assertInBounds(index);
+    @NonNull
+    private List<String> getColumnNames() { return context.getResultSet().getColumnNames(); }
+
+    private int indexForColumnName(@NonNull String name) {
+        final int index = context.getResultSet().getColumnIndex(name);
+        if (index < 0) { return -1; }
+        return ((missingColumns & (1L << index)) == 0) ? index : -1;
     }
 
-    private void assertInBounds(int index) {
-        if (!isInBounds(index)) {
-            throw new ArrayIndexOutOfBoundsException("index " + index + " must be between 0 and " + count());
+    private boolean isInBounds(int index) { return (0 <= index) && (index < count()); }
+
+    private void assertOpen() {
+        if (context.isClosed()) {
+            throw new IllegalStateException("Attempt to use a result after its containing ResultSet has been closed");
         }
     }
 
-    private void assertOpen() {
-        if (rs.isClosed()) {
-            throw new IllegalStateException("Attempt to use a result after its containing ResultSet has been closed");
+    private void assertValid(int index) {
+        assertOpen();
+        if (!isInBounds(index)) {
+            throw new ArrayIndexOutOfBoundsException("index " + index + " is not 0 <= index < " + count());
         }
     }
 }

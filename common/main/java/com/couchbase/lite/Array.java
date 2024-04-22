@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.JSONEncoder;
@@ -86,14 +85,8 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     protected Array(@NonNull MArray array) {
         internalArray = array;
         final MContext context = array.getContext();
-        if (context instanceof DbContext) {
-            final BaseDatabase db = ((DbContext) context).getDatabase();
-            if (db != null) {
-                lock = db.getDbLock();
-                return;
-            }
-        }
-        lock = new Object();
+        final BaseDatabase db = (context == null) ? null : context.getDatabase();
+        lock = (db == null) ? new Object() : db.getDbLock();
     }
 
     //---------------------------------------------

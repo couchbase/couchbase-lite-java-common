@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.JSONEncoder;
@@ -88,17 +87,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Copy constructor
     protected Dictionary(@NonNull MDict dict) {
         internalDict = dict;
-
         final MContext context = dict.getContext();
-        if (context instanceof DbContext) {
-            final BaseDatabase db = ((DbContext) context).getDatabase();
-            if (db != null) {
-                lock = db.getDbLock();
-                return;
-            }
-        }
-
-        lock = new Object();
+        final BaseDatabase db = (context == null) ? null : context.getDatabase();
+        lock = (db == null) ? new Object() : db.getDbLock();
     }
 
     //-------------------------------------------------------------------------
@@ -366,7 +357,8 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      * A call to the <code>next()</code> method of the returned iterator
      * will throw a ConcurrentModificationException, if the MutableDictionary is
      * modified while it is in use.
-     *     *
+     * *
+     *
      * @return an iterator over the dictionary's keys.
      */
     @NonNull
