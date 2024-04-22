@@ -90,6 +90,12 @@ public abstract class MCollection implements Encodable {
     // Protected Methods
     //---------------------------------------------
 
+    protected void assertOpen() {
+        if ((context != null) && context.isClosed()) {
+            throw new IllegalStateException("Cannot use a Fleece object after its parent has been closed");
+        }
+    }
+
     protected final void mutate() { mutate(true); }
 
     protected final void mutate(boolean isLocal) {
@@ -101,4 +107,3 @@ public abstract class MCollection implements Encodable {
         if (parent != null) { parent.mutate(false); }
     }
 }
-

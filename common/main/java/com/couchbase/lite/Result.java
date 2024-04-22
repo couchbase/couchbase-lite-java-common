@@ -541,7 +541,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     private Object fleeceValueToObject(int index) {
         final FLValue value = values.get(index);
         if (value == null) { return null; }
-        final AbstractDatabase db = Preconditions.assertNotNull(context.getResultSet().getQuery().getDatabase(), "db");
+        final AbstractDatabase db = Preconditions.assertNotNull(context.getDatabase(), "db");
         final MRoot root = new MRoot(context, value, false);
         synchronized (db.getDbLock()) { return root.asNative(); }
     }
@@ -565,23 +565,18 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         return ((missingColumns & (1L << index)) == 0) ? index : -1;
     }
 
+    private boolean isInBounds(int index) { return (0 <= index) && (index < count()); }
 
-    private boolean isInBounds(int index) { return (index >= 0) && (index < count()); }
-
-    private void assertValid(int index) {
-        assertOpen();
-        assertInBounds(index);
-    }
-
-    private void assertInBounds(int index) {
-        if (!isInBounds(index)) {
-            throw new ArrayIndexOutOfBoundsException(index + " is not 0 <= i < " + count());
+    private void assertOpen() {
+        if (context.isClosed()) {
+            throw new IllegalStateException("Attempt to use a result after its containing ResultSet has been closed");
         }
     }
 
-    private void assertOpen() {
-        if (context.getResultSet().isClosed()) {
-            throw new CouchbaseLiteError("Attempt to use a result after its containing ResultSet has been closed");
+    private void assertValid(int index) {
+        assertOpen();
+        if (!isInBounds(index)) {
+            throw new ArrayIndexOutOfBoundsException("index " + index + " is not 0 <= index < " + count());
         }
     }
 }
