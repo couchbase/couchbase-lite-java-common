@@ -18,7 +18,6 @@ package com.couchbase.lite.internal.exec;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -78,7 +77,7 @@ public class ClientTask<T> {
 
     private void setFailure(@Nullable Throwable t) {
         if ((t == null) || (err != null)) { return; }
-        if (!(t instanceof Exception)) { throw new IllegalStateException("Client task failed catastrophically", t); }
+        if (!(t instanceof Exception)) { throw new IllegalStateException("Client task error", t); }
         err = (Exception) t;
     }
 }

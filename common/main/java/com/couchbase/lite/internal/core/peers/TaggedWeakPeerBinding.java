@@ -10,6 +10,7 @@
 //
 package com.couchbase.lite.internal.core.peers;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.CouchbaseLiteError;
@@ -42,12 +43,17 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
      * Sometimes the object to be put into the map needs to know
      * its own token.  Pre-reserving it makes it possible to make it final.
      *
-     * @return a unique value 0 <= key < Integer.MAX_VALUE.
+     * @return a unique value 3 <= key < Integer.MAX_VALUE - 1.
      */
     public synchronized long reserveKey() {
         long key;
 
-        do { key = MathUtils.RANDOM.get().nextInt(Integer.MAX_VALUE); }
+        int i = 0;
+        do {
+            // Reasonable response to an unreasonable condition. h/t Pasin.
+            if (i++ > 13) { throw new CouchbaseLiteError("No free binding tags"); }
+            key = MathUtils.RANDOM.get().nextInt(Integer.MAX_VALUE - 5) + 4;
+        }
         while (exists(key));
         super.set(key, null);
 
@@ -60,8 +66,9 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
      * @param key a previously reserved token
      * @param obj the object to be bound to the token.
      */
+    @GuardedBy("this")
     @Override
-    public void preBind(long key, @NonNull T obj) {
+    protected void preBind(long key, @NonNull T obj) {
         if (!exists(key)) { throw new CouchbaseLiteError("attempt to use un-reserved key"); }
     }
 
@@ -73,9 +80,10 @@ public class TaggedWeakPeerBinding<T> extends WeakPeerBinding<T> {
      * @param key a token created by <code>reserveKey()</code>
      * @return the bound object, or null if none exists.
      */
+    @GuardedBy("this")
     @Override
-    public void preGetBinding(long key) {
-        if ((key < 0) || (key > Integer.MAX_VALUE)) {
+    protected void preGetBinding(long key) {
+        if ((key < 3) || (key >= Integer.MAX_VALUE)) {
             throw new IllegalArgumentException("Key out of bounds: " + key);
         }
     }

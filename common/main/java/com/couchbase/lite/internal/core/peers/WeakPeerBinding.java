@@ -56,15 +56,19 @@ public abstract class WeakPeerBinding<T> extends PeerBinding<T> {
     @Override
     protected void remove(long key) { bindings.remove(key); }
 
+    @GuardedBy("this")
     @Override
     protected boolean exists(long key) { return bindings.containsKey(key); }
 
+    @GuardedBy("this")
     @VisibleForTesting
     public final synchronized int size() { return bindings.size(); }
 
+    @GuardedBy("this")
     @VisibleForTesting
     public final synchronized void clear() { bindings.clear(); }
 
+    @GuardedBy("this")
     @NonNull
     @VisibleForTesting
     public final synchronized Set<Long> keySet() { return bindings.keySet(); }
