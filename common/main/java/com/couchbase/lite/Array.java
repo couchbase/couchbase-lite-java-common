@@ -312,6 +312,9 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
             internalArray.encodeTo(encoder);
             return encoder.finishJSON();
         }
+        catch (LiteCoreException e) {
+            throw new IllegalStateException("Failed encoding array as JSON", e);
+        }
     }
 
     //---------------------------------------------

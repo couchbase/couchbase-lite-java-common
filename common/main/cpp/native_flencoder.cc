@@ -298,6 +298,9 @@ Java_com_couchbase_lite_internal_fleece_JSONEncoder_finishJSON(JNIEnv *env, jcla
 
     FLSliceResult_Release(result);
 
+    if (json == nullptr)
+        throwError(env, {LiteCoreDomain, kC4ErrorCorruptData});
+
     return json;
 }
 }
