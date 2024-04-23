@@ -113,7 +113,10 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
-    public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
+    public static String getDefaultDbDirPath() {
+        requireInit("Can't get default database directory");
+        return defaultDbDir.getAbsolutePath();
+    }
 
     @VisibleForTesting
     @NonNull

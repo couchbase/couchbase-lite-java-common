@@ -27,7 +27,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Synchronous safe execution of a client task.
- * <p>
  * Motto: Their failure is not our failure.
  *
  * @param <T> type of the value returned by the wrapped task.
@@ -36,16 +35,10 @@ public class ClientTask<T> {
     private static final CBLExecutor EXECUTOR
         = new CBLExecutor("Client worker", 1, CBLExecutor.CPU_COUNT * 2 + 1, new SynchronousQueue<>());
 
-    public static void dumpState() {
-        if (AbstractExecutionService.throttled()) { return; }
-        EXECUTOR.dumpState();
-        AbstractExecutionService.dumpThreads();
-    }
-
-
     @NonNull
     private final Callable<T> task;
 
+    @Nullable
     private T result;
     @Nullable
     private Exception err;
@@ -54,10 +47,11 @@ public class ClientTask<T> {
 
     public void execute() { execute(30, TimeUnit.SECONDS); }
 
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public void execute(long timeout, @NonNull TimeUnit timeUnit) {
         final FutureTask<T> future = new FutureTask<>(task);
         try { EXECUTOR.execute(new InstrumentedTask(future, null)); }
-        catch (Exception e) {
+        catch (Throwable e) {
             dumpState();
             setFailure(e);
             return;
@@ -66,7 +60,7 @@ public class ClientTask<T> {
         // block until complete or timeout
         try { result = future.get(timeout, timeUnit); }
         catch (ExecutionException e) { setFailure(e.getCause()); }
-        catch (Exception e) { setFailure(e); }
+        catch (Throwable e) { setFailure(e); }
     }
 
     @Nullable
@@ -76,8 +70,14 @@ public class ClientTask<T> {
     public Exception getFailure() { return err; }
 
     private void setFailure(@Nullable Throwable t) {
+        if ((t instanceof Error)) { throw (Error) t; }
         if ((t == null) || (err != null)) { return; }
-        if (!(t instanceof Exception)) { throw new IllegalStateException("Client task error", t); }
         err = (Exception) t;
+    }
+
+    public void dumpState() {
+        if (AbstractExecutionService.throttled()) { return; }
+        EXECUTOR.dumpState();
+        AbstractExecutionService.dumpThreads();
     }
 }

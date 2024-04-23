@@ -35,6 +35,8 @@ public class BaseReplicatorConfiguration {
     protected final Map<Collection, CollectionConfiguration> collectionConfigurations;
 
     protected BaseReplicatorConfiguration(@Nullable Map<Collection, CollectionConfiguration> configs) {
+        CouchbaseLiteInternal.requireInit("Can't create ReplicatorConfiguration");
+
         internalCollectionConfigurations = (configs != null) ? configs : new HashMap<>();
         collectionConfigurations = Collections.unmodifiableMap(internalCollectionConfigurations);
     }
