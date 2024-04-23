@@ -23,10 +23,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.support.Log;
 
 
 /**
@@ -37,7 +33,7 @@ import com.couchbase.lite.internal.support.Log;
  */
 public class ClientTask<T> {
     private static final CBLExecutor EXECUTOR
-        = new CBLExecutor("Client worker", 4, 8, new SynchronousQueue<>());
+        = new CBLExecutor("Client worker", 1, CBLExecutor.CPU_COUNT * 2 + 1, new SynchronousQueue<>());
 
     public static void dumpState() {
         EXECUTOR.dumpState();
@@ -56,24 +52,19 @@ public class ClientTask<T> {
 
     public void execute() { execute(30, TimeUnit.SECONDS); }
 
-    @SuppressWarnings({"PMD.PreserveStackTrace", "PMD.AvoidThrowingRawExceptionTypes"})
     public void execute(long timeout, @NonNull TimeUnit timeUnit) {
         final FutureTask<T> future = new FutureTask<>(task);
         try { EXECUTOR.execute(new InstrumentedTask(future, null)); }
-        catch (RuntimeException e) {
-            Log.w(LogDomain.DATABASE, "Catastrophic executor failure (ClientTask)!", e);
+        catch (Exception e) {
             if (!AbstractExecutionService.throttled()) { dumpState(); }
-            throw e;
+            setFailure(e);
+            return;
         }
 
         // block until complete or timeout
         try { result = future.get(timeout, timeUnit); }
-        catch (InterruptedException | TimeoutException e) { err = e; }
-        catch (ExecutionException e) {
-            final Throwable t = e.getCause();
-            if (!(t instanceof Exception)) { throw new Error("Client task error", t); }
-            err = (Exception) t;
-        }
+        catch (ExecutionException e) { setFailure(e.getCause()); }
+        catch (Exception e) { setFailure(e); }
     }
 
     @Nullable
@@ -81,4 +72,10 @@ public class ClientTask<T> {
 
     @Nullable
     public Exception getFailure() { return err; }
+
+    private void setFailure(@Nullable Throwable t) {
+        if ((t == null) || (err != null)) { return; }
+        if (!(t instanceof Exception)) { throw new IllegalStateException("Client task error", t); }
+        err = (Exception) t;
+    }
 }
