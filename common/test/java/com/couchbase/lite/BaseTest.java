@@ -134,12 +134,15 @@ public abstract class BaseTest extends PlatformBaseTest {
     // one of these methods (or their equivalents in C4BaseTest and OKHttpSocketTest
 
     public static <T extends Exception> void assertThrows(Class<T> ex, @NonNull Fn.TaskThrows<Exception> test) {
+        Throwable err = null;
         try { test.run(); }
         catch (Throwable e) {
-            if (!ex.equals(e.getClass())) { fail("Expecting exception: " + ex + " but got " + e); }
-            return;
+            if (ex.equals(e.getClass())) { return; }
+            err = e;
         }
-        fail("Expecting exception: " + ex);
+
+        if (err != null) { err.printStackTrace(); }
+        fail("Expecting exception: " + ex + " but got " + err);
     }
 
     public static void assertIsCBLException(@Nullable Exception e, @Nullable String domain, int code) {

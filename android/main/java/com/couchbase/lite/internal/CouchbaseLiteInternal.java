@@ -147,7 +147,10 @@ public final class CouchbaseLiteInternal {
     }
 
     @NonNull
-    public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
+    public static String getDefaultDbDirPath() {
+        requireInit("Can't create DB path");
+        return defaultDbDir.getAbsolutePath();
+    }
 
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }
