@@ -30,8 +30,8 @@ import com.couchbase.lite.internal.logging.Log;
 
 
 public class CBLExecutor extends ThreadPoolExecutor {
-    private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
-    private static final int POOL_SIZE = Math.max(4, CPU_COUNT - 1);
+    public static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+    public static final int POOL_SIZE = Math.max(4, CPU_COUNT - 1);
 
     @NonNull
     private final String name;
