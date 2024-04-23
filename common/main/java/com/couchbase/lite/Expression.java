@@ -843,7 +843,7 @@ public abstract class Expression {
      */
     @NonNull
     public Expression in(@NonNull List<Expression> expressions) {
-        if (expressions.size() <= 0) { throw new IllegalArgumentException("empty 'IN'."); }
+        if (expressions.isEmpty()) { throw new IllegalArgumentException("empty 'IN'."); }
         final Expression aggr = new AggregateExpression(expressions);
         return new BinaryExpression(this, aggr, BinaryExpression.OP_IN);
     }
