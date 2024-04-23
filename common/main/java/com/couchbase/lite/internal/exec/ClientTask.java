@@ -23,27 +23,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.internal.logging.Log;
 
 
 /**
  * Synchronous safe execution of a client task.
- * <p>
  * Motto: Their failure is not our failure.
  *
  * @param <T> type of the value returned by the wrapped task.
  */
 public class ClientTask<T> {
     private static final CBLExecutor EXECUTOR
-        = new CBLExecutor("Client worker", 4, 8, new SynchronousQueue<>());
-
-    public static void dumpState() {
-        EXECUTOR.dumpState();
-        AbstractExecutionService.dumpThreads();
-    }
+        = new CBLExecutor("Client worker", 1, CBLExecutor.CPU_COUNT * 2 + 1, new SynchronousQueue<>());
 
 
     @NonNull
@@ -57,24 +47,20 @@ public class ClientTask<T> {
 
     public void execute() { execute(30, TimeUnit.SECONDS); }
 
-    @SuppressWarnings({"PMD.PreserveStackTrace", "PMD.AvoidThrowingRawExceptionTypes"})
+    @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public void execute(long timeout, @NonNull TimeUnit timeUnit) {
         final FutureTask<T> future = new FutureTask<>(task);
         try { EXECUTOR.execute(new InstrumentedTask(future, null)); }
-        catch (RuntimeException e) {
-            Log.w(LogDomain.DATABASE, "Catastrophic executor failure (ClientTask)!", e);
-            if (!AbstractExecutionService.throttled()) { dumpState(); }
-            throw e;
+        catch (Throwable e) {
+            dumpState();
+            setFailure(e);
+            return;
         }
 
         // block until complete or timeout
         try { result = future.get(timeout, timeUnit); }
-        catch (InterruptedException | TimeoutException e) { err = e; }
-        catch (ExecutionException e) {
-            final Throwable t = e.getCause();
-            if (!(t instanceof Exception)) { throw new Error("Client task error", t); }
-            err = (Exception) t;
-        }
+        catch (ExecutionException e) { setFailure(e.getCause()); }
+        catch (Throwable e) { setFailure(e); }
     }
 
     @Nullable
@@ -82,4 +68,16 @@ public class ClientTask<T> {
 
     @Nullable
     public Exception getFailure() { return err; }
+
+    private void setFailure(@Nullable Throwable t) {
+        if ((t instanceof Error)) { throw (Error) t; }
+        if ((t == null) || (err != null)) { return; }
+        err = (Exception) t;
+    }
+
+    public void dumpState() {
+        if (AbstractExecutionService.throttled()) { return; }
+        EXECUTOR.dumpState();
+        AbstractExecutionService.dumpThreads();
+    }
 }
