@@ -963,6 +963,38 @@ public class ResultTest extends BaseQueryTest {
         }
     }
 
+    @Test
+    public void testResultRefAfterClose() throws CouchbaseLiteException {
+        MutableDocument mDoc = makeDocument();
+        saveDocInTestCollection(mDoc);
+
+        final Result result;
+        final Dictionary dict;
+        final Array array;
+        final ResultSet results= QueryBuilder
+            .createQuery("SELECT * FROM " + testCollection.getFullName(), testCollection.getDatabase())
+            .execute();
+
+        result = results.next();
+        assertNotNull(result);
+
+        dict = result.getDictionary(0);
+        assertNotNull(dict);
+
+        array = dict.getArray("doc-25");
+        assertNotNull(array);
+
+        Object val = array.getString(20);
+        assertNotNull(val);
+
+        results.close();
+
+        assertNull(results.next());
+        assertThrows(IllegalStateException.class, () -> result.getDictionary(0));
+        assertThrows(IllegalStateException.class, () -> dict.getArray("doc-25"));
+        assertThrows(IllegalStateException.class, () -> array.getString(20));
+    }
+
 
     ///////////////  Tooling
 

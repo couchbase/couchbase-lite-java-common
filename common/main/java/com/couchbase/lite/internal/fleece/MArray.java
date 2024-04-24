@@ -80,6 +80,8 @@ public final class MArray extends MCollection {
      */
     @NonNull
     public MValue get(long index) {
+        assertOpen();
+
         if ((index < 0) || (index >= values.size())) { return MValue.EMPTY; }
 
         MValue value = values.get((int) index);
@@ -98,6 +100,7 @@ public final class MArray extends MCollection {
 
     public boolean set(long index, Object value) {
         if (!isMutable()) { throw new IllegalStateException("Cannot set items in a non-mutable MArray"); }
+        assertOpen();
 
         if ((index < 0) || (index >= count())) { return false; }
 
@@ -109,6 +112,7 @@ public final class MArray extends MCollection {
 
     public boolean insert(long index, Object value) {
         if (!isMutable()) { throw new IllegalStateException("Cannot insert items in a non-mutable MArray"); }
+        assertOpen();
 
         if ((index < 0) || (index > count())) { return false; }
 
@@ -122,6 +126,7 @@ public final class MArray extends MCollection {
 
     public boolean remove(long start, long num) {
         if (!isMutable()) { throw new IllegalStateException("Cannot remove items in a non-mutable MArray"); }
+        assertOpen();
 
         final long end = start + num;
         if (end <= start) { return end == start; }
@@ -139,6 +144,7 @@ public final class MArray extends MCollection {
 
     public void clear() {
         if (!isMutable()) { throw new IllegalStateException("Cannot clear items in a non-mutable MArray"); }
+        assertOpen();
 
         if (values.isEmpty()) { return; }
 
@@ -149,6 +155,7 @@ public final class MArray extends MCollection {
     /* Encodable */
 
     public void encodeTo(@NonNull FLEncoder enc) {
+        assertOpen();
         if (!isMutated()) {
             if (baseArray != null) {
                 enc.writeValue(baseArray);
@@ -171,6 +178,7 @@ public final class MArray extends MCollection {
     }
 
     private void resize() {
+        assertOpen();
         if (baseArray == null) { return; }
         final long newSize = baseArray.count();
         final int count = values.size();

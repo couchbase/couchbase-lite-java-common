@@ -81,6 +81,7 @@ public final class MDict extends MCollection {
      * @return true if the dictionary contains the key
      */
     public boolean contains(String key) {
+        assertOpen();
         final MValue val = values.get(key);
         return (val != null) ? !val.isEmpty() : ((baseDict != null) && (baseDict.get(key) != null));
     }
@@ -92,6 +93,8 @@ public final class MDict extends MCollection {
      */
     @NonNull
     public List<String> getKeys() {
+        assertOpen();
+
         final List<String> keys = new ArrayList<>();
         for (Map.Entry<String, MValue> entry: values.entrySet()) {
             if (!entry.getValue().isEmpty()) { keys.add(entry.getKey()); }
@@ -112,6 +115,8 @@ public final class MDict extends MCollection {
 
     @NonNull
     public MValue get(@NonNull String key) {
+        assertOpen();
+
         MValue mValue = values.get(key);
         if (mValue != null) { return mValue; }
 
@@ -126,6 +131,7 @@ public final class MDict extends MCollection {
 
     public void set(String key, @NonNull MValue value) {
         if (!isMutable()) { throw new IllegalStateException("Cannot set items in a non-mutable MDict"); }
+        assertOpen();
 
         final boolean hasVal = !value.isEmpty();
 
@@ -164,6 +170,7 @@ public final class MDict extends MCollection {
 
     public void clear() {
         if (!isMutable()) { throw new IllegalStateException("Cannot clear items from a non-mutable MDict"); }
+        assertOpen();
 
         if (valCount == 0) { return; }
 
@@ -187,6 +194,8 @@ public final class MDict extends MCollection {
 
     @Override
     public void encodeTo(@NonNull FLEncoder enc) {
+        assertOpen();
+
         if (!isMutated()) {
             if (baseDict != null) {
                 enc.writeValue(baseDict);
