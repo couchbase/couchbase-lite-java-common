@@ -85,8 +85,8 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         @NonNull AbstractQuery query,
         @Nullable C4QueryEnumerator c4enum,
         @NonNull Map<String, Integer> cols) {
-        this.query = query;
-        this.columnNames = cols;
+        this.query = Preconditions.assertNotNull(query, "query");
+        this.columnNames = Preconditions.assertNotNull(cols, "columns");
         this.context = new ResultContext(query.getDatabase(), this);
         this.c4enum = c4enum;
     }
@@ -107,8 +107,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
      */
     @Nullable
     public Result next() {
-        Preconditions.assertNotNull(query, "query");
-
         final LiteCoreException err;
         synchronized (lock) {
             if ((c4enum == null) || (isAllEnumerated)) { return null; }
@@ -163,11 +161,30 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     public void close() {
         final C4QueryEnumerator qEnum;
         synchronized (lock) {
-            if (c4enum == null) { return; }
             qEnum = c4enum;
             c4enum = null;
         }
-        synchronized (getDbLock()) { qEnum.close(); }
+        if (qEnum == null) { return; }
+
+        final AbstractDatabase db = context.getDatabase();
+        if (db == null) { throw new IllegalStateException("Could not obtain db lock"); }
+
+        synchronized (db.getDbLock()) { qEnum.close(); }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            final C4QueryEnumerator qEnum = c4enum;
+
+            // !!! This absolutely should hold the db lock the way close() does.
+            // If it does, though, it stands a good chance of timing out the finalizer thread.
+            // Cross your fingers and pray.
+            if (qEnum != null) { qEnum.close(); }
+        }
+        finally {
+            super.finalize();
+        }
     }
 
     //---------------------------------------------
@@ -190,19 +207,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     boolean isClosed() {
         synchronized (lock) { return c4enum == null; }
     }
-
-    //---------------------------------------------
-    // Private level access
-    //---------------------------------------------
-
-    @NonNull
-    private Object getDbLock() {
-        final AbstractQuery q = query;
-        if (q != null) {
-            final AbstractDatabase db = q.getDatabase();
-            if (db != null) { return db.getDbLock(); }
-        }
-        throw new CouchbaseLiteError("Could not obtain db lock");
-    }
 }
+
 

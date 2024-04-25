@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.MCollection;
@@ -87,17 +86,9 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Construct a new dictionary with the passed content
     protected Dictionary(@NonNull MDict dict) {
         internalDict = dict;
-
         final MContext context = dict.getContext();
-        if (context instanceof DbContext) {
-            final BaseDatabase db = ((DbContext) context).getDatabase();
-            if (db != null) {
-                lock = db.getDbLock();
-                return;
-            }
-        }
-
-        lock = new Object();
+        final BaseDatabase db = (context == null) ? null : context.getDatabase();
+        lock = (db == null) ? new Object() : db.getDbLock();
     }
 
     //-------------------------------------------------------------------------

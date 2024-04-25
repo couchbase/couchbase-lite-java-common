@@ -19,16 +19,25 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.internal.DbContext;
+import com.couchbase.lite.internal.utils.Internal;
 
 
+@Internal("This class is not part of the public API")
 public class ResultContext extends DbContext {
     @NonNull
     private final ResultSet rs;
 
-    public ResultContext(@Nullable BaseDatabase db, @NonNull ResultSet rs) {
+    public ResultContext(@Nullable AbstractDatabase db, @NonNull ResultSet rs) {
         super(db);
         this.rs = rs;
     }
+
+    @Override
+    @Nullable
+    public AbstractDatabase getDatabase() { return (AbstractDatabase) super.getDatabase(); }
+
+    @Override
+    public boolean isClosed() { return rs.isClosed(); }
 
     @NonNull
     public ResultSet getResultSet() { return rs; }

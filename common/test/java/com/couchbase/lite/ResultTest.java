@@ -934,6 +934,40 @@ public class ResultTest extends BaseQueryTest {
         }
     }
 
+    @Test
+    public void testResultRefAfterClose() throws CouchbaseLiteException {
+        MutableDocument mDoc = makeDocument();
+        saveDocInTestCollection(mDoc);
+
+        final Collection testCollection = getTestCollection();
+        final Result result;
+        final Dictionary dict;
+        final Array array;
+        final ResultSet results= QueryBuilder
+            .createQuery("SELECT * FROM " + testCollection.getFullName(), testCollection.getDatabase())
+            .execute();
+
+        result = results.next();
+        assertNotNull(result);
+
+        dict = result.getDictionary(0);
+        assertNotNull(dict);
+
+        array = dict.getArray("doc-25");
+        assertNotNull(array);
+
+        Object val = array.getString(20);
+        assertNotNull(val);
+
+        results.close();
+
+        assertNull(results.next());
+        assertThrows(IllegalStateException.class, () -> result.getDictionary(0));
+        assertThrows(IllegalStateException.class, () -> dict.getArray("doc-25"));
+        assertThrows(IllegalStateException.class, () -> array.getString(20));
+    }
+
+
     ///////////////  JSON tests
 
     // JSON 3.8
@@ -961,26 +995,6 @@ public class ResultTest extends BaseQueryTest {
             verifyDocument(result, false);
             verifyDocument(new JSONObject(result.toJSON()));
         }
-    }
-
-    @Ignore("CBL-5486: Native crash using contents of a ResultSet after the ResultSet is released")
-    @Test
-    public void testResultRefAfterClose() throws CouchbaseLiteException {
-        MutableDocument mDoc = makeDocument();
-        saveDocInTestCollection(mDoc);
-
-        Array array;
-        try (ResultSet results = QueryBuilder.select(SelectResult.property("doc-25"))
-            .from(DataSource.collection(getTestCollection()))
-            .execute()) {
-
-            Result result = results.next();
-            assertNotNull(result);
-
-            array = result.getArray(0);
-        }
-
-        array.getValue(26);
     }
 
 

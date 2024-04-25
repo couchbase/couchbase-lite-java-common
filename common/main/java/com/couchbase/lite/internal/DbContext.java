@@ -27,6 +27,7 @@ public class DbContext extends MContext {
 
     public DbContext(@Nullable BaseDatabase db) { this.db = db; }
 
+    @Override
     @Nullable
     public BaseDatabase getDatabase() { return db; }
 }
