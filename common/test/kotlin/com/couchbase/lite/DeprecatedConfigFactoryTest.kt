@@ -76,7 +76,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
     @Test
     fun testReplicatorConfigFromCollectionWithDefault() {
         val config1 = ReplicatorConfigurationFactory
-            .newConfig(testEndpoint, mapOf(listOf(testDatabase.defaultCollection!!) to CollectionConfiguration()))
+            .newConfig(testEndpoint, mapOf(listOf(testDatabase.defaultCollection) to CollectionConfiguration()))
         val config2 = config1.create()
         assertNotSame(config1, config2)
         assertEquals(config1.database, config2.database)
@@ -97,7 +97,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         assertEquals(config1.database, config2.database)
 
         val db = config1.database
-        val defaultCollection = db.defaultCollection!!
+        val defaultCollection = db.defaultCollection
 
         assertEquals(setOf(defaultCollection), config2.collections)
         assertEquals(filter, config2.getCollectionConfiguration(defaultCollection)?.pushFilter)
@@ -109,7 +109,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         val config = ReplicatorConfigurationFactory.create(testDatabase, testEndpoint, channels = listOf("boop"))
         assertEquals(testDatabase, config.database)
         assertEquals(testEndpoint, config.target)
-        assertEquals(listOf("boop"), config.getCollectionConfiguration(testDatabase.defaultCollection!!)!!.channels)
+        assertEquals(listOf("boop"), config.getCollectionConfiguration(testDatabase.defaultCollection)!!.channels)
     }
 
     // Create a collection style config from one built with the legacy call
@@ -121,7 +121,7 @@ class DeprecatedConfigFactoryTest : BaseDbTest() {
         assertEquals(testEndpoint, config2.target)
         val colls = config2.collections
         assertEquals(1, colls.size)
-        val defaultCollection = testDatabase.defaultCollection!!
+        val defaultCollection = testDatabase.defaultCollection
         assertTrue(colls.contains(defaultCollection))
         assertEquals(listOf("boop"), config2.getCollectionConfiguration(defaultCollection)!!.channels)
     }

@@ -569,7 +569,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
 
     private void assertOpen() {
         if (context.isClosed()) {
-            throw new IllegalStateException("Attempt to use a result after its containing ResultSet has been closed");
+            throw new CouchbaseLiteError("Attempt to use a result after its containing ResultSet has been closed");
         }
     }
 

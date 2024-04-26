@@ -201,9 +201,7 @@ fun LogFileConfiguration?.create(
 // database default collection, we are about to lose information.
 internal fun checkDbCollections(db: Database, collections: Set<Collection>?) {
     val colls = collections ?: emptySet()
-    val defaultCollection = db.defaultCollection
-        ?: throw IllegalArgumentException(Log.lookupStandardMessage("NoDefaultCollectionInConfig"))
-    if ((colls.size != 1) || (!colls.contains(defaultCollection))) {
+    if ((colls.size != 1) || (!colls.contains(db.defaultCollection))) {
         Log.d(LogDomain.LISTENER, "Copy to deprecated config loses collection information")
     }
 }
