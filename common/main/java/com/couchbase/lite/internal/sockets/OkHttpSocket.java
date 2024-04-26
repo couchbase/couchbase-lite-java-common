@@ -40,6 +40,7 @@ import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 import okio.ByteString;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Replicator;
@@ -394,7 +395,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     private SocketFromRemote getOpenCore() {
         final SocketFromRemote core = toCore.get();
         if (SocketFromRemote.Constants.NULL.equals(core)) {
-            throw new IllegalStateException("Attempt to use socket before initialization");
+            throw new CouchbaseLiteError("Attempt to use socket before initialization");
         }
         return core;
     }

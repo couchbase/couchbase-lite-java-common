@@ -25,8 +25,8 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.QueryLanguage;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
 import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLDict;
@@ -227,13 +227,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - DB Query expression index
     @Test
     public void testDBQueryExpressionIndex() throws LiteCoreException {
-        c4Collection.createIndex(
+        c4Collection.createValueIndex(
             "length",
-            json5("[['length()', ['.name.first']]]"),
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.VALUE,
-            null,
-            true);
+            QueryLanguage.JSON.getCode(),
+            json5("[['length()', ['.name.first']]]"));
         compile("['=', ['length()', ['.name.first']], 9]");
         assertEquals(Arrays.asList("0000015", "0000099"), run());
     }
@@ -242,13 +239,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testDeleteIndexedDoc() throws LiteCoreException {
         // Create the same index as the above test:
-        c4Collection.createIndex(
+        c4Collection.createValueIndex(
             "length",
-            json5("[['length()', ['.name.first']]]"),
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.VALUE,
-            null,
-            true);
+            QueryLanguage.JSON.getCode(),
+            json5("[['length()', ['.name.first']]]"));
 
         // Delete doc "0000015":
         {
@@ -303,11 +297,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text query
     @Test
     public void testFullTextQuery() throws LiteCoreException {
-        c4Collection.createIndex(
+        c4Collection.createFullTextIndex(
             "byStreet",
+            QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
         compile("['MATCH()', 'byStreet', 'Hwy']");
@@ -325,11 +318,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text multiple properties
     @Test
     public void testFullTextMultipleProperties() throws LiteCoreException {
-        c4Collection.createIndex(
+        c4Collection.createFullTextIndex(
             "byAddress",
+            QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"], [\".contact.address.city\"], [\".contact.address.state\"]]",
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
 
@@ -381,18 +373,16 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Multiple Full-text indexes
     @Test
     public void testMultipleFullTextIndexes() throws LiteCoreException {
-        c4Collection.createIndex(
+        c4Collection.createFullTextIndex(
             "byStreet",
+            QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        c4Collection.createIndex(
+        c4Collection.createFullTextIndex(
             "byCity",
+            QueryLanguage.JSON.getCode(),
             "[[\".contact.address.city\"]]",
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
         compile("['AND', ['MATCH()', 'byStreet', 'Hwy'], ['MATCH()', 'byCity',   'Santa']]");
@@ -405,18 +395,16 @@ public class C4QueryTest extends C4QueryBaseTest {
     // - Full-text query in multiple ANDs
     @Test
     public void testFullTextQueryInMultipleANDs() throws LiteCoreException {
-        c4Collection.createIndex(
+        c4Collection.createFullTextIndex(
             "byStreet",
+            QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
-        c4Collection.createIndex(
+        c4Collection.createFullTextIndex(
             "byCity",
+            QueryLanguage.JSON.getCode(),
             "[[\".contact.address.city\"]]",
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
         compile("['AND',['AND',['=',['.gender'],'male'],"
@@ -431,11 +419,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testMultipleFullTextQueries() throws LiteCoreException {
         // You can't query the same FTS index multiple times in a query (says SQLite)
-        c4Collection.createIndex(
+        c4Collection.createFullTextIndex(
             "byStreet",
+            QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
         try {
@@ -452,11 +439,10 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testBuriedFullTextQueries() throws LiteCoreException {
         // You can't put an FTS match inside an expression other than a top-level AND (says SQLite)
-        c4Collection.createIndex(
+        c4Collection.createFullTextIndex(
             "byStreet",
+            QueryLanguage.JSON.getCode(),
             "[[\".contact.address.street\"]]",
-            AbstractIndex.QueryLanguage.JSON,
-            AbstractIndex.IndexType.FULL_TEXT,
             null,
             true);
         try {
@@ -489,7 +475,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             assertEquals(itr.getValue().asString(), expectedFirst.get(i));
-            assertTrue(itr.next());
+            itr.next();
             assertEquals(itr.getValue().asString(), expectedLast.get(i));
             i++;
         }
@@ -533,7 +519,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             assertEquals(itr.getValue().asString(), "Aerni");
-            assertTrue(itr.next());
+            itr.next();
             assertEquals(itr.getValue().asString(), "Zirk");
             i++;
         }
@@ -561,9 +547,9 @@ public class C4QueryTest extends C4QueryBaseTest {
             FLArrayIterator itr = e.getColumns();
             if (i < expectedState.size()) {
                 assertEquals(itr.getValue().asString(), expectedState.get(i));
-                assertTrue(itr.next());
+                itr.next();
                 assertEquals(itr.getValue().asString(), expectedMin.get(i));
-                assertTrue(itr.next());
+                itr.next();
                 assertEquals(itr.getValue().asString(), expectedMax.get(i));
             }
             i++;
@@ -596,7 +582,7 @@ public class C4QueryTest extends C4QueryBaseTest {
             FLArrayIterator itr = e.getColumns();
             if (i < expectedState.size()) {
                 assertEquals(itr.getValue().asString(), expectedFirst.get(i));
-                assertTrue(itr.next());
+                itr.next();
                 assertEquals(itr.getValue().asString(), expectedState.get(i));
             }
             i++;
@@ -613,7 +599,7 @@ public class C4QueryTest extends C4QueryBaseTest {
     @Test
     public void testQueryParserErrorMessages() {
         try {
-            query = C4Query.create(c4Database, AbstractIndex.QueryLanguage.JSON, "[\"=\"]");
+            query = C4Query.create(c4Database, QueryLanguage.JSON, "[\"=\"]");
             fail();
         }
         catch (LiteCoreException ex) {

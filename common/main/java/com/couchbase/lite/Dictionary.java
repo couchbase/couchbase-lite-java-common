@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.MCollection;
@@ -49,7 +48,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         private final Iterator<String> iterator;
 
         DictionaryIterator() {
-            this.mutations = Dictionary.this.internalDict.getMutationCount();
+            this.mutations = Dictionary.this.internalDict.getLocalMutationCount();
             this.iterator = Dictionary.this.getKeys().iterator();
         }
 
@@ -59,7 +58,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         @Nullable
         @Override
         public String next() {
-            if (Dictionary.this.internalDict.getMutationCount() != mutations) {
+            if (Dictionary.this.internalDict.getLocalMutationCount() != mutations) {
                 throw new ConcurrentModificationException("Dictionary modified during iteration");
             }
             return iterator.next();
@@ -78,26 +77,18 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     // Constructors
     //-------------------------------------------------------------------------
 
-    // Construct an empty mutable Dictionary
+    // Construct a new empty Dictionary
     Dictionary() { this(new MDict()); }
 
     // Slot(??) constructor
     Dictionary(@NonNull MValue val, @Nullable MCollection parent) { this(new MDict(val, parent)); }
 
-    // Copy constructor
+    // Construct a new dictionary with the passed content
     protected Dictionary(@NonNull MDict dict) {
         internalDict = dict;
-
         final MContext context = dict.getContext();
-        if (context instanceof DbContext) {
-            final BaseDatabase db = ((DbContext) context).getDatabase();
-            if (db != null) {
-                lock = db.getDbLock();
-                return;
-            }
-        }
-
-        lock = new Object();
+        final BaseDatabase db = (context == null) ? null : context.getDatabase();
+        lock = (db == null) ? new Object() : db.getDbLock();
     }
 
     //-------------------------------------------------------------------------
@@ -111,7 +102,7 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
      */
     @NonNull
     public MutableDictionary toMutable() {
-        synchronized (lock) { return new MutableDictionary(new MDict(internalDict, true)); }
+        synchronized (lock) { return new MutableDictionary(this); }
     }
 
     /**
@@ -343,15 +334,21 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         return result;
     }
 
+    /**
+     * Encode a Dictionary as a JSON string
+     *
+     * @return JSON encoded representation of the Dictionary
+     * @throws CouchbaseLiteException on encoder failure.
+     */
     @NonNull
     @Override
-    public String toJSON() {
+    public String toJSON() throws CouchbaseLiteException {
         try (FLEncoder.JSONEncoder encoder = FLEncoder.getJSONEncoder()) {
             internalDict.encodeTo(encoder);
             return encoder.finishJSON();
         }
         catch (LiteCoreException e) {
-            throw new IllegalStateException("Cannot encode dictionary: " + this, e);
+            throw CouchbaseLiteException.convertException(e, "Cannot encode dictionary: " + this);
         }
     }
 
@@ -414,14 +411,10 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
         return h;
     }
 
-    @SuppressWarnings("PMD.ConsecutiveLiteralAppends")
     @NonNull
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder("Dictionary{(")
-            .append((internalDict.isMutable()) ? '+' : '.')
-            .append((internalDict.isMutated()) ? '!' : '.')
-            .append(')');
+        final StringBuilder buf = new StringBuilder("Dictionary{(").append(internalDict.getStateString()).append(')');
 
         boolean first = true;
         for (String key: getKeys()) {

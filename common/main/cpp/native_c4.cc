@@ -14,7 +14,9 @@
 // limitations under the License.
 //
 #if defined(__ANDROID__)
+
 #include <android/log.h>
+
 #elif defined(__linux__) || defined(__APPLE__)
 #include <sys/time.h>
 #endif
@@ -213,7 +215,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_getMessage(
         jint jdomain,
         jint jcode,
         jint jinfo) {
-    C4Error c4err = {(C4ErrorDomain) jdomain, (int) jcode,  (unsigned) jinfo};
+    C4Error c4err = {(C4ErrorDomain) jdomain, (int) jcode, (unsigned) jinfo};
     C4StringResult msg = c4error_getMessage(c4err);
     jstring result = toJString(env, msg);
     c4slice_free(msg);
@@ -232,6 +234,17 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir(JNIEnv *env, jcla
     auto ok = c4_setTempDir(tempDir, &error);
     if (!ok && error.code != 0)
         throwError(env, error);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4
+ * Method:    setExtPath
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4_setExtPath(JNIEnv *env, jclass ignore, jstring jextPath) {
+    jstringSlice extPath(env, jextPath);
+    c4_setExtensionPath(extPath);
 }
 
 // ----------------------------------------------------------------------------

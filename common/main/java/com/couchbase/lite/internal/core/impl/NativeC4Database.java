@@ -64,7 +64,7 @@ public final class NativeC4Database implements C4Database.NativeImpl {
         setCookie(db, url, setCookieHeader, acceptParentDomain);
     }
 
-    @NonNull
+    @Nullable
     @Override
     public String nGetCookies(long db, @NonNull String url) throws LiteCoreException { return getCookies(db, url); }
 
@@ -152,7 +152,7 @@ public final class NativeC4Database implements C4Database.NativeImpl {
     private static native void setCookie(long db, String url, String setCookieHeader, boolean acceptParentDomain)
         throws LiteCoreException;
 
-    @NonNull
+    @Nullable
     private static native String getCookies(long db, @NonNull String url) throws LiteCoreException;
 
     // - Utilities

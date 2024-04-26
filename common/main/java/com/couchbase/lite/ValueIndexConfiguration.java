@@ -20,12 +20,20 @@ import androidx.annotation.NonNull;
 import java.util.Arrays;
 import java.util.List;
 
+import com.couchbase.lite.internal.QueryLanguage;
+import com.couchbase.lite.internal.core.C4Collection;
+
 
 /**
  * Configuration for a standard database index.
  */
-public class ValueIndexConfiguration extends IndexConfiguration {
+public final class ValueIndexConfiguration extends IndexConfiguration {
     public ValueIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
-    ValueIndexConfiguration(@NonNull List<String> expressions) { super(IndexType.VALUE, expressions); }
+    ValueIndexConfiguration(@NonNull List<String> expressions) { super(expressions); }
+
+    @Override
+    void createIndex(@NonNull String name, @NonNull C4Collection c4Collection) throws LiteCoreException {
+        c4Collection.createValueIndex(name, QueryLanguage.N1QL.getCode(), getIndexSpec());
+    }
 }

@@ -155,7 +155,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
+        run(
+            repl,
+            false,
+            LONG_TIMEOUT_SEC,
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
         synchronized (options) {
             assertEquals(
@@ -168,7 +173,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
                 Defaults.Replicator.HEARTBEAT,
                 ((Number) options.get(C4Replicator.REPLICATOR_HEARTBEAT_INTERVAL)).intValue());
             assertEquals(
-                Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
+                Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME,
                 ((Number) options.get(C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL)).intValue());
             assertEquals(
                 Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT - 1,
@@ -196,7 +201,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
+        run(
+            repl,
+            false,
+            STD_TIMEOUT_SEC,
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
         synchronized (options) {
             assertEquals(Boolean.TRUE, options.get(C4Replicator.REPLICATOR_OPTION_ACCEPT_PARENT_COOKIES));
@@ -224,7 +234,12 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
         });
 
         // the replicator will fail because the endpoint is bogus
-        run(repl, false, CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST);
+        run(
+            repl,
+            false,
+            STD_TIMEOUT_SEC,
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.TIMEOUT),
+            new CouchbaseLiteException("", CBLError.Domain.CBLITE, CBLError.Code.UNKNOWN_HOST));
 
         synchronized (options) {
             final Object authOpts = options.get(C4Replicator.REPLICATOR_OPTION_AUTHENTICATION);
@@ -288,7 +303,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(getTestDatabase());
 
-        assertThrows(IllegalStateException.class, repl::start);
+        assertThrows(CouchbaseLiteError.class, repl::start);
     }
 
     // CBL-1218
@@ -298,7 +313,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         deleteDb(getTestDatabase());
 
-        assertThrows(IllegalStateException.class, () -> repl.getPendingDocumentIds(getTestCollection()));
+        assertThrows(CouchbaseLiteError.class, () -> repl.getPendingDocumentIds(getTestCollection()));
     }
 
     // CBL-1218
@@ -308,7 +323,7 @@ public class ReplicatorMiscTest extends BaseReplicatorTest {
 
         closeDb(getTestDatabase());
 
-        assertThrows(IllegalStateException.class, () -> repl.isDocumentPending("who-cares", getTestCollection()));
+        assertThrows(CouchbaseLiteError.class, () -> repl.isDocumentPending("who-cares", getTestCollection()));
     }
 
     // CBL-1441

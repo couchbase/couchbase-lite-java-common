@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2023 Couchbase, Inc All rights reserved.
+// Copyright (c) 2024 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,18 +13,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.replicator;
+package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
-import com.couchbase.lite.AbstractReplicator;
 
+public class CouchbaseLiteError extends IllegalStateException {
+    public CouchbaseLiteError(@NonNull String msg) { this(msg, null); }
 
-/**
- * Exists to make the method BaseReplicator.dispatcher() visible for testing
- */
-public class InternalReplicatorTest {
-    public static void enqueueOnDispatcher(@NonNull AbstractReplicator repl, @NonNull Runnable task) {
-        repl.dispatcher.execute(task);
+    public CouchbaseLiteError(@NonNull String msg, @Nullable Exception e) {
+        super(CouchbaseLiteException.getErrorMessage(msg, e), e);
     }
 }

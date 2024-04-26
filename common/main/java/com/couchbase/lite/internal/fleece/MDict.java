@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.CouchbaseLiteError;
+
 
 /**
  * Please see the comments in MValue
@@ -39,8 +41,11 @@ public final class MDict extends MCollection {
     // Constructors
     //---------------------------------------------
 
-    // Dictionary constructor
-    public MDict() { baseDict = null; }
+    // Construct a new empty MDict
+    public MDict() {
+        super(MContext.NULL, true);
+        baseDict = null;
+    }
 
     // Copy constructor
     public MDict(@NonNull MDict dict, boolean isMutable) {
@@ -81,6 +86,7 @@ public final class MDict extends MCollection {
      * @return true if the dictionary contains the key
      */
     public boolean contains(String key) {
+        assertOpen();
         final MValue val = values.get(key);
         return (val != null) ? !val.isEmpty() : ((baseDict != null) && (baseDict.get(key) != null));
     }
@@ -92,6 +98,8 @@ public final class MDict extends MCollection {
      */
     @NonNull
     public List<String> getKeys() {
+        assertOpen();
+
         final List<String> keys = new ArrayList<>();
         for (Map.Entry<String, MValue> entry: values.entrySet()) {
             if (!entry.getValue().isEmpty()) { keys.add(entry.getKey()); }
@@ -112,6 +120,8 @@ public final class MDict extends MCollection {
 
     @NonNull
     public MValue get(@NonNull String key) {
+        assertOpen();
+
         MValue mValue = values.get(key);
         if (mValue != null) { return mValue; }
 
@@ -125,7 +135,8 @@ public final class MDict extends MCollection {
     }
 
     public void set(String key, @NonNull MValue value) {
-        if (!isMutable()) { throw new IllegalStateException("Cannot set items in a non-mutable MDict"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot set items in a non-mutable MDict"); }
+        assertOpen();
 
         final boolean hasVal = !value.isEmpty();
 
@@ -158,12 +169,13 @@ public final class MDict extends MCollection {
     }
 
     public void remove(String key) {
-        if (!isMutable()) { throw new IllegalStateException("Cannot remove items in a non-mutable MDict"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot remove items in a non-mutable MDict"); }
         set(key, MValue.EMPTY);
     }
 
     public void clear() {
-        if (!isMutable()) { throw new IllegalStateException("Cannot clear items from a non-mutable MDict"); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot clear items from a non-mutable MDict"); }
+        assertOpen();
 
         if (valCount == 0) { return; }
 
@@ -187,6 +199,8 @@ public final class MDict extends MCollection {
 
     @Override
     public void encodeTo(@NonNull FLEncoder enc) {
+        assertOpen();
+
         if (!isMutated()) {
             if (baseDict != null) {
                 enc.writeValue(baseDict);

@@ -42,7 +42,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     //---------------------------------------------
 
     /**
-     * Construct a new empty Array object.
+     * Construct a new empty MutableArray.
      */
     public MutableArray() { }
 
@@ -62,8 +62,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     public MutableArray(@NonNull String json) { setJSON(json); }
 
-    // Create a mutable copy
-    MutableArray(@NonNull MArray array) { super(array); }
+    // Create a MutableArray that is a copy of the passed Array
+    MutableArray(@NonNull Array array) { super(new MArray(array.internalArray, true)); }
 
     // Called from the MValueConverter.
     MutableArray(@NonNull MValue val, @Nullable MCollection parent) { super(val, parent); }
@@ -555,7 +555,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
 
     @NonNull
     @Override
-    public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
+    public String toJSON() { throw new CouchbaseLiteError("Mutable objects may not be encoded as JSON"); }
 
     @Nullable
     private Object checkSelf(@Nullable Object value) {

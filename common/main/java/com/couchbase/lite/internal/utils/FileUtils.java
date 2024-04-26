@@ -25,6 +25,7 @@ import java.io.OutputStream;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.logging.Log;
 
@@ -46,7 +47,7 @@ public final class FileUtils {
         }
         catch (IOException e) { err = e; }
 
-        throw new IllegalStateException("Cannot create or access directory at " + dir, err);
+        throw new CouchbaseLiteError("Cannot create or access directory at " + dir, err);
     }
 
     public static void copyFile(InputStream in, OutputStream out) throws IOException {
@@ -100,7 +101,7 @@ public final class FileUtils {
     @NonNull
     public static File getCurrentDirectory() {
         try { return new File("").getCanonicalFile(); }
-        catch (IOException e) { throw new IllegalStateException("Can't open current directory", e); }
+        catch (IOException e) { throw new CouchbaseLiteError("Can't open current directory", e); }
     }
 
     private static boolean deleteRecursive(File fileOrDirectory) {

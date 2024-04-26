@@ -44,7 +44,7 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
     @NonNull
     public FLSliceResult nGetContents(long peer, long key) throws LiteCoreException { return getContents(peer, key); }
 
-    @NonNull
+    @Nullable
     public String nGetFilePath(long peer, long key) throws LiteCoreException { return getFilePath(peer, key); }
 
     public long nCreate(long peer, byte[] data) throws LiteCoreException { return create(peer, data); }
@@ -99,7 +99,7 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
     @NonNull
     private static native FLSliceResult getContents(long peer, long blobKey) throws LiteCoreException;
 
-    @NonNull
+    @Nullable
     private static native String getFilePath(long peer, long blobKey) throws LiteCoreException;
 
     private static native long create(long peer, byte[] contents) throws LiteCoreException;

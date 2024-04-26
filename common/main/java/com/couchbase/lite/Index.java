@@ -23,12 +23,13 @@ import org.json.JSONException;
 
 import com.couchbase.lite.internal.utils.JSONUtils;
 
+
 /**
  * Index represents an index: either a value index for regular queries or
  * full-text index for full-text queries (using the match operator).
  */
 public abstract class Index extends AbstractIndex {
-    Index(@NonNull IndexType type) { super(type, QueryLanguage.JSON); }
+    Index() { }
 
     @NonNull
     abstract List<Object> getJson();

@@ -2668,7 +2668,7 @@ public class DocumentTest extends BaseDbTest {
     // JSON 3.5.?
     @Test
     public void testMutableDocToJSONBeforeSave() {
-        assertThrows(IllegalStateException.class, () -> new MutableDocument().toJSON());
+        assertThrows(CouchbaseLiteError.class, () -> new MutableDocument().toJSON());
     }
 
     // JSON 3.5.a
@@ -2677,10 +2677,10 @@ public class DocumentTest extends BaseDbTest {
     // JSON 3.5.b-c
     @Test
     public void testDocFromJSON() throws JSONException {
-        Document dbDoc
-            = saveDocInTestCollection(new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("document.json")));
+        Document dbDoc = saveDocInTestCollection(
+            new MutableDocument("fromJSON", BaseDbTestKt.readJSONResource("document.json")));
         getTestDatabase().saveBlob(makeBlob()); // be sure the blob is there...
-        verifyDocument(dbDoc);
+        verifyDocument(dbDoc, true);
         verifyDocument(new JSONObject(dbDoc.toJSON()));
     }
 

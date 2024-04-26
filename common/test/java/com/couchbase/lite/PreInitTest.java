@@ -31,21 +31,21 @@ public class PreInitTest extends BaseTest {
 
     @Test
     public void testCreateDatabaseBeforeInit() {
-        assertThrows(IllegalStateException.class, () -> new Database("fail"));
+        assertThrows(CouchbaseLiteError.class, () -> new Database("fail"));
     }
 
     @Test
     public void testGetConsoleBeforeInit() {
-        assertThrows(IllegalStateException.class, () -> new Log().getConsole());
+        assertThrows(CouchbaseLiteError.class, () -> new Log().getConsole());
     }
 
     @Test
     public void testGetFileBeforeInit() {
-        assertThrows(IllegalStateException.class, () -> new Log().getFile());
+        assertThrows(CouchbaseLiteError.class, () -> new Log().getFile());
     }
 
     @Test
     public void testCreateDBConfigBeforeInit() {
-        assertThrows(IllegalStateException.class, DatabaseConfiguration::new);
+        assertThrows(CouchbaseLiteError.class, DatabaseConfiguration::new);
     }
 }

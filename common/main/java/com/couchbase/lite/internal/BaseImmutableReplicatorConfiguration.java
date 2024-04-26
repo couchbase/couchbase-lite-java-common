@@ -185,7 +185,7 @@ public class BaseImmutableReplicatorConfiguration {
 
         options.put(
             C4Replicator.REPLICATOR_OPTION_MAX_RETRY_INTERVAL,
-            (maxAttemptWaitTime > 0) ? maxAttemptWaitTime : Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME);
+            (maxAttemptWaitTime > 0) ? maxAttemptWaitTime : Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME);
 
         options.put(
             C4Replicator.REPLICATOR_OPTION_MAX_RETRIES,

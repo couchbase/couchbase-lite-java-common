@@ -64,7 +64,7 @@ import com.couchbase.lite.internal.utils.StringUtils;
 @SuppressWarnings({"PMD.TooManyFields", "PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public abstract class AbstractReplicator extends BaseReplicator
     implements Listenable<ReplicatorChange, ReplicatorChangeListener> {
-    private static final LogDomain DOMAIN = LogDomain.REPLICATOR;
+    private static final LogDomain LOG_DOMAIN = LogDomain.REPLICATOR;
 
     static class ReplicatorCookieStore implements CBLCookieStore {
         @NonNull
@@ -169,11 +169,13 @@ public abstract class AbstractReplicator extends BaseReplicator
      * through replicator change notifications.
      */
     public void start(boolean resetCheckpoint) {
-        Log.i(DOMAIN, "Replicator is starting");
+        Log.i(LOG_DOMAIN, "Replicator(%s) started: %s", getId(), this);
 
         getDatabase().addActiveReplicator(this);
 
-        final C4Replicator c4Repl = getOrCreateC4Replicator();
+        final C4Replicator c4Repl;
+        try { c4Repl = getOrCreateC4Replicator(); }
+        catch (LiteCoreException e) { throw new CouchbaseLiteError("Failed to create replicator", e); }
         synchronized (getReplicatorLock()) {
             c4Repl.start(resetCheckpoint);
 
@@ -199,7 +201,7 @@ public abstract class AbstractReplicator extends BaseReplicator
      */
     public void stop() {
         final C4Replicator c4repl = getC4Replicator();
-        Log.i(DOMAIN, "%s: Replicator is stopping (%s)", this, c4repl);
+        Log.i(LOG_DOMAIN, "Replicator(%s) stopped: %s", getId(), this);
         if (c4repl == null) { return; }
         c4repl.stop();
     }
@@ -409,7 +411,7 @@ public abstract class AbstractReplicator extends BaseReplicator
      * We recommend the use of this method on Replicators that are in the STOPPED state.  If the
      * replicator is not stopped, this method will make a best effort attempt to stop it but
      * will not wait to confirm that it was stopped cleanly.
-     * Any attempt to restart a closed replicator will result in an IllegalStateException.
+     * Any attempt to restart a closed replicator will result in an CouchbaseLiteError.
      * This includes calls to getPendingDocIds and isDocPending.
      */
     public void close() {
@@ -572,7 +574,7 @@ public abstract class AbstractReplicator extends BaseReplicator
 
     // callback from queueConflictResolution
     void onConflictResolved(Fn.NullableConsumer<CouchbaseLiteException> task, @NonNull ReplicatedDocument rDoc) {
-        Log.i(DOMAIN, "Conflict resolved: %s", rDoc.getError(), rDoc.getID());
+        Log.i(LOG_DOMAIN, "%s: conflict resolved: %s", rDoc.getError(), getId(), rDoc.getID());
         List<C4ReplicatorStatus> pendingNotifications = null;
         synchronized (getReplicatorLock()) {
             pendingResolutions.remove(task);
@@ -592,7 +594,7 @@ public abstract class AbstractReplicator extends BaseReplicator
 
     void notifyDocumentEnded(boolean pushing, List<ReplicatedDocument> docs) {
         final DocumentReplication update = new DocumentReplication((Replicator) this, pushing, docs);
-        Log.i(DOMAIN, "notifyDocumentEnded: %s", update);
+        Log.i(LOG_DOMAIN, "%s: document end notification: %s", getId(), update);
         final Set<DocumentReplicationListenerToken> listenerTokens;
         synchronized (getReplicatorLock()) { listenerTokens = new HashSet<>(docEndedListeners); }
         for (DocumentReplicationListenerToken token: listenerTokens) { token.postChange(update); }
@@ -682,15 +684,15 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     @NonNull
-    private C4Replicator getOrCreateC4Replicator() {
+    private C4Replicator getOrCreateC4Replicator() throws LiteCoreException {
         // createReplicatorForTarget is going to seize this lock anyway: force in-order seizure
         synchronized (getDatabase().getDbLock()) {
-            if (closed) { throw new IllegalStateException("Attempt to operate on a closed replicator"); }
+            if (closed) { throw new CouchbaseLiteError("Attempt to operate on a closed replicator"); }
 
             C4Replicator c4Repl = getC4Replicator();
 
             final Map<String, Object> options = config.getConnectionOptions();
-            Log.d(LogDomain.REPLICATOR, "Replication options: " + options);
+            Log.d(LOG_DOMAIN, "%s: options: %s", getId(), StringUtils.toString(options));
 
             if (c4Repl != null) {
                 c4Repl.setOptions(FLEncoder.encodeMap(options));
@@ -698,19 +700,13 @@ public abstract class AbstractReplicator extends BaseReplicator
                 return c4Repl;
             }
 
-            try {
-                c4Repl = createReplicatorForTarget(config.getTarget());
-                synchronized (getReplicatorLock()) {
-                    setC4Replicator(c4Repl);
-                    setProgressLevel();
-                }
-                return c4Repl;
+            c4Repl = createReplicatorForTarget(config.getTarget());
+            synchronized (getReplicatorLock()) {
+                setC4Replicator(c4Repl);
+                setProgressLevel();
             }
-            catch (LiteCoreException e) {
-                throw new IllegalStateException(
-                    "Could not create replicator",
-                    CouchbaseLiteException.convertException(e));
-            }
+
+            return c4Repl;
         }
     }
 
@@ -719,9 +715,12 @@ public abstract class AbstractReplicator extends BaseReplicator
         final Set<ReplicatorChangeListenerToken> listenerTokens;
         synchronized (getReplicatorLock()) {
             Log.i(
-                DOMAIN,
-                "status changed: (%d, %d) @%s for %s",
-                pendingResolutions.size(), pendingStatusNotifications.size(), c4Status, this);
+                LOG_DOMAIN,
+                "%s: status changed: (%d, %d) @%s",
+                getId(),
+                pendingResolutions.size(),
+                pendingStatusNotifications.size(),
+                c4Status);
 
             if (config.isContinuous()) { handleOffline(status.getActivityLevel(), !isOffline(c4Status)); }
 
@@ -748,14 +747,19 @@ public abstract class AbstractReplicator extends BaseReplicator
     }
 
     private void documentsEnded(@NonNull List<C4DocumentEnded> docEnds, boolean pushing) {
-        Log.d(LogDomain.REPLICATOR, "AbstractReplicator.documentsEnded: " + docEnds.size());
+        Log.i(LOG_DOMAIN, "%s: documents ended: %d", getId(), docEnds.size());
 
         final List<ReplicatedDocument> unconflictedDocs = new ArrayList<>();
 
         for (C4DocumentEnded docEnd: docEnds) {
+            if (docEnd.docId == null) {
+                Log.d(LOG_DOMAIN, "%s: DocId is null in document end: ", getId(), docEnd);
+                continue;
+            }
+
             final ReplicationCollection coll = ReplicationCollection.getBinding(docEnd.token);
             if (coll == null) {
-                Log.w(LogDomain.REPLICATOR, "No collection for document end: " + docEnd);
+                Log.d(LOG_DOMAIN, "%s: No collection for document end: ", getId(), docEnd);
                 continue;
             }
 
@@ -793,13 +797,15 @@ public abstract class AbstractReplicator extends BaseReplicator
         final CouchbaseLiteException err = status.getError();
         if (c4Status.getErrorCode() != 0) { lastError = err; }
 
-        Log.i(DOMAIN, "State changed %s => %s(%d/%d): %s for %s",
+        Log.i(
+            LOG_DOMAIN,
+            "%s: state changed %s => %s(%d/%d)",
+            err,
+            getId(),
             oldStatus.getActivityLevel(),
             status.getActivityLevel(),
             c4Status.getProgressUnitsCompleted(),
-            c4Status.getProgressUnitsTotal(),
-            err,
-            this);
+            c4Status.getProgressUnitsTotal());
 
         return new C4ReplicatorStatus(c4Status);
     }
@@ -807,9 +813,13 @@ public abstract class AbstractReplicator extends BaseReplicator
     private void queueConflictResolution(@NonNull ReplicatedDocument rDoc, @Nullable ConflictResolver resolver) {
         final Database db = getDatabase();
         Log.i(
-            DOMAIN,
-            "%s: pulled conflicting version of '%s.%s.%s#%s'",
-            this, db.getName(), rDoc.getScope(), rDoc.getCollection(), rDoc.getID());
+            LOG_DOMAIN,
+            "%s: found conflicting version of '%s.%s.%s#%s'",
+            getId(),
+            db.getName(),
+            rDoc.getScope(),
+            rDoc.getCollection(),
+            rDoc.getID());
 
         final Fn.NullableConsumer<CouchbaseLiteException> continuation
             = new Fn.NullableConsumer<CouchbaseLiteException>() {
@@ -850,14 +860,14 @@ public abstract class AbstractReplicator extends BaseReplicator
                     : C4Replicator.PROGRESS_PER_DOC);
         }
         catch (LiteCoreException e) {
-            Log.w(LogDomain.REPLICATOR, "failed setting progress level");
+            Log.w(LOG_DOMAIN, "%s: failed setting progress level", getId());
         }
     }
 
     @NonNull
     private Database getDatabase() {
         final Database db = config.getDatabase();
-        if (db == null) { throw new IllegalStateException("No database in Replicator"); }
+        if (db == null) { throw new CouchbaseLiteError("No database in Replicator"); }
         return db;
     }
 

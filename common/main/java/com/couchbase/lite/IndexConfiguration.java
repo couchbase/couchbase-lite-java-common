@@ -26,18 +26,15 @@ import com.couchbase.lite.internal.utils.Preconditions;
 import com.couchbase.lite.internal.utils.StringUtils;
 
 
-public class IndexConfiguration extends AbstractIndex {
+public abstract class IndexConfiguration extends AbstractIndex {
     @NonNull
     private final List<String> expressions;
 
-    IndexConfiguration(@NonNull IndexType type, @NonNull String... expressions) {
-        this(type, Arrays.asList(expressions));
-    }
+    IndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
-    IndexConfiguration(@NonNull IndexType type, @NonNull List<String> expressions) {
-        super(type, QueryLanguage.N1QL);
+    IndexConfiguration(@NonNull List<String> expressions) {
         this.expressions = Preconditions.assertNotEmpty(
-            Fn.filterToList(expressions, i -> (i != null)),
+            Fn.filterToList(expressions, s -> !StringUtils.isEmpty(s)),
             "expression list");
     }
 

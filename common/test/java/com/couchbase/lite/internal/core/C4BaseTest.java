@@ -34,6 +34,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import com.couchbase.lite.BaseTest;
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -126,7 +127,7 @@ public class C4BaseTest extends BaseTest {
             }
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
-        catch (IOException e) { throw new IllegalStateException("IO error setting up directories", e); }
+        catch (IOException e) { throw new CouchbaseLiteError("IO error setting up directories", e); }
     }
 
     @After

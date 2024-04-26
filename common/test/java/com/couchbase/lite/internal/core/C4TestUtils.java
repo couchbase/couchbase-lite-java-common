@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 
 import com.couchbase.lite.CBLError;
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -87,7 +88,7 @@ public class C4TestUtils {
         catch (LiteCoreException e) {
             try { store.close(); }
             catch (Exception ignore) { }
-            throw new IllegalStateException("Failed deleting blob store", e);
+            throw new CouchbaseLiteError("Failed deleting blob store", e);
         }
     }
 
@@ -206,7 +207,7 @@ public class C4TestUtils {
     @NonNull
     private static native FLSliceResult encodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
 
-    @NonNull
+    @Nullable
     private static native String getDocID(long doc);
 
     // C4Document

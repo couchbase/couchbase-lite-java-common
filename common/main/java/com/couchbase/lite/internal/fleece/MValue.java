@@ -18,8 +18,7 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.MValueConverter;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -46,6 +45,12 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * <p>
  * The regrettable upside-down dependency on MValueConverter provides access to package
  * visible symbols in com.couchbase.lite.
+ * <p>
+ * It worries me that this isn't thread safe... but, as I say, I've never seen it be a problem.
+ * <p>
+ * 3/2024 (CBL-5486): I've seen a problem!
+ * If the parent, the object holding the Fleece reference, is closed, the Fleece object backing
+ * all of the contained objects, is freed.
  */
 public class MValue extends MValueConverter implements Encodable {
 
@@ -86,7 +91,7 @@ public class MValue extends MValueConverter implements Encodable {
 
     @Override
     public void encodeTo(@NonNull FLEncoder enc) {
-        if (isEmpty()) { throw new IllegalStateException("MValue is empty."); }
+        if (isEmpty()) { throw new CouchbaseLiteError("MValue is empty."); }
 
         if (flValue != null) { enc.writeValue(flValue); }
         else if (value != null) { enc.writeValue(value); }
@@ -109,9 +114,8 @@ public class MValue extends MValueConverter implements Encodable {
     public Object asNative(@Nullable MCollection parent) {
         if ((value != null) || (flValue == null)) { return value; }
 
-        final AtomicBoolean cacheIt = new AtomicBoolean(false);
-        final Object obj = toNative(this, parent, cacheIt);
-        if (cacheIt.get()) { value = obj; }
-        return obj;
+        final NativeValue<?> val = toNative(this, parent);
+        if (val.cacheIt) { value = val.nVal; }
+        return val.nVal;
     }
 }

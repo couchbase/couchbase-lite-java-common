@@ -192,7 +192,7 @@ class LogTest : BaseDbTest() {
         val config = LogFileConfiguration("up/down")
         assertEquals(Defaults.LogFile.MAX_SIZE, config.maxSize)
         assertEquals(Defaults.LogFile.MAX_ROTATE_COUNT, config.maxRotateCount)
-        assertEquals(Defaults.LogFile.USE_PLAIN_TEXT, config.usesPlaintext())
+        assertEquals(Defaults.LogFile.USE_PLAINTEXT, config.usesPlaintext())
     }
 
     @Test
@@ -461,9 +461,9 @@ class LogTest : BaseDbTest() {
     @Test
     fun testEditReadOnlyLogFileConfiguration() {
         testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(scratchDirPath!!)) {
-            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxSize = 1024 }
-            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.maxRotateCount = 3 }
-            assertThrows(IllegalStateException::class.java) { Database.log.file.config!!.setUsePlaintext(true) }
+            assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.maxSize = 1024 }
+            assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.maxRotateCount = 3 }
+            assertThrows(CouchbaseLiteError::class.java) { Database.log.file.config!!.setUsePlaintext(true) }
         }
     }
 

@@ -16,8 +16,19 @@
 package com.couchbase.lite.internal.fleece;
 
 
+import androidx.annotation.Nullable;
+
+import com.couchbase.lite.BaseDatabase;
+
+
 public class MContext {
     public static final MContext NULL = new MContext();
 
+
     protected MContext() { }
+
+    @Nullable
+    public BaseDatabase getDatabase() { return null; }
+
+    public boolean isClosed() { return false; }
 }

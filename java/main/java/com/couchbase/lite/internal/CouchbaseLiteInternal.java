@@ -26,6 +26,7 @@ import java.util.Properties;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4;
@@ -43,7 +44,7 @@ import com.couchbase.lite.internal.utils.FileUtils;
  */
 public final class CouchbaseLiteInternal {
     // Utility class
-    private CouchbaseLiteInternal() {}
+    private CouchbaseLiteInternal() { }
 
     public static final String PLATFORM = "CBL-JAVA";
 
@@ -60,26 +61,29 @@ public final class CouchbaseLiteInternal {
     private static volatile boolean debugging;
 
     private static volatile File defaultDbDir;
+    private static volatile File scratchDir;
 
-    public static void init(
-        boolean debug,
-        @NonNull File defaultDbDir,
-        @NonNull File scratchDir) {
+
+    public static void init(boolean debug, @NonNull File defaultDbDir, @NonNull File tempDir) {
         if (INITIALIZED.getAndSet(true)) { return; }
 
         // set early to catch initialization errors
         debugging = debug;
 
         CouchbaseLiteInternal.defaultDbDir = FileUtils.verifyDir(defaultDbDir);
-        final File tmpDir = FileUtils.verifyDir(scratchDir);
+
+        final File tmpDir = FileUtils.verifyDir(tempDir);
+        scratchDir = tmpDir;
 
         NativeLibrary.load(tmpDir);
 
         C4.debug(debugging);
 
-        Log.initLogging(loadErrorMessages());
+        Log.initLogging(debugging, loadErrorMessages());
 
         setC4TmpDirPath(tmpDir);
+
+        CBLVariantExtensions.initVariant(LOCK, tmpDir);
     }
 
     public static boolean debugging() { return debugging; }
@@ -97,18 +101,25 @@ public final class CouchbaseLiteInternal {
 
     public static void requireInit(String message) {
         if (!INITIALIZED.get()) {
-            throw new IllegalStateException(message + ".  Did you forget to call CouchbaseLite.init()?");
+            throw new CouchbaseLiteError(message + ".  Did you forget to call CouchbaseLite.init()?");
         }
     }
 
     @NonNull
     public static File getDefaultDbDir() {
-        requireInit("Can't create DB path");
+        requireInit("Can't get default database directory");
         return defaultDbDir;
     }
 
     @NonNull
     public static String getDefaultDbDirPath() { return defaultDbDir.getAbsolutePath(); }
+
+    @VisibleForTesting
+    @NonNull
+    public static File getScratchDir() {
+        requireInit("Can't get scratch directory");
+        return scratchDir;
+    }
 
     @VisibleForTesting
     public static void reset(boolean state) { INITIALIZED.set(state); }

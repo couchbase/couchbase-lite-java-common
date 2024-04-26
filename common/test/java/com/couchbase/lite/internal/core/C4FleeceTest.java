@@ -32,7 +32,6 @@ import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.ARRAY;
 import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DATA;
 import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DICT;
 import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.STRING;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -125,6 +124,27 @@ public class C4FleeceTest extends C4BaseTest {
             byte[] decodedData = (byte[]) decoded.get("bytes");
             assertNotNull(decodedData);
             Assert.assertArrayEquals(data, decodedData);
+        }
+    }
+
+    @Test
+    public void testEncodeNull() throws LiteCoreException {
+        try (FLEncoder.JSONEncoder enc = FLEncoder.getJSONEncoder()) {
+            enc.beginDict(6);
+            enc.writeKey("foo");
+            enc.writeValue("foo");
+            enc.writeKey(null);
+            enc.writeValue("foo");
+            enc.writeKey("foo");
+            enc.writeValue(null);
+            enc.writeKey(null);
+            enc.writeValue(null);
+            enc.writeKey("foo");
+            enc.writeValue("bar");
+            enc.writeKey("bar");
+            enc.writeValue("bar");
+            enc.endDict();
+            enc.finishJSON();
         }
     }
 }

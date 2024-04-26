@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.MArray;
@@ -47,7 +46,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         private final long mutations;
         private int index;
 
-        ArrayIterator() { this.mutations = Array.this.internalArray.getMutationCount(); }
+        ArrayIterator() { this.mutations = Array.this.internalArray.getLocalMutationCount(); }
 
         @Override
         public boolean hasNext() { return index < Array.this.count(); }
@@ -55,7 +54,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         @Nullable
         @Override
         public Object next() {
-            if (Array.this.internalArray.getMutationCount() != mutations) {
+            if (Array.this.internalArray.getLocalMutationCount() != mutations) {
                 throw new ConcurrentModificationException("Array modified during iteration");
             }
             return getValue(index++);
@@ -75,24 +74,18 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     // Constructors
     //---------------------------------------------
 
-    // Construct an empty mutable Array
+    // Construct a new empty Array
     protected Array() { this(new MArray()); }
 
     // Slot(??) constructor
     Array(@NonNull MValue val, @Nullable MCollection parent) { this(new MArray(val, parent)); }
 
-    // Copy constructor
+    // Construct a new array with the passed content
     protected Array(@NonNull MArray array) {
         internalArray = array;
         final MContext context = array.getContext();
-        if (context instanceof DbContext) {
-            final BaseDatabase db = ((DbContext) context).getDatabase();
-            if (db != null) {
-                lock = db.getDbLock();
-                return;
-            }
-        }
-        lock = new Object();
+        final BaseDatabase db = (context == null) ? null : context.getDatabase();
+        lock = (db == null) ? new Object() : db.getDbLock();
     }
 
     //---------------------------------------------
@@ -106,7 +99,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      */
     @NonNull
     public MutableArray toMutable() {
-        synchronized (lock) { return new MutableArray(new MArray(internalArray, true)); }
+        synchronized (lock) { return new MutableArray(this); }
     }
 
     /**
@@ -304,15 +297,21 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         }
     }
 
+    /**
+     * Encode an Array as a JSON string
+     *
+     * @return JSON encoded representation of the Array
+     * @throws CouchbaseLiteException on encoder failure.
+     */
     @NonNull
     @Override
-    public String toJSON() {
+    public String toJSON() throws CouchbaseLiteException {
         try (FLEncoder.JSONEncoder encoder = FLEncoder.getJSONEncoder()) {
             internalArray.encodeTo(encoder);
             return encoder.finishJSON();
         }
         catch (LiteCoreException e) {
-            throw new IllegalStateException("Cannot encode array: " + this, e);
+            throw CouchbaseLiteException.convertException(e, "Cannot encode array: " + this);
         }
     }
 
@@ -367,14 +366,10 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
         return h;
     }
 
-    @SuppressWarnings("PMD.ConsecutiveLiteralAppends")
     @NonNull
     @Override
     public String toString() {
-        final StringBuilder buf = new StringBuilder("Array{(")
-            .append((internalArray.isMutable()) ? '+' : '.')
-            .append((internalArray.isMutated()) ? '!' : '.')
-            .append(')');
+        final StringBuilder buf = new StringBuilder("Array{(").append(internalArray.getStateString()).append(')');
 
         final int n = count();
         for (int i = 0; i < n; i++) {

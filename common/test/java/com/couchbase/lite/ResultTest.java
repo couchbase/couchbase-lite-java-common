@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.utils.Fn;
@@ -41,7 +42,6 @@ import static org.junit.Assert.assertTrue;
 
 @SuppressWarnings("ConstantConditions")
 public class ResultTest extends BaseQueryTest {
-
 
     @Test
     public void testGetValueByKey() {
@@ -934,6 +934,40 @@ public class ResultTest extends BaseQueryTest {
         }
     }
 
+    @Test
+    public void testResultRefAfterClose() throws CouchbaseLiteException {
+        MutableDocument mDoc = makeDocument();
+        saveDocInTestCollection(mDoc);
+
+        final Collection testCollection = getTestCollection();
+        final Result result;
+        final Dictionary dict;
+        final Array array;
+        final ResultSet results= QueryBuilder
+            .createQuery("SELECT * FROM " + testCollection.getFullName(), testCollection.getDatabase())
+            .execute();
+
+        result = results.next();
+        assertNotNull(result);
+
+        dict = result.getDictionary(0);
+        assertNotNull(dict);
+
+        array = dict.getArray("doc-25");
+        assertNotNull(array);
+
+        Object val = array.getString(20);
+        assertNotNull(val);
+
+        results.close();
+
+        assertNull(results.next());
+        assertThrows(IllegalStateException.class, () -> result.getDictionary(0));
+        assertThrows(IllegalStateException.class, () -> dict.getArray("doc-25"));
+        assertThrows(IllegalStateException.class, () -> array.getString(20));
+    }
+
+
     ///////////////  JSON tests
 
     // JSON 3.8
@@ -958,7 +992,7 @@ public class ResultTest extends BaseQueryTest {
             assertNotNull(result);
             assertNull(results.next());
 
-            verifyDocument(result);
+            verifyDocument(result, false);
             verifyDocument(new JSONObject(result.toJSON()));
         }
     }

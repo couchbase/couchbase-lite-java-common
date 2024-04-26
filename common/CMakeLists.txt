@@ -80,6 +80,11 @@ target_include_directories( LiteCoreJNI PUBLIC
     "${PROJECT_SOURCE_DIR}/../lite-core/android/${ANDROID_ABI}/include"
 )
 
+set_target_properties(
+    LiteCoreJNI PROPERTIES LINK_FLAGS
+    "-Wl,--version-script=${PROJECT_SOURCE_DIR}/jni_android.ld"
+)
+
 target_link_libraries( LiteCoreJNI
     LiteCore
     "log"

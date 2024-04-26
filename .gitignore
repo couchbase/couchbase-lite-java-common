@@ -27,6 +27,7 @@ local.properties
 # Keystore files
 *.jks
 
-# Lite Core
+# Libraries
 lite-core
+ext-libs
 

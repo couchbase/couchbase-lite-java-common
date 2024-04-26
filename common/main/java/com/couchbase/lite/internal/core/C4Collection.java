@@ -15,7 +15,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.Collection;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
@@ -46,15 +45,35 @@ public final class C4Collection extends C4NativePeer {
 
         // Indexes
         long nGetIndexesInfo(long peer) throws LiteCoreException;
-        void nCreateIndex(
+
+        void nCreateValueIndex(long peer, String name, int queryLanguage, String indexSpec) throws LiteCoreException;
+
+        void nCreateFullTextIndex(
             long peer,
             String name,
-            String indexSpec,
             int queryLanguage,
-            int indexType,
+            String indexSpec,
             String language,
             boolean ignoreDiacritics)
             throws LiteCoreException;
+
+        void nCreatePredictiveIndex(long peer, String name, String indexSpec) throws LiteCoreException;
+
+        @SuppressWarnings("PMD.ExcessiveParameterList")
+        void nCreateVectorIndex(
+            long peer,
+            String name,
+            String queryExpressions,
+            long dimensions,
+            int metric,
+            long centroids,
+            int encoding,
+            long subquantizers,
+            long bits,
+            long minTrainingSize,
+            long maxTrainingSize)
+            throws LiteCoreException;
+
         void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException;
     }
 
@@ -208,25 +227,59 @@ public final class C4Collection extends C4NativePeer {
 
     // - Indexes
 
-    public void createIndex(
+    // These all call the same underlying LiteCore method but the call interface gets
+    // completely polluted if we try to combine them into a single call.
+
+    public void createValueIndex(String name, int queryLanguage, String indexSpec) throws LiteCoreException {
+        withPeer(peer -> impl.nCreateValueIndex(peer, name, queryLanguage, indexSpec));
+    }
+
+    public void createFullTextIndex(
         String name,
+        int queryLanguage,
         String indexSpec,
-        AbstractIndex.QueryLanguage queryLanguage,
-        AbstractIndex.IndexType indexType,
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        withPeer(peer ->
-            impl.nCreateIndex(
-                peer,
-                name,
-                indexSpec,
-                queryLanguage.getValue(),
-                indexType.getValue(),
-                language,
-                ignoreDiacritics));
+        withPeer(peer -> impl.nCreateFullTextIndex(
+            peer,
+            name,
+            queryLanguage,
+            indexSpec,
+            language,
+            ignoreDiacritics));
     }
 
+    public void createPredictiveIndex(String name, String indexSpec) throws LiteCoreException {
+        withPeer(peer -> impl.nCreatePredictiveIndex(peer, name, indexSpec));
+    }
+
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    public void createVectorIndex(
+        String name,
+        String queryExpressions,
+        long dimensions,
+        int metric,
+        long centroids,
+        int encoding,
+        long subquantizers,
+        long bits,
+        long minTrainingSize,
+        long maxTrainingSize)
+        throws LiteCoreException {
+        withPeer(peer -> impl.nCreateVectorIndex(
+            peer,
+            name,
+            queryExpressions,
+            dimensions,
+            metric,
+            centroids,
+            encoding,
+            subquantizers,
+            bits,
+            minTrainingSize,
+            maxTrainingSize));
+    }
 
     @NonNull
     public FLValue getIndexesInfo() throws LiteCoreException {

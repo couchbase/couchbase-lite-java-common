@@ -276,7 +276,7 @@ class ConflictResolutionTests : BaseReplicatorTest() {
         var succeeded = false
         try {
             succeeded = testCollection.save(doc1b) { _: MutableDocument, _: Document? ->
-                throw IllegalStateException("freak out!")
+                throw CouchbaseLiteError("freak out!")
             }
             fail("save should not succeed!")
         } catch (err: CouchbaseLiteException) {
@@ -384,7 +384,6 @@ class ConflictResolutionTests : BaseReplicatorTest() {
      * Verify that the only docs subject to conflict resolution are conflicted docs that are being pulled
      */
     @Test
-    @Throws(CouchbaseLiteException::class, InterruptedException::class)
     fun testConflictResolutionCriteria() {
         // documentsEnded is going to need this.
         val rc = ReplicationCollection.create(testCollection, null, null, null, null)

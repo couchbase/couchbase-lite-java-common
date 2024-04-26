@@ -16,8 +16,8 @@ extern "C" {
  * Method:    count
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_count
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_count
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -25,8 +25,8 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_count
  * Method:    get
  * Signature: (JJ)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_get
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_get
         (JNIEnv *, jclass, jlong, jlong);
 
 /*
@@ -34,8 +34,8 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_get
  * Method:    init
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_init
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_init
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -43,8 +43,8 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_init
  * Method:    getValueAt
  * Signature: (JI)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValueAt
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValueAt
         (JNIEnv *, jclass, jlong, jint);
 
 /*
@@ -52,8 +52,8 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValueAt
  * Method:    next
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_next
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_next
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -61,8 +61,8 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_next
  * Method:    getValue
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValue
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValue
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -70,8 +70,8 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValue
  * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_free
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_free
         (JNIEnv *, jclass, jlong);
 
 // ----------------------------------------------------------------------------
@@ -82,71 +82,71 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_free
  * Method:    count
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_count
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_count
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLDict
  * Method:    get
  * Signature: (J[B)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_get
-        (JNIEnv *, jclass, jlong, jbyteArray);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_get
+        (JNIEnv * , jclass, jlong, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLDict
  * Method:    init
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_init
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_init
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLDict
  * Method:    getCount
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_getCount
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_getCount
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLDict
  * Method:    next
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_next
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_next
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLDict
  * Method:    getKey
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_getKey
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_getKey
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLDict
  * Method:    getValue
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_getValue
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_getValue
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLDict
  * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_free
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_free
         (JNIEnv *, jclass, jlong);
 
 // ----------------------------------------------------------------------------
@@ -157,171 +157,171 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_free
  * Method:    fromTrustedData
  * Signature: ([B)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromTrustedData
-        (JNIEnv *, jclass, jbyteArray);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromTrustedData
+        (JNIEnv * , jclass, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    fromData
  * Signature: (JJ)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromData
-        (JNIEnv *, jclass, jlong, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromData
+        (JNIEnv * , jclass, jlong, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    getType
  * Signature: (J)I
  */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_getType
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jint
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_getType
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    isInteger
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isInteger
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isInteger
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    isUnsigned
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isUnsigned
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isUnsigned
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    isDouble
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isDouble
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isDouble
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    toString
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toString
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toString
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    toJSON
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    toJSON5
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON5
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON5
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asData
  * Signature: (J)[B
  */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asData
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jbyteArray
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asData
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asBool
  * Signature: (J)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asBool
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asBool
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asUnsigned
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asUnsigned
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asUnsigned
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asInt
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asInt
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asInt
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asFloat
  * Signature: (J)F
  */
-JNIEXPORT jfloat JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asFloat
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jfloat
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asFloat
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asDouble
  * Signature: (J)D
  */
-JNIEXPORT jdouble JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDouble
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jdouble
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDouble
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asString
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asString
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asString
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asArray
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asArray
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asArray
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    asDict
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDict
-        (JNIEnv *, jclass, jlong);
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDict
+        (JNIEnv * , jclass, jlong);
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLValue
  * Method:    json5toJson
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_json5toJson
-        (JNIEnv *, jclass, jstring);
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_json5toJson
+        (JNIEnv * , jclass, jstring);
 
 // ----------------------------------------------------------------------------
 // NativeFLSliceResult
@@ -331,9 +331,9 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_json5toJson
  * Method:    getBuf
  * Signature: (JJ)[B
  */
-JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult_getBuf
-        (JNIEnv *, jclass, jlong, jlong);
+JNIEXPORT jbyteArray
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult_getBuf
+        (JNIEnv * , jclass, jlong, jlong);
 
 #ifdef __cplusplus
 }

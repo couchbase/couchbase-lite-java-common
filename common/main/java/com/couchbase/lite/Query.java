@@ -41,7 +41,7 @@ public interface Query {
      * also re-execute the query if there is at least one listener listening for
      * changes.
      */
-    void setParameters(Parameters parameters);
+    void setParameters(Parameters parameters) throws CouchbaseLiteException;
 
     /**
      * Executes the query. The returning a result set that enumerates result rows one at a time.

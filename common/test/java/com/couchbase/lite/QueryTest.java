@@ -17,8 +17,6 @@ package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,7 +27,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -787,7 +784,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testParameters() {
+    public void testParameters() throws CouchbaseLiteException {
         loadDocuments(100);
 
         Query query = QueryBuilder
@@ -924,7 +921,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLimit() {
+    public void testLimit() throws CouchbaseLiteException {
         loadDocuments(10);
 
         Query query = QueryBuilder
@@ -962,7 +959,7 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testLimitOffset() {
+    public void testLimitOffset() throws CouchbaseLiteException {
         loadDocuments(10);
 
         Query query = QueryBuilder
@@ -1111,7 +1108,7 @@ public class QueryTest extends BaseQueryTest {
             query,
             1,
             (n, result) -> {
-                assertEquals(50.5F, (float) result.getValue(0), 0.0F);
+                assertEquals(50.5, (Double) result.getValue(0), 0.0F);
                 assertEquals(100L, (long) result.getValue(1));
                 assertEquals(1L, (long) result.getValue(2));
                 assertEquals(100L, (long) result.getValue(3));
@@ -1641,67 +1638,54 @@ public class QueryTest extends BaseQueryTest {
     public void testJoinWithEmptyArgs1() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .join((Join[]) null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .join((Join[]) null));
     }
 
     @Test
     public void testJoinWithEmptyArgs2() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .where(null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .where(null));
     }
 
     @Test
     public void testJoinWithEmptyArgs3() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .groupBy((Expression[]) null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .groupBy((Expression[]) null));
     }
 
     @Test
     public void testJoinWithEmptyArgs4() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .orderBy((Ordering[]) null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .orderBy((Ordering[]) null));
     }
 
     @Test
     public void testJoinWithEmptyArgs5() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .limit(null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .limit(null));
     }
 
     @Test
     public void testJoinWithEmptyArgs6() {
         assertThrows(
             IllegalArgumentException.class,
-            () -> {
-                QueryBuilder.select(SelectResult.all())
-                    .from(DataSource.collection(getTestCollection()).as("main"))
-                    .limit(null, null);
-            });
+            () -> QueryBuilder.select(SelectResult.all())
+                .from(DataSource.collection(getTestCollection()).as("main"))
+                .limit(null, null));
     }
 
     //https://github.com/couchbase/couchbase-lite-android/issues/1785
@@ -2940,16 +2924,16 @@ public class QueryTest extends BaseQueryTest {
     }
 
     @Test
-    public void testStringToUTC() throws ParseException {
+    public void testStringToUTC() {
         createDateDocs();
 
         ArrayList<String> expectedLocal = new ArrayList<>();
-        expectedLocal.add(localToUTC("yyyy-MM-dd", "1985-10-26"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm", "1985-10-26 01:21"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss", "1985-10-26 01:21:30"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.500"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.550"));
-        expectedLocal.add(localToUTC("yyyy-MM-dd HH:mm:ss.SSS", "1985-10-26 01:21:30.555"));
+        expectedLocal.add("1985-10-26T07:00:00Z");
+        expectedLocal.add("1985-10-26T08:21:00Z");
+        expectedLocal.add("1985-10-26T08:21:30Z");
+        expectedLocal.add("1985-10-26T08:21:30.500Z");
+        expectedLocal.add("1985-10-26T08:21:30.550Z");
+        expectedLocal.add("1985-10-26T08:21:30.555Z");
 
         ArrayList<String> expectedJST = new ArrayList<>();
         expectedJST.add(null);
@@ -3289,16 +3273,6 @@ public class QueryTest extends BaseQueryTest {
         doc.setString("title", title);
         doc.setBoolean("complete", complete);
         return saveDocInTestCollection(doc);
-    }
-
-    private String localToUTC(String format, String dateStr) throws ParseException {
-        TimeZone tz = TimeZone.getDefault();
-        SimpleDateFormat df = new SimpleDateFormat(format);
-        df.setTimeZone(tz);
-        Date date = df.parse(dateStr);
-        df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-        df.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return df.format(date).replace(".000", "");
     }
 
     private void liveQueryNoUpdate(Fn.Consumer<QueryChange> test) throws InterruptedException {

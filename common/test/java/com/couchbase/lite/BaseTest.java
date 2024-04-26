@@ -33,12 +33,12 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Database;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
@@ -48,7 +48,11 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 
 @SuppressWarnings("ConstantConditions")
@@ -68,15 +72,27 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
+    private static final class ClassWatcher extends TestWatcher {
+        public String className = BaseTest.class.getSimpleName();
+
+        @Override
+        protected void starting(Description description) {
+            className = description.getTestClass().getSimpleName();
+        }
+    }
+
+    @ClassRule
+    public static final ClassWatcher CLASS_WATCHER = new ClassWatcher();
+
     @BeforeClass
-    public static void setUpPlatformSuite() { setupLogging(">>>>>>>>>>>> Suite started"); }
+    public static void setUpPlatformSuite() { setupLogging(">>>>>>>>>>>> Suite started: " + CLASS_WATCHER.className); }
 
     @AfterClass
     public static void tearDownBaseTestSuite() {
         for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
         SCRATCH_DIRS.clear();
 
-        Report.log("<<<<<<<<<<<< Suite completed");
+        Report.log("<<<<<<<<<<<< Suite completed: " + CLASS_WATCHER.className);
     }
 
     // Make this package protected method visible
@@ -99,6 +115,17 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
     }
 
+    // See if the container contains an item that matches using the passed comparitor
+    public static <T extends Throwable> boolean containsWithComparator(
+        java.util.Collection<T> collection,
+        T target,
+        Fn.BiFunction<T, T, Boolean> comp) {
+        if (collection.isEmpty()) { return false; }
+        for (T obj: collection) {
+            if (comp.apply(target, obj)) { return true; }
+        }
+        return false;
+    }
 
     ///////////////////////////////   E X C E P T I O N   A S S E R T I O N S   ///////////////////////////////
 
@@ -136,6 +163,16 @@ public abstract class BaseTest extends PlatformBaseTest {
         catch (Exception e) {
             assertIsCBLException(e, domain, code);
         }
+    }
+
+    public static boolean compareExceptions(Throwable e1, Throwable e2) {
+        if (!(e1 instanceof CouchbaseLiteException) || !(e2 instanceof CouchbaseLiteException)) {
+            return e1.getClass().equals(e2.getClass());
+        }
+
+        CouchbaseLiteException cbl1 = (CouchbaseLiteException) e1;
+        CouchbaseLiteException cbl2 = (CouchbaseLiteException) e2;
+        return (cbl1.getCode() == cbl2.getCode()) && (cbl1.getDomain().equals(cbl2.getDomain()));
     }
 
     private static void setupLogging(String msg) {
@@ -226,6 +263,11 @@ public abstract class BaseTest extends PlatformBaseTest {
         if (exclusion != null) { Assume.assumeFalse(exclusion.msg, exclusion.test.get()); }
     }
 
+    protected final void skipTestUnless(@NonNull String tag) {
+        final Exclusion exclusion = getExclusions(tag);
+        if (exclusion != null) { Assume.assumeTrue(exclusion.msg, exclusion.test.get()); }
+    }
+
     protected final String getScratchDirectoryPath(@NonNull String name) {
         try {
             String path = FileUtils.verifyDir(new File(getTmpDir(), name)).getCanonicalPath();
@@ -241,18 +283,56 @@ public abstract class BaseTest extends PlatformBaseTest {
     @NonNull
     protected final Database createDb(@NonNull String name) { return createDb(name, null); }
 
-    // Prefer this method to any other way of creating a new database
+    // Prefer this method to any other way of creating a new database (ceptin, of course, the method above)
     @NonNull
     protected final Database createDb(@NonNull String name, @Nullable DatabaseConfiguration config) {
+        if (config == null) { config = new DatabaseConfiguration(); }
+
         final String dbName = getUniqueName(name);
-        final File dbDir = new File(
-            (config != null) ? config.getDirectory() : CouchbaseLiteInternal.getDefaultDbDirPath(),
-            dbName + C4Database.DB_EXTENSION);
+        final File dbDir = new File(config.getDirectory(), dbName + C4Database.DB_EXTENSION);
         assertFalse(dbDir.exists());
-        Database db;
+
+        final Database db;
         try { db = (config == null) ? new Database(dbName) : new Database(dbName, config); }
         catch (Exception e) { throw new AssertionError("Failed creating database " + name, e); }
+
         assertTrue(dbDir.exists());
+        return db;
+    }
+
+    // Prefer this method to any other way of copying a database
+    @NonNull
+    protected final Database copyDb(
+        @NonNull String srcDbPath,
+        @NonNull String srcDbName,
+        @NonNull String dstDbName) {
+        return copyDb(srcDbPath, srcDbName, dstDbName, null);
+    }
+
+    // Prefer this method to any other way of copying a database (ceptin, of course, the method above)
+    @NonNull
+    protected final Database copyDb(
+        @NonNull String srcDbPath,
+        @NonNull String srcDbName,
+        @NonNull String dstDbName,
+        @Nullable DatabaseConfiguration config) {
+        if (config == null) { config = new DatabaseConfiguration(); }
+
+        final File srcDbFile = new File(srcDbPath, srcDbName + C4Database.DB_EXTENSION);
+        assertTrue(srcDbFile.exists());
+
+        final String dbName = getUniqueName(dstDbName);
+        final File dstDbFile = new File(config.getDirectory(), dbName + C4Database.DB_EXTENSION);
+        assertFalse(dstDbFile.exists());
+
+        final Database db;
+        try {
+            Database.copy(srcDbFile, dbName, config);
+            db = new Database(dbName, config);
+        }
+        catch (Exception e) { throw new AssertionError("Failed creating database " + dstDbFile.getPath(), e); }
+
+        assertTrue(dstDbFile.exists());
         return db;
     }
 

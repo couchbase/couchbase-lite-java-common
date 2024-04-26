@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 
@@ -43,15 +44,22 @@ public final class FLDictIterator extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    public long getCount() { return impl.nGetCount(getPeer()); }
+    public long getCount() { return withPeerOrThrow(impl::nGetCount); }
 
-    public boolean next() { return impl.nNext(getPeer()); }
+    /**
+     * Advances the iterator to the next key/value.
+     * NOTE: It is illegal to call this when the iterator is already at the end.
+     * In particular, calling this when the dict is empty is always illegal
+     */
+    public void next() { withPeerOrThrow(impl::nNext); }
 
     @Nullable
-    public String getKey() { return impl.nGetKey(getPeer()); }
+    public String getKey() { return withPeerOrNull(impl::nGetKey); }
 
     @NonNull
-    public FLValue getValue() { return FLValue.getFLValue(impl.nGetValue(getPeer())); }
+    public FLValue getValue() {
+        return this.<FLValue, CouchbaseLiteError>withPeerOrThrow(p -> FLValue.getFLValue(impl.nGetValue(p)));
+    }
 
     @Override
     public void close() { closePeer(null); }

@@ -88,7 +88,7 @@ abstract class AbstractDatabase extends BaseDatabase
     private static final String ERROR_RESOLVER_FAILED = "Conflict resolution failed for document '%s': %s";
     private static final String WARN_WRONG_ID
         = "Conflict resolution for a document produced a new document with ID '%s', "
-        + "which does not match the IDs of the conflicting documents (%s)";
+        + "which does not match the IDs of the conflicting document (%s)";
     private static final String WARN_WRONG_COLLECTION
         = "Conflict resolution for document '%s' produced a new document belonging to collection '%s', "
         + "not the collection into which it would be stored (%s)";
@@ -639,7 +639,7 @@ abstract class AbstractDatabase extends BaseDatabase
             synchronized (getDbLock()) { defaultCollection = getDefaultCollectionLocked(); }
         }
         catch (CouchbaseLiteException e) {
-            throw new IllegalStateException("Failed getting default collection", e);
+            throw new CouchbaseLiteError("Failed getting default collection", e);
         }
 
         return (defaultCollection == null) ? 0 : defaultCollection.getCount();
@@ -656,12 +656,12 @@ abstract class AbstractDatabase extends BaseDatabase
     /**
      * Gets an existing Document with the given ID from the default collection.
      * If the document with the given ID doesn't exist in the default collection,
-     * the method will return null. If the database is closed the method will
-     * throw an IllegalStateException
+     * the method will return null.  If the default collection does not exist or if
+     * the database is closed, the method will throw an CouchbaseLiteError
      *
      * @param id the document ID
      * @return the Document object or null
-     * @throws IllegalStateException when the database is closed
+     * @throws CouchbaseLiteError when the database is closed or the default collection has been deleted
      * @deprecated Use getDefaultCollection().getDocument()
      */
     @SuppressWarnings("PMD.PreserveStackTrace")
@@ -724,7 +724,7 @@ abstract class AbstractDatabase extends BaseDatabase
         try { return getDefaultCollectionOrThrow().save(document, conflictHandler); }
         catch (CouchbaseLiteException e) {
             if (!(CBLError.Domain.CBLITE.equals(e.getDomain()) && (CBLError.Code.NOT_OPEN == e.getCode()))) { throw e; }
-            else { throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e); }
+            else { throw new CouchbaseLiteError(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), e); }
         }
     }
 
@@ -1023,7 +1023,8 @@ abstract class AbstractDatabase extends BaseDatabase
     Set<Collection> getDefaultCollectionAsSet() {
         final Collection defaultCollection;
         try { defaultCollection = Collection.getDefaultCollection(this.getDatabase()); }
-        catch (CouchbaseLiteException e) { throw new IllegalStateException("Can't get default collection", e); }
+        catch (CouchbaseLiteException e) { throw new CouchbaseLiteError("Can't get default collection", e); }
+        if (defaultCollection == null) { throw new IllegalArgumentException("Database " + getName() + "has no default collection"); }
         final HashSet<Collection> collections = new HashSet<>();
         collections.add(defaultCollection);
         return collections;
@@ -1305,7 +1306,7 @@ abstract class AbstractDatabase extends BaseDatabase
         }
         catch (CouchbaseLiteException e) { err = e; }
 
-        throw new IllegalStateException(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), err);
+        throw new CouchbaseLiteError(Log.lookupStandardMessage("DBClosedOrCollectionDeleted"), err);
     }
 
     @NonNull
@@ -1417,7 +1418,7 @@ abstract class AbstractDatabase extends BaseDatabase
 
         final Collection localCollection = localDoc.getCollection();
         if (localCollection == null) {
-            throw new IllegalStateException("Local doc does not belong to any collection: " + docID);
+            throw new CouchbaseLiteError("Local doc does not belong to any collection: " + docID);
         }
 
         final Document resolvedDoc = runClientResolver(resolver, docID, localDoc, remoteDoc);

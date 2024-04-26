@@ -431,7 +431,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @NonNull
     @Override
-    public Iterator<String> iterator() { return getKeys().iterator(); }
+    public Iterator<String> iterator() { return internalDict.iterator(); }
 
     //---------------------------------------------
     // Override
@@ -572,7 +572,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @NonNull
     final FLSliceResult encode() throws LiteCoreException {
         final Database db = getDatabase();
-        if (db == null) { throw new IllegalStateException("encode called with null database"); }
+        if (db == null) { throw new CouchbaseLiteError("encode called with null database"); }
 
         try (FLEncoder encoder = db.getSharedFleeceEncoder()) {
             encoder.setArg(Blob.ENCODER_ARG_DB, getDatabase());
@@ -617,7 +617,7 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
 
         final Database db = getDatabase();
-        if (db == null) { throw new IllegalStateException("document has not been saved to a database"); }
+        if (db == null) { throw new CouchbaseLiteError("document has not been saved to a database"); }
 
         final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
         internalDict = (Dictionary) Preconditions.assertNotNull(newRoot.asNative(), "root dictionary");

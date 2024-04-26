@@ -18,9 +18,9 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.couchbase.lite.AbstractIndex;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.QueryLanguage;
 import com.couchbase.lite.internal.core.impl.NativeC4Query;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -30,7 +30,7 @@ public final class C4Query extends C4NativePeer {
     public interface NativeImpl {
         long nCreateQuery(long db, int language, @NonNull String params) throws LiteCoreException;
         void nSetParameters(long peer, long paramPtr, long paramSize);
-        @NonNull
+        @Nullable
         String nExplain(long peer);
         long nRun(long peer, long paramPtr, long paramSize) throws LiteCoreException;
         int nColumnCount(long peer);
@@ -45,7 +45,7 @@ public final class C4Query extends C4NativePeer {
     @NonNull
     public static C4Query create(
         @NonNull C4Database db,
-        @NonNull AbstractIndex.QueryLanguage language,
+        @NonNull QueryLanguage language,
         @NonNull String expression)
         throws LiteCoreException {
         return new C4Query(NATIVE_IMPL, db.getPeer(), language, expression);
@@ -65,10 +65,10 @@ public final class C4Query extends C4NativePeer {
     private C4Query(
         @NonNull NativeImpl impl,
         long db,
-        @NonNull AbstractIndex.QueryLanguage language,
+        @NonNull QueryLanguage language,
         @NonNull String expression)
         throws LiteCoreException {
-        super(impl.nCreateQuery(Preconditions.assertNotZero(db, "db peer ref"), language.getValue(), expression));
+        super(impl.nCreateQuery(Preconditions.assertNotZero(db, "db peer ref"), language.getCode(), expression));
         this.impl = impl;
     }
 

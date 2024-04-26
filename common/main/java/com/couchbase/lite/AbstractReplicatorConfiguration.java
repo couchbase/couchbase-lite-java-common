@@ -81,11 +81,11 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
         final Collection defaultCollection;
         try { defaultCollection = db.getDefaultCollection(); }
         catch (CouchbaseLiteException e) {
-            throw new IllegalStateException(Log.lookupStandardMessage("NoDefaultCollectionInConfig"), e);
+            throw new CouchbaseLiteError(Log.lookupStandardMessage("NoDefaultCollectionInConfig"), e);
         }
 
         if (defaultCollection == null) {
-            throw new IllegalStateException(Log.lookupStandardMessage("NoDefaultCollectionInConfig"));
+            throw new CouchbaseLiteError(Log.lookupStandardMessage("NoDefaultCollectionInConfig"));
         }
 
         final Map<Collection, CollectionConfiguration> collections = new HashMap<>();
@@ -146,7 +146,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             Defaults.Replicator.ACCEPT_PARENT_COOKIES,
             null,
             Defaults.Replicator.MAX_ATTEMPTS_SINGLE_SHOT,
-            Defaults.Replicator.MAX_ATTEMPT_WAIT_TIME,
+            Defaults.Replicator.MAX_ATTEMPTS_WAIT_TIME,
             Defaults.Replicator.HEARTBEAT,
             Defaults.Replicator.ENABLE_AUTO_PURGE,
             db);
@@ -456,7 +456,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
                 type = com.couchbase.lite.ReplicatorType.PULL;
                 break;
             default:
-                throw new IllegalStateException("Unrecognized replicator type: " + replicatorType);
+                throw new CouchbaseLiteError("Unrecognized replicator type: " + replicatorType);
         }
         return setType(type);
     }
@@ -707,7 +707,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             case PULL:
                 return AbstractReplicatorConfiguration.ReplicatorType.PULL;
             default:
-                throw new IllegalStateException("Unrecognized replicator type: " + type);
+                throw new CouchbaseLiteError("Unrecognized replicator type: " + type);
         }
     }
 
@@ -722,7 +722,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public final byte[] getPinnedServerCertificate() {
         try { return (pinnedServerCertificate == null) ? null : pinnedServerCertificate.getEncoded(); }
         catch (CertificateEncodingException e) {
-            throw new IllegalStateException("Unrecognized certificate encoding", e);
+            throw new CouchbaseLiteError("Unrecognized certificate encoding", e);
         }
     }
 
@@ -736,7 +736,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
     public final Database getDatabase() {
         if (database != null) { return database; }
         // Can't change the nullity of this method: it has to throw.
-        throw new IllegalStateException("No database or collections provided for replication configuration");
+        throw new CouchbaseLiteError("No database or collections provided for replication configuration");
     }
 
     /**
@@ -830,6 +830,7 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
 
         if (authenticator != null) { buf.append('@'); }
         if (pinnedServerCertificate != null) { buf.append('^'); }
+        buf.append(' ');
 
         return "ReplicatorConfig{" + buf + target + '}';
     }

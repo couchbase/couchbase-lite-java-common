@@ -13,8 +13,8 @@ extern "C" {
  * Method:    getFromCollection
  * Signature: (JLjava/lang/String;ZZ)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFromCollection
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFromCollection
         (JNIEnv *, jclass, jlong, jstring, jboolean, jboolean);
 
 /*
@@ -22,8 +22,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFromCollection
  * Method:    createFromSlice
  * Signature: (JLjava/lang/String;JJI)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_createFromSlice
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_createFromSlice
         (JNIEnv *, jclass, jlong, jstring, jlong, jlong, jint);
 
 /*
@@ -31,17 +31,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_createFromSlice
  * Method:    getFlags
  * Signature: (J)I
  */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
- * Method:    getDocID
- * Signature: (J)Ljava/lang/String;
- */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getDocID
+JNIEXPORT jint
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -49,8 +40,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getDocID
  * Method:    getRevID
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevID
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevID
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -58,8 +49,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevID
  * Method:    getSequence
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSequence
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSequence
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -67,8 +58,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSequence
  * Method:    getSelectedRevID
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -76,8 +67,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID
  * Method:    getSelectedRevID
  * Signature: (J)J;
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getTimestamp
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getTimestamp
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -85,8 +76,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getTimestamp
  * Method:    getSelectedFlags
  * Signature: (J)I
  */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedFlags
+JNIEXPORT jint
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedFlags
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -94,8 +85,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedFlags
  * Method:    getSelectedSequence
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -103,8 +94,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedSequence
  * Method:    getSelectedBody2
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -112,8 +103,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2
  * Method:    save
  * Signature: (JI)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_save
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_save
         (JNIEnv *, jclass, jlong, jint);
 
 /*
@@ -121,17 +112,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_save
  * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
- * Method:    selectParentRevision
- * Signature: (J)Z
- */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectParentRevision
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -139,8 +121,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectParentRevision
  * Method:    selectNextLeafRevision
  * Signature: (JZZ)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectNextLeafRevision
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectNextLeafRevision
         (JNIEnv *, jclass, jlong, jboolean, jboolean);
 
 /*
@@ -148,8 +130,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectNextLeafRevisi
  * Method:    resolveConflict
  * Signature: (JLjava/lang/String;Ljava/lang/String;[BI)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_resolveConflict
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_resolveConflict
         (JNIEnv *, jclass, jlong, jstring, jstring, jbyteArray, jint);
 
 /*
@@ -157,8 +139,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_resolveConflict
  * Method:    update2
  * Signature: (JJJI)J
  */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_update2
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_update2
         (JNIEnv *, jclass, jlong, jlong, jlong, jint);
 
 /*
@@ -166,8 +148,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_update2
  * Method:    bodyAsJSON
  * Signature: (JZ)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON
         (JNIEnv *, jclass, jlong, jboolean);
 
 /*
@@ -175,8 +157,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON
  * Method:    dictContainsBlobs
  * Signature: (JJJ)Z
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Document_dictContainsBlobs
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_dictContainsBlobs
         (JNIEnv *, jclass, jlong, jlong, jlong);
 
 #ifdef __cplusplus

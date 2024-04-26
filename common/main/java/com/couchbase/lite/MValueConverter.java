@@ -18,8 +18,6 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLDict;
@@ -36,28 +34,39 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * This class exists to provide access to package visible symbols, to MValue
  */
 @Internal("This class is not part of the public API")
-public class MValueConverter {
+public abstract class MValueConverter {
+    public static final class NativeValue<T> {
+        public final boolean cacheIt;
+        @Nullable
+        public final T nVal;
+
+        public NativeValue(@Nullable T nVal, boolean cacheIt) {
+            this.cacheIt = cacheIt;
+            this.nVal = nVal;
+        }
+    }
+
     protected MValueConverter() { }
 
     //-------------------------------------------------------------------------
     // Protected methods
     //-------------------------------------------------------------------------
-    @Nullable
-    protected Object toNative(@NonNull MValue val, @Nullable MCollection parent, @NonNull AtomicBoolean cacheIt) {
+    @NonNull
+    protected NativeValue<?> toNative(@NonNull MValue val, @Nullable MCollection parent) {
         final FLValue value = Preconditions.assertNotNull(val.getValue(), "value");
         switch (value.getType()) {
             case FLConstants.ValueType.DICT:
-                cacheIt.set(true);
                 return mValueToDictionary(val, Preconditions.assertNotNull(parent, "parent"));
             case FLConstants.ValueType.ARRAY:
-                cacheIt.set(true);
-                return ((parent == null) || !parent.hasMutableChildren())
-                    ? new Array(val, parent)
-                    : new MutableArray(val, parent);
+                return new NativeValue<>(
+                    ((parent == null) || !parent.hasMutableChildren())
+                        ? new Array(val, parent)
+                        : new MutableArray(val, parent),
+                    true);
             case FLConstants.ValueType.DATA:
-                return new Blob("application/octet-stream", value.asData());
+                return new NativeValue<>(new Blob("application/octet-stream", value.asData()), false);
             default:
-                return value.asObject();
+                return new NativeValue<>(value.asObject(), false);
         }
     }
 
@@ -66,9 +75,9 @@ public class MValueConverter {
     //-------------------------------------------------------------------------
 
     @NonNull
-    private Object mValueToDictionary(@NonNull MValue mv, @NonNull MCollection parent) {
+    private NativeValue<?> mValueToDictionary(@NonNull MValue mv, @NonNull MCollection parent) {
         final MContext ctxt = parent.getContext();
-        if (!(ctxt instanceof DbContext)) { throw new IllegalStateException("Context is not DbContext: " + ctxt); }
+        if (!(ctxt instanceof DbContext)) { throw new CouchbaseLiteError("Context is not DbContext: " + ctxt); }
         final DbContext context = (DbContext) ctxt;
 
         final FLDict flDict = Preconditions.assertNotNull(mv.getValue(), "MValue").asFLDict();
@@ -77,12 +86,14 @@ public class MValueConverter {
         final String type = (flType == null) ? null : flType.asString();
 
         if (Blob.TYPE_BLOB.equals(type) || ((type == null) && isOldAttachment(flDict))) {
-            return new Blob(Preconditions.assertNotNull(context.getDatabase(), "database"), flDict.asDict());
+            return new NativeValue<>(
+                new Blob(Preconditions.assertNotNull(context.getDatabase(), "database"), flDict.asDict()),
+                true);
         }
 
-        return (parent.hasMutableChildren())
-            ? new MutableDictionary(mv, parent)
-            : new Dictionary(mv, parent);
+        return new NativeValue<>(
+            (parent.hasMutableChildren()) ? new MutableDictionary(mv, parent) : new Dictionary(mv, parent),
+            true);
     }
 
     // At some point in the past, attachments were dictionaries in a top-level

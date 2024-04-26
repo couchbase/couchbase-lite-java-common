@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4QueryEnumerator;
@@ -77,7 +78,7 @@ public final class C4QueryEnumerator extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    public boolean next() throws LiteCoreException { return impl.nNext(getPeer()); }
+    public boolean next() throws LiteCoreException { return withPeerOrThrow(impl::nNext); }
 
     /**
      * FLArrayIterator columns
@@ -86,7 +87,8 @@ public final class C4QueryEnumerator extends C4NativePeer {
      */
     @NonNull
     public FLArrayIterator getColumns() {
-        return FLArray.unmanagedIterator(impl.nGetColumns(getPeer()));
+        return this.<FLArrayIterator, CouchbaseLiteError>withPeerOrThrow(
+            p -> FLArray.unmanagedIterator(impl.nGetColumns(p)));
     }
 
     /**
@@ -94,7 +96,7 @@ public final class C4QueryEnumerator extends C4NativePeer {
      * This is how you tell a missing property value from a value that is JSON 'null',
      * since the value in the `columns` array will be a Fleece `null` either way.
      */
-    public long getMissingColumns() { return impl.nGetMissingColumns(getPeer()); }
+    public long getMissingColumns() { return withPeerOrThrow(impl::nGetMissingColumns); }
 
     @Override
     public void close() { closePeer(null); }

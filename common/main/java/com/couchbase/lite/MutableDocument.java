@@ -345,11 +345,11 @@ public final class MutableDocument extends Document implements MutableDictionary
      * Unimplemented: Mutable objects may not be encoded as JSON
      *
      * @return never
-     * @throws IllegalStateException always
+     * @throws CouchbaseLiteError always
      */
     @NonNull
     @Override
-    public String toJSON() { throw new IllegalStateException("Mutable objects may not be encoded as JSON"); }
+    public String toJSON() { throw new CouchbaseLiteError("Mutable objects may not be encoded as JSON"); }
 
     //---------------------------------------------
     // Private access

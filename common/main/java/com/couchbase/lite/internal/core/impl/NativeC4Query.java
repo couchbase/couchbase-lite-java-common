@@ -31,7 +31,7 @@ public final class NativeC4Query implements C4Query.NativeImpl {
     @Override
     public void nSetParameters(long peer, long paramPtr, long paramSize) { setParameters(peer, paramPtr, paramSize); }
 
-    @NonNull
+    @Nullable
     @Override
     public String nExplain(long peer) { return explain(peer); }
 
@@ -59,7 +59,7 @@ public final class NativeC4Query implements C4Query.NativeImpl {
 
     private static native void setParameters(long peer, long paramPtr, long paramSize);
 
-    @NonNull
+    @Nullable
     private static native String explain(long peer);
 
     private static native long run(long peer, long paramPtr, long paramSize)

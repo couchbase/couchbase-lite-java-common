@@ -21,6 +21,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
+
 @SuppressWarnings("PMD.TooManyMethods")
 public final class NativeFLEncoder implements FLEncoder.NativeImpl {
     @Override
@@ -95,7 +96,7 @@ public final class NativeFLEncoder implements FLEncoder.NativeImpl {
     private static native long newJSONEncoder();
 
     @NonNull
-    static native String finishJSON(long peer) throws LiteCoreException;
+    private static native String finishJSON(long peer) throws LiteCoreException;
 
 
     // FLEncoders

@@ -88,7 +88,7 @@ public final class LogFileConfiguration {
         this.directory = Preconditions.assertNotNull(directory, "directory");
         this.maxSize = (maxSize != null) ? maxSize : Defaults.LogFile.MAX_SIZE;
         this.maxRotateCount = (maxRotateCount != null) ? maxRotateCount : Defaults.LogFile.MAX_ROTATE_COUNT;
-        this.usePlaintext = (usePlaintext != null) ? usePlaintext : Defaults.LogFile.USE_PLAIN_TEXT;
+        this.usePlaintext = (usePlaintext != null) ? usePlaintext : Defaults.LogFile.USE_PLAINTEXT;
         this.readonly = readonly;
     }
 
@@ -108,7 +108,7 @@ public final class LogFileConfiguration {
      */
     @NonNull
     public LogFileConfiguration setMaxSize(long maxSize) {
-        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
+        if (readonly) { throw new CouchbaseLiteError("LogFileConfiguration is readonly mode."); }
 
         this.maxSize = Preconditions.assertNotNegative(maxSize, "max size");
         return this;
@@ -125,7 +125,7 @@ public final class LogFileConfiguration {
      */
     @NonNull
     public LogFileConfiguration setMaxRotateCount(int maxRotateCount) {
-        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
+        if (readonly) { throw new CouchbaseLiteError("LogFileConfiguration is readonly mode."); }
 
         this.maxRotateCount = Preconditions.assertNotNegative(maxRotateCount, "max rotation count");
         return this;
@@ -141,7 +141,7 @@ public final class LogFileConfiguration {
      */
     @NonNull
     public LogFileConfiguration setUsePlaintext(boolean usePlaintext) {
-        if (readonly) { throw new IllegalStateException("LogFileConfiguration is readonly mode."); }
+        if (readonly) { throw new CouchbaseLiteError("LogFileConfiguration is readonly mode."); }
 
         this.usePlaintext = usePlaintext;
         return this;

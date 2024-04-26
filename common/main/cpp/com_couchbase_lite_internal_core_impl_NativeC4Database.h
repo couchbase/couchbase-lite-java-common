@@ -7,12 +7,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    open
  * Signature: (Ljava/lang/String;Ljava/lang/String;II[B)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open
         (JNIEnv *, jclass, jstring, jstring, jint, jint, jbyteArray);
 
 /*
@@ -20,7 +22,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Datab
  * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_free
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_free
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -28,7 +31,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    copy
  * Signature: (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II[B)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy
         (JNIEnv *, jclass, jstring, jstring, jstring, jint, jint, jbyteArray);
 
 /*
@@ -36,7 +40,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    close
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_close
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_close
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -44,7 +49,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    delete
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_delete
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_delete
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -52,7 +58,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    deleteNamed
  * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed
         (JNIEnv *, jclass, jstring, jstring);
 
 /*
@@ -60,7 +67,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    rekey
  * Signature: (JI[B)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_rekey
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_rekey
         (JNIEnv *, jclass, jlong, jint, jbyteArray);
 
 /*
@@ -68,31 +76,17 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    getPath
  * Signature: (J)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPath
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPath
         (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    getDocumentCount
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getDocumentCount
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
- * Method:    purgeDoc
- * Signature: (JLjava/lang/String;)V
- */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_purgeDoc
-        (JNIEnv *, jclass, jlong, jstring);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    getPublicUUID
  * Signature: (J)[B
  */
-JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPublicUUID
+JNIEXPORT jbyteArray
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPublicUUID
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -100,7 +94,8 @@ JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4
  * Method:    beginTransaction
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_beginTransaction
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_beginTransaction
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -108,7 +103,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    endTransaction
  * Signature: (JZ)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_endTransaction
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_endTransaction
         (JNIEnv *, jclass, jlong, jboolean);
 
 /*
@@ -116,7 +112,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    setCookie
  * Signature: (JLjava/lang/String;Ljava/lang/String;Z)V
  */
-JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie
         (JNIEnv *, jclass, jlong, jstring, jstring, jboolean);
 
 /*
@@ -124,7 +121,8 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Databa
  * Method:    getCookies
  * Signature: (JLjava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies
+JNIEXPORT jstring
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies
         (JNIEnv *, jclass, jlong, jstring);
 
 /*
@@ -132,7 +130,8 @@ JNIEXPORT jstring JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Dat
  * Method:    getSharedFleeceEncoder
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getSharedFleeceEncoder
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getSharedFleeceEncoder
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -140,7 +139,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Datab
  * Method:    getFLSharedKeys
  * Signature: (J)J
  */
-JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getFLSharedKeys
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getFLSharedKeys
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -148,7 +148,8 @@ JNIEXPORT jlong JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Datab
  * Method:    maintenance
  * Signature: (JI)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance
         (JNIEnv *, jclass, jlong, jint);
 
 
@@ -159,8 +160,8 @@ JNIEXPORT jboolean JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Da
  * Method:    getScopes
  * Signature: (J)Ljava/util.Set;
  */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames
         (JNIEnv *, jclass, jlong);
 
 /*
@@ -168,8 +169,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames
  * Method:    hasScope
  * Signature: (JLjava/lang/String;)Z;
  */
-JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_hasScope
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_hasScope
         (JNIEnv *, jclass, jlong, jstring);
 
 /*
@@ -177,8 +178,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_hasScope
  * Method:    collectionNames
  * Signature: (JLjava/lang/String;)Ljava/util.Set;
  */
-JNIEXPORT jobject JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames
+JNIEXPORT jobject
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames
         (JNIEnv *, jclass, jlong, jstring);
 
 /*
@@ -186,8 +187,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames
  * Method:    deleteCollection
  * Signature: (JLjava/lang/String;Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection
         (JNIEnv *, jclass, jlong, jstring, jstring);
 
 #ifdef __cplusplus

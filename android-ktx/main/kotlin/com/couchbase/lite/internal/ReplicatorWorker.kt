@@ -21,6 +21,7 @@ import androidx.work.Data
 import androidx.work.WorkerParameters
 import com.couchbase.lite.AbstractReplicatorConfiguration
 import com.couchbase.lite.CBLError
+import com.couchbase.lite.CouchbaseLiteError
 import com.couchbase.lite.CouchbaseLiteException
 import com.couchbase.lite.LogDomain
 import com.couchbase.lite.Replicator
@@ -169,7 +170,7 @@ class ReplicatorWorker(appContext: Context, params: WorkerParameters) : Coroutin
         try {
             return (Class.forName(factoryClass).getDeclaredConstructor().newInstance() as WorkManagerReplicatorFactory)
         } catch (e: Exception) {
-            throw IllegalStateException("Failed creating factory ${factoryClass}", e)
+            throw CouchbaseLiteError("Failed creating factory ${factoryClass}", e)
         }
     }
 

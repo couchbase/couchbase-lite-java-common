@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
@@ -206,91 +207,104 @@ public abstract class FLEncoder extends C4NativePeer {
         synchronized (arguments) { return arguments.get(key); }
     }
 
-    public boolean writeNull() { return impl.nWriteNull(getPeer()); }
+    public boolean writeNull() { return withPeerOrThrow(impl::nWriteNull); }
 
-    public boolean writeString(String value) { return impl.nWriteString(getPeer(), value); }
+    public boolean writeString(@NonNull String value) {
+        return this.<Boolean, CouchbaseLiteError>withPeerOrThrow(p -> impl.nWriteString(p, value));
+    }
 
-    public boolean writeString(char[] value) { return impl.nWriteStringChars(getPeer(), value); }
+    public boolean writeString(@NonNull char[] value) {
+        return this.<Boolean, CouchbaseLiteError>withPeerOrThrow(p -> impl.nWriteStringChars(p, value));
+    }
 
-    public boolean writeData(byte[] value) { return impl.nWriteData(getPeer(), value); }
+    public boolean writeData(@NonNull byte[] value) {
+        return this.<Boolean, CouchbaseLiteError>withPeerOrThrow(p -> impl.nWriteData(p, value));
+    }
 
-    public boolean beginDict(long reserve) { return impl.nBeginDict(getPeer(), reserve); }
+    public boolean beginDict(long reserve) {
+        return this.<Boolean, CouchbaseLiteError>withPeerOrThrow(p -> impl.nBeginDict(p, reserve));
+    }
 
-    public boolean endDict() { return impl.nEndDict(getPeer()); }
+    public boolean endDict() { return withPeerOrThrow(impl::nEndDict); }
 
-    public boolean beginArray(long reserve) { return impl.nBeginArray(getPeer(), reserve); }
+    public boolean beginArray(long reserve) {
+        return this.<Boolean, CouchbaseLiteError>withPeerOrThrow(p -> impl.nBeginArray(p, reserve));
+    }
 
-    public boolean endArray() { return impl.nEndArray(getPeer()); }
+    public boolean endArray() { return withPeerOrThrow(impl::nEndArray); }
 
-    public boolean writeKey(String slice) { return impl.nWriteKey(getPeer(), slice); }
+    public boolean writeKey(String slice) {
+        return this.<Boolean, CouchbaseLiteError>withPeerOrThrow(p -> impl.nWriteKey(p, slice));
+    }
 
     @SuppressWarnings({"unchecked", "PMD.NPathComplexity"})
     public boolean writeValue(@Nullable Object value) {
-        final long peer = getPeer();
-        // null
-        if (value == null) { return impl.nWriteNull(peer); }
+        return withPeerOrThrow(peer -> {
+            // null
+            if (value == null) { return impl.nWriteNull(peer); }
 
-        // boolean
-        if (value instanceof Boolean) { return impl.nWriteBool(peer, (Boolean) value); }
+            // boolean
+            if (value instanceof Boolean) { return impl.nWriteBool(peer, (Boolean) value); }
 
-        // Number
-        if (value instanceof Number) {
-            // Integer
-            if (value instanceof Integer) { return impl.nWriteInt(peer, ((Integer) value).longValue()); }
+            // Number
+            if (value instanceof Number) {
+                // Integer
+                if (value instanceof Integer) { return impl.nWriteInt(peer, ((Integer) value).longValue()); }
 
-            // Long
-            if (value instanceof Long) { return impl.nWriteInt(peer, (Long) value); }
+                // Long
+                if (value instanceof Long) { return impl.nWriteInt(peer, (Long) value); }
 
-            // Short
-            if (value instanceof Short) { return impl.nWriteInt(peer, ((Short) value).longValue()); }
+                // Short
+                if (value instanceof Short) { return impl.nWriteInt(peer, ((Short) value).longValue()); }
 
-            // Double
-            if (value instanceof Double) { return impl.nWriteDouble(peer, (Double) value); }
+                // Double
+                if (value instanceof Double) { return impl.nWriteDouble(peer, (Double) value); }
 
-            // Float
-            return impl.nWriteFloat(peer, (Float) value);
-        }
+                // Float
+                return impl.nWriteFloat(peer, (Float) value);
+            }
 
-        // String
-        if (value instanceof String) { return impl.nWriteString(peer, (String) value); }
+            // String
+            if (value instanceof String) { return impl.nWriteString(peer, (String) value); }
 
-        // String (represented as char[])
-        if (value instanceof char[]) { return writeString((char[]) value); }
+            // String (represented as char[])
+            if (value instanceof char[]) { return writeString((char[]) value); }
 
-        // byte[]
-        if (value instanceof byte[]) { return impl.nWriteData(peer, (byte[]) value); }
+            // byte[]
+            if (value instanceof byte[]) { return impl.nWriteData(peer, (byte[]) value); }
 
-        // List
-        if (value instanceof List) { return write((List<?>) value); }
+            // List
+            if (value instanceof List) { return write((List<?>) value); }
 
-        // Map
-        if (value instanceof Map) { return write((Map<String, Object>) value); }
+            // Map
+            if (value instanceof Map) { return write((Map<String, Object>) value); }
 
-        // FLValue
-        if (value instanceof FLValue) {
-            final Boolean val = ((FLValue) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
-            return (val != null) && val;
-        }
+            // FLValue
+            if (value instanceof FLValue) {
+                final Boolean val = ((FLValue) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
+                return (val != null) && val;
+            }
 
-        // FLDict
-        if (value instanceof FLDict) {
-            final Boolean val = ((FLDict) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
-            return (val != null) && val;
-        }
+            // FLDict
+            if (value instanceof FLDict) {
+                final Boolean val = ((FLDict) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
+                return (val != null) && val;
+            }
 
-        // FLArray
-        if (value instanceof FLArray) {
-            final Boolean val = ((FLArray) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
-            return (val != null) && val;
-        }
+            // FLArray
+            if (value instanceof FLArray) {
+                final Boolean val = ((FLArray) value).withContent(hdl -> impl.nWriteValue(peer, hdl));
+                return (val != null) && val;
+            }
 
-        // FLEncodable
-        if (value instanceof FLEncodable) {
-            ((FLEncodable) value).encodeTo(this);
-            return true;
-        }
+            // FLEncodable
+            if (value instanceof FLEncodable) {
+                ((FLEncodable) value).encodeTo(this);
+                return true;
+            }
 
-        return false;
+            return false;
+        });
     }
 
     public boolean write(@Nullable Map<String, Object> map) {

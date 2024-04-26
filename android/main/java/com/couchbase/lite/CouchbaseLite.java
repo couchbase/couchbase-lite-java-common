@@ -26,21 +26,23 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
 
 public final class CouchbaseLite {
     // Utility class
-    private CouchbaseLite() {}
+    private CouchbaseLite() { }
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
      *
      * @param ctxt the ApplicationContext.
-     * @throws IllegalStateException on initialization failure
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init(@NonNull Context ctxt) { init(ctxt, BuildConfig.CBL_DEBUG); }
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
+     * Debugging mode is not supported for client code.  Please use it only when advised to do
+     * so by Couchbase Support Engineering
      *
-     * @param debug true to enable debugging
-     * @throws IllegalStateException on initialization failure
+     * @param debug true to enable debugging (Unsupported)
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug) {
         init(ctxt, debug, ctxt.getFilesDir(), new File(ctxt.getFilesDir(), CouchbaseLiteInternal.SCRATCH_DIR_NAME));
@@ -48,17 +50,18 @@ public final class CouchbaseLite {
 
     /**
      * Initialize CouchbaseLite library.
+     * Debugging mode is not supported for client code.  Please use it only when advised to do
+     * so by Couchbase Support Engineering
      * This method allows specifying a default root directory for database files,
-     * and the scratch directory used for SQLite temporary files.
-     * Use it with great caution.
+     * and the scratch directory used for SQLite temporary files. Use it with great caution.
      *
      * @param ctxt       Application context
      * @param debug      to enable debugging
      * @param rootDir    default directory for databases
      * @param scratchDir scratch directory for SQLite
-     * @throws IllegalStateException on initialization failure
+     * @throws CouchbaseLiteError on initialization failure
      */
     public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
-        CouchbaseLiteInternal.init(debug, rootDir, scratchDir, ctxt);
+        CouchbaseLiteInternal.init(ctxt, debug, rootDir, scratchDir);
     }
 }

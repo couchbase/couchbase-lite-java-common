@@ -25,7 +25,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.couchbase.lite.internal.DbContext;
 import com.couchbase.lite.internal.core.C4QueryEnumerator;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -68,7 +67,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @NonNull
     private final Map<String, Integer> columnNames;
     @NonNull
-    private final DbContext context;
+    private final ResultContext context;
 
     @GuardedBy("lock")
     @Nullable
@@ -86,9 +85,9 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         @NonNull AbstractQuery query,
         @Nullable C4QueryEnumerator c4enum,
         @NonNull Map<String, Integer> cols) {
-        this.query = query;
-        this.columnNames = cols;
-        this.context = new DbContext(query.getDatabase());
+        this.query = Preconditions.assertNotNull(query, "query");
+        this.columnNames = Preconditions.assertNotNull(cols, "columns");
+        this.context = new ResultContext(query.getDatabase(), this);
         this.c4enum = c4enum;
     }
 
@@ -108,8 +107,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
      */
     @Nullable
     public Result next() {
-        Preconditions.assertNotNull(query, "query");
-
         final LiteCoreException err;
         synchronized (lock) {
             if ((c4enum == null) || (isAllEnumerated)) { return null; }
@@ -120,7 +117,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
                     return null;
                 }
 
-                return new Result(this, c4enum, context);
+                return new Result(context, c4enum);
             }
             catch (LiteCoreException e) { err = e; }
         }
@@ -132,7 +129,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Return a List of all Results.
-     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#iterator} and {@link ResultSet#iterator}
+     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#allResults} and {@link ResultSet#iterator}
      * method share same data structure. They cannot be used together.</p>
      *
      * @return List of Results
@@ -151,7 +148,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     /**
      * Return Iterator of Results.
-     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#iterator} and {@link ResultSet#iterator}
+     * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#allResults} and {@link ResultSet#iterator}
      * method share same data structure. They cannot be used together.</p>
      *
      * @return an iterator over the elements in this list in proper sequence
@@ -164,11 +161,30 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     public void close() {
         final C4QueryEnumerator qEnum;
         synchronized (lock) {
-            if (c4enum == null) { return; }
             qEnum = c4enum;
             c4enum = null;
         }
-        synchronized (getDbLock()) { qEnum.close(); }
+        if (qEnum == null) { return; }
+
+        final AbstractDatabase db = context.getDatabase();
+        if (db == null) { throw new IllegalStateException("Could not obtain db lock"); }
+
+        synchronized (db.getDbLock()) { qEnum.close(); }
+    }
+
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            final C4QueryEnumerator qEnum = c4enum;
+
+            // !!! This absolutely should hold the db lock the way close() does.
+            // If it does, though, it stands a good chance of timing out the finalizer thread.
+            // Cross your fingers and pray.
+            if (qEnum != null) { qEnum.close(); }
+        }
+        finally {
+            super.finalize();
+        }
     }
 
     //---------------------------------------------
@@ -191,19 +207,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     boolean isClosed() {
         synchronized (lock) { return c4enum == null; }
     }
-
-    //---------------------------------------------
-    // Private level access
-    //---------------------------------------------
-
-    @NonNull
-    private Object getDbLock() {
-        final AbstractQuery q = query;
-        if (q != null) {
-            final AbstractDatabase db = q.getDatabase();
-            if (db != null) { return db.getDbLock(); }
-        }
-        throw new IllegalStateException("Could not obtain db lock");
-    }
 }
+
 

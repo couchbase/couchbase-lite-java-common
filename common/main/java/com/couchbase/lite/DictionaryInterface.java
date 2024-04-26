@@ -73,5 +73,5 @@ public interface DictionaryInterface {
     Map<String, Object> toMap();
 
     @Nullable
-    String toJSON();
+    String toJSON() throws CouchbaseLiteException;
 }

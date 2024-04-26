@@ -18,6 +18,9 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 /**
  * Please see the comments in MValue
@@ -32,14 +35,13 @@ public abstract class MCollection implements Encodable {
     private final boolean mutable;
     private final boolean mutableChildren;
 
-    private long mutations;
+    private final AtomicBoolean mutated = new AtomicBoolean();
+    private final AtomicInteger localMutations = new AtomicInteger();
+
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-
-    // Convenience constructor for sub-classes
-    protected MCollection() { this(MContext.NULL, true); }
 
     protected MCollection(@Nullable MContext context, boolean isMutable) { this(null, null, context, isMutable); }
 
@@ -51,7 +53,7 @@ public abstract class MCollection implements Encodable {
     // Slot constructor
     protected MCollection(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
         this(slot, parent, ((slot.getValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
-        if (slot.isMutated()) { mutations = 1; }
+        if (slot.isMutated()) { mutated.set(true); }
     }
 
     private MCollection(
@@ -70,27 +72,38 @@ public abstract class MCollection implements Encodable {
     // Public Methods
     //---------------------------------------------
 
-    public boolean isMutated() { return mutations > 0; }
-
-    public long getMutationCount() { return mutations; }
-
     public final boolean isMutable() { return mutable; }
 
     public final boolean hasMutableChildren() { return mutableChildren; }
 
+    public boolean isMutated() { return mutated.get(); }
+
+    public final long getLocalMutationCount() { return localMutations.get(); }
+
     @Nullable
     public final MContext getContext() { return context; }
+
+    @NonNull
+    public final String getStateString() { return ((mutable) ? "+" : ".") + ((isMutated()) ? "!" : "."); }
 
     //---------------------------------------------
     // Protected Methods
     //---------------------------------------------
 
-    protected final void mutate() {
-        mutations++;
-        if (mutations > 1) { return; }
+    protected void assertOpen() {
+        if ((context != null) && context.isClosed()) {
+            throw new IllegalStateException("Cannot use a Fleece object after its parent has been closed");
+        }
+    }
+
+    protected final void mutate() { mutate(true); }
+
+    protected final void mutate(boolean isLocal) {
+        if (isLocal) { localMutations.incrementAndGet(); }
+
+        if (mutated.getAndSet(true)) { return; }
 
         if (slot != null) { slot.mutate(); }
-        if (parent != null) { parent.mutate(); }
+        if (parent != null) { parent.mutate(false); }
     }
 }
-

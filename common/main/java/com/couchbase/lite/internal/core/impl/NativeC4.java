@@ -7,7 +7,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4;
 
 
-public final class NativeC4 implements C4.NativeImpl{
+public final class NativeC4 implements C4.NativeImpl {
     @Override
     public void nSetenv(@NonNull String name, @NonNull String value, int overwrite) { setenv(name, value, overwrite); }
 
@@ -26,6 +26,9 @@ public final class NativeC4 implements C4.NativeImpl{
     public void nSetTempDir(@NonNull String tempDir) throws LiteCoreException { setTempDir(tempDir); }
 
     @Override
+    public void nSetExtPath(@NonNull String extDir) { setExtPath(extDir); }
+
+    @Override
     @Nullable
     public String nGetMessage(int domain, int code, int internalInfo) { return getMessage(domain, code, internalInfo); }
 
@@ -36,6 +39,8 @@ public final class NativeC4 implements C4.NativeImpl{
     private static native void debug(boolean debugging);
 
     private static native void setTempDir(@NonNull String tempDir) throws LiteCoreException;
+
+    private static native void setExtPath(@NonNull String extDir);
 
     @Nullable
     private static native String getMessage(int domain, int code, int internalInfo);

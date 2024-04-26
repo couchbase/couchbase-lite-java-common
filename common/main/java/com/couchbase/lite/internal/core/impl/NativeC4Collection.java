@@ -71,16 +71,54 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     public long nGetIndexesInfo(long peer) throws LiteCoreException { return getIndexesInfo(peer); }
 
     @Override
-    public void nCreateIndex(
+    public void nCreateValueIndex(long peer, String name, int qLanguage, String indexSpec) throws LiteCoreException {
+        createValueIndex(peer, name, qLanguage, indexSpec);
+    }
+
+    @Override
+    public void nCreateFullTextIndex(
         long peer,
         String name,
+        int qLanguage,
         String indexSpec,
-        int queryLanguage,
-        int indexType,
         String language,
         boolean ignoreDiacritics)
-    throws LiteCoreException {
-        createIndex(peer, name, indexSpec, queryLanguage, indexType, language, ignoreDiacritics);
+        throws LiteCoreException {
+        createFullTextIndex(peer, name, qLanguage, indexSpec, language, ignoreDiacritics);
+    }
+
+    @Override
+    public void nCreatePredictiveIndex(long peer, String name, String indexSpec) throws LiteCoreException {
+        createPredictiveIndex(peer, name, indexSpec);
+    }
+
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    @Override
+    public void nCreateVectorIndex(
+        long peer,
+        String name,
+        String queryExpressions,
+        long dimensions,
+        int metric,
+        long centroids,
+        int encoding,
+        long subquantizers,
+        long bits,
+        long minTrainingSize,
+        long maxTrainingSize)
+        throws LiteCoreException {
+        createVectorIndex(
+            peer,
+            name,
+            queryExpressions,
+            dimensions,
+            metric,
+            centroids,
+            encoding,
+            subquantizers,
+            bits,
+            minTrainingSize,
+            maxTrainingSize);
     }
 
     @Override
@@ -115,14 +153,34 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
 
     private static native long getIndexesInfo(long peer) throws LiteCoreException;
 
-    private static native void createIndex(
+    private static native void createValueIndex(long peer, String name, int qLanguage, String indexSpec)
+        throws LiteCoreException;
+
+    private static native void createFullTextIndex(
         long peer,
         String name,
+        int qLanguage,
         String indexSpec,
-        int queryLanguage,
-        int indexType,
         String language,
         boolean ignoreDiacritics)
+        throws LiteCoreException;
+
+    private static native void createPredictiveIndex(long peer, String name, String indexSpec)
+        throws LiteCoreException;
+
+    @SuppressWarnings("PMD.ExcessiveParameterList")
+    private static native void createVectorIndex(
+        long peer,
+        String name,
+        String queryExpressions,
+        long dimensions,
+        int metric,
+        long centroids,
+        int encoding,
+        long subquantizers,
+        long bits,
+        long minTrainingSize,
+        long maxTrainingSize)
         throws LiteCoreException;
 
     private static native void deleteIndex(long peer, @NonNull String name)throws LiteCoreException;

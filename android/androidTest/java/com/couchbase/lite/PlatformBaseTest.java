@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
+import com.couchbase.lite.internal.CBLVariantExtensions;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.exec.ExecutionService;
@@ -48,9 +49,14 @@ public abstract class PlatformBaseTest implements PlatformTest {
     private static final Map<String, Exclusion> PLATFORM_DEPENDENT_TESTS;
     static {
         final Map<String, Exclusion> m = new HashMap<>();
-        m.put("android<21", new Exclusion("Not supported on Android API < 21", () -> Build.VERSION.SDK_INT < 21));
-        m.put("NOT WINDOWS", new Exclusion("Supported only on Windows", () -> true));
         m.put("NEXUS5", new Exclusion("Fails on Nexus 5", () -> "Nexus 5".equals(android.os.Build.MODEL)));
+        m.put("ANDROID<21", new Exclusion("Not supported on Android API < 21", () -> Build.VERSION.SDK_INT < 21));
+        m.put("WINDOWS", new Exclusion("Supported only on Windows", () -> false));
+        m.put(
+            "VECTORSEARCH",
+            new Exclusion(
+                "Requires the VectorSarch Library",
+                () -> CBLVariantExtensions.setExtensionPath(new Object(), getAppContext())));
         m.put(
             "SWEDISH UNSUPPORTED",
             new Exclusion(
