@@ -21,6 +21,8 @@ import androidx.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.couchbase.lite.CouchbaseLiteError;
+
 
 /**
  * Please see the comments in MValue
@@ -92,7 +94,7 @@ public abstract class MCollection implements Encodable {
 
     protected void assertOpen() {
         if ((context != null) && context.isClosed()) {
-            throw new IllegalStateException("Cannot use a Fleece object after its parent has been closed");
+            throw new CouchbaseLiteError("Cannot use a Fleece object after its parent has been closed");
         }
     }
 

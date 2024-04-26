@@ -61,7 +61,6 @@ public class MigrationTest extends BaseTest {
 
         migrationTestDb = openDatabase();
         Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
-        assertNotNull(migrationTestCollection);
         assertEquals(2, migrationTestCollection.getCount());
         for (int i = 1; i <= 2; i++) {
             Document doc = migrationTestCollection.getDocument("doc" + i);
@@ -86,8 +85,6 @@ public class MigrationTest extends BaseTest {
 
         migrationTestDb = openDatabase();
         Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
-        assertNotNull(migrationTestCollection);
-
         assertEquals(2, migrationTestCollection.getCount());
         for (int i = 1; i <= 2; i++) {
             Document doc = migrationTestCollection.getDocument("doc" + i);
@@ -102,8 +99,6 @@ public class MigrationTest extends BaseTest {
 
         migrationTestDb = openDatabase();
         Collection migrationTestCollection = migrationTestDb.getDefaultCollection();
-        assertNotNull(migrationTestCollection);
-
         assertEquals(2, migrationTestCollection.getCount());
 
         for (int i = 1; i <= 2; i++) {

@@ -72,7 +72,7 @@ public class DataSource {
         Preconditions.assertNotNull(database, "database");
 
         final Collection defaultCollection;
-        try { defaultCollection = Preconditions.assertNotNull(database.getDefaultCollection(), "default collection"); }
+        try { defaultCollection = database.getDefaultCollection(); }
         catch (CouchbaseLiteException e) { throw new IllegalArgumentException("Database not open", e); }
 
         final As source = new As(defaultCollection);

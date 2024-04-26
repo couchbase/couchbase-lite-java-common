@@ -15,11 +15,17 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
 import java.net.URI
 
 class PreInitTest {
+
+    @Before
+    fun setUpPreInitTest() { CouchbaseLiteInternal.reset(); }
+
     @Test
     fun testGetConsoleLoggerBeforeInit() {
         assertThrows(CouchbaseLiteError::class.java) {
