@@ -65,7 +65,7 @@ class FlowTest : BaseReplicatorTest() {
                 for (i in 0..9) {
                     val doc = MutableDocument("doc-${i}")
                     doc.setValue("type", "demo")
-                    saveDocInCollection(doc, testDatabase.defaultCollection!!)
+                    saveDocInCollection(doc, testDatabase.defaultCollection)
                 }
             }
 

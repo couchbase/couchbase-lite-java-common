@@ -84,10 +84,6 @@ public abstract class AbstractReplicatorConfiguration extends BaseReplicatorConf
             throw new CouchbaseLiteError(Log.lookupStandardMessage("NoDefaultCollectionInConfig"), e);
         }
 
-        if (defaultCollection == null) {
-            throw new CouchbaseLiteError(Log.lookupStandardMessage("NoDefaultCollectionInConfig"));
-        }
-
         final Map<Collection, CollectionConfiguration> collections = new HashMap<>();
         collections.put(defaultCollection, new CollectionConfiguration());
 

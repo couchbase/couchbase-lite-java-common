@@ -116,12 +116,9 @@ public final class Collection extends BaseCollection
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
-    @Nullable
+    @NonNull
     static Collection getDefaultCollection(@NonNull Database db) throws CouchbaseLiteException {
-        try {
-            final C4Collection c4Coll = db.getDefaultC4Collection();
-            return (c4Coll == null) ? null : new Collection(db, c4Coll);
-        }
+        try { return new Collection(db, db.getDefaultC4Collection()); }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
@@ -429,7 +426,7 @@ public final class Collection extends BaseCollection
     /**
      * Get a list of the names of indices in the collection.
      *
-     * @return the list of index names
+     * @return the set of index names
      * @throws CouchbaseLiteException on failure
      */
     @NonNull
