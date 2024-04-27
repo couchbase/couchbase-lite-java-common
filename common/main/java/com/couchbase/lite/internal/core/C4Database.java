@@ -472,7 +472,7 @@ public abstract class C4Database extends C4NativePeer {
         return C4Collection.get(this, scopeName, collectionName);
     }
 
-    @Nullable
+    @NonNull
     public final C4Collection getDefaultCollection() throws LiteCoreException {
         return C4Collection.getDefault(this);
     }

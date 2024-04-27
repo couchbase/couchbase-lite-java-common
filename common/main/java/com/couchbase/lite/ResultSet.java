@@ -167,7 +167,7 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         if (qEnum == null) { return; }
 
         final AbstractDatabase db = context.getDatabase();
-        if (db == null) { throw new IllegalStateException("Could not obtain db lock"); }
+        if (db == null) { throw new CouchbaseLiteError("Could not obtain db lock"); }
 
         synchronized (db.getDbLock()) { qEnum.close(); }
     }

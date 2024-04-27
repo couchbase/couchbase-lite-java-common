@@ -441,7 +441,7 @@ class C4DatabaseTest : C4BaseTest() {
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
         var targetDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
         createRev(targetDb.defaultCollection, "doc001", REV_ID_1, fleeceBody)
-        assertEquals(1L, targetDb.defaultCollection?.documentCount)
+        assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
         try {
             C4Database.copyDb(
@@ -455,7 +455,7 @@ class C4DatabaseTest : C4BaseTest() {
             assertEquals(POSIX_EEXIST, ex.code)
         }
         targetDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
-        assertEquals(1L, targetDb.defaultCollection?.documentCount)
+        assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
     }
 
@@ -549,7 +549,7 @@ class C4DatabaseTest : C4BaseTest() {
 
         c4Collection?.purgeDocument(docID)
 
-        assertNull(c4Database.defaultCollection?.getDocument(docID))
+        assertNull(c4Database.defaultCollection.getDocument(docID))
     }
 
     @Test

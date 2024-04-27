@@ -962,9 +962,9 @@ public class ResultTest extends BaseQueryTest {
         results.close();
 
         assertNull(results.next());
-        assertThrows(IllegalStateException.class, () -> result.getDictionary(0));
-        assertThrows(IllegalStateException.class, () -> dict.getArray("doc-25"));
-        assertThrows(IllegalStateException.class, () -> array.getString(20));
+        assertThrows(CouchbaseLiteError.class, () -> result.getDictionary(0));
+        assertThrows(CouchbaseLiteError.class, () -> dict.getArray("doc-25"));
+        assertThrows(CouchbaseLiteError.class, () -> array.getString(20));
     }
 
 

@@ -53,11 +53,11 @@ public final class CouchbaseLiteInternal {
 
     private static final String ERRORS_PROPERTIES_PATH = "/errors.properties";
 
+    private static final Object LOCK = new Object();
+
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
-
-    private static final Object LOCK = new Object();
 
     private static volatile boolean debugging;
 
@@ -126,7 +126,15 @@ public final class CouchbaseLiteInternal {
     }
 
     @VisibleForTesting
-    public static void reset(boolean state) { INITIALIZED.set(state); }
+    public static void reset() {
+        debugging = false;
+        defaultDbDir = null;
+        scratchDir = null;
+
+        EXECUTION_SERVICE.set(null);
+
+        INITIALIZED.set(false);
+    }
 
     @VisibleForTesting
     @SuppressWarnings({"unchecked", "rawtypes"})

@@ -30,13 +30,10 @@ import java.util.List;
 public class DatabaseChange {
     @NonNull
     private static Collection getDefaultCollection(@NonNull Database database) {
-        CouchbaseLiteException fail = null;
-        try {
-            final Collection defaultCollection = database.getDefaultCollection();
-            if (defaultCollection != null) { return defaultCollection; }
+        try { return database.getDefaultCollection(); }
+        catch (CouchbaseLiteException e) {
+            throw new CouchbaseLiteError("Failed retrieving default collection for database: " + database.getName(), e);
         }
-        catch (CouchbaseLiteException e) { fail = e; }
-        throw new CouchbaseLiteError("Database " + database.getName() + " has no default collection", fail);
     }
 
     @NonNull

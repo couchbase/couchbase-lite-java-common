@@ -48,7 +48,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
     @Test
     fun testCreateAndCloseReplicationCollection() {
         assertEquals(0, boundCollectionCount())
-        val replColl = ReplicationCollection.create(testDatabase.defaultCollection!!, null, null, null, null)
+        val replColl = ReplicationCollection.create(testDatabase.defaultCollection, null, null, null, null)
         assertEquals(1, boundCollectionCount())
         replColl.close()
         assertEquals(0, boundCollectionCount())
@@ -57,7 +57,7 @@ class ReplicationConfigurationTest : BaseDbTest() {
     @Test
     fun testCreateAllReplicationCollection() {
         val colls = mapOf(
-            testDatabase.defaultCollection!! to CollectionConfiguration(),
+            testDatabase.defaultCollection to CollectionConfiguration(),
             testDatabase.createCollection("antique_clocks") to CollectionConfiguration()
         )
 
