@@ -39,9 +39,6 @@ public interface PlatformTest {
         }
     }
 
-    /* initialize the platform */
-    void setupPlatform();
-
     /* get a scratch directory */
     File getTmpDir();
 

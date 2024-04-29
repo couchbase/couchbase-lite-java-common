@@ -204,8 +204,6 @@ public abstract class BaseTest extends PlatformBaseTest {
     public final void setUpBaseTest() {
         setupLogging(">>>>>>>> Test started: " + testName);
 
-        setupPlatform();
-
         testSerialExecutor = new ExecutionService.CloseableExecutor() {
             final ThreadPoolExecutor executor = new ThreadPoolExecutor(
                 1, 1,
