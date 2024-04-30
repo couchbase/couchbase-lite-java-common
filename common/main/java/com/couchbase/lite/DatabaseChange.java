@@ -32,7 +32,7 @@ public class DatabaseChange {
     private static Collection getDefaultCollection(@NonNull Database database) {
         try { return database.getDefaultCollection(); }
         catch (CouchbaseLiteException e) {
-            throw new CouchbaseLiteError("Failed retrieving default collecion for database: " + database.getName(), e);
+            throw new CouchbaseLiteError("Failed retrieving default collection for database: " + database.getName(), e);
         }
     }
 

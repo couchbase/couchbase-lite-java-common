@@ -191,7 +191,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Request a remote connections
     @Override
     public boolean openRemote(@NonNull URI uri, @Nullable Map<String, Object> options) {
-        Log.d(LOG_DOMAIN, "%s.open: %s, %s", this, uri, options);
+        Log.d(LOG_DOMAIN, "%s.open: %s", this, uri);
         final SocketFromRemote core = getOpenCore();
         if (core == null) { return false; }
 
