@@ -73,7 +73,7 @@ public final class C4QueryObserver extends C4NativePeer {
     // Native callback method
     //-------------------------------------------------------------------------
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     static void onQueryChanged(long token, long results, int domain, int code, @Nullable String message) {
         final C4QueryObserver observer = QUERY_OBSERVER_CONTEXT.getBinding(token);
         if (observer == null) {

@@ -49,7 +49,7 @@ public final class C4CollectionObserver
     // JNI callback methods
     //-------------------------------------------------------------------------
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     static void callback(long token) {
         Log.d(LogDomain.DATABASE, "C4CollectionObserver.callback @%x", token);
 

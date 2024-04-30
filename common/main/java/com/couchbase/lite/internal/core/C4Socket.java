@@ -130,7 +130,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
     // JNI callback methods
     //-------------------------------------------------------------------------
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     static void open(
         long peer,
         long token,
@@ -155,7 +155,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
 
     // Apparently SpotBugs can't tel that `data` *is* null-checked
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     static void write(long peer, @Nullable byte[] data) {
         final int nBytes = (data == null) ? 0 : data.length;
         Log.d(LOG_DOMAIN, "^C4Socket.write@%x(%d)", peer, nBytes);
@@ -166,13 +166,13 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
         withSocket(peer, "write", (s, r) -> r.coreWrites(data));
     }
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     static void completedReceive(long peer, long nBytes) {
         Log.d(LOG_DOMAIN, "^C4Socket.completedReceive@%x(%d)", peer, nBytes);
         withSocket(peer, "completedReceive", (s, r) -> r.coreAcksWrite(nBytes));
     }
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     // Called only in NO_FRAMING mode
     static void requestClose(long peer, int status, @Nullable String message) {
         Log.d(LOG_DOMAIN, "^C4Socket.requestClose@%x(%d): '%s'", peer, status, message);
@@ -182,7 +182,7 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             (s, r) -> r.coreRequestsClose(new CloseStatus(C4Constants.ErrorDomain.WEB_SOCKET, status, message)));
     }
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     // Called only when not in NO_FRAMING mode
     static void close(long peer) {
         Log.d(LOG_DOMAIN, "^C4Socket.close@%x", peer);

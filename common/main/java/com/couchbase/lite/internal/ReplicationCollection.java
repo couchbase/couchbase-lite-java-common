@@ -96,7 +96,7 @@ public final class ReplicationCollection implements AutoCloseable {
 
     //// Native Callbacks
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     // It is called from a native thread that Java has never even heard of...
     static boolean filterCallback(
         long collToken,
@@ -211,7 +211,7 @@ public final class ReplicationCollection implements AutoCloseable {
     // Member Variables
     //-------------------------------------------------------------------------
 
-    // These fields are accessed by reflection.  Don't change them.
+    // These fields are used by reflection.  Don't change them.
 
     public final long token;
 

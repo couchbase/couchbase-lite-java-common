@@ -35,6 +35,7 @@ import com.couchbase.lite.internal.core.impl.NativeC4Log;
 
 
 // Not final for testing
+// This class and its constructor are used by reflection.  Don't change it.
 public class C4Log {
     public interface NativeImpl {
         void nLog(String domain, int level, String message);
@@ -117,7 +118,7 @@ public class C4Log {
     @NonNull
     private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
 
-    // This class and this method are referenced by name, from native code.
+    // This method is used by reflection.  Don't change its signature.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
         get().logInternal((c4Domain == null) ? "???" : c4Domain, c4Level, (message == null) ? "" : message);
     }

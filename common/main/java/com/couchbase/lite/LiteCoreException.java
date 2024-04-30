@@ -22,10 +22,10 @@ import androidx.annotation.Nullable;
 /**
  * Internal error in native code.
  */
-// This class is referenced by name, from native code.
+// This class and its constructor are used by reflection.  Don't change it.
 public class LiteCoreException extends Exception {
 
-    // This method is referenced by name, from native code.
+    // This method is used by reflection.  Don't change its signature.
     public static void throwException(int domain, int code, @Nullable String msg) throws LiteCoreException {
         throw new LiteCoreException(domain, code, msg);
     }

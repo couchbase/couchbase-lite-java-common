@@ -68,8 +68,8 @@ public class C4BaseTest extends BaseTest {
             throw new AssertionError("Expected CBL exception (" + domain + ", " + code + ") but got:", e);
         }
         final LiteCoreException err = (LiteCoreException) e;
-        if (domain > 0) { assertEquals(domain, err.getDomain()); }
-        if (code > 0) { assertEquals(code, err.getCode()); }
+        if (domain > 0) { assertEquals(domain, err.domain); }
+        if (code > 0) { assertEquals(code, err.code); }
     }
 
     public static void assertThrowsLiteCoreException(int domain, int code, @NonNull Fn.TaskThrows<Exception> block) {

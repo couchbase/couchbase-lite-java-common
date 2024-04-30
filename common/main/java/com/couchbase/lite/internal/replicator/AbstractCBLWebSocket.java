@@ -141,10 +141,6 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     public static final String HEADER_PROXY_AUTH = "Proxy-Authorization";
 
     private static final String CHALLENGE_BASIC = "Basic";
-    private static final String CHALLENGE_PREEMPTIVE = "OkHttp-Preemptive";
-
-    // OkHttp Interceptor failure message
-    public static final String ERROR_INTERCEPTOR = "Interceptor Failure";
 
     private static final LogDomain LOG_DOMAIN = LogDomain.NETWORK;
 
@@ -648,27 +644,21 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     }
 
     private void setupAuthentication(@NonNull OkHttpClient.Builder builder, @NonNull Map<?, ?> auth) {
-        String proxyCredentials = null;
         final Object proxyUser = auth.get(C4Replicator.REPLICATOR_OPTION_PROXY_USER);
         final Object proxyPass = auth.get(C4Replicator.REPLICATOR_OPTION_PROXY_PASS);
         if (((proxyUser instanceof String) && (proxyPass instanceof String))) {
-            proxyCredentials = Credentials.basic((String) proxyUser, (String) proxyPass);
+            final String proxyCred = Credentials.basic((String) proxyUser, (String) proxyPass);
+            builder.proxyAuthenticator((route, resp) -> authenticate(resp, HEADER_PROXY_AUTH, proxyCred));
         }
-        final String proxyCred = proxyCredentials;
 
-        String endpointCredentials = null;
         if (C4Replicator.AUTH_TYPE_BASIC.equals(auth.get(C4Replicator.REPLICATOR_AUTH_TYPE))) {
             final Object endptUser = auth.get(C4Replicator.REPLICATOR_AUTH_USER_NAME);
             final Object endptPass = auth.get(C4Replicator.REPLICATOR_AUTH_PASSWORD);
             if (((endptUser instanceof String) && (endptPass instanceof String))) {
-                endpointCredentials = Credentials.basic((String) endptUser, (String) endptPass);
-                forcePreAuth(builder, endpointCredentials);
+                final String endptCred = Credentials.basic((String) endptUser, (String) endptPass);
+                builder.authenticator((route, resp) -> authenticate(resp, HEADER_AUTH, endptCred));
+                forcePreAuth(builder, endptCred);
             }
-        }
-        final String endptCred = endpointCredentials;
-
-        if ((proxyCredentials != null) || (endpointCredentials != null)) {
-            builder.authenticator((route, resp) -> authenticate(resp, endptCred, proxyCred));
         }
     }
 
@@ -780,7 +770,7 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
     // http://www.ietf.org/rfc/rfc2617.txt
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @Nullable
-    private Request authenticate(@NonNull Response resp, @Nullable String endptCred, @Nullable String proxyCred) {
+    private Request authenticate(@NonNull Response resp, @NonNull String header, @NonNull String cred) {
         Log.d(LOG_DOMAIN, "%s.authenticate: %s", this, resp);
 
         // If failed 3 times, give up.
@@ -792,23 +782,10 @@ public abstract class AbstractCBLWebSocket implements SocketFromCore, SocketFrom
 
         for (Challenge challenge: challenges) {
             if (CHALLENGE_BASIC.equalsIgnoreCase(challenge.scheme())) {
-                return (endptCred == null)
-                    ? null
-                    : resp.request()
-                        .newBuilder()
-                        .header(HEADER_AUTH, endptCred)
-                        .build();
-            }
-
-            // This is the challenge we will get if OkHttp determines that it
-            // is talking to a proxy and needs to authenticate with it.
-            if (CHALLENGE_PREEMPTIVE.equalsIgnoreCase(challenge.scheme())) {
-                return (proxyCred == null)
-                    ? null
-                    : resp.request()
-                        .newBuilder()
-                        .header(HEADER_PROXY_AUTH, proxyCred)
-                        .build();
+                return resp.request()
+                    .newBuilder()
+                    .header(header, cred)
+                    .build();
             }
         }
 
