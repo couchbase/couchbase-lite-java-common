@@ -25,6 +25,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+
 import com.couchbase.lite.internal.CBLVariantExtensions;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.JavaExecutionService;
@@ -64,12 +67,12 @@ public abstract class PlatformBaseTest implements PlatformTest {
                 () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
     }
 
-    static { CouchbaseLite.init(true); }
-    // instance methods
+    @BeforeClass
+    public static void setUpPlatformBaseTestSuite() { CouchbaseLite.init(true); }
 
+    @AfterClass
+    public static void tearDownPlatformBaseTestSuite() { }
 
-    @Override
-    public final void setupPlatform() { }
 
     @Override
     public final File getTmpDir() {

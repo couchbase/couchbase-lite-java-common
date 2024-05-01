@@ -49,7 +49,7 @@ public class C4DocumentObserver extends C4NativePeer {
     // JNI callback methods
     //-------------------------------------------------------------------------
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     static void callback(long token, long seq, @Nullable String docId) {
         Log.d(
             LogDomain.DATABASE,

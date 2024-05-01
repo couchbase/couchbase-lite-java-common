@@ -119,7 +119,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // This is the OkHttp connection outbound to the remote.
     // Its value has lifecycle null -> NULL_WS -> valid -> null.
     // It could be a simple final var, if the initialization process happened in the other order...
-    // Whenever this value is non-null, we assume that referenced OkHttp WebSocket
+    // Whenever this value is non-null, we assume that the referenced OkHttp WebSocket
     // will do something reasonable with calls.
     private final AtomicReference<WebSocket> toRemote = new AtomicReference<>();
 
@@ -191,7 +191,7 @@ public final class OkHttpSocket extends WebSocketListener implements SocketToRem
     // Request a remote connections
     @Override
     public boolean openRemote(@NonNull URI uri, @Nullable Map<String, Object> options) {
-        Log.d(LOG_DOMAIN, "%s.open: %s, %s", this, uri, options);
+        Log.d(LOG_DOMAIN, "%s.open: %s", this, uri);
         final SocketFromRemote core = getOpenCore();
         if (core == null) { return false; }
 

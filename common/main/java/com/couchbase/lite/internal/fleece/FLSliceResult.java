@@ -40,14 +40,14 @@ public class FLSliceResult {
     @NonNull
     private final NativeImpl impl;
 
-    // These fields are accessed by reflection.  Don't change them.
+    // These fields are used by reflection.  Don't change them.
     final long base;
     final long size;
 
     //-------------------------------------------------------------------------
     // Constructors
     //-------------------------------------------------------------------------
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     public FLSliceResult(long base, long size) { this(NATIVE_IMPL, base, size); }
 
     @VisibleForTesting

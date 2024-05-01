@@ -568,7 +568,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
     private boolean isInBounds(int index) { return (0 <= index) && (index < count()); }
 
     private void assertOpen() {
-        if (context.getResultSet().isClosed()) {
+        if (context.isClosed()) {
             throw new CouchbaseLiteError("Attempt to use a result after its containing ResultSet has been closed");
         }
     }

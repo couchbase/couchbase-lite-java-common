@@ -29,6 +29,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+
 import com.couchbase.lite.internal.AndroidExecutionService;
 import com.couchbase.lite.internal.CBLVariantExtensions;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -65,16 +68,19 @@ public abstract class PlatformBaseTest implements PlatformTest {
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
-    static { CouchbaseLite.init(getAppContext(), true); }
-
     static {
         try { Runtime.getRuntime().exec("logcat --prune /" + android.os.Process.myPid()).waitFor(); }
         catch (Exception e) { android.util.Log.w("TEST", "Failed adding to chatty whitelist", e); }
     }
+
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
 
-    @Override
-    public final void setupPlatform() { }
+    @BeforeClass
+    public static void setUpPlatformBaseTestSuite() { CouchbaseLite.init(getAppContext(), true); }
+
+    @AfterClass
+    public static void tearDownPlatformBaseTestSuite() { }
+
 
     @Override
     public final File getTmpDir() {

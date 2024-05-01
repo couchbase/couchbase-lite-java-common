@@ -56,7 +56,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * This object must be careful never to forward a call to a native object once that object has been freed.
  * </ol>
  * <p>
- * This class and its members are referenced by name, from native code.
+ * This class and its members are used by reflection.  Don't change it.
  */
 public abstract class C4Replicator extends C4NativePeer {
 
@@ -348,7 +348,7 @@ public abstract class C4Replicator extends C4NativePeer {
     // Native callback methods
     //-------------------------------------------------------------------------
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     static void statusChangedCallback(long token, @Nullable C4ReplicatorStatus status) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
         final String id = (c4Repl == null) ? "???@" + token : c4Repl.getReplId();
@@ -359,7 +359,7 @@ public abstract class C4Replicator extends C4NativePeer {
         c4Repl.statusChanged(c4Repl, status);
     }
 
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     static void documentEndedCallback(long token, boolean pushing, @Nullable C4DocumentEnded... docEnds) {
         final C4Replicator c4Repl = BOUND_REPLICATORS.getBinding(token);
         final String id = (c4Repl == null) ? "???@" + token : c4Repl.getReplId();

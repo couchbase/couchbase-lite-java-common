@@ -23,7 +23,7 @@ import com.couchbase.lite.internal.logging.Log;
 
 
 public final class C4DocumentChange {
-    // This method is called by reflection.  Don't change its signature.
+    // This method is used by reflection.  Don't change its signature.
     @Nullable
     public static C4DocumentChange createC4DocumentChange(
         @Nullable String docId,
