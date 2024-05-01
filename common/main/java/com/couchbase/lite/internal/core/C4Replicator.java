@@ -55,8 +55,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * <li/> Calls to the native object:  These should work as long as the peer handle is non-zero.
  * This object must be careful never to forward a call to a native object once that object has been freed.
  * </ol>
- * <p>
- * This class and its members are used by reflection.  Don't change it.
  */
 public abstract class C4Replicator extends C4NativePeer {
 

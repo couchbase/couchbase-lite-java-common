@@ -211,22 +211,27 @@ public final class ReplicationCollection implements AutoCloseable {
     // Member Variables
     //-------------------------------------------------------------------------
 
-    // These fields are used by reflection.  Don't change them.
-
+    // This field is used by reflection.  Don't change it.
     public final long token;
 
+    // This field is used by reflection.  Don't change it.
     @NonNull
     public final String scope;
+    // This field is used by reflection.  Don't change it.
     @NonNull
     public final String name;
 
+    // This field is used by reflection.  Don't change it.
     @Nullable
     public final C4Filter c4PushFilter;
+    // This field is used by reflection.  Don't change it.
     @Nullable
     public final C4Filter c4PullFilter;
+
     @Nullable
     public final ConflictResolver resolver;
 
+    // This field is used by reflection.  Don't change it.
     @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
     @VisibleForTesting
     @Nullable

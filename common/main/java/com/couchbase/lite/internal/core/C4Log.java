@@ -118,13 +118,13 @@ public class C4Log {
     @NonNull
     private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
 
+    @NonNull
+    public static C4Log get() { return LOGGER.get(); }
+
     // This method is used by reflection.  Don't change its signature.
     public static void logCallback(@Nullable String c4Domain, int c4Level, @Nullable String message) {
         get().logInternal((c4Domain == null) ? "???" : c4Domain, c4Level, (message == null) ? "" : message);
     }
-
-    @NonNull
-    public static C4Log get() { return LOGGER.get(); }
 
 
     @NonNull

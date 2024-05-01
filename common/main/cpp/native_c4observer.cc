@@ -118,11 +118,11 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
 
 /**
  * Callback method from LiteCore C4CollectionObserver
- * @param observer reference to the C4CollectionObserver
- * @param context the token bound to the observer instance.
+ * @param ignore ignored
+ * @param context the token bound to the java C4CollectionObserver instance.
  */
 static void
-c4CollectionObsCallback(C4CollectionObserver *observer, void *context) {
+c4CollectionObsCallback(C4CollectionObserver *ignore, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
