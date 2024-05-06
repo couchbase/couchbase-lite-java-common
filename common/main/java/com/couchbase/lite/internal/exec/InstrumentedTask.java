@@ -51,18 +51,16 @@ public class InstrumentedTask implements Runnable {
 
     @SuppressWarnings("PMD.AvoidCatchingThrowable")
     public void run() {
+        final long t;
         synchronized (this) {
-            if (startedAt != 0L) {
-                throw new CouchbaseLiteError("Attempt to execute a task multiple times");
-            }
+            t = startedAt;
             startedAt = System.currentTimeMillis();
         }
+        if (t != 0L) { throw new CouchbaseLiteError("This task was started previously at: " + t); }
 
-        try {
-            task.run();
-            finishedAt = System.currentTimeMillis();
-        }
+        try { task.run(); }
         finally {
+            finishedAt = System.currentTimeMillis();
             final Runnable completionTask = onComplete;
             if (completionTask != null) { completionTask.run(); }
             completedAt = System.currentTimeMillis();
@@ -72,11 +70,11 @@ public class InstrumentedTask implements Runnable {
     @NonNull
     @Override
     public String toString() {
-        return "task[#" + id
+        return "task{#" + id
             + " @" + createdAt
-            + "(" + startedAt
-            + "<" + finishedAt
-            + "<" + completedAt
-            + "):" + task + "]";
+            + " (" + startedAt
+            + " >" + finishedAt
+            + " >" + completedAt
+            + "): " + task + "}";
     }
 }

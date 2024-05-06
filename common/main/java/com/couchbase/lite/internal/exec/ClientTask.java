@@ -24,16 +24,35 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal;
+
 
 /**
  * Synchronous safe execution of a client task.
  * Motto: Their failure is not our failure.
+ * <p>
+ * Design notes:
+ * It is necessary to use a Future and an Executor to impose a timeout.
+ * If it weren't for that, we could just run the task on the calling thread
+ * surrounded by a try/catch block.
+ * As of 2024-05-01, all of the tests in the test suite pass with a MAX_POOL_SIZE
+ * of 2.  The chosen size is a heuristic: I have been told that LiteCore has a
+ * pool of 2 * virtual cores threads.  If that is true then it should not be
+ * able to run more that that number of tasks concurrently.
+ * After some consideration, I have decided to use a SynchronousQueue in front
+ * of the thread pool.  I do not think that there is anything to be gained
+ * from queuing tassks.  If there are insufficient resources to run the task,
+ * it will be rejected and the caller will have to deal with it.  This decision
+ * require review.
  *
  * @param <T> type of the value returned by the wrapped task.
  */
 public class ClientTask<T> {
+    public static final int MAX_POOL_SIZE = (CBLExecutor.CPU_COUNT * 2) + 1;
+
     private static final CBLExecutor EXECUTOR
-        = new CBLExecutor("Client worker", 1, CBLExecutor.CPU_COUNT * 2 + 1, new SynchronousQueue<>());
+        = new CBLExecutor("Client worker", 0, MAX_POOL_SIZE, new SynchronousQueue<>());
+
 
     @NonNull
     private final Callable<T> task;
@@ -52,12 +71,14 @@ public class ClientTask<T> {
         final FutureTask<T> future = new FutureTask<>(task);
         try { EXECUTOR.execute(new InstrumentedTask(future, null)); }
         catch (Throwable e) {
-            dumpState();
+            if (CouchbaseLiteInternal.debugging()) { EXECUTOR.dumpState(); }
             setFailure(e);
             return;
         }
 
         // block until complete or timeout
+        // Note that it is quite likely that Future.get will return
+        // before the InstrumentedTask's finally clause has been executed.
         try { result = future.get(timeout, timeUnit); }
         catch (ExecutionException e) { setFailure(e.getCause()); }
         catch (Throwable e) { setFailure(e); }
@@ -73,11 +94,5 @@ public class ClientTask<T> {
         if ((t instanceof Error)) { throw (Error) t; }
         if ((t == null) || (err != null)) { return; }
         err = (Exception) t;
-    }
-
-    public void dumpState() {
-        if (AbstractExecutionService.throttled()) { return; }
-        EXECUTOR.dumpState();
-        AbstractExecutionService.dumpThreads();
     }
 }
