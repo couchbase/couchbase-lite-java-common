@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,7 +54,7 @@ public class LiveQueryTest extends BaseDbTest {
             .orderBy(Ordering.property(KEY).ascending());
 
         final CountDownLatch latch = new CountDownLatch(1);
-        try (ListenerToken ignore = query.addChangeListener(testSerialExecutor, change -> latch.countDown())) {
+        try (ListenerToken ignore = query.addChangeListener(getTestSerialExecutor(), change -> latch.countDown())) {
             assertTrue(latch.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
         }
     }
@@ -78,14 +79,15 @@ public class LiveQueryTest extends BaseDbTest {
 
         final AtomicIntegerArray atmCount = new AtomicIntegerArray(2);
 
+        final Executor exec = getTestSerialExecutor();
         try (ListenerToken ignore1 = query.addChangeListener(
-            testSerialExecutor,
+            exec,
             change -> latch1[atmCount.getAndIncrement(0)].countDown())) {
 
             // listener 1 gets notified after observer subscribed
             assertTrue(latch1[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
             try (ListenerToken ignore2 = query.addChangeListener(
-                testSerialExecutor,
+                exec,
                 change -> latch2[atmCount.getAndIncrement(1)].countDown())) {
                 // listener 2 should get notified
                 assertTrue(latch2[0].await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
@@ -114,7 +116,7 @@ public class LiveQueryTest extends BaseDbTest {
         for (int i = 0; i < latches.length; i++) { latches[i] = new CountDownLatch(1); }
 
         try (ListenerToken ignore = query.addChangeListener(
-            testSerialExecutor,
+            getTestSerialExecutor(),
             change -> {
                 change.getResults().close();
                 latches[atmCount.getAndIncrement(0)].countDown();
@@ -141,8 +143,9 @@ public class LiveQueryTest extends BaseDbTest {
         final CountDownLatch latch1 = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
 
+        final Executor exec = getTestSerialExecutor();
         try (ListenerToken ignore1 = query.addChangeListener(
-            testSerialExecutor,
+            exec,
             change -> {
                 // even if the other listener finishes running first and iterates through doc-11,
                 // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
@@ -152,7 +155,7 @@ public class LiveQueryTest extends BaseDbTest {
                 }
             });
              ListenerToken ignore2 = query.addChangeListener(
-                 testSerialExecutor,
+                 exec,
                  change -> {
                      // even if the other listener finishes running first and iterates through doc-11,
                      // this listener should get an independent rs, thus iterates from the beginning, getting doc-11
@@ -195,7 +198,7 @@ public class LiveQueryTest extends BaseDbTest {
         query.setParameters(params);
 
         try (ListenerToken ignore = query.addChangeListener(
-            testSerialExecutor,
+            getTestSerialExecutor(),
             change -> {
                 try (ResultSet rs = change.getResults()) {
                     //  query should only be notified 2 times:
@@ -238,7 +241,7 @@ public class LiveQueryTest extends BaseDbTest {
         latchHolder.set(new CountDownLatch(1));
 
         try (ListenerToken ignore = query.addChangeListener(
-            testSerialExecutor,
+            getTestSerialExecutor(),
             change -> {
                 resultsHolder.set(change.getResults().allResults());
                 latchHolder.get().countDown();

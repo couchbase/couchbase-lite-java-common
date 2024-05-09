@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -286,9 +287,10 @@ public class ConcurrencyTest extends BaseDbTest {
         AtomicReference<Exception> error = new AtomicReference<>();
 
 
+        final Executor exec = getTestSerialExecutor();
         try (ListenerToken ignore = getTestCollection()
-            .addChangeListener(testSerialExecutor, change -> latch.countDown())) {
-            testSerialExecutor.execute(() -> {
+            .addChangeListener(exec, change -> latch.countDown())) {
+            exec.execute(() -> {
                 try { getTestCollection().save(new MutableDocument()); }
                 catch (Exception e) { error.compareAndSet(null, e); }
             });
@@ -310,7 +312,7 @@ public class ConcurrencyTest extends BaseDbTest {
 
         try (ListenerToken ignore
                  = getTestCollection().addDocumentChangeListener(mDoc.getId(), change -> latch.countDown())) {
-            testSerialExecutor.execute(() -> {
+            getTestSerialExecutor().execute(() -> {
                 try { getTestCollection().save(mDoc); }
                 catch (Exception e) { error.compareAndSet(null, e); }
             });

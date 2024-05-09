@@ -37,7 +37,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
         Replicator repl = makeRepl(makeConfig().setType(ReplicatorType.PULL));
         ListenerToken token = repl.addChangeListener(
-            testSerialExecutor,
+            getTestSerialExecutor(),
             change -> {
                 switch (change.getStatus().getActivityLevel()) {
                     case STOPPED:
@@ -67,7 +67,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         final CountDownLatch stopped = new CountDownLatch(1);
         Replicator repl = makeRepl(makeConfig().setContinuous(false));
         ListenerToken token = repl.addChangeListener(
-            testSerialExecutor,
+            getTestSerialExecutor(),
             change -> {
                 if (change.getStatus().getActivityLevel() == ReplicatorActivityLevel.STOPPED) { stopped.countDown(); }
             });
@@ -100,7 +100,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
 
         assertThrows(
             IllegalArgumentException.class,
-            () -> repl.addDocumentReplicationListener(testSerialExecutor, null));
+            () -> repl.addDocumentReplicationListener(getTestSerialExecutor(), null));
     }
 
     @Test
@@ -117,7 +117,7 @@ public class ReplicatorOfflineTest extends BaseReplicatorTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> {
-                try (ListenerToken token = makeRepl().addChangeListener(testSerialExecutor, null)) { }
+                try (ListenerToken token = makeRepl().addChangeListener(getTestSerialExecutor(), null)) { }
             });
     }
 

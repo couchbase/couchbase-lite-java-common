@@ -18,7 +18,7 @@ package com.couchbase.lite
 import com.couchbase.lite.internal.ReplicationCollection
 import com.couchbase.lite.internal.core.C4DocumentEnded
 import com.couchbase.lite.internal.core.C4Replicator
-import com.couchbase.lite.internal.replicator.InternalReplicatorTest
+import com.couchbase.lite.internal.replicator.BaseReplicatorHack
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 // These tests were, originally essentially translations of Jay Vavachan's Obj-C tests
-class ConflictResolutionTests : BaseReplicatorTest() {
+class ConflictResolutionTest : BaseReplicatorTest() {
 
     /**
      * 1. Test conflict handler that just returns true without modifying the document.
@@ -303,7 +303,7 @@ class ConflictResolutionTests : BaseReplicatorTest() {
         saveDocInCollection(doc)
         val docID = doc.id
 
-        var ts1 = testCollection.getNonNullDoc(docID).timestamp
+        val ts1 = testCollection.getNonNullDoc(docID).timestamp
 
         val doc1a = testCollection.getNonNullDoc(docID).toMutable()
         val doc1b = testCollection.getNonNullDoc(docID).toMutable()
@@ -425,7 +425,7 @@ class ConflictResolutionTests : BaseReplicatorTest() {
         // This task is the last thing on the queue: all the previously enqueued
         // tasks are done when this is done
         val latch = CountDownLatch(1)
-        InternalReplicatorTest.enqueueOnDispatcher(repl) { latch.countDown() }
+        BaseReplicatorHack.enqueueOnDispatcher(repl) { latch.countDown() }
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
 
         // A total of 6 docs dispatched; only one of them should have been enqued for CR

@@ -39,17 +39,14 @@ public interface PlatformTest {
         }
     }
 
-    /* get a scratch directory */
-    File getTmpDir();
-
-    /* Skip the test on some platforms */
-    Exclusion getExclusions(@NonNull String tag);
-
     /* Get the device name */
     String getDevice();
 
+    /* get a scratch directory */
+    File getTmpDir();
+
     AbstractExecutionService getExecutionService(ThreadPoolExecutor executor);
 
-    /* Schedule a task to be executed asynchronously. */
-    void executeAsync(long delayMs, Runnable task);
+    /* Skip the test on some platforms */
+    Exclusion getExclusions(@NonNull String tag);
 }

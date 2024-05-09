@@ -21,37 +21,30 @@ import org.junit.Before
 import org.junit.Test
 import java.net.URI
 
-class PreInitTest {
+
+class PreInitTest : BaseTest() {
 
     @Before
-    fun setUpPreInitTest() { CouchbaseLiteInternal.reset(); }
+    fun setUpPreInitTest() = CouchbaseLiteInternal.reset()
 
     @Test
     fun testGetConsoleLoggerBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
-            Log().console
-        }
+        assertThrows(CouchbaseLiteError::class.java) { Log().console }
     }
 
     @Test
     fun testGetFileLoggerBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
-            Log().file
-        }
+        assertThrows(CouchbaseLiteError::class.java) { Log().file }
     }
 
     @Test
     fun testCreateDBConfigBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
-            DatabaseConfiguration()
-        }
+        assertThrows(CouchbaseLiteError::class.java) { DatabaseConfiguration() }
     }
 
     @Test
     fun testCreateDatabaseBeforeInit() {
-        assertThrows(CouchbaseLiteError::class.java) {
-            Database("fail")
-        }
+        assertThrows(CouchbaseLiteError::class.java) { Database("fail") }
     }
 
     @Test
@@ -66,7 +59,8 @@ class PreInitTest {
         try {
             test()
         } catch (e: Throwable) {
-            if (ex == e::class.java) { return; }
+            if (ex == e::class.java) {
+                return; }
             err = e
         }
 
