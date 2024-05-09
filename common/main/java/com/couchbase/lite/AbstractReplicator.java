@@ -164,9 +164,12 @@ public abstract class AbstractReplicator extends BaseReplicator
 
     /**
      * Start the replicator.
+     * <p/>
      * This method does not wait for the replicator to start.
      * The replicator runs asynchronously and reports its progress
      * through replicator change notifications.
+     * <p/>
+     * Note: Replicators <b>cannot</b> be started from within a <code>Database.inBatch()</code> block.
      */
     public void start(boolean resetCheckpoint) {
         Log.i(LOG_DOMAIN, "Replicator(%s) started: %s", getId(), this);
