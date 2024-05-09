@@ -38,8 +38,8 @@ import com.couchbase.lite.internal.core.impl.NativeC4Log;
 // This class and its constructor are used by reflection.  Don't change it.
 public class C4Log {
     public interface NativeImpl {
-        void nLog(String domain, int level, String message);
-        void nSetLevel(String domain, int level);
+        void nLog(@NonNull String domain, int level, @NonNull String message);
+        void nSetLevel(@NonNull String domain, int level);
         void nSetCallbackLevel(int level);
         int nGetBinaryFileLevel();
         void nSetBinaryFileLevel(int level);
@@ -111,9 +111,8 @@ public class C4Log {
         LOG_LEVEL_TO_C4 = Collections.unmodifiableMap(m);
     }
 
-    @VisibleForTesting
-    @NonNull
-    public static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(new C4Log(new NativeC4Log()));
+     @NonNull
+    private static final AtomicReference<C4Log> LOGGER = new AtomicReference<>(new C4Log(new NativeC4Log()));
 
     @NonNull
     private static final AtomicReference<LogLevel> CALLBACK_LEVEL = new AtomicReference<>(LogLevel.NONE);
@@ -126,13 +125,17 @@ public class C4Log {
         get().logInternal((c4Domain == null) ? "???" : c4Domain, c4Level, (message == null) ? "" : message);
     }
 
+    @VisibleForTesting
+    @NonNull
+    public static C4Log swap(C4Log logger) { return LOGGER.getAndSet(logger); }
+
 
     @NonNull
     private final C4Log.NativeImpl impl;
 
     protected C4Log(@NonNull NativeImpl impl) { this.impl = impl; }
 
-    public final void logToCore(LogDomain domain, LogLevel level, String message) {
+    public final void logToCore(@NonNull LogDomain domain, @NonNull LogLevel level, @NonNull String message) {
         impl.nLog(getC4DomainForLoggingDomain(domain), getC4LevelForLogLevel(level), message);
     }
 
@@ -152,7 +155,9 @@ public class C4Log {
 
     public final void setLevels(int level, @Nullable String... domains) {
         if ((domains == null) || (domains.length <= 0)) { return; }
-        for (String domain: domains) { impl.nSetLevel(domain, level); }
+        for (String domain: domains) {
+            if (domain != null) { impl.nSetLevel(domain, level); }
+        }
     }
 
     @NonNull

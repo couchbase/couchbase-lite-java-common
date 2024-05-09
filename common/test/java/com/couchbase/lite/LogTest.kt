@@ -578,7 +578,7 @@ class LogTest : BaseDbTest() {
     fun testInternalLogging() {
         val c4Domain = "foo"
         val testC4Logger = TestC4Logger(c4Domain)
-        val oldLogger = C4Log.LOGGER.getAndSet(testC4Logger)
+        val oldLogger = C4Log.swap(testC4Logger)
         try {
             testC4Logger.reset()
             QueryBuilder.select(SelectResult.expression(Meta.id))
@@ -603,7 +603,7 @@ class LogTest : BaseDbTest() {
             assertEquals(actualMinLevel, testC4Logger.minLevel)
         } finally {
             testC4Logger.setLevels(C4TestUtils.getLogLevel(c4Domain), c4Domain)
-            C4Log.LOGGER.set(oldLogger)
+            C4Log.swap(oldLogger)
         }
     }
 

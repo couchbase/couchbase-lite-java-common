@@ -1,15 +1,17 @@
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.NonNull;
+
 import com.couchbase.lite.internal.core.C4Log;
 
 
 public final class NativeC4Log implements C4Log.NativeImpl {
 
     @Override
-    public void nLog(String domain, int level, String message) { log(domain, level, message); }
+    public void nLog(@NonNull String domain, int level, @NonNull String message) { log(domain, level, message); }
 
     @Override
-    public void nSetLevel(String domain, int level) { setLevel(domain, level); }
+    public void nSetLevel(@NonNull String domain, int level) { setLevel(domain, level); }
 
     @Override
     public void nSetCallbackLevel(int level) { setCallbackLevel(level); }

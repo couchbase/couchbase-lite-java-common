@@ -21,6 +21,7 @@
 #include <sys/time.h>
 #endif
 
+#include <unordered_set>
 #include "native_glue.hh"
 #include "com_couchbase_lite_internal_core_impl_NativeC4.h"
 #include "com_couchbase_lite_internal_core_impl_NativeC4Log.h"
@@ -138,6 +139,26 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
     }
 }
 
+/*
+ * We let our code create new domains ("true" as 2nd arg to c4log_getDomain) if it wants.
+ * The advantage is that if, esp for debugging, we want to log to a dynamically created domain,
+ * we can do so at any time, including before Core creates it.  The problem with that is that
+ * LiteCore doesn't keep the names, itself.  Unless the domain already exists, it will use
+ * the string that we pass to it.  That means that string has to be stored somewhere permanent.
+ * It is possible that this can go away when CBL-5726 is resolved
+ */
+namespace litecore {
+    namespace jni {
+        static std::unordered_set<std::string> gDomainNames;
+
+        // Assert: jdomain is not null
+        static const C4LogDomain getDomain(JNIEnv *env, jstring jdomain) {
+            std::string domain = JstringToUTF8(env, jdomain);
+            const char *safeDomain = gDomainNames.insert(std::move(domain)).first->c_str();
+            return c4log_getDomain(safeDomain, true);
+        }
+    }
+}
 
 extern "C" {
 // ----------------------------------------------------------------------------
@@ -255,12 +276,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_setExtPath(JNIEnv *env, jcla
  * Class:     com_couchbase_lite_internal_core_impl_C4Log
  * Method:    setLevel
  * Signature: (Ljava/lang/String;I)V
- *
- * Since the Java code can only talk about domains that are instance of the LogDomain enum,
- * it is ok to let this code create new domains (2nd arg to c4log_getDomain).
- * The advantage of allowing this method to create new LogDomain instances is that if,
- * for debugging, we need to log for a dynamically created domain, we can initialize
- * that domain at any time, including before Core creates it.
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setLevel(
@@ -268,8 +283,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setLevel(
         jclass ignore,
         jstring jdomain,
         jint jlevel) {
-    jstringSlice domain(env, jdomain);
-    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), true);
+    C4LogDomain logDomain = getDomain(env, jdomain);
     c4log_setLevel(logDomain, (C4LogLevel) jlevel);
 }
 
@@ -286,10 +300,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_log(
         jint jlevel,
         jstring jmessage) {
     jstringSlice message(env, jmessage);
-    const char *domain = env->GetStringUTFChars(jdomain, nullptr);
-    C4LogDomain logDomain = c4log_getDomain(domain, true);
+    C4LogDomain logDomain = getDomain(env, jdomain);
     c4slog(logDomain, (C4LogLevel) jlevel, message);
-    env->ReleaseStringUTFChars(jdomain, domain);
 }
 
 /*
@@ -308,7 +320,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_getBinaryFileLevel(JNIEnv
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setBinaryFileLevel(JNIEnv *env, jclass ignore, jint level) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setBinaryFileLevel(
+        JNIEnv *env,
+        jclass ignore,
+        jint level) {
     c4log_setBinaryFileLevel((C4LogLevel) level);
 }
 
@@ -350,7 +365,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_writeToBinaryFile(
  * Signature: (I)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setCallbackLevel(JNIEnv *env, jclass clazz, jint jlevel) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setCallbackLevel(
+        JNIEnv *env,
+        jclass clazz,
+        jint jlevel) {
     c4log_setCallbackLevel((C4LogLevel) jlevel);
 }
 
