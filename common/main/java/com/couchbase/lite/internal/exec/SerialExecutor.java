@@ -145,7 +145,7 @@ class SerialExecutor implements ExecutionService.CloseableExecutor {
         final CountDownLatch latch;
         synchronized (this) {
             executeTask(pendingTasks.remove());
-            latch = (pendingTasks.size() > 0) ? null : stopLatch;
+            latch = (!pendingTasks.isEmpty()) ? null : stopLatch;
         }
 
         if (latch != null) { latch.countDown(); }

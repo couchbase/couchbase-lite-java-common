@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.exec;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
@@ -36,17 +37,23 @@ public class CBLExecutor extends ThreadPoolExecutor {
     @NonNull
     private final String name;
 
+    @GuardedBy("name")
     private long n;
+    @GuardedBy("name")
     private int qSizeMax;
+    @GuardedBy("name")
     private float qSizeMean;
+    @GuardedBy("name")
     private float qSizeVariance;
+    @GuardedBy("name")
     private float m2;
 
+    // A fixed sized pool backed by a very large queue.
     public CBLExecutor(@NonNull String name) { this(name, POOL_SIZE, POOL_SIZE, new LinkedBlockingQueue<>()); }
 
     public CBLExecutor(@NonNull String name, int min, int max, @NonNull BlockingQueue<Runnable> workQueue) {
         super(min, max,
-            30, TimeUnit.SECONDS,        // unused threads die after 30 sec
+            30, TimeUnit.SECONDS,        // if there are more than min threads, idle ones will die after 30 sec
             workQueue,
             new ThreadFactory() {        // thread factory that gives our threads nice recognizable names
                 private final String threadName = name + " #";
@@ -73,45 +80,51 @@ public class CBLExecutor extends ThreadPoolExecutor {
 
     @Override
     public void execute(@NonNull Runnable task) {
-        super.execute(task);
-        computeQueueStats();
+        try { super.execute(task); }
+        finally { computeQueueStats(); }
     }
 
     @NonNull
     @Override
-    public String toString() { return "CBLExecutor(" + name + "}"; }
+    public String toString() { return "CBLExecutor{" + name + "}"; }
 
     public void dumpState() {
         final int max;
         final float mean;
-        final double stdDev;
+        final double variance;
         synchronized (name) {
             max = qSizeMax;
             mean = qSizeMean;
-            stdDev = Math.sqrt(qSizeVariance);
+            variance = qSizeVariance;
         }
 
         Log.w(
             LogDomain.DATABASE,
             "==== CBL Executor \"%s\" (%s)",
             name,
-            (isShutdown()) ? "x" : ((isTerminated()) ? "o" : ((isTerminating()) ? "-" : "+")));
+            (isShutdown()) ? "x" : ((isTerminated()) ? "-" : ((isTerminating()) ? "o" : "+")));
 
         Log.w(LogDomain.DATABASE, "== Tasks: %d, %d", getTaskCount(), getCompletedTaskCount());
 
-        Log.w(LogDomain.DATABASE, "== Pool: %d, %d, %d", getPoolSize(), getLargestPoolSize(), getMaximumPoolSize());
+        Log.w(
+            LogDomain.DATABASE,
+            "== Pool: %d, %d, %d, %d",
+            getPoolSize(),
+            getCorePoolSize(),
+            getLargestPoolSize(),
+            getMaximumPoolSize());
 
         final ArrayList<Runnable> waiting = new ArrayList<>(getQueue());
-        if (waiting.isEmpty()) {
-            Log.w(LogDomain.DATABASE, "== Queue is empty");
-            return;
-        }
+        Log.w(LogDomain.DATABASE, "== Queue: %d, %d, %.2f, %.4f", waiting.size(), max, mean, Math.sqrt(variance));
 
-        Log.w(LogDomain.DATABASE, "== Queue: %d, %d, %.2f, %.4f", waiting.size(), max, mean, stdDev);
         int n = 0;
         for (Runnable r: waiting) {
-            final Exception orig = (!(r instanceof InstrumentedTask)) ? null : ((InstrumentedTask) r).origin;
-            Log.w(LogDomain.DATABASE, "@" + (n++) + ": " + r, orig);
+            Log.w(
+                LogDomain.DATABASE,
+                "@%d: %s",
+                (!(r instanceof InstrumentedTask)) ? null : ((InstrumentedTask) r).origin,
+                n++,
+                r);
         }
     }
 

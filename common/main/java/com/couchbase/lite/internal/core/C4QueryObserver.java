@@ -132,6 +132,9 @@ public final class C4QueryObserver extends C4NativePeer {
             (code == 0) ? null : new LiteCoreException(domain, code, message));
     }
 
+    @VisibleForTesting
+    long getToken() { return token; }
+
     private void closePeer(@Nullable LogDomain domain) {
         releasePeer(
             domain,

@@ -25,6 +25,7 @@ import java.util.Objects;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
 import com.couchbase.lite.internal.logging.Log;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
@@ -51,6 +52,8 @@ public final class FileLogger implements Logger {
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
+        Preconditions.assertNotNull(level, "level");
+        Preconditions.assertNotNull(domain, "domain");
         if ((config == null) || (level.compareTo(logLevel) < 0)) { return; }
         c4Log.logToCore(domain, level, message);
     }

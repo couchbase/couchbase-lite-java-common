@@ -80,6 +80,7 @@ std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
     env->ReleaseStringChars(jstr, chars);
     return ret;
 }
+
 // ??? Callers can't handle exceptions so we just ignore errors and return an empty string.
 std::string litecore::jni::JcharArrayToUTF8(JNIEnv *env, jcharArray jcharArray) {
     jsize len = env->GetArrayLength(jcharArray);

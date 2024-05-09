@@ -153,9 +153,9 @@ public final class C4Socket extends C4NativePeer implements SocketToCore {
             });
     }
 
+    // This method is used by reflection.  Don't change its signature.
     // Apparently SpotBugs can't tel that `data` *is* null-checked
     @SuppressFBWarnings("NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE")
-    // This method is used by reflection.  Don't change its signature.
     static void write(long peer, @Nullable byte[] data) {
         final int nBytes = (data == null) ? 0 : data.length;
         Log.d(LOG_DOMAIN, "^C4Socket.write@%x(%d)", peer, nBytes);

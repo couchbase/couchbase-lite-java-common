@@ -164,9 +164,12 @@ public abstract class AbstractReplicator extends BaseReplicator
 
     /**
      * Start the replicator.
+     * <p/>
      * This method does not wait for the replicator to start.
      * The replicator runs asynchronously and reports its progress
      * through replicator change notifications.
+     * <p/>
+     * Note: Replicators <b>cannot</b> be started from within a <code>Database.inBatch()</code> block.
      */
     public void start(boolean resetCheckpoint) {
         Log.i(LOG_DOMAIN, "Replicator(%s) started: %s", getId(), this);
@@ -494,10 +497,6 @@ public abstract class AbstractReplicator extends BaseReplicator
     @GuardedBy("getDbLock()")
     @NonNull
     protected final C4Replicator getRemoteC4Replicator(@NonNull URI remoteUri) throws LiteCoreException {
-        // Set up the port: core uses 0 for not set
-        final int p = remoteUri.getPort();
-        final int port = Math.max(0, p);
-
         // get db name and path
         final Deque<String> splitPath = splitPath(remoteUri.getPath());
         final String dbName = (splitPath.size() <= 0) ? "" : splitPath.removeLast();
@@ -507,7 +506,7 @@ public abstract class AbstractReplicator extends BaseReplicator
             config.getCollectionConfigs(),
             remoteUri.getScheme(),
             remoteUri.getHost(),
-            port,
+            Math.max(0, remoteUri.getPort()), // core uses 0 for "not set"
             path,
             dbName,
             MessageFraming.NO_FRAMING,
@@ -896,7 +895,7 @@ public abstract class AbstractReplicator extends BaseReplicator
     private Deque<String> splitPath(@NonNull String fullPath) {
         final Deque<String> path = new ArrayDeque<>();
         for (String element: fullPath.split("/")) {
-            if (element.length() > 0) { path.addLast(element); }
+            if (!element.isEmpty()) { path.addLast(element); }
         }
         return path;
     }

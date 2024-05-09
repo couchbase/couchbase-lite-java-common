@@ -34,7 +34,6 @@ import com.couchbase.lite.internal.utils.JSONUtils;
 /**
  * Mutable access to array data.
  */
-// This class and its constructor are used by reflection.  Don't change it.
 @SuppressWarnings("PMD.TooManyMethods")
 public final class MutableArray extends Array implements MutableArrayInterface {
     //---------------------------------------------

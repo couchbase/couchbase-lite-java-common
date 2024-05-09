@@ -71,9 +71,11 @@ class C4QueryObserverTest : C4BaseTest() {
                 result?.close()
             })
 
-        obs.queryChanged(5L, 0, 0, null)
-        obs.queryChanged(5L, 0, 0, null)
-        obs.queryChanged(5L, 0, 0, null)
+
+        val token = obs.token
+        C4QueryObserver.onQueryChanged(token, 5L, 0, 0, null)
+        C4QueryObserver.onQueryChanged(token, 5L, 0, 0, null)
+        C4QueryObserver.onQueryChanged(token, 5L, 0, 0, null)
 
         assertEquals(3, i)
     }
