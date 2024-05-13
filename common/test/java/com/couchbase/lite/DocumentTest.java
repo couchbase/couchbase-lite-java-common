@@ -61,7 +61,7 @@ public class DocumentTest extends BaseDbTest {
     public void testCreateDoc() {
         MutableDocument doc1a = new MutableDocument();
         assertNotNull(doc1a);
-        assertTrue(doc1a.getId().length() > 0);
+        assertFalse(doc1a.getId().isEmpty());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
         Document doc1b = saveDocInTestCollection(doc1a);
@@ -99,7 +99,7 @@ public class DocumentTest extends BaseDbTest {
     public void testCreateDocWithNilID() {
         MutableDocument doc1a = new MutableDocument((String) null);
         assertNotNull(doc1a);
-        assertTrue(doc1a.getId().length() > 0);
+        assertFalse(doc1a.getId().isEmpty());
         assertEquals(new HashMap<String, Object>(), doc1a.toMap());
 
         Document doc1b = saveDocInTestCollection(doc1a);
@@ -125,7 +125,7 @@ public class DocumentTest extends BaseDbTest {
 
         final MutableDocument doc1a = new MutableDocument(dict);
         assertNotNull(doc1a);
-        assertTrue(doc1a.getId().length() > 0);
+        assertFalse(doc1a.getId().isEmpty());
         assertEquals(dict, doc1a.toMap());
 
         Document doc1b = saveDocInTestCollection(doc1a);
@@ -779,7 +779,7 @@ public class DocumentTest extends BaseDbTest {
 
         Date date = new Date();
         final String dateStr = JSONUtils.toJSONString(date);
-        assertTrue(dateStr.length() > 0);
+        assertFalse(dateStr.isEmpty());
         mDoc.setValue("date", date);
 
         Document doc = validateAndSaveDocInTestCollection(mDoc, d -> {
@@ -1793,7 +1793,7 @@ public class DocumentTest extends BaseDbTest {
             STD_TIMEOUT_MS,
             () -> {
                 if (0 != testCollection.getCount()) { return false; }
-                try (ResultSet rs = queryDeleted.execute()) { return 0 == rs.allResults().size(); }
+                try (ResultSet rs = queryDeleted.execute()) { return rs.allResults().isEmpty(); }
                 catch (CouchbaseLiteException e) { Report.log(e, "Unexpected exception"); }
                 return false;
             });

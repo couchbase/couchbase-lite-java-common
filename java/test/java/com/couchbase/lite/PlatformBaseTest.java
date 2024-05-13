@@ -25,14 +25,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import com.couchbase.lite.internal.CBLVariantExtensions;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.JavaExecutionService;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
-import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 
@@ -66,13 +62,15 @@ public abstract class PlatformBaseTest implements PlatformTest {
                 "Swedish locale not supported",
                 () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
     }
+    protected static void initCouchbase() { CouchbaseLite.init(true); }
 
-    @BeforeClass
-    public static void setUpPlatformBaseTestSuite() { CouchbaseLite.init(true); }
 
-    @AfterClass
-    public static void tearDownPlatformBaseTestSuite() { }
-
+    @Override
+    public final String getDevice() {
+        final String device = System.getProperty("os.name");
+        Report.log("Test device: %s", device);
+        return device.toLowerCase(Locale.getDefault()).substring(0, 3);
+    }
 
     @Override
     public final File getTmpDir() {
@@ -85,18 +83,5 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
-    public final void executeAsync(long delayMs, Runnable task) {
-        ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
-        executionService.postDelayedOnExecutor(delayMs, executionService.getDefaultExecutor(), task);
-    }
-
-    @Override
     public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
-
-    @Override
-    public final String getDevice() {
-        final String device = System.getProperty("os.name");
-        Report.log("Test device: %s", device);
-        return device.toLowerCase(Locale.getDefault()).substring(0, 3);
-    }
 }

@@ -22,17 +22,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assume;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -40,13 +33,12 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 import com.couchbase.lite.internal.core.C4Database;
-import com.couchbase.lite.internal.exec.ExecutionService;
-import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.JSONUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StringUtils;
+import com.couchbase.lite.utils.TestTimer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -72,27 +64,24 @@ public abstract class BaseTest extends PlatformBaseTest {
 
     private static final List<String> SCRATCH_DIRS = new ArrayList<>();
 
-    private static final class ClassWatcher extends TestWatcher {
-        public String className = BaseTest.class.getSimpleName();
-
+    @ClassRule
+    public static final TestWatcher CLASS_NAME_WATCHER = new TestWatcher() {
         @Override
         protected void starting(Description description) {
-            className = description.getTestClass().getSimpleName();
+            resetCouchbase();
+            Report.log(">>>>>>>>>>>> Suite started: %s", description.getTestClass().getSimpleName());
         }
-    }
 
-    @ClassRule
-    public static final ClassWatcher CLASS_WATCHER = new ClassWatcher();
-
-    @BeforeClass
-    public static void setUpPlatformSuite() { setupLogging(">>>>>>>>>>>> Suite started: " + CLASS_WATCHER.className); }
+        protected void finished(Description description) {
+            resetCouchbase();
+            Report.log("<<<<<<<<<<<< Suite completed: %s", description.getTestClass().getSimpleName());
+        }
+    };
 
     @AfterClass
     public static void tearDownBaseTestSuite() {
         for (String path: SCRATCH_DIRS) { FileUtils.eraseFileOrDir(path); }
         SCRATCH_DIRS.clear();
-
-        Report.log("<<<<<<<<<<<< Suite completed: " + CLASS_WATCHER.className);
     }
 
     // Make this package protected method visible
@@ -115,7 +104,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
     }
 
-    // See if the container contains an item that matches using the passed comparitor
+    // See if the container contains an item that matches using the passed comparator
     public static <T extends Throwable> boolean containsWithComparator(
         java.util.Collection<T> collection,
         T target,
@@ -141,7 +130,7 @@ public abstract class BaseTest extends PlatformBaseTest {
             err = e;
         }
 
-        if (err != null) { err.printStackTrace(); }
+        if (err != null) { Report.log(err, "Unexpected exception"); }
         fail("Expecting exception: " + ex + " but got " + err);
     }
 
@@ -178,86 +167,43 @@ public abstract class BaseTest extends PlatformBaseTest {
         return (cbl1.getCode() == cbl2.getCode()) && (cbl1.getDomain().equals(cbl2.getDomain()));
     }
 
-    private static void setupLogging(String msg) {
-        Log.initLoggingInternal();
+    private static void resetCouchbase() {
+        initCouchbase();
 
         Database.log.reset();
 
         final ConsoleLogger console = Database.log.getConsole();
         console.setLevel(LogLevel.DEBUG);
         console.setDomains(LogDomain.ALL_DOMAINS);
-
-        Report.log(msg);
     }
 
-
-    protected ExecutionService.CloseableExecutor testSerialExecutor;
-    private String testName;
-    private long startTime;
 
     @Rule
     public TestRule watcher = new TestWatcher() {
-        protected void starting(Description description) { testName = description.getMethodName(); }
+        private long startTime;
+
+        @Override
+        protected void starting(Description description) {
+            resetCouchbase();
+            startTime = System.currentTimeMillis();
+            Report.log(
+                ">>>>>>>> Test started: %s.%s",
+                description.getTestClass().getSimpleName(),
+                description.getMethodName());
+        }
+
+        protected void finished(Description description) {
+            resetCouchbase();
+            Report.log(
+                "<<<<<<<< Test completed(%s): %s.%s",
+                formatInterval(System.currentTimeMillis() - startTime),
+                description.getTestClass().getSimpleName(),
+                description.getMethodName());
+        }
     };
 
-    @Before
-    public final void setUpBaseTest() {
-        setupLogging(">>>>>>>> Test started: " + testName);
-
-        testSerialExecutor = new ExecutionService.CloseableExecutor() {
-            final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-                1, 1,
-                30, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
-                // thread factory that gives our threads nice recognizable names
-                new ThreadFactory() {
-                    private final AtomicInteger threadId = new AtomicInteger(0);
-
-                    @NonNull
-                    public Thread newThread(@NonNull Runnable r) {
-                        final Thread thread = new Thread(r, "TEST-THREAD #" + threadId.incrementAndGet());
-                        thread.setDaemon(true);
-                        thread.setUncaughtExceptionHandler((t, e) ->
-                            Report.log(e, "Uncaught exception on test thread %s", thread.getName()));
-                        Report.log("New test thread: %s", thread.getName());
-                        return thread;
-                    }
-                });
-
-            @Override
-            public void execute(@NonNull Runnable task) {
-                Report.log("task enqueued: %s", task);
-                executor.execute(() -> {
-                    Report.log("task started: %s", task);
-                    task.run();
-                    Report.log("task finished: %s", task);
-                });
-            }
-
-            @Override
-            public int getPending() { return executor.getQueue().size(); }
-
-            @Override
-            public boolean stop(long timeout, @NonNull TimeUnit unit) {
-                executor.shutdownNow();
-                return true;
-            }
-        };
-
-        startTime = System.currentTimeMillis();
-    }
-
-    @After
-    public final void tearDownBaseTest() {
-        boolean succeeded = false;
-        if (testSerialExecutor != null) { succeeded = testSerialExecutor.stop(2, TimeUnit.SECONDS); }
-        Report.log("Executor stopped: %s", succeeded);
-
-        Report.log(
-            "<<<<<<<< Test completed(%s): %s",
-            formatInterval(System.currentTimeMillis() - startTime),
-            testName);
-    }
+    @Rule
+    public final TestTimer TIMEOUT = new TestTimer(2, TimeUnit.MINUTES);
 
     protected final void skipTestWhen(@NonNull String tag) {
         final Exclusion exclusion = getExclusions(tag);

@@ -75,7 +75,7 @@ public class QueryChangeTest extends BaseQueryTest {
         // The listener might get called before query.addChangeListener(), below, returns.
         // If that happened "token" would not yet have been set and the test would not work.
         // Seizing a lock here guarantees that that can't happen.
-        synchronized (lock) { token.set(query.addChangeListener(testSerialExecutor, listener)); }
+        synchronized (lock) { token.set(query.addChangeListener(getTestSerialExecutor(), listener)); }
         try { assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS)); }
         finally {
             ListenerToken t = token.get();
@@ -113,7 +113,7 @@ public class QueryChangeTest extends BaseQueryTest {
                 }
                 else {
                     final ListenerToken token;
-                    synchronized (tokens) { token = (tokens.size() <= 0) ? null : tokens.pop(); }
+                    synchronized (tokens) { token = (tokens.isEmpty()) ? null : tokens.pop(); }
                     if (token != null) { token.close(); }
                 }
             });
@@ -124,7 +124,7 @@ public class QueryChangeTest extends BaseQueryTest {
         catch (InterruptedException e) { throw new AssertionError(e); }
         finally {
             synchronized (tokens) {
-                while (tokens.size() > 0) { tokens.pop().close(); }
+                while (!tokens.isEmpty()) { tokens.pop().close(); }
             }
         }
     }

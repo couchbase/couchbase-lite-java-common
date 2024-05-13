@@ -127,7 +127,7 @@ public class C4Log {
 
     @VisibleForTesting
     @NonNull
-    public static C4Log swap(C4Log logger) { return LOGGER.getAndSet(logger); }
+    public static C4Log swap(@NonNull C4Log logger) { return LOGGER.getAndSet(logger); }
 
 
     @NonNull

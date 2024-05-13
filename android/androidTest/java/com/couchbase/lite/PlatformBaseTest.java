@@ -29,14 +29,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-
 import com.couchbase.lite.internal.AndroidExecutionService;
 import com.couchbase.lite.internal.CBLVariantExtensions;
-import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
-import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.utils.FileUtils;
 
 
@@ -73,14 +68,13 @@ public abstract class PlatformBaseTest implements PlatformTest {
         catch (Exception e) { android.util.Log.w("TEST", "Failed adding to chatty whitelist", e); }
     }
 
+    protected static void initCouchbase() { CouchbaseLite.init(getAppContext(), true); }
+
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }
 
-    @BeforeClass
-    public static void setUpPlatformBaseTestSuite() { CouchbaseLite.init(getAppContext(), true); }
 
-    @AfterClass
-    public static void tearDownPlatformBaseTestSuite() { }
-
+    @Override
+    public final String getDevice() { return android.os.Build.PRODUCT; }
 
     @Override
     public final File getTmpDir() {
@@ -93,14 +87,5 @@ public abstract class PlatformBaseTest implements PlatformTest {
     }
 
     @Override
-    public final void executeAsync(long delayMs, Runnable task) {
-        ExecutionService executionService = CouchbaseLiteInternal.getExecutionService();
-        executionService.postDelayedOnExecutor(delayMs, executionService.getDefaultExecutor(), task);
-    }
-
-    @Override
     public final Exclusion getExclusions(@NonNull String tag) { return PLATFORM_DEPENDENT_TESTS.get(tag); }
-
-    @Override
-    public final String getDevice() { return android.os.Build.PRODUCT; }
 }

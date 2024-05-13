@@ -1542,7 +1542,7 @@ public class QueryTest extends BaseQueryTest {
             }
         };
 
-        try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
+        try (ListenerToken token = query.addChangeListener(getTestSerialExecutor(), listener)) {
             assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // create some more docs
@@ -2019,7 +2019,7 @@ public class QueryTest extends BaseQueryTest {
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(getTestCollection()));
 
-        try (ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch1.countDown())) {
+        try (ListenerToken token = query.addChangeListener(getTestSerialExecutor(), change -> latch1.countDown())) {
             assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
             deleteDb(getTestDatabase());
         }
@@ -2032,7 +2032,7 @@ public class QueryTest extends BaseQueryTest {
             .select(SelectResult.expression(Meta.id))
             .from(DataSource.collection(getTestCollection()));
 
-        ListenerToken token = query.addChangeListener(testSerialExecutor, change -> latch.countDown());
+        ListenerToken token = query.addChangeListener(getTestSerialExecutor(), change -> latch.countDown());
         try {
             assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
             closeDb(getTestDatabase());
@@ -2600,7 +2600,7 @@ public class QueryTest extends BaseQueryTest {
             }
         };
 
-        try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
+        try (ListenerToken token = query.addChangeListener(getTestSerialExecutor(), listener)) {
             assertTrue(latch1.await(LONG_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             loadDocuments(51, 50, getTestCollection());
@@ -2636,7 +2636,7 @@ public class QueryTest extends BaseQueryTest {
             else { latch2.countDown(); }
         };
 
-        try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
+        try (ListenerToken token = query.addChangeListener(getTestSerialExecutor(), listener)) {
             assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             doc = getTestCollection().getDocument(doc.getId()).toMutable();
@@ -3297,7 +3297,7 @@ public class QueryTest extends BaseQueryTest {
             else { latch2.countDown(); }
         };
 
-        try (ListenerToken token = query.addChangeListener(testSerialExecutor, listener)) {
+        try (ListenerToken token = query.addChangeListener(getTestSerialExecutor(), listener)) {
             assertTrue(latch1.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS));
 
             // create more docs

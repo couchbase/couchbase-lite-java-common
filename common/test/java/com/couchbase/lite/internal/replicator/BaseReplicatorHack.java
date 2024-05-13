@@ -23,7 +23,7 @@ import com.couchbase.lite.AbstractReplicator;
 /**
  * Exists to make the method BaseReplicator.dispatcher() visible for testing
  */
-public class InternalReplicatorTest {
+public class BaseReplicatorHack {
     public static void enqueueOnDispatcher(@NonNull AbstractReplicator repl, @NonNull Runnable task) {
         repl.dispatcher.execute(task);
     }

@@ -43,7 +43,7 @@ public class NotificationTest extends BaseDbTest {
 
         AtomicInteger n = new AtomicInteger(0);
         try (ListenerToken ignore = getTestCollection().addChangeListener(
-            testSerialExecutor,
+            getTestSerialExecutor(),
             change -> {
                 assertNotNull(change);
                 assertEquals(getTestCollection(), change.getCollection());
@@ -151,7 +151,7 @@ public class NotificationTest extends BaseDbTest {
         try {
             final CountDownLatch latchDB = new CountDownLatch(1);
             coll2.addChangeListener(
-                testSerialExecutor,
+                getTestSerialExecutor(),
                 change -> {
                     assertNotNull(change);
                     if (counter.addAndGet(change.getDocumentIDs().size()) >= 10) {
@@ -161,7 +161,7 @@ public class NotificationTest extends BaseDbTest {
                 });
 
             final CountDownLatch latchDoc = new CountDownLatch(1);
-            token = coll2.addDocumentChangeListener("doc-6", testSerialExecutor, change -> {
+            token = coll2.addDocumentChangeListener("doc-6", getTestSerialExecutor(), change -> {
                 assertNotNull(change);
                 assertEquals("doc-6", change.getDocumentID());
                 Document doc = BaseDbTestKt.getNonNullDoc(coll2, change.getDocumentID());

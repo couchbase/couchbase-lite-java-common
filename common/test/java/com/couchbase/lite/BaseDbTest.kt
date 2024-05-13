@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.exec.ExecutionService.CloseableExecutor
 import com.couchbase.lite.internal.utils.JSONUtils
 import com.couchbase.lite.internal.utils.PlatformUtils
 import com.couchbase.lite.internal.utils.Report
@@ -32,7 +33,12 @@ import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 import java.util.Locale
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executor
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ThreadFactory
+import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 
 // Here to make it visible from other test packages
@@ -141,11 +147,13 @@ abstract class BaseDbTest : BaseTest() {
         get() = testCol!!
     protected val testTag: String
         get() = testTg!!
-
+    protected val testSerialExecutor: Executor
+        get() = testExec!!
 
     private var testDb: Database? = null
     private var testCol: Collection? = null
     private var testTg: String? = null
+    private var testExec: CloseableExecutor? = null
 
     @Before
     fun setUpBaseDbTest() {
@@ -153,9 +161,57 @@ abstract class BaseDbTest : BaseTest() {
         Report.log("Created base test DB: $testDatabase")
         assertNotNull(testDatabase)
         assertTrue(testDatabase.isOpen)
+
         testCol = testDatabase.createCollection(getUniqueName("test_collection"), getUniqueName("test_scope"))
         Report.log("Created base test Collection: $testCollection")
+        assertNotNull(testCol)
+
         testTg = getUniqueName("db_test_tag")
+
+        testExec = object : CloseableExecutor {
+            val executor: ThreadPoolExecutor = ThreadPoolExecutor(
+                1, 1,
+                30, TimeUnit.SECONDS,
+                LinkedBlockingQueue(),  // thread factory that gives our threads nice recognizable names
+                object : ThreadFactory {
+                    private val threadId = AtomicInteger(0)
+
+                    override fun newThread(r: Runnable): Thread {
+                        val thread = Thread(r, "TEST-THREAD #" + threadId.incrementAndGet())
+                        thread.isDaemon = true
+                        thread.uncaughtExceptionHandler = Thread.UncaughtExceptionHandler { _, e: Throwable? ->
+                            Report.log(
+                                e,
+                                "Uncaught exception on test thread %s",
+                                thread.name
+                            )
+                        }
+                        Report.log("New test thread: %s", thread.name)
+                        return thread
+                    }
+                })
+
+            override fun execute(task: Runnable) {
+                Report.log("task enqueued: %s", task)
+                executor.execute {
+                    Report.log("Test task started: %s", task)
+                    try {
+                        task.run()
+                    } finally {
+                        Report.log("Test task finished: %s", task)
+                    }
+                }
+            }
+
+            override fun getPending(): Int {
+                return executor.queue.size
+            }
+
+            override fun stop(timeout: Long, unit: TimeUnit): Boolean {
+                executor.shutdownNow()
+                return true
+            }
+        }
     }
 
     @After
@@ -169,6 +225,10 @@ abstract class BaseDbTest : BaseTest() {
             eraseDb(it)
             Report.log("Test db erased: ${it.name}")
         }
+
+        var succeeded = false
+        testExec?.let { succeeded = it.stop(2, TimeUnit.SECONDS) }
+        Report.log("Executor stopped: %s", succeeded)
     }
 
     protected fun reopenTestDb() {
