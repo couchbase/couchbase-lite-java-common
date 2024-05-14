@@ -36,7 +36,6 @@ import org.json.JSONObject;
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.R;
 import com.couchbase.lite.internal.connectivity.AndroidConnectivityManager;
 import com.couchbase.lite.internal.core.C4;
@@ -98,7 +97,7 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging(loadErrorMessages(ctxt), debugging ? LogLevel.DEBUG : LogLevel.WARNING);
+        Log.initLogging();
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
 
@@ -164,12 +163,11 @@ public final class CouchbaseLiteInternal {
         INITIALIZED.set(false);
     }
 
-    @VisibleForTesting
     @NonNull
-    public static Map<String, String> loadErrorMessages(@NonNull Context ctxt) {
+    public static Map<String, String> loadErrorMessages() {
         final Map<String, String> errorMessages = new HashMap<>();
 
-        try (InputStream is = ctxt.getResources().openRawResource(R.raw.errors)) {
+        try (InputStream is = getContext().getResources().openRawResource(R.raw.errors)) {
             final JSONObject root = new JSONObject(new Scanner(is, "UTF-8").useDelimiter("\\A").next());
             final Iterable<String> errors = root::keys;
             for (String error: errors) { errorMessages.put(error, root.getString(error)); }

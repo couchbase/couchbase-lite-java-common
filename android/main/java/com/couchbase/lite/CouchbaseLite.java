@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import java.io.File;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.utils.Internal;
 
 
 public final class CouchbaseLite {
@@ -44,6 +45,7 @@ public final class CouchbaseLite {
      * @param debug true to enable debugging (Unsupported)
      * @throws CouchbaseLiteError on initialization failure
      */
+    @Internal
     public static void init(@NonNull Context ctxt, boolean debug) {
         init(ctxt, debug, ctxt.getFilesDir(), new File(ctxt.getFilesDir(), CouchbaseLiteInternal.SCRATCH_DIR_NAME));
     }
@@ -61,6 +63,7 @@ public final class CouchbaseLite {
      * @param scratchDir scratch directory for SQLite
      * @throws CouchbaseLiteError on initialization failure
      */
+    @Internal
     public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
         CouchbaseLiteInternal.init(ctxt, debug, rootDir, scratchDir);
     }

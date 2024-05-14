@@ -28,7 +28,6 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
@@ -47,7 +46,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
-@SuppressWarnings("ConstantConditions")
 public abstract class BaseTest extends PlatformBaseTest {
     public static final long STD_TIMEOUT_SEC = 10;
     public static final long LONG_TIMEOUT_SEC = 60;
@@ -68,12 +66,12 @@ public abstract class BaseTest extends PlatformBaseTest {
     public static final TestWatcher CLASS_NAME_WATCHER = new TestWatcher() {
         @Override
         protected void starting(Description description) {
-            resetCouchbase();
+            initCouchbase();
             Report.log(">>>>>>>>>>>> Suite started: %s", description.getTestClass().getSimpleName());
         }
 
         protected void finished(Description description) {
-            resetCouchbase();
+            initCouchbase();
             Report.log("<<<<<<<<<<<< Suite completed: %s", description.getTestClass().getSimpleName());
         }
     };
@@ -167,24 +165,14 @@ public abstract class BaseTest extends PlatformBaseTest {
         return (cbl1.getCode() == cbl2.getCode()) && (cbl1.getDomain().equals(cbl2.getDomain()));
     }
 
-    private static void resetCouchbase() {
-        initCouchbase();
-
-        Database.log.reset();
-
-        final ConsoleLogger console = Database.log.getConsole();
-        console.setLevel(LogLevel.DEBUG);
-        console.setDomains(LogDomain.ALL_DOMAINS);
-    }
-
 
     @Rule
-    public TestRule watcher = new TestWatcher() {
+    public TestWatcher watcher = new TestWatcher() {
         private long startTime;
 
         @Override
         protected void starting(Description description) {
-            resetCouchbase();
+            initCouchbase();
             startTime = System.currentTimeMillis();
             Report.log(
                 ">>>>>>>> Test started: %s.%s",
@@ -193,7 +181,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
 
         protected void finished(Description description) {
-            resetCouchbase();
+            initCouchbase();
             Report.log(
                 "<<<<<<<< Test completed(%s): %s.%s",
                 formatInterval(System.currentTimeMillis() - startTime),

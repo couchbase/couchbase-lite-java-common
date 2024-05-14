@@ -16,7 +16,6 @@
 package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import java.util.Arrays;
@@ -31,15 +30,13 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 abstract class AbstractConsoleLogger implements Logger {
     // nullable for testing
-    @Nullable
-    private final C4Log c4Log;
     @NonNull
     private EnumSet<LogDomain> logDomains = LogDomain.ALL_DOMAINS;
     @NonNull
     private LogLevel logLevel = LogLevel.WARNING;
 
     // Singleton instance accessible from Database.log.getConsole()
-    protected AbstractConsoleLogger(@Nullable C4Log c4Log) { this.c4Log = c4Log; }
+    protected AbstractConsoleLogger() { }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
@@ -62,7 +59,7 @@ abstract class AbstractConsoleLogger implements Logger {
         if (logLevel == level) { return; }
 
         logLevel = level;
-        if (c4Log != null) { c4Log.setCallbackLevel(logLevel); }
+        setC4Level(level);
     }
 
     /**
@@ -92,6 +89,10 @@ abstract class AbstractConsoleLogger implements Logger {
     }
 
     protected abstract void doLog(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message);
+
+    protected void setC4Level(@NonNull LogLevel level) {
+        C4Log.get().setCallbackLevel(level);
+    }
 
     @VisibleForTesting
     final void reset() {

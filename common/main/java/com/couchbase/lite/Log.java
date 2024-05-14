@@ -28,10 +28,10 @@ import com.couchbase.lite.internal.core.C4Log;
  */
 public final class Log {
     // Singleton instance.
-    private final ConsoleLogger consoleLogger = new ConsoleLogger(C4Log.get());
+    private final ConsoleLogger consoleLogger = new ConsoleLogger();
 
     // Singleton instance.
-    private final FileLogger fileLogger = new FileLogger(C4Log.get());
+    private final FileLogger fileLogger = new FileLogger();
 
     // Singleton instance.
     @Nullable
