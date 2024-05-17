@@ -32,8 +32,8 @@ class LoadTest : BaseDbTest() {
     companion object {
         private val DEVICE_SPEED_MULTIPLIER = mapOf(
             // java devices
-            "lin" to 33,
-            "mac" to 40,
+            "lin" to 50,
+            "mac" to 70,
             "win" to 120,
 
             // android on jenkins

@@ -35,7 +35,9 @@ public class C4QueryBaseTest extends C4BaseTest {
 
     @After
     public final void tearDownC4QueryBaseTest() {
-        if (query != null) { query.close(); }
+        final C4Query q = query;
+        query = null;
+        if (q != null) { q.close(); }
     }
 
     protected final void compileSelect(String json) throws LiteCoreException {
@@ -64,7 +66,7 @@ public class C4QueryBaseTest extends C4BaseTest {
         json.append(c4Collection.getName()).append("'}],");
         json.append("\"WHERE\": ");
         json.append(whereExpr);
-        if (sortExpr != null && sortExpr.length() > 0) {
+        if ((sortExpr != null) && !sortExpr.isEmpty()) {
             json.append(", \"ORDER_BY\": ");
             json.append(sortExpr);
         }

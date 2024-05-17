@@ -127,7 +127,11 @@ abstract class BaseReplicatorTest : BaseDbTest() {
     @After
     fun tearDownBaseReplicatorTest() {
         targetCollection.close()
-        replicators.forEach { it.close() }
+
+        val repls = replicators.toList()
+        replicators.clear()
+        repls.forEach { it.close() }
+
         eraseDb(targetDatabase)
     }
 
