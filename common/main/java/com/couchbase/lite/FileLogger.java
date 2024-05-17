@@ -40,22 +40,20 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * the thread safety and the several races are tolerable.
  */
 public final class FileLogger implements Logger {
-    @NonNull
-    private final C4Log c4Log;
     @Nullable
     private volatile LogFileConfiguration config;
     @NonNull
     private volatile LogLevel logLevel = LogLevel.NONE;
 
     // The singleton instance is available from Database.log.getFile()
-    FileLogger(@NonNull C4Log c4Log) { this.c4Log = c4Log; }
+    FileLogger() { }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {
         Preconditions.assertNotNull(level, "level");
         Preconditions.assertNotNull(domain, "domain");
         if ((config == null) || (level.compareTo(logLevel) < 0)) { return; }
-        c4Log.logToCore(domain, level, message);
+        C4Log.get().logToCore(domain, level, message);
     }
 
     @NonNull
@@ -72,7 +70,7 @@ public final class FileLogger implements Logger {
 
         if (logLevel == level) { return; }
 
-        c4Log.setFileLogLevel(level);
+        C4Log.get().setFileLogLevel(level);
         logLevel = level;
 
         if (level == LogLevel.NONE) { Log.warn(); }
@@ -125,7 +123,7 @@ public final class FileLogger implements Logger {
         }
 
         final LogFileConfiguration cfg = new LogFileConfiguration(logDirPath, newConfig, true);
-        c4Log.initFileLogger(
+        C4Log.get().initFileLogger(
             logDirPath,
             logLevel,
             cfg.getMaxRotateCount(),
@@ -140,6 +138,6 @@ public final class FileLogger implements Logger {
     void reset(boolean hard) {
         config = null;
         logLevel = LogLevel.NONE;
-        if (hard) { c4Log.initFileLogger("", LogLevel.NONE, 0, 0, false, ""); }
+        if (hard) { C4Log.get().initFileLogger("", LogLevel.NONE, 0, 0, false, ""); }
     }
 }

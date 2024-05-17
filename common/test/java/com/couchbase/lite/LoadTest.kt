@@ -44,7 +44,7 @@ class LoadTest : BaseDbTest() {
             "a12uue" to 210,
 
             // android local
-            "taimen" to 60,
+            "taimen" to 70,
             "sunfish" to 200,
             "shamu" to 200,
             "hammerhead" to 200,

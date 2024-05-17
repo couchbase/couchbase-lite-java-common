@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
-import com.couchbase.lite.LogLevel;
 import com.couchbase.lite.internal.core.C4;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.logging.Log;
@@ -80,7 +79,7 @@ public final class CouchbaseLiteInternal {
 
         C4.debug(debugging);
 
-        Log.initLogging(loadErrorMessages(), debugging ? LogLevel.DEBUG : LogLevel.WARNING);
+        Log.initLogging();
 
         setC4TmpDirPath(tmpDir);
 
