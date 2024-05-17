@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2023 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package com.couchbase.lite;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.time.LocalDateTime;
@@ -24,7 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
-import com.couchbase.lite.internal.core.C4Log;
 
 
 /**
@@ -54,7 +52,7 @@ public class ConsoleLogger extends AbstractConsoleLogger {
     }
 
 
-    ConsoleLogger(@Nullable C4Log c4Log) { super(c4Log); }
+    ConsoleLogger() { }
 
     @Override
     public void log(@NonNull LogLevel level, @NonNull LogDomain domain, @NonNull String message) {

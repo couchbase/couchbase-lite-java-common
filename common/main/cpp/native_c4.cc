@@ -306,16 +306,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_log(
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
- * Method:    getBinaryFileLevel
- * Signature: (V)I
- */
-JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Log_getBinaryFileLevel(JNIEnv *env, jclass ignore) {
-    return c4log_binaryFileLevel();
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Log
  * Method:    setBinaryFileLevel
  * Signature: (I)V
  */

@@ -92,6 +92,28 @@ public final class LogFileConfiguration {
         this.readonly = readonly;
     }
 
+    @Override
+    public int hashCode() { return Objects.hash(directory); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }
+        if (!(o instanceof LogFileConfiguration)) { return false; }
+        final LogFileConfiguration that = (LogFileConfiguration) o;
+        return (maxSize == that.maxSize)
+            && (maxRotateCount == that.maxRotateCount)
+            && (usePlaintext == that.usePlaintext)
+            && directory.equals(that.directory);
+    }
+
+    @NonNull
+    @Override
+    public String toString() {
+        return "LogFileConfig{"
+            + ((readonly) ? "" : "!")
+            + ((usePlaintext) ? "+" : "")
+            + directory + ", " + maxSize + ", " + maxRotateCount + "}";
+    }
 
     //---------------------------------------------
     // Setters
@@ -187,22 +209,4 @@ public final class LogFileConfiguration {
      * @return Whether or not CBL is logging in plaintext
      */
     public boolean usesPlaintext() { return usePlaintext; }
-
-    //---------------------------------------------
-    // Package level access
-    //---------------------------------------------
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) { return true; }
-        if (!(o instanceof LogFileConfiguration)) { return false; }
-        final LogFileConfiguration that = (LogFileConfiguration) o;
-        return (maxSize == that.maxSize)
-            && (maxRotateCount == that.maxRotateCount)
-            && (usePlaintext == that.usePlaintext)
-            && directory.equals(that.directory);
-    }
-
-    @Override
-    public int hashCode() { return Objects.hash(directory); }
 }

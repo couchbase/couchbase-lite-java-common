@@ -38,6 +38,7 @@ import com.couchbase.lite.Logger;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.core.C4Log;
 import com.couchbase.lite.internal.core.CBLVersion;
+import com.couchbase.lite.internal.core.impl.NativeC4Log;
 
 
 /**
@@ -65,16 +66,16 @@ public final class Log {
     /**
      * Setup logging.
      */
-    public static void initLogging(@NonNull Map<String, String> errorMessages, @NonNull LogLevel initLogLevel) {
+    public static void initLogging() {
         initLoggingInternal();
 
-        setStandardErrorMessages(Collections.unmodifiableMap(errorMessages));
+        setStandardErrorMessages(CouchbaseLiteInternal.loadErrorMessages());
 
         // Init the console logger.  The FileLogger will take care of itself.
         final ConsoleLogger logger = Database.log.getConsole();
         logger.setLevel(LogLevel.INFO);
         Log.i(LogDomain.DATABASE, CouchbaseLiteInternal.PLATFORM + " Initialized: " + CBLVersion.getVersionInfo());
-        logger.setLevel(initLogLevel);
+        logger.setLevel(CouchbaseLiteInternal.debugging() ? LogLevel.DEBUG : LogLevel.WARNING);
     }
 
     /**
@@ -287,17 +288,15 @@ public final class Log {
 
     @VisibleForTesting
     public static void initLoggingInternal() {
-        final C4Log c4Log = C4Log.get();
+        final C4Log c4Log = new C4Log(new NativeC4Log());
+        C4Log.set(c4Log);
         c4Log.forceCallbackLevel(Database.log.getConsole().getLevel());
         c4Log.setC4LogLevel(LogDomain.ALL_DOMAINS, LogLevel.DEBUG);
     }
 
     @VisibleForTesting
-    @NonNull
-    public static Map<String, String> setStandardErrorMessages(@NonNull Map<String, String> stdErrMsgs) {
-        final Map<String, String> prevMessages = errorMessages;
+    public static void setStandardErrorMessages(@NonNull Map<String, String> stdErrMsgs) {
         errorMessages = Collections.unmodifiableMap(new HashMap<>(stdErrMsgs));
-        return prevMessages;
     }
 
     private static void log(
@@ -326,7 +325,8 @@ public final class Log {
 
     private static boolean shouldLog(@NonNull LogLevel logLevel) {
         if ((LogLevel.VERBOSE.compareTo(logLevel) >= 0) && !CouchbaseLiteInternal.debugging()) { return false; }
-        final LogLevel callbackLevel = C4Log.get().getCallbackLevel();
+        final C4Log c4Log = C4Log.get();
+        final LogLevel callbackLevel = c4Log.getCallbackLevel();
         final LogLevel fileLogLevel = Database.log.getFile().getLevel();
         return ((callbackLevel.compareTo(fileLogLevel) < 0) ? callbackLevel : fileLogLevel).compareTo(logLevel) <= 0;
     }

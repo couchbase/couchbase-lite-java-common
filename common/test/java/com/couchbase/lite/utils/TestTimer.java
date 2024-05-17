@@ -15,24 +15,26 @@
 //
 package com.couchbase.lite.utils;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
+import org.junit.After;
+import org.junit.rules.MethodRule;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestTimedOutException;
 
-// Unfortunately, I don't see a way, right offhand, to run the
-// @After methods the the test times out.
-public class TestTimer implements TestRule {
-    public static final Executor EXECUTOR = Executors.newSingleThreadExecutor();
 
+// I just don't want to go through and annotate every single test with its timeout.
+// Getting the @After methods to run after a timeout, though, is a bit of a hack.
+public class TestTimer implements MethodRule {
     private final long timeout;
     private final TimeUnit timeUnit;
 
@@ -41,8 +43,32 @@ public class TestTimer implements TestRule {
         this.timeUnit = timeUnit;
     }
 
-    public Statement apply(Statement statement, Description description) {
-        return new TestTimeout(statement, timeout, timeUnit);
+    @Override
+    public Statement apply(Statement statement, FrameworkMethod method, Object target) {
+        // Because this will wrap RunAfters, we need to find the after methods and run them, if we timeout
+        return new TestTimeout(statement, timeout, timeUnit, target, findAfters(method.getDeclaringClass()));
+    }
+
+    // Return the list of after methods, starting at the parameter and in order up the superclasses
+    private List<Method> findAfters(Class<?> clazz) {
+        List<Method> afters = new ArrayList<>();
+        for (Class<?> clazzes: getSuperClasses(clazz)) {
+            for (Method method: clazzes.getDeclaredMethods()) {
+                if (method.getAnnotation(After.class) != null) { afters.add(method); }
+            }
+        }
+        return Collections.unmodifiableList(afters);
+    }
+
+    // Return the list of superclasses, starting at the parameter and in order up the superclasses
+    private List<Class<?>> getSuperClasses(Class<?> testClass) {
+        List<Class<?>> results = new ArrayList<>();
+        Class<?> current = testClass;
+        while (current != null) {
+            results.add(current);
+            current = current.getSuperclass();
+        }
+        return results;
     }
 }
 
@@ -50,11 +76,15 @@ class TestTimeout extends Statement {
     private final Statement statement;
     private final TimeUnit timeUnit;
     private final long timeout;
+    private final Object target;
+    private final List<Method> afters;
 
-    TestTimeout(Statement statement, long timeout, TimeUnit timeUnit) {
+    TestTimeout(Statement statement, long timeout, TimeUnit timeUnit, Object target, List<Method> afters) {
         this.statement = statement;
         this.timeout = timeout;
         this.timeUnit = timeUnit;
+        this.target = target;
+        this.afters = afters;
     }
 
     @Override
@@ -66,23 +96,36 @@ class TestTimeout extends Statement {
                 try {
                     startingGate.await();
                     statement.evaluate();
-                 }
+                    return null;
+                }
                 catch (Throwable e) { return e; }
-                return null;
             }
         );
 
-        TestTimer.EXECUTOR.execute(task);
+        new Thread(task).start();
 
+        List<Throwable> errors = new ArrayList<>();
         startingGate.await();
         try {
             Throwable e = (timeout <= 0) ? task.get() : task.get(timeout, timeUnit);
-            if (e != null) { throw e; }
+            if (e == null) { return; }
+
+            errors.add(e);
         }
-        catch (ExecutionException e) {
-            final Throwable ee = e.getCause();
-            throw (ee == null)? e : ee;
+        catch (TimeoutException e) {
+            errors.add(new TestTimedOutException(timeout, timeUnit));
         }
-        catch (TimeoutException e) { throw new TestTimedOutException(timeout, timeUnit); }
+
+        for (Method after: afters) {
+            try { after.invoke(target); }
+            catch (Throwable e) { errors.add(e); }
+        }
+
+        // this handles skipped tests (AssumptionViolatedException)
+        if (errors.size() == 1) { throw errors.get(0); }
+
+        // I think I have seen this cause a single test to fail multiple times
+        // which is weird...
+        throw new MultipleFailureException(errors);
     }
 }
