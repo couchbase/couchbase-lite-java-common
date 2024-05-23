@@ -171,7 +171,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
                 }
             }
 
-            return new ResultSet(this, c4enum, new HashMap<>(colNames));
+            return new ResultSet(getDatabase(), c4enum, new HashMap<>(colNames));
         }
         catch (LiteCoreException e) {
             throw CouchbaseLiteException.convertException(e);
@@ -338,7 +338,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
         @NonNull ChangeListenerToken<QueryChange> token,
         @Nullable C4QueryEnumerator results,
         @Nullable LiteCoreException err) {
-        token.postChange(new QueryChange(this, new ResultSet(this, results, columnNames), err));
+        token.postChange(new QueryChange(this, new ResultSet(getDatabase(), results, columnNames), err));
     }
 
     @NonNull

@@ -110,7 +110,6 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_shareDbCollections;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startHttp;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4Log_getBinaryFileLevel;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Log_log;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setBinaryFileLevel;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setCallbackLevel;

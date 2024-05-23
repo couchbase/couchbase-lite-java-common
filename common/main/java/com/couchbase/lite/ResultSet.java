@@ -63,8 +63,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     private final Object lock = new Object();
 
     @NonNull
-    private final AbstractQuery query;
-    @NonNull
     private final Map<String, Integer> columnNames;
     @NonNull
     private final ResultContext context;
@@ -82,12 +80,11 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
     // This object is the sole owner of the c4enum passed as the second argument.
     ResultSet(
-        @NonNull AbstractQuery query,
+        @Nullable AbstractDatabase database,
         @Nullable C4QueryEnumerator c4enum,
         @NonNull Map<String, Integer> cols) {
-        this.query = Preconditions.assertNotNull(query, "query");
         this.columnNames = Preconditions.assertNotNull(cols, "columns");
-        this.context = new ResultContext(query.getDatabase(), this);
+        this.context = new ResultContext(database, this);
         this.c4enum = c4enum;
     }
 
@@ -142,10 +139,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
         return results;
     }
 
-    //---------------------------------------------
-    // Iterable implementation
-    //---------------------------------------------
-
     /**
      * Return Iterator of Results.
      * <p>Caution:  {@link ResultSet#next}, {@link ResultSet#allResults} and {@link ResultSet#iterator}
@@ -156,6 +149,10 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     @NonNull
     @Override
     public Iterator<Result> iterator() { return allResults().iterator(); }
+
+    public boolean isClosed() {
+        synchronized (lock) { return c4enum == null; }
+    }
 
     @Override
     public void close() {
@@ -171,6 +168,10 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
 
         synchronized (db.getDbLock()) { qEnum.close(); }
     }
+
+    //---------------------------------------------
+    // Protected access
+    //---------------------------------------------
 
     @Override
     protected void finalize() throws Throwable {
@@ -188,11 +189,8 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     }
 
     //---------------------------------------------
-    // Package level access
+    // Package access
     //---------------------------------------------
-
-    @NonNull
-    AbstractQuery getQuery() { return query; }
 
     int getColumnCount() { return columnNames.size(); }
 
@@ -202,10 +200,6 @@ public class ResultSet implements Iterable<Result>, AutoCloseable {
     int getColumnIndex(@NonNull String name) {
         final Integer idx = columnNames.get(name);
         return (idx == null) ? -1 : idx;
-    }
-
-    boolean isClosed() {
-        synchronized (lock) { return c4enum == null; }
     }
 }
 
