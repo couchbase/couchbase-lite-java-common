@@ -35,7 +35,7 @@ class LoadTest : BaseDbTest() {
             "mac" to 40,
             "win" to 120,
             "r8quex" to 100,
-            "a12uue" to 210,
+            "a12uue" to 230,
             "starqlteue" to 150,
             "dandelion_global" to 100,
             "cheetah" to 100,

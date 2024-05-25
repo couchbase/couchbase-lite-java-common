@@ -26,6 +26,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -85,10 +86,11 @@ open class MockImpl : C4Socket.NativeImpl {
 }
 
 class C4SocketTest : BaseTest() {
+    @Before
+    fun setupC4SocketTest() = C4Socket.BOUND_SOCKETS.clear()
+
     @After
-    fun tearDownC4SocketTest() {
-        C4Socket.BOUND_SOCKETS.clear()
-    }
+    fun tearDownC4SocketTest() = C4Socket.BOUND_SOCKETS.clear()
 
 
     ////////////////  S T A T I C   U T I L I T I E S   ////////////////

@@ -113,6 +113,9 @@ fun CountDownLatch.stdWait(): Boolean {
     }
 }
 
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T : Any> List<*>.castAs() = if (!all { it is T }) null else this as List<T>
+
 // Comparing documents isn't trivial:
 // Fleece will change the types of numeric values
 // to suit its internal requirements.
