@@ -36,6 +36,7 @@ import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4BlobWriteStream;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JSONUtils;
@@ -618,10 +619,9 @@ public final class Blob implements FLEncodable {
 
     @Nullable
     private byte[] getContentFromDatabase() {
-        Preconditions.assertNotNull(database, "database");
-
         final byte[] newContent;
-        try (C4BlobStore blobStore = database.getBlobStore(); C4BlobKey key = C4BlobKey.create(blobDigest)) {
+        try (C4BlobStore blobStore = Preconditions.assertNotNull(database, "database").getBlobStore();
+             C4BlobKey key = C4BlobKey.create(blobDigest)) {
             newContent = blobStore.getContents(key);
         }
         catch (LiteCoreException e) {

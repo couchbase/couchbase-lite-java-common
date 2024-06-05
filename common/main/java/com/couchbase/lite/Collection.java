@@ -905,6 +905,9 @@ public final class Collection extends BaseCollection
         catch (LiteCoreException e) {
             throw CouchbaseLiteException.convertException(e);
         }
+        finally {
+            if (body != null) { body.close(); }
+        }
     }
 
     private void closeCollectionChangeNotifierLocked() {

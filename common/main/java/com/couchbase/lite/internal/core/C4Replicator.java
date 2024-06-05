@@ -655,9 +655,10 @@ public abstract class C4Replicator extends C4NativePeer {
 
     @NonNull
     public Set<String> getPendingDocIDs(@NonNull String scope, @NonNull String collection) throws LiteCoreException {
-        final FLSliceResult result = withPeerOrNull(peer -> impl.nGetPendingDocIds(peer, scope, collection));
-        final FLValue slice = FLValue.fromData(result);
-        return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray(String.class));
+        try (FLSliceResult result = withPeerOrNull(peer -> impl.nGetPendingDocIds(peer, scope, collection))) {
+            final FLValue val = FLValue.fromData(result);
+            return (val == null) ? Collections.emptySet() : new HashSet<>(val.asTypedArray(String.class));
+        }
     }
 
     public void setProgressLevel(int level) throws LiteCoreException {

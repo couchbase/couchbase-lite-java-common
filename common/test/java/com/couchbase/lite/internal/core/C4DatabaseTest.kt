@@ -178,7 +178,8 @@ class C4DatabaseTest : C4BaseTest() {
         c4Database = C4Database.getDatabase(
             dbParentDirPath,
             dbName,
-            (testDbFlags or C4Constants.DatabaseFlags.READ_ONLY) and NOT_CREATE_FLAG)
+            (testDbFlags or C4Constants.DatabaseFlags.READ_ONLY) and NOT_CREATE_FLAG
+        )
         assertNotNull(c4Database)
         assertNotNull(c4Database.publicUUID)
         assertNotNull(C4TestUtils.privateUUIDForDb(c4Database))
@@ -222,7 +223,8 @@ class C4DatabaseTest : C4BaseTest() {
             C4Database.getDatabase(
                 getScratchDirectoryPath(getUniqueName("c4_test_2")),
                 getUniqueName("bundle"),
-                testDbFlags and NOT_CREATE_FLAG)
+                testDbFlags and NOT_CREATE_FLAG
+            )
             fail()
         } catch (e: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
@@ -602,21 +604,24 @@ class C4DatabaseTest : C4BaseTest() {
         }
         json.append("]}")
 
-        // Save document:
-        val doc = C4TestUtils.create(
-            c4Collection,
-            C4TestUtils.encodeJSONInDb(c4Database, json5(json.toString())),
-            docID,
-            C4Constants.RevisionFlags.HAS_ATTACHMENTS,
-            false,
-            false, arrayOfNulls(0),
-            true,
-            0,
-            0
-        )
+       C4TestUtils.encodeJSONInDb(c4Database, json5(json.toString())).use { body ->
+            // Don't try to autoclose this: See C4Document.close()
+            assertNotNull(
+                C4TestUtils.create(
+                    c4Collection,
+                    body,
+                    docID,
+                    C4Constants.RevisionFlags.HAS_ATTACHMENTS,
+                    false,
+                    false,
+                    arrayOfNulls(0),
+                    true,
+                    0,
+                    0
+                )
+            )
+        }
 
-        assertNotNull(doc)
-        doc.close()
         return keys
     }
 }

@@ -89,7 +89,6 @@ public abstract class FLSliceResult implements AutoCloseable {
     @GuardedBy("this")
     private NativeImpl impl;
 
-
     private FLSliceResult(@NonNull NativeImpl impl, long base, long size) {
         this.impl = impl;
         this.base = base;
