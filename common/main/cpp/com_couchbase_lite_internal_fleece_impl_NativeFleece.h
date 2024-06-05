@@ -326,6 +326,7 @@ JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_json5toJson
 // ----------------------------------------------------------------------------
 // NativeFLSliceResult
 // ----------------------------------------------------------------------------
+
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult
  * Method:    getBuf
@@ -334,6 +335,15 @@ JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_json5toJson
 JNIEXPORT jbyteArray
 JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult_getBuf
         (JNIEnv * , jclass, jlong, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult
+ * Method:    release
+ * Signature: (JJ)V
+ */
+JNIEXPORT void
+JNICALL Java_com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult_release(
+        JNIEnv *, jclass, jlong, jlong);
 
 #ifdef __cplusplus
 }

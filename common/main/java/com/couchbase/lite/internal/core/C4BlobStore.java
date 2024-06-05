@@ -21,7 +21,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.impl.NativeC4Blob;
-import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
 /**
@@ -31,8 +30,8 @@ public abstract class C4BlobStore extends C4NativePeer {
     public interface NativeImpl {
         long nGetBlobStore(long db) throws LiteCoreException;
         long nGetSize(long peer, long key);
-        @NonNull
-        FLSliceResult nGetContents(long peer, long key) throws LiteCoreException;
+        @Nullable
+        byte[] nGetContents(long peer, long key) throws LiteCoreException;
         @Nullable
         String nGetFilePath(long peer, long key) throws LiteCoreException;
         long nCreate(long peer, byte[] data) throws LiteCoreException;
@@ -108,10 +107,9 @@ public abstract class C4BlobStore extends C4NativePeer {
      * Reads the entire contents of a blob into memory.
      * NOTE: the FLSliceResult returned by this method must be released by the caller
      */
-    @NonNull
-    public FLSliceResult getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return this.<FLSliceResult, LiteCoreException>withPeerOrThrow(peer ->
-            impl.nGetContents(peer, blobKey.getHandle()));
+    @Nullable
+    public byte[] getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
+        return this.<byte[], LiteCoreException>withPeerOrNull(peer -> impl.nGetContents(peer, blobKey.getHandle()));
     }
 
     /**

@@ -85,7 +85,7 @@ open class MockNativeReplicator : C4Replicator.NativeImpl {
     override fun nStart(peer: Long, restart: Boolean) = Unit
     override fun nStop(peer: Long) = Unit
     override fun nSetOptions(peer: Long, options: ByteArray?) = Unit
-    override fun nGetPendingDocIds(peer: Long, scope: String, collection: String) = FLSliceResult(0, 0)
+    override fun nGetPendingDocIds(peer: Long, scope: String, collection: String) = FLSliceResult.createTestSlice()
     override fun nIsDocumentPending(peer: Long, id: String, scope: String, collection: String) = true
     override fun nSetProgressLevel(peer: Long, progressLevel: Int) = Unit
     override fun nSetHostReachable(peer: Long, reachable: Boolean) = Unit

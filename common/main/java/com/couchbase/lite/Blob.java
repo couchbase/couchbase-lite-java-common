@@ -622,7 +622,7 @@ public final class Blob implements FLEncodable {
 
         final byte[] newContent;
         try (C4BlobStore blobStore = database.getBlobStore(); C4BlobKey key = C4BlobKey.create(blobDigest)) {
-            newContent = blobStore.getContents(key).getContent();
+            newContent = blobStore.getContents(key);
         }
         catch (LiteCoreException e) {
             final String msg = "Failed to read content from database for digest: " + blobDigest;

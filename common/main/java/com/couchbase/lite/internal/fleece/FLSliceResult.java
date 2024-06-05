@@ -15,46 +15,85 @@
 //
 package com.couchbase.lite.internal.fleece;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.internal.fleece.impl.NativeFLSliceResult;
+import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 /**
- * This is an interesting object. It frames a piece of memory that LiteCore owns:
- * it just passes us this view: `base` points at the start of the block, base + size is its end.
- * Its C companion is a struct so there is no memory for Java to manage.
- * The JNI just creates one of these whenever LiteCore returns a native FLSliceResult.
+ * This object a frames a piece of native memory for which the recipient (caller) is responsible.
+ * `base` points at the start of the block, base + size is its end. The JNI just creates one of these
+ * whenever LiteCore returns a native FLSliceResult (or its alias, C4SliceResult).
  */
-public class FLSliceResult {
+public abstract class FLSliceResult implements AutoCloseable {
     public interface NativeImpl {
         @Nullable
         byte[] nGetBuf(long base, long size);
+        void nRelease(long base, long size);
+    }
+
+    // We manage the FLSliceResult in almost all cases.
+    // We own the block of memory it frames and must release it.
+    private static final class ManagedFLSliceResult extends FLSliceResult {
+        ManagedFLSliceResult(@NonNull NativeImpl impl, long base, long size) { super(impl, base, size); }
+
+        @Override
+        protected void release(@NonNull NativeImpl impl) { impl.nRelease(base, size); }
+
+        @SuppressWarnings("NoFinalizer")
+        @Override
+        protected void finalize() throws Throwable {
+            try { close(); }
+            finally { super.finalize(); }
+        }
+    }
+
+    // If we are going to return this FLSliceResult to someone else (LiteCore),
+    // though, it will belong to *them* and we must not release it.
+    private static final class UnmanagedFLSliceResult extends FLSliceResult {
+        UnmanagedFLSliceResult(@NonNull NativeImpl impl, long base, long size) { super(impl, base, size); }
+
+        @Override
+        protected void release(@NonNull NativeImpl impl) { }
     }
 
     private static final FLSliceResult.NativeImpl NATIVE_IMPL = new NativeFLSliceResult();
 
+    // This method is used by reflection.  Don't change its signature.
+    @NonNull
+    public static FLSliceResult createManagedSlice(long base, long size) {
+        return new ManagedFLSliceResult(NATIVE_IMPL, base, size);
+    }
 
     @NonNull
-    private final NativeImpl impl;
+    public static FLSliceResult createUnmanagedSlice(long base, long size) {
+        return new UnmanagedFLSliceResult(NATIVE_IMPL, base, size);
+    }
+
+    @VisibleForTesting
+    @NonNull
+    public static FLSliceResult createTestSlice() { return createManagedSlice(0, 0); }
+
 
     // These fields are used by reflection.  Don't change them.
     final long base;
     final long size;
 
-    //-------------------------------------------------------------------------
-    // Constructors
-    //-------------------------------------------------------------------------
-    // This method is used by reflection.  Don't change its signature.
-    public FLSliceResult(long base, long size) { this(NATIVE_IMPL, base, size); }
+    // Not using an AtomicBoolean here because the Android VM
+    // will GC an object's data members before finalizing the object
+    @GuardedBy("this")
+    private NativeImpl impl;
 
-    @VisibleForTesting
-    public FLSliceResult(@NonNull NativeImpl impl, long base, long size) {
+
+    private FLSliceResult(@NonNull NativeImpl impl, long base, long size) {
         this.impl = impl;
         this.base = base;
-        this.size = size;
+        this.size = Preconditions.assertNotNegative(size, "size");
     }
 
     //-------------------------------------------------------------------------
@@ -63,13 +102,34 @@ public class FLSliceResult {
 
     @NonNull
     @Override
-    public String toString() { return "SliceResult{" + size + "@0x0" + Long.toHexString(base); }
+    public String toString() {
+        return "SliceResult{" + ClassUtils.objId(this) + " @0x0" + Long.toHexString(base) + ", " + size + "}";
+    }
 
-    // ???  Exposes a native pointer
+    // ??? Exposes a native pointer
     public long getBase() { return base; }
 
     public long getSize() { return size; }
 
+    // this returns a *copy* of the data
     @Nullable
-    public byte[] getContent() { return impl.nGetBuf(base, size); }
+    public byte[] getContent() {
+        synchronized (this) {
+            if (impl == null) { throw new IllegalStateException("Attempt to use a closed slice"); }
+            return impl.nGetBuf(base, size);
+        }
+    }
+
+    @Override
+    public void close() {
+        final NativeImpl ni;
+        synchronized (this) {
+            ni = impl;
+            impl = null;
+        }
+
+        if (ni != null) { release(ni); }
+    }
+
+    protected abstract void release(@NonNull NativeImpl ni);
 }
