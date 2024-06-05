@@ -352,7 +352,7 @@ public abstract class C4Replicator extends C4NativePeer {
         final String id = (c4Repl == null) ? "???@" + token : c4Repl.getReplId();
         Log.d(LOG_DOMAIN, "C4Replicator(%s).statusChangedCallback: %s", id, status);
 
-        if ((c4Repl == null)  || (status == null)) { return; }
+        if ((c4Repl == null) || (status == null)) { return; }
 
         c4Repl.statusChanged(c4Repl, status);
     }
@@ -365,7 +365,7 @@ public abstract class C4Replicator extends C4NativePeer {
 
         Log.d(LOG_DOMAIN, "C4Replicator(%s).documentEndedCallback: %d (%s)", id, nDocs, pushing);
 
-        if ((c4Repl == null)  || (nDocs <= 0)) { return; }
+        if ((c4Repl == null) || (nDocs <= 0)) { return; }
 
         c4Repl.documentsEnded(Arrays.asList(docEnds), pushing);
     }
@@ -657,7 +657,7 @@ public abstract class C4Replicator extends C4NativePeer {
     public Set<String> getPendingDocIDs(@NonNull String scope, @NonNull String collection) throws LiteCoreException {
         final FLSliceResult result = withPeerOrNull(peer -> impl.nGetPendingDocIds(peer, scope, collection));
         final FLValue slice = FLValue.fromData(result);
-        return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray());
+        return (slice == null) ? Collections.emptySet() : new HashSet<>(slice.asTypedArray(String.class));
     }
 
     public void setProgressLevel(int level) throws LiteCoreException {

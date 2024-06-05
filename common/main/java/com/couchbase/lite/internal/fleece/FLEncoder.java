@@ -335,6 +335,7 @@ public abstract class FLEncoder extends C4NativePeer {
     @NonNull
     public byte[] finish() throws LiteCoreException { return impl.nFinish(getPeer()); }
 
+    // NOTE: the FLSliceResult returned by this method must be released by the caller
     @NonNull
     public FLSliceResult finish2() throws LiteCoreException { return impl.nFinish2(getPeer()); }
 }

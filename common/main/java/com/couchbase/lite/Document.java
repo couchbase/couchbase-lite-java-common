@@ -569,10 +569,11 @@ public class Document implements DictionaryInterface, Iterable<String> {
         }
     }
 
+    // NOTE: the FLSliceResult returned by this method must be released by the caller
     @NonNull
     final FLSliceResult encode() throws LiteCoreException {
         final Database db = getDatabase();
-        if (db == null) { throw new CouchbaseLiteError("encode called with null database"); }
+        if (db == null) { throw new CouchbaseLiteError("Encode called with null database"); }
 
         try (FLEncoder encoder = db.getSharedFleeceEncoder()) {
             encoder.setArg(Blob.ENCODER_ARG_DB, getDatabase());

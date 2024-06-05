@@ -121,17 +121,17 @@ std::string litecore::jni::JcharsToUTF8(JNIEnv *env, const jchar *chars, jsize l
 
 
 // Java ArrayList class
-static jclass cls_ArrayList;                       // global reference
-static jmethodID m_ArrayList_init;                 // constructor
-static jmethodID m_ArrayList_add;                  // add
+static jclass cls_ArrayList;                     // global class reference
+static jmethodID m_ArrayList_init;               // constructor
+static jmethodID m_ArrayList_add;                // add
 
 // Java HashSet class
-static jclass cls_HashSet;                       // global reference
+static jclass cls_HashSet;                       // global class reference
 static jmethodID m_HashSet_init;                 // constructor
 static jmethodID m_HashSet_add;                  // add
 
 // Java FLSliceResult class
-static jclass cls_FLSliceResult;                 // global reference
+static jclass cls_FLSliceResult;                 // global class reference
 static jmethodID m_FLSliceResult_init;           // constructor
 static jfieldID f_FLSliceResult_base;            // field: base
 static jfieldID f_FLSliceResult_size;            // field: size
@@ -332,6 +332,7 @@ namespace litecore {
             return toJString(env, (C4Slice) s);
         }
 
+        // NOTE: this creates a *copy* of the passed slice
         jbyteArray toJByteArray(JNIEnv *env, C4Slice s) {
             if (s.buf == nullptr)
                 return nullptr;

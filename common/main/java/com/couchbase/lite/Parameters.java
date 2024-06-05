@@ -210,6 +210,7 @@ public final class Parameters {
     @NonNull
     Parameters readonlyCopy() { return new Parameters(this, true); }
 
+    // NOTE: the FLSliceResult returned by this method must be released by the caller
     @NonNull
     FLSliceResult encode() throws LiteCoreException {
         try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
