@@ -164,8 +164,4 @@ public final class NativeC4Document implements C4Document.NativeImpl {
 
     //// Utility
     private static native boolean dictContainsBlobs(long dictPtr, long dictSize, long sk);
-
-    // Remove when Version Vectors are enabled
-    @Deprecated
-    private static native long getGenerationForId(@NonNull String doc);
 }

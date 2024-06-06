@@ -105,7 +105,8 @@ public abstract class C4BlobStore extends C4NativePeer {
     }
 
     /**
-     * Reads the entire contents of a blob into memory. Caller is responsible for freeing it.
+     * Reads the entire contents of a blob into memory.
+     * NOTE: the FLSliceResult returned by this method must be released by the caller
      */
     @NonNull
     public FLSliceResult getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {

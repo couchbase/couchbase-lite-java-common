@@ -21,7 +21,9 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.impl.NativeFLArray;
+import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Fn;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -91,16 +93,24 @@ public final class FLArray {
     public FLValue get(long index) { return FLValue.getFLValue(impl.nGet(peer, index)); }
 
     @NonNull
-    public List<Object> asArray() { return asTypedArray(); }
+    public List<Object> asArray() { return asTypedArray(Object.class); }
 
     @NonNull
-    @SuppressWarnings("unchecked")
-    public <T> List<T> asTypedArray() {
+    public <T> List<T> asTypedArray(@NonNull Class<T> klass) {
         final List<T> results = new ArrayList<>();
         try (FLArrayIterator itr = iterator()) {
             FLValue value;
             while ((value = itr.getValue()) != null) {
-                results.add((T) value.asObject());
+                final Object val = value.asObject();
+                try { results.add(klass.cast(val)); }
+                catch (ClassCastException e) {
+                    Log.w(
+                        LogDomain.DATABASE,
+                        "Expecting type %s but got %s(%s). Ignored.",
+                        klass.getSimpleName(),
+                        (val == null) ? "-" : val.getClass().getSimpleName(),
+                        val);
+                }
                 itr.next();
             }
         }

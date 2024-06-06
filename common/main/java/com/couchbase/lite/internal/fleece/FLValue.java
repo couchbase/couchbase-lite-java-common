@@ -71,25 +71,11 @@ public class FLValue {
     @Nullable
     public static Object toObject(@NonNull FLValue flValue) { return flValue.asObject(); }
 
-    @Nullable
-    public static FLValue fromData(@Nullable FLSliceResult slice) { return fromData(NATIVE_IMPL, slice); }
-
-    @VisibleForTesting
-    @Nullable
-    public static FLValue fromData(@NonNull NativeImpl impl, @Nullable FLSliceResult slice) {
-        if (slice == null) { return null; }
-        final long value = impl.nFromData(slice.getBase(), slice.getSize());
-        return value == 0 ? null : FLValue.getFLValue(value);
-    }
-
     @NonNull
     public static FLValue fromData(@NonNull byte[] data) { return fromData(NATIVE_IMPL, data); }
 
-    @VisibleForTesting
-    @NonNull
-    public static FLValue fromData(@NonNull NativeImpl impl, @NonNull byte[] data) {
-        return FLValue.getFLValue(impl.nFromTrustedData(data));
-    }
+    @Nullable
+    public static FLValue fromData(@Nullable FLSliceResult slice) { return fromData(NATIVE_IMPL, slice); }
 
     /**
      * Converts valid JSON5 to JSON.
@@ -108,6 +94,19 @@ public class FLValue {
     public static String getJSONForJSON5(@NonNull NativeImpl impl, @Nullable String json5) throws LiteCoreException {
         return impl.nJson5toJson(json5);
     }
+
+    @NonNull
+    private static FLValue fromData(@NonNull NativeImpl impl, @NonNull byte[] data) {
+        return FLValue.getFLValue(impl.nFromTrustedData(data));
+    }
+
+    @Nullable
+    private static FLValue fromData(@NonNull NativeImpl impl, @Nullable FLSliceResult slice) {
+        if (slice == null) { return null; }
+        final long value = impl.nFromData(slice.getBase(), slice.getSize());
+        return value == 0 ? null : FLValue.getFLValue(value);
+    }
+
 
     //-------------------------------------------------------------------------
     // Member Variables
@@ -247,7 +246,7 @@ public class FLValue {
     public List<Object> asArray() { return asFLArray().asArray(); }
 
     @NonNull
-    public <T> List<T> asTypedArray() { return asFLArray().asTypedArray(); }
+    public <T> List<T> asTypedArray(@NonNull Class<T> klass) { return asFLArray().asTypedArray(klass); }
 
     /**
      * Returns the contents as a dictionary.
