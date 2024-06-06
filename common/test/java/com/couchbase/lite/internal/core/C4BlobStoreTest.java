@@ -29,7 +29,6 @@ import org.junit.Test;
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.utils.FileUtils;
 import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.SlowTest;
@@ -126,10 +125,10 @@ public class C4BlobStoreTest extends C4BaseTest {
             // TODO: Encryption
             assertEquals(blobToStore.getBytes(StandardCharsets.UTF_8).length, blobSize);
 
-            FLSliceResult res = blobStore.getContents(key);
-            assertNotNull(res);
-            assertArrayEquals(blobToStore.getBytes(StandardCharsets.UTF_8), res.getContent());
-            assertEquals(blobToStore.getBytes(StandardCharsets.UTF_8).length, res.getContent().length);
+            byte[] content = blobStore.getContents(key);
+            assertNotNull(content);
+            assertArrayEquals(blobToStore.getBytes(StandardCharsets.UTF_8), content);
+            assertEquals(blobToStore.getBytes(StandardCharsets.UTF_8).length, content.length);
 
             String p = blobStore.getFilePath(key);
             // TODO: Encryption
@@ -161,23 +160,15 @@ public class C4BlobStoreTest extends C4BaseTest {
             long blobSize = blobStore.getSize(key);
             assertEquals(-1, blobSize);
 
-            try {
-                blobStore.getContents(key);
-                fail();
-            }
-            catch (LiteCoreException ex) {
-                assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
-                assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
-            }
+            assertThrowsLiteCoreException(
+                C4Constants.ErrorDomain.LITE_CORE,
+                C4Constants.LiteCoreError.NOT_FOUND,
+                () -> blobStore.getContents(key));
 
-            try {
-                final String blobPath = blobStore.getFilePath(key);
-                fail("blob has path: " + blobPath);
-            }
-            catch (LiteCoreException ex) {
-                assertEquals(C4Constants.ErrorDomain.LITE_CORE, ex.domain);
-                assertEquals(C4Constants.LiteCoreError.NOT_FOUND, ex.code);
-            }
+            assertThrowsLiteCoreException(
+                C4Constants.ErrorDomain.LITE_CORE,
+                C4Constants.LiteCoreError.NOT_FOUND,
+                () -> blobStore.getFilePath(key));
         }
     }
 
@@ -233,10 +224,9 @@ public class C4BlobStoreTest extends C4BaseTest {
             }
 
             // Read it back using the key:
-            FLSliceResult contents = blobStore.getContents(key);
+            byte[] contents = blobStore.getContents(key);
             assertNotNull(contents);
-            assertEquals(18000, contents.getSize());
-            assertEquals(18000, contents.getContent().length);
+            assertEquals(18000, contents.length);
 
             // Read it back random-access:
             try (C4BlobReadStream reader = blobStore.openReadStream(key)) {
@@ -291,14 +281,12 @@ public class C4BlobStoreTest extends C4BaseTest {
                     stream.install();
 
                     // Read it back using the key:
-                    FLSliceResult contents = blobStore.getContents(key);
+                    byte[] contents = blobStore.getContents(key);
                     assertNotNull(contents);
-                    assertEquals(size, contents.getSize());
-                    assertEquals(size, contents.getContent().length);
-                    byte[] buf = contents.getContent();
+                    assertEquals(size, contents.length);
                     for (int i = 0; i < size; i++) {
                         assertEquals(chars.substring(i % chars.length(), i % chars.length() + 1)
-                            .getBytes(StandardCharsets.UTF_8)[0], buf[i]);
+                            .getBytes(StandardCharsets.UTF_8)[0], contents[i]);
                     }
                 }
             }

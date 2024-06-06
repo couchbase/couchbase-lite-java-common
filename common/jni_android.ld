@@ -179,6 +179,7 @@ CBL {
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_endDict;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish2;
+        Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish3;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finishJSON;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_free;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_newFleeceEncoder;
@@ -195,6 +196,7 @@ CBL {
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeStringChars;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_writeValue;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult_getBuf;
+        Java_com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult_release;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asArray;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asBool;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asData;

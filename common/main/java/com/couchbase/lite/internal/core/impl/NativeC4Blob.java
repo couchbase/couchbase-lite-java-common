@@ -15,13 +15,12 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4BlobKey;
 import com.couchbase.lite.internal.core.C4BlobStore;
-import com.couchbase.lite.internal.fleece.FLSliceResult;
+
 
 @SuppressWarnings("PMD.TooManyMethods")
 public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.NativeImpl {
@@ -41,8 +40,8 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
 
     public long nGetSize(long peer, long key) { return getSize(peer, key); }
 
-    @NonNull
-    public FLSliceResult nGetContents(long peer, long key) throws LiteCoreException { return getContents(peer, key); }
+    @Nullable
+    public byte[] nGetContents(long peer, long key) throws LiteCoreException { return getContents(peer, key); }
 
     @Nullable
     public String nGetFilePath(long peer, long key) throws LiteCoreException { return getFilePath(peer, key); }
@@ -96,8 +95,8 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
 
     private static native long getSize(long peer, long blobKey);
 
-    @NonNull
-    private static native FLSliceResult getContents(long peer, long blobKey) throws LiteCoreException;
+    @Nullable
+    private static native byte[] getContents(long peer, long blobKey) throws LiteCoreException;
 
     @Nullable
     private static native String getFilePath(long peer, long blobKey) throws LiteCoreException;

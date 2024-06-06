@@ -85,6 +85,10 @@ public final class NativeFLEncoder implements FLEncoder.NativeImpl {
 
     @NonNull
     @Override
+    public FLSliceResult nFinish3(long peer) throws LiteCoreException { return finish3(peer); }
+
+    @NonNull
+    @Override
     public String nFinishJSON(long peer) throws LiteCoreException { return finishJSON(peer); }
 
     @Override
@@ -140,4 +144,7 @@ public final class NativeFLEncoder implements FLEncoder.NativeImpl {
 
     @NonNull
     private static native FLSliceResult finish2(long peer) throws LiteCoreException;
+
+    @NonNull
+    private static native FLSliceResult finish3(long peer) throws LiteCoreException;
 }

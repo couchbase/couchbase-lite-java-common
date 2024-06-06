@@ -59,9 +59,9 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getSize
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Blob
  * Method:    getContents
- * Signature: (JJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;
+ * Signature: (JJ)[B
  */
-JNIEXPORT jobject
+JNIEXPORT jbyteArray
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getContents
         (JNIEnv *, jclass, jlong, jlong);
 

@@ -1493,8 +1493,7 @@ abstract class AbstractDatabase extends BaseDatabase
                 mergedFlags |= C4Constants.RevisionFlags.DELETED;
                 try (FLEncoder enc = getSharedFleeceEncoder()) {
                     enc.writeValue(Collections.emptyMap());
-                    final FLSliceResult mergedBody = enc.finish2();
-                    mergedBodyBytes = mergedBody.getContent();
+                    mergedBodyBytes = enc.finish();
                 }
             }
             else {

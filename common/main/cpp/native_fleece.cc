@@ -432,6 +432,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON5(JNIEnv *env, 
 // ----------------------------------------------------------------------------
 // FLSliceResult
 // ----------------------------------------------------------------------------
+
 /*
  * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult
  * Method:    getBuf
@@ -445,5 +446,20 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult_getBuf(
         jlong size) {
     C4Slice s = {(const void *) base, (size_t) size};
     return toJByteArray(env, s);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult
+ * Method:    release
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLSliceResult_release(
+        JNIEnv *env,
+        jclass ignore,
+        jlong base,
+        jlong size) {
+    FLSliceResult result = {(const void *) base, (size_t) size};
+    FLSliceResult_Release(result);
 }
 }
