@@ -98,7 +98,7 @@ public class C4QueryBaseTest extends C4BaseTest {
 
     protected final C4QueryEnumerator runQuery(@NonNull C4Query query)
         throws LiteCoreException {
-        return query.run(new FLSliceResult(0, 0));
+        return query.run(FLSliceResult.createTestSlice());
     }
 
     protected final List<List<C4FullTextMatch>> runFTS() throws LiteCoreException {
