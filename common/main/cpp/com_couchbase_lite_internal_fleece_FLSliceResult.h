@@ -13,7 +13,15 @@ extern "C" {
  * Signature: (JJ)[B
  */
 JNIEXPORT jbyteArray JNICALL Java_com_couchbase_lite_internal_fleece_FLSliceResult_getBuf
-  (JNIEnv *, jclass, jlong, jlong);
+        (JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_FLSliceResult
+ * Method:    release
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_fleece_FLSliceResult_release(
+        JNIEnv *, jclass, jlong, jlong);
 
 #ifdef __cplusplus
 }

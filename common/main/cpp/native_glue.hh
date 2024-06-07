@@ -136,8 +136,11 @@ namespace litecore {
         // Copy a FLMutableArray of strings to a Java HashSet<String>
         jobject toStringSet(JNIEnv *env, FLMutableArray array);
 
-        // Copy a native FLSliceResult to a Java FLSliceResult
+        // Copy a native FLSliceResult to a Managed Java FLSliceResult
         jobject toJavaFLSliceResult(JNIEnv *const env, const FLSliceResult &sr);
+
+        // Copy a native FLSliceResult to an Unmanaged Java FLSliceResult
+        jobject toJavaUnmanagedFLSliceResult(JNIEnv *const env, const FLSliceResult &sr);
 
         // Copy a Java FLSliceResult to a native FLSliceResult
         FLSliceResult fromJavaFLSliceResult(JNIEnv *const env, jobject jsr);

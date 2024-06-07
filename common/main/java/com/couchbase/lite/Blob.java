@@ -36,6 +36,7 @@ import com.couchbase.lite.internal.core.C4BlobStore;
 import com.couchbase.lite.internal.core.C4BlobWriteStream;
 import com.couchbase.lite.internal.fleece.FLEncodable;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.support.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.JSONUtils;
@@ -621,8 +622,10 @@ public final class Blob implements FLEncodable {
         Preconditions.assertNotNull(database, "database");
 
         final byte[] newContent;
-        try (C4BlobStore blobStore = database.getBlobStore(); C4BlobKey key = new C4BlobKey(blobDigest)) {
-            newContent = blobStore.getContents(key).getContent();
+        try (C4BlobStore blobStore = database.getBlobStore();
+             C4BlobKey key = new C4BlobKey(blobDigest);
+             FLSliceResult result = blobStore.getContents(key)) {
+            newContent = result.getContent();
         }
         catch (LiteCoreException e) {
             final String msg = "Failed to read content from database for digest: " + blobDigest;
