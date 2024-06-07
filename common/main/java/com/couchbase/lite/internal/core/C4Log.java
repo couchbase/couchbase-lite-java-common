@@ -40,7 +40,6 @@ public class C4Log {
         void nLog(String domain, int level, String message);
         void nSetLevel(String domain, int level);
         void nSetCallbackLevel(int level);
-        int nGetBinaryFileLevel();
         void nSetBinaryFileLevel(int level);
         void nWriteToBinaryFile(
             String path,
@@ -144,8 +143,6 @@ public class C4Log {
         String header) {
         impl.nWriteToBinaryFile(path, getC4LevelForLogLevel(level), maxRotate, maxSize, plainText, header);
     }
-
-    public final int getFileLogLevel() { return impl.nGetBinaryFileLevel(); }
 
     public final void setFileLogLevel(LogLevel level) { impl.nSetBinaryFileLevel(getC4LevelForLogLevel(level)); }
 
