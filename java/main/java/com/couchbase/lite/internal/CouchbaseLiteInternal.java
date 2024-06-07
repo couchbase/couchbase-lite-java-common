@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.couchbase.lite.CouchbaseLiteError;
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4;
@@ -82,8 +83,10 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(debugging, loadErrorMessages());
 
         setC4TmpDirPath(tmpDir);
+    }
 
-        CBLVariantExtensions.initVariant(LOCK, tmpDir);
+    public static void enableVectorSearch() throws CouchbaseLiteException {
+        CBLVariantExtensions.initVariant(LOCK, scratchDir);
     }
 
     public static boolean debugging() { return debugging; }

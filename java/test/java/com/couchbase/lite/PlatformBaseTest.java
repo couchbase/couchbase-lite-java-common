@@ -25,7 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import com.couchbase.lite.internal.CBLVariantExtensions;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
 import com.couchbase.lite.internal.JavaExecutionService;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
@@ -51,11 +50,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
             new Exclusion(
                 "Not supported on Windows",
                 () -> System.getProperty("os.name").toLowerCase().contains("windows")));
-        m.put(
-            "VECTORSEARCH",
-            new Exclusion(
-                "Requires the VectorSarch Library",
-                () -> CBLVariantExtensions.setExtensionPath(new Object(), CouchbaseLiteInternal.getScratchDir())));
         PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
         m.put(
             "SWEDISH UNSUPPORTED",

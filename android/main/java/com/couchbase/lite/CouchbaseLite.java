@@ -64,4 +64,15 @@ public final class CouchbaseLite {
     public static void init(@NonNull Context ctxt, boolean debug, @NonNull File rootDir, @NonNull File scratchDir) {
         CouchbaseLiteInternal.init(ctxt, debug, rootDir, scratchDir);
     }
+
+    /**
+     * Enable Vector Search.
+     * Attempts to use the Vector Search feature without first calling this method will fail.
+     * This method must be called AFTER calling CouchbaseLite.init(...).
+     *
+     * @throws CouchbaseLiteError on failure to load the library
+     */
+    public static void enableVectorSearch() throws CouchbaseLiteException {
+        CouchbaseLiteInternal.enableVectorSearch();
+    }
 }

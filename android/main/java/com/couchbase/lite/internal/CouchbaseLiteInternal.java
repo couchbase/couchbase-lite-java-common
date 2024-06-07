@@ -34,6 +34,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.couchbase.lite.CouchbaseLiteError;
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.R;
@@ -100,8 +101,10 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(debugging, loadErrorMessages(ctxt));
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
+    }
 
-        CBLVariantExtensions.initVariant(LOCK, ctxt);
+    public static void enableVectorSearch() throws CouchbaseLiteException {
+        CBLVariantExtensions.initVariant(LOCK, getContext());
     }
 
     @NonNull
