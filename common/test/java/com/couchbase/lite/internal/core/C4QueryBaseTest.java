@@ -85,17 +85,11 @@ public class C4QueryBaseTest extends C4BaseTest {
 
     protected final List<String> run(Map<String, Object> params) throws LiteCoreException {
         List<String> docIDs = new ArrayList<>();
-
-        final C4QueryEnumerator e;
-        FLSliceResult encodedParams = encodeParameters(params);
-        e = query.run(encodedParams);
-        assertNotNull(e);
-
-        try {
+        try (FLSliceResult encodedParams = encodeParameters(params); C4QueryEnumerator e = query.run(encodedParams)) {
+            assertNotNull(e);
             while (e.next()) { docIDs.add(e.getColumns().getValueAt(0).asString()); }
             return docIDs;
         }
-        finally { e.close(); }
     }
 
     protected final C4QueryEnumerator runQuery(@NonNull C4Query query)
@@ -106,12 +100,8 @@ public class C4QueryBaseTest extends C4BaseTest {
     protected final List<List<C4FullTextMatch>> runFTS() throws LiteCoreException {
         final List<List<C4FullTextMatch>> matches = new ArrayList<>();
 
-        final C4QueryEnumerator e;
-        FLSliceResult encodedParams = encodeParameters(null);
-        e = query.run(encodedParams);
-        assertNotNull(e);
-
-        try {
+        try (FLSliceResult params = encodeParameters(null); C4QueryEnumerator e = query.run(params)) {
+            assertNotNull(e);
             while (e.next()) {
                 List<C4FullTextMatch> match = new ArrayList<>();
                 for (int i = 0; i < C4FullTextMatch.getFullTextMatchCount(e); i++) {
@@ -120,8 +110,6 @@ public class C4QueryBaseTest extends C4BaseTest {
                 matches.add(match);
             }
         }
-        finally { e.close(); }
-
 
         return matches;
     }

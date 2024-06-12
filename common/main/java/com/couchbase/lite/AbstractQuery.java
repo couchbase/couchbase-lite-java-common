@@ -137,7 +137,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
 
             if (parameters == null) { return; }
 
-            try { getC4QueryLocked().setParameters(parameters.encode()); }
+            try (FLSliceResult encodedParams = parameters.encode()) { getC4QueryLocked().setParameters(encodedParams); }
             catch (LiteCoreException e) {
                 throw CouchbaseLiteException.convertException(e, "Failed encoding parameters");
             }
@@ -163,19 +163,17 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
             if (parameters == null) { parameters = new Parameters(); }
             final C4QueryEnumerator c4enum;
             final Map<String, Integer> colNames;
-            final FLSliceResult params = parameters.encode();
-            synchronized (getDbLock()) {
-                synchronized (lock) {
-                    c4enum = getC4QueryLocked().run(params);
-                    colNames = columnNames;
+            try (FLSliceResult params = parameters.encode()) {
+                synchronized (getDbLock()) {
+                    synchronized (lock) {
+                        c4enum = getC4QueryLocked().run(params);
+                        colNames = columnNames;
+                    }
                 }
             }
-
             return new ResultSet(getDatabase(), c4enum, new HashMap<>(colNames));
         }
-        catch (LiteCoreException e) {
-            throw CouchbaseLiteException.convertException(e);
-        }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
     }
 
     /**

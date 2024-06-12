@@ -502,7 +502,7 @@ public final class Blob implements FLEncodable {
 
     /**
      * Get the blob hash code.
-     *
+     * <p>
      * <b>This method is quite expensive. Also, when called on a blob created from a stream
      * (or a file path), it will cause the entire contents of that stream to be read into memory!</b>
      *
@@ -513,7 +513,7 @@ public final class Blob implements FLEncodable {
 
     /**
      * Compare for equality.
-     *
+     * <p>
      * <b>This method is quite expensive. Also, when called on a blob created from a stream
      * (or a file path), it will cause the entire contents of that stream to be read into memory!</b>
      *
@@ -618,10 +618,9 @@ public final class Blob implements FLEncodable {
 
     @Nullable
     private byte[] getContentFromDatabase() {
-        Preconditions.assertNotNull(database, "database");
-
         final byte[] newContent;
-        try (C4BlobStore blobStore = database.getBlobStore(); C4BlobKey key = C4BlobKey.create(blobDigest)) {
+        try (C4BlobStore blobStore = Preconditions.assertNotNull(database, "database").getBlobStore();
+             C4BlobKey key = C4BlobKey.create(blobDigest)) {
             newContent = blobStore.getContents(key);
         }
         catch (LiteCoreException e) {

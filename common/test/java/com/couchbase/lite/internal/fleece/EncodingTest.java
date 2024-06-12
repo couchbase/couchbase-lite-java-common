@@ -143,15 +143,15 @@ public class EncodingTest extends BaseTest {
         try (FLEncoder encoder = FLEncoder.getManagedEncoder()) {
             assertTrue(encoder.writeValue(item));
 
-            FLSliceResult slice = encoder.finish2();
-            assertNotNull(slice);
-            final FLValue flValue = FLValue.fromData(slice);
+            final FLValue flValue;
+            try (FLSliceResult slice = encoder.finish2()) {
+                flValue = FLValue.fromData(slice);
+                assertNotNull(flValue);
 
-            assertNotNull(flValue);
-
-            Object obj = FLValue.toObject(flValue);
-            Report.log("ROUND TRIP SLICE: '%s'; FROM: '%s'; EXPECTING: '%s'", obj, item, expected);
-            assertEquals(expected, obj);
+                Object obj = FLValue.toObject(flValue);
+                Report.log("ROUND TRIP SLICE: '%s'; FROM: '%s'; EXPECTING: '%s'", obj, item, expected);
+                assertEquals(expected, obj);
+            }
         }
     }
 

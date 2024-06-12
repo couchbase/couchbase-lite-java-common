@@ -48,7 +48,9 @@ import com.couchbase.lite.internal.utils.Report;
 import com.couchbase.lite.internal.utils.StopWatch;
 import com.couchbase.lite.internal.utils.StringUtils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 
 public class C4BaseTest extends BaseTest {
@@ -196,8 +198,7 @@ public class C4BaseTest extends BaseTest {
     protected byte[] json2fleece(String json) throws LiteCoreException {
         boolean commit = false;
         c4Database.beginTransaction();
-        try {
-            FLSliceResult body = C4TestUtils.encodeJSONInDb(c4Database, json5(json));
+        try (FLSliceResult body = C4TestUtils.encodeJSONInDb(c4Database, json5(json))) {
             byte[] bytes = body.getContent();
             commit = true;
             return bytes;
@@ -282,19 +283,20 @@ public class C4BaseTest extends BaseTest {
             while ((l = br.readLine()) != null) {
                 String docID = String.format(Locale.ENGLISH, "%s%07d", idPrefix, numDocs + 1);
 
-                // Don't try to autoclose this: See C4Document.close(), in
-                C4Document doc = C4TestUtils.create(
-                    c4Collection,
-                    C4TestUtils.encodeJSONInDb(c4Database, l),
-                    docID,
-                    0,
-                    false,
-                    false,
-                    new String[0],
-                    true,
-                    0,
-                    0);
-                assertNotNull(doc);
+                try (FLSliceResult body = C4TestUtils.encodeJSONInDb(c4Database, l)) {
+                    // Don't try to autoclose this: See C4Document.close()
+                    assertNotNull(C4TestUtils.create(
+                        c4Collection,
+                        body,
+                        docID,
+                        0,
+                        false,
+                        false,
+                        new String[0],
+                        true,
+                        0,
+                        0));
+                }
 
                 numDocs++;
 

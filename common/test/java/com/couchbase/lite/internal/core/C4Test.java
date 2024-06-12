@@ -17,6 +17,8 @@ package com.couchbase.lite.internal.core;
 
 import org.junit.Test;
 
+import com.couchbase.lite.Database;
+
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
