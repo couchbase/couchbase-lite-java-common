@@ -264,8 +264,6 @@ public class C4QueryTest extends C4QueryBaseTest {
                     0,
                     0);
                 assertNotNull(updatedDoc);
-                doc.close();
-                updatedDoc.close();
                 commit = true;
             }
             finally {

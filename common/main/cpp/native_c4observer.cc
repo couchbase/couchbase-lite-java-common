@@ -157,7 +157,7 @@ c4DocObsCallback(C4DocumentObserver *ign1, C4Collection *ign2, C4Slice docID, C4
     if (getEnvStat == JNI_OK) {
         jstring _docID = toJString(env, docID);
         env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) context, (jlong) seq, _docID);
-        env->DeleteLocalRef(_docID);
+        if (_docID) env->DeleteLocalRef(_docID);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(
@@ -189,15 +189,24 @@ static jobjectArray
 c4DocChangesToJavaArray(JNIEnv *env, C4CollectionChange changes[], uint32_t nChanges, bool external) {
     jobjectArray array = env->NewObjectArray((jsize) nChanges, cls_C4DocChange, nullptr);
     for (size_t i = 0; i < nChanges; i++) {
+        jstring _docId = toJString(env, changes[i].docID);
+        jstring _revId = toJString(env, changes[i].revID);
+
         jobject obj = env->CallStaticObjectMethod(
                 cls_C4DocChange,
                 m_C4DocChange_create,
-                toJString(env, changes[i].docID),
-                toJString(env, changes[i].revID),
+                _docId,
+                _revId,
                 (jlong) changes[i].sequence,
                 (jboolean) external);
-        if (obj != nullptr)
+
+        if (_docId) env->DeleteLocalRef(_docId);
+        if (_revId) env->DeleteLocalRef(_revId);
+
+        if (obj != nullptr) {
             env->SetObjectArrayElement(array, (jsize) i, obj);
+            env->DeleteLocalRef(obj);
+        }
     }
 
     return array;
@@ -228,8 +237,7 @@ doC4QueryObserverCallback(JNIEnv *env, C4QueryObserver *observer, void *ctx) {
             (jint) error.code,
             errMsg);
 
-    if (errMsg)
-        env->DeleteLocalRef(errMsg);
+    if (errMsg) env->DeleteLocalRef(errMsg);
 }
 
 /**

@@ -69,31 +69,7 @@ jstring litecore::jni::UTF8ToJstring(JNIEnv *env, const char *s, size_t size) {
     return jstr;
 }
 
-// ??? Callers can't handle exceptions so we just ignore errors and return an empty string.
-std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
-    jsize len = env->GetStringLength(jstr);
-    if (len <= 0)
-        return std::string();
-
-    const jchar *chars = env->GetStringChars(jstr, nullptr);
-    auto ret = litecore::jni::JcharsToUTF8(env, chars, len);
-    env->ReleaseStringChars(jstr, chars);
-    return ret;
-}
-
-// ??? Callers can't handle exceptions so we just ignore errors and return an empty string.
-std::string litecore::jni::JcharArrayToUTF8(JNIEnv *env, jcharArray jcharArray) {
-    jsize len = env->GetArrayLength(jcharArray);
-    if (len <= 0)
-        return std::string();
-
-    jchar *chars = env->GetCharArrayElements(jcharArray, nullptr);
-    auto ret = litecore::jni::JcharsToUTF8(env, chars, len);
-    env->ReleaseCharArrayElements(jcharArray, chars, JNI_ABORT);
-    return ret;
-}
-
-std::string litecore::jni::JcharsToUTF8(JNIEnv *env, const jchar *chars, jsize len) {
+std::string JcharsToUTF8(const jchar *chars, jsize len) {
     std::string str;
 
     if (chars == nullptr) {
@@ -119,6 +95,30 @@ std::string litecore::jni::JcharsToUTF8(JNIEnv *env, const jchar *chars, jsize l
     return str;
 }
 
+// ??? Callers can't handle exceptions so we just ignore errors and return an empty string.
+std::string litecore::jni::JstringToUTF8(JNIEnv *env, jstring jstr) {
+    jsize len = env->GetStringLength(jstr);
+    if (len <= 0)
+        return std::string();
+
+    const jchar *chars = env->GetStringChars(jstr, nullptr);
+    auto ret = JcharsToUTF8(chars, len);
+    env->ReleaseStringChars(jstr, chars);
+    return ret;
+}
+
+// ??? Callers can't handle exceptions so we just ignore errors and return an empty string.
+std::string litecore::jni::JcharArrayToUTF8(JNIEnv *env, jcharArray jcharArray) {
+    jsize len = env->GetArrayLength(jcharArray);
+    if (len <= 0)
+        return std::string();
+
+    jchar *chars = env->GetCharArrayElements(jcharArray, nullptr);
+    auto ret = JcharsToUTF8(chars, len);
+    env->ReleaseCharArrayElements(jcharArray, chars, JNI_ABORT);
+    return ret;
+}
+
 
 // Java ArrayList class
 static jclass cls_ArrayList;                      // global class reference
@@ -136,6 +136,10 @@ static jmethodID m_FLSliceResult_createManaged;   // static constructor
 static jmethodID m_FLSliceResult_createUnmanaged; // static constructor
 static jfieldID f_FLSliceResult_base;             // field: base
 static jfieldID f_FLSliceResult_size;             // field: size
+
+// Java LiteCoreException class
+static jclass cls_LiteCoreException;             // global reference
+static jmethodID m_LiteCoreException_throw;      // static throw
 
 
 static bool initC4Glue(JNIEnv *env) {
@@ -204,6 +208,19 @@ static bool initC4Glue(JNIEnv *env) {
         if (!f_FLSliceResult_size)
             return false;
 
+    }
+    {
+        jclass localClass = env->FindClass("com/couchbase/lite/LiteCoreException");
+        if (!localClass)
+            return false;
+
+        cls_LiteCoreException = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
+        if (!cls_LiteCoreException)
+            return false;
+
+        m_LiteCoreException_throw = env->GetStaticMethodID(cls_LiteCoreException, "throwException", "(IILjava/lang/String;)V");
+        if (!m_LiteCoreException_throw)
+            return false;
     }
 
     logError("glue initialized");
@@ -276,18 +293,22 @@ namespace litecore {
 
         const char *jstringSlice::c_str() {
             return (const char *) _slice.buf;
-        };
+        }
 
-        // ATTN: In critical, should not call any other JNI methods.
+        // ATTN: In critical, cannot call any other JNI methods.
         // http://docs.oracle.com/javase/6/docs/technotes/guides/jni/spec/functions.html
         // Just don't set it true.
         jbyteArraySlice::jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, bool critical)
-                : jbyteArraySlice(env, jbytes, (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)), critical) {}
+                : jbyteArraySlice(env, false, jbytes, critical) {}
 
-        jbyteArraySlice::jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, size_t length, bool critical)
+        jbyteArraySlice::jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, bool critical)
+                : jbyteArraySlice(env, delRef, jbytes, (size_t) (!jbytes ? 0 : env->GetArrayLength(jbytes)), critical) {}
+
+        jbyteArraySlice::jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, size_t length, bool critical)
                 : _env(env),
                   _jbytes(jbytes),
-                  _critical(critical) {
+                  _critical(critical),
+                  _delRef(delRef) {
             if (!jbytes || length <= 0) {
                 _slice = kFLSliceNull;
                 return;
@@ -311,6 +332,7 @@ namespace litecore {
                     _env->ReleaseByteArrayElements(_jbytes, (jbyte *) _slice.buf, JNI_ABORT);
                 }
             }
+            if (_jbytes && _delRef) _env->DeleteLocalRef(_jbytes);
         }
 
         FLSliceResult jbyteArraySlice::copy(JNIEnv *env, jbyteArray jbytes) {
@@ -321,16 +343,19 @@ namespace litecore {
         void throwError(JNIEnv *env, C4Error error) {
             if (env->ExceptionOccurred())
                 return;
-            jclass xclass = env->FindClass("com/couchbase/lite/LiteCoreException");
-            assert(xclass); // if we can't even throw an exception, we're really fuxored
-            jmethodID m = env->GetStaticMethodID(xclass, "throwException", "(IILjava/lang/String;)V");
-            assert(m);
 
             C4SliceResult msgSlice = c4error_getMessage(error);
             jstring msg = toJString(env, msgSlice);
             c4slice_free(msgSlice);
 
-            env->CallStaticVoidMethod(xclass, m, (jint) error.domain, (jint) error.code, msg);
+            env->CallStaticVoidMethod(
+                    cls_LiteCoreException,
+                    m_LiteCoreException_throw,
+                    (jint) error.domain,
+                    (jint) error.code,
+                    msg);
+
+            if (msg) env->DeleteLocalRef(msg);
         }
 
         jstring toJString(JNIEnv *env, C4Slice s) {
@@ -347,8 +372,6 @@ namespace litecore {
         jbyteArray toJByteArray(JNIEnv *env, C4Slice s) {
             if (s.buf == nullptr)
                 return nullptr;
-            // NOTE: Local reference is taken care by JVM.
-            // http://docs.oracle.com/javase/6/docs/technotes/guides/jni/spec/functions.html#global_local
             jbyteArray array = env->NewByteArray((jsize) s.size);
             if (array)
                 env->SetByteArrayRegion(array, 0, (jsize) s.size, (const jbyte *) s.buf);

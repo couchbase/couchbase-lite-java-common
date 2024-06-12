@@ -120,23 +120,26 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
     jstring message = UTF8ToJstring(env, fmt, strlen(fmt));
     if (!message) {
-        logError("logCallback(): Failed encoding error message");
+        logError("Failed encoding log message");
         return;
     }
 
     const char *domainNameRaw = c4log_getDomainName(domain);
     jstring domainName = UTF8ToJstring(env, domainNameRaw, strlen(domainNameRaw));
+    if (!domainName)
+        domainName = env->NewStringUTF("???");
+
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    env->DeleteLocalRef(message);
-    if (domainName)
-        env->DeleteLocalRef(domainName);
-
     if (getEnvStat == JNI_EDETACHED) {
-        if (gJVM->DetachCurrentThread() != 0) {
-            C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
+        if (gJVM->DetachCurrentThread() == 0) {
+            return;
         }
+        C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
     }
+
+    env->DeleteLocalRef(message);
+    env->DeleteLocalRef(domainName);
 }
 
 /*

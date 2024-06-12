@@ -243,9 +243,9 @@ public class C4BaseTest extends BaseTest {
 
     private void createRev(C4Collection coll, String docID, String revID, byte[] body, int flags)
         throws LiteCoreException {
-        boolean commit = false;
-
         C4Database db = coll.getDb();
+
+        boolean commit = false;
         db.beginTransaction();
         try {
             C4Document curDoc = getOrCreateDocument(coll, docID);
@@ -257,10 +257,6 @@ public class C4BaseTest extends BaseTest {
             String[] history = revIDs.toArray(new String[0]);
             C4Document doc = C4TestUtils.create(coll, body, docID, flags, true, false, history, true, 0, 0);
             assertNotNull(doc);
-
-            doc.close();
-            // don't try to close the C4Document
-
             commit = true;
         }
         finally {

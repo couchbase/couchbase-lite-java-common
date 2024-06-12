@@ -317,7 +317,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_write(
         jlong jstream,
         jbyteArray jbytes,
         jint jsize) {
-    jbyteArraySlice bytes(env, jbytes, (size_t) jsize);
+    jbyteArraySlice bytes(env, false, jbytes, (size_t) jsize, true);
     auto slice = (C4Slice) bytes;
     C4Error error{};
     if (!c4stream_write((C4WriteStream *) jstream, slice.buf, slice.size, &error))
