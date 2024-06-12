@@ -18,6 +18,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_C4TestUtils_getDocument;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained;
         Java_com_couchbase_lite_internal_core_C4TestUtils_next;
         Java_com_couchbase_lite_internal_core_C4TestUtils_openStore;
         Java_com_couchbase_lite_internal_core_C4TestUtils_put;
@@ -155,7 +156,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4_getBuildInfo;
         Java_com_couchbase_lite_internal_core_impl_NativeC4_getMessage;
         Java_com_couchbase_lite_internal_core_impl_NativeC4_getVersion;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4_setExtPath;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4_enableExtension;
         Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir;
         Java_com_couchbase_lite_internal_core_impl_NativeC4_setenv;
         Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_count;

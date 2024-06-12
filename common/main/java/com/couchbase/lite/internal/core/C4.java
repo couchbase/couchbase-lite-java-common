@@ -33,7 +33,7 @@ public final class C4 {
         String nGetVersion();
         void nDebug(boolean debugging);
         void nSetTempDir(@NonNull String tempDir) throws LiteCoreException;
-        void nSetExtPath(@NonNull String extDir);
+        void nEnableExtension(@NonNull String name, @NonNull String path) throws LiteCoreException;
         @Nullable
         String nGetMessage(int domain, int code, int internalInfo);
     }
@@ -57,7 +57,9 @@ public final class C4 {
         NATIVE_IMPL.nSetTempDir(tempDir);
     }
 
-    public static void setExtPath(@NonNull String extPath) { NATIVE_IMPL.nSetExtPath(extPath); }
+    public static void enableExtension(@NonNull String name, @NonNull String path) throws LiteCoreException {
+        NATIVE_IMPL.nEnableExtension(name, path);
+    }
 
     @Nullable
     public static String getMessage(int domain, int code, int internalInfo) {

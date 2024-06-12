@@ -56,7 +56,7 @@ public final class CouchbaseLiteInternal {
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
-    private static final Object LOCK = new Object();
+    static final Object LOCK = new Object();
 
     private static volatile boolean debugging;
 
@@ -82,8 +82,6 @@ public final class CouchbaseLiteInternal {
         Log.initLogging(debugging, loadErrorMessages());
 
         setC4TmpDirPath(tmpDir);
-
-        CBLVariantExtensions.initVariant(LOCK, tmpDir);
     }
 
     public static boolean debugging() { return debugging; }
