@@ -116,7 +116,8 @@ static jmethodID m_HashSet_add;                  // add
 
 // Java FLSliceResult class
 static jclass cls_FLSliceResult;                 // global reference
-static jmethodID m_FLSliceResult_init;           // constructor
+static jmethodID m_FLSliceResult_createManaged;   // static constructor
+static jmethodID m_FLSliceResult_createUnmanaged; // static constructor
 static jfieldID f_FLSliceResult_base;            // field: base
 static jfieldID f_FLSliceResult_size;            // field: size
 
@@ -169,8 +170,18 @@ static bool initC4Glue(JNIEnv *env) {
         if (!cls_FLSliceResult)
             return false;
 
-        m_FLSliceResult_init = env->GetMethodID(cls_FLSliceResult, "<init>", "(JJ)V");
-        if (!m_FLSliceResult_init)
+        m_FLSliceResult_createManaged = env->GetStaticMethodID(
+                cls_FLSliceResult,
+                "createManagedSlice",
+                "(JJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;");
+        if (!m_FLSliceResult_createManaged)
+            return false;
+
+        m_FLSliceResult_createUnmanaged = env->GetStaticMethodID(
+                cls_FLSliceResult,
+                "createUnmanagedSlice",
+                "(JJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;");
+        if (!m_FLSliceResult_createUnmanaged)
             return false;
 
         f_FLSliceResult_base = env->GetFieldID(cls_FLSliceResult, "base", "J");
@@ -331,6 +342,7 @@ namespace litecore {
             return toJString(env, (C4Slice) s);
         }
 
+        // NOTE: this creates a *copy* of the passed slice
         jbyteArray toJByteArray(JNIEnv *env, C4Slice s) {
             if (s.buf == nullptr)
                 return nullptr;
@@ -416,7 +428,19 @@ namespace litecore {
         }
 
         jobject toJavaFLSliceResult(JNIEnv *const env, const FLSliceResult &sr) {
-            return env->NewObject(cls_FLSliceResult, m_FLSliceResult_init, (jlong) sr.buf, (jlong) sr.size);
+            return env->CallStaticObjectMethod(
+                    cls_FLSliceResult,
+                    m_FLSliceResult_createManaged,
+                    (jlong) sr.buf,
+                    (jlong) sr.size);
+        }
+
+        jobject toJavaUnmanagedFLSliceResult(JNIEnv *const env, const FLSliceResult &sr) {
+            return env->CallStaticObjectMethod(
+                    cls_FLSliceResult,
+                    m_FLSliceResult_createUnmanaged,
+                    (jlong) sr.buf,
+                    (jlong) sr.size);
         }
 
         FLSliceResult fromJavaFLSliceResult(JNIEnv *const env, jobject jsr) {

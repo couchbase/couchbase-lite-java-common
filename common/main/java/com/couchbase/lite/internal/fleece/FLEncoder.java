@@ -248,9 +248,14 @@ public abstract class FLEncoder extends C4NativePeer {
     @NonNull
     public byte[] finish() throws LiteCoreException { return finish(getPeer()); }
 
+    // NOTE: the FLSliceResult returned by this method must be released by the caller
     @NonNull
     public FLSliceResult finish2() throws LiteCoreException { return finish2(getPeer()); }
 
+    // NOTE: We expect the FLSliceResult returned by this method to be handed, immediately,
+    // to someone else (LiteCore) who will release it.  Java does release the memory.
+    @NonNull
+    public FLSliceResult finish3() throws LiteCoreException { return finish3(getPeer()); }
 
     //-------------------------------------------------------------------------
     // native methods
@@ -293,4 +298,8 @@ public abstract class FLEncoder extends C4NativePeer {
 
     @NonNull
     private static native FLSliceResult finish2(long encoder) throws LiteCoreException;
+
+    @NonNull
+    private static native FLSliceResult finish3(long encoder) throws LiteCoreException;
 }
+

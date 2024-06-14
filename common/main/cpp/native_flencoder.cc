@@ -253,11 +253,29 @@ Java_com_couchbase_lite_internal_fleece_FLEncoder_finish2(JNIEnv *env, jclass ig
         throwError(env, {FleeceDomain, error});
         return 0;
     }
+
     return toJavaFLSliceResult(env, res);
 }
 
 /*
  * Class:     com_couchbase_lite_internal_fleece_FLEncoder
+ * Method:    finish3
+ * Signature: (J)Lcom/couchbase/lite/internal/fleece/FLSliceResult
+ */
+JNIEXPORT jobject JNICALL
+Java_com_couchbase_lite_internal_fleece_FLEncoder_finish3(JNIEnv *env, jclass ignore, jlong jenc) {
+    FLError error = kFLNoError;
+    FLSliceResult res = FLEncoder_Finish((FLEncoder) jenc, &error);
+    if (error != kFLNoError) {
+        throwError(env, {FleeceDomain, error});
+        return 0;
+    }
+
+    return toJavaUnmanagedFLSliceResult(env, res);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_fleece_impl_NativeFLEncoder
  * Method:    reset
  * Signature: (J)V
  */

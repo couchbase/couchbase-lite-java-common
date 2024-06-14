@@ -71,7 +71,7 @@ class C4DatabaseTest : C4BaseTest() {
         override fun nSetCookie(db: Long, url: String?, setCookieHeader: String?, acceptParents: Boolean) = Unit
         override fun nGetCookies(db: Long, url: String): String = "test_cookies"
         override fun nGetSharedFleeceEncoder(db: Long): Long = 1L
-        override fun nEncodeJSON(db: Long, jsonData: ByteArray): FLSliceResult = FLSliceResult(0, 0)
+        override fun nEncodeJSON(db: Long, jsonData: ByteArray): FLSliceResult = FLSliceResult.createTestSlice()
         override fun nGetFLSharedKeys(db: Long): Long = 1L
         override fun nGetScopeNames(peer: Long): MutableSet<String> = mutableSetOf()
         override fun nHasScope(peer: Long, scope: String): Boolean = true
