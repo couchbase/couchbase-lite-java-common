@@ -31,6 +31,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 
@@ -54,7 +55,8 @@ public class DictionaryTest extends BaseDbTest {
     @Test
     public void testRecursiveDictionary() {
         MutableDictionary dict = new MutableDictionary();
-        assertThrows(IllegalArgumentException.class, () -> dict.setDictionary("k1", dict));
+        dict.setDictionary("k1", dict);
+        assertNotSame(dict, dict.getDictionary("k1"));
     }
 
     @Test
