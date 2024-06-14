@@ -33,7 +33,7 @@ class LoadTest : BaseDbTest() {
         private val DEVICE_SPEED_MULTIPLIER = mapOf(
             // java devices
             "lin" to 50,
-            "mac" to 70,
+            "mac" to 100,
             "win" to 120,
 
             // android on jenkins

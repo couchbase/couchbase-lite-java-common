@@ -131,7 +131,7 @@ abstract class AbstractQuery implements Listenable<QueryChange, QueryChangeListe
     @Override
     public void setParameters(@Nullable Parameters parameters) throws CouchbaseLiteException {
         synchronized (lock) {
-            if (parameters != null) { parameters = parameters.readonlyCopy(); }
+            if (parameters != null) { parameters = parameters.readOnlyCopy(); }
 
             this.parameters = parameters;
 
