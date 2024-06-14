@@ -200,7 +200,7 @@ public final class Parameters {
     public Parameters setValue(@NonNull String name, @Nullable Object value) {
         Preconditions.assertNotNull(name, "name");
         if (readonly) { throw new CouchbaseLiteError("Parameters is readonly mode."); }
-        map.put(name, value);
+        map.put(name, Fleece.toCBLObject(value));
         return this;
     }
 

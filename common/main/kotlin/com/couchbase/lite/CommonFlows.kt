@@ -77,6 +77,9 @@ fun Replicator.replicatorChangesFlow(executor: Executor? = null) = callbackFlow 
 
 /**
  * A Flow of document replications.
+ * This is a flow of DocumentReplications, each of which contains a list of ReplicatedDocuments,
+ * each of which, in turn, contains the name (String) of the document scope, the name (String)
+ * of the document collection, and the document ID (String).
  *
  * @param executor Optional executor on which to run the change listener. If no executor
  * is provided, the listener will be called on the Flow's CoroutineDispatcher.
