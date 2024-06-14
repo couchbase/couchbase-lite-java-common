@@ -19,7 +19,7 @@ import com.couchbase.lite.internal.utils.JSONUtils
 import org.junit.Assert
 import org.junit.Test
 
-class ParameterTests : BaseDbTest() {
+class ParameterTest : BaseDbTest() {
     @Test
     fun testCreateParams() {
         val params = Parameters()
@@ -37,7 +37,7 @@ class ParameterTests : BaseDbTest() {
     }
 
     @Test
-    fun tesMutateImmutableParams() {
+    fun testMutateImmutableParams() {
         val params = Parameters()
         params.setString("param", "value")
 
@@ -69,7 +69,7 @@ class ParameterTests : BaseDbTest() {
         verifyParams(query.parameters)
     }
 
-    protected fun makeParams(): Parameters {
+    private fun makeParams(): Parameters {
         // A small array
         val simpleArray = MutableArray()
         simpleArray.addInt(54)
@@ -112,7 +112,7 @@ class ParameterTests : BaseDbTest() {
         return params
     }
 
-    fun verifyParams(params: Parameters?) {
+    private fun verifyParams(params: Parameters?) {
         Assert.assertNotNull(params)
         params!!
 
@@ -153,7 +153,7 @@ class ParameterTests : BaseDbTest() {
         Assert.assertEquals(Float.MAX_VALUE, params.getValue("param-12"))
 
         //#12 param.setDouble(0.0);
-        Assert.assertEquals(0.0, params.getValue("param-13")!!.promoteToDouble(), 0.001)
+        Assert.assertEquals(0.0, params.getValue("param-13") as Double, 0.001)
 
         //#13 param.setDouble(Double.MIN_VALUE);
         Assert.assertEquals(Double.MIN_VALUE, params.getValue("param-14") as Double, 0.001)

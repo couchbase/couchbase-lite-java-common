@@ -1772,26 +1772,26 @@ abstract class BaseDbTest : BaseTest() {
     }
 
     // Some JSON encoding will promote a Float to a Double.
-    protected fun Any.demoteToFloat() = when (this) {
+    private fun Any.demoteToFloat() = when (this) {
         is Float -> this
         is Double -> this.toFloat()
         else -> throw IllegalArgumentException("${this} cannot be converted to float")
     }
 
-    protected fun Any.promoteToDouble() = when (this) {
+    private fun Any.promoteToDouble() = when (this) {
         is Float -> this.toDouble()
         is Double -> this
         else -> throw IllegalArgumentException("${this} cannot be converted to double")
     }
 
     // Some JSON encoding will promote a Float to a Double.
-    protected fun Any.demoteToInt() = when (this) {
+    private fun Any.demoteToInt() = when (this) {
         is Int -> this
         is Long -> this.toInt()
         else -> throw IllegalArgumentException("${this} cannot be converted to int")
     }
 
-    protected fun Any.promoteToLong() = when (this) {
+    private fun Any.promoteToLong() = when (this) {
         is Int -> this.toLong()
         is Long -> this
         else -> throw IllegalArgumentException("${this} cannot be converted to float")

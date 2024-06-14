@@ -32,7 +32,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 public class Parameters {
     private static final class ImmutableParameters extends Parameters {
-        private ImmutableParameters(Parameters parameters) { super(parameters); }
+        private ImmutableParameters(@Nullable Parameters parameters) { super(parameters); }
 
         @NonNull
         @Override
@@ -60,6 +60,19 @@ public class Parameters {
     public final Object getValue(@NonNull String name) {
         Preconditions.assertNotNull(name, "name");
         return map.get(name);
+    }
+
+    /**
+     * Gets a parameter's value.
+     *
+     * @param name the key.
+     * @return The value in the dictionary at the key (or null).
+     * @throws ClassCastException if the value is not of the passed class.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, @NonNull String name) {
+        final Object val = getValue(name);
+        return (val == null) ? null : klass.cast(val);
     }
 
     /**

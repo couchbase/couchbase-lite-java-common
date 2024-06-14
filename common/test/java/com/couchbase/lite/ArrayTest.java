@@ -79,7 +79,8 @@ public class ArrayTest extends BaseDbTest {
     @Test
     public void testRecursiveArray() {
         MutableArray array = new MutableArray();
-        assertThrows(IllegalArgumentException.class, () -> array.addArray(array));
+        array.addArray(array);
+        assertNotSame(array, array.getArray(0));
     }
 
     @Test
@@ -1358,14 +1359,14 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
-            assertEquals(0, array.getInt(2));
-            assertEquals(Integer.MAX_VALUE, array.getInt(0));
-            assertEquals(Integer.MIN_VALUE, array.getInt(1));
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
+        assertEquals(0, array.getInt(2));
+        assertEquals(Integer.MAX_VALUE, array.getInt(0));
+        assertEquals(Integer.MIN_VALUE, array.getInt(1));
     }
 
     @Test
@@ -1380,15 +1381,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(4, array.count());
-            assertEquals(0, array.getInt(0));
-            assertEquals(Integer.MAX_VALUE, array.getInt(1));
-            assertEquals(Integer.MIN_VALUE, array.getInt(2));
-            assertEquals(10, array.getInt(3));
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(4, array.count());
+        assertEquals(0, array.getInt(0));
+        assertEquals(Integer.MAX_VALUE, array.getInt(1));
+        assertEquals(Integer.MIN_VALUE, array.getInt(2));
+        assertEquals(10, array.getInt(3));
     }
 
     @Test
@@ -1400,14 +1401,14 @@ public class ArrayTest extends BaseDbTest {
         mArray.addLong(Long.MIN_VALUE);
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
-            assertEquals(0, array.getLong(0));
-            assertEquals(Long.MAX_VALUE, array.getLong(1));
-            assertEquals(Long.MIN_VALUE, array.getLong(2));
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
+        assertEquals(0, array.getLong(0));
+        assertEquals(Long.MAX_VALUE, array.getLong(1));
+        assertEquals(Long.MIN_VALUE, array.getLong(2));
     }
 
     @Test
@@ -1422,14 +1423,14 @@ public class ArrayTest extends BaseDbTest {
         mArray.setLong(2, 0);
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
-            assertEquals(0, array.getLong(2));
-            assertEquals(Long.MAX_VALUE, array.getLong(0));
-            assertEquals(Long.MIN_VALUE, array.getLong(1));
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
+        assertEquals(0, array.getLong(2));
+        assertEquals(Long.MAX_VALUE, array.getLong(0));
+        assertEquals(Long.MIN_VALUE, array.getLong(1));
     }
 
     @Test
@@ -1444,15 +1445,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(4, array.count());
-            assertEquals(0, array.getLong(0));
-            assertEquals(Long.MAX_VALUE, array.getLong(1));
-            assertEquals(Long.MIN_VALUE, array.getLong(2));
-            assertEquals(10, array.getLong(3));
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(4, array.count());
+        assertEquals(0, array.getLong(0));
+        assertEquals(Long.MAX_VALUE, array.getLong(1));
+        assertEquals(Long.MIN_VALUE, array.getLong(2));
+        assertEquals(10, array.getLong(3));
     }
 
     @Test
@@ -1464,14 +1465,14 @@ public class ArrayTest extends BaseDbTest {
         mArray.addFloat(Float.MIN_VALUE);
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
-            assertEquals(0.0F, array.getFloat(0), 0.0F);
-            assertEquals(Float.MAX_VALUE, array.getFloat(1), 0.0F);
-            assertEquals(Float.MIN_VALUE, array.getFloat(2), 0.0F);
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
+        assertEquals(0.0F, array.getFloat(0), 0.0F);
+        assertEquals(Float.MAX_VALUE, array.getFloat(1), 0.0F);
+        assertEquals(Float.MIN_VALUE, array.getFloat(2), 0.0F);
     }
 
     @Test
@@ -1489,15 +1490,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
 
-            assertEquals(0.0F, array.getLong(2), 0.0F);
-            assertEquals(Float.MAX_VALUE, array.getFloat(0), 0.0F);
-            assertEquals(Float.MIN_VALUE, array.getFloat(1), 0.0f);
+        assertEquals(0.0F, array.getLong(2), 0.0F);
+        assertEquals(Float.MAX_VALUE, array.getFloat(0), 0.0F);
+        assertEquals(Float.MIN_VALUE, array.getFloat(1), 0.0f);
     }
 
     @Test
@@ -1512,15 +1513,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(4, array.count());
-            assertEquals(0F, array.getFloat(0), 0F);
-            assertEquals(Float.MAX_VALUE, array.getFloat(1), 0F);
-            assertEquals(Float.MIN_VALUE, array.getFloat(2), 0F);
-            assertEquals(10F, array.getFloat(3), 0F);
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(4, array.count());
+        assertEquals(0F, array.getFloat(0), 0F);
+        assertEquals(Float.MAX_VALUE, array.getFloat(1), 0F);
+        assertEquals(Float.MIN_VALUE, array.getFloat(2), 0F);
+        assertEquals(10F, array.getFloat(3), 0F);
     }
 
     @Test
@@ -1534,14 +1535,14 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
-            assertEquals(0.0, array.getDouble(0), 0.0);
-            assertEquals(Double.MAX_VALUE, array.getDouble(1), 0.0);
-            assertEquals(Double.MIN_VALUE, array.getDouble(2), 0.0);
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
+        assertEquals(0.0, array.getDouble(0), 0.0);
+        assertEquals(Double.MAX_VALUE, array.getDouble(1), 0.0);
+        assertEquals(Double.MIN_VALUE, array.getDouble(2), 0.0);
     }
 
     @Test
@@ -1559,15 +1560,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
 
-            assertEquals(0.0, array.getDouble(2), 0.0);
-            assertEquals(Double.MAX_VALUE, array.getDouble(0), 0.0);
-            assertEquals(Double.MIN_VALUE, array.getDouble(1), 0.0);
+        assertEquals(0.0, array.getDouble(2), 0.0);
+        assertEquals(Double.MAX_VALUE, array.getDouble(0), 0.0);
+        assertEquals(Double.MIN_VALUE, array.getDouble(1), 0.0);
     }
 
     @Test
@@ -1582,15 +1583,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(4, array.count());
-            assertEquals(0.0, array.getDouble(0), 0.0);
-            assertEquals(Double.MAX_VALUE, array.getDouble(1), 0.0);
-            assertEquals(Double.MIN_VALUE, array.getDouble(2), 0.0);
-            assertEquals(10.0, array.getDouble(3), 0.0);
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(4, array.count());
+        assertEquals(0.0, array.getDouble(0), 0.0);
+        assertEquals(Double.MAX_VALUE, array.getDouble(1), 0.0);
+        assertEquals(Double.MIN_VALUE, array.getDouble(2), 0.0);
+        assertEquals(10.0, array.getDouble(3), 0.0);
     }
 
     @Test
@@ -1604,15 +1605,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
 
-            assertEquals(Integer.MAX_VALUE, array.getNumber(0).intValue());
-            assertEquals(Long.MAX_VALUE, array.getNumber(1).longValue());
-            assertEquals(Double.MAX_VALUE, array.getNumber(2).doubleValue(), 0.0);
+        assertEquals(Integer.MAX_VALUE, array.getNumber(0).intValue());
+        assertEquals(Long.MAX_VALUE, array.getNumber(1).longValue());
+        assertEquals(Double.MAX_VALUE, array.getNumber(2).doubleValue(), 0.0);
     }
 
     @Test
@@ -1630,15 +1631,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
 
-            assertEquals(Integer.MAX_VALUE, array.getNumber(2).intValue());
-            assertEquals(Long.MAX_VALUE, array.getNumber(0).longValue());
-            assertEquals(Double.MAX_VALUE, array.getNumber(1).doubleValue(), 0.0);
+        assertEquals(Integer.MAX_VALUE, array.getNumber(2).intValue());
+        assertEquals(Long.MAX_VALUE, array.getNumber(0).longValue());
+        assertEquals(Double.MAX_VALUE, array.getNumber(1).doubleValue(), 0.0);
     }
 
     @Test
@@ -1653,15 +1654,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(4, array.count());
-            assertEquals(Integer.MAX_VALUE, array.getInt(0));
-            assertEquals(Long.MAX_VALUE, array.getLong(1));
-            assertEquals(Double.MAX_VALUE, array.getDouble(2), 0.0);
-            assertEquals(10L, array.getNumber(3).longValue());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(4, array.count());
+        assertEquals(Integer.MAX_VALUE, array.getInt(0));
+        assertEquals(Long.MAX_VALUE, array.getLong(1));
+        assertEquals(Double.MAX_VALUE, array.getDouble(2), 0.0);
+        assertEquals(10L, array.getNumber(3).longValue());
     }
 
     @Test
@@ -1675,15 +1676,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
 
-            assertEquals("", array.getString(0));
-            assertEquals("Hello", array.getString(1));
-            assertEquals("World", array.getString(2));
+        assertEquals("", array.getString(0));
+        assertEquals("Hello", array.getString(1));
+        assertEquals("World", array.getString(2));
     }
 
     @Test
@@ -1701,15 +1702,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(3, array.count());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(3, array.count());
 
-            assertEquals("", array.getString(2));
-            assertEquals("Hello", array.getString(0));
-            assertEquals("World", array.getString(1));
+        assertEquals("", array.getString(2));
+        assertEquals("Hello", array.getString(0));
+        assertEquals("World", array.getString(1));
     }
 
     @Test
@@ -1724,15 +1725,15 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(4, array.count());
-            assertEquals("Hello", array.getString(0));
-            assertEquals("World", array.getString(1));
-            assertEquals("!", array.getString(2));
-            assertEquals("", array.getString(3));
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(4, array.count());
+        assertEquals("Hello", array.getString(0));
+        assertEquals("World", array.getString(1));
+        assertEquals("!", array.getString(2));
+        assertEquals("", array.getString(3));
     }
 
     @Test
@@ -1745,14 +1746,14 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(2, array.count());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(2, array.count());
 
-            assertTrue(array.getBoolean(0));
-            assertFalse(array.getBoolean(1));
+        assertTrue(array.getBoolean(0));
+        assertFalse(array.getBoolean(1));
     }
 
     @Test
@@ -1768,14 +1769,14 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(2, array.count());
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(2, array.count());
 
-            assertTrue(array.getBoolean(1));
-            assertFalse(array.getBoolean(0));
+        assertTrue(array.getBoolean(1));
+        assertFalse(array.getBoolean(0));
     }
 
     @Test
@@ -1790,20 +1791,20 @@ public class ArrayTest extends BaseDbTest {
 
         mDoc.setArray("array", mArray);
         Document doc = saveDocInTestCollection(mDoc);
-            assertEquals(1, doc.count());
-            assertTrue(doc.contains("array"));
-            Array array = doc.getArray("array");
-            assertNotNull(array);
-            assertEquals(4, array.count());
-            assertTrue(array.getBoolean(0));
-            assertFalse(array.getBoolean(1));
-            assertFalse(array.getBoolean(2));
-            assertTrue(array.getBoolean(3));
+        assertEquals(1, doc.count());
+        assertTrue(doc.contains("array"));
+        Array array = doc.getArray("array");
+        assertNotNull(array);
+        assertEquals(4, array.count());
+        assertTrue(array.getBoolean(0));
+        assertFalse(array.getBoolean(1));
+        assertFalse(array.getBoolean(2));
+        assertTrue(array.getBoolean(3));
     }
 
     ///////////////  Error Case test
 
-    private static class Unserializable{}
+    private static class Unserializable { }
 
     @Test
     public void testAddValueUnexpectedObject() {
