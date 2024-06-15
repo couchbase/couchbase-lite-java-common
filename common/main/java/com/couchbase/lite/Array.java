@@ -117,13 +117,28 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
      * Array, Dictionary, Number, or String based on the underlying
      * data type; or null if the value is nil.
      *
-     * @param index the index. This value must not exceed the bounds of the array.
+     * @param index the index. This value must be 0 &lt;= index &lt; count().
      * @return the Object or null.
      */
     @Nullable
     @Override
     public Object getValue(int index) {
         synchronized (lock) { return getMValue(internalArray, index).asNative(internalArray); }
+    }
+
+    /**
+     * Gets value at the given index as an object. The object types are Blob,
+     * Array, Dictionary, Number, or String based on the underlying
+     * data type; or null if the value is nil.
+     *
+     * @param index the index. This value must be 0 &lt;= index &lt; count().
+     * @return the array value at the index.
+     * @throws ClassCastException if the value is not of the passed class.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, int index) {
+        final Object val = getValue(index);
+        return (val == null) ? null : klass.cast(val);
     }
 
     /**

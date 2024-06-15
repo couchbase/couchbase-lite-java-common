@@ -260,6 +260,17 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public Object getValue(@NonNull String key) { return getContent().getValue(key); }
 
     /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
+     *
+     * @param key the key.
+     * @return the object value or null.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, @NonNull String key) { return getContent().getValue(klass, key); }
+
+    /**
      * Gets a property's value as a String.
      * Returns null if the value doesn't exist, or its value is not a String.
      *

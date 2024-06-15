@@ -54,7 +54,8 @@ public class DictionaryTest extends BaseDbTest {
     @Test
     public void testRecursiveDictionary() {
         MutableDictionary dict = new MutableDictionary();
-        assertThrows(IllegalArgumentException.class, () -> dict.setDictionary("k1", dict));
+        dict.setDictionary("k1", dict);
+        assertNotSame(dict, dict.getDictionary("k1"));
     }
 
     @Test

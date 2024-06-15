@@ -151,6 +151,21 @@ public class Dictionary implements DictionaryInterface, FLEncodable, Iterable<St
     }
 
     /**
+     * Gets a property's value as an object. The object types are Blob, Array,
+     * Dictionary, Number, or String based on the underlying data type; or nil if the
+     * property value is null or the property doesn't exist.
+     *
+     * @param key the key.
+     * @return The value in the dictionary at the key (or null).
+     * @throws ClassCastException if the value is not of the passed class.
+     */
+    @Nullable
+    public <T> T getValue(@NonNull Class<T> klass, @NonNull String key) {
+        final Object val = getValue(key);
+        return (val == null) ? null : klass.cast(val);
+    }
+
+    /**
      * Gets a property's value as a String. Returns null if the value doesn't exist, or its value is not a String.
      *
      * @param key the key

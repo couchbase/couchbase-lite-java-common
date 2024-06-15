@@ -89,7 +89,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
             for (Map.Entry<String, Object> entry: data.entrySet()) {
                 internalDict.set(
                     Preconditions.assertNotNull(entry.getKey(), "data key"),
-                    new MValue(Fleece.toCBLObject(checkSelf(entry.getValue()))));
+                    new MValue(toFleece(entry.getValue())));
             }
         }
         return this;
@@ -127,7 +127,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary setValue(@NonNull String key, @Nullable Object value) {
         Preconditions.assertNotNull(key, "key");
-        final Object val = Fleece.toCBLObject(checkSelf(value));
+        final Object val = toFleece(value);
         synchronized (lock) {
             if (Fleece.willMutate(val, internalDict.get(key), internalDict)) { internalDict.set(key, new MValue(val)); }
         }
@@ -303,8 +303,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     }
 
     @Nullable
-    private Object checkSelf(@Nullable Object value) {
-        if (value != this) { return value; }
-        throw new IllegalArgumentException("Dictionaries cannot be added to themselves");
+    private Object toFleece(@Nullable Object value) {
+        return (value == this)
+            ? ((Dictionary) value).toMutable()
+            : Fleece.toCBLObject(value);
     }
 }
