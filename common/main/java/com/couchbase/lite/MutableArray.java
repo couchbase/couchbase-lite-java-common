@@ -87,7 +87,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray setData(@NonNull List<Object> data) {
         synchronized (lock) {
             internalArray.clear();
-            for (Object obj: data) { internalArray.append(Fleece.toCBLObject(checkSelf(obj))); }
+            for (Object obj: data) { internalArray.append(toFleece(obj)); }
         }
         return this;
     }
@@ -123,10 +123,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray setValue(int index, @Nullable Object value) {
-        final Object val = checkSelf(value);
+        final Object val = toFleece(value);
         synchronized (lock) {
             if (Fleece.willMutate(val, internalArray.get(index), internalArray)
-                && (!internalArray.set(index, Fleece.toCBLObject(val)))) {
+                && (!internalArray.set(index, val))) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
         }
@@ -263,7 +263,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray addValue(@Nullable Object value) {
-        synchronized (lock) { internalArray.append(Fleece.toCBLObject(checkSelf(value))); }
+        final Object val = toFleece(value);
+        synchronized (lock) { internalArray.append(val); }
         return this;
     }
 
@@ -387,8 +388,9 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray insertValue(int index, @Nullable Object value) {
+        final Object val = toFleece(value);
         synchronized (lock) {
-            if (!internalArray.insert(index, Fleece.toCBLObject(checkSelf(value)))) {
+            if (!internalArray.insert(index, val)) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
         }
@@ -558,9 +560,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public String toJSON() { throw new CouchbaseLiteError("Mutable objects may not be encoded as JSON"); }
 
     @Nullable
-    private Object checkSelf(@Nullable Object value) {
-        if (value != this) { return value; }
-        throw new IllegalArgumentException("Arrays cannot be added to themselves");
+    private Object toFleece(@Nullable Object value) {
+        return (value == this)
+            ? ((Array) value).toMutable()
+            : Fleece.toCBLObject(value);
     }
 }
 
