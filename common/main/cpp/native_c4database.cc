@@ -47,12 +47,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open(
     C4DatabaseConfig2 config;
     config.parentDirectory = parentDir;
     config.flags = (C4DatabaseFlags) jflags;
-    if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))
+    bool ok = getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey);
+    if (!ok)
         return 0;
 
     C4Error error{};
     C4Database *db = c4db_openNamed(name, &config, &error);
-    if (!db && error.code != 0) {
+    if ((db == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -68,8 +69,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open(
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_close(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error{};
-    bool res = c4db_close((C4Database *) jdb, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_close((C4Database *) jdb, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -122,12 +123,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy(
     C4DatabaseConfig2 config;
     config.parentDirectory = parentDir;
     config.flags = (C4DatabaseFlags) jflags;
-    if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey))
+    bool ok = getEncryptionKey(env, encryptionAlg, encryptionKey, &config.encryptionKey);
+    if (!ok)
         return;
 
     C4Error error{};
-    bool res = c4db_copyNamed(fromPath, name, &config, &error);
-    if (!res && error.code != 0)
+    ok = c4db_copyNamed(fromPath, name, &config, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -139,8 +141,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy(
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_delete(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error{};
-    bool res = c4db_delete((C4Database *) jdb, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_delete((C4Database *) jdb, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -159,8 +161,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed(
     jstringSlice inDirectory(env, dir);
 
     C4Error error{};
-    bool res = c4db_deleteNamed(dbName, inDirectory, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_deleteNamed(dbName, inDirectory, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -177,8 +179,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPublicUUID(JNIEnv
     C4UUID uuid;
 
     C4Error error{};
-    bool res = c4db_getUUIDs((C4Database *) jdb, &uuid, nullptr, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_getUUIDs((C4Database *) jdb, &uuid, nullptr, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 
     C4Slice s = {&uuid, sizeof(uuid)};
@@ -196,8 +198,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getPublicUUID(JNIEnv
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_beginTransaction(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error{};
-    bool res = c4db_beginTransaction((C4Database *) jdb, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_beginTransaction((C4Database *) jdb, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -213,8 +215,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_endTransaction(
         jlong jdb,
         jboolean jcommit) {
     C4Error error{};
-    bool res = c4db_endTransaction((C4Database *) jdb, jcommit, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_endTransaction((C4Database *) jdb, jcommit, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -234,12 +236,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_rekey(
         jint encryptionAlg,
         jbyteArray encryptionKey) {
     C4EncryptionKey key;
-    if (!getEncryptionKey(env, encryptionAlg, encryptionKey, &key))
+    bool ok = getEncryptionKey(env, encryptionAlg, encryptionKey, &key);
+    if (!ok)
         return;
 
     C4Error error{};
-    bool res = c4db_rekey((C4Database *) jdb, &key, &error);
-    if (!res && error.code != 0)
+    ok = c4db_rekey((C4Database *) jdb, &key, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -247,6 +250,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_rekey(
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    maintenance
  * Signature: (JI)J
+ *
+ * ??? Does this method ever actually return false without throwing an exception?
  */
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance(
@@ -255,11 +260,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_maintenance(
         jlong db,
         jint type) {
     C4Error error{};
-    bool res = c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_maintenance((C4Database *) db, (C4MaintenanceType) type, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 
-    return (jboolean) res;
+    return (jboolean) ok;
 }
 
 
@@ -282,20 +287,21 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_setCookie(
     jstringSlice cookie(env, jcookie);
 
     C4Address address;
-    if (!c4address_fromURL(url, &address, nullptr)) {
+    bool ok = c4address_fromURL(url, &address, nullptr);
+    if (!ok) {
         throwError(env, {NetworkDomain, kC4NetErrInvalidURL});
         return;
     }
 
     C4Error error{};
-    bool res = c4db_setCookie(
+    ok = c4db_setCookie(
             (C4Database *) jdb,
             cookie,
             address.hostname,
             address.path,
             acceptParentDomain,
             &error);
-    if (!res && error.code != 0)
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -313,7 +319,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCookies(
     jstringSlice url(env, jurl);
 
     C4Address address;
-    if (!c4address_fromURL(url, &address, nullptr)) {
+    bool ok = c4address_fromURL(url, &address, nullptr);
+    if (!ok) {
         throwError(env, {NetworkDomain, kC4NetErrInvalidURL});
         return nullptr;
     }
@@ -369,8 +376,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getScopeNames(
         jclass ignore,
         jlong db) {
     C4Error error{};
-    auto scopes = c4db_scopeNames((C4Database *) db, &error);
-    if (!scopes && error.code != 0) {
+    FLMutableArray scopes = c4db_scopeNames((C4Database *) db, &error);
+    if ((scopes == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return nullptr;
     }
@@ -409,8 +416,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames(
     jstringSlice scope(env, jscope);
 
     C4Error error{};
-    auto collections = c4db_collectionNames((C4Database *) db, scope, &error);
-    if (!collections && error.code != 0) {
+    FLMutableArray collections = c4db_collectionNames((C4Database *) db, scope, &error);
+    if ((collections == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return nullptr;
     }

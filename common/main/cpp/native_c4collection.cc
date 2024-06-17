@@ -34,7 +34,7 @@ static void createIndex(
     jstringSlice queryExpressions(env, jqueryExpressions);
 
     C4Error error{};
-    bool res = c4coll_createIndex(
+    bool ok = c4coll_createIndex(
             (C4Collection *) coll,
             name,
             queryExpressions,
@@ -43,7 +43,7 @@ static void createIndex(
             &options,
             &error);
 
-    if (!res && error.code != 0)
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -65,7 +65,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection(
 
     C4Error error{};
     C4Collection *coll = c4db_createCollection((C4Database *) db, collSpec, &error);
-    if (!coll && error.code != 0) {
+    if ((coll == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -120,7 +120,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDefaultCollecti
         jlong db) {
     C4Error error{};
     C4Collection *coll = c4db_getDefaultCollection((C4Database *) db, &error);
-    if (!coll && error.code != 0) {
+    if ((coll == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -161,7 +161,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_free(
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount(JNIEnv *env, jclass ignore, jlong coll) {
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll) {
     return (jlong) c4coll_getDocumentCount((C4Collection *) coll);
 }
 
@@ -223,8 +226,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc(
     jstringSlice docId(env, jDocId);
 
     C4Error error{};
-    bool purged = c4coll_purgeDoc((C4Collection *) coll, docId, &error);
-    if (!purged && error.code != 0)
+    bool ok = c4coll_purgeDoc((C4Collection *) coll, docId, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 
@@ -357,8 +360,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_deleteIndex(
     jstringSlice name(env, jName);
 
     C4Error error{};
-    bool res = c4coll_deleteIndex((C4Collection *) coll, name, &error);
-    if (!res && error.code != 0)
+    bool ok = c4coll_deleteIndex((C4Collection *) coll, name, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 }
 }

@@ -48,8 +48,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_createQuery(
             &errorLoc,
             &error);
 
-    // !!! Should put the error location into the exception message.
-    if (!query) {
+    // ??? Should put errorLoc into the exception message.
+    if (query == nullptr) {
         throwError(env, error);
         return 0;
     }
@@ -101,7 +101,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Query_run(
     C4Error error{};
     C4Slice params {(const void *) jparamPtr, (size_t) jparamSize};
     C4QueryEnumerator *e = c4query_run((C4Query *) jquery, params, &error);
-    if (!e) {
+    if (e == nullptr) {
         throwError(env, error);
         return 0;
     }

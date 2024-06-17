@@ -39,38 +39,38 @@ bool litecore::jni::initC4Socket(JNIEnv *env) {
     // Find C4Socket class and static methods for callback
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Socket");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4Socket = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4Socket)
+        if (cls_C4Socket == nullptr)
             return false;
 
         m_C4Socket_open = env->GetStaticMethodID(
                 cls_C4Socket,
                 "open",
                 "(JJLjava/lang/String;Ljava/lang/String;ILjava/lang/String;[B)V");
-        if (!m_C4Socket_open)
+        if (m_C4Socket_open == nullptr)
             return false;
 
         m_C4Socket_write = env->GetStaticMethodID(cls_C4Socket, "write", "(J[B)V");
-        if (!m_C4Socket_write)
+        if (m_C4Socket_write == nullptr)
             return false;
 
         m_C4Socket_completedReceive = env->GetStaticMethodID(cls_C4Socket, "completedReceive", "(JJ)V");
-        if (!m_C4Socket_completedReceive)
+        if (m_C4Socket_completedReceive == nullptr)
             return false;
 
         m_C4Socket_close = env->GetStaticMethodID(cls_C4Socket, "close", "(J)V");
-        if (!m_C4Socket_close)
+        if (m_C4Socket_close == nullptr)
             return false;
 
         m_C4Socket_requestClose = env->GetStaticMethodID(cls_C4Socket, "requestClose", "(JILjava/lang/String;)V");
-        if (!m_C4Socket_requestClose)
+        if (m_C4Socket_requestClose == nullptr)
             return false;
     }
 
-    logError("sockets initialized");
+    jniLog("sockets initialized");
     return true;
 }
 
@@ -88,31 +88,33 @@ static void socket_open(C4Socket *socket, const C4Address *addr, C4Slice options
         jstring _path = toJString(env, addr->path);
         jbyteArray _options = toJByteArray(env, options);
 
-        env->CallStaticVoidMethod(cls_C4Socket,
-                                  m_C4Socket_open,
-                                  (jlong) socket,
-                                  (jlong) token,
-                                  _scheme,
-                                  _host,
-                                  addr->port,
-                                  _path,
-                                  _options);
+        env->CallStaticVoidMethod(
+                cls_C4Socket,
+                m_C4Socket_open,
+                (jlong) socket,
+                (jlong) token,
+                _scheme,
+                _host,
+                addr->port,
+                _path,
+                _options);
 
-        if (_scheme) env->DeleteLocalRef(_scheme);
-        if (_host) env->DeleteLocalRef(_host);
-        if (_path) env->DeleteLocalRef(_path);
-        if (_options) env->DeleteLocalRef(_options);
+        if (_scheme != nullptr) env->DeleteLocalRef(_scheme);
+        if (_host != nullptr) env->DeleteLocalRef(_host);
+        if (_path != nullptr) env->DeleteLocalRef(_path);
+        if (_options != nullptr) env->DeleteLocalRef(_options);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            env->CallStaticVoidMethod(cls_C4Socket,
-                                      m_C4Socket_open,
-                                      (jlong) socket,
-                                      (jlong) token,
-                                      toJString(env, addr->scheme),
-                                      toJString(env, addr->hostname),
-                                      addr->port,
-                                      toJString(env, addr->path),
-                                      toJByteArray(env, options));
+            env->CallStaticVoidMethod(
+                    cls_C4Socket,
+                    m_C4Socket_open,
+                    (jlong) socket,
+                    (jlong) token,
+                    toJString(env, addr->scheme),
+                    toJString(env, addr->hostname),
+                    addr->port,
+                    toJString(env, addr->path),
+                    toJByteArray(env, options));
 
             if (gJVM->DetachCurrentThread() != 0) {
                 C4Warn("socket_open(): Failed to detach the current thread from a Java VM");
@@ -129,7 +131,7 @@ static void do_socket_write(JNIEnv *env, C4Socket *socket, C4SliceResult data) {
     jbyteArray _data = toJByteArray(env, data);
     c4slice_free(data);
     env->CallStaticVoidMethod(cls_C4Socket, m_C4Socket_write, (jlong) socket, _data);
-    if (_data) env->DeleteLocalRef(_data);
+    if (_data != nullptr) env->DeleteLocalRef(_data);
 }
 
 static void socket_write(C4Socket *socket, C4SliceResult allocatedData) {
@@ -179,7 +181,7 @@ static void socket_requestClose(C4Socket *socket, int status, C4String messageSl
     if (getEnvStat == JNI_OK) {
         jstring _message = toJString(env, messageSlice);
         env->CallStaticVoidMethod(cls_C4Socket, m_C4Socket_requestClose, (jlong) socket, (jint) status, _message);
-        if (_message) env->DeleteLocalRef(_message);
+        if (_message != nullptr) env->DeleteLocalRef(_message);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(

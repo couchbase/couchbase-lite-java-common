@@ -32,21 +32,21 @@ static jmethodID m_C4Prediction_prediction;
 
 bool litecore::jni::initC4Prediction(JNIEnv *env) {
     jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Prediction");
-    if (!localClass)
+    if (localClass == nullptr)
         return false;
 
     cls_C4Prediction = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-    if (!cls_C4Prediction)
+    if (cls_C4Prediction == nullptr)
         return false;
 
     m_C4Prediction_prediction = env->GetStaticMethodID(
             cls_C4Prediction,
             "prediction",
             "(JJJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;");
-    if (!m_C4Prediction_prediction)
+    if (m_C4Prediction_prediction == nullptr)
         return false;
 
-    logError("prediction initialized");
+    jniLog("prediction initialized");
     return true;
 }
 
@@ -63,7 +63,7 @@ static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4E
                 (jlong) token,
                 (jlong) input,
                 (jlong) c4db);
-        if (sliceResult) {
+        if (sliceResult != nullptr) {
             res = fromJavaFLSliceResult(env, sliceResult);
             env->DeleteLocalRef(sliceResult);
         }
@@ -75,7 +75,7 @@ static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4E
                     (jlong) token,
                     (jlong) input,
                     (jlong) c4db);
-            if (sliceResult)
+            if (sliceResult != nullptr)
                 res = fromJavaFLSliceResult(env, sliceResult);
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");

@@ -32,8 +32,8 @@ extern "C" {
  * Method:    dataSource
  * Signature: (J)J
  */
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource(
         JNIEnv *env,
         jclass ignore,
         jlong handle) {
@@ -46,8 +46,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource(
  * Method:    property
  * Signature: (J)J
  */
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_property(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_property(
         JNIEnv *env,
         jclass ignore,
         jlong handle) {
@@ -60,8 +60,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_property(
  * Method:    term
  * Signature: (J)J
  */
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_term(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_term(
         JNIEnv *env,
         jclass ignore,
         jlong handle) {
@@ -74,8 +74,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_term(
  * Method:    start
  * Signature: (J)J
  */
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_start(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_start(
         JNIEnv *env,
         jclass ignore,
         jlong handle) {
@@ -88,8 +88,8 @@ JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_start(
  * Method:    length
  * Signature: (J)J
  */
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_C4FullTextMatch_length(
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4FullTextMatch_length(
         JNIEnv *env,
         jclass ignore,
         jlong handle) {

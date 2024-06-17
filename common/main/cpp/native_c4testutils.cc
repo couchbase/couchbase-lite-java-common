@@ -41,7 +41,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_enumerateAllDocs(
     const C4EnumeratorOptions options = {C4EnumeratorFlags(jflags)};
     C4Error error{};
     C4DocEnumerator *e = c4coll_enumerateAllDocs((C4Collection *) jcollection, &options, &error);
-    if (!e) {
+    if (e == nullptr) {
         throwError(env, error);
         return 0;
     }
@@ -56,12 +56,12 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_enumerateAllDocs(
 JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_next(JNIEnv *env, jclass ignore, jlong handle) {
     C4Error error{};
-    bool res = c4enum_next((C4DocEnumerator *) handle, &error);
-    if (!res && error.code != 0) {
+    bool ok = c4enum_next((C4DocEnumerator *) handle, &error);
+    if (!ok && error.code != 0) {
         throwError(env, error);
         return false;
     }
-    return (jboolean) res;
+    return (jboolean) ok;
 }
 
 /*
@@ -73,7 +73,7 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_getDocument(JNIEnv *env, jclass ignore, jlong handle) {
     C4Error error{};
     C4Document *doc = c4enum_getDocument((C4DocEnumerator *) handle, &error);
-    if (!doc) {
+    if (doc == nullptr) {
         throwError(env, error);
         return 0;
     }
@@ -122,7 +122,8 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_openStore(
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_C4TestUtils_deleteStore(JNIEnv *env, jclass ignore, jlong jblobstore) {
     C4Error error{};
-    if (!c4blob_deleteStore((C4BlobStore *) jblobstore, &error))
+    bool ok = c4blob_deleteStore((C4BlobStore *) jblobstore, &error);
+    if (!ok)
         throwError(env, error);
 }
 
@@ -148,8 +149,8 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID(JNIEnv *env, jc
     C4UUID uuid;
 
     C4Error error{};
-    bool res = c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error);
-    if (!res && error.code != 0)
+    bool ok = c4db_getUUIDs((C4Database *) jdb, nullptr, &uuid, &error);
+    if (!ok && error.code != 0)
         throwError(env, error);
 
     C4Slice s = {&uuid, sizeof(uuid)};
@@ -217,16 +218,16 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put(
     jbyteArraySlice body(env, jbody);
 
     C4DocPutRequest rq{};
-    rq.body = body;                         ///< Revision's body
-    rq.docID = docID;                       ///< Document ID
-    rq.revFlags = revFlags;                 ///< Revision flags (deletion, attachments, keepBody)
-    rq.existingRevision = existingRevision; ///< Is this an already-existing rev coming from replication?
-    rq.allowConflict = allowConflict;       ///< OK to create a conflict, i.e. can parent be non-leaf?
-    rq.history = nullptr;                   ///< Array of ancestor revision IDs
-    rq.historyCount = 0;                    ///< Size of history[] array
-    rq.save = save;                         ///< Save the document after inserting the revision?
-    rq.maxRevTreeDepth = maxRevTreeDepth;   ///< Max depth of revision tree to save (or 0 for default)
-    rq.remoteDBID = (C4RemoteID) remoteDBID; ///< Identifier of remote db this rev's from (or 0 if local)
+    rq.body = body;                          // Revision's body
+    rq.docID = docID;                        // Document ID
+    rq.revFlags = revFlags;                  // Revision flags (deletion, attachments, keepBody)
+    rq.existingRevision = existingRevision;  // Is this an already-existing rev coming from replication?
+    rq.allowConflict = allowConflict;        // OK to create a conflict, i.e. can parent be non-leaf?
+    rq.history = nullptr;                    // Array of ancestor revision IDs
+    rq.historyCount = 0;                     // Size of history[] array
+    rq.save = save;                          // Save the document after inserting the revision?
+    rq.maxRevTreeDepth = maxRevTreeDepth;    // Max depth of revision tree to save (or 0 for default)
+    rq.remoteDBID = (C4RemoteID) remoteDBID; // Identifier of remote db this rev's from (or 0 if local)
 
     // history
     // Convert jhistory, a Java String[], to a C array of C4Slice:
@@ -237,7 +238,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put(
     std::vector<jstringSlice *> historyAlloc;
     for (jsize i = 0; i < n; i++) {
         auto js = (jstring) env->GetObjectArrayElement(jhistory, i);
-        auto item = new jstringSlice(env, js);
+        jstringSlice *item = new jstringSlice(env, js);
         historyAlloc.push_back(item); // so its memory won't be freed
         history[i] = *item;
     }
@@ -252,7 +253,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put(
     for (jsize i = 0; i < n; i++)
         delete historyAlloc.at(i);
 
-    if (!doc) {
+    if (doc == nullptr) {
         throwError(env, error);
         return 0;
     }
@@ -285,17 +286,17 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put2(
 
     // Parameters for adding a revision using c4coll_put.
     C4DocPutRequest rq{};
-    rq.body.buf = (const void *) jbodyPtr;  ///< Revision's body
-    rq.body.size = (size_t) jbodySize;      ///< Revision's body
-    rq.docID = docID;                       ///< Document ID
-    rq.revFlags = revFlags;                 ///< Revision flags (deletion, attachments, keepBody)
-    rq.existingRevision = existingRevision; ///< Is this an already-existing rev coming from replication?
-    rq.allowConflict = allowConflict;       ///< OK to create a conflict, i.e. can parent be non-leaf?
-    rq.history = nullptr;                   ///< Array of ancestor revision IDs
-    rq.historyCount = 0;                    ///< Size of history[] array
-    rq.save = save;                         ///< Save the document after inserting the revision?
-    rq.maxRevTreeDepth = maxRevTreeDepth;   ///< Max depth of revision tree to save (or 0 for default)
-    rq.remoteDBID = (C4RemoteID) remoteDBID; ///< Identifier of remote db this rev's from (or 0 if local)
+    rq.body.buf = (const void *) jbodyPtr;   // Revision's body
+    rq.body.size = (size_t) jbodySize;       // Revision's body
+    rq.docID = docID;                        // Document ID
+    rq.revFlags = revFlags;                  // Revision flags (deletion, attachments, keepBody)
+    rq.existingRevision = existingRevision;  // Is this an already-existing rev coming from replication?
+    rq.allowConflict = allowConflict;        // OK to create a conflict, i.e. can parent be non-leaf?
+    rq.history = nullptr;                    // Array of ancestor revision IDs
+    rq.historyCount = 0;                     // Size of history[] array
+    rq.save = save;                          // Save the document after inserting the revision?
+    rq.maxRevTreeDepth = maxRevTreeDepth;    // Max depth of revision tree to save (or 0 for default)
+    rq.remoteDBID = (C4RemoteID) remoteDBID; // Identifier of remote db this rev's from (or 0 if local)
 
     // history
     // Convert jhistory, a Java String[], to a C array of C4Slice:
@@ -307,7 +308,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put2(
     if (n > 0) {
         for (jsize i = 0; i < n; i++) {
             auto js = (jstring) env->GetObjectArrayElement(jhistory, i);
-            auto item = new jstringSlice(env, js);
+            jstringSlice *item = new jstringSlice(env, js);
             historyAlloc.push_back(item); // so its memory won't be freed
             history[i] = *item;
         }
@@ -323,7 +324,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put2(
     for (jsize i = 0; i < n; i++)
         delete historyAlloc.at(i);
 
-    if (!doc) {
+    if (doc == nullptr) {
         throwError(env, error);
         return 0;
     }
@@ -343,7 +344,8 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_deriveKeyFromPassword(JNIEnv *
     jstringSlice pwd(env, password);
 
     C4EncryptionKey key;
-    if (!c4key_setPassword(&key, pwd, kC4EncryptionAES256))
+    bool ok = c4key_setPassword(&key, pwd, kC4EncryptionAES256);
+    if (!ok)
         return nullptr;
 
     int keyLen = sizeof(key.bytes);
@@ -366,5 +368,4 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel(JNIEnv *env, jclass i
     C4LogDomain logDomain = c4log_getDomain(domain.c_str(), false);
     return (!logDomain) ? -1 : (jint) c4log_getLevel(logDomain);
 }
-
 }

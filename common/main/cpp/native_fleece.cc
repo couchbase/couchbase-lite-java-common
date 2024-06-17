@@ -90,7 +90,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValueAt(
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_next(JNIEnv *env, jclass ignore, jlong jitr) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_next(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jitr) {
     return (jboolean) FLArrayIterator_Next((FLArrayIterator *) jitr);
 }
 
@@ -100,7 +103,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_next(JNIEnv *env, jcl
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValue(JNIEnv *env, jclass ignore, jlong jitr) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValue(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jitr) {
     return (jlong) FLArrayIterator_GetValue((FLArrayIterator *) jitr);
 }
 
@@ -110,7 +116,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_getValue(JNIEnv *env,
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_free(JNIEnv *env, jclass ignore, jlong jitr) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_free(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jitr) {
     ::free((FLArrayIterator *) jitr);
 }
 
@@ -124,7 +133,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLArray_free(JNIEnv *env, jcl
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_count(JNIEnv *env, jclass ignore, jlong jdict) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_count(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdict) {
     return (jlong) FLDict_Count((FLDict) jdict);
 }
 
@@ -188,7 +200,8 @@ JNIEXPORT jstring JNICALL
 Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_getKey(JNIEnv *env, jclass ignore, jlong jitr) {
     // This is necessary because, when the iterator is exhausted, calling GetKey
     // will fail with a pointer exception.  GetValue returns null instead.
-    if (!FLDictIterator_GetValue((FLDictIterator *) jitr))
+    bool ok = FLDictIterator_GetValue((FLDictIterator *) jitr);
+    if (!ok)
         return nullptr;
 
     FLString s = FLDictIterator_GetKeyString((FLDictIterator *) jitr);
@@ -225,7 +238,11 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLDict_free(JNIEnv *env, jcla
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromData(JNIEnv *env, jclass ignore, jlong ptr, jlong size) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromData(
+        JNIEnv *env,
+        jclass ignore,
+        jlong ptr,
+        jlong size) {
     FLSlice slice{(const void *) ptr, (size_t) size};
     return (jlong) FLValue_FromData(slice, kFLUntrusted);
 }
@@ -236,7 +253,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromData(JNIEnv *env,
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromTrustedData(JNIEnv *env, jclass ignore, jbyteArray jdata) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromTrustedData(
+        JNIEnv *env,
+        jclass ignore,
+        jbyteArray jdata) {
     jbyteArraySlice data(env, jdata, true);
     return (jlong) FLValue_FromData(data, kFLTrusted);
 }
@@ -247,7 +267,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_fromTrustedData(JNIEn
  * Signature: (J)I
  */
 JNIEXPORT jint JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_getType(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_getType(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return FLValue_GetType((FLValue) jvalue);
 }
 
@@ -257,7 +280,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_getType(JNIEnv *env, 
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asBool(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asBool(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jboolean) FLValue_AsBool((FLValue) jvalue);
 }
 
@@ -267,7 +293,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asBool(JNIEnv *env, j
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asUnsigned(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asUnsigned(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jlong) FLValue_AsUnsigned((FLValue) jvalue);
 }
 
@@ -287,7 +316,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asInt(JNIEnv *env, jc
  * Signature: (J)F
  */
 JNIEXPORT jfloat JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asFloat(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asFloat(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jfloat) FLValue_AsFloat((FLValue) jvalue);
 }
 
@@ -297,7 +329,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asFloat(JNIEnv *env, 
  * Signature: (J)D
  */
 JNIEXPORT jdouble JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDouble(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDouble(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jdouble) FLValue_AsDouble((FLValue) jvalue);
 }
 
@@ -307,7 +342,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDouble(JNIEnv *env,
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asString(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asString(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     FLString str = FLValue_AsString((FLValue) jvalue);
     return toJString(env, str);
 }
@@ -318,7 +356,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asString(JNIEnv *env,
  * Signature: (J)[B
  */
 JNIEXPORT jbyteArray JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asData(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asData(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     FLSlice bytes = FLValue_AsData((FLValue) jvalue);
     return toJByteArray(env, bytes);
 }
@@ -329,7 +370,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asData(JNIEnv *env, j
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asArray(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asArray(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jlong) FLValue_AsArray((FLValue) jvalue);
 }
 
@@ -339,7 +383,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asArray(JNIEnv *env, 
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDict(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDict(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jlong) FLValue_AsDict((FLValue) jvalue);
 }
 
@@ -349,7 +396,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_asDict(JNIEnv *env, j
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isInteger(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isInteger(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jboolean) FLValue_IsInteger((FLValue) jvalue);
 }
 
@@ -359,7 +409,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isInteger(JNIEnv *env
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isDouble(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isDouble(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jboolean) FLValue_IsDouble((FLValue) jvalue);
 }
 /*
@@ -368,7 +421,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isDouble(JNIEnv *env,
  * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isUnsigned(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isUnsigned(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     return (jboolean) FLValue_IsUnsigned((FLValue) jvalue);
 }
 
@@ -378,7 +434,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_isUnsigned(JNIEnv *en
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_json5toJson(JNIEnv *env, jclass ignore, jstring jjson5) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_json5toJson(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jjson5) {
     jstringSlice json5(env, jjson5);
     FLError error = kFLNoError;
     FLStringResult json = FLJSON5_ToJSON(json5, nullptr, nullptr, &error);
@@ -396,7 +455,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_json5toJson(JNIEnv *e
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toString(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toString(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     FLStringResult str = FLValue_ToString((FLValue) jvalue);
     jstring res = toJString(env, str);
     FLSliceResult_Release(str);
@@ -409,7 +471,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toString(JNIEnv *env,
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     FLStringResult str = FLValue_ToJSON((FLValue) jvalue);
     jstring res = toJString(env, str);
     FLSliceResult_Release(str);
@@ -422,7 +487,10 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON(JNIEnv *env, j
  * Signature: (J)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON5(JNIEnv *env, jclass ignore, jlong jvalue) {
+Java_com_couchbase_lite_internal_fleece_impl_NativeFLValue_toJSON5(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jvalue) {
     FLStringResult str = FLValue_ToJSON5((FLValue) jvalue);
     jstring res = toJString(env, str);
     FLSliceResult_Release(str);

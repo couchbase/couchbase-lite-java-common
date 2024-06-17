@@ -33,7 +33,7 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getBlobStore(JNIEnv *env, jclass ignore, jlong jdb) {
     C4Error error{};
     C4BlobStore *store = c4db_getBlobStore((C4Database *) jdb, &error);
-    if (!store) {
+    if (store == nullptr) {
         throwError(env, error);
         return 0;
     }
@@ -49,7 +49,8 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_fromString(JNIEnv *env, jclass ignore, jstring jstr) {
     jstringSlice str(env, jstr);
     auto pBlobKey = (C4BlobKey *) ::malloc(sizeof(C4BlobKey));
-    if (!c4blob_keyFromString(str, pBlobKey)) {
+    bool ok = c4blob_keyFromString(str, pBlobKey);
+    if (!ok) {
         ::free(pBlobKey);
         throwError(env, {LiteCoreDomain, 0});
         return 0L;
@@ -164,7 +165,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_create(
 
     C4BlobKey blobKey;
     C4Error error{};
-    if (!c4blob_create((C4BlobStore *) jblobstore, ccontents, nullptr, &blobKey, &error)) {
+    bool ok = c4blob_create((C4BlobStore *) jblobstore, ccontents, nullptr, &blobKey, &error);
+    if (!ok) {
         throwError(env, error);
         return 0;
     }
@@ -187,7 +189,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_delete(
         jlong jblobkey) {
     auto pBlobKey = (C4BlobKey *) jblobkey;
     C4Error error{};
-    if (!c4blob_delete((C4BlobStore *) jblobstore, *pBlobKey, &error))
+    bool ok = c4blob_delete((C4BlobStore *) jblobstore, *pBlobKey, &error);
+    if (!ok)
         throwError(env, error);
 }
 
@@ -287,7 +290,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_seek(
         jlong jstream,
         jlong jposition) {
     C4Error error{};
-    if (!c4stream_seek((C4ReadStream *) jstream, (uint64_t) jposition, &error))
+    bool ok = c4stream_seek((C4ReadStream *) jstream, (uint64_t) jposition, &error);
+    if (!ok)
         throwError(env, error);
 }
 
@@ -320,7 +324,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_write(
     jbyteArraySlice bytes(env, false, jbytes, (size_t) jsize, true);
     auto slice = (C4Slice) bytes;
     C4Error error{};
-    if (!c4stream_write((C4WriteStream *) jstream, slice.buf, slice.size, &error))
+    bool ok = c4stream_write((C4WriteStream *) jstream, slice.buf, slice.size, &error);
+    if (!ok)
         throwError(env, error);
 }
 
@@ -344,7 +349,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_computeBlobKey(JNIEnv *e
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_install(JNIEnv *env, jclass ignore, jlong jstream) {
     C4Error error{};
-    if (!c4stream_install((C4WriteStream *) jstream, nullptr, &error))
+    bool ok = c4stream_install((C4WriteStream *) jstream, nullptr, &error);
+    if (!ok)
         throwError(env, error);
 }
 

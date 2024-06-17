@@ -58,109 +58,109 @@ static bool pushFilterFunction(C4CollectionSpec, C4String, C4String, C4RevisionF
 bool litecore::jni::initC4Replicator(JNIEnv *env) {
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Replicator");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4Replicator = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4Replicator)
+        if (cls_C4Replicator == nullptr)
             return false;
 
         m_C4Replicator_statusChangedCallback = env->GetStaticMethodID(
                 cls_C4Replicator,
                 "statusChangedCallback",
                 "(JLcom/couchbase/lite/internal/core/C4ReplicatorStatus;)V");
-        if (!m_C4Replicator_statusChangedCallback)
+        if (m_C4Replicator_statusChangedCallback == nullptr)
             return false;
 
         m_C4Replicator_documentEndedCallback = env->GetStaticMethodID(
                 cls_C4Replicator,
                 "documentEndedCallback",
                 "(JZ[Lcom/couchbase/lite/internal/core/C4DocumentEnded;)V");
-        if (!m_C4Replicator_documentEndedCallback)
+        if (m_C4Replicator_documentEndedCallback == nullptr)
             return false;
     }
 
     // C4ReplicatorStatus, constructor, and fields
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4ReplicatorStatus");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4ReplStatus = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4ReplStatus)
+        if (cls_C4ReplStatus == nullptr)
             return false;
 
         m_C4ReplStatus_init = env->GetMethodID(cls_C4ReplStatus, "<init>", "(IJJJIII)V");
-        if (!m_C4ReplStatus_init)
+        if (m_C4ReplStatus_init == nullptr)
             return false;
     }
 
     // C4DocumentEnded, constructor, and fields
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4DocumentEnded");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4DocEnded = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4DocEnded)
+        if (cls_C4DocEnded == nullptr)
             return false;
 
         m_C4DocEnded_init = env->GetMethodID(
                 cls_C4DocEnded,
                 "<init>",
                 "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJIIIZ)V");
-        if (!m_C4DocEnded_init)
+        if (m_C4DocEnded_init == nullptr)
             return false;
     }
 
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/ReplicationCollection");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_ReplColl = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_ReplColl)
+        if (cls_ReplColl == nullptr)
             return false;
 
         f_ReplColl_token = env->GetFieldID(cls_ReplColl, "token", "J");
-        if (!f_ReplColl_token)
+        if (f_ReplColl_token == nullptr)
             return false;
 
         f_ReplColl_scope = env->GetFieldID(cls_ReplColl, "scope", "Ljava/lang/String;");
-        if (!f_ReplColl_scope)
+        if (f_ReplColl_scope == nullptr)
             return false;
 
         f_ReplColl_name = env->GetFieldID(cls_ReplColl, "name", "Ljava/lang/String;");
-        if (!f_ReplColl_name)
+        if (f_ReplColl_name == nullptr)
             return false;
 
         f_ReplColl_options = env->GetFieldID(cls_ReplColl, "options", "[B");
-        if (!f_ReplColl_options)
+        if (f_ReplColl_options == nullptr)
             return false;
 
         f_ReplColl_pushFilter = env->GetFieldID(
                 cls_ReplColl,
                 "c4PushFilter",
                 "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
-        if (!f_ReplColl_pushFilter)
+        if (f_ReplColl_pushFilter == nullptr)
             return false;
 
         f_ReplColl_pullFilter = env->GetFieldID(
                 cls_ReplColl,
                 "c4PullFilter",
                 "Lcom/couchbase/lite/internal/ReplicationCollection$C4Filter;");
-        if (!f_ReplColl_pullFilter)
+        if (f_ReplColl_pullFilter == nullptr)
             return false;
 
         m_ReplColl_filterCallback = env->GetStaticMethodID(
                 cls_ReplColl,
                 "filterCallback",
                 "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IJZ)Z");
-        if (!m_ReplColl_filterCallback)
+        if (m_ReplColl_filterCallback == nullptr)
             return false;
     }
 
-    logError("replicator initialized");
+    jniLog("replicator initialized");
     return true;
 }
 
@@ -198,10 +198,10 @@ static jobject toJavaDocumentEnded(JNIEnv *env, const C4DocumentEnded *document)
             (jint) document->error.internal_info,
             (jboolean) document->errorIsTransient);
 
-    if (_scope) env->DeleteLocalRef(_scope);
-    if (_name) env->DeleteLocalRef(_name);
-    if (_docID) env->DeleteLocalRef(_docID);
-    if (_revID) env->DeleteLocalRef(_revID);
+    if (_scope != nullptr) env->DeleteLocalRef(_scope);
+    if (_name != nullptr) env->DeleteLocalRef(_name);
+    if (_docID != nullptr) env->DeleteLocalRef(_docID);
+    if (_revID != nullptr) env->DeleteLocalRef(_revID);
 
     return _docEnd;
 }
@@ -211,7 +211,7 @@ static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C
     for (int i = 0; i < arraySize; i++) {
         jobject d = toJavaDocumentEnded(env, array[i]);
         env->SetObjectArrayElement(ds, i, d);
-        env->DeleteLocalRef(d);
+        if (d != nullptr) env->DeleteLocalRef(d);
     }
     return ds;
 }
@@ -221,7 +221,6 @@ static jobjectArray toJavaDocumentEndedArray(JNIEnv *env, int arraySize, const C
 // are just around to keep the slices they contain from going out of scope.
 // All they do is hold on to them, so that the C4ReplicationCollections
 // in colls can point to them, until the end of the *caller's* scope.
-// Since this is a loop, we delete all the LocalRefs explicitly
 static int fromJavaReplColls(
         JNIEnv *env,
         jobjectArray jColls,
@@ -235,17 +234,17 @@ static int fromJavaReplColls(
 
     for (jsize i = 0; i < nColls; i++) {
         jobject replColl = env->GetObjectArrayElement(jColls, i);
-        if (!replColl) continue;
+        if (replColl == nullptr) continue;
 
         jobject jscope = env->GetObjectField(replColl, f_ReplColl_scope);
         auto pScope = std::make_shared<jstringSlice>(env, (jstring) jscope);
-        if (jscope) env->DeleteLocalRef(jscope);
+        if (jscope != nullptr) env->DeleteLocalRef(jscope);
         collNames.push_back(pScope);
         colls[i].collection.scope = *pScope;
 
         jobject jname = env->GetObjectField(replColl, f_ReplColl_name);
         auto pName = std::make_shared<jstringSlice>(env, (jstring) jname);
-        if (jname) env->DeleteLocalRef(jname);
+        if (jname != nullptr) env->DeleteLocalRef(jname);
         collNames.push_back(pName);
         colls[i].collection.name = *pName;
 
@@ -257,12 +256,12 @@ static int fromJavaReplColls(
         collOptions.push_back(pOptions);
         colls[i].optionsDictFleece = *pOptions;
 
-        auto pushf = env->GetObjectField(replColl, f_ReplColl_pushFilter);
+        jobject pushf = env->GetObjectField(replColl, f_ReplColl_pushFilter);
         if (pushf != nullptr) {
             colls[i].pushFilter = &pushFilterFunction;
             env->DeleteLocalRef(pushf);
         }
-        auto pullf = env->GetObjectField(replColl, f_ReplColl_pullFilter);
+        jobject pullf = env->GetObjectField(replColl, f_ReplColl_pullFilter);
         if (pullf != nullptr) {
             colls[i].pullFilter = &pullFilterFunction;
             env->DeleteLocalRef(pullf);
@@ -290,7 +289,7 @@ static void statusChangedCallback(C4Replicator *ignored, C4ReplicatorStatus stat
     if (getEnvStat == JNI_OK) {
         jobject _status = toJavaReplStatus(env, status);
         env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_statusChangedCallback, (jlong) token, _status);
-        env->DeleteLocalRef(_status);
+        if (_status != nullptr) env->DeleteLocalRef(_status);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(
@@ -331,7 +330,7 @@ static void documentEndedCallback(
     if (getEnvStat == JNI_OK) {
         jobjectArray docs = toJavaDocumentEndedArray(env, nDocs, documentEnded);
         env->CallStaticVoidMethod(cls_C4Replicator, m_C4Replicator_documentEndedCallback, (jlong) token, pushing, docs);
-        env->DeleteLocalRef(docs);
+        if (docs != nullptr) env->DeleteLocalRef(docs);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(
@@ -381,10 +380,10 @@ static jboolean replicationFilter(
                 (jlong) dict,
                 isPush);
 
-        if (_scope) env->DeleteLocalRef(_scope);
-        if (_name) env->DeleteLocalRef(_name);
-        if (_docID) env->DeleteLocalRef(_docID);
-        if (_revID) env->DeleteLocalRef(_revID);
+        if (_scope != nullptr) env->DeleteLocalRef(_scope);
+        if (_name != nullptr) env->DeleteLocalRef(_name);
+        if (_docID != nullptr) env->DeleteLocalRef(_docID);
+        if (_revID != nullptr) env->DeleteLocalRef(_revID);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             res = (jboolean) env->CallStaticBooleanMethod(
@@ -528,7 +527,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_create(
 
     C4Error error{};
     C4Replicator *repl = c4repl_new((C4Database *) jdb, c4Address, remoteDBName, params, id, &error);
-    if (!repl && error.code != 0) {
+    if ((repl == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -591,7 +590,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createLocal(
 
     C4Error error{};
     C4Replicator *repl = c4repl_newLocal((C4Database *) jdb, (C4Database *) targetDb, params, id, &error);
-    if (!repl && error.code != 0) {
+    if ((repl == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -646,7 +645,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_createWithSocket(
 
     C4Error error{};
     C4Replicator *repl = c4repl_newWithSocket(db, openSocket, params, id, &error);
-    if (!repl && error.code != 0) {
+    if ((repl == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return 0;
     }
@@ -764,7 +763,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_isDocumentPending(
 
     C4Error c4Error{};
     bool pending = c4repl_isDocumentPending((C4Replicator *) repl, docId, collSpec, &c4Error);
-    if (c4Error.domain != 0 && c4Error.code != 0) {
+    if (!pending && c4Error.code != 0) {
         throwError(env, c4Error);
         return false;
     }
@@ -784,7 +783,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Replicator_setProgressLevel(
         jlong repl,
         jint level) {
     C4Error error{};
-    auto ok = c4repl_setProgressLevel((C4Replicator *) repl, (C4ReplicatorProgressLevel) level, &error);
+    bool ok = c4repl_setProgressLevel((C4Replicator *) repl, (C4ReplicatorProgressLevel) level, &error);
     if (!ok && error.code != 0) {
         throwError(env, error);
     }

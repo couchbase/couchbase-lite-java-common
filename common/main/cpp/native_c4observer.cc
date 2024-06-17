@@ -108,7 +108,7 @@ bool litecore::jni::initC4Observer(JNIEnv *env) {
             return false;
     }
 
-    logError("observers initialized");
+    jniLog("observers initialized");
     return true;
 }
 
@@ -200,8 +200,8 @@ c4DocChangesToJavaArray(JNIEnv *env, C4CollectionChange changes[], uint32_t nCha
                 (jlong) changes[i].sequence,
                 (jboolean) external);
 
-        if (_docId) env->DeleteLocalRef(_docId);
-        if (_revId) env->DeleteLocalRef(_revId);
+        if (_docId != nullptr) env->DeleteLocalRef(_docId);
+        if (_revId != nullptr) env->DeleteLocalRef(_revId);
 
         if (obj != nullptr) {
             env->SetObjectArrayElement(array, (jsize) i, obj);
@@ -237,7 +237,7 @@ doC4QueryObserverCallback(JNIEnv *env, C4QueryObserver *observer, void *ctx) {
             (jint) error.code,
             errMsg);
 
-    if (errMsg) env->DeleteLocalRef(errMsg);
+    if (errMsg != nullptr) env->DeleteLocalRef(errMsg);
 }
 
 /**

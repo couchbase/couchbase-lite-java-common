@@ -42,24 +42,32 @@ namespace litecore {
 
         extern JavaVM *gJVM;
 
-        int attachCurrentThread(JNIEnv **p_env);
-
         bool initC4Logging(JNIEnv *env); // Implemented in native_c4.cc
         bool initC4Observer(JNIEnv *);   // Implemented in native_c4observer.cc
         bool initC4Replicator(JNIEnv *); // Implemented in native_c4replicator.cc
         bool initC4Socket(JNIEnv *);     // Implemented in native_c4socket.cc
 
 #ifdef COUCHBASE_ENTERPRISE
-
         bool initC4Prediction(JNIEnv *); // Implemented in native_c4prediction.cc
         bool initC4Listener(JNIEnv *);   // Implemented in native_c4listener.cc
 #endif
+
+        int attachCurrentThread(JNIEnv **p_env);
+
+        // Sets a Java exception based on the LiteCore error.
+        void throwError(JNIEnv *, C4Error);
+
+        // Sets a Java exception based on the LiteCore error.
+        void throwError(JNIEnv *, C4Error, const char *msg);
+
+        jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
 
         std::string JstringToUTF8(JNIEnv *env, jstring jstr);
 
         std::string JcharArrayToUTF8(JNIEnv *env, const jcharArray jcharArray);
 
-        jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
+        // lightweight logging: defined in native_c4.cc
+        void jniLog(const char *fmt, ...);
 
         // Creates a temporary slice value from a Java String object
         class jstringSlice {
@@ -95,7 +103,7 @@ namespace litecore {
             ~jbyteArraySlice();
 
             jbyteArraySlice(jbyteArraySlice &&s) // move constructor
-                    : _slice(s._slice), _env(s._env), _jbytes(s._jbytes),
+                    : _slice(s._slice), _env(s._env), _delRef(s._delRef), _jbytes(s._jbytes),
                       _critical(s._critical) { s._slice = kFLSliceNull; }
 
             operator FLSlice() { return _slice; }
@@ -123,19 +131,6 @@ namespace litecore {
 
         jbyteArray toJByteArray(JNIEnv *, C4SliceResult);
 
-        // Copies an encryption key to a C4EncryptionKey. Returns false on exception.
-        bool getEncryptionKey(
-                JNIEnv *env,
-                jint keyAlg,
-                jbyteArray jKeyBytes,
-                C4EncryptionKey *outKey);
-
-        // lightweight logging
-        void logError(const char *fmt, ...);
-
-        // Sets a Java exception based on the LiteCore error.
-        void throwError(JNIEnv *, C4Error);
-
         // Copy a FLMutableArray of strings to a Java ArrayList<String>
         jobject toStringList(JNIEnv *env, FLMutableArray array);
 
@@ -150,6 +145,13 @@ namespace litecore {
 
         // Copy a Java FLSliceResult to a native FLSliceResult
         FLSliceResult fromJavaFLSliceResult(JNIEnv *const env, jobject jsr);
+
+        // Copies an encryption key to a C4EncryptionKey. Returns false on exception.
+        bool getEncryptionKey(
+                JNIEnv *env,
+                jint keyAlg,
+                jbyteArray jKeyBytes,
+                C4EncryptionKey *outKey);
     }
 }
 
