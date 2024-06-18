@@ -157,7 +157,7 @@ c4DocObsCallback(C4DocumentObserver *ign1, C4Collection *ign2, C4Slice docID, C4
     if (getEnvStat == JNI_OK) {
         jstring _docID = toJString(env, docID);
         env->CallStaticVoidMethod(cls_C4DocObs, m_C4DocObs_callback, (jlong) context, (jlong) seq, _docID);
-        if (_docID) env->DeleteLocalRef(_docID);
+        if (_docID != nullptr) env->DeleteLocalRef(_docID);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             env->CallStaticVoidMethod(
