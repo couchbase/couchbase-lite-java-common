@@ -245,7 +245,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish(JNIEnv *env,
     FLError error = kFLNoError;
     FLSliceResult result = FLEncoder_Finish((FLEncoder) jenc, &error);
     if (error != kFLNoError) {
-        throwError(env, {FleeceDomain, error});
+        throwError(env, {FleeceDomain, error}, FLEncoder_GetErrorMessage((FLEncoder) jenc));
         return nullptr;
     }
 
@@ -264,8 +264,8 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish2(JNIEnv *env
     FLError error = kFLNoError;
     FLSliceResult res = FLEncoder_Finish((FLEncoder) jenc, &error);
     if (error != kFLNoError) {
-        throwError(env, {FleeceDomain, error});
-        return 0;
+        throwError(env, {FleeceDomain, error}, FLEncoder_GetErrorMessage((FLEncoder) jenc));
+        return nullptr;
     }
 
     return toJavaFLSliceResult(env, res);
@@ -281,8 +281,8 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finish3(JNIEnv *env
     FLError error = kFLNoError;
     FLSliceResult res = FLEncoder_Finish((FLEncoder) jenc, &error);
     if (error != kFLNoError) {
-        throwError(env, {FleeceDomain, error});
-        return 0;
+        throwError(env, {FleeceDomain, error}, FLEncoder_GetErrorMessage((FLEncoder) jenc));
+        return nullptr;
     }
 
     return toJavaUnmanagedFLSliceResult(env, res);
@@ -330,7 +330,7 @@ Java_com_couchbase_lite_internal_fleece_impl_NativeFLEncoder_finishJSON(
     FLError error = kFLNoError;
     FLSliceResult result = FLEncoder_Finish((FLEncoder) jenc, &error);
     if (error != kFLNoError) {
-        throwError(env, {FleeceDomain, error});
+        throwError(env, {FleeceDomain, error}, FLEncoder_GetErrorMessage((FLEncoder) jenc));
         return nullptr;
     }
 

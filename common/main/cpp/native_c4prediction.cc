@@ -32,29 +32,29 @@ static jmethodID m_C4Prediction_prediction;
 
 bool litecore::jni::initC4Prediction(JNIEnv *env) {
     jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Prediction");
-    if (!localClass)
+    if (localClass == nullptr)
         return false;
 
     cls_C4Prediction = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-    if (!cls_C4Prediction)
+    if (cls_C4Prediction == nullptr)
         return false;
 
     m_C4Prediction_prediction = env->GetStaticMethodID(
             cls_C4Prediction,
             "prediction",
             "(JJJ)Lcom/couchbase/lite/internal/fleece/FLSliceResult;");
-    if (!m_C4Prediction_prediction)
+    if (m_C4Prediction_prediction == nullptr)
         return false;
 
-    logError("prediction initialized");
+    jniLog("prediction initialized");
     return true;
 }
 
 static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4Error *error) {
+    C4SliceResult res = {nullptr, 0};
+
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
-
-    C4SliceResult res = {nullptr, 0};
     if (getEnvStat == JNI_OK) {
         // this call returns null when there is no prediction.
         jobject sliceResult = env->CallStaticObjectMethod(
@@ -63,10 +63,10 @@ static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4E
                 (jlong) token,
                 (jlong) input,
                 (jlong) c4db);
-
-        // if the call returned a nullptr, just give the caller an empty result.
-        if (sliceResult)
+        if (sliceResult != nullptr) {
             res = fromJavaFLSliceResult(env, sliceResult);
+            env->DeleteLocalRef(sliceResult);
+        }
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             jobject sliceResult = env->CallStaticObjectMethod(
@@ -75,9 +75,7 @@ static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4E
                     (jlong) token,
                     (jlong) input,
                     (jlong) c4db);
-
-            // if the call returned a nullptr, just give the caller an empty result.
-            if (sliceResult)
+            if (sliceResult != nullptr)
                 res = fromJavaFLSliceResult(env, sliceResult);
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("doRequestClose(): Failed to detach the current thread from a Java VM");

@@ -41,11 +41,11 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
 bool litecore::jni::initC4Logging(JNIEnv *env) {
     jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Log");
-    if (!localClass)
+    if (localClass == nullptr)
         return false;
 
     cls_C4Log = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-    if (!cls_C4Log)
+    if (cls_C4Log == nullptr)
         return false;
 
     m_C4Log_logCallback = env->GetStaticMethodID(
@@ -53,14 +53,18 @@ bool litecore::jni::initC4Logging(JNIEnv *env) {
             "logCallback",
             "(Ljava/lang/String;ILjava/lang/String;)V");
 
-    if (!m_C4Log_logCallback)
+    if (m_C4Log_logCallback == nullptr)
         return false;
 
     c4log_writeToCallback((C4LogLevel) kC4LogDebug, logCallback, true);
 
-    logError("logging initialized");
+    jniLog("logging initialized");
     return true;
 }
+
+//-------------------------------------------------------------------------
+// Logging
+//-------------------------------------------------------------------------
 
 // The default logging callback writes to stderr, or on Android to __android_log_write.
 // ??? Need to do something better for web service and Windows logging
@@ -87,16 +91,24 @@ void vLogError(const char *fmt, va_list args) {
 #endif
 }
 
-void litecore::jni::logError(const char *fmt, ...) {
+void litecore::jni::jniLog(const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     vLogError(fmt, args);
     va_end(args);
 }
 
+static bool detach(jint getEnvStat) {
+    if (getEnvStat == JNI_EDETACHED) {
+        if (gJVM->DetachCurrentThread() == 0) return true;
+        C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
+    }
+    return false;
+}
+
 static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list ignore) {
-    if (!cls_C4Log || !m_C4Log_logCallback) {
-        logError("logCallback(): Logging not initialized");
+    if ((cls_C4Log == nullptr) || (m_C4Log_logCallback == nullptr)) {
+        jniLog("Logger: not initialized");
         return;
     }
 
@@ -105,37 +117,36 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
     if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) != 0) {
-            logError("logCallback(): Failed to attach the current thread to a Java VM)");
+            jniLog("Logger: Failed to attach the current thread for logging");
             return;
         }
     } else if (getEnvStat != JNI_OK) {
-        logError("logCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
+        jniLog("Logger: Could not get the environment: %d", getEnvStat);
         return;
     }
 
     if (env->ExceptionCheck() == JNI_TRUE) {
-        logError("logCallback(): Cannot log while an exception is outstanding");
+        jniLog("Logger: exception outstanding");
+        detach(getEnvStat);
         return;
     }
 
     jstring message = UTF8ToJstring(env, fmt, strlen(fmt));
-    if (!message) {
-        logError("logCallback(): Failed encoding error message");
+    if (message == nullptr) {
+        jniLog("Logger: Failed encoding message");
+        detach(getEnvStat);
         return;
     }
 
     const char *domainNameRaw = c4log_getDomainName(domain);
     jstring domainName = UTF8ToJstring(env, domainNameRaw, strlen(domainNameRaw));
+    if (domainName == nullptr) domainName = env->NewStringUTF("???");
+
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    env->DeleteLocalRef(message);
-    if (domainName)
+    if (!detach(getEnvStat)) {
+        env->DeleteLocalRef(message);
         env->DeleteLocalRef(domainName);
-
-    if (getEnvStat == JNI_EDETACHED) {
-        if (gJVM->DetachCurrentThread() != 0) {
-            C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
-        }
     }
 }
 
@@ -252,7 +263,7 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir(JNIEnv *env, jclass ignore, jstring jtempDir) {
     jstringSlice tempDir(env, jtempDir);
     C4Error error{};
-    auto ok = c4_setTempDir(tempDir, &error);
+    bool ok = c4_setTempDir(tempDir, &error);
     if (!ok && error.code != 0)
         throwError(env, error);
 }
@@ -344,7 +355,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_writeToBinaryFile(
     };
 
     C4Error error{};
-    auto ok = c4log_writeToBinaryFile(options, &error);
+    bool ok = c4log_writeToBinaryFile(options, &error);
     if (!ok && error.code != 0)
         throwError(env, error);
 }
@@ -376,8 +387,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Key_pbkdf2(JNIEnv *env, jclas
     jstringSlice pwd(env, password);
 
     C4EncryptionKey key;
-    if (!c4key_setPasswordSHA1(&key, pwd, kC4EncryptionAES256))
-        return nullptr;
+    bool ok = c4key_setPasswordSHA1(&key, pwd, kC4EncryptionAES256);
+    if (!ok) return nullptr;
 
     int keyLen = sizeof(key.bytes);
     jbyteArray result = env->NewByteArray(keyLen);

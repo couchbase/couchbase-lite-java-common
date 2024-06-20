@@ -88,7 +88,10 @@ public final class BasicAuthenticator extends BaseAuthenticator {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { Arrays.fill(password, (char) 0); }
+        try {
+            final char[] pwd = password;
+            if (pwd != null) { Arrays.fill(pwd, (char) 0); }
+        }
         finally { super.finalize(); }
     }
 

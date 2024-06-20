@@ -66,14 +66,15 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    jboolean res = false;
+    jboolean ok = false;
     if (getEnvStat == JNI_OK) {
         jstring _header = toJString(env, authHeader);
-        res = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_httpAuthCallback, (jlong) context, _header);
-        env->DeleteLocalRef(_header);
+        ok = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_httpAuthCallback, (jlong) context, _header);
+        if (_header != nullptr) env->DeleteLocalRef(_header);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            res = env->CallStaticBooleanMethod(cls_C4Listener,
+            ok = env->CallStaticBooleanMethod(
+                    cls_C4Listener,
                     m_C4Listener_httpAuthCallback,
                     (jlong) context,
                     toJString(env, authHeader));
@@ -82,26 +83,26 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
         } else {
             C4Warn("httpAuthCallback(): Failed to attaches the current thread to a Java VM");
         }
-        return res;
+        return ok;
     } else {
         C4Warn("httpAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return res;
+    return ok;
 }
 
 static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *context) {
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    bool res = false;
+    bool ok = false;
     if (getEnvStat == JNI_OK) {
         jbyteArray _data = toJByteArray(env, clientCertData);
-        res = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_certAuthCallback, (jlong) context, _data);
-        env->DeleteLocalRef(_data);
+        ok = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_certAuthCallback, (jlong) context, _data);
+        if (_data != nullptr) env->DeleteLocalRef(_data);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            res = env->CallStaticBooleanMethod(
+            ok = env->CallStaticBooleanMethod(
                     cls_C4Listener,
                     m_C4Listener_certAuthCallback,
                     (jlong) context,
@@ -114,14 +115,15 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
     } else {
         C4Warn("certAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
-    return res;
+
+    return ok;
 }
 
 // The Java method returns a byte array of key data.
 // This method copies the data to its destination.
 static bool doKeyDataCallback(JNIEnv *env, void *extKey, size_t outMaxLen, void *output, size_t *outLen) {
     auto key = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair, m_C4KeyPair_keyDataCallback, (jlong) extKey));
-    if (!key)
+    if (key == nullptr)
         return false;
 
     jsize keyDataSize = env->GetArrayLength(key);
@@ -145,12 +147,12 @@ static bool publicKeyDataCallback(void *externalKey, void *output, size_t output
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    bool res = false;
+    bool ok = false;
     if (getEnvStat == JNI_OK) {
-        res = doKeyDataCallback(env, externalKey, outputMaxLen, output, outputLen);
+        ok = doKeyDataCallback(env, externalKey, outputMaxLen, output, outputLen);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            res = doKeyDataCallback(env, externalKey, outputMaxLen, output, outputLen);
+            ok = doKeyDataCallback(env, externalKey, outputMaxLen, output, outputLen);
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("publicKeyDataCallback(): Failed to detach the current thread from a Java VM");
         } else {
@@ -160,7 +162,7 @@ static bool publicKeyDataCallback(void *externalKey, void *output, size_t output
         C4Warn("publicKeyDataCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return res;
+    return ok;
 }
 
 // The Java method takes a byte array of encrypted data and returns a byte array
@@ -177,12 +179,13 @@ static bool doDecryptCallback(
     int n = (int) input.size;
 
     jbyteArray encData = env->NewByteArray(n);
+    if (encData == nullptr) return false;
     env->SetByteArrayRegion(encData, 0, n, (jbyte *) input.buf);
 
     auto decData = (jbyteArray)
             (env->CallStaticObjectMethod(cls_C4KeyPair, m_C4KeyPair_decryptCallback, (jlong) extKey, encData));
     env->DeleteLocalRef(encData);
-    if (!decData)
+    if (decData == nullptr)
         return false;
 
     jsize dataSize = env->GetArrayLength(decData);
@@ -206,12 +209,12 @@ static bool decryptKeyCallback(void *externalKey, C4Slice input, void *output, s
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    bool res = false;
+    bool ok = false;
     if (getEnvStat == JNI_OK) {
-        res = doDecryptCallback(env, externalKey, input, outputMaxLen, output, outputLen);
+        ok = doDecryptCallback(env, externalKey, input, outputMaxLen, output, outputLen);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            res = doDecryptCallback(env, externalKey, input, outputMaxLen, output, outputLen);
+            ok = doDecryptCallback(env, externalKey, input, outputMaxLen, output, outputLen);
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("decryptKeyCallback(): Failed to detach the current thread from a Java VM");
         } else {
@@ -221,7 +224,7 @@ static bool decryptKeyCallback(void *externalKey, C4Slice input, void *output, s
         C4Warn("decryptKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return res;
+    return ok;
 }
 
 // The Java method takes a byte array of data and returns a byte array
@@ -232,12 +235,13 @@ static bool doSignCallback(JNIEnv *env, void *extKey, C4SignatureDigestAlgorithm
     int n = (int) inData.size;
 
     jbyteArray data = env->NewByteArray(n);
+    if (data == nullptr) return false;
     env->SetByteArrayRegion(data, 0, n, (jbyte *) inData.buf);
 
     auto sig = (jbyteArray)
             (env->CallStaticObjectMethod(cls_C4KeyPair, m_C4KeyPair_signCallback, (jlong) extKey, (jint) alg, data));
     env->DeleteLocalRef(data);
-    if (!sig)
+    if (sig == nullptr)
         return false;
 
     jsize sigSize = env->GetArrayLength(sig);
@@ -261,12 +265,12 @@ static bool signKeyCallback(
     JNIEnv *env = nullptr;
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
-    bool res = false;
+    bool ok = false;
     if (getEnvStat == JNI_OK) {
-        res = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
+        ok = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
-            res = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
+            ok = doSignCallback(env, externalKey, digestAlgorithm, inputData, outSignature);
             if (gJVM->DetachCurrentThread() != 0)
                 C4Warn("signKeyCallback(): Failed to detach the current thread from a Java VM");
         } else {
@@ -276,7 +280,7 @@ static bool signKeyCallback(
         C4Warn("signKeyCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
 
-    return res;
+    return ok;
 }
 
 // See C4ExternalKeyCallbacks in C4Certificate.h
@@ -306,25 +310,25 @@ static void freeKeyCallback(void *externalKey) {
 static bool initListenerCallbacks(JNIEnv *env) {
     {
         jclass localClass = env->FindClass("com/couchbase/lite/ConnectionStatus");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_ConnectionStatus = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_ConnectionStatus)
+        if (cls_ConnectionStatus == nullptr)
             return false;
 
         m_ConnectionStatus_init = env->GetMethodID(cls_ConnectionStatus, "<init>", "(II)V");
-        if (!m_ConnectionStatus_init)
+        if (m_ConnectionStatus_init == nullptr)
             return false;
     }
 
     {
         jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4Listener");
-        if (!localClass)
+        if (localClass == nullptr)
             return false;
 
         cls_C4Listener = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-        if (!cls_C4Listener)
+        if (cls_C4Listener == nullptr)
             return false;
 
         m_C4Listener_certAuthCallback = env->GetStaticMethodID(
@@ -332,7 +336,7 @@ static bool initListenerCallbacks(JNIEnv *env) {
                 "certAuthCallback",
                 "(J[B)Z");
 
-        if (!m_C4Listener_certAuthCallback)
+        if (m_C4Listener_certAuthCallback == nullptr)
             return false;
 
         m_C4Listener_httpAuthCallback = env->GetStaticMethodID(
@@ -340,37 +344,37 @@ static bool initListenerCallbacks(JNIEnv *env) {
                 "httpAuthCallback",
                 "(JLjava/lang/String;)Z");
 
-        if (!m_C4Listener_httpAuthCallback)
+        if (m_C4Listener_httpAuthCallback == nullptr)
             return false;
     }
 
-    logError("listener initialized");
+    jniLog("listener initialized");
     return true;
 }
 
 static bool initKeyPairCallbacks(JNIEnv *env) {
     jclass localClass = env->FindClass("com/couchbase/lite/internal/core/C4KeyPair");
-    if (!localClass)
+    if (localClass == nullptr)
         return false;
 
     cls_C4KeyPair = reinterpret_cast<jclass>(env->NewGlobalRef(localClass));
-    if (!cls_C4KeyPair)
+    if (cls_C4KeyPair == nullptr)
         return false;
 
     m_C4KeyPair_keyDataCallback = env->GetStaticMethodID(cls_C4KeyPair, "getKeyDataCallback", "(J)[B");
-    if (!m_C4KeyPair_keyDataCallback)
+    if (m_C4KeyPair_keyDataCallback == nullptr)
         return false;
 
     m_C4KeyPair_signCallback = env->GetStaticMethodID(cls_C4KeyPair, "signCallback", "(JI[B)[B");
-    if (!m_C4KeyPair_signCallback)
+    if (m_C4KeyPair_signCallback == nullptr)
         return false;
 
     m_C4KeyPair_decryptCallback = env->GetStaticMethodID(cls_C4KeyPair, "decryptCallback", "(J[B)[B");
-    if (!m_C4KeyPair_decryptCallback)
+    if (m_C4KeyPair_decryptCallback == nullptr)
         return false;
 
     m_C4KeyPair_freeCallback = env->GetStaticMethodID(cls_C4KeyPair, "freeCallback", "(J)V");
-    if (!m_C4KeyPair_freeCallback)
+    if (m_C4KeyPair_freeCallback == nullptr)
         return false;
 
     keyCallbacks.publicKeyData = &publicKeyDataCallback;
@@ -378,7 +382,7 @@ static bool initKeyPairCallbacks(JNIEnv *env) {
     keyCallbacks.sign = &signKeyCallback;
     keyCallbacks.free = &freeKeyCallback;
 
-    logError("keypair initialized");
+    jniLog("keypair initialized");
     return true;
 }
 
@@ -419,8 +423,8 @@ static C4Listener *startListener(
     }
 
     C4Error error{};
-    auto listener = c4listener_start(&config, &error);
-    if (!listener && error.code != 0) {
+    C4Listener *listener = c4listener_start(&config, &error);
+    if ((listener == nullptr) && (error.code != 0)) {
         throwError(env, error);
         return nullptr;
     }
@@ -439,7 +443,7 @@ static jobject toConnectionStatus(JNIEnv *env, unsigned connectionCount, unsigne
 static C4Cert *getCert(JNIEnv *env, jbyteArray cert, bool &didThrow) {
     didThrow = false;
 
-    if (!cert)
+    if (cert == nullptr)
         return nullptr;
 
     jsize certSize = env->GetArrayLength(cert);
@@ -450,11 +454,11 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert, bool &didThrow) {
     FLSlice certSlice = {certData, (size_t) certSize};
 
     C4Error error{};
-    auto c4cert = c4cert_fromData(certSlice, &error);
+    C4Cert *c4cert = c4cert_fromData(certSlice, &error);
 
     env->ReleaseByteArrayElements(cert, certData, 0);
 
-    if (!c4cert) {
+    if (c4cert == nullptr) {
         throwError(env, error);
         didThrow = true;
         return nullptr;
@@ -464,25 +468,26 @@ static C4Cert *getCert(JNIEnv *env, jbyteArray cert, bool &didThrow) {
 }
 
 static jbyteArray getCertData(JNIEnv *env, C4Cert *cert) {
-    if (!cert)
+    if (cert == nullptr)
         return nullptr;
 
-    auto certData = c4cert_copyData(cert, false);
+    FLSliceResult certData = c4cert_copyData(cert, false);
     jbyteArray jData = toJByteArray(env, certData);
-    c4slice_free(certData);
+    FLSliceResult_Release(certData);
 
     return jData;
 }
 
 static C4KeyPair *createKeyPair(JNIEnv *env, jbyte algorithm, jint keySizeInBits, jlong context) {
     C4Error error{};
-    auto keyPair = c4keypair_fromExternal((C4KeyPairAlgorithm) algorithm,
-                                          (size_t) keySizeInBits,
-                                          (void *) context,
-                                          keyCallbacks,
-                                          &error);
-    if (!keyPair) {
-        litecore::jni::throwError(env, error);
+    C4KeyPair *keyPair = c4keypair_fromExternal(
+            (C4KeyPairAlgorithm) algorithm,
+            (size_t) keySizeInBits,
+            (void *) context,
+            keyCallbacks,
+            &error);
+    if (keyPair == nullptr) {
+        throwError(env, error);
         return nullptr;
     }
 
@@ -568,7 +573,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
 
     // Client Cert Authentication:
     tlsConfig.requireClientCerts = requireClientCerts;
-    if (requireClientCerts == true) {
+    if (requireClientCerts == JNI_TRUE) {
         if (rootClientCerts == nullptr) {
             tlsConfig.certAuthCallback = &certAuthCallback;
             tlsConfig.tlsCallbackContext = reinterpret_cast<void *>(context);
@@ -581,7 +586,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
         }
     }
 
-    auto listener = reinterpret_cast<jlong>(startListener(
+    C4Listener *listener = startListener(
             env,
             port,
             networkInterface,
@@ -594,12 +599,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_startTls(
             allowPull,
             enableDeltaSync,
             requirePasswordAuth,
-            &tlsConfig));
+            &tlsConfig);
 
     c4cert_release(tlsConfig.certificate);
     c4cert_release(tlsConfig.rootClientCerts);
 
-    return listener;
+    return (jlong) listener;
 }
 
 /*
@@ -632,12 +637,12 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listen
     jstringSlice name(env, dbName);
 
     C4Error error1{};
-    auto ok1 = c4listener_shareDB(
+    bool ok = c4listener_shareDB(
             reinterpret_cast<C4Listener *>(c4Listener),
             name,
             reinterpret_cast<C4Database *>(c4db),
             &error1);
-    if (!ok1 && error1.code != 0) {
+    if (!ok && error1.code != 0) {
         throwError(env, error1);
         return;
     }
@@ -646,12 +651,12 @@ JNIEXPORT void JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Listen
     jlong *colls = env->GetLongArrayElements(c4Collections, nullptr);
     for (int i = 0; i < n; i++) {
         C4Error error2{};
-        auto ok2 = c4listener_shareCollection(
+        ok = c4listener_shareCollection(
                 reinterpret_cast<C4Listener *>(c4Listener),
                 name,
                 reinterpret_cast<C4Collection *>(colls[i]),
                 &error2);
-        if (!ok2 && error2.code != 0) {
+        if (!ok && error2.code != 0) {
             throwError(env, error2);
             break;
         }
@@ -671,13 +676,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUrls(
         jlong c4Listener,
         jlong c4Database) {
     C4Error error{};
-    auto urls = c4listener_getURLs(
+    FLMutableArray urls = c4listener_getURLs(
             reinterpret_cast<C4Listener *>(c4Listener),
             reinterpret_cast<C4Database *>(c4Database),
             kC4SyncAPI, // forced
             &error);
 
-    if (!urls) {
+    if (urls == nullptr) {
         throwError(env, error);
         return nullptr;
     }
@@ -716,9 +721,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Listener_getUriFromPath(
         jclass ignore,
         jstring path) {
     jstringSlice pathSlice(env, path);
-    auto uri = c4db_URINameFromPath(pathSlice);
+    FLSliceResult uri = c4db_URINameFromPath(pathSlice);
     jstring jstr = toJString(env, uri);
-    c4slice_free(uri);
+    FLSliceResult_Release(uri);
     return jstr;
 }
 
@@ -749,17 +754,23 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
     auto keys = (C4KeyPair *) c4KeyPair;
 
     int size = env->GetArrayLength(nameComponents);
-    auto subjectName = new C4CertNameComponent[size];
+    C4CertNameComponent *subjectName = new C4CertNameComponent[size];
 
     // For retaining jstringSlice objects of cert's attributes and values:
     std::vector<jstringSlice *> attrs;
     for (int i = 0; i < size; ++i) {
         auto component = (jobjectArray) env->GetObjectArrayElement(nameComponents, i);
-        auto key = (jstring) env->GetObjectArrayElement(component, 0);
-        auto value = (jstring) env->GetObjectArrayElement(component, 1);
+        if (component == nullptr) continue;
 
-        auto keySlice = new jstringSlice(env, key);
-        auto valueSlice = new jstringSlice(env, value);
+        auto key = (jstring) env->GetObjectArrayElement(component, 0);
+        jstringSlice *keySlice = new jstringSlice(env, key);
+        if (key != nullptr) env->DeleteLocalRef(key);
+
+        auto value = (jstring) env->GetObjectArrayElement(component, 1);
+        jstringSlice *valueSlice = new jstringSlice(env, value);
+        if (value != nullptr) env->DeleteLocalRef(value);
+
+        env->DeleteLocalRef(component);
 
         attrs.push_back(keySlice);
         attrs.push_back(valueSlice);
@@ -768,31 +779,31 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
     }
 
     C4Error error{};
-    auto csr = c4cert_createRequest(subjectName, size, usage, keys, &error);
-    delete[] subjectName;
-    if (!csr) {
-        throwError(env, error);
-        return nullptr;
-    }
+    C4Cert *csr = c4cert_createRequest(subjectName, size, usage, keys, &error);
 
     // Release cert's attributes and values:
+    delete[] subjectName;
     for (int i = 0; i < attrs.size(); i++) {
         delete attrs.at(i);
     }
 
-    C4CertIssuerParameters issuerParams = kDefaultCertIssuerParameters;
-    if (validityInSeconds > 0) {
-        issuerParams.validityInSeconds = validityInSeconds;
-    }
-
-    auto cert = c4cert_signRequest(csr, &issuerParams, keys, nullptr, &error);
-    c4cert_release(csr);
-    if (!cert) {
+    if (csr == nullptr) {
         throwError(env, error);
         return nullptr;
     }
 
-    auto certData = getCertData(env, cert);
+    C4CertIssuerParameters issuerParams = kDefaultCertIssuerParameters;
+    if (validityInSeconds > 0)
+        issuerParams.validityInSeconds = validityInSeconds;
+
+    C4Cert *cert = c4cert_signRequest(csr, &issuerParams, keys, nullptr, &error);
+    c4cert_release(csr);
+    if (cert == nullptr) {
+        throwError(env, error);
+        return nullptr;
+    }
+
+    jbyteArray certData = getCertData(env, cert);
     c4cert_release(cert);
 
     return certData;
