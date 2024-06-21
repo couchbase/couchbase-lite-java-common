@@ -67,6 +67,7 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
     jint getEnvStat = gJVM->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6);
 
     jboolean ok = false;
+
     if (getEnvStat == JNI_OK) {
         jstring _header = toJString(env, authHeader);
         ok = env->CallStaticBooleanMethod(cls_C4Listener, m_C4Listener_httpAuthCallback, (jlong) context, _header);
@@ -83,7 +84,6 @@ static bool httpAuthCallback(C4Listener *ignore, C4Slice authHeader, void *conte
         } else {
             C4Warn("httpAuthCallback(): Failed to attaches the current thread to a Java VM");
         }
-        return ok;
     } else {
         C4Warn("httpAuthCallback(): Failed to get the environment: getEnvStat -> %d", getEnvStat);
     }
@@ -123,11 +123,14 @@ static bool certAuthCallback(C4Listener *ignore, C4Slice clientCertData, void *c
 // This method copies the data to its destination.
 static bool doKeyDataCallback(JNIEnv *env, void *extKey, size_t outMaxLen, void *output, size_t *outLen) {
     auto key = (jbyteArray) (env->CallStaticObjectMethod(cls_C4KeyPair, m_C4KeyPair_keyDataCallback, (jlong) extKey));
-    if (key == nullptr)
+    if (key == nullptr) {
+        C4Warn("doKeyDataCallback: Failed to get key data from Java");
         return false;
+    }
 
     jsize keyDataSize = env->GetArrayLength(key);
     if (keyDataSize > outMaxLen) {
+        C4Warn("doKeyDataCallback: data is too big");
         env->DeleteLocalRef(key);
         return false;
     }
@@ -179,17 +182,22 @@ static bool doDecryptCallback(
     int n = (int) input.size;
 
     jbyteArray encData = env->NewByteArray(n);
-    if (encData == nullptr) return false;
+    if (encData == nullptr) {
+        C4Warn("doDecryptCallback: Failed to allocate byte array");
+        return false;
+    }
     env->SetByteArrayRegion(encData, 0, n, (jbyte *) input.buf);
 
     auto decData = (jbyteArray)
             (env->CallStaticObjectMethod(cls_C4KeyPair, m_C4KeyPair_decryptCallback, (jlong) extKey, encData));
     env->DeleteLocalRef(encData);
     if (decData == nullptr)
+        C4Warn("doDecryptCallback: Failed to get decrypted data from Java");
         return false;
 
     jsize dataSize = env->GetArrayLength(decData);
     if (dataSize > outMaxLen) {
+        C4Warn("doDecryptCallback: data is too big");
         env->DeleteLocalRef(decData);
         return false;
     }
@@ -235,14 +243,19 @@ static bool doSignCallback(JNIEnv *env, void *extKey, C4SignatureDigestAlgorithm
     int n = (int) inData.size;
 
     jbyteArray data = env->NewByteArray(n);
-    if (data == nullptr) return false;
+    if (data == nullptr) {
+        C4Warn("doSignCallback: Failed to allocate byte array");
+        return false;
+    }
     env->SetByteArrayRegion(data, 0, n, (jbyte *) inData.buf);
 
     auto sig = (jbyteArray)
             (env->CallStaticObjectMethod(cls_C4KeyPair, m_C4KeyPair_signCallback, (jlong) extKey, (jint) alg, data));
     env->DeleteLocalRef(data);
-    if (sig == nullptr)
+    if (sig == nullptr) {
+        C4Warn("doDecryptCallback: Failed to get signing data from Java");
         return false;
+    }
 
     jsize sigSize = env->GetArrayLength(sig);
     // The signature is the same size as the key.
@@ -754,7 +767,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
     auto keys = (C4KeyPair *) c4KeyPair;
 
     int size = env->GetArrayLength(nameComponents);
-    C4CertNameComponent *subjectName = new C4CertNameComponent[size];
+    auto *subjectName = new C4CertNameComponent[size];
 
     // For retaining jstringSlice objects of cert's attributes and values:
     std::vector<jstringSlice *> attrs;
@@ -763,11 +776,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCer
         if (component == nullptr) continue;
 
         auto key = (jstring) env->GetObjectArrayElement(component, 0);
-        jstringSlice *keySlice = new jstringSlice(env, key);
+        auto *keySlice = new jstringSlice(env, key);
         if (key != nullptr) env->DeleteLocalRef(key);
 
         auto value = (jstring) env->GetObjectArrayElement(component, 1);
-        jstringSlice *valueSlice = new jstringSlice(env, value);
+        auto *valueSlice = new jstringSlice(env, value);
         if (value != nullptr) env->DeleteLocalRef(value);
 
         env->DeleteLocalRef(component);

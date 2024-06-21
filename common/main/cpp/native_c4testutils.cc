@@ -238,7 +238,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put(
     std::vector<jstringSlice *> historyAlloc;
     for (jsize i = 0; i < n; i++) {
         auto js = (jstring) env->GetObjectArrayElement(jhistory, i);
-        jstringSlice *item = new jstringSlice(env, js);
+        auto *item = new jstringSlice(env, js);
         historyAlloc.push_back(item); // so its memory won't be freed
         history[i] = *item;
     }
@@ -308,7 +308,7 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_put2(
     if (n > 0) {
         for (jsize i = 0; i < n; i++) {
             auto js = (jstring) env->GetObjectArrayElement(jhistory, i);
-            jstringSlice *item = new jstringSlice(env, js);
+            auto *item = new jstringSlice(env, js);
             historyAlloc.push_back(item); // so its memory won't be freed
             history[i] = *item;
         }

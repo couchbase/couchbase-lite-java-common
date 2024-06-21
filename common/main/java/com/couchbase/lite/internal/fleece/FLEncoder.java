@@ -68,9 +68,9 @@ public abstract class FLEncoder extends C4NativePeer {
         void nFree(long peer);
     }
 
-    // unmanaged: the native code will free it
-    static final class UnmanagedFLEncoder extends FLEncoder {
-        UnmanagedFLEncoder(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
+    // shared: the native code manages it
+    static final class SharedFLEncoder extends FLEncoder {
+        SharedFLEncoder(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
 
         @Override
         public void close() {
@@ -131,7 +131,7 @@ public abstract class FLEncoder extends C4NativePeer {
     private static final NativeImpl NATIVE_IMPL = new NativeFLEncoder();
 
     @NonNull
-    public static FLEncoder getUnmanagedEncoder(long peer) { return new UnmanagedFLEncoder(NATIVE_IMPL, peer); }
+    public static FLEncoder getSharedEncoder(long peer) { return new SharedFLEncoder(NATIVE_IMPL, peer); }
 
     @NonNull
     public static FLEncoder getManagedEncoder() {

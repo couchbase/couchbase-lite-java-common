@@ -443,7 +443,7 @@ public abstract class C4Database extends C4NativePeer {
     // This must be called holding both the document and the database locks!
     @NonNull
     public FLEncoder getSharedFleeceEncoder() {
-        return FLEncoder.getUnmanagedEncoder(impl.nGetSharedFleeceEncoder(getPeer()));
+        return FLEncoder.getSharedEncoder(impl.nGetSharedFleeceEncoder(getPeer()));
     }
 
     @NonNull
