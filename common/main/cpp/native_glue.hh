@@ -59,7 +59,7 @@ namespace litecore {
 
         std::string JcharArrayToUTF8(JNIEnv *env, const jcharArray jcharArray);
 
-        std::string JcharsToUTF8(JNIEnv *env, const jchar * jchars, jsize len);
+        std::string JcharsToUTF8(JNIEnv *env, const jchar *jchars, jsize len);
 
         jstring UTF8ToJstring(JNIEnv *env, const char *s, size_t size);
 
@@ -84,18 +84,20 @@ namespace litecore {
 
         // Creates a temporary slice value from a Java byte[], attempting to avoid copying
         class jbyteArraySlice {
-        public:
             // Warning: If `critical` is true, you cannot make any further JNI calls (except other
             // critical accesses) until this object goes out of scope or is deleted.
             // That includes any attempt to log anything.
+        public:
             jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, bool critical = false);
 
-            jbyteArraySlice(JNIEnv *env, jbyteArray jbytes, size_t length, bool critical = false);
+            jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, bool critical = false);
+
+            jbyteArraySlice(JNIEnv *env, bool delRef, jbyteArray jbytes, size_t length, bool critical = false);
 
             ~jbyteArraySlice();
 
             jbyteArraySlice(jbyteArraySlice &&s) // move constructor
-                    : _slice(s._slice), _env(s._env), _jbytes(s._jbytes),
+                    : _slice(s._slice), _env(s._env), _delRef(s._delRef), _jbytes(s._jbytes),
                       _critical(s._critical) { s._slice = kFLSliceNull; }
 
             operator FLSlice() { return _slice; }
@@ -108,6 +110,7 @@ namespace litecore {
             JNIEnv *_env;
             jbyteArray _jbytes;
             bool _critical;
+            bool _delRef;
         };
 
         // Creates a Java String from the contents of a C4Slice.
@@ -123,10 +126,11 @@ namespace litecore {
         jbyteArray toJByteArray(JNIEnv *, C4SliceResult);
 
         // Copies an encryption key to a C4EncryptionKey. Returns false on exception.
-        bool getEncryptionKey(JNIEnv *env,
-                              jint keyAlg,
-                              jbyteArray jKeyBytes,
-                              C4EncryptionKey *outKey);
+        bool getEncryptionKey(
+                JNIEnv *env,
+                jint keyAlg,
+                jbyteArray jKeyBytes,
+                C4EncryptionKey *outKey);
 
         // lightweight logging
         void logError(const char *fmt, ...);

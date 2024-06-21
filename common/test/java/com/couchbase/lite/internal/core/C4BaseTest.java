@@ -256,10 +256,6 @@ public class C4BaseTest extends BaseTest {
             String[] history = revIDs.toArray(new String[0]);
             C4Document doc = C4TestUtils.create(coll, body, docID, flags, true, false, history, true, 0, 0);
             assertNotNull(doc);
-
-            doc.close();
-            // don't try to close the C4Document
-
             commit = true;
         }
         finally {

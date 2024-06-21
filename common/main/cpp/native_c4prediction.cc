@@ -63,10 +63,10 @@ static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4E
                 (jlong) token,
                 (jlong) input,
                 (jlong) c4db);
-
-        // if the call returned a nullptr, just give the caller an empty result.
-        if (sliceResult)
+        if (sliceResult) {
             res = fromJavaFLSliceResult(env, sliceResult);
+            env->DeleteLocalRef(sliceResult);
+        }
     } else if (getEnvStat == JNI_EDETACHED) {
         if (attachCurrentThread(&env) == 0) {
             jobject sliceResult = env->CallStaticObjectMethod(
@@ -75,8 +75,6 @@ static C4SliceResult prediction(void *token, FLDict input, C4Database *c4db, C4E
                     (jlong) token,
                     (jlong) input,
                     (jlong) c4db);
-
-            // if the call returned a nullptr, just give the caller an empty result.
             if (sliceResult)
                 res = fromJavaFLSliceResult(env, sliceResult);
             if (gJVM->DetachCurrentThread() != 0)

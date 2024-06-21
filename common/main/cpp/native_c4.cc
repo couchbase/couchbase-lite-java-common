@@ -93,6 +93,14 @@ void litecore::jni::logError(const char *fmt, ...) {
     va_end(args);
 }
 
+static bool detach(jint getEnvStat) {
+    if (getEnvStat == JNI_EDETACHED) {
+        if (gJVM->DetachCurrentThread() == 0) return true;
+        C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
+    }
+    return false;
+}
+
 static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, va_list ignore) {
     if (!cls_C4Log || !m_C4Log_logCallback) {
         logError("logCallback(): Logging not initialized");
@@ -114,27 +122,27 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
 
     if (env->ExceptionCheck() == JNI_TRUE) {
         logError("logCallback(): Cannot log while an exception is outstanding");
+        detach(getEnvStat);
         return;
     }
 
     jstring message = UTF8ToJstring(env, fmt, strlen(fmt));
     if (!message) {
         logError("logCallback(): Failed encoding error message");
+        detach(getEnvStat);
         return;
     }
 
     const char *domainNameRaw = c4log_getDomainName(domain);
     jstring domainName = UTF8ToJstring(env, domainNameRaw, strlen(domainNameRaw));
+    if (!domainName)
+        domainName = env->NewStringUTF("???");
+
     env->CallStaticVoidMethod(cls_C4Log, m_C4Log_logCallback, domainName, (jint) level, message);
 
-    env->DeleteLocalRef(message);
-    if (domainName)
+    if (!detach(getEnvStat)) {
+        env->DeleteLocalRef(message);
         env->DeleteLocalRef(domainName);
-
-    if (getEnvStat == JNI_EDETACHED) {
-        if (gJVM->DetachCurrentThread() != 0) {
-            C4Warn("logCallback(): doRequestClose(): Failed to detach the current thread from a Java VM");
-        }
     }
 }
 
