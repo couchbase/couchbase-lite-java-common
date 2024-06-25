@@ -309,7 +309,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createPredictiveIn
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createVectorIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;JIJIJJJJ)V
+ * Signature: (JLjava/lang/String;Ljava/lang/String;JIJIJJJJJB)V
  */
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
@@ -325,7 +325,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
         jlong subquantizers,
         jlong bits,
         jlong minTrainingSize,
-        jlong maxTrainingSize) {
+        jlong maxTrainingSize,
+        jlong numProbes,
+        jboolean isLazy) {
 #ifdef COUCHBASE_ENTERPRISE
     C4IndexOptions options = {};
 
@@ -333,10 +335,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
     options.vector.dimensions = (unsigned) dimensions;
     options.vector.metric = (C4VectorMetricType) metric;
     options.vector.clustering = {kC4VectorClusteringFlat, (unsigned) centroids, 0, 0};
-    options.vector.encoding = { (C4VectorEncodingType) encoding, (unsigned) subquantizers, (unsigned) bits };
+    options.vector.encoding = {(C4VectorEncodingType) encoding, (unsigned) subquantizers, (unsigned) bits};
     options.vector.minTrainingSize = (unsigned) minTrainingSize;
     options.vector.maxTrainingSize = (unsigned) maxTrainingSize;
-    options.vector.numProbes = 0;
+    options.vector.numProbes = (unsigned) numProbes;
 
     createIndex(env, coll, kC4VectorIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
 #endif

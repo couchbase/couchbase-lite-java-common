@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -115,7 +116,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         }
     }
 
-    // See if the container contains an item that matches using the passed comparitor
+    // See if the container contains an item that matches using the passed comparator
     public static <T extends Throwable> boolean containsWithComparator(
         java.util.Collection<T> collection,
         T target,
@@ -127,7 +128,13 @@ public abstract class BaseTest extends PlatformBaseTest {
         return false;
     }
 
-    ///////////////////////////////   E X C E P T I O N   A S S E R T I O N S   ///////////////////////////////
+    ///////////////////////////////   A S S E R T I O N S   ///////////////////////////////
+
+    @NonNull
+    public static <T> T assertNonNull(T obj) {
+        assertNotNull(obj);
+        return obj;
+    }
 
     // Please do *NOT* use the @Test(expected=...) annotation.  It is entirely too prone to error.
     // Even though it can work pretty will in a very limited number of cases, please, always prefer
@@ -174,6 +181,8 @@ public abstract class BaseTest extends PlatformBaseTest {
         CouchbaseLiteException cbl2 = (CouchbaseLiteException) e2;
         return (cbl1.getCode() == cbl2.getCode()) && (cbl1.getDomain().equals(cbl2.getDomain()));
     }
+
+    ///////////////////////////////   L O G G I N G   ///////////////////////////////
 
     private static void setupLogging(String msg) {
         Log.initLoggingInternal();

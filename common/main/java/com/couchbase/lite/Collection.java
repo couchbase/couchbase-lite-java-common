@@ -34,6 +34,7 @@ import com.couchbase.lite.internal.core.C4CollectionObserver;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.core.C4DocumentObserver;
+import com.couchbase.lite.internal.core.C4QueryIndex;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -237,6 +238,8 @@ public final class Collection extends BaseCollection
         catch (CouchbaseLiteException e) {
             if (!CouchbaseLiteException.isConflict(e)) { throw e; }
         }
+        // saveLocked will never throw a conflict exception if concurrency control is LAST_WRITE_WINS
+        // we get here only if concurrency control is FAIL_ON_CONFLICT and there is a conflict
         return false;
     }
 
@@ -254,8 +257,7 @@ public final class Collection extends BaseCollection
         Preconditions.assertNotNull(document, "document");
         Preconditions.assertNotNull(conflictHandler, "conflictHandler");
         prepareDocument(document);
-        saveWithConflictHandler(document, conflictHandler);
-        return true;
+        return saveWithConflictHandler(document, conflictHandler);
     }
 
     /**
@@ -452,6 +454,20 @@ public final class Collection extends BaseCollection
     }
 
     /**
+     * Get the named index from the collection.
+     *
+     * @param name index name
+     * @return the QueryIndex
+     */
+    @Nullable
+    public QueryIndex getIndex(@NonNull String name) throws CouchbaseLiteException {
+        // ??? Use error kC4ErrorMissingIndex instead?
+        if (!getIndexes().contains(name)) { return null; }
+        final C4QueryIndex idx = c4Collection.getIndex(getDbLock(), name);
+        return new QueryIndex(this, name, idx);
+    }
+
+    /**
      * Add an index to the collection.
      *
      * @param name   index name
@@ -592,7 +608,7 @@ public final class Collection extends BaseCollection
         }
     }
 
-    void saveWithConflictHandler(@NonNull MutableDocument document, @NonNull ConflictHandler handler)
+    boolean saveWithConflictHandler(@NonNull MutableDocument document, @NonNull ConflictHandler handler)
         throws CouchbaseLiteException {
         Document oldDoc = null;
         int n = 0;
@@ -608,7 +624,7 @@ public final class Collection extends BaseCollection
                 assertOpen();
                 try {
                     saveLocked(document, oldDoc, false, ConcurrencyControl.FAIL_ON_CONFLICT);
-                    return;
+                    return true;
                 }
                 catch (CouchbaseLiteException e) {
                     if (!CouchbaseLiteException.isConflict(e)) { throw e; }
@@ -619,13 +635,7 @@ public final class Collection extends BaseCollection
             }
 
             try {
-                if (!handler.handle(document, (oldDoc.isDeleted()) ? null : oldDoc)) {
-                    throw new CouchbaseLiteException(
-                        "Conflict handler returned false",
-                        CBLError.Domain.CBLITE,
-                        CBLError.Code.CONFLICT
-                    );
-                }
+                if (!handler.handle(document, (oldDoc.isDeleted()) ? null : oldDoc)) { return false; }
             }
             catch (Exception e) {
                 throw new CouchbaseLiteException(
