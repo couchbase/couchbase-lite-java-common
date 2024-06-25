@@ -105,7 +105,9 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
         long subquantizers,
         long bits,
         long minTrainingSize,
-        long maxTrainingSize)
+        long maxTrainingSize,
+        long numProbes,
+        boolean isLazy)
         throws LiteCoreException {
         createVectorIndex(
             peer,
@@ -118,7 +120,9 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
             subquantizers,
             bits,
             minTrainingSize,
-            maxTrainingSize);
+            maxTrainingSize,
+            numProbes,
+            isLazy);
     }
 
     @Override
@@ -180,7 +184,9 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
         long subquantizers,
         long bits,
         long minTrainingSize,
-        long maxTrainingSize)
+        long maxTrainingSize,
+        long numProbes,
+        boolean isLazy)
         throws LiteCoreException;
 
     private static native void deleteIndex(long peer, @NonNull String name)throws LiteCoreException;

@@ -129,7 +129,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createPred
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createVectoreIndex
- * Signature: (JLjava/lang/String;Ljava/lang/String;JIJIJJJJ)V
+ * Signature: (JLjava/lang/String;Ljava/lang/String;JIJIJJJJJB)V
  */
 JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex
@@ -144,7 +144,9 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVect
          jlong,
          jlong,
          jlong,
-         jlong);
+         jlong,
+         jlong,
+         jboolean);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection

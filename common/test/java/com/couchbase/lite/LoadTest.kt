@@ -38,10 +38,10 @@ class LoadTest : BaseDbTest() {
 
             // android on jenkins
             "r8quex" to 100,
+            "a12uue" to 230,
+            "starqlteue" to 150,
             "dandelion_global" to 100,
             "cheetah" to 100,
-            "starqlteue" to 150,
-            "a12uue" to 210,
 
             // android local
             "taimen" to 70,
