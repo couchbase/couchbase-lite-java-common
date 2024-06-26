@@ -24,7 +24,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -133,17 +132,18 @@ class ConflictResolutionTests : BaseReplicatorTest() {
 
         doc1b.setString("artist", "Holly Sears")
 
-        var succeeded = false
-        try {
-            succeeded = testCollection.save(doc1b) { cur: MutableDocument, prev: Document? ->
-                assertEquals(doc1b, cur)
-                assertEquals(doc1a, prev)
-                false
-            }
-            fail("save should not succeed!")
-        } catch (err: CouchbaseLiteException) {
-            assertEquals(CBLError.Code.CONFLICT, err.code)
+        var tested = false
+        var cDoc: MutableDocument? = null
+        var pDoc: Document? = null
+        var succeeded = testCollection.save(doc1b) { cur: MutableDocument, prev: Document? ->
+            tested = true
+            cDoc = cur
+            pDoc = prev
+            false
         }
+        assertTrue(tested)
+        assertEquals(doc1b, cDoc)
+        assertEquals(doc1a, pDoc)
         assertFalse(succeeded)
 
         val curDoc = testCollection.getNonNullDoc(docID)
@@ -164,15 +164,13 @@ class ConflictResolutionTests : BaseReplicatorTest() {
 
         doc1d.setString("artist", "G. Charnelet-Vasselon")
 
-        try {
-            succeeded = testCollection.save(doc1d) { cur, _ ->
-                cur.setString("artist", "Holly Sears")
-                false
-            }
-            fail("save should not succeed!")
-        } catch (err: CouchbaseLiteException) {
-            assertEquals(CBLError.Code.CONFLICT, err.code)
+        tested = false
+        succeeded = testCollection.save(doc1d) { cur, _ ->
+            tested = true
+            cur.setString("artist", "Holly Sears")
+            false
         }
+        assertTrue(tested)
         assertFalse(succeeded)
 
         // make sure no update to revision and generation
@@ -230,17 +228,18 @@ class ConflictResolutionTests : BaseReplicatorTest() {
 
         doc1b.setString("location", "Olympia")
 
-        var succeeded = false
-        try {
-            succeeded = testCollection.save(doc1b) { cur: MutableDocument, prev: Document? ->
-                assertNull(prev)
-                assertNotNull(cur)
-                false
-            }
-            fail("save should not succeed!")
-        } catch (err: CouchbaseLiteException) {
-            assertEquals(CBLError.Code.CONFLICT, err.code)
+        var tested = false
+        var cDoc: MutableDocument? = null
+        var pDoc: Document? = null
+        val succeeded = testCollection.save(doc1b) { cur: MutableDocument, prev: Document? ->
+            tested = true
+            pDoc = prev
+            cDoc = cur
+            false
         }
+        assertTrue(tested)
+        assertNull(pDoc)
+        assertNotNull(cDoc)
         assertFalse(succeeded)
 
         assertNull(testCollection.getDocument(docID))
@@ -273,16 +272,15 @@ class ConflictResolutionTests : BaseReplicatorTest() {
 
         doc1b.setString("artist", "Holly Sears")
 
+        var tested = false
         var succeeded = false
-        try {
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.CONFLICT) {
             succeeded = testCollection.save(doc1b) { _: MutableDocument, _: Document? ->
+                tested = true
                 throw CouchbaseLiteError("freak out!")
             }
-            fail("save should not succeed!")
-        } catch (err: CouchbaseLiteException) {
-            assertEquals(CBLError.Code.CONFLICT, err.code)
-            assertEquals("freak out!", err.cause?.message)
         }
+        assertTrue(tested)
         assertFalse(succeeded)
 
         assertEquals(doc1a, testCollection.getNonNullDoc(docID))
@@ -303,7 +301,7 @@ class ConflictResolutionTests : BaseReplicatorTest() {
         saveDocInCollection(doc)
         val docID = doc.id
 
-        var ts1 = testCollection.getNonNullDoc(docID).timestamp
+        val ts1 = testCollection.getNonNullDoc(docID).timestamp
 
         val doc1a = testCollection.getNonNullDoc(docID).toMutable()
         val doc1b = testCollection.getNonNullDoc(docID).toMutable()
@@ -368,14 +366,9 @@ class ConflictResolutionTests : BaseReplicatorTest() {
 
         doc1a.setString("artist", "Sheep Jones")
 
-        var succeeded = false
-        try {
-            succeeded = testCollection.save(doc1a) { _: MutableDocument, _: Document? -> true }
-            fail("save should not succeed!")
-        } catch (err: CouchbaseLiteException) {
-            assertEquals(CBLError.Code.NOT_FOUND, err.code)
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_FOUND) {
+            testCollection.save(doc1a) { _: MutableDocument, _: Document? -> true }
         }
-        assertFalse(succeeded)
     }
 
     /**
@@ -428,7 +421,7 @@ class ConflictResolutionTests : BaseReplicatorTest() {
         InternalReplicatorTest.enqueueOnDispatcher(repl) { latch.countDown() }
         assertTrue(latch.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS))
 
-        // A total of 6 docs dispatched; only one of them should have been enqued for CR
+        // A total of 6 docs dispatched; only one of them should have been enqueued for CR
         assertEquals(5, unconflictedCount.get().toLong())
         assertEquals(1, conflictedCount.get().toLong())
     }

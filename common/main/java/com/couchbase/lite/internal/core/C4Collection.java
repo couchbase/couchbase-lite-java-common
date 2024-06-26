@@ -328,6 +328,8 @@ public final class C4Collection extends C4NativePeer {
         finally { super.finalize(); }
     }
 
+    // Dumb check for null is necessary because Android has a nasty habit
+    // of releasing fields befor calling finalize
     private void closePeer(@Nullable LogDomain domain) {
         releasePeer(
             domain,
