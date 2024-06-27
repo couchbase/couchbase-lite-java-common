@@ -150,6 +150,15 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVect
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    getIndex
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndex
+        (JNIEnv *, jclass, jlong, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    deleteIndex
  * Signature: (JLjava/lang/String;)V
  */

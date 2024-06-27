@@ -170,8 +170,10 @@ public final class C4Document extends C4NativePeer {
 
     @Nullable
     public FLDict getSelectedBody2() {
-        final long value = withPeerOrThrow(impl::nGetSelectedBody2);
-        return value == 0 ? null : FLDict.create(value);
+        return nullableWithPeerOrThrow(peer -> {
+            final long value = impl.nGetSelectedBody2(peer);
+            return value == 0 ? null : FLDict.create(value);
+        });
     }
 
     // - Conflict resolution
@@ -179,16 +181,12 @@ public final class C4Document extends C4NativePeer {
     public long getTimestamp() { return withPeerOrDefault(-1L, impl::nGetTimestamp); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
-        this.<LiteCoreException>withPeerOrThrow(peer ->
-            impl.nSelectNextLeafRevision(peer, includeDeleted, withBody)
-        );
+        voidWithPeerOrThrow(peer -> impl.nSelectNextLeafRevision(peer, includeDeleted, withBody));
     }
 
     public void resolveConflict(String winningRevID, String losingRevID, byte[] mergeBody, int mergedFlags)
         throws LiteCoreException {
-        this.<LiteCoreException>withPeerOrThrow(peer ->
-            impl.nResolveConflict(peer, winningRevID, losingRevID, mergeBody, mergedFlags)
-        );
+        voidWithPeerOrThrow(peer -> impl.nResolveConflict(peer, winningRevID, losingRevID, mergeBody, mergedFlags));
     }
 
     @Nullable
@@ -204,7 +202,7 @@ public final class C4Document extends C4NativePeer {
     }
 
     public void save(int maxRevTreeDepth) throws LiteCoreException {
-        this.<LiteCoreException>withPeerOrThrow(peer -> impl.nSave(peer, maxRevTreeDepth));
+        voidWithPeerOrThrow(peer -> impl.nSave(peer, maxRevTreeDepth));
     }
 
     // - Fleece

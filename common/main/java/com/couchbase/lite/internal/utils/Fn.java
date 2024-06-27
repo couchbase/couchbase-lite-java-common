@@ -40,6 +40,13 @@ public interface Fn {
     }
 
     @FunctionalInterface
+    interface NonNullFunction<T, R> {
+        @NonNull
+        R apply(@NonNull T x);
+    }
+
+
+    @FunctionalInterface
     interface Function<T, R> {
         @Nullable
         R apply(@NonNull T x);

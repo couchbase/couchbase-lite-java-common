@@ -73,7 +73,7 @@ public final class C4BlobWriteStream extends C4NativePeer {
      */
     @NonNull
     public C4BlobKey computeBlobKey() throws LiteCoreException {
-        return C4BlobKey.create(withPeerOrThrow(impl::nComputeBlobKey));
+        return withPeerOrThrow(peer -> C4BlobKey.create(impl.nComputeBlobKey(peer)));
     }
 
     /**

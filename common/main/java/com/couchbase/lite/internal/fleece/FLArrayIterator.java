@@ -18,7 +18,6 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 
@@ -88,8 +87,10 @@ public abstract class FLArrayIterator extends C4NativePeer {
 
     @Nullable
     public FLValue getValueAt(int index) {
-        final long hValue = this.<Long, CouchbaseLiteError>withPeerOrThrow(p -> impl.nGetValueAt(p, index));
-        return hValue == 0L ? null : FLValue.getFLValue(hValue);
+        return nullableWithPeerOrThrow(peer -> {
+            final long val = impl.nGetValueAt(peer, index);
+            return val == 0L ? null : FLValue.getFLValue(val);
+        });
     }
 
     /**
@@ -101,7 +102,9 @@ public abstract class FLArrayIterator extends C4NativePeer {
 
     @Nullable
     public FLValue getValue() {
-        final long hValue = this.<Long, CouchbaseLiteError>withPeerOrThrow(impl::nGetValue);
-        return hValue == 0L ? null : FLValue.getFLValue(hValue);
+        return nullableWithPeerOrThrow(peer -> {
+            final long val = impl.nGetValue(peer);
+            return val == 0L ? null : FLValue.getFLValue(val);
+        });
     }
 }

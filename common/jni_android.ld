@@ -57,6 +57,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocExpiration;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getDocumentCount;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndexesInfo;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndex;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_isValid;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_purgeDoc;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_setDocExpiration;
@@ -99,6 +100,14 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_save;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_selectNextLeafRevision;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_update2;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4Index_beginUpdate;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4Index_releaseIndex;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4IndexUpdater_close;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4IndexUpdater_count;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4IndexUpdater_finish;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4IndexUpdater_setVectorAt;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4IndexUpdater_skipVectorAt;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4IndexUpdater_valueAt;
         Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_free;
         Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_fromExternal;
         Java_com_couchbase_lite_internal_core_impl_NativeC4KeyPair_generateSelfSignedCertificate;

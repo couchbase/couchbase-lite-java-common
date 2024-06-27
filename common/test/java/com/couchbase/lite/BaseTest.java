@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -143,7 +142,7 @@ public abstract class BaseTest extends PlatformBaseTest {
     public static <T extends Exception> void assertThrows(Class<T> ex, @NonNull Fn.TaskThrows<Exception> test) {
         try { test.run(); }
         catch (Throwable e) {
-            if (!ex.equals(e.getClass())) { fail("Expecting exception: " + ex + " but got " + e); }
+            if (!ex.equals(e.getClass())) { throw new AssertionError("Expecting exception: " + ex + ") but got:", e); }
             return;
         }
         fail("Expecting exception: " + ex);

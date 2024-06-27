@@ -62,6 +62,7 @@ add_library( LiteCoreJNI SHARED
     ${JNI_SRC}/native_c4database.cc
     ${JNI_SRC}/native_c4document.cc
     ${JNI_SRC}/native_c4fulltextmatch.cc
+    ${JNI_SRC}/native_c4index.cc
     ${JNI_SRC}/native_c4listener.cc
     ${JNI_SRC}/native_c4observer.cc
     ${JNI_SRC}/native_c4prediction.cc
