@@ -134,6 +134,7 @@ public final class MDict extends MCollection {
         return mValue;
     }
 
+    @SuppressWarnings("PMD.CognitiveComplexity")
     public void set(String key, @NonNull MValue value) {
         if (!isMutable()) { throw new CouchbaseLiteError("Cannot set items in a non-mutable MDict"); }
         assertOpen();

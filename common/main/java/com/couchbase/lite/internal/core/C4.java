@@ -17,7 +17,6 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.impl.NativeC4;
@@ -34,33 +33,36 @@ public final class C4 {
         String nGetVersion();
         void nDebug(boolean debugging);
         void nSetTempDir(@NonNull String tempDir) throws LiteCoreException;
-        void nSetExtPath(@NonNull String extDir);
+        void nEnableExtension(@NonNull String name, @NonNull String path) throws LiteCoreException;
         @Nullable
         String nGetMessage(int domain, int code, int internalInfo);
     }
 
     @NonNull
-    @VisibleForTesting
-    static volatile NativeImpl nativeImpl = new NativeC4();
+    private static final NativeImpl NATIVE_IMPL = new NativeC4();
 
     public static void setEnv(@NonNull String name, @NonNull String value, int overwrite) {
-        nativeImpl.nSetenv(name, value, overwrite);
+        NATIVE_IMPL.nSetenv(name, value, overwrite);
     }
 
     @Nullable
-    public static String getBuildInfo() { return nativeImpl.nGetBuildInfo(); }
+    public static String getBuildInfo() { return NATIVE_IMPL.nGetBuildInfo(); }
 
     @Nullable
-    public static String getVersion() { return nativeImpl.nGetVersion(); }
+    public static String getVersion() { return NATIVE_IMPL.nGetVersion(); }
 
-    public static void debug(boolean debugging) { nativeImpl.nDebug(debugging); }
+    public static void debug(boolean debugging) { NATIVE_IMPL.nDebug(debugging); }
 
-    public static void setTempDir(@NonNull String tempDir) throws LiteCoreException { nativeImpl.nSetTempDir(tempDir); }
+    public static void setTempDir(@NonNull String tempDir) throws LiteCoreException {
+        NATIVE_IMPL.nSetTempDir(tempDir);
+    }
 
-    public static void setExtPath(@NonNull String extPath) { nativeImpl.nSetExtPath(extPath); }
+    public static void enableExtension(@NonNull String name, @NonNull String path) throws LiteCoreException {
+        NATIVE_IMPL.nEnableExtension(name, path);
+    }
 
     @Nullable
     public static String getMessage(int domain, int code, int internalInfo) {
-        return nativeImpl.nGetMessage(domain, code, internalInfo);
+        return NATIVE_IMPL.nGetMessage(domain, code, internalInfo);
     }
 }

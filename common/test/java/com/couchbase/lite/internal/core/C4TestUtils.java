@@ -21,11 +21,13 @@ import androidx.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 
 import com.couchbase.lite.CBLError;
+import com.couchbase.lite.Collection;
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
+
 
 // It is worth considering breaking this up.  You know, OOP and all...
 public class C4TestUtils {
@@ -177,6 +179,13 @@ public class C4TestUtils {
 
     public static int getLogLevel(String domain) { return getLevel(domain); }
 
+    // C4Collection
+
+    public static boolean isIndexTrained(C4Collection collection, @NonNull String name) throws LiteCoreException {
+        return isIndexTrained(collection.getPeer(), name);
+    }
+
+
     //-------------------------------------------------------------------------
     // native methods
     //-------------------------------------------------------------------------
@@ -248,4 +257,8 @@ public class C4TestUtils {
     // C4Log
 
     private static native int getLevel(@NonNull String domain);
+
+    // C4Index
+
+    private static native boolean isIndexTrained(long collection, @NonNull String name) throws LiteCoreException;
 }

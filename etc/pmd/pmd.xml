@@ -68,6 +68,7 @@
         <exclude name="AvoidFieldNameMatchingTypeName" />open
         <exclude name="MissingSerialVersionUID" />
         <exclude name="AvoidFieldNameMatchingMethodName" />
+        <exclude name="ReturnEmptyCollectionRatherThanNull" />
     </rule>
     <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
         <properties>
@@ -88,6 +89,7 @@
     <rule ref="category/java/bestpractices.xml">
         <exclude name="AbstractClassWithoutAbstractMethod" />
         <exclude name="SwitchStmtsShouldHaveDefault" />
+        <exclude name="GuardLogStatement" />
         <exclude name="UseVarargs" />
 
         <!-- Enable these someday... -->
@@ -114,6 +116,11 @@
     <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts">
         <properties>
             <property name="problemDepth" value="4" />
+        </properties>
+    </rule>
+    <rule ref="category/java/design.xml/CognitiveComplexity">
+        <properties>
+            <property name="reportLevel" value="20" />
         </properties>
     </rule>
     <rule ref="category/java/design.xml/CyclomaticComplexity">

@@ -239,7 +239,7 @@ public abstract class FLEncoder extends C4NativePeer {
         return this.<Boolean, CouchbaseLiteError>withPeerOrThrow(p -> impl.nWriteKey(p, slice));
     }
 
-    @SuppressWarnings({"unchecked", "PMD.NPathComplexity"})
+    @SuppressWarnings({"unchecked", "PMD.NPathComplexity", "PMD.CognitiveComplexity"})
     public boolean writeValue(@Nullable Object value) {
         return withPeerOrThrow(peer -> {
             // null
