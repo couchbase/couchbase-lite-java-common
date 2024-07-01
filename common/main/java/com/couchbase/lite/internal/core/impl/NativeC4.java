@@ -26,7 +26,9 @@ public final class NativeC4 implements C4.NativeImpl {
     public void nSetTempDir(@NonNull String tempDir) throws LiteCoreException { setTempDir(tempDir); }
 
     @Override
-    public void nSetExtPath(@NonNull String extDir) { setExtPath(extDir); }
+    public void nEnableExtension(@NonNull String name, @NonNull String path) throws LiteCoreException {
+        enableExtension(name, path);
+    }
 
     @Override
     @Nullable
@@ -40,7 +42,7 @@ public final class NativeC4 implements C4.NativeImpl {
 
     private static native void setTempDir(@NonNull String tempDir) throws LiteCoreException;
 
-    private static native void setExtPath(@NonNull String extDir);
+    private static native void enableExtension(@NonNull String name, @NonNull String path) throws LiteCoreException;
 
     @Nullable
     private static native String getMessage(int domain, int code, int internalInfo);

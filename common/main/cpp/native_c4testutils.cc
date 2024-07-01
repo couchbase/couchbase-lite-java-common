@@ -368,4 +368,29 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel(JNIEnv *env, jclass i
     C4LogDomain logDomain = c4log_getDomain(domain.c_str(), false);
     return (!logDomain) ? -1 : (jint) c4log_getLevel(logDomain);
 }
+
+// C4Collection
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    isIndexTrained
+ * Signature: (JLjava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jname) {
+    jstringSlice name(env, jname);
+
+    C4Error error{};
+    bool ok = c4coll_isIndexTrained((C4Collection *) coll, name, &error);
+    if (error.domain != 0 && error.code != 0) {
+        throwError(env, error);
+        return JNI_FALSE;
+    }
+
+    return ok ? JNI_TRUE : JNI_FALSE;
+}
 }

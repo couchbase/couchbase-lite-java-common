@@ -53,12 +53,12 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4
- * Method:    setExtPath
- * Signature: (Ljava/lang/String;)V
+ * Method:    enableExtension
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_setExtPath
-        (JNIEnv *, jclass, jstring);
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4_enableExtension
+        (JNIEnv *env, jclass ignore, jstring jname, jstring jpath);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4

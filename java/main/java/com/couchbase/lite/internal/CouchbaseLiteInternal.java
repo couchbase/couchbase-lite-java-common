@@ -52,17 +52,15 @@ public final class CouchbaseLiteInternal {
 
     private static final String ERRORS_PROPERTIES_PATH = "/errors.properties";
 
-    private static final Object LOCK = new Object();
-
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
     private static volatile boolean debugging;
-
     private static volatile File defaultDbDir;
     private static volatile File scratchDir;
 
+    static final Object LOCK = new Object();
 
     public static void init(boolean debug, @NonNull File defaultDbDir, @NonNull File tempDir) {
         if (INITIALIZED.getAndSet(true)) { return; }
@@ -82,8 +80,6 @@ public final class CouchbaseLiteInternal {
         Log.initLogging();
 
         setC4TmpDirPath(tmpDir);
-
-        CBLVariantExtensions.initVariant(LOCK, tmpDir);
     }
 
     public static boolean debugging() { return debugging; }

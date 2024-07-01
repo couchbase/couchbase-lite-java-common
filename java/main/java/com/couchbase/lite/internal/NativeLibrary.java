@@ -95,20 +95,8 @@ final class NativeLibrary {
      * Extracts the named library and its support libraries from the jar file,
      * puts them on the file system, and returns the path of the containing directory.
      */
-    @Nullable
-    static String loadExtension(
-        @NonNull String libName,
-        @NonNull File scratchDir,
-        @Nullable List<String> supportLibNames) {
-        try { return loadExtensionInternal(libName, scratchDir, supportLibNames); }
-        catch (Exception err) {
-            Log.d(LogDomain.DATABASE, "Could not load extension lib: %s", err, libName);
-            return null;
-        }
-    }
-
     @NonNull
-    private static String loadExtensionInternal(
+    static String loadExtension(
         @NonNull String libName,
         @NonNull File scratchDir,
         @Nullable List<String> supportLibNames)

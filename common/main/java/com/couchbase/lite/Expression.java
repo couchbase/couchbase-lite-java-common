@@ -166,7 +166,7 @@ public abstract class Expression {
 
             json.add(lhs.asJSON());
 
-            if (!op.equals(OP_BETWEEN)) { json.add(rhs.asJSON()); }
+            if (!OP_BETWEEN.equals(op)) { json.add(rhs.asJSON()); }
             else {
                 // "between"'s RHS is an aggregate of the min and max, but the min and max need to be
                 // written out as parameters to the BETWEEN operation:

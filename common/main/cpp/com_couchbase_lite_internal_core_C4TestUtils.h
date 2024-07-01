@@ -147,6 +147,20 @@ JNIEXPORT jint
 JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel
         (JNIEnv *, jclass, jstring);
 
+// C4Collection
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    isIndexTrained
+ * Signature: (JLjava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained(
+        JNIEnv *,
+        jclass,
+        jlong,
+        jstring);
+
 #ifdef __cplusplus
 }
 #endif

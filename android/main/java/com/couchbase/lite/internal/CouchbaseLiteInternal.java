@@ -64,8 +64,6 @@ public final class CouchbaseLiteInternal {
 
     private static final String LITECORE_JNI_LIBRARY = "LiteCoreJNI";
 
-    private static final Object LOCK = new Object();
-
     private static final AtomicReference<SoftReference<Context>> CONTEXT = new AtomicReference<>();
     private static final AtomicReference<ExecutionService> EXECUTION_SERVICE = new AtomicReference<>();
     private static final AtomicReference<NetworkConnectivityManager> CONNECTIVITY_MANAGER = new AtomicReference<>();
@@ -73,8 +71,9 @@ public final class CouchbaseLiteInternal {
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
 
     private static volatile boolean debugging;
-
     private static volatile File defaultDbDir;
+
+    static final Object LOCK = new Object();
 
     /**
      * Initialize CouchbaseLite library. This method MUST be called before using CouchbaseLite.
@@ -100,8 +99,6 @@ public final class CouchbaseLiteInternal {
         Log.initLogging();
 
         setC4TmpDirPath(FileUtils.verifyDir(scratchDir));
-
-        CBLVariantExtensions.initVariant(LOCK, ctxt);
     }
 
     @NonNull
