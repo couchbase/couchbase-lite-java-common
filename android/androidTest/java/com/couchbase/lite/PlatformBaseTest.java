@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import com.couchbase.lite.internal.AndroidExecutionService;
-import com.couchbase.lite.internal.CBLVariantExtensions;
 import com.couchbase.lite.internal.exec.AbstractExecutionService;
 import com.couchbase.lite.internal.utils.FileUtils;
 
@@ -51,11 +50,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
         m.put("ANDROID<21", new Exclusion("Not supported on Android API < 21", () -> Build.VERSION.SDK_INT < 21));
         m.put("WINDOWS", new Exclusion("Supported only on Windows", () -> false));
         m.put(
-            "VECTORSEARCH",
-            new Exclusion(
-                "Requires the VectorSarch Library",
-                () -> CBLVariantExtensions.setExtensionPath(new Object(), getAppContext())));
-        m.put(
             "SWEDISH UNSUPPORTED",
             new Exclusion(
                 "Swedish locale not supported",
@@ -67,7 +61,6 @@ public abstract class PlatformBaseTest implements PlatformTest {
         try { Runtime.getRuntime().exec("logcat --prune /" + android.os.Process.myPid()).waitFor(); }
         catch (Exception e) { android.util.Log.w("TEST", "Failed adding to chatty whitelist", e); }
     }
-
     protected static void initCouchbase() { CouchbaseLite.init(getAppContext(), true); }
 
     private static Context getAppContext() { return ApplicationProvider.getApplicationContext(); }

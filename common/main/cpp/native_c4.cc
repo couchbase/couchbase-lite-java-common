@@ -270,14 +270,24 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir(JNIEnv *env, jcla
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4
- * Method:    setExtPath
- * Signature: (Ljava/lang/String;)V
+ * Method:    enableExtension
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
+/// !!! Needs LiteCore Support
 JNIEXPORT void JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4_setExtPath(JNIEnv *env, jclass ignore, jstring jextPath) {
-    jstringSlice extPath(env, jextPath);
-    c4_setExtensionPath(extPath);
+Java_com_couchbase_lite_internal_core_impl_NativeC4_enableExtension(
+        JNIEnv *env,
+        jclass ignore,
+        jstring jname,
+        jstring jpath) {
+    jstringSlice name(env, jname);
+    jstringSlice path(env, jpath);
+    C4Error error{LiteCoreDomain, kC4ErrorUnsupported};
+//    bool ok = c4_enableExtension(name, path, &error);
+//    if (!ok && error.code != 0)
+        throwError(env, error);
 }
+
 
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_C4Log

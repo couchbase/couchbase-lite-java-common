@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -114,7 +115,13 @@ public abstract class BaseTest extends PlatformBaseTest {
         return false;
     }
 
-    ///////////////////////////////   E X C E P T I O N   A S S E R T I O N S   ///////////////////////////////
+    ///////////////////////////////   A S S E R T I O N S   ///////////////////////////////
+
+    @NonNull
+    public static <T> T assertNonNull(T obj) {
+        assertNotNull(obj);
+        return obj;
+    }
 
     // Please do *NOT* use the @Test(expected=...) annotation.  It is entirely too prone to error.
     // Even though it can work pretty will in a very limited number of cases, please, always prefer
@@ -164,7 +171,6 @@ public abstract class BaseTest extends PlatformBaseTest {
         CouchbaseLiteException cbl2 = (CouchbaseLiteException) e2;
         return (cbl1.getCode() == cbl2.getCode()) && (cbl1.getDomain().equals(cbl2.getDomain()));
     }
-
 
     @Rule
     public TestWatcher watcher = new TestWatcher() {

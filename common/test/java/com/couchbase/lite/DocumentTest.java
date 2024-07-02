@@ -2498,7 +2498,7 @@ public class DocumentTest extends BaseDbTest {
         assertNotEquals(mDoc9, mDoc8);
         assertEquals(mDoc9, mDoc9);
 
-        assertNotNull(null, doc3);
+        assertNotNull(doc3);
     }
 
     @Test

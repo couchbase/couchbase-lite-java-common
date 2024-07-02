@@ -670,6 +670,7 @@ public final class Blob implements FLEncodable {
     }
 
     @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressWarnings("PMD.UseTryWithResources")
     @NonNull
     private C4BlobKey writeDatabaseFromInitStream(@NonNull C4BlobStore store) throws LiteCoreException, IOException {
         if (blobContentStream == null) { throw new CouchbaseLiteError("Blob stream is null"); }

@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.Collection;
+import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.Scope;
@@ -71,7 +72,9 @@ public final class C4Collection extends C4NativePeer {
             long subquantizers,
             long bits,
             long minTrainingSize,
-            long maxTrainingSize)
+            long maxTrainingSize,
+            long numProbes,
+            boolean isLazy)
             throws LiteCoreException;
 
         void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException;
@@ -268,7 +271,9 @@ public final class C4Collection extends C4NativePeer {
         long subquantizers,
         long bits,
         long minTrainingSize,
-        long maxTrainingSize)
+        long maxTrainingSize,
+        long numProbes,
+        boolean isLazy)
         throws LiteCoreException {
         withPeer(peer -> impl.nCreateVectorIndex(
             peer,
@@ -281,7 +286,9 @@ public final class C4Collection extends C4NativePeer {
             subquantizers,
             bits,
             minTrainingSize,
-            maxTrainingSize));
+            maxTrainingSize,
+            numProbes,
+            isLazy));
     }
 
     @NonNull
@@ -302,6 +309,11 @@ public final class C4Collection extends C4NativePeer {
     @NonNull
     public String getName() { return name; }
 
+    @NonNull
+    public C4QueryIndex getIndex(@NonNull Object dbLock, @NonNull String name) throws CouchbaseLiteException {
+        return new C4QueryIndex(dbLock);
+    }
+
     //-------------------------------------------------------------------------
     // package access
     //-------------------------------------------------------------------------
@@ -316,6 +328,8 @@ public final class C4Collection extends C4NativePeer {
         finally { super.finalize(); }
     }
 
+    // Dumb check for null is necessary because Android has a nasty habit
+    // of releasing fields befor calling finalize
     private void closePeer(@Nullable LogDomain domain) {
         releasePeer(
             domain,
