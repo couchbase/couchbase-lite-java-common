@@ -70,8 +70,8 @@ namespace litecore {
 
             jstringSlice(JNIEnv *env, jcharArray jchars);
 
-            jstringSlice(jstringSlice &&s)
-                    : _str(std::move(s._str)), _slice(s._slice) { s._slice = kFLSliceNull; }
+            jstringSlice(jstringSlice &&s) noexcept
+                : _str(std::move(s._str)), _slice(s._slice) { s._slice = kFLSliceNull; }
 
             operator FLSlice() { return _slice; }
 
@@ -96,7 +96,7 @@ namespace litecore {
 
             ~jbyteArraySlice();
 
-            jbyteArraySlice(jbyteArraySlice &&s) // move constructor
+            jbyteArraySlice(jbyteArraySlice &&s) noexcept // move constructor
                     : _slice(s._slice), _env(s._env), _delRef(s._delRef), _jbytes(s._jbytes),
                       _critical(s._critical) { s._slice = kFLSliceNull; }
 

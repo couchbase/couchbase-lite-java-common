@@ -18,7 +18,6 @@ package com.couchbase.lite.internal.fleece;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.C4NativePeer;
 
@@ -58,7 +57,7 @@ public final class FLDictIterator extends C4NativePeer {
 
     @NonNull
     public FLValue getValue() {
-        return this.<FLValue, CouchbaseLiteError>withPeerOrThrow(p -> FLValue.getFLValue(impl.nGetValue(p)));
+        return withPeerOrThrow(p -> FLValue.getFLValue(impl.nGetValue(p)));
     }
 
     @Override

@@ -126,6 +126,11 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     }
 
     @Override
+    public long nGetIndex(long peer, @NonNull String name) throws LiteCoreException {
+        return getIndex(peer, name);
+    }
+
+    @Override
     public void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException { deleteIndex(peer, name); }
 
     //-------------------------------------------------------------------------
@@ -189,5 +194,7 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
         boolean isLazy)
         throws LiteCoreException;
 
-    private static native void deleteIndex(long peer, @NonNull String name)throws LiteCoreException;
+    private static native long getIndex(long peer, @NonNull String name) throws LiteCoreException;
+
+    private static native void deleteIndex(long peer, @NonNull String name) throws LiteCoreException;
 }

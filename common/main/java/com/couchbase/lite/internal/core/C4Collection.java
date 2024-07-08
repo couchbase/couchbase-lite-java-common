@@ -11,12 +11,12 @@
 
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.Collection;
-import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.Scope;
@@ -76,6 +76,8 @@ public final class C4Collection extends C4NativePeer {
             long numProbes,
             boolean isLazy)
             throws LiteCoreException;
+
+        long nGetIndex(long peer, @NonNull String name) throws LiteCoreException;
 
         void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException;
     }
@@ -220,15 +222,13 @@ public final class C4Collection extends C4NativePeer {
 
     @NonNull
     public C4CollectionObserver createCollectionObserver(@NonNull Runnable listener) throws LiteCoreException {
-        return this.<C4CollectionObserver, LiteCoreException>withPeerOrThrow(peer ->
-            C4CollectionObserver.newObserver(peer, listener));
+        return withPeerOrThrow(peer -> C4CollectionObserver.newObserver(peer, listener));
     }
 
     @NonNull
     public C4DocumentObserver createDocumentObserver(@NonNull String docID, @NonNull Runnable listener)
         throws LiteCoreException {
-        return this.<C4DocumentObserver, LiteCoreException>withPeerOrThrow(peer ->
-            C4CollectionDocObserver.newObserver(peer, docID, listener));
+        return withPeerOrThrow(peer -> C4CollectionDocObserver.newObserver(peer, docID, listener));
     }
 
     // - Indexes
@@ -293,7 +293,17 @@ public final class C4Collection extends C4NativePeer {
 
     @NonNull
     public FLValue getIndexesInfo() throws LiteCoreException {
-        return FLValue.getFLValue(withPeerOrThrow(impl::nGetIndexesInfo));
+        return withPeerOrThrow(peer -> FLValue.getFLValue(impl.nGetIndexesInfo(peer)));
+    }
+
+    @GuardedBy("Database.getDbLock()")
+    @Nullable
+    public C4Index getIndex(@NonNull String name) throws LiteCoreException {
+        // ??? need to check collection for validity?
+        return nullableWithPeerOrThrow(peer -> {
+            final long idx = impl.nGetIndex(peer, name);
+            return (idx == 0L) ? null : C4Index.create(idx);
+        });
     }
 
     public void deleteIndex(String name) throws LiteCoreException {
@@ -308,11 +318,6 @@ public final class C4Collection extends C4NativePeer {
 
     @NonNull
     public String getName() { return name; }
-
-    @NonNull
-    public C4QueryIndex getIndex(@NonNull Object dbLock, @NonNull String name) throws CouchbaseLiteException {
-        return new C4QueryIndex(dbLock);
-    }
 
     //-------------------------------------------------------------------------
     // package access
