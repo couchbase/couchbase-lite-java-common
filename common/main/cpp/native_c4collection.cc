@@ -342,11 +342,41 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createVectorIndex(
     options.vector.minTrainingSize = (unsigned) minTrainingSize;
     options.vector.maxTrainingSize = (unsigned) maxTrainingSize;
     options.vector.numProbes = (unsigned) numProbes;
+    options.vector.lazy = isLazy == JNI_TRUE;
 
     createIndex(env, coll, kC4VectorIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
 #endif
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    getIndex
+ * Signature: (JLjava/lang/String;)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_getIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jName) {
+    jstringSlice name(env, jName);
+
+    C4Error error{};
+    C4Index *idx = c4coll_getIndex((C4Collection *) coll, name, &error);
+    if (idx != nullptr)
+        return (jlong) idx;
+
+    // no error code; no error
+    if (error.code == 0)
+        return 0;
+
+    // If the index was not found, just return null
+    if ((error.domain == LiteCoreDomain) && (error.code == kC4ErrorMissingIndex))
+        return 0;
+
+    throwError(env, error);
+    return 0;
+}
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection

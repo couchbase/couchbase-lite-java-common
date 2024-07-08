@@ -109,7 +109,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @Nullable
     public byte[] getContents(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return this.<byte[], LiteCoreException>withPeerOrNull(peer -> impl.nGetContents(peer, blobKey.getHandle()));
+        return withPeerOrNull(peer -> impl.nGetContents(peer, blobKey.getHandle()));
     }
 
     /**
@@ -131,7 +131,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobKey create(@NonNull byte[] contents) throws LiteCoreException {
-        return C4BlobKey.create(this.<Long, LiteCoreException>withPeerOrThrow(peer -> impl.nCreate(peer, contents)));
+        return withPeerOrThrow(peer -> C4BlobKey.create(impl.nCreate(peer, contents)));
     }
 
     /**
@@ -146,9 +146,7 @@ public abstract class C4BlobStore extends C4NativePeer {
      */
     @NonNull
     public C4BlobReadStream openReadStream(@NonNull C4BlobKey blobKey) throws LiteCoreException {
-        return new C4BlobReadStream(
-            impl,
-            this.<Long, LiteCoreException>withPeerOrThrow(peer -> impl.nOpenReadStream(peer, blobKey.getHandle())));
+        return withPeerOrThrow(peer -> new C4BlobReadStream(impl, impl.nOpenReadStream(peer, blobKey.getHandle())));
     }
 
     /**

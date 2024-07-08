@@ -34,7 +34,7 @@ import com.couchbase.lite.internal.core.C4CollectionObserver;
 import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.core.C4DocumentObserver;
-import com.couchbase.lite.internal.core.C4QueryIndex;
+import com.couchbase.lite.internal.core.C4Index;
 import com.couchbase.lite.internal.exec.ExecutionService;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -454,17 +454,22 @@ public final class Collection extends BaseCollection
     }
 
     /**
-     * Get the named index from the collection.
+     * Get a query index object by name.
      *
      * @param name index name
-     * @return the QueryIndex
+     * @return the QueryIndex or null if it does not exist
      */
     @Nullable
     public QueryIndex getIndex(@NonNull String name) throws CouchbaseLiteException {
-        // ??? Use error kC4ErrorMissingIndex instead?
-        if (!getIndexes().contains(name)) { return null; }
-        final C4QueryIndex idx = c4Collection.getIndex(getDbLock(), name);
-        return new QueryIndex(this, name, idx);
+        final C4Index idx;
+        try {
+            synchronized (getDbLock()) {
+                db.assertOpenChecked();
+                idx = c4Collection.getIndex(name);
+            }
+        }
+        catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        return (idx == null) ? null : new QueryIndex(this, name, idx);
     }
 
     /**

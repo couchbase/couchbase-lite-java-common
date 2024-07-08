@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -131,7 +130,7 @@ public abstract class BaseTest extends PlatformBaseTest {
         Throwable err = null;
         try { test.run(); }
         catch (Throwable e) {
-            if (ex.equals(e.getClass())) { return; }
+            if (ex.isAssignableFrom(e.getClass())) { return; }
             err = e;
         }
 

@@ -159,9 +159,9 @@ public abstract class C4Replicator extends C4NativePeer {
     // Session cookie or auth token (string)
     public static final String REPLICATOR_AUTH_TOKEN = "token";
     // Proxy authentications: user
-    public static final String REPLICATOR_OPTION_PROXY_USER = "user";
+    public static final String REPLICATOR_OPTION_PROXY_USER = "proxyUser";
     // Proxy authentications: password
-    public static final String REPLICATOR_OPTION_PROXY_PASS = "pass";
+    public static final String REPLICATOR_OPTION_PROXY_PASS = "proxyPassword";
 
     ////// auth.type values:
     // HTTP Basic (the default)

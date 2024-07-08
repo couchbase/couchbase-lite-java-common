@@ -403,7 +403,7 @@ public class Array implements ArrayInterface, FLEncodable, Iterable<Object> {
     private MValue getMValue(@NonNull MArray array, int index) {
         final MValue value = array.get(index);
         if (value.isEmpty()) {
-            throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
+            throw new ArrayIndexOutOfBoundsException("index " + index + " is not 0 <= index < " + count());
         }
         return value;
     }

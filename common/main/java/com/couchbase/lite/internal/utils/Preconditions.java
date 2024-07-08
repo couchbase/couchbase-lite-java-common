@@ -75,7 +75,15 @@ public final class Preconditions {
         return n;
     }
 
-    public static long assertUnsigned(long n, @NonNull String name) {
+    public static int assertInt(long n, @NonNull String name) {
+        if ((n < Integer.MIN_VALUE) || (n > Integer.MAX_VALUE)) {
+            throw new IllegalArgumentException(
+                name + " must be " + Integer.MIN_VALUE + " <= " + n + " <= " + Integer.MAX_VALUE);
+        }
+        return (int) n;
+    }
+
+    public static long assertUInt32(long n, @NonNull String name) {
         if ((n < 0) || (n >= (1L << 32))) {
             throw new IllegalArgumentException(name + " must be 0 <= " + n + " < 2^32");
         }
