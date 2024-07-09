@@ -30,14 +30,14 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Index
  * Method:    beginUpdate
- * Signature: (JJ)J
+ * Signature: (JI)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Index_beginUpdate(
         JNIEnv *env,
         jclass ignore,
         jlong handle,
-        jlong limit) {
+        jint limit) {
 #ifndef COUCHBASE_ENTERPRISE
     return 0;
 #else

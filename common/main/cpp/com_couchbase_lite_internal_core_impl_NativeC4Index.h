@@ -11,14 +11,14 @@ extern "C" {
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Index
  * Method:    beginUpdate
- * Signature: (JJ)J
+ * Signature: (JI)J
  */
 JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Index_beginUpdate(
         JNIEnv *,
         jclass,
         jlong,
-        jlong);
+        jint);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Index

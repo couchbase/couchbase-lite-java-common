@@ -142,7 +142,9 @@ public abstract class BaseTest extends PlatformBaseTest {
     public static <T extends Exception> void assertThrows(Class<T> ex, @NonNull Fn.TaskThrows<Exception> test) {
         try { test.run(); }
         catch (Throwable e) {
-            if (!ex.equals(e.getClass())) { throw new AssertionError("Expecting exception: " + ex + ") but got:", e); }
+            if (!ex.isAssignableFrom(e.getClass())) {
+                throw new AssertionError("Expecting exception: " + ex + ") but got:", e);
+            }
             return;
         }
         fail("Expecting exception: " + ex);

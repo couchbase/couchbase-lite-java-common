@@ -1286,7 +1286,7 @@ public class ArrayTest extends BaseDbTest {
         assertNull(array.getDictionary(2));
         assertNotNull(array.getDictionary(3));
 
-        assertThrows(IndexOutOfBoundsException.class, () -> assertNull(array.getDictionary(4)));
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> assertNull(array.getDictionary(4)));
 
         Dictionary nestedDict = array.getDictionary(3);
         assertEquals(nestedDict, mNestedDict);
@@ -1318,7 +1318,7 @@ public class ArrayTest extends BaseDbTest {
         assertNull(array.getArray(2));
         assertNotNull(array.getArray(3));
 
-        assertThrows(IndexOutOfBoundsException.class, () -> assertNull(array.getArray(4)));
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> assertNull(array.getArray(4)));
 
         Array nestedArray = array.getArray(3);
         assertEquals(nestedArray, mNestedArray);
