@@ -248,7 +248,7 @@ public final class C4Document extends C4NativePeer {
 
     @NonNull
     @Override
-    public String toString() { return "C4Document@" + super.toString(); }
+    public String toString() { return "C4Document" + super.toString(); }
 
     //-------------------------------------------------------------------------
     // protected methods
