@@ -109,9 +109,10 @@ public final class C4CollectionObserver
     @Override
     @Nullable
     public List<C4DocumentChange> getChanges(int maxChanges) {
-        final C4DocumentChange[] changes = this.<C4DocumentChange[], RuntimeException>withPeerOrThrow(peer ->
-            impl.nGetChanges(peer, maxChanges));
-        return (changes.length <= 0) ? null : Arrays.asList(changes);
+        return nullableWithPeerOrThrow(peer -> {
+            final C4DocumentChange[] changes = impl.nGetChanges(peer, maxChanges);
+            return (changes.length <= 0) ? null : Arrays.asList(changes);
+        });
     }
 
     @Override

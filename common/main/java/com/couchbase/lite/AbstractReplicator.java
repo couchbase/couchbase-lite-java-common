@@ -691,7 +691,6 @@ public abstract class AbstractReplicator extends BaseReplicator
             C4Replicator c4Repl = getC4Replicator();
 
             final Map<String, Object> options = config.getConnectionOptions();
-            Log.d(LOG_DOMAIN, "%s: options: %s", getId(), StringUtils.toString(options));
 
             if (c4Repl != null) {
                 c4Repl.setOptions(FLEncoder.encodeMap(options));
