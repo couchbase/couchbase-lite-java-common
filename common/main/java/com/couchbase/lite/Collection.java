@@ -898,6 +898,8 @@ public final class Collection extends BaseCollection
             else if (!document.isEmpty()) {
                 // Encode properties to Fleece data:
                 body = document.encode();
+                // !!! Remove before release!
+                Log.d(LogDomain.DATABASE, "Encoded doc for save (%s): %s", body, document);
                 if (C4Document.dictContainsBlobs(body, db.getSharedKeys())) {
                     revFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
                 }
@@ -906,7 +908,11 @@ public final class Collection extends BaseCollection
             // Save to database:
             C4Document c4Doc = (base != null) ? base : document.getC4doc();
 
-            if (c4Doc != null) { c4Doc = c4Doc.update(body, revFlags); }
+            if (c4Doc != null) {
+                // !!! Remove before release!
+                Log.d(LogDomain.DATABASE, "Update doc (%s): %s", c4Doc, body);
+                c4Doc = c4Doc.update(body, revFlags);
+            }
             else {
                 final Collection collection = document.getCollection();
                 if (collection == null) {
@@ -919,6 +925,9 @@ public final class Collection extends BaseCollection
         }
         catch (LiteCoreException e) {
             throw CouchbaseLiteException.convertException(e);
+        }
+        finally {
+            if (body != null) { body.close(); }
         }
     }
 
