@@ -150,27 +150,6 @@ static void logCallback(C4LogDomain domain, C4LogLevel level, const char *fmt, v
     }
 }
 
-/*
- * We let our code create new domains ("true" as 2nd arg to c4log_getDomain) if it wants.
- * The advantage is that if, esp for debugging, we want to log to a dynamically created domain,
- * we can do so at any time, including before Core creates it.  The problem with that is that
- * LiteCore doesn't keep the names, itself.  Unless the domain already exists, it will use
- * the string that we pass to it.  That means that string has to be stored somewhere permanent.
- * It is possible that this can go away when CBL-5726 is resolved
- */
-namespace litecore {
-    namespace jni {
-        static std::unordered_set<std::string> gDomainNames;
-
-        // Assert: jdomain is not null
-        static const C4LogDomain getDomain(JNIEnv *env, jstring jdomain) {
-            std::string domain = JstringToUTF8(env, jdomain);
-            const char *safeDomain = gDomainNames.insert(std::move(domain)).first->c_str();
-            return c4log_getDomain(safeDomain, true);
-        }
-    }
-}
-
 extern "C" {
 // ----------------------------------------------------------------------------
 // com_couchbase_lite_internal_core_impl_NativeC4
@@ -273,7 +252,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_setTempDir(JNIEnv *env, jcla
  * Method:    enableExtension
  * Signature: (Ljava/lang/String;Ljava/lang/String;)V
  */
-/// !!! Needs LiteCore Support
 JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4_enableExtension(
         JNIEnv *env,
@@ -283,9 +261,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_enableExtension(
     jstringSlice name(env, jname);
     jstringSlice path(env, jpath);
     C4Error error{LiteCoreDomain, kC4ErrorUnsupported};
+/// !!! Needs LiteCore Support
+//    C4Error error{};
 //    bool ok = c4_enableExtension(name, path, &error);
 //    if (!ok && error.code != 0)
-        throwError(env, error);
+    throwError(env, error);
 }
 
 
@@ -304,8 +284,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setLevel(
         jclass ignore,
         jstring jdomain,
         jint jlevel) {
-    C4LogDomain logDomain = getDomain(env, jdomain);
-    c4log_setLevel(logDomain, (C4LogLevel) jlevel);
+    jstringSlice domain(env, jdomain);
+    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), true);
+    if (logDomain != nullptr)
+        c4log_setLevel(logDomain, (C4LogLevel) jlevel);
 }
 
 /*
@@ -320,9 +302,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_log(
         jstring jdomain,
         jint jlevel,
         jstring jmessage) {
+    jstringSlice domain(env, jdomain);
     jstringSlice message(env, jmessage);
-    C4LogDomain logDomain = getDomain(env, jdomain);
-    c4slog(logDomain, (C4LogLevel) jlevel, message);
+    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), true);
+    if (logDomain != nullptr)
+        c4slog(logDomain, (C4LogLevel) jlevel, message);
 }
 
 /*
