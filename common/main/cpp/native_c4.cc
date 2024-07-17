@@ -287,7 +287,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_setLevel(
         jint jlevel) {
     jstringSlice domain(env, jdomain);
     C4LogDomain logDomain = c4log_getDomain(domain.c_str(), true);
-    c4log_setLevel(logDomain, (C4LogLevel) jlevel);
+    if (logDomain != nullptr)
+        c4log_setLevel(logDomain, (C4LogLevel) jlevel);
 }
 
 /*
@@ -302,11 +303,11 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Log_log(
         jstring jdomain,
         jint jlevel,
         jstring jmessage) {
+    jstringSlice domain(env, jdomain);
     jstringSlice message(env, jmessage);
-    const char *domain = env->GetStringUTFChars(jdomain, nullptr);
-    C4LogDomain logDomain = c4log_getDomain(domain, true);
-    c4slog(logDomain, (C4LogLevel) jlevel, message);
-    env->ReleaseStringUTFChars(jdomain, domain);
+    C4LogDomain logDomain = c4log_getDomain(domain.c_str(), true);
+    if (logDomain != nullptr)
+        c4slog(logDomain, (C4LogLevel) jlevel, message);
 }
 
 /*
