@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite
 
+import com.couchbase.lite.internal.CouchbaseLiteInternal
 import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.core.C4Log
 import com.couchbase.lite.internal.core.C4TestUtils
@@ -404,6 +405,35 @@ class LogTest : BaseDbTest() {
         assertTrue(
             msg!!.startsWith(Log.LOG_HEADER + "$$\$TEST DEBUG arg 1 3.00" + nl + "java.lang.Exception: whoops" + nl)
         )
+    }
+
+    @Test
+    fun testDebugFlag() {
+        val message = "test message"
+        val uuid = UUID.randomUUID().toString()
+        val error = CouchbaseLiteException(uuid)
+
+        CouchbaseLiteInternal.setDebugging(false)
+        var logDir = getScratchDirectoryPath(getUniqueName("log-dir"))
+        testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(logDir).setUsePlaintext(true)) {
+            Log.d(LogDomain.DATABASE, message, error)
+            Log.e(LogDomain.DATABASE, message, error)
+
+            val logs = File(logDir).listFiles()
+            assertTrue(getLogContents(assertNonNull(logs.firstOrNull { it.name.contains("error") })).contains(uuid))
+            assertFalse(getLogContents(assertNonNull(logs.firstOrNull { it.name.contains("debug") })).contains(uuid))
+        }
+
+        CouchbaseLiteInternal.setDebugging(true)
+        logDir = getScratchDirectoryPath(getUniqueName("log-dir"))
+        testWithConfiguration(LogLevel.DEBUG, LogFileConfiguration(logDir).setUsePlaintext(true)) {
+            Log.d(LogDomain.DATABASE, message, error)
+            Log.e(LogDomain.DATABASE, message, error)
+
+            val logs = File(logDir).listFiles()
+            assertTrue(getLogContents(assertNonNull(logs.firstOrNull { it.name.contains("error") })).contains(uuid))
+            assertTrue(getLogContents(assertNonNull(logs.firstOrNull { it.name.contains("debug") })).contains(uuid))
+        }
     }
 
     @Test
