@@ -114,6 +114,9 @@ public final class CouchbaseLiteInternal {
 
     public static boolean debugging() { return debugging; }
 
+    @VisibleForTesting
+    public static void setDebugging(boolean debug) { debugging = debug; }
+
     @NonNull
     public static NetworkConnectivityManager getNetworkConnectivityManager() {
         final NetworkConnectivityManager connectivityMgr = CONNECTIVITY_MANAGER.get();

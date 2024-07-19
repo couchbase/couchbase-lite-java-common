@@ -84,6 +84,9 @@ public final class CouchbaseLiteInternal {
 
     public static boolean debugging() { return debugging; }
 
+    @VisibleForTesting
+    public static void setDebugging(boolean debug) { debugging = debug; }
+
     /**
      * This method is for internal used only and will be removed in the future release.
      */
