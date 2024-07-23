@@ -52,7 +52,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      *
      * @param data the array content list
      */
-    public MutableArray(@NonNull List<Object> data) { setData(data); }
+    public MutableArray(@NonNull List<?> data) { setData(data); }
 
     /**
      * Creates a new MutableArray with content from the passed JSON string.
@@ -83,7 +83,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      */
     @NonNull
     @Override
-    public MutableArray setData(@NonNull List<Object> data) {
+    public MutableArray setData(@NonNull List<?> data) {
         synchronized (lock) {
             internalArray.clear();
             for (Object obj: data) { internalArray.append(toFleece(obj)); }

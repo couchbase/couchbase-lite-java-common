@@ -64,7 +64,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      *
      * @param data the Map object
      */
-    public MutableDocument(@NonNull Map<String, Object> data) { this(null, data); }
+    public MutableDocument(@NonNull Map<String, ?> data) { this(null, data); }
 
     /**
      * Creates a new Document with a given ID and content from the passed Map.
@@ -77,7 +77,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      * @param id   the document ID.
      * @param data the Map object
      */
-    public MutableDocument(@Nullable String id, @NonNull Map<String, Object> data) {
+    public MutableDocument(@Nullable String id, @NonNull Map<String, ?> data) {
         this(null, id, null);
         if (data != null) { setData(data); }
     }
@@ -144,7 +144,7 @@ public final class MutableDocument extends Document implements MutableDictionary
      */
     @NonNull
     @Override
-    public MutableDocument setData(@NonNull Map<String, Object> data) {
+    public MutableDocument setData(@NonNull Map<String, ?> data) {
         getMutableContent().setData(data);
         return this;
     }

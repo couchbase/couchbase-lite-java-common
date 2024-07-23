@@ -419,7 +419,7 @@ class LogTest : BaseDbTest() {
             Log.d(LogDomain.DATABASE, message, error)
             Log.e(LogDomain.DATABASE, message, error)
 
-            val logs = File(logDir).listFiles()
+            val logs = assertNonNull(File(logDir).listFiles())
             assertTrue(getLogContents(assertNonNull(logs.firstOrNull { it.name.contains("error") })).contains(uuid))
             assertFalse(getLogContents(assertNonNull(logs.firstOrNull { it.name.contains("debug") })).contains(uuid))
         }
@@ -430,7 +430,7 @@ class LogTest : BaseDbTest() {
             Log.d(LogDomain.DATABASE, message, error)
             Log.e(LogDomain.DATABASE, message, error)
 
-            val logs = File(logDir).listFiles()
+            val logs = assertNonNull(File(logDir).listFiles())
             assertTrue(getLogContents(assertNonNull(logs.firstOrNull { it.name.contains("error") })).contains(uuid))
             assertTrue(getLogContents(assertNonNull(logs.firstOrNull { it.name.contains("debug") })).contains(uuid))
         }
