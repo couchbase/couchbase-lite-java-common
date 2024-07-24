@@ -81,7 +81,7 @@ public interface MutableDictionaryInterface extends DictionaryInterface {
     MutableDictionaryInterface setDictionary(@NonNull String key, @NonNull Dictionary value);
 
     @NonNull
-    MutableDictionaryInterface setData(@NonNull Map<String, Object> data);
+    MutableDictionaryInterface setData(@NonNull Map<String, ?> data);
 
     @NonNull
     MutableDictionaryInterface setJSON(@NonNull String json);

@@ -52,7 +52,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      *
      * @param data the dictionary content map.
      */
-    public MutableDictionary(@NonNull Map<String, Object> data) { setData(data); }
+    public MutableDictionary(@NonNull Map<String, ?> data) { setData(data); }
 
     /**
      * Creates a new MutableDictionary with content from the passed JSON string.
@@ -83,10 +83,10 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      */
     @NonNull
     @Override
-    public MutableDictionary setData(@NonNull Map<String, Object> data) {
+    public MutableDictionary setData(@NonNull Map<String, ?> data) {
         synchronized (lock) {
             internalDict.clear();
-            for (Map.Entry<String, Object> entry: data.entrySet()) {
+            for (Map.Entry<String, ?> entry: data.entrySet()) {
                 internalDict.set(
                     Preconditions.assertNotNull(entry.getKey(), "data key"),
                     new MValue(toFleece(entry.getValue())));

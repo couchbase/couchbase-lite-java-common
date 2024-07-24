@@ -81,7 +81,7 @@ interface MutableArrayInterface extends ArrayInterface {
     MutableArrayInterface setValue(int index, @Nullable Object value);
 
     @NonNull
-    MutableArrayInterface setData(@NonNull List<Object> data);
+    MutableArrayInterface setData(@NonNull List<?> data);
 
     @NonNull
     MutableArrayInterface setJSON(@NonNull String json);
