@@ -31,9 +31,9 @@ import com.couchbase.lite.CouchbaseLiteError;
  */
 public final class MDict extends MCollection {
     @NonNull
-    private final Map<String, MValue> values = new HashMap<>();
+    private final Map<String, MValue> cache = new HashMap<>();
     @Nullable
-    private final FLDict baseDict;
+    private final FLDict flDict;
 
     private long valCount;
 
@@ -44,29 +44,34 @@ public final class MDict extends MCollection {
     // Construct a new empty MDict
     public MDict() {
         super(MContext.NULL, true);
-        baseDict = null;
+        flDict = null;
     }
 
     // Copy constructor
-    public MDict(@NonNull MDict dict, boolean isMutable) {
-        super(dict, isMutable);
-        values.putAll(dict.values);
-        baseDict = dict.baseDict;
+    public MDict(@NonNull MDict dict) {
+        super(dict.getContext(), true);
+
+        assertOpen();
+
+        cache.putAll(dict.cache);
+        flDict = dict.flDict;
         valCount = dict.valCount;
     }
 
     // Slot(??) constructor
-    public MDict(@NonNull MValue val, @Nullable MCollection parent) {
-        super(val, parent, parent != null && parent.hasMutableChildren());
+    public MDict(@NonNull MValue val, @Nullable MCollection parent, boolean isMutable) {
+        super(val, parent, isMutable);
 
-        final FLValue value = val.getValue();
+        assertOpen();
+
+        final FLValue value = val.getFLValue();
         if (value == null) {
-            baseDict = null;
+            flDict = null;
             return;
         }
 
-        baseDict = value.asFLDict();
-        valCount = baseDict.count();
+        flDict = value.asFLDict();
+        valCount = flDict.count();
     }
 
     //---------------------------------------------
@@ -87,8 +92,8 @@ public final class MDict extends MCollection {
      */
     public boolean contains(String key) {
         assertOpen();
-        final MValue val = values.get(key);
-        return (val != null) ? !val.isEmpty() : ((baseDict != null) && (baseDict.get(key) != null));
+        final MValue val = cache.get(key);
+        return (val != null) ? !val.isEmpty() : ((flDict != null) && (flDict.get(key) != null));
     }
 
     /**
@@ -101,15 +106,15 @@ public final class MDict extends MCollection {
         assertOpen();
 
         final List<String> keys = new ArrayList<>();
-        for (Map.Entry<String, MValue> entry: values.entrySet()) {
+        for (Map.Entry<String, MValue> entry: cache.entrySet()) {
             if (!entry.getValue().isEmpty()) { keys.add(entry.getKey()); }
         }
 
-        if ((baseDict != null) && (baseDict.count() > 0)) {
-            try (FLDictIterator itr = baseDict.iterator()) {
+        if ((flDict != null) && (flDict.count() > 0)) {
+            try (FLDictIterator itr = flDict.iterator()) {
                 String key;
                 while ((key = itr.getKey()) != null) {
-                    if (!values.containsKey(key)) { keys.add(key); }
+                    if (!cache.containsKey(key)) { keys.add(key); }
                     itr.next();
                 }
             }
@@ -122,14 +127,14 @@ public final class MDict extends MCollection {
     public MValue get(@NonNull String key) {
         assertOpen();
 
-        MValue mValue = values.get(key);
+        MValue mValue = cache.get(key);
         if (mValue != null) { return mValue; }
 
-        final FLValue flValue = (baseDict == null) ? null : baseDict.get(key);
+        final FLValue flValue = (flDict == null) ? null : flDict.get(key);
         if (flValue == null) { return MValue.EMPTY; }
 
         mValue = new MValue(flValue);
-        values.put(key, mValue);
+        cache.put(key, mValue);
 
         return mValue;
     }
@@ -141,7 +146,7 @@ public final class MDict extends MCollection {
 
         final boolean hasVal = !value.isEmpty();
 
-        final MValue oValue = values.get(key);
+        final MValue oValue = cache.get(key);
         if (oValue != null) {
             // Found in valueMap: update value
 
@@ -156,7 +161,7 @@ public final class MDict extends MCollection {
         else {
             // Not found in valueMap: check the baseDict:
 
-            if ((baseDict != null) && (baseDict.get(key) != null)) {
+            if ((flDict != null) && (flDict.get(key) != null)) {
                 if (!hasVal) { valCount--; }
             }
             else {
@@ -166,7 +171,7 @@ public final class MDict extends MCollection {
         }
 
         mutate();
-        values.put(key, value);
+        cache.put(key, value);
     }
 
     public void remove(String key) {
@@ -181,13 +186,13 @@ public final class MDict extends MCollection {
         if (valCount == 0) { return; }
 
         mutate();
-        values.clear();
+        cache.clear();
 
-        if ((baseDict != null) && (baseDict.count() > 0)) {
-            try (FLDictIterator itr = baseDict.iterator()) {
+        if ((flDict != null) && (flDict.count() > 0)) {
+            try (FLDictIterator itr = flDict.iterator()) {
                 String key;
                 while ((key = itr.getKey()) != null) {
-                    values.put(key, MValue.EMPTY);
+                    cache.put(key, MValue.EMPTY);
                     itr.next();
                 }
             }
@@ -203,8 +208,8 @@ public final class MDict extends MCollection {
         assertOpen();
 
         if (!isMutated()) {
-            if (baseDict != null) {
-                enc.writeValue(baseDict);
+            if (flDict != null) {
+                enc.writeValue(flDict);
                 return;
             }
 
@@ -214,7 +219,7 @@ public final class MDict extends MCollection {
         }
 
         enc.beginDict(valCount);
-        for (Map.Entry<String, MValue> entry: values.entrySet()) {
+        for (Map.Entry<String, MValue> entry: cache.entrySet()) {
             final MValue value = entry.getValue();
             if (!value.isEmpty()) {
                 enc.writeKey(entry.getKey());
@@ -222,11 +227,11 @@ public final class MDict extends MCollection {
             }
         }
 
-        if ((baseDict != null) && (baseDict.count() > 0)) {
-            try (FLDictIterator itr = baseDict.iterator()) {
+        if ((flDict != null) && (flDict.count() > 0)) {
+            try (FLDictIterator itr = flDict.iterator()) {
                 String key;
                 while ((key = itr.getKey()) != null) {
-                    if (!values.containsKey(key)) {
+                    if (!cache.containsKey(key)) {
                         enc.writeKey(key);
                         enc.writeValue(itr.getValue());
                     }

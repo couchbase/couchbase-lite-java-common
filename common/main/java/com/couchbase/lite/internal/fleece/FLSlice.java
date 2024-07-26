@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2024 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,13 +15,17 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-@SuppressWarnings("ConstantName")
-public final class FLConstants {
-    private FLConstants() {}
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
+import com.couchbase.lite.internal.utils.Fn;
+import com.couchbase.lite.internal.utils.Preconditions;
+
+
+public abstract class FLSlice<T> {
     // Types of Fleece values. Basically JSON, with the addition of Data (raw blob).
     public static final class ValueType {
-        private ValueType() {}
+        private ValueType() { }
 
         public static final int UNDEFINED = -1; // Type of a nullptr FLValue (i.e. no such value)
         public static final int NULL = 0;
@@ -34,7 +38,7 @@ public final class FLConstants {
     }
 
     public static final class Error {
-        private Error() {}
+        private Error() { }
 
         public static final int NO_ERROR = 0;
         public static final int MEMORY_ERROR = 1;   // Out of memory, or allocation failed
@@ -46,4 +50,43 @@ public final class FLConstants {
         public static final int INTERNAL_ERROR = 7; // Something that shouldn't happen
         public static final int NOT_FOUND = 8;
     }
+
+    @FunctionalInterface
+    interface Getter<E extends Exception> {
+        long apply(long x) throws E;
+    }
+
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
+
+    protected final T impl;
+    protected final long peer;
+
+    //-------------------------------------------------------------------------
+    // Constructor
+    //-------------------------------------------------------------------------
+
+    public FLSlice(@NonNull T impl, long peer) {
+        this.peer = Preconditions.assertNotZero(peer, "peer");
+        this.impl = Preconditions.assertNotNull(impl, "impl");
+    }
+
+    abstract int getType();
+
+    abstract long count();
+
+    @NonNull
+    public FLValue asFLValue() { return FLValue.create(peer); }
+
+    @Nullable
+    public <E extends Exception> FLValue getFLValue(@NonNull Getter<E> fn) throws E {
+        final long val = fn.apply(peer);
+        return (val == 0) ? null : FLValue.create(peer);
+    }
+
+    @Nullable
+    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
 }
+

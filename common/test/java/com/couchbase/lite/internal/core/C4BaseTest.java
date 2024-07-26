@@ -202,12 +202,8 @@ public class C4BaseTest extends BaseTest {
 
     protected String json5(String input) {
         String json = null;
-        try {
-            json = FLValue.getJSONForJSON5(input);
-        }
-        catch (LiteCoreException e) {
-            fail(e.getMessage());
-        }
+        try { json = FLValue.getJSONForJSON5(input); }
+        catch (LiteCoreException e) { throw new AssertionError("Failed encoding as JSON5: '" + input +"'", e); }
         assertNotNull(json);
         return json;
     }

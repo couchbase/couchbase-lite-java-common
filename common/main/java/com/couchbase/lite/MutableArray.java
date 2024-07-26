@@ -62,10 +62,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray(@NonNull String json) { setJSON(json); }
 
     // Create a MutableArray that is a copy of the passed Array
-    MutableArray(@NonNull Array array) { super(new MArray(array.internalArray, true)); }
+    MutableArray(@NonNull Array array) { super(new MArray(array.internalArray)); }
 
     // Called from the MValueConverter.
-    MutableArray(@NonNull MValue val, @Nullable MCollection parent) { super(val, parent); }
+    MutableArray(@NonNull MValue val, @Nullable MCollection parent) { super(new MArray(val, parent, true)); }
 
     //---------------------------------------------
     // API - public methods
@@ -101,7 +101,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
      * @param json the dictionary object.
      * @return this Document instance
      */
-    // ??? This is a ridiculously expensive way to do this...
+    // ??? This is a moderately expensive way to do this
+    // It would be better to parse the JSON directly into the Fleece data
     @NonNull
     @Override
     public MutableArray setJSON(@NonNull String json) {
@@ -124,10 +125,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray setValue(int index, @Nullable Object value) {
         final Object val = toFleece(value);
         synchronized (lock) {
-            if (Fleece.willMutate(val, internalArray.get(index), internalArray)
-                && (!internalArray.set(index, val))) {
-                throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
-            }
+            if (willMutate(val, internalArray.get(index), internalArray)) { internalArray.set(index, val); }
         }
         return this;
     }
@@ -388,11 +386,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @Override
     public MutableArray insertValue(int index, @Nullable Object value) {
         final Object val = toFleece(value);
-        synchronized (lock) {
-            if (!internalArray.insert(index, val)) {
-                throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
-            }
-        }
+        synchronized (lock) { internalArray.insert(index, val); }
         return this;
     }
 
@@ -526,12 +520,8 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray remove(int index) {
-        synchronized (lock) {
-            if (!internalArray.remove(index, 1)) {
-                throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
-            }
-            return this;
-        }
+        synchronized (lock) { internalArray.remove(index); }
+        return this;
     }
 
     /**
@@ -562,7 +552,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     private Object toFleece(@Nullable Object value) {
         return (value == this)
             ? ((Array) value).toMutable()
-            : Fleece.toCBLObject(value);
+            : toCBLObject(value);
     }
 }
 

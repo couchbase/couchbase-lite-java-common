@@ -24,14 +24,80 @@ import java.util.List;
 import com.couchbase.lite.CouchbaseLiteError;
 
 
+// Honestly, sometime PMD is just dumb as a post.
+@SuppressWarnings("PMD.MissingStaticMethodInNonInstantiatableClass")
+abstract class CacheEntry {
+    static class Cached extends CacheEntry {
+        @NonNull
+        private final MValue mValue;
+
+        Cached(@NonNull MValue mValue) {
+            super(true);
+            this.mValue = mValue;
+        }
+
+        @Override
+        @NonNull
+        CacheEntry copy() { return new Cached(mValue); }
+
+        @Override
+        @NonNull
+        MValue getMVal() { return mValue; }
+
+        @Override
+        @NonNull
+        public String toString() { return "Cached{ " + mValue + "}"; }
+    }
+
+    static class Fleece extends CacheEntry {
+        @NonNull
+        private final FLArray flArray;
+        private final long index;
+
+        Fleece(@NonNull FLArray flArray, long index) {
+            super(false);
+            this.flArray = flArray;
+            this.index = index;
+        }
+
+        // This is safe because the flArray is immutable.
+        @Override
+        @NonNull
+        CacheEntry copy() { return new Fleece(flArray, index); }
+
+        @Override
+        @NonNull
+        MValue getMVal() {
+            final FLValue val = flArray.get(index);
+            if (val == null) { throw new CouchbaseLiteError("fleece val is null (index out of bounds?)"); }
+            return new MValue(val);
+        }
+
+        @Override
+        @NonNull
+        public String toString() { return "Fleece{ " + index + "}"; }
+    }
+
+    public final boolean isCached;
+
+    private CacheEntry(boolean isCached) { this.isCached = isCached; }
+
+    @NonNull
+    abstract CacheEntry copy();
+    @NonNull
+    abstract MValue getMVal();
+}
+
+
 /**
  * Please see the comments in MValue
  */
 public final class MArray extends MCollection {
-    @NonNull
-    private final List<MValue> values = new ArrayList<>();
+
     @Nullable
-    private final FLArray baseArray;
+    private final FLArray flArray;
+    @NonNull
+    private final List<CacheEntry> cache = new ArrayList<>();
 
     //---------------------------------------------
     // Constructors
@@ -40,32 +106,35 @@ public final class MArray extends MCollection {
     // Construct a new empty MArray
     public MArray() {
         super(MContext.NULL, true);
-        baseArray = null;
+        flArray = null;
     }
 
     // Copy constructor
-    public MArray(@NonNull MArray array, boolean isMutable) {
-        super(array, isMutable);
+    public MArray(@NonNull MArray array) {
+        super(array.getContext(), true);
 
-        values.addAll(array.values);
-        baseArray = array.baseArray;
+        assertOpen();
 
-        resize();
+        // this is safe because the flArray is immutable
+        flArray = array.flArray;
+        if (flArray == null) { return; }
+
+        // Copy the other guys cache.
+        for (CacheEntry entry: array.cache) { cache.add(entry.copy()); }
     }
 
     // Slot(??) constructor
-    public MArray(@NonNull MValue val, @Nullable MCollection parent) {
-        super(val, parent, (parent != null) && parent.hasMutableChildren());
+    public MArray(@NonNull MValue mVal, @Nullable MCollection parent, boolean isMutable) {
+        super(mVal, parent, isMutable);
 
-        final FLValue value = val.getValue();
-        if (value == null) {
-            baseArray = null;
-            return;
-        }
+        assertOpen();
 
-        baseArray = value.asFLArray();
+        final FLValue flVal = mVal.getFLValue();
+        flArray = (flVal == null) ? null : flVal.asFLArray();
+        if (flArray == null) { return; }
 
-        resize();
+        // create a new, empty, cache of the right size
+        for (int i = 0; i < (int) flArray.count(); i++) { cache.add(new CacheEntry.Fleece(flArray, i)); }
     }
 
     //---------------------------------------------
@@ -77,84 +146,53 @@ public final class MArray extends MCollection {
      *
      * @return array size
      */
-    public long count() { return values.size(); }
+    public long count() { return cache.size(); }
 
-    /**
-     * Returns a reference to the MValue of the item at the given index.
-     * If the index is out of range, returns an empty MValue.
-     */
     @NonNull
     public MValue get(long index) {
-        assertOpen();
+        final int idx = validateAndGetIndex(index);
+        CacheEntry value = cache.get(idx);
 
-        if ((index < 0) || (index >= values.size())) { return MValue.EMPTY; }
-
-        MValue value = values.get((int) index);
-        if (value.isEmpty() && (baseArray != null)) {
-            value = new MValue(baseArray.get(index));
-            values.set((int) index, value);
+        // if the value is not yet cached, get it and cache it.
+        if (!value.isCached) {
+            value = new CacheEntry.Cached(value.getMVal());
+            cache.set(idx, value);
         }
 
-        return value;
+        return value.getMVal();
     }
 
-    public boolean append(Object value) {
-        if (!isMutable()) { throw new CouchbaseLiteError("Cannot append items to a non-mutable MArray"); }
-        return insert(count(), value);
-    }
-
-    public boolean set(long index, Object value) {
-        if (!isMutable()) { throw new CouchbaseLiteError("Cannot set items in a non-mutable MArray"); }
-        assertOpen();
-
-        if ((index < 0) || (index >= count())) { return false; }
-
+    public void set(long index, Object value) {
+        final int idx = validateAndGetIndex(index);
         mutate();
-        values.set((int) index, new MValue(value));
-
-        return true;
+        cache.set(idx, new CacheEntry.Cached(new MValue(value)));
     }
 
-    public boolean insert(long index, Object value) {
-        if (!isMutable()) { throw new CouchbaseLiteError("Cannot insert items in a non-mutable MArray"); }
-        assertOpen();
-
-        if ((index < 0) || (index > count())) { return false; }
-
-        if (index < count()) { populateValues(); }
-
+    public void append(Object value) {
+        validateAndGetIndex(0);
         mutate();
-        values.add((int) index, new MValue(value));
-
-        return true;
+        cache.add(new CacheEntry.Cached(new MValue(value)));
     }
 
-    public boolean remove(long start, long num) {
-        if (!isMutable()) { throw new CouchbaseLiteError("Cannot remove items in a non-mutable MArray"); }
-        assertOpen();
-
-        final long end = start + num;
-        if (end <= start) { return end == start; }
-
-        final long count = count();
-        if (end > count) { return false; }
-
-        if (end < count) { populateValues(); }
-
+    public void insert(long index, Object value) {
+        final int idx = validateAndGetIndex(index);
         mutate();
-        values.subList((int) start, (int) end).clear();
+        cache.add(idx, new CacheEntry.Cached(new MValue(value)));
+    }
 
-        return true;
+    public void remove(long index) {
+        final int idx = validateAndGetIndex(index);
+        mutate();
+        cache.remove(idx);
     }
 
     public void clear() {
-        if (!isMutable()) { throw new CouchbaseLiteError("Cannot clear items in a non-mutable MArray"); }
-        assertOpen();
+        validateAndGetIndex(0);
 
-        if (values.isEmpty()) { return; }
+        if (cache.isEmpty()) { return; }
 
         mutate();
-        values.clear();
+        cache.clear();
     }
 
     /* Encodable */
@@ -162,8 +200,8 @@ public final class MArray extends MCollection {
     public void encodeTo(@NonNull FLEncoder enc) {
         assertOpen();
         if (!isMutated()) {
-            if (baseArray != null) {
-                enc.writeValue(baseArray);
+            if (flArray != null) {
+                enc.writeValue(flArray);
                 return;
             }
 
@@ -172,37 +210,27 @@ public final class MArray extends MCollection {
             return;
         }
 
-        long i = 0;
-        enc.beginArray(values.size());
-        for (MValue value: values) {
-            if (!value.isEmpty()) { value.encodeTo(enc); }
-            else if (baseArray != null) { enc.writeValue(baseArray.get(i)); }
-            i++;
+        enc.beginArray(cache.size());
+        for (CacheEntry entry: cache) {
+            if (!entry.isCached) { enc.writeValue(entry.getMVal()); }
+            else { entry.getMVal().encodeTo(enc); }
         }
         enc.endArray();
-    }
-
-    private void resize() {
-        assertOpen();
-        if (baseArray == null) { return; }
-        final long newSize = baseArray.count();
-        final int count = values.size();
-        if (newSize < count) { values.subList((int) newSize, count).clear(); }
-        else if (newSize > count) {
-            for (int i = 0; i < newSize - count; i++) { values.add(MValue.EMPTY); }
-        }
     }
 
     //---------------------------------------------
     // Private
     //---------------------------------------------
 
-    private void populateValues() {
-        if (baseArray == null) { return; }
+    private int validateAndGetIndex(long index) {
+        assertOpen();
 
-        final int size = values.size();
-        for (int i = 0; i < size; i++) {
-            if (values.get(i).isEmpty()) { values.set(i, new MValue(baseArray.get(i))); }
+        if (!isMutable()) { throw new CouchbaseLiteError("Cannot set items in a non-mutable MArray"); }
+
+        if ((index < 0) && (index >= count())) {
+            throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
         }
+
+        return (int) index;
     }
 }

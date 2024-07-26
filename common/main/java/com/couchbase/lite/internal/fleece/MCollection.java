@@ -35,7 +35,6 @@ public abstract class MCollection implements Encodable {
     @Nullable
     private final MCollection parent;
     private final boolean mutable;
-    private final boolean mutableChildren;
 
     private final AtomicBoolean mutated = new AtomicBoolean();
     private final AtomicInteger localMutations = new AtomicInteger();
@@ -45,16 +44,12 @@ public abstract class MCollection implements Encodable {
     // Constructors
     //---------------------------------------------
 
-    protected MCollection(@Nullable MContext context, boolean isMutable) { this(null, null, context, isMutable); }
-
     // Copy constructor
-    protected MCollection(@NonNull MCollection original, boolean isMutable) {
-        this(null, null, original.getContext(), isMutable);
-    }
+    protected MCollection(@Nullable MContext context, boolean isMutable) { this(null, null, context, isMutable); }
 
     // Slot constructor
     protected MCollection(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
-        this(slot, parent, ((slot.getValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
+        this(slot, parent, ((slot.getFLValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
         if (slot.isMutated()) { mutated.set(true); }
     }
 
@@ -67,7 +62,6 @@ public abstract class MCollection implements Encodable {
         this.context = context;
         this.parent = parent;
         this.mutable = isMutable;
-        mutableChildren = isMutable;
     }
 
     //---------------------------------------------
@@ -75,8 +69,6 @@ public abstract class MCollection implements Encodable {
     //---------------------------------------------
 
     public final boolean isMutable() { return mutable; }
-
-    public final boolean hasMutableChildren() { return mutableChildren; }
 
     public boolean isMutated() { return mutated.get(); }
 

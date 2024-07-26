@@ -353,8 +353,15 @@ public final class C4Collection extends C4Peer {
 
     @NonNull
     public FLValue getIndexesInfo() throws LiteCoreException {
-        return withPeerOrThrow(peer -> {
-            synchronized (dbLock) { return FLValue.getFLValue(impl.nGetIndexesInfo(peer)); }
+        return withPeerOrThrow(peer -> FLValue.create(() -> impl.nGetIndexesInfo(peer)));
+    }
+
+    @GuardedBy("Database.getDbLock()")
+    @Nullable
+    public C4Index getIndex(@NonNull String name) throws LiteCoreException {
+        return nullableWithPeerOrThrow(peer -> {
+            final long idx = impl.nGetIndex(peer, name);
+            return (idx == 0L) ? null : C4Index.create(idx);
         });
     }
 

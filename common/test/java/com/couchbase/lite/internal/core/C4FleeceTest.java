@@ -28,10 +28,10 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLValue;
 
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.ARRAY;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DATA;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DICT;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.STRING;
+import static com.couchbase.lite.internal.fleece.FLSlice.ValueType.ARRAY;
+import static com.couchbase.lite.internal.fleece.FLSlice.ValueType.DATA;
+import static com.couchbase.lite.internal.fleece.FLSlice.ValueType.DICT;
+import static com.couchbase.lite.internal.fleece.FLSlice.ValueType.STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;

@@ -62,10 +62,10 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     public MutableDictionary(@NonNull String json) { setJSON(json); }
 
     // Create a MutableDictionary that is a copy of the passed Dictionary
-    MutableDictionary(@NonNull Dictionary dict) { super(new MDict(dict.internalDict, true)); }
+    MutableDictionary(@NonNull Dictionary dict) { super(new MDict(dict.internalDict)); }
 
     // Called from the MValueConverter.
-    MutableDictionary(@NonNull MValue val, @Nullable MCollection parent) { super(val, parent); }
+    MutableDictionary(@NonNull MValue val, @Nullable MCollection parent) { super(new MDict(val, parent, true)); }
 
     //---------------------------------------------
     // API - public methods
@@ -103,7 +103,6 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param json the dictionary object.
      * @return this Document instance
      */
-    // ??? This is a ridiculously expensive way to do this...
     @NonNull
     @Override
     public MutableDictionary setJSON(@NonNull String json) {
@@ -129,7 +128,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
         Preconditions.assertNotNull(key, "key");
         final Object val = toFleece(value);
         synchronized (lock) {
-            if (Fleece.willMutate(val, internalDict.get(key), internalDict)) { internalDict.set(key, new MValue(val)); }
+            if (willMutate(val, internalDict.get(key), internalDict)) { internalDict.set(key, new MValue(val)); }
         }
         return this;
     }
@@ -306,6 +305,6 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     private Object toFleece(@Nullable Object value) {
         return (value == this)
             ? ((Dictionary) value).toMutable()
-            : Fleece.toCBLObject(value);
+            : toCBLObject(value);
     }
 }

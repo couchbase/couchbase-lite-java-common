@@ -44,6 +44,7 @@ class LoadTest : BaseDbTest() {
             "cheetah" to 100,
 
             // android local
+            "shiba" to 70,
             "taimen" to 70,
             "sunfish" to 200,
             "shamu" to 200,

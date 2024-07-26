@@ -30,7 +30,7 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * A Parameters object used for setting values to the query parameters defined in the query.
  */
-public class Parameters {
+public class Parameters extends Fleece {
     private static final class ImmutableParameters extends Parameters {
         private ImmutableParameters(@Nullable Parameters parameters) { super(parameters); }
 
@@ -222,7 +222,7 @@ public class Parameters {
     @NonNull
     public Parameters setValue(@NonNull String name, @Nullable Object value) {
         Preconditions.assertNotNull(name, "name");
-        map.put(name, Fleece.toCBLObject(value));
+        map.put(name, toCBLObject(value));
         return this;
     }
 

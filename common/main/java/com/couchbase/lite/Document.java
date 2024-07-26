@@ -643,8 +643,8 @@ public class Document implements DictionaryInterface, Iterable<String> {
         final Database db = getDatabase();
         if (db == null) { throw new CouchbaseLiteError("document has not been saved to a database"); }
 
-        final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.toFLValue(), mutable);
-        internalDict = (Dictionary) Preconditions.assertNotNull(newRoot.asNative(), "root dictionary");
+        final MRoot newRoot = new MRoot(new DocContext(db, c4Document), data.asFLValue(), mutable);
+        internalDict = (Dictionary) Preconditions.assertNotNull(newRoot.toJava(), "root dictionary");
         root = newRoot;
     }
 }

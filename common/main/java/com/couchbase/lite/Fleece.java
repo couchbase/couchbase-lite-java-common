@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.couchbase.lite.internal.fleece.FLConstants;
+import com.couchbase.lite.internal.fleece.FLSlice;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MValue;
@@ -32,27 +32,25 @@ import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.JSONUtils;
 
 
-final class Fleece {
-    private Fleece() { }
-
+class Fleece {
     private static final String SUPPORTED_TYPES
         = "MutableDictionary, Dictionary, Map, MutableArray, Array, List, Blob, Date, String, Number, Boolean and null";
 
     // Assume that array and dict values are always different to avoid expensive comparisons.
-    static boolean willMutate(Object newValue, @NonNull MValue oldValue, MCollection container) {
-        final FLValue val = oldValue.getValue();
-        final int oldType = (val != null) ? val.getType() : FLConstants.ValueType.UNDEFINED;
-        return ((oldType == FLConstants.ValueType.UNDEFINED)
-            || (oldType == FLConstants.ValueType.DICT)
+    protected boolean willMutate(Object newValue, @NonNull MValue oldValue, MCollection container) {
+        final FLValue val = oldValue.getFLValue();
+        final int oldType = (val == null) ? FLSlice.ValueType.UNDEFINED : val.getType();
+        return (oldType == FLSlice.ValueType.UNDEFINED)
+            || (oldType == FLSlice.ValueType.DICT)
             || (newValue instanceof Dictionary)
-            || (oldType == FLConstants.ValueType.ARRAY)
+            || (oldType == FLSlice.ValueType.ARRAY)
             || (newValue instanceof Array)
-            || !Objects.equals(newValue, oldValue.asNative(container)));
+            || !Objects.equals(newValue, oldValue.toJava(container));
     }
 
     @Nullable
-    @SuppressWarnings("unchecked")
-    static Object toCBLObject(@Nullable Object value) {
+    @SuppressWarnings({"unchecked", "PMD.NPathComplexity"})
+    protected Object toCBLObject(@Nullable Object value) {
         if ((value == null)
             || (value instanceof Boolean)
             || (value instanceof Number)
@@ -62,24 +60,21 @@ final class Fleece {
             || (value instanceof MutableDictionary)) {
             return value;
         }
-        else if (value instanceof Map) { return new MutableDictionary((Map<String, Object>) value); }
-        else if (value instanceof Dictionary) { return ((Dictionary) value).toMutable(); }
-        else if (value instanceof List) { return new MutableArray((List<Object>) value); }
-        else if (value instanceof Array) { return ((Array) value).toMutable(); }
-        else if (value instanceof Date) { return JSONUtils.toJSONString((Date) value); }
+        if (value instanceof Map) { return new MutableDictionary((Map<String, Object>) value); }
+        if (value instanceof Dictionary) { return ((Dictionary) value).toMutable(); }
+        if (value instanceof List) { return new MutableArray((List<Object>) value); }
+        if (value instanceof Array) { return ((Array) value).toMutable(); }
+        if (value instanceof Date) { return JSONUtils.toJSONString((Date) value); }
 
         throw new IllegalArgumentException(
-            Log.formatStandardMessage(
-                "InvalidCouchbaseObjType",
-                value.getClass().getSimpleName(),
-                SUPPORTED_TYPES));
+            Log.formatStandardMessage("InvalidCouchbaseObjType", value.getClass().getSimpleName(), SUPPORTED_TYPES));
     }
 
     @Nullable
-    static Object toObject(@Nullable Object value) {
+    protected Object toObject(@Nullable Object value) {
         if (value == null) { return null; }
-        else if (value instanceof Dictionary) { return ((Dictionary) value).toMap(); }
-        else if (value instanceof Array) { return ((Array) value).toList(); }
-        else { return value; }
+        if (value instanceof Dictionary) { return ((Dictionary) value).toMap(); }
+        if (value instanceof Array) { return ((Array) value).toList(); }
+        return value;
     }
 }

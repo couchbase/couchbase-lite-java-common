@@ -29,8 +29,8 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.QueryLanguage;
 import com.couchbase.lite.internal.core.C4TestUtils.C4FullTextMatch;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
-import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLDict;
+import com.couchbase.lite.internal.fleece.FLSlice;
 import com.couchbase.lite.internal.fleece.FLValue;
 
 import static org.junit.Assert.assertEquals;
@@ -496,7 +496,7 @@ public class C4QueryTest extends C4QueryBaseTest {
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             FLValue col = itr.getValueAt(0);
-            assertEquals(col.getType(), FLConstants.ValueType.DICT);
+            assertEquals(col.getType(), FLSlice.ValueType.DICT);
             FLDict name = col.asFLDict();
             assertEquals(expectedFirst.get(i), name.get("first").asString());
             assertEquals(expectedLast.get(i), name.get("last").asString());

@@ -265,7 +265,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         assertOpen();
         final int nVals = count();
         final List<Object> array = new ArrayList<>(nVals);
-        for (int i = 0; i < nVals; i++) { array.add(values.get(i).asObject()); }
+        for (int i = 0; i < nVals; i++) { array.add(values.get(i).asJava()); }
         return array;
     }
 
@@ -473,7 +473,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         for (String name: getColumnNames()) {
             final int i = indexForColumnName(name);
             if ((i < 0) || (i >= nVals)) { continue; }
-            dict.put(name, values.get(i).asObject());
+            dict.put(name, values.get(i).asJava());
         }
         return dict;
     }
@@ -543,7 +543,7 @@ public final class Result implements ArrayInterface, DictionaryInterface, Iterab
         if (value == null) { return null; }
         final AbstractDatabase db = Preconditions.assertNotNull(context.getDatabase(), "db");
         final MRoot root = new MRoot(context, value, false);
-        synchronized (db.getDbLock()) { return root.asNative(); }
+        synchronized (db.getDbLock()) { return root.toJava(); }
     }
 
     @NonNull

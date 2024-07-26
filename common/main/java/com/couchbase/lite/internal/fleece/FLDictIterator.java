@@ -56,9 +56,7 @@ public final class FLDictIterator extends C4NativePeer {
     public String getKey() { return withPeerOrNull(impl::nGetKey); }
 
     @NonNull
-    public FLValue getValue() {
-        return withPeerOrThrow(p -> FLValue.getFLValue(impl.nGetValue(p)));
-    }
+    public FLValue getValue() { return withPeerOrThrow(p -> FLValue.create(() -> impl.nGetValue(p))); }
 
     @Override
     public void close() { closePeer(null); }
