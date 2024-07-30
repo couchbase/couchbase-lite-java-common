@@ -29,24 +29,28 @@ abstract class AbstractDatabaseConfiguration {
     // Data Members
     //---------------------------------------------
     private String dbDirectory;
+    private boolean fullSync;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    protected AbstractDatabaseConfiguration() { this((String) null); }
+    protected AbstractDatabaseConfiguration() { this(null, Defaults.Database.FULL_SYNC); }
 
-    @SuppressWarnings("CopyConstructorMissesField")
     protected AbstractDatabaseConfiguration(@Nullable AbstractDatabaseConfiguration config) {
-        this((config == null) ? null : config.getDirectory());
+        this(
+            (config == null) ? null : config.getDirectory(),
+            (config == null) ? Defaults.Database.FULL_SYNC : config.isFullSync()
+        );
     }
 
-    protected AbstractDatabaseConfiguration(@Nullable BaseImmutableDatabaseConfiguration config) {
-        this((config == null) ? null : config.getDirectory());
+    protected AbstractDatabaseConfiguration(@NonNull BaseImmutableDatabaseConfiguration config) {
+        this(config.getDirectory(), config.isFullSync());
     }
 
-    protected AbstractDatabaseConfiguration(@Nullable String dbDir) {
+    private AbstractDatabaseConfiguration(@Nullable String dbDir, boolean fullSync) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
         this.dbDirectory = (dbDir != null) ? dbDir : CouchbaseLiteInternal.getDefaultDbDirPath();
+        this.fullSync = fullSync;
     }
 
     //---------------------------------------------
@@ -81,6 +85,22 @@ abstract class AbstractDatabaseConfiguration {
      */
     @NonNull
     public String getDirectory() { return dbDirectory; }
+
+    /**
+     * As Couchbase Lite normally configures its databases, there is a very small (though non-zero) chance that a
+     * power failure at just the wrong time could cause the most recently committed transaction's changes to be lost.
+     * This would cause the database to appear as it did immediately before that transaction. Setting this mode true
+     * ensures that an operating system crash or power failure will not cause the loss of any data. Full sync mode is
+     * very safe but it is also <b>dramatically</b> slower.
+     */
+    @NonNull
+    public DatabaseConfiguration setFullSync(boolean isfullSync) {
+        this.fullSync = isfullSync;
+        return getDatabaseConfiguration();
+    }
+
+    public boolean isFullSync() { return fullSync; }
+
 
     //---------------------------------------------
     // Protected level access

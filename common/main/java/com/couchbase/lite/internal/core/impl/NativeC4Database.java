@@ -104,6 +104,10 @@ public class NativeC4Database implements C4Database.NativeImpl {
         deleteCollection(peer, scope, collection);
     }
 
+    @Override
+    public int nGetFlags(long peer) throws LiteCoreException { return getFlags(peer); }
+
+
     //-------------------------------------------------------------------------
     // Native methods
     //-------------------------------------------------------------------------
@@ -177,6 +181,8 @@ public class NativeC4Database implements C4Database.NativeImpl {
 
     @NonNull
     private static native FLSliceResult encodeJSON(long db, @NonNull byte[] jsonData) throws LiteCoreException;
+
+    private static native int getFlags(long db);
 
     // - Scopes and Collections
 

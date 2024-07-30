@@ -272,7 +272,6 @@ abstract class AbstractDatabase extends BaseDatabase
         // Name:
         this.name = name;
 
-        // Copy configuration
         this.config = config;
 
         this.postExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
@@ -1334,11 +1333,13 @@ abstract class AbstractDatabase extends BaseDatabase
     private C4Database openC4Db() throws CouchbaseLiteException {
         final String parentDirPath = config.getDirectory();
         Log.d(DOMAIN, "Opening db %s at path %s", this, parentDirPath);
+        int dbFlags = DEFAULT_DATABASE_FLAGS;
+        if (config.isFullSync()) { dbFlags |= C4Constants.DatabaseFlags.DISC_FULL_SYNC; }
         try {
             return C4Database.getDatabase(
                 parentDirPath,
                 name,
-                DEFAULT_DATABASE_FLAGS,
+                dbFlags,
                 getEncryptionAlgorithm(),
                 getEncryptionKey());
         }

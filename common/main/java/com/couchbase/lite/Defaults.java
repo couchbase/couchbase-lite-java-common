@@ -34,6 +34,13 @@ public final class Defaults {
         public static final int MAX_ROTATE_COUNT = 1;
     }
 
+    public static final class Database {
+        private Database() {}
+
+        /** Full sync is off by default */
+        public static final boolean FULL_SYNC = false;
+    }
+
     public static final class FullTextIndex {
         private FullTextIndex() {}
 
