@@ -106,7 +106,9 @@ public class C4TestUtils {
         return encodeJSON(db.getPeer(), data.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static String idForDoc(C4Document doc) { return getDocID(doc.getPeer()); }
+    public static String idForDoc(@NonNull C4Document doc) { return getDocID(doc.getPeer()); }
+
+    public static int getFlags(@NonNull C4Database db) throws LiteCoreException { return getFlags(db.getPeer()); }
 
     // C4Document
 
@@ -218,6 +220,8 @@ public class C4TestUtils {
 
     @Nullable
     private static native String getDocID(long doc);
+
+    private static native int getFlags(long db) throws LiteCoreException;
 
     // C4Document
 
