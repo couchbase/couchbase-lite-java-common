@@ -80,8 +80,9 @@ public final class C4Constants {
         static final int VERSION_VECTORS = 0x08;        // Upgrade DB to version vectors instead of rev trees [EXPERIMENTAL]
         private static final int NO_UPGRADE = 0x20;     // Disable upgrading an older-version database
         private static final int NON_OBSERVABLE = 0x40; // Disable database/collection observers, for slightly faster writes
+        public static final int DISC_FULL_SYNC = 0x80;  // Flush to disk after each transaction
         @VisibleForTesting
-        static final int FAKE_CLOCK = 0x80;             // Use counters instead of timestamps in version vectors (TESTS ONLY)
+        static final int FAKE_CLOCK = 0x100;            // Use counters instead of timestamps in version vectors (TESTS ONLY)
         // @formatter:on
     }
 

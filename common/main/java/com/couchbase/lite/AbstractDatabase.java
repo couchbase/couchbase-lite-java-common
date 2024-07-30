@@ -264,7 +264,6 @@ abstract class AbstractDatabase extends BaseDatabase
         // Name:
         this.name = name;
 
-        // Copy configuration
         this.config = config;
 
         this.postExecutor = CouchbaseLiteInternal.getExecutionService().getSerialExecutor();
@@ -607,7 +606,9 @@ abstract class AbstractDatabase extends BaseDatabase
 
     @NonNull
     @Override
-    public String toString() { return "Database{@" + ClassUtils.objId(this) + ": '" + name + "'}"; }
+    public String toString() {
+        return "Database{@" + ClassUtils.objId(this) + ": '" + name  + ((config.isFullSync() ? "!" : "") + "'}");
+    }
 
     @Override
     public int hashCode() { return Objects.hash(name); }
@@ -1319,6 +1320,7 @@ abstract class AbstractDatabase extends BaseDatabase
             return C4Database.getDatabase(
                 parentDirPath,
                 name,
+                config.isFullSync(),
                 getEncryptionAlgorithm(),
                 getEncryptionKey());
         }

@@ -19,6 +19,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.DatabaseConfiguration;
+import com.couchbase.lite.Defaults;
 
 
 /**
@@ -32,6 +33,7 @@ public class BaseImmutableDatabaseConfiguration {
     //-------------------------------------------------------------------------
     @NonNull
     private final String dbDir;
+    private final boolean fullSync;
 
     //-------------------------------------------------------------------------
     // Constructors
@@ -39,6 +41,7 @@ public class BaseImmutableDatabaseConfiguration {
     protected BaseImmutableDatabaseConfiguration(@Nullable DatabaseConfiguration config) {
         final String dbDirectory = (config == null) ? null : config.getDirectory();
         this.dbDir = (dbDirectory != null) ? dbDirectory : CouchbaseLiteInternal.getDefaultDbDirPath();
+        this.fullSync = (config == null) ? Defaults.Database.FULL_SYNC : config.isFullSync();
     }
 
     //-------------------------------------------------------------------------
@@ -46,4 +49,6 @@ public class BaseImmutableDatabaseConfiguration {
     //-------------------------------------------------------------------------
     @NonNull
     public final String getDirectory() { return dbDir; }
+
+    public final boolean isFullSync() { return fullSync; }
 }
