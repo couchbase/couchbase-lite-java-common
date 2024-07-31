@@ -207,10 +207,13 @@ public abstract class C4Database extends C4NativePeer {
     public static C4Database getDatabase(
         @NonNull String parentDirPath,
         @NonNull String name,
+        boolean isFullSync,
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        return getDatabase(NATIVE_IMPL, parentDirPath, name, DB_FLAGS, algorithm, encryptionKey);
+        int dbFlags = DB_FLAGS;
+        if (isFullSync) { dbFlags |= C4Constants.DatabaseFlags.DISC_FULL_SYNC; }
+        return getDatabase(NATIVE_IMPL, parentDirPath, name, dbFlags, algorithm, encryptionKey);
     }
 
     @VisibleForTesting

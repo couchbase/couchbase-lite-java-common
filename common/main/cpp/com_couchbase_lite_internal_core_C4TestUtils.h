@@ -96,6 +96,15 @@ JNIEXPORT jobject
 JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON
         (JNIEnv *, jclass, jlong, jbyteArray);
 
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getFlags
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_getFlags(
+        JNIEnv *, jclass, jlong);
+
 // C4Document
 
 /*

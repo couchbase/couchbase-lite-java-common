@@ -179,6 +179,25 @@ Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON(
     return toJavaFLSliceResult(env, res);
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getFlags
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_getFlags(
+        JNIEnv *env,
+        jclass ignore,
+        jlong db) {
+    const C4DatabaseConfig2 *config = c4db_getConfig2((C4Database *) db);
+    if (config == nullptr) {
+        throwError(env, {LiteCoreDomain, kC4ErrorNotOpen});
+        return 0;
+    }
+
+    return (jint) config->flags;
+}
+
 // C4Document
 
 /*
