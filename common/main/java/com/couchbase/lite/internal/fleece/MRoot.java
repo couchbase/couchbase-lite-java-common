@@ -42,5 +42,5 @@ public final class MRoot extends MCollection {
     public boolean isMutated() { return content.isMutated(); }
 
     @Nullable
-    public Object asNative() { return content.asNative(this); }
+    public Object toJava() { return content.toJava(this); }
 }

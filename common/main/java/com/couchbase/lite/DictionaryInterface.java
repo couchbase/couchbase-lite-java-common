@@ -29,9 +29,7 @@ import com.couchbase.lite.internal.utils.Internal;
  * This is an internal interface and not part of the public API.
  */
 @Internal("This interface is not part of the public API")
-public interface DictionaryInterface {
-    int count();
-
+public interface DictionaryInterface extends Container {
     boolean contains(@NonNull String key);
 
     int getInt(@NonNull String key);
@@ -71,7 +69,4 @@ public interface DictionaryInterface {
 
     @NonNull
     Map<String, Object> toMap();
-
-    @Nullable
-    String toJSON() throws CouchbaseLiteException;
 }

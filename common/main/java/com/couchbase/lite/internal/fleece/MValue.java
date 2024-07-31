@@ -103,7 +103,7 @@ public class MValue extends MValueConverter implements Encodable {
     public boolean isMutated() { return flValue == null; }
 
     @Nullable
-    public FLValue getValue() { return flValue; }
+    public FLValue getFLValue() { return flValue; }
 
     public void mutate() {
         Preconditions.assertNotNull(value, "Native object");
@@ -111,11 +111,11 @@ public class MValue extends MValueConverter implements Encodable {
     }
 
     @Nullable
-    public Object asNative(@Nullable MCollection parent) {
+    public Object toJava(@Nullable MCollection parent) {
         if ((value != null) || (flValue == null)) { return value; }
 
-        final NativeValue<?> val = toNative(this, parent);
-        if (val.cacheIt) { value = val.nVal; }
+        final JavaValue val = toJava(this, parent);
+        if (val.shouldCache) { value = val.nVal; }
         return val.nVal;
     }
 }

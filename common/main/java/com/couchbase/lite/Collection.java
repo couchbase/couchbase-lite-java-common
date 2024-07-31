@@ -443,10 +443,15 @@ public final class Collection extends BaseCollection
     public Set<String> getIndexes() throws CouchbaseLiteException {
         final Set<String> indexNames = new HashSet<>();
 
-        final List<Map<String, ?>> indexesInfo = getIndexInfo();
-        if (indexesInfo.isEmpty()) { return indexNames; }
+        final Object idxInfos = flIndexInfo.asJava();
+        if (!(idxInfos instanceof List<?>)) { return indexNames; }
 
-        for (Map<String, ?> idxInfo: indexesInfo) {
+        final List<?> indexInfos = List<?> idxInfos;
+        if (indexInfos.isEmpty()) { return indexNames; }
+
+        for (Object info: indexInfos) {
+            if (!(info instanceof Map<?, ?>)) { continue; }
+            final Map<?, ?> idxInfo = (Map<?, ?>) info;
             final Object idxName = idxInfo.get(INDEX_KEY_NAME);
             if (idxName instanceof String) { indexNames.add((String) idxName); }
         }

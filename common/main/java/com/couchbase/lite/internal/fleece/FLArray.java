@@ -25,10 +25,9 @@ import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.fleece.impl.NativeFLArray;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public final class FLArray {
+public final class FLArray extends FLContainerSlice<FLArray.NativeImpl> {
     public interface NativeImpl {
         long nCount(long array);
         long nGet(long array, long index);
@@ -41,14 +40,17 @@ public final class FLArray {
         void nFree(long peer);
     }
 
+    @NonNull
     private static final NativeImpl NATIVE_IMPL = new NativeFLArray();
 
     //-------------------------------------------------------------------------
-    // Factory Method
+    // Factory Methods
     //-------------------------------------------------------------------------
 
     @NonNull
-    public static FLArray create(long peer) { return new FLArray(NATIVE_IMPL, peer); }
+    public static <E extends Exception> FLArray create(@NonNull Fn.LongProviderThrows<E> fn) throws E {
+        return new FLArray(NATIVE_IMPL, fn.get());
+    }
 
     @NonNull
     public static FLArrayIterator unmanagedIterator(long peer) {
@@ -56,31 +58,19 @@ public final class FLArray {
     }
 
     //-------------------------------------------------------------------------
-    // Fields
-    //-------------------------------------------------------------------------
-
-    private final long peer; // pointer to FLArray
-    private final NativeImpl impl;
-
-    //-------------------------------------------------------------------------
     // constructor
     //-------------------------------------------------------------------------
 
-    private FLArray(@NonNull NativeImpl impl, long peer) {
-        Preconditions.assertNotZero(peer, "peer");
-        this.peer = peer;
-        this.impl = impl;
-    }
+    private FLArray(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
 
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
 
-    /**
-     * Returns the number of items in an array; 0 if peer is null.
-     *
-     * @return the number of items in an array; 0 if peer is null.
-     */
+    @Override
+    public int getType() { return FLSlice.ValueType.ARRAY; }
+
+    @Override
     public long count() { return impl.nCount(peer); }
 
     /**
@@ -89,8 +79,8 @@ public final class FLArray {
      * @param index index for value
      * @return the FLValue at index
      */
-    @NonNull
-    public FLValue get(long index) { return FLValue.getFLValue(impl.nGet(peer, index)); }
+    @Nullable
+    public FLValue get(long index) { return childAt(peer -> impl.nGet(peer, index)); }
 
     @NonNull
     public List<Object> asArray() { return asTypedArray(Object.class); }
@@ -100,8 +90,8 @@ public final class FLArray {
         final List<T> results = new ArrayList<>();
         try (FLArrayIterator itr = iterator()) {
             FLValue value;
-            while ((value = itr.getValue()) != null) {
-                final Object val = value.asObject();
+            while ((value = itr.getFLValue()) != null) {
+                final Object val = value.toJava();
                 try { results.add(klass.cast(val)); }
                 catch (ClassCastException e) {
                     Log.w(
@@ -120,11 +110,4 @@ public final class FLArray {
 
     @NonNull
     public FLArrayIterator iterator() { return new FLArrayIterator.ManagedFLArrayIterator(impl, this); }
-
-    //-------------------------------------------------------------------------
-    // package level access
-    //-------------------------------------------------------------------------
-
-    @Nullable
-    <T> T withContent(@NonNull Fn.Function<Long, T> fn) { return fn.apply(peer); }
 }

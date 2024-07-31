@@ -89,7 +89,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
             for (Map.Entry<String, ?> entry: data.entrySet()) {
                 internalDict.set(
                     Preconditions.assertNotNull(entry.getKey(), "data key"),
-                    new MValue(toFleece(entry.getValue())));
+                    new MValue(cblOCopy(entry.getValue())));
             }
         }
         return this;
@@ -103,7 +103,7 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
      * @param json the dictionary object.
      * @return this Document instance
      */
-    // ??? This is a ridiculously expensive way to do this...
+    // ??? This is an expensive way to do this...
     @NonNull
     @Override
     public MutableDictionary setJSON(@NonNull String json) {
@@ -127,9 +127,11 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary setValue(@NonNull String key, @Nullable Object value) {
         Preconditions.assertNotNull(key, "key");
-        final Object val = toFleece(value);
+        final Object val = cblOCopy(value);
         synchronized (lock) {
-            if (Fleece.willMutate(val, internalDict.get(key), internalDict)) { internalDict.set(key, new MValue(val)); }
+            if (MutableContainer.willMutate(val, internalDict.get(key), internalDict)) {
+                internalDict.set(key, new MValue(val));
+            }
         }
         return this;
     }
@@ -293,6 +295,12 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     @Override
     public MutableDictionary getDictionary(@NonNull String key) { return (MutableDictionary) super.getDictionary(key); }
 
+    /**
+     * Mutable objects may not be encoded as JSON
+     *
+     * @return never
+     * @throws CouchbaseLiteError always
+     */
     @NonNull
     @Override
     public String toJSON() { throw new CouchbaseLiteError("Mutable objects may not be encoded as JSON"); }
@@ -303,9 +311,9 @@ public final class MutableDictionary extends Dictionary implements MutableDictio
     }
 
     @Nullable
-    private Object toFleece(@Nullable Object value) {
+    private Object cblOCopy(@Nullable Object value) {
         return (value == this)
             ? ((Dictionary) value).toMutable()
-            : Fleece.toCBLObject(value);
+            : MutableContainer.toCBL(value);
     }
 }

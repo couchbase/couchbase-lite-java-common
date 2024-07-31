@@ -26,12 +26,9 @@ import org.junit.Test;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.FLEncoder;
+import com.couchbase.lite.internal.fleece.FLSlice;
 import com.couchbase.lite.internal.fleece.FLValue;
 
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.ARRAY;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DATA;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.DICT;
-import static com.couchbase.lite.internal.fleece.FLConstants.ValueType.STRING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +47,7 @@ public class C4FleeceTest extends C4BaseTest {
 
             FLValue value = FLValue.fromData(encoded);
             assertNotNull(value);
-            assertEquals(STRING, value.getType());
+            assertEquals(FLSlice.ValueType.STRING, value.getType());
 
             String decoded = value.asString();
             assertNotNull(decoded);
@@ -69,7 +66,7 @@ public class C4FleeceTest extends C4BaseTest {
 
             FLValue value = FLValue.fromData(encoded);
             assertNotNull(value);
-            assertEquals(DATA, value.getType());
+            assertEquals(FLSlice.ValueType.DATA, value.getType());
 
             byte[] decoded = value.asData();
             assertNotNull(decoded);
@@ -90,7 +87,7 @@ public class C4FleeceTest extends C4BaseTest {
 
             FLValue value = FLValue.fromData(encoded);
             assertNotNull(value);
-            assertEquals(ARRAY, value.getType());
+            assertEquals(FLSlice.ValueType.ARRAY, value.getType());
 
             List<Object> decoded = value.asArray();
             assertNotNull(decoded);
@@ -115,7 +112,7 @@ public class C4FleeceTest extends C4BaseTest {
 
             FLValue value = FLValue.fromData(encoded);
             assertNotNull(value);
-            assertEquals(DICT, value.getType());
+            assertEquals(FLSlice.ValueType.DICT, value.getType());
 
             Map<String, Object> decoded = value.asDict();
             assertNotNull(decoded);

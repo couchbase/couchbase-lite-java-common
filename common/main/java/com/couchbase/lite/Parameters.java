@@ -222,7 +222,7 @@ public class Parameters {
     @NonNull
     public Parameters setValue(@NonNull String name, @Nullable Object value) {
         Preconditions.assertNotNull(name, "name");
-        map.put(name, Fleece.toCBLObject(value));
+        map.put(name, MutableContainer.toCBL(value));
         return this;
     }
 

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2024 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,20 +15,24 @@
 //
 package com.couchbase.lite.internal.fleece;
 
-
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.couchbase.lite.BaseDatabase;
 
+public abstract class FLContainerSlice<T> extends FLSlice<T> {
 
-public abstract class MContext {
-    public static final MContext NULL = new MContext() {};
+    @FunctionalInterface
+    interface ChildAt<E extends Exception> {
+        long getChild(long x) throws E;
+    }
 
+    protected FLContainerSlice(@NonNull T impl, long peer) { super(impl, peer); }
 
-    protected MContext() { }
+    public abstract long count();
 
     @Nullable
-    public BaseDatabase getDatabase() { return null; }
-
-    public boolean isClosed() { return false; }
+    protected <E extends Exception> FLValue childAt(@NonNull ChildAt<E> fn) throws E {
+        final long child = fn.getChild(peer);
+        return (child == 0) ? null : FLValue.create(child);
+    }
 }

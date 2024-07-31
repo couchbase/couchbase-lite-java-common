@@ -19,8 +19,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.internal.DbContext;
-import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLDict;
+import com.couchbase.lite.internal.fleece.FLSlice;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.fleece.MCollection;
 import com.couchbase.lite.internal.fleece.MContext;
@@ -35,13 +35,13 @@ import com.couchbase.lite.internal.utils.Preconditions;
  */
 @Internal("This class is not part of the public API")
 public abstract class MValueConverter {
-    public static final class NativeValue<T> {
-        public final boolean cacheIt;
+    public static final class JavaValue {
+        public final boolean shouldCache;
         @Nullable
-        public final T nVal;
+        public final Object nVal;
 
-        public NativeValue(@Nullable T nVal, boolean cacheIt) {
-            this.cacheIt = cacheIt;
+        public JavaValue(@Nullable Object nVal, boolean shouldCache) {
+            this.shouldCache = shouldCache;
             this.nVal = nVal;
         }
     }
@@ -52,21 +52,21 @@ public abstract class MValueConverter {
     // Protected methods
     //-------------------------------------------------------------------------
     @NonNull
-    protected NativeValue<?> toNative(@NonNull MValue val, @Nullable MCollection parent) {
-        final FLValue value = Preconditions.assertNotNull(val.getValue(), "value");
+    protected JavaValue toJava(@NonNull MValue val, @Nullable MCollection parent) {
+        final FLValue value = Preconditions.assertNotNull(val.getFLValue(), "value");
         switch (value.getType()) {
-            case FLConstants.ValueType.DICT:
+            case FLSlice.ValueType.DICT:
                 return mValueToDictionary(val, Preconditions.assertNotNull(parent, "parent"));
-            case FLConstants.ValueType.ARRAY:
-                return new NativeValue<>(
+            case FLSlice.ValueType.ARRAY:
+                return new JavaValue(
                     ((parent == null) || !parent.hasMutableChildren())
                         ? new Array(val, parent)
                         : new MutableArray(val, parent),
                     true);
-            case FLConstants.ValueType.DATA:
-                return new NativeValue<>(new Blob("application/octet-stream", value.asData()), false);
+            case FLSlice.ValueType.DATA:
+                return new JavaValue(new Blob("application/octet-stream", value.asData()), false);
             default:
-                return new NativeValue<>(value.asObject(), false);
+                return new JavaValue(value.toJava(), false);
         }
     }
 
@@ -75,25 +75,27 @@ public abstract class MValueConverter {
     //-------------------------------------------------------------------------
 
     @NonNull
-    private NativeValue<?> mValueToDictionary(@NonNull MValue mv, @NonNull MCollection parent) {
+    private JavaValue mValueToDictionary(@NonNull MValue mv, @NonNull MCollection parent) {
+        final FLDict flDict = Preconditions.assertNotNull(mv.getFLValue(), "MValue").asFLDict();
+
+        if (!isBlob(flDict)) {
+            return new JavaValue(
+                (parent.hasMutableChildren()) ? new MutableDictionary(mv, parent) : new Dictionary(mv, parent),
+                true);
+         }
+
         final MContext ctxt = parent.getContext();
         if (!(ctxt instanceof DbContext)) { throw new CouchbaseLiteError("Context is not DbContext: " + ctxt); }
-        final DbContext context = (DbContext) ctxt;
-
-        final FLDict flDict = Preconditions.assertNotNull(mv.getValue(), "MValue").asFLDict();
-
-        final FLValue flType = flDict.get(Blob.META_PROP_TYPE);
-        final String type = (flType == null) ? null : flType.asString();
-
-        if (Blob.TYPE_BLOB.equals(type) || ((type == null) && isOldAttachment(flDict))) {
-            return new NativeValue<>(
-                new Blob(Preconditions.assertNotNull(context.getDatabase(), "database"), flDict.asDict()),
-                true);
-        }
-
-        return new NativeValue<>(
-            (parent.hasMutableChildren()) ? new MutableDictionary(mv, parent) : new Dictionary(mv, parent),
+        return new JavaValue(
+            new Blob(Preconditions.assertNotNull(((DbContext) ctxt).getDatabase(), "database"), flDict.asDict()),
             true);
+    }
+
+    private boolean isBlob(@NonNull FLDict flDict) {
+        final FLValue flType = flDict.get(Blob.META_PROP_TYPE);
+        return (flType == null)
+            ? isOldAttachment(flDict)
+            : Blob.TYPE_BLOB.equals(flType.asString());
     }
 
     // At some point in the past, attachments were dictionaries in a top-level

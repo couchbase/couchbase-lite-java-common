@@ -25,24 +25,53 @@ import java.util.Map;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.fleece.impl.NativeFLValue;
 import com.couchbase.lite.internal.utils.Fn;
-import com.couchbase.lite.internal.utils.Preconditions;
 
+
+/**
+ * The Fleece implementations are different across the various platforms. Here's what
+ * I can figure out (though I really have only rumors to go by).  I think that Jens did two
+ * implementations, the second of which was an attempt to make life easier for the platforms.
+ * Word has it that it did not succeed in doing that.  iOS still uses the first
+ * implementation. Java tried to use the first implementation but, because of a problem with
+ * running out of LocalRefs, the original developer for this platform (Java/Android) chose,
+ * more or less, to port that first implementation into Java. I think that .NET did something
+ * similar. As I understand it both Jim and Sandy tried to update .NET to use Jens' second
+ * implementation somewhere in the 2.7 time-frame. They had, at most, partial success.
+ * <p>
+ * In 9/2020 (CBL-246), I tried to convert this code to use LiteCore's MutableFleece package
+ * (that's Jens' second implementations). Both Jim and Jens warned me, without specifics,
+ * that doing so might be more trouble than it was worth. Although the LiteCore
+ * implementation of Mutable Fleece is relatively clear, this Java code is just plain
+ * bizarre. It works, though. I don't think I have ever seen a problem that could be traced
+ * to it. Instead of using the new LiteCore implementation, I've just cleaned this code up
+ * a bit.  Other than that, I'm leaving it alone and I suggest you do the same, unless something
+ * changes to make the benefit side of the C/B fraction more interesting.
+ * <p>
+ * The regrettable upside-down dependency on MValueConverter provides access to package
+ * visible symbols in com.couchbase.lite.
+ * <p>
+ * It worries me that this isn't thread safe... but, as I say, I've never seen it be a problem.
+ * <p>
+ * 3/2024 (CBL-5486): I've seen a problem!
+ * If the parent, the object holding the Fleece reference, is closed, the Fleece object backing
+ * all of the contained objects, is freed.
+ */
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.ExcessivePublicCount"})
-public class FLValue {
+public class FLValue extends FLSlice<FLValue.NativeImpl> {
     public interface NativeImpl {
         long nFromTrustedData(byte[] data);
-        long nFromData(long ptr, long size);
+        long nFromSlice(long ptr, long size);
         int nGetType(long value);
         boolean nIsInteger(long value);
         boolean nIsUnsigned(long value);
         boolean nIsDouble(long value);
         @Nullable
-        String nToString(long handle);
+        String nToString(long value);
         @Nullable
-        String nToJSON(long handle);
+        String nToJSON(long value);
         @Nullable
-        String nToJSON5(long handle);
+        String nToJSON5(long value);
         @NonNull
         byte[] nAsData(long value);
         boolean nAsBool(long value);
@@ -62,49 +91,20 @@ public class FLValue {
     private static final NativeImpl NATIVE_IMPL = new NativeFLValue();
 
     //-------------------------------------------------------------------------
-    // public static methods
+    // Factory methods
     //-------------------------------------------------------------------------
 
     @NonNull
-    public static FLValue getFLValue(long peer) { return new FLValue(NATIVE_IMPL, peer); }
+    public static FLValue fromData(@NonNull byte[] data) { return create(NATIVE_IMPL.nFromTrustedData(data)); }
 
     @Nullable
-    public static Object toObject(@NonNull FLValue flValue) { return flValue.asObject(); }
-
-    @NonNull
-    public static FLValue fromData(@NonNull byte[] data) { return fromData(NATIVE_IMPL, data); }
-
-    @Nullable
-    public static FLValue fromData(@Nullable FLSliceResult slice) { return fromData(NATIVE_IMPL, slice); }
-
-    /**
-     * Converts valid JSON5 to JSON.
-     *
-     * @param json5 String
-     * @return JSON String
-     * @throws LiteCoreException on parse failure
-     */
-    @Nullable
-    public static String getJSONForJSON5(@Nullable String json5) throws LiteCoreException {
-        return getJSONForJSON5(NATIVE_IMPL, json5);
-    }
-
-    @VisibleForTesting
-    @Nullable
-    public static String getJSONForJSON5(@NonNull NativeImpl impl, @Nullable String json5) throws LiteCoreException {
-        return impl.nJson5toJson(json5);
+    public static FLValue fromSliceResult(@Nullable FLSliceResult slice) {
+        return (slice == null) ? null : createOrNull(() -> NATIVE_IMPL.nFromSlice(slice.getBase(), slice.getSize()));
     }
 
     @NonNull
-    private static FLValue fromData(@NonNull NativeImpl impl, @NonNull byte[] data) {
-        return FLValue.getFLValue(impl.nFromTrustedData(data));
-    }
-
-    @Nullable
-    private static FLValue fromData(@NonNull NativeImpl impl, @Nullable FLSliceResult slice) {
-        if (slice == null) { return null; }
-        final long value = impl.nFromData(slice.getBase(), slice.getSize());
-        return value == 0 ? null : FLValue.getFLValue(value);
+    public static <E extends Exception> FLValue create(@NonNull Fn.LongProviderThrows<E> fn) throws E {
+        return create(fn.get());
     }
 
     @Nullable
@@ -118,22 +118,18 @@ public class FLValue {
     @NonNull
     public static FLValue create(long peer) { return new FLValue(NATIVE_IMPL, peer); }
 
-    //-------------------------------------------------------------------------
-    // Member Variables
-    //-------------------------------------------------------------------------
-
-    private final NativeImpl impl;
-    private final long peer; // pointer to FLValue
+    @VisibleForTesting
+    @Nullable
+    public static String getJSONForJSON5(@Nullable String json5) throws LiteCoreException {
+        return NATIVE_IMPL.nJson5toJson(json5);
+    }
 
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
     @VisibleForTesting
-    public FLValue(@NonNull NativeImpl impl, long peer) {
-        this.impl = Preconditions.assertNotNull(impl, "impl");
-        this.peer = Preconditions.assertNotZero(peer, "peer");
-    }
+    public FLValue(@NonNull NativeImpl impl, long peer) { super(impl, peer); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -151,7 +147,7 @@ public class FLValue {
      *
      * @return true if value is a number
      */
-    public boolean isNumber() { return getType() == FLConstants.ValueType.NUMBER; }
+    public boolean isNumber() { return getType() == FLSlice.ValueType.NUMBER; }
 
     /**
      * Is this value an integer?
@@ -245,7 +241,7 @@ public class FLValue {
 
     /**
      * Returns the exact contents of a string value, or null for all other types.
-     * ??? If we are out of memory or the string cannot be decoded, we just drop it on the floor
+     * ??? If we are out of memory or the string cannot be decoded, we just return null
      *
      * @return String
      */
@@ -267,7 +263,7 @@ public class FLValue {
     public FLDict asFLDict() { return FLDict.create(impl.nAsDict(peer)); }
 
     /**
-     * If a FLValue represents an array, returns it cast to FLDict, else nullptr.
+     * If a FLValue represents a map, returns it cast to FLDict, else nullptr.
      *
      * @return long (FLDict)
      */
@@ -280,32 +276,29 @@ public class FLValue {
      * @return Object
      */
     @Nullable
-    public Object asObject() {
+    public Object toJava() {
         switch (impl.nGetType(peer)) {
-            case FLConstants.ValueType.BOOLEAN:
+            case FLSlice.ValueType.BOOLEAN:
                 return Boolean.valueOf(asBool());
-            case FLConstants.ValueType.NUMBER:
+            case FLSlice.ValueType.NUMBER:
                 if (isInteger()) { return (isUnsigned()) ? Long.valueOf(asUnsigned()) : Long.valueOf(asInt()); }
                 if (isDouble()) { return Double.valueOf(asDouble()); }
                 return Float.valueOf(asFloat());
-            case FLConstants.ValueType.STRING:
+            case FLSlice.ValueType.STRING:
                 return asString();
-            case FLConstants.ValueType.DATA:
+            case FLSlice.ValueType.DATA:
                 return asData();
-            case FLConstants.ValueType.ARRAY:
+            case FLSlice.ValueType.ARRAY:
                 return asArray();
-            case FLConstants.ValueType.DICT:
+            case FLSlice.ValueType.DICT:
                 return asDict();
-            case FLConstants.ValueType.NULL:
+            case FLSlice.ValueType.NULL:
             default:
                 return null;
         }
     }
 
-    @Nullable
-    <T> T withContent(@NonNull Fn.NonNullFunction<Long, T> fn) { return fn.apply(peer); }
-
     @NonNull
-    FLArray asFLArray() { return FLArray.create(impl.nAsArray(peer)); }
+    FLArray asFLArray() { return FLArray.create(() -> impl.nAsArray(peer)); }
 }
 

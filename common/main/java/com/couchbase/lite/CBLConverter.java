@@ -46,34 +46,34 @@ final class CBLConverter {
     }
 
     static int asInteger(@NonNull MValue val, @Nullable MCollection container) {
-        final FLValue value = val.getValue();
+        final FLValue value = val.getFLValue();
         if (value != null) { return (int) value.asInt(); }
 
-        final Number num = asNumber(val.asNative(container));
+        final Number num = asNumber(val.toJava(container));
         return num != null ? num.intValue() : 0;
     }
 
     static long asLong(@NonNull MValue val, @Nullable MCollection container) {
-        final FLValue value = val.getValue();
+        final FLValue value = val.getFLValue();
         if (value != null) { return value.asInt(); }
 
-        final Number num = asNumber(val.asNative(container));
+        final Number num = asNumber(val.toJava(container));
         return num != null ? num.longValue() : 0L;
     }
 
     static float asFloat(@NonNull MValue val, @Nullable MCollection container) {
-        final FLValue value = val.getValue();
+        final FLValue value = val.getFLValue();
         if (value != null) { return value.asFloat(); }
 
-        final Number num = asNumber(val.asNative(container));
+        final Number num = asNumber(val.toJava(container));
         return num != null ? num.floatValue() : 0L;
     }
 
     static double asDouble(@NonNull MValue val, @Nullable MCollection container) {
-        final FLValue value = val.getValue();
+        final FLValue value = val.getFLValue();
         if (value != null) { return value.asDouble(); }
 
-        final Number num = asNumber(val.asNative(container));
+        final Number num = asNumber(val.toJava(container));
         return num != null ? num.doubleValue() : 0L;
     }
 }

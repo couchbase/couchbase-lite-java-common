@@ -103,7 +103,7 @@ public class C4CollatedQueryTest extends C4QueryBaseTest {
     protected List<String> run() throws LiteCoreException {
         try (C4QueryEnumerator e = runQuery(query)) {
             List<String> results = new ArrayList<>();
-            while (e.next()) { results.add(e.getColumns().getValueAt(0).asString()); }
+            while (e.next()) { results.add(e.getColumns().getFLValueAt(0).asString()); }
             return results;
         }
     }

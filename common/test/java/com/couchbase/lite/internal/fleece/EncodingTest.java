@@ -145,11 +145,10 @@ public class EncodingTest extends BaseTest {
 
             final FLValue flValue;
             try (FLSliceResult slice = encoder.finish2()) {
-                flValue = FLValue.fromData(slice);
+                flValue = FLValue.fromSliceResult(slice);
                 assertNotNull(flValue);
-
-                Object obj = FLValue.toObject(flValue);
-                Report.log("ROUND TRIP SLICE: '%s'; FROM: '%s'; EXPECTING: '%s'", obj, item, expected);
+                Object obj = flValue.toJava();
+                Report.log("Slice round trip: '%s' -> '%s'; expecting: '%s'", item, obj, expected);
                 assertEquals(expected, obj);
             }
         }
@@ -157,8 +156,8 @@ public class EncodingTest extends BaseTest {
 
     private void testSlice(byte[] utf8Slice, String expected) {
         FLValue flValue = FLValue.fromData(utf8Slice);
-        Object obj = FLValue.toObject(flValue);
-        Report.log("DECODE SLICE: '%s'; EXPECTED: '%s'", obj, expected);
+        Object obj = flValue.toJava();
+        Report.log("Decoding slice, expected: '%s'; got: '%s'", expected, obj);
         assertEquals(expected, obj);
     }
 }

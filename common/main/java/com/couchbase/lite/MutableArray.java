@@ -86,7 +86,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public MutableArray setData(@NonNull List<?> data) {
         synchronized (lock) {
             internalArray.clear();
-            for (Object obj: data) { internalArray.append(toFleece(obj)); }
+            for (Object obj: data) { internalArray.append(cblOrCopy(obj)); }
         }
         return this;
     }
@@ -122,9 +122,9 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray setValue(int index, @Nullable Object value) {
-        final Object val = toFleece(value);
+        final Object val = cblOrCopy(value);
         synchronized (lock) {
-            if (Fleece.willMutate(val, internalArray.get(index), internalArray)
+            if (MutableContainer.willMutate(val, internalArray.get(index), internalArray)
                 && (!internalArray.set(index, val))) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
             }
@@ -262,7 +262,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray addValue(@Nullable Object value) {
-        final Object val = toFleece(value);
+        final Object val = cblOrCopy(value);
         synchronized (lock) { internalArray.append(val); }
         return this;
     }
@@ -387,7 +387,7 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     @NonNull
     @Override
     public MutableArray insertValue(int index, @Nullable Object value) {
-        final Object val = toFleece(value);
+        final Object val = cblOrCopy(value);
         synchronized (lock) {
             if (!internalArray.insert(index, val)) {
                 throw new IndexOutOfBoundsException("Array index " + index + " is out of range");
@@ -559,10 +559,10 @@ public final class MutableArray extends Array implements MutableArrayInterface {
     public String toJSON() { throw new CouchbaseLiteError("Mutable objects may not be encoded as JSON"); }
 
     @Nullable
-    private Object toFleece(@Nullable Object value) {
+    private Object cblOrCopy(@Nullable Object value) {
         return (value == this)
             ? ((Array) value).toMutable()
-            : Fleece.toCBLObject(value);
+            : MutableContainer.toCBL(value);
     }
 }
 

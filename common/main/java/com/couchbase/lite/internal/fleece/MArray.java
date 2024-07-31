@@ -57,7 +57,7 @@ public final class MArray extends MCollection {
     public MArray(@NonNull MValue val, @Nullable MCollection parent) {
         super(val, parent, (parent != null) && parent.hasMutableChildren());
 
-        final FLValue value = val.getValue();
+        final FLValue value = val.getFLValue();
         if (value == null) {
             baseArray = null;
             return;

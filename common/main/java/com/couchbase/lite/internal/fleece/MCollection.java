@@ -54,7 +54,7 @@ public abstract class MCollection implements Encodable {
 
     // Slot constructor
     protected MCollection(@NonNull MValue slot, @Nullable MCollection parent, boolean isMutable) {
-        this(slot, parent, ((slot.getValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
+        this(slot, parent, ((slot.getFLValue() == null) || (parent == null)) ? null : parent.getContext(), isMutable);
         if (slot.isMutated()) { mutated.set(true); }
     }
 

@@ -59,7 +59,7 @@ public final class MDict extends MCollection {
     public MDict(@NonNull MValue val, @Nullable MCollection parent) {
         super(val, parent, parent != null && parent.hasMutableChildren());
 
-        final FLValue value = val.getValue();
+        final FLValue value = val.getFLValue();
         if (value == null) {
             baseDict = null;
             return;
@@ -228,7 +228,7 @@ public final class MDict extends MCollection {
                 while ((key = itr.getKey()) != null) {
                     if (!values.containsKey(key)) {
                         enc.writeKey(key);
-                        enc.writeValue(itr.getValue());
+                        enc.writeValue(itr.getFLValue());
                     }
                     itr.next();
                 }

@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020 Couchbase, Inc.
+// Copyright (c) 2024 Couchbase, Inc All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,50 +18,23 @@ package com.couchbase.lite;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import java.util.Date;
-import java.util.List;
-
 import com.couchbase.lite.internal.utils.Internal;
 
 
 /**
- * Internal interface
+ * This is an internal interface and not part of the public API.
  */
-@Internal("This interface  is not part of the public API")
-public interface ArrayInterface extends Container {
-    int getInt(int index);
-
-    long getLong(int index);
-
-    float getFloat(int index);
-
-    double getDouble(int index);
-
-    boolean getBoolean(int index);
-
+@Internal("This interface is not part of the public API")
+public interface Container {
     @Nullable
-    Number getNumber(int index);
+    static Object toPureJava(@Nullable Object value) {
+        if (value == null) { return null; }
+        else if (value instanceof Dictionary) { return ((Dictionary) value).toMap(); }
+        else if (value instanceof Array) { return ((Array) value).toList(); }
+        else { return value; }
+    }
 
-    @Nullable
-    String getString(int index);
-
-    @Nullable
-    Date getDate(int index);
-
-    @Nullable
-    Blob getBlob(int index);
-
-    @Nullable
-    ArrayInterface getArray(int index);
-
-    @Nullable
-    DictionaryInterface getDictionary(int index);
-
-    @Nullable
-    Object getValue(int index);
-
-    @NonNull
-    List<Object> toList();
+    int count();
 
     @NonNull
     String toJSON() throws CouchbaseLiteException;

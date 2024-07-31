@@ -86,11 +86,8 @@ public abstract class FLArrayIterator extends C4NativePeer {
     public abstract void close();
 
     @Nullable
-    public FLValue getValueAt(int index) {
-        return nullableWithPeerOrThrow(peer -> {
-            final long val = impl.nGetValueAt(peer, index);
-            return val == 0L ? null : FLValue.getFLValue(val);
-        });
+    public FLValue getFLValueAt(int index) {
+        return nullableWithPeerOrThrow(peer -> FLValue.createOrNull(() -> impl.nGetValueAt(peer, index)));
     }
 
     /**
@@ -101,10 +98,7 @@ public abstract class FLArrayIterator extends C4NativePeer {
     public void next() { withPeerOrThrow(impl::nNext); }
 
     @Nullable
-    public FLValue getValue() {
-        return nullableWithPeerOrThrow(peer -> {
-            final long val = impl.nGetValue(peer);
-            return val == 0L ? null : FLValue.getFLValue(val);
-        });
+    public FLValue getFLValue() {
+        return nullableWithPeerOrThrow(peer -> FLValue.createOrNull(() -> impl.nGetValue(peer)));
     }
 }

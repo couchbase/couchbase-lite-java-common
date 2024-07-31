@@ -29,8 +29,8 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.QueryLanguage;
 import com.couchbase.lite.internal.core.C4TestUtils.C4FullTextMatch;
 import com.couchbase.lite.internal.fleece.FLArrayIterator;
-import com.couchbase.lite.internal.fleece.FLConstants;
 import com.couchbase.lite.internal.fleece.FLDict;
+import com.couchbase.lite.internal.fleece.FLSlice;
 import com.couchbase.lite.internal.fleece.FLValue;
 
 import static org.junit.Assert.assertEquals;
@@ -472,9 +472,9 @@ public class C4QueryTest extends C4QueryBaseTest {
         int i = 0;
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
-            assertEquals(itr.getValue().asString(), expectedFirst.get(i));
+            assertEquals(itr.getFLValue().asString(), expectedFirst.get(i));
             itr.next();
-            assertEquals(itr.getValue().asString(), expectedLast.get(i));
+            assertEquals(itr.getFLValue().asString(), expectedLast.get(i));
             i++;
         }
         e.close();
@@ -495,8 +495,8 @@ public class C4QueryTest extends C4QueryBaseTest {
         int i = 0;
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
-            FLValue col = itr.getValueAt(0);
-            assertEquals(col.getType(), FLConstants.ValueType.DICT);
+            FLValue col = itr.getFLValueAt(0);
+            assertEquals(col.getType(), FLSlice.ValueType.DICT);
             FLDict name = col.asFLDict();
             assertEquals(expectedFirst.get(i), name.get("first").asString());
             assertEquals(expectedLast.get(i), name.get("last").asString());
@@ -516,9 +516,9 @@ public class C4QueryTest extends C4QueryBaseTest {
         int i = 0;
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
-            assertEquals(itr.getValue().asString(), "Aerni");
+            assertEquals(itr.getFLValue().asString(), "Aerni");
             itr.next();
-            assertEquals(itr.getValue().asString(), "Zirk");
+            assertEquals(itr.getFLValue().asString(), "Zirk");
             i++;
         }
         e.close();
@@ -544,11 +544,11 @@ public class C4QueryTest extends C4QueryBaseTest {
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             if (i < expectedState.size()) {
-                assertEquals(itr.getValue().asString(), expectedState.get(i));
+                assertEquals(itr.getFLValue().asString(), expectedState.get(i));
                 itr.next();
-                assertEquals(itr.getValue().asString(), expectedMin.get(i));
+                assertEquals(itr.getFLValue().asString(), expectedMin.get(i));
                 itr.next();
-                assertEquals(itr.getValue().asString(), expectedMax.get(i));
+                assertEquals(itr.getFLValue().asString(), expectedMax.get(i));
             }
             i++;
         }
@@ -579,9 +579,9 @@ public class C4QueryTest extends C4QueryBaseTest {
         while (e.next()) {
             FLArrayIterator itr = e.getColumns();
             if (i < expectedState.size()) {
-                assertEquals(itr.getValue().asString(), expectedFirst.get(i));
+                assertEquals(itr.getFLValue().asString(), expectedFirst.get(i));
                 itr.next();
-                assertEquals(itr.getValue().asString(), expectedState.get(i));
+                assertEquals(itr.getFLValue().asString(), expectedState.get(i));
             }
             i++;
         }

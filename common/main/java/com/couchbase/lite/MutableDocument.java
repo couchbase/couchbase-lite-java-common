@@ -342,7 +342,7 @@ public final class MutableDocument extends Document implements MutableDictionary
     public MutableDictionary getDictionary(@NonNull String key) { return getMutableContent().getDictionary(key); }
 
     /**
-     * Unimplemented: Mutable objects may not be encoded as JSON
+     * Mutable objects may not be encoded as JSON
      *
      * @return never
      * @throws CouchbaseLiteError always

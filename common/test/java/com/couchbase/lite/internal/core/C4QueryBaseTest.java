@@ -88,7 +88,7 @@ public class C4QueryBaseTest extends C4BaseTest {
         List<String> docIDs = new ArrayList<>();
         try (FLSliceResult encodedParams = encodeParameters(params); C4QueryEnumerator e = query.run(encodedParams)) {
             assertNotNull(e);
-            while (e.next()) { docIDs.add(e.getColumns().getValueAt(0).asString()); }
+            while (e.next()) { docIDs.add(e.getColumns().getFLValueAt(0).asString()); }
             return docIDs;
         }
     }

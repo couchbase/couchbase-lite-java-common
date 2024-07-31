@@ -27,7 +27,7 @@ public final class NativeFLValue implements FLValue.NativeImpl {
     public long nFromTrustedData(byte[] data) { return fromTrustedData(data); }
 
     @Override
-    public long nFromData(long ptr, long size) { return fromData(ptr, size); }
+    public long nFromSlice(long ptr, long size) { return fromData(ptr, size); }
 
     @Override
     public int nGetType(long value) { return getType(value); }
