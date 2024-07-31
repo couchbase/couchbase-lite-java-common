@@ -260,12 +260,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4_enableExtension(
         jstring jpath) {
     jstringSlice name(env, jname);
     jstringSlice path(env, jpath);
-    C4Error error{LiteCoreDomain, kC4ErrorUnsupported};
-/// !!! Needs LiteCore Support
-//    C4Error error{};
-//    bool ok = c4_enableExtension(name, path, &error);
-//    if (!ok && error.code != 0)
-    throwError(env, error);
+    C4Error error{};
+    bool ok = c4_enableExtension(name, path, &error);
+    if (!ok && error.code != 0)
+        throwError(env, error);
 }
 
 

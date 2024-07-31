@@ -61,7 +61,7 @@ public final class C4Document extends C4NativePeer {
         long nUpdate(long doc, long bodyPtr, long bodySize, int flags) throws LiteCoreException;
         void nSave(long doc, int maxRevTreeDepth) throws LiteCoreException;
         //// Fleece-related
-        @Nullable
+        @NonNull
         String nBodyAsJSON(long doc, boolean canonical) throws LiteCoreException;
         //// Lifecycle
         void nFree(long doc);
@@ -207,9 +207,9 @@ public final class C4Document extends C4NativePeer {
 
     // - Fleece
 
-    @Nullable
+    @NonNull
     public String bodyAsJSON(boolean canonical) throws LiteCoreException {
-        return withPeerOrNull(h -> impl.nBodyAsJSON(h, canonical));
+        return withPeerOrThrow(h -> impl.nBodyAsJSON(h, canonical));
     }
 
     // - Helper methods

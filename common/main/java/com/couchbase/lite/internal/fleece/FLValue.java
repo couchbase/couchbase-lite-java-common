@@ -107,6 +107,16 @@ public class FLValue {
         return value == 0 ? null : FLValue.getFLValue(value);
     }
 
+    @Nullable
+    public static <E extends Exception> FLValue createOrNull(@NonNull Fn.LongProviderThrows<E> fn) throws E {
+        final long peer = fn.get();
+        return (peer == 0) ? null : create(peer);
+    }
+
+    // Don't use this outside this class unless you really must (LiteCore passed you the ref or something)
+    // Our peer is nobody else's business.
+    @NonNull
+    public static FLValue create(long peer) { return new FLValue(NATIVE_IMPL, peer); }
 
     //-------------------------------------------------------------------------
     // Member Variables

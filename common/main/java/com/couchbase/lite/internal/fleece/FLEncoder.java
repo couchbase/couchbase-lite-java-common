@@ -332,6 +332,8 @@ public abstract class FLEncoder extends C4NativePeer {
         return ok && endArray();
     }
 
+    public boolean write(long hdl) { return withPeerOrThrow(peer -> impl.nWriteValue(peer, hdl)); }
+
     public void reset() { impl.nReset(getPeer()); }
 
     @NonNull
