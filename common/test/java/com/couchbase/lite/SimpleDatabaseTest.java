@@ -21,7 +21,9 @@ import java.io.IOException;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.core.C4Constants;
 import com.couchbase.lite.internal.core.C4Database;
+import com.couchbase.lite.internal.core.C4TestUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,12 +39,21 @@ public class SimpleDatabaseTest extends BaseTest {
         DatabaseConfiguration config1 = new DatabaseConfiguration();
         assertNotNull(config1.getDirectory());
         assertFalse(config1.getDirectory().isEmpty());
+        // # 1.2 TestSQLiteFullSyncDefault
+        assertEquals(Defaults.Database.FULL_SYNC, config1.isFullSync());
 
         // Custom
         DatabaseConfiguration config2 = new DatabaseConfiguration();
         String dbDir = getScratchDirectoryPath(getUniqueName("tmp"));
         config2.setDirectory(dbDir);
         assertEquals(dbDir, config2.getDirectory());
+
+        // # 1.3-4 TestSetGetFullSync
+        config2.setFullSync(true);
+        assertTrue(config2.isFullSync());
+        // # 1.5-6 TestSetGetFullSync
+        config2.setFullSync(false);
+        assertFalse(config2.isFullSync());
     }
 
     @Test
@@ -97,9 +108,28 @@ public class SimpleDatabaseTest extends BaseTest {
     }
 
     @Test
-    public void testCreateWithEmptyDBNames() {
-        assertThrows(IllegalArgumentException.class, () -> new Database(""));
+    public void testDBWithFullSync() throws CouchbaseLiteException, LiteCoreException {
+        final DatabaseConfiguration config = new DatabaseConfiguration();
+
+        Database db = new Database(getUniqueName("full_sync_db_1"), config.setFullSync(true));
+        try {
+            assertTrue(db.getConfig().isFullSync());
+            assertEquals(
+                C4Constants.DatabaseFlags.DISC_FULL_SYNC,
+                C4TestUtils.getFlags(db.getOpenC4Database()) & C4Constants.DatabaseFlags.DISC_FULL_SYNC);
+        }
+        finally { eraseDb(db); }
+
+        db = new Database(getUniqueName("full_sync_db_2"), config.setFullSync(false));
+        try {
+            assertFalse(db.getConfig().isFullSync());
+            assertEquals(0, C4TestUtils.getFlags(db.getOpenC4Database()) & C4Constants.DatabaseFlags.DISC_FULL_SYNC);
+        }
+        finally { eraseDb(db); }
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateWithEmptyDBNames() throws CouchbaseLiteException { new Database(""); }
 
     @Test
     public void testCreateWithSpecialCharacterDBNames() throws CouchbaseLiteException {
