@@ -125,6 +125,8 @@ public abstract class C4Database extends C4NativePeer {
 
         long nGetFLSharedKeys(long db);
 
+        int nGetFlags(long peer) throws LiteCoreException;
+
         // - Scopes and Collections
 
         // returns Set<String> of scope names
@@ -420,6 +422,9 @@ public abstract class C4Database extends C4NativePeer {
 
     @NonNull
     public FLSharedKeys getFLSharedKeys() { return new FLSharedKeys(impl.nGetFLSharedKeys(getPeer())); }
+
+    @VisibleForTesting
+    public int getFlags() throws LiteCoreException { return impl.nGetFlags(getPeer()); }
 
     // - Scopes and Collections
     @NonNull

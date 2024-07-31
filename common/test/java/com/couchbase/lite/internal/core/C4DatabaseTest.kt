@@ -73,6 +73,8 @@ class C4DatabaseTest : C4BaseTest() {
         override fun nGetSharedFleeceEncoder(db: Long): Long = 1L
         override fun nEncodeJSON(db: Long, jsonData: ByteArray): FLSliceResult = FLSliceResult.createTestSlice()
         override fun nGetFLSharedKeys(db: Long): Long = 1L
+        override fun nGetFlags(peer: Long): Int = 0
+
         override fun nGetScopeNames(peer: Long): MutableSet<String> = mutableSetOf()
         override fun nHasScope(peer: Long, scope: String): Boolean = true
         override fun nGetCollectionNames(peer: Long, scope: String): MutableSet<String> = mutableSetOf()

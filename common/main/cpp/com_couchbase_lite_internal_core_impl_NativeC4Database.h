@@ -206,6 +206,14 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection
         (JNIEnv *, jclass, jlong, jstring, jstring);
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
+ * Method:    getFlags
+ * Signature: (J)I
+ */
+JNIEXPORT jint JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getFlags(
+        JNIEnv *, jclass, jlong);
 #ifdef __cplusplus
 }
 #endif
