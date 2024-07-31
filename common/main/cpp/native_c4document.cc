@@ -326,7 +326,12 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON(
     }
 
     jstring jstr = toJString(env, result);
+
     c4slice_free(result);
+
+    if (jstr == nullptr)
+        throwError(env, {LiteCoreDomain, kC4ErrorCorruptData});
+
     return jstr;
 }
 

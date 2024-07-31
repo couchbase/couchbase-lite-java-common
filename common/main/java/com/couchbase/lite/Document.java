@@ -32,7 +32,6 @@ import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.MRoot;
-import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -404,19 +403,21 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @Override
     public Map<String, Object> toMap() { return getContent().toMap(); }
 
-    @Nullable
+    @NonNull
     @Override
     public String toJSON() {
         try {
             synchronized (lock) {
-                if (c4Document != null) { return c4Document.bodyAsJSON(true); }
+                if (c4Document == null) { throw new CouchbaseLiteError("Document has not been saved to a database"); }
+                return c4Document.bodyAsJSON(true);
             }
         }
         catch (LiteCoreException e) {
-            Log.i(LogDomain.DATABASE, "Failed encoding document as JSON", CouchbaseLiteException.convertException(e));
+            // !!! This should be a checked exception
+            throw new CouchbaseLiteError(
+                "Failed encoding document as JSON",
+                CouchbaseLiteException.convertException(e));
         }
-
-        return null;
     }
 
 

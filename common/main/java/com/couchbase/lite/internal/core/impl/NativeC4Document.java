@@ -16,10 +16,10 @@
 package com.couchbase.lite.internal.core.impl;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Document;
+
 
 @SuppressWarnings("PMD.TooManyMethods")
 public final class NativeC4Document implements C4Document.NativeImpl {
@@ -92,7 +92,7 @@ public final class NativeC4Document implements C4Document.NativeImpl {
 
     //// Fleece-related
     @Override
-    @Nullable
+    @NonNull
     public String nBodyAsJSON(long doc, boolean canonical) throws LiteCoreException {
         return bodyAsJSON(doc, canonical);
     }
@@ -156,7 +156,7 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     private static native void save(long doc, int maxRevTreeDepth) throws LiteCoreException;
 
     //// Fleece-related
-    @Nullable
+    @NonNull
     private static native String bodyAsJSON(long doc, boolean canonical) throws LiteCoreException;
 
     //// Lifecycle

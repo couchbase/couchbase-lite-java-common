@@ -71,6 +71,9 @@ public interface Fn {
     }
 
     @FunctionalInterface
+    interface LongProviderThrows<E extends Exception> { long get() throws E; }
+
+    @FunctionalInterface
     interface Predicate<T> {
         boolean test(@NonNull T x);
     }
