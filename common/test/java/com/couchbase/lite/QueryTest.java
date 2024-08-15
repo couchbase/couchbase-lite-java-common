@@ -29,7 +29,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
 
@@ -3188,6 +3190,61 @@ public class QueryTest extends BaseQueryTest {
                 assertNotNull(result.getString(1));
             });
     }
+
+    @Test
+    public void testConcurrentCreateAndQuery() throws InterruptedException {
+        CountDownLatch latch1 = new CountDownLatch(1); // 2nd thread waits for first to enter inBatch
+        CountDownLatch latch2 = new CountDownLatch(1); // 1st thread waits for 2nd to run a query: should time out
+        CountDownLatch latch3 = new CountDownLatch(2); // test is complete
+
+        AtomicInteger n = new AtomicInteger(0); // ensure strict ordering of events
+        AtomicBoolean timeout = new AtomicBoolean(false); // latch 2 should time out in the first thread
+        AtomicReference<Exception> err = new AtomicReference<>(null); // to capture any exceptions
+
+        Thread t1 = new Thread(() -> {
+            try {
+                getTestDatabase().inBatch(() -> {
+                    // the other thread should be wating on the first latch
+                    n.compareAndSet(0, 1);
+                    latch1.countDown(); // let the other thread run its query
+                    timeout.set(!latch2.await(1, TimeUnit.SECONDS)); // this should time out
+                    // the other thread should be past the first latch but should not have been able to start its query
+                    n.compareAndSet(2, 3);
+                });
+            }
+            catch (Exception e) { err.compareAndSet(null, e); }
+            finally { latch3.countDown(); }
+        });
+
+        Thread t2 = new Thread(() -> {
+            try {
+                latch1.await();
+                // this thread is allowed to run its query only after the other thread is in inBatch
+                n.compareAndSet(1, 2);
+                // this thread should not be able to run the query until the other thread has left inBatch
+                try (ResultSet rs = getTestDatabase().createQuery("SELECT * FROM _").execute()) {
+                    // This latch should already have timed out in the other thread
+                    latch2.countDown();
+                    // shouldn't get here until the other thread has left inBatch
+                    n.compareAndSet(3, 4);
+                }
+                catch (CouchbaseLiteException e) { err.compareAndSet(null, e); }
+            }
+            catch (InterruptedException ignore) { }
+            finally { latch3.countDown(); }
+        });
+
+        t1.start();
+        t2.start();
+
+        latch3.await(STD_TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        Exception e = err.get();
+        assertEquals("Events did not occur in expected order", 4, n.get());
+        assertTrue("Latch 2 should have timed out", timeout.get());
+        if (e != null) { throw new AssertionError("Operation failed", e); }
+    }
+
 
     // Utility Functions
 
