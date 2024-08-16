@@ -15,9 +15,11 @@
 //
 package com.couchbase.lite.internal.exec;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
@@ -33,21 +35,83 @@ public class CBLExecutor extends ThreadPoolExecutor {
     public static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
     public static final int POOL_SIZE = Math.max(4, CPU_COUNT - 1);
 
+    public static class Stats {
+        public final boolean isShutdown;
+        public final boolean isTerminating;
+        public final boolean isTerminated;
+        public final long totalTasks;
+        public final long completedTasks;
+        public final int poolSize;
+        public final int corePoolSize;
+        public final int largestPoolSize;
+        public final int maxPoolSize;
+        public final int qCurSize;
+        public final int qMaxSize;
+        public final float qMeanSize;
+        public final double qSizeSD;
+
+        @SuppressWarnings("PMD.ExcessiveParameterList")
+        public Stats(
+            boolean isShutdown,
+            boolean isTerminating,
+            boolean isTerminated,
+            long totalTasks,
+            long completedTasks,
+            int poolSize,
+            int corePoolSize,
+            int largestPoolSize,
+            int maxPoolSize,
+            int qCurSize,
+            int qMaxSize,
+            float qMeanSize,
+            double qSizeSD) {
+            this.isShutdown = isShutdown;
+            this.isTerminating = isTerminating;
+            this.isTerminated = isTerminated;
+            this.totalTasks = totalTasks;
+            this.completedTasks = completedTasks;
+            this.poolSize = poolSize;
+            this.corePoolSize = corePoolSize;
+            this.largestPoolSize = largestPoolSize;
+            this.maxPoolSize = maxPoolSize;
+            this.qCurSize = qCurSize;
+            this.qMaxSize = qMaxSize;
+            this.qMeanSize = qMeanSize;
+            this.qSizeSD = qSizeSD;
+        }
+    }
+
+
     @NonNull
     private final String name;
 
+    @GuardedBy("name")
     private long n;
+    @GuardedBy("name")
     private int qSizeMax;
+    @GuardedBy("name")
     private float qSizeMean;
+    @GuardedBy("name")
     private float qSizeVariance;
+    @GuardedBy("name")
     private float m2;
 
+    // A fixed sized pool backed by a very large queue.
     public CBLExecutor(@NonNull String name) { this(name, POOL_SIZE, POOL_SIZE, new LinkedBlockingQueue<>()); }
 
     public CBLExecutor(@NonNull String name, int min, int max, @NonNull BlockingQueue<Runnable> workQueue) {
+        this(name, min, max, 30, workQueue);  // unused threads die after 30 sec
+    }
+
+    public CBLExecutor(
+        @NonNull String name,
+        int min,
+        int max,
+        long ttlSecs,
+        @NonNull BlockingQueue<Runnable> queue) {
         super(min, max,
-            30, TimeUnit.SECONDS,        // unused threads die after 30 sec
-            workQueue,
+            ttlSecs, TimeUnit.SECONDS,
+            queue,
             new ThreadFactory() {        // thread factory that gives our threads nice recognizable names
                 private final String threadName = name + " #";
                 private final AtomicInteger threadId = new AtomicInteger(0);
@@ -73,46 +137,68 @@ public class CBLExecutor extends ThreadPoolExecutor {
 
     @Override
     public void execute(@NonNull Runnable task) {
-        super.execute(task);
-        computeQueueStats();
+        try { super.execute(task); }
+        finally { computeQueueStats(); }
     }
 
     @NonNull
     @Override
-    public String toString() { return "CBLExecutor(" + name + "}"; }
+    public String toString() { return "CBLExecutor{" + name + "}"; }
 
     public void dumpState() {
-        final int max;
-        final float mean;
-        final double stdDev;
-        synchronized (name) {
-            max = qSizeMax;
-            mean = qSizeMean;
-            stdDev = Math.sqrt(qSizeVariance);
-        }
-
+        final Stats stats = getStats();
         Log.w(
             LogDomain.DATABASE,
             "==== CBL Executor \"%s\" (%s)",
             name,
-            (isShutdown()) ? "x" : ((isTerminated()) ? "o" : ((isTerminating()) ? "-" : "+")));
+            (stats.isShutdown) ? "x" : ((stats.isTerminated) ? "-" : ((stats.isTerminating) ? "o" : "+")));
 
-        Log.w(LogDomain.DATABASE, "== Tasks: %d, %d", getTaskCount(), getCompletedTaskCount());
+        Log.w(LogDomain.DATABASE, "== Tasks: %d, %d", stats.totalTasks, stats.completedTasks);
 
-        Log.w(LogDomain.DATABASE, "== Pool: %d, %d, %d", getPoolSize(), getLargestPoolSize(), getMaximumPoolSize());
+        Log.w(
+            LogDomain.DATABASE,
+            "== Pool: %d, %d, %d, %d",
+            stats.poolSize,
+            stats.corePoolSize,
+            stats.largestPoolSize,
+            stats.maxPoolSize);
 
-        final ArrayList<Runnable> waiting = new ArrayList<>(getQueue());
-        if (waiting.isEmpty()) {
-            Log.w(LogDomain.DATABASE, "== Queue is empty");
-            return;
-        }
+        Log.w(
+            LogDomain.DATABASE,
+            "== Queue: %d, %d, %.2f, %.4f",
+            stats.qCurSize,
+            stats.qMaxSize,
+            stats.qMeanSize,
+            stats.qSizeSD);
 
-        Log.w(LogDomain.DATABASE, "== Queue: %d, %d, %.2f, %.4f", waiting.size(), max, mean, stdDev);
+        final List<Runnable> waiting = new ArrayList<>(getQueue());
         int n = 0;
         for (Runnable r: waiting) {
-            final Exception orig = (!(r instanceof InstrumentedTask)) ? null : ((InstrumentedTask) r).origin;
-            Log.w(LogDomain.DATABASE, "@" + (n++) + ": " + r, orig);
+            Log.w(
+                LogDomain.DATABASE,
+                "@%d: %s",
+                (!(r instanceof InstrumentedTask)) ? null : ((InstrumentedTask) r).origin,
+                n++,
+                r);
         }
+    }
+
+    @NonNull
+    public Stats getStats() {
+        final int max;
+        final float mean;
+        final double variance;
+        synchronized (name) {
+            max = qSizeMax;
+            mean = qSizeMean;
+            variance = qSizeVariance;
+        }
+
+        return new Stats(
+            isShutdown(), isTerminating(), isTerminated(),
+            getTaskCount(), getCompletedTaskCount(),
+            getPoolSize(), getCorePoolSize(), getLargestPoolSize(), getMaximumPoolSize(),
+            getQueue().size(), max, mean, Math.sqrt(variance));
     }
 
     private void computeQueueStats() {
