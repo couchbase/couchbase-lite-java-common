@@ -157,7 +157,7 @@ public final class C4Document extends C4Peer {
 
     // - Properties
     @Nullable
-    public String getRevID() { return nullableWithPeerOrNull(impl::nGetRevID); }
+    public String getRevID() { return withPeerOrNull(impl::nGetRevID); }
 
     public long getSequence() { return withPeerOrDefault(0L, impl::nGetSequence); }
 
@@ -166,13 +166,13 @@ public final class C4Document extends C4Peer {
     // - Revisions
 
     @Nullable
-    public String getSelectedRevID() { return nullableWithPeerOrNull(impl::nGetSelectedRevID); }
+    public String getSelectedRevID() { return withPeerOrNull(impl::nGetSelectedRevID); }
 
     public long getSelectedSequence() { return withPeerOrDefault(0L, impl::nGetSelectedSequence); }
 
     @Nullable
     public FLDict getSelectedBody2() {
-        final long value = nonNullWithPeerOrThrow(impl::nGetSelectedBody2);
+        final long value = withPeerOrThrow(impl::nGetSelectedBody2);
         return value == 0 ? null : FLDict.create(value);
     }
 
@@ -209,7 +209,7 @@ public final class C4Document extends C4Peer {
 
     @NonNull
     public String bodyAsJSON(boolean canonical) throws LiteCoreException {
-        return nonNullWithPeerOrThrow(h -> impl.nBodyAsJSON(h, canonical));
+        return withPeerOrThrow(h -> impl.nBodyAsJSON(h, canonical));
     }
 
     // - Helper methods
@@ -236,10 +236,10 @@ public final class C4Document extends C4Peer {
         return C4Constants.hasFlags(getFlags(), C4Constants.RevisionFlags.HAS_ATTACHMENTS);
     }
 
-    // Although we inherit it from C4NativePeer, actually closing the C4Document
+    // Although we inherit it from AutoClosable, actually closing the C4Document
     // will cause crashes. Apparently, there may be multiple active references
     // to a single C4Document, making it very hard to figure out when they can be
-    // closed, explicitly.  Just log the call: don't actually close it.
+    // closed, explicitly.  Just log the call but don't actually close it.
     @SuppressWarnings({"MissingSuperCall", "PMD.CallSuper"})
     @Override
     public void close() {
