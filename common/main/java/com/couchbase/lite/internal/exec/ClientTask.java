@@ -41,7 +41,7 @@ import com.couchbase.lite.internal.CouchbaseLiteInternal;
  * able to run more that that number of tasks concurrently.
  * After some consideration, I have decided to use a SynchronousQueue in front
  * of the thread pool.  I do not think that there is anything to be gained
- * from queuing tassks.  If there are insufficient resources to run the task,
+ * from queuing tasks.  If there are insufficient resources to run the task,
  * it will be rejected and the caller will have to deal with it.  This decision
  * require review.
  *
