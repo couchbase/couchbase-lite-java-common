@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.core;
+package com.couchbase.lite.internal.exec;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,7 +21,6 @@ import androidx.annotation.VisibleForTesting;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,7 +50,10 @@ import com.couchbase.lite.internal.utils.ClassUtils;
  * <ul>
  * <li> The alive set contains a ref to a CleanableRef (making it reachable).
  * <li> The CleanableRef is a phantom ref to an object used by platform code that needs cleaning.
+ *      The CleanableRef must NOT have a hard ref to the object!
  * <li> The CleanableRef also contains a ref to a method (probably a lambda) that does the clean up for the object.
+ *      Again, be careful!  If the method is a lambda that contains a ref to the target object, the target object
+ *      is hard reachable and will never be GCed!
  * </ul>
  * <p>
  * When the object becomes unreachable, the VM enqueues the CleanableRef on the zombies
@@ -59,24 +61,26 @@ import com.couchbase.lite.internal.utils.ClassUtils;
  * If it finds one, it removes it from the zombies queue, clears it (apparently preferred
  * prior to Java 11), removes itself from the alive set and calls the clean method on the
  * associated Cleaner.Cleanable.  Presumably, that releases the associated native resource
- * (see C4Peer). Cleaner.Cleanables support a finalizing flag, so they can behave differently
- * in response to an explicit close, than they do to being cleaned up by the Cleaner.
+ * (see C4Peer). Cleaner.Cleanables support a finalizing flag so they can behave differently
+ * in response to an explicit close than they do to being cleaned up by the Cleaner.
  * <p>
  * The timeout parameter is the maximum time the CleanerThread will wait for a zombie to appear.
  * It is useful because when a Cleaner is stopped, its cleaner threads will not notice until
- * they awakened by a zombie or the timeout.
+ * they are awakened by a zombie or by the timeout.
  * <p>
  * Cleaners clean themselves: this is sole reason for the existence of CleanerImpl, separate from
  * Cleaner. A Cleaner will clean up its own resources when it becomes unreachable.  A Cleaner
- * registers itself with the CleanerImpl that  actually does the cleaning.  When the Cleaner
+ * registers itself with the CleanerImpl that actually does the cleaning.  When the Cleaner
  * becomes unreachable its CleanableRef will be enqueued on the zombies queue, its clean method
- * called, and that will, in turn delegate to the stopCleaner method.
- * p>
- * Potential failure modes:
+ * called, and that will, in turn, delegate to the stopCleaner method.
+ * <p>
+ * Failure modes:
  * <ul>
- * <li> If the Cleaner is not reachable, the alive set will become unreachable and the cleaners in it
+ * <li> If the Cleaner is not reachable, the alive set will become unreachable and the CleanableRef in it
  * will be unreachable.  They may be GC'ed before their associated objects and therefore unable to clean
  * up after those objects.
+ * <li> If a Cleanable takes a long time (or even deadlocks), the CleanerThread will be hung and
+ * not able to clean up other resources.
  * </ul>
  */
 class CleanerImpl {
@@ -97,17 +101,18 @@ class CleanerImpl {
         @Override
         public void clean(boolean finalizing) {
             // Apparently preferred in Java 8. Not actually necessary,
-            // because the ref is about to become unreachable, anyway.
+            // because this ref is about to become unreachable, anyway.
             clear();
 
             try { cleanable.clean(finalizing); }
             catch (Exception e) {
-                Log.w(LogDomain.DATABASE, "Cleanable error%s in %s", e, ((finalizing) ? "!" : ""), name);
+                Log.w(LogDomain.DATABASE, "%sFailed cleaning: %s", e, ((finalizing) ? "!" : ""), name);
             }
             finally {
                 synchronized (alive) {
                     alive.remove(this);
-                    capacity = alive.size();
+                    curSize = alive.size();
+                    if (curSize < minSize) { minSize = curSize; }
                 }
             }
         }
@@ -118,6 +123,8 @@ class CleanerImpl {
     }
 
     private final class CleanerThread extends Thread {
+        private AtomicLong runtime = new AtomicLong();
+
         CleanerThread(@NonNull String name) {
             super(name);
             setPriority(Thread.MAX_PRIORITY - 2);
@@ -140,13 +147,15 @@ class CleanerImpl {
             try {
                 Log.i(LogDomain.DATABASE, "Cleaner thread %s-%s started", cleanerName, getName());
                 while (!shouldStop.get()) {
-                    try {
-                        final Cleaner.Cleanable ref = getNextZombie();
-                        // Except during testing, "ref" is, in fact, a CleanableRef
-                        // ... so this is a call to CleanableRef.clean
-                        if (ref != null) { ref.clean(true); }
+                    final Cleaner.Cleanable ref = getNextZombie();
+                    // Except during testing, "ref" is, in fact, a CleanableRef
+                    // ... so this is a call to CleanableRef.clean
+                    if (ref != null) {
+                        long t = System.nanoTime();
+                        ref.clean(true);
+                        t = System.nanoTime() - t;
+                        runtime.getAndAdd(t);
                     }
-                    catch (InterruptedException ignore) { }
                 }
             }
             catch (Exception e) { err = e; }
@@ -156,28 +165,34 @@ class CleanerImpl {
                 if (!shouldStop.get()) { startCleaner(); }
             }
         }
-    }
 
-    @NonNull
-    private final Set<CleanableRef> alive = new HashSet<>();
-    @NonNull
-    private final ReferenceQueue<Object> zombies = new ReferenceQueue<>();
+        public long getRuntimeNanos() { return runtime.getAndSet(0); }
+    }
 
     @NonNull
     private final AtomicBoolean shouldStop = new AtomicBoolean();
 
     @NonNull
+    private final Set<CleanableRef> alive = new HashSet<>();
+
+    @NonNull
+    private final ReferenceQueue<Object> zombies = new ReferenceQueue<>();
+
+    @NonNull
     private final AtomicLong threadId = new AtomicLong();
+
     @VisibleForTesting
     @NonNull
-    final Set<Thread> threads = Collections.synchronizedSet(new HashSet<>());
+    private final Set<CleanerThread> threads = new HashSet<>();
 
     @NonNull
     final String cleanerName;
     private final int nThreads;
     private final int timeoutMs;
 
-    private int capacity;
+    private int curSize;
+    private int minSize;
+    private int maxSize;
 
     CleanerImpl(@NonNull String cleanerName, int nThreads, int timeoutMs) {
         this.cleanerName = cleanerName;
@@ -191,7 +206,8 @@ class CleanerImpl {
 
         final CleanableRef ref = new CleanableRef(obj, cleanable);
         synchronized (alive) {
-            capacity = alive.size();
+            curSize = alive.size();
+            if (curSize > maxSize) { maxSize = curSize; }
             alive.add(ref);
         }
 
@@ -200,28 +216,65 @@ class CleanerImpl {
         return ref;
     }
 
-    final int runningThreads() { return threads.size(); }
-
-    final int capacity() {
-        synchronized (alive) { return capacity; }
-    }
-
-    @VisibleForTesting
-    final void stopCleaner() { shouldStop.set(true); }
-
     @VisibleForTesting
     final void startCleaner() {
-        while (threads.size() < nThreads) {
-            final Thread thread = new CleanerThread(cleanerName + "-thread-" + threadId.getAndIncrement());
-            threads.add(thread);
-            thread.start();
+        synchronized (threads) {
+            while (threads.size() < nThreads) {
+                final CleanerThread thread = new CleanerThread(cleanerName + "-thread-" + threadId.getAndIncrement());
+                threads.add(thread);
+                thread.start();
+            }
         }
     }
 
     @VisibleForTesting
     @Nullable
-    Cleaner.Cleanable getNextZombie() throws InterruptedException {
-        return (Cleaner.Cleanable) zombies.remove(timeoutMs);
+    Cleaner.Cleanable getNextZombie() {
+        try { return (Cleaner.Cleanable) zombies.remove(timeoutMs); }
+        catch (InterruptedException ignore) { }
+        return null;
+    }
+
+    @VisibleForTesting
+    final void stopCleaner() { shouldStop.set(true); }
+
+
+    // Instrumentation
+
+    final int getRunningThreadCount() {
+        synchronized (threads) { return threads.size(); }
+    }
+
+    final boolean isRunning(@Nullable Thread t) {
+        synchronized (threads) { return threads.contains(t); }
+    }
+
+    final long getCleanerNanos() {
+        long runtime = 0;
+        synchronized (threads) {
+            for (CleanerThread t: threads) { runtime += t.getRuntimeNanos(); }
+        }
+        return runtime;
+    }
+
+    final int getLiveCount() {
+        synchronized (alive) { return curSize; }
+    }
+
+    final int getMinLiveCount() {
+        synchronized (alive) {
+            final int mSize = minSize;
+            minSize = curSize;
+            return mSize;
+        }
+    }
+
+    final int getMaxLiveCount() {
+        synchronized (alive) {
+            final int mSize = maxSize;
+            maxSize = curSize;
+            return mSize;
+        }
     }
 }
 
@@ -248,12 +301,11 @@ public final class Cleaner {
     }
 
     /**
+     * WARNING:
      * Be very careful with implementations of Cleanable passed to this method!
      * Anything to which it holds a reference (even implicitly, as a lambda)
      * will be reachable and not eligible for garbage collection.  If the Cleanable
      * holds a reference to the obj, the obj will be leaked, permanently.
-     * LOL: looking at the Java implementation of Cleanable, I find pretty much
-     * this same warning.
      */
     @NonNull
     public Cleanable register(@NonNull Object obj, @NonNull Cleanable cleaner) {
@@ -261,11 +313,20 @@ public final class Cleaner {
     }
 
     @VisibleForTesting
-    public int runningThreads() { return impl.runningThreads(); }
+    public long getCleanerNanos() { return impl.getCleanerNanos(); }
 
     @VisibleForTesting
-    public int capacity() { return impl.capacity(); }
+    public int getLiveCount() { return impl.getLiveCount(); }
 
     @VisibleForTesting
-    public void stop() { impl.stopCleaner(); }
+    public int getMinLiveCount() { return impl.getMinLiveCount(); }
+
+    @VisibleForTesting
+    public int getMaxLiveCount() { return impl.getMaxLiveCount(); }
+
+    @VisibleForTesting
+    int getRunningThreadCount() { return impl.getRunningThreadCount(); }
+
+    @VisibleForTesting
+    void stop() { impl.stopCleaner(); }
 }

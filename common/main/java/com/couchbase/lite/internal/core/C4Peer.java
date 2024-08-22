@@ -18,6 +18,7 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.CallSuper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +28,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
+import com.couchbase.lite.internal.exec.Cleaner;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
 import com.couchbase.lite.internal.utils.Fn;
@@ -104,7 +106,8 @@ public abstract class C4Peer implements AutoCloseable {
         Object getPeerLock() { return peerRef; }
     }
 
-    private static final Cleaner CLEANER = new Cleaner("c4peer", 3);
+    @VisibleForTesting
+    static final Cleaner CLEANER = new Cleaner("c4peer", 3);
 
 
     @NonNull
@@ -113,7 +116,6 @@ public abstract class C4Peer implements AutoCloseable {
     private final PeerHolder peerHolder;
     @NonNull
     final Cleaner.Cleanable cleaner;
-
 
     protected C4Peer(long peer, @Nullable PeerCleaner cleaner) {
         this.name = getClass().getSimpleName() + "(0x" + Long.toHexString(peer) + ")" + ClassUtils.objId(this);
@@ -124,10 +126,6 @@ public abstract class C4Peer implements AutoCloseable {
         // Anything to which the peerHolder holds a reference will be reachable until the cleaner is run
         this.cleaner = CLEANER.register(this, peerHolder);
     }
-
-    //-------------------------------------------------------------------------
-    // Object methods
-    //-------------------------------------------------------------------------
 
     @NonNull
     @Override
