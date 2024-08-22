@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.BaseTest
+import com.couchbase.lite.CouchbaseLiteError
 import com.couchbase.lite.internal.core.C4Peer.PeerCleaner
 import com.couchbase.lite.internal.core.Cleaner.Cleanable
 import org.junit.Assert.assertEquals
@@ -27,18 +28,34 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 
 class C4PeerTest : BaseTest() {
-    // Verify that a newly created cleaner has no threads running
-
-    // Verify that registering a cleanable with a cleaner causes it to start
-    // all of the threads specified at its creation
+    // Verify that a newly created cleaner has the expected number of threads running
+    @Test
+    fun testNewCleaner() {
+        assertEquals(2, Cleaner("newTest", 2, 1000).runningThreads())
+    }
 
     // Verify that registering a cleanable with a cleaner
     // adds a CleanableRef to the alive set and that cleaning it removes it.
+    @Test
+    fun testCleanerRefs() {
+        val cleaner = Cleaner("refsTest", 2, 1000)
+        assertEquals(0, cleaner.capacity())
+        cleaner.register(Object()) { _ -> }
+        assertEquals(1, cleaner.capacity())
+        // It is hard to test for the removal of the ref, because it happens only after a GC.
+    }
 
     // Verify that closing a C4Peer before it is cleaned does not cause multiple
     // calls to the dispose method.
+    /// This is hard to test, because it has to verify something that happens only after a GC
 
-    // Verify that attempting to register with a closed cleaner throws
+    // Verify that attempting to register with a stopped cleaner throws
+    @Test
+    fun testClosedCleaner() {
+        val cleaner = Cleaner("refsTest", 2, 1000)
+        cleaner.stop()
+        assertThrows(CouchbaseLiteError::class.java) { cleaner.register(Object()) { _ -> } }
+    }
 
     // Verify that closing a peer ref explicitly gets its dispose method called.
     @Test
@@ -54,7 +71,7 @@ class C4PeerTest : BaseTest() {
     // This test will throw an OOM on failure1
     @Test
     fun testFinalizePeer() {
-        val cleaner = Cleaner("test-cleaner", 1, 1000)
+        val cleaner = Cleaner("finalizerTest", 1, 1000)
 
         val visited = AtomicBoolean()
         while (!visited.get()) {
@@ -66,7 +83,7 @@ class C4PeerTest : BaseTest() {
     // even if there are no queued cleanables
     @Test
     fun testStopCleaner() {
-        val peerCleaner = Cleaner("testThreads", 3, 200)
+        val peerCleaner = Cleaner("stopTest", 3, 200)
         assertEquals(3, peerCleaner.runningThreads())
 
         peerCleaner.stop()
@@ -79,22 +96,28 @@ class C4PeerTest : BaseTest() {
     fun testCleanableException() {
         val latch = CountDownLatch(1)
         val peerCleaner = object : CleanerImpl("testCleanerError", 1, 500) {
-            override fun getNextZombie(): Cleanable {
-                if (latch.count <= 0) {
-                    Thread.sleep(1000)
-                }
-                val bomb = Cleanable {
-                    latch.countDown()
-                    throw Exception()
-                }
-                return bomb
+            override fun getNextZombie(): Cleanable? {
+                if (latch.count == 0L) return null
+                latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                throw Exception("ch ch ch ch ch ch ch ch cherry bomb")
             }
         }
 
+        // start the cleaner and verify that it has a thread
         peerCleaner.startCleaner()
-        latch.await(5, TimeUnit.SECONDS)
+        waitUntil(STD_TIMEOUT_MS) { peerCleaner.runningThreads() == 1 }
+        val theThread = peerCleaner.threads.first()
 
-        assertEquals(1, peerCleaner.runningThreads())
+        // let the Cleanable throw its exception
+        latch.countDown()
+
+        // verify that the thread dies and is removed from the list of threads
+        waitUntil(STD_TIMEOUT_MS) { !peerCleaner.threads.contains(theThread) }
+
+        // verify that it is replaced by another thread
+        waitUntil(STD_TIMEOUT_MS) { peerCleaner.runningThreads() == 1 }
+
+        peerCleaner.stopCleaner()
     }
 
     // Verify that an exception in the cleaner itself does not reduce the number of running threads
@@ -103,14 +126,25 @@ class C4PeerTest : BaseTest() {
         val latch = CountDownLatch(1)
         val peerCleaner = object : CleanerImpl("testCleanerError", 1, 500) {
             override fun getNextZombie(): Cleanable? {
-                latch.countDown()
-                throw Exception()
+                if (latch.count == 0L) return null
+                latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+                throw Exception("ch ch ch ch ch ch ch ch cherry bomb")
             }
         }
 
+        // start the cleaner and verify that it has a thread
         peerCleaner.startCleaner()
-        latch.await(5, TimeUnit.SECONDS)
-        assertEquals(1, peerCleaner.runningThreads())
+        waitUntil(STD_TIMEOUT_MS) { peerCleaner.runningThreads() == 1 }
+        val theThread = peerCleaner.threads.first()
+
+        // let getNextZombie throw its exception
+        latch.countDown()
+
+        // verify that the thread dies and is removed from the list of threads
+        waitUntil(STD_TIMEOUT_MS) { !peerCleaner.threads.contains(theThread) }
+
+        // verify that it is replaced by another thread
+        waitUntil(STD_TIMEOUT_MS) { peerCleaner.runningThreads() == 1 }
 
         peerCleaner.stopCleaner()
     }

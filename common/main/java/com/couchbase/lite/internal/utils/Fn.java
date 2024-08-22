@@ -33,6 +33,9 @@ public interface Fn {
         R apply(@NonNull T x);
     }
 
+    /**
+     * @deprecated Use NullableFunction
+     */
     @Deprecated
     @FunctionalInterface
     interface Function<T, R> {
@@ -58,6 +61,9 @@ public interface Fn {
         R apply(@NonNull T x) throws E;
     }
 
+    /**
+     * @deprecated Use NonNullFunctionThrows
+     */
     @Deprecated
     @FunctionalInterface
     interface FunctionThrows<T, R, E extends Exception> {
@@ -84,7 +90,9 @@ public interface Fn {
     }
 
     @FunctionalInterface
-    interface LongProviderThrows<E extends Exception> { long get() throws E; }
+    interface LongProviderThrows<E extends Exception> {
+        long get() throws E;
+    }
 
     @FunctionalInterface
     interface Predicate<T> {
