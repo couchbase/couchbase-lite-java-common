@@ -13,25 +13,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-package com.couchbase.lite.internal.core
+package com.couchbase.lite.internal.exec
 
 import com.couchbase.lite.BaseTest
 import com.couchbase.lite.CouchbaseLiteError
+import com.couchbase.lite.internal.core.C4Peer
 import com.couchbase.lite.internal.core.C4Peer.PeerCleaner
-import com.couchbase.lite.internal.core.Cleaner.Cleanable
+import com.couchbase.lite.internal.exec.Cleaner.Cleanable
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 
 class C4PeerTest : BaseTest() {
     // Verify that a newly created cleaner has the expected number of threads running
     @Test
     fun testNewCleaner() {
-        assertEquals(2, Cleaner("newTest", 2, 1000).runningThreads())
+        assertEquals(2, Cleaner("newTest", 2, 1000).runningThreadCount)
     }
 
     // Verify that registering a cleanable with a cleaner
@@ -39,15 +42,14 @@ class C4PeerTest : BaseTest() {
     @Test
     fun testCleanerRefs() {
         val cleaner = Cleaner("refsTest", 2, 1000)
-        assertEquals(0, cleaner.capacity())
+        assertEquals(0, cleaner.liveCount)
         cleaner.register(Object()) { _ -> }
-        assertEquals(1, cleaner.capacity())
-        // It is hard to test for the removal of the ref, because it happens only after a GC.
+        assertEquals(1, cleaner.liveCount)
+        // Difficult to verify the removal of the ref, because it happens only after a GC.
     }
 
-    // Verify that closing a C4Peer before it is cleaned does not cause multiple
-    // calls to the dispose method.
-    /// This is hard to test, because it has to verify something that happens only after a GC
+    // Verify that a ref added to the CleanerImpl's ref queue is cleaned
+    /// There is no way to add things to a ReferenceQueue, explicitly, though.
 
     // Verify that attempting to register with a stopped cleaner throws
     @Test
@@ -67,15 +69,35 @@ class C4PeerTest : BaseTest() {
         assertTrue(visited.get())
     }
 
+    // Verify that closing a peer ref explicitly, multiple time, gets its dispose method called exactly once.
+    @Test
+    fun testClosePeerLots() {
+        val closes = AtomicInteger()
+        val peered = object : C4Peer(8954L, PeerCleaner { closes.incrementAndGet() }) {}
+
+        for (i in 0 until 100) {
+            peered.close()
+        }
+        assertEquals(1, closes.get())
+    }
+
+    // Verify that closing a C4Peer before it is cleaned does not cause multiple
+    // calls to the dispose method.
+    /// Difficult to verify because this happens only after a GC
+
     // Verify that finalizing a peer ref gets its dispose method called.
-    // This test will throw an OOM on failure1
+    // This test will throw an OOM on failure!
     @Test
     fun testFinalizePeer() {
         val cleaner = Cleaner("finalizerTest", 1, 1000)
-
         val visited = AtomicBoolean()
-        while (!visited.get()) {
-            cleaner.register(Any()) { visited.set(true) }
+        try {
+            while (!visited.get()) {
+                cleaner.register(Any()) { visited.set(true) }
+            }
+        } catch (e: OutOfMemoryError) {
+            // not at all clear that this will save our biscuit
+            throw AssertionError("Cleaner did not run")
         }
     }
 
@@ -84,68 +106,78 @@ class C4PeerTest : BaseTest() {
     @Test
     fun testStopCleaner() {
         val peerCleaner = Cleaner("stopTest", 3, 200)
-        assertEquals(3, peerCleaner.runningThreads())
+        assertEquals(3, peerCleaner.runningThreadCount)
 
         peerCleaner.stop()
         Thread.sleep(300)
-        assertEquals(0, peerCleaner.runningThreads())
+        assertEquals(0, peerCleaner.runningThreadCount)
     }
 
     // Verify that an exception in a cleanable does not reduce the number of running threads
     @Test
     fun testCleanableException() {
+        val thread = AtomicReference<Thread>()
+        val ok = AtomicBoolean()
         val latch = CountDownLatch(1)
         val peerCleaner = object : CleanerImpl("testCleanerError", 1, 500) {
             override fun getNextZombie(): Cleanable? {
-                if (latch.count == 0L) return null
-                latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                throw Exception("ch ch ch ch ch ch ch ch cherry bomb")
+                // if thread.get is null, this is the first time through
+                // return a Cleanable that throws an exception
+                if (null == thread.get()) {
+                    thread.set(Thread.currentThread())
+                    return Cleanable { throw Exception("ch ch ch ch ch ch ch ch cherry bomb") }
+                }
+
+                // if we get here the thread on which the exception was thrown should be gone
+                // and we should be on a new thread.
+                ok.set(!isRunning(thread.get()))
+                latch.countDown()
+
+                return null
             }
         }
 
         // start the cleaner and verify that it has a thread
         peerCleaner.startCleaner()
-        waitUntil(STD_TIMEOUT_MS) { peerCleaner.runningThreads() == 1 }
-        val theThread = peerCleaner.threads.first()
-
-        // let the Cleanable throw its exception
-        latch.countDown()
-
-        // verify that the thread dies and is removed from the list of threads
-        waitUntil(STD_TIMEOUT_MS) { !peerCleaner.threads.contains(theThread) }
-
-        // verify that it is replaced by another thread
-        waitUntil(STD_TIMEOUT_MS) { peerCleaner.runningThreads() == 1 }
-
-        peerCleaner.stopCleaner()
+        try {
+            assertTrue(latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS))
+            assertTrue(ok.get())
+        } finally {
+            peerCleaner.stopCleaner()
+        }
     }
 
     // Verify that an exception in the cleaner itself does not reduce the number of running threads
     @Test
     fun testCleanerError() {
+        val thread = AtomicReference<Thread>()
+        val ok = AtomicBoolean()
         val latch = CountDownLatch(1)
         val peerCleaner = object : CleanerImpl("testCleanerError", 1, 500) {
             override fun getNextZombie(): Cleanable? {
-                if (latch.count == 0L) return null
-                latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS)
-                throw Exception("ch ch ch ch ch ch ch ch cherry bomb")
+                // if thread.get is null, this is the first time through
+                // throw an exception
+                if (null == thread.get()) {
+                    thread.set(Thread.currentThread())
+                    throw Exception("ch ch ch ch ch ch ch ch cherry bomb")
+                }
+
+                // if we get here the thread on which the exception was thrown should be gone
+                // and we should be on a new thread.
+                ok.set(!isRunning(thread.get()))
+                latch.countDown()
+
+                return null
             }
         }
 
         // start the cleaner and verify that it has a thread
         peerCleaner.startCleaner()
-        waitUntil(STD_TIMEOUT_MS) { peerCleaner.runningThreads() == 1 }
-        val theThread = peerCleaner.threads.first()
-
-        // let getNextZombie throw its exception
-        latch.countDown()
-
-        // verify that the thread dies and is removed from the list of threads
-        waitUntil(STD_TIMEOUT_MS) { !peerCleaner.threads.contains(theThread) }
-
-        // verify that it is replaced by another thread
-        waitUntil(STD_TIMEOUT_MS) { peerCleaner.runningThreads() == 1 }
-
-        peerCleaner.stopCleaner()
+        try {
+            assertTrue(latch.await(STD_TIMEOUT_MS, TimeUnit.MILLISECONDS))
+            assertTrue(ok.get())
+        } finally {
+            peerCleaner.stopCleaner()
+        }
     }
 }
