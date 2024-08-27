@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LiteCoreException;
@@ -107,61 +108,74 @@ public final class NativeC4Document implements C4Document.NativeImpl {
         return dictContainsBlobs(dictPtr, dictSize, sk);
     }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     //// Creating and Updating Documents
 
-    private static native long getFromCollection(long coll, String docID, boolean mustExist, boolean getAllRevs)
+    @GuardedBy("dbLock")
+    private static native long getFromCollection(long peer, String docID, boolean mustExist, boolean getAllRevs)
         throws LiteCoreException;
 
-    private static native long createFromSlice(long coll, String docID, long bodyPtr, long bodySize, int flags)
+    @GuardedBy("dbLock")
+    private static native long createFromSlice(long peer, String docID, long bodyPtr, long bodySize, int flags)
         throws LiteCoreException;
 
     //// Properties
-    private static native int getFlags(long doc);
+    private static native int getFlags(long peer);
 
     @NonNull
-    private static native String getRevID(long doc);
+    private static native String getRevID(long peer);
 
-    private static native long getSequence(long doc);
+    private static native long getSequence(long peer);
 
-    //// Revisions
-    private static native int getSelectedFlags(long doc);
+    private static native int getSelectedFlags(long peer);
 
     @NonNull
-    private static native String getSelectedRevID(long doc);
+    private static native String getSelectedRevID(long peer);
 
-    private static native long getTimestamp(long doc);
+    private static native long getTimestamp(long peer);
 
-    private static native long getSelectedSequence(long doc);
+    private static native long getSelectedSequence(long peer);
 
-    private static native long getSelectedBody2(long doc);
+    @GuardedBy("dbLock")
+    private static native long getSelectedBody2(long peer);
 
     //// Conflict Resolution
-    private static native void selectNextLeafRevision(long doc, boolean includeDeleted, boolean withBody)
+
+    @GuardedBy("dbLock")
+    private static native void selectNextLeafRevision(long peer, boolean includeDeleted, boolean withBody)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native void resolveConflict(
-        long doc,
+        long peer,
         String winningRevID,
         String losingRevID,
         byte[] mergeBody,
         int mergedFlags)
         throws LiteCoreException;
 
-    private static native long update2(long doc, long bodyPtr, long bodySize, int flags) throws LiteCoreException;
+    @GuardedBy("dbLock&docLock")
+    private static native long update2(long peer, long body, long bodySize, int flags) throws LiteCoreException;
 
-    private static native void save(long doc, int maxRevTreeDepth) throws LiteCoreException;
+    @GuardedBy("dbLock&docLock")
+    private static native void save(long peer, int maxRevTreeDepth) throws LiteCoreException;
 
     //// Fleece-related
+    @GuardedBy("dbLock")
     @NonNull
-    private static native String bodyAsJSON(long doc, boolean canonical) throws LiteCoreException;
+    private static native String bodyAsJSON(long peer, boolean canonical) throws LiteCoreException;
 
     //// Lifecycle
-    private static native void free(long doc);
+    private static native void free(long peer);
 
     //// Utility
-    private static native boolean dictContainsBlobs(long dictPtr, long dictSize, long sk);
+    @GuardedBy("dbLock")
+    private static native boolean dictContainsBlobs(long peer, long dictSize, long sharedKeys);
 }

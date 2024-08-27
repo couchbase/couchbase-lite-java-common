@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
@@ -78,7 +79,10 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
 
 
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     // BlobKey
@@ -91,6 +95,7 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
     private static native void free(long peer);
 
     // BlobStore
+    @GuardedBy("dbLock")
     private static native long getBlobStore(long db) throws LiteCoreException;
 
     private static native long getSize(long peer, long blobKey);
@@ -111,20 +116,26 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
 
     // BlobReadStream
 
+    @GuardedBy("streamLock")
     private static native int read(long peer, byte[] b, int offset, long maxBytesToRead) throws LiteCoreException;
 
+    @GuardedBy("streamLock")
     private static native long getLength(long peer) throws LiteCoreException;
 
+    @GuardedBy("streamLock")
     private static native void seek(long peer, long position) throws LiteCoreException;
 
     private static native void closeWriteStream(long peer);
 
     // BlobReadStream
 
+    @GuardedBy("streamLock")
     private static native void write(long peer, byte[] bytes, int len) throws LiteCoreException;
 
+    @GuardedBy("streamLock")
     private static native long computeBlobKey(long peer) throws LiteCoreException;
 
+    @GuardedBy("streamLock")
     private static native void install(long peer) throws LiteCoreException;
 
     private static native void closeReadStream(long peer);

@@ -25,6 +25,113 @@ using namespace litecore::jni;
 
 extern "C" {
 
+// C4FullTextMatch
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    dataSource
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_dataSource(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
+    if (!handle) return 0L;
+    return (jlong) ((C4FullTextMatch *) handle)->dataSource;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    property
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_property(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
+    if (!handle) return 0L;
+    return (jlong) ((C4FullTextMatch *) handle)->property;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    term
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_term(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
+    if (!handle) return 0L;
+    return (jlong) ((C4FullTextMatch *) handle)->term;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    start
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_start(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
+    if (!handle) return 0L;
+    return (jlong) ((C4FullTextMatch *) handle)->start;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    length
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_length(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
+    if (!handle) return 0L;
+    return (jlong) ((C4FullTextMatch *) handle)->length;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getFullTextMatchCount
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatchCount(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle) {
+    auto e = (C4QueryEnumerator *) handle;
+    if (e == nullptr)
+        return 0L;
+
+    return (jlong) e->fullTextMatchCount;
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatch
+ * Method:    getFullTextMatch
+ * Signature: (JI)J
+ */
+JNIEXPORT jlong JNICALL
+Java_com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatch(
+        JNIEnv *env,
+        jclass ignore,
+        jlong handle,
+        jint jidx) {
+    auto e = (C4QueryEnumerator *) handle;
+    if (e == nullptr)
+        return 0L;
+
+    return (jlong) &(e->fullTextMatches[(int) jidx]);
+}
+
 // C4DocEnumerator
 
 /*

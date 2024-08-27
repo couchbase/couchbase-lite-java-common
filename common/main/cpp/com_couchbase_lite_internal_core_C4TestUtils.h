@@ -9,6 +9,71 @@
 extern "C" {
 #endif
 
+// C4FullTextMatch
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    dataSource
+ * Signature: (J)J
+ */
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_dataSource
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    property
+ * Signature: (J)J
+ */
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_property
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    term
+ * Signature: (J)J
+ */
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_term
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    start
+ * Signature: (J)J
+ */
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_start
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    length
+ * Signature: (J)J
+ */
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_length
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getFullTextMatchCount
+ * Signature: (J)J
+ */
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatchCount
+        (JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_C4TestUtils
+ * Method:    getFullTextMatch
+ * Signature: (JI)J
+ */
+JNIEXPORT jlong
+JNICALL Java_com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatch
+        (JNIEnv *, jclass, jlong, jint);
+
 // C4DocEnumerator
 
 /*

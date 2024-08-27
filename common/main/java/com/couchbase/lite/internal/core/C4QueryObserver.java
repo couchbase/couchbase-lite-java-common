@@ -31,7 +31,7 @@ public final class C4QueryObserver extends C4NativePeer {
     }
 
     public interface NativeImpl {
-        long nCreate(long token, long c4Query);
+        long nCreate(long peer, long token);
         void nEnable(long peer);
         void nFree(long peer);
     }
@@ -61,7 +61,7 @@ public final class C4QueryObserver extends C4NativePeer {
         @NonNull QueryChangeCallback callback) {
         final long token = QUERY_OBSERVER_CONTEXT.reserveKey();
 
-        final long peer = impl.nCreate(token, query.getPeer());
+        final long peer = impl.nCreate(query.getPeer(), token);
 
         final C4QueryObserver observer = new C4QueryObserver(impl, peer, queryEnumeratorFactory, token, callback);
         QUERY_OBSERVER_CONTEXT.bind(token, observer);

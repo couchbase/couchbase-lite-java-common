@@ -350,8 +350,8 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_create(
         JNIEnv *env,
         jclass ignore,
-        jlong token,
         jlong coll,
+        jlong token,
         jstring jdocID) {
     jstringSlice docID(env, jdocID);
 
@@ -397,8 +397,8 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4QueryObserver_create(
         JNIEnv *env,
         jclass clazz,
-        jlong token,
-        jlong jquery) {
+        jlong jquery,
+        jlong token) {
     return (jlong) c4queryobs_create((C4Query *) jquery, c4QueryObserverCallback, (void *) token);
 }
 

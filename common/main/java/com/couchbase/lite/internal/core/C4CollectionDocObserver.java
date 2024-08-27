@@ -24,7 +24,7 @@ public final class C4CollectionDocObserver extends C4DocumentObserver {
     throws LiteCoreException {
         final long token = BOUND_OBSERVERS.reserveKey();
         final C4CollectionDocObserver observer
-            = new C4CollectionDocObserver(impl, token, impl.nCreate(token, c4Coll, id), listener);
+            = new C4CollectionDocObserver(impl, token, impl.nCreate(c4Coll, token, id), listener);
         BOUND_OBSERVERS.bind(token, observer);
         return observer;
     }

@@ -1,5 +1,6 @@
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -93,8 +94,12 @@ public final class NativeC4Database implements C4Database.NativeImpl {
         deleteCollection(peer, scope, collection);
     }
 
+
     //-------------------------------------------------------------------------
     // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     // - Lifecycle
@@ -108,14 +113,15 @@ public final class NativeC4Database implements C4Database.NativeImpl {
         throws LiteCoreException;
 
     @SuppressWarnings("PMD.UnusedPrivateMethod")
-    private static native void close(long db) throws LiteCoreException;
+    @GuardedBy("dbLock")
+    private static native void close(long peer) throws LiteCoreException;
 
-    static native void free(long db);
+    static native void free(long peer);
 
 // - File System
 
     @Nullable
-    private static native String getPath(long db);
+    private static native String getPath(long peer);
 
     private static native void copy(
         String sourcePath,
@@ -126,55 +132,67 @@ public final class NativeC4Database implements C4Database.NativeImpl {
         byte[] encryptionKey)
         throws LiteCoreException;
 
-    private static native void delete(long db) throws LiteCoreException;
+    private static native void delete(long peer) throws LiteCoreException;
 
     private static native void deleteNamed(@NonNull String name, @NonNull String dir) throws LiteCoreException;
 
     // - UUID
 
+    @GuardedBy("dbLock")
     @NonNull
-    private static native byte[] getPublicUUID(long db) throws LiteCoreException;
+    private static native byte[] getPublicUUID(long peer) throws LiteCoreException;
 
     // - Transactions
 
-    private static native void beginTransaction(long db) throws LiteCoreException;
+    @GuardedBy("dbLock")
+    private static native void beginTransaction(long peer) throws LiteCoreException;
 
-    private static native void endTransaction(long db, boolean commit) throws LiteCoreException;
+    @GuardedBy("dbLock")
+    private static native void endTransaction(long peer, boolean commit) throws LiteCoreException;
 
     // - Maintenance
 
-    private static native void rekey(long db, int keyType, byte[] newKey) throws LiteCoreException;
+    private static native void rekey(long peer, int keyType, byte[] newKey) throws LiteCoreException;
 
-    private static native boolean maintenance(long db, int type) throws LiteCoreException;
+    @GuardedBy("dbLock")
+    private static native boolean maintenance(long peer, int type) throws LiteCoreException;
 
     // - Cookie Store
 
-    private static native void setCookie(long db, String url, String setCookieHeader, boolean acceptParentDomain)
+    @GuardedBy("dbLock")
+    private static native void setCookie(long peer, String url, String setCookieHeader, boolean acceptParentDomain)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     @Nullable
-    private static native String getCookies(long db, @NonNull String url) throws LiteCoreException;
+    private static native String getCookies(long peer, @NonNull String url) throws LiteCoreException;
 
     // - Utilities
 
-    private static native long getSharedFleeceEncoder(long db);
+    @GuardedBy("dbLock")
+    private static native long getSharedFleeceEncoder(long peer);
 
-    private static native long getFLSharedKeys(long db);
+    @GuardedBy("dbLock")
+    private static native long getFLSharedKeys(long peer);
 
     // - Scopes and Collections
 
     // returns Set<String> of scope names
+    @GuardedBy("dbLock")
     @NonNull
     private static native Set<String> getScopeNames(long peer) throws LiteCoreException;
 
     // returns true if the db has a scope with the passed name
+    @GuardedBy("dbLock")
     private static native boolean hasScope(long peer, @NonNull String scope);
 
     // returns Set<String> of scope names
+    @GuardedBy("dbLock")
     @NonNull
     private static native Set<String> getCollectionNames(long peer, @NonNull String scope) throws LiteCoreException;
 
     // deletes the named collection
+    @GuardedBy("dbLock")
     private static native void deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException;
 }

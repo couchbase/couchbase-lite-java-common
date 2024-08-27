@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 
 import com.couchbase.lite.LiteCoreException;
@@ -36,9 +37,13 @@ public final class NativeC4CollectionObserver implements C4CollectionObserver.Na
 
 
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
+    @GuardedBy("dbLock")
     private static native long create(long token, long coll) throws LiteCoreException;
 
     @NonNull

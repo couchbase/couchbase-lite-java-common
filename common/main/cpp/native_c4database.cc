@@ -41,7 +41,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open(
         jint encryptionAlg,
         jbyteArray encryptionKey) {
     jstringSlice name(env, jname);
-
     jstringSlice parentDir(env, jparentDir);
 
     C4DatabaseConfig2 config;
@@ -116,9 +115,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy(
         jint encryptionAlg,
         jbyteArray encryptionKey) {
     jstringSlice fromPath(env, jfromPath);
-    jstringSlice name(env, jname);
-
     jstringSlice parentDir(env, jparentDir);
+    jstringSlice name(env, jname);
 
     C4DatabaseConfig2 config;
     config.parentDirectory = parentDir;

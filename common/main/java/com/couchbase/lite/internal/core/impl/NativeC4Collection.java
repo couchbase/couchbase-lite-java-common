@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -133,15 +134,21 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     @Override
     public void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException { deleteIndex(peer, name); }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     private static native long getDefaultCollection(long c4Db) throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native long getCollection(long c4Db, @Nullable String scope, @NonNull String collection)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native long createCollection(long c4Db, @Nullable String scope, @NonNull String collection)
         throws LiteCoreException;
 
@@ -149,22 +156,29 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
 
     private static native void free(long peer);
 
+    @GuardedBy("dbLock")
     private static native long getDocumentCount(long peer);
 
+    @GuardedBy("dbLock")
     private static native void setDocExpiration(long peer, @NonNull String docID, long timestamp)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native long getDocExpiration(long peer, @NonNull String docID)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native void purgeDoc(long peer, @NonNull String docID)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native long getIndexesInfo(long peer) throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native void createValueIndex(long peer, String name, int qLanguage, String indexSpec)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native void createFullTextIndex(
         long peer,
         String name,
@@ -174,10 +188,12 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
         boolean ignoreDiacritics)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native void createPredictiveIndex(long peer, String name, String indexSpec)
         throws LiteCoreException;
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @GuardedBy("dbLock")
     private static native void createVectorIndex(
         long peer,
         String name,
@@ -194,7 +210,9 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
         boolean isLazy)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native long getIndex(long peer, @NonNull String name) throws LiteCoreException;
 
+    @GuardedBy("dbLock")
     private static native void deleteIndex(long peer, @NonNull String name) throws LiteCoreException;
 }

@@ -123,7 +123,7 @@ class CleanerImpl {
     }
 
     private final class CleanerThread extends Thread {
-        private AtomicLong runtime = new AtomicLong();
+        private final AtomicLong runtime = new AtomicLong();
 
         CleanerThread(@NonNull String name) {
             super(name);
