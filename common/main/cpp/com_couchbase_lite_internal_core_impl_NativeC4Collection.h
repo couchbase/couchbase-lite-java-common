@@ -110,6 +110,15 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createValu
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    createArrayIndex
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createArrayIndex
+        (JNIEnv *, jclass, jlong, jstring, jstring, jstring);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createFullTextIndex
  * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;B)V
  */

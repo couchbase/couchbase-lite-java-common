@@ -33,14 +33,15 @@ public abstract class IndexConfiguration extends AbstractIndex {
     IndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
     IndexConfiguration(@NonNull List<String> expressions) {
-        this.expressions = Preconditions.assertNotEmpty(
-            Fn.filterToList(expressions, s -> !StringUtils.isEmpty(s)),
-            "expression list");
+        this.expressions = Fn.filterToList(Preconditions.assertNotEmpty(expressions, "expressions"), s -> s != null);
+        if (expressions.size() != this.expressions.size()) {
+            throw new IllegalArgumentException("Null expressions are not legal");
+        }
     }
 
     @NonNull
-    public List<String> getExpressions() { return new ArrayList<>(expressions); }
+    public final List<String> getExpressions() { return new ArrayList<>(expressions); }
 
     @NonNull
-    String getIndexSpec() { return StringUtils.join(",", expressions); }
+    final String getIndexSpec() { return StringUtils.join(",", expressions); }
 }
