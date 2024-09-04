@@ -270,6 +270,27 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createValueIndex(
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
+ * Method:    createArrayIndex
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createArrayIndex(
+        JNIEnv *env,
+        jclass ignore,
+        jlong coll,
+        jstring jName,
+        jstring jpath,
+        jstring jqueryExpressions) {
+    jstringSlice path(env, jpath);
+
+    C4IndexOptions options = {};
+    //options.path = path.c_str();
+
+    createIndex(env, coll, kC4ArrayIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Collection
  * Method:    createFullTextIndex
  * Signature: (JLjava/lang/String;ILjava/lang/String;Ljava/lang/String;B)V
  */

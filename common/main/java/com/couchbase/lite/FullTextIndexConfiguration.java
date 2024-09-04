@@ -38,7 +38,7 @@ public final class FullTextIndexConfiguration extends IndexConfiguration {
 
     public FullTextIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
-    FullTextIndexConfiguration(@NonNull List<String> expressions) { super(expressions); }
+    public FullTextIndexConfiguration(@NonNull List<String> expressions) { super(expressions); }
 
     /**
      * The language code which is an ISO-639 language such as "en", "fr", etc.
