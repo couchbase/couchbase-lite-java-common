@@ -41,7 +41,7 @@ public final class JSONUtils {
         @NonNull
         protected synchronized SimpleDateFormat initialValue() {
             final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
-            sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
             return sdf;
         }
     };
