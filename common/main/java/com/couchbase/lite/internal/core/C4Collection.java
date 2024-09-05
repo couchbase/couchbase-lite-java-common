@@ -115,7 +115,7 @@ public final class C4Collection extends C4NativePeer {
         throws LiteCoreException {
         return new C4Collection(
             impl,
-            impl.nCreateCollection(c4db.getPeer(), scope, collection),
+            c4db.withPeerOrThrow(dbPeer -> impl.nCreateCollection(dbPeer, scope, collection)),
             c4db,
             scope,
             collection);
@@ -130,7 +130,7 @@ public final class C4Collection extends C4NativePeer {
         @NonNull String scope,
         @NonNull String collection)
         throws LiteCoreException {
-        final long c4collection = impl.nGetCollection(c4db.getPeer(), scope, collection);
+        final long c4collection = c4db.withPeerOrThrow(dbPeer -> impl.nGetCollection(dbPeer, scope, collection));
         return (c4collection == 0L) ? null : new C4Collection(impl, c4collection, c4db, scope, collection);
     }
 
@@ -139,7 +139,7 @@ public final class C4Collection extends C4NativePeer {
     static C4Collection getDefault(@NonNull NativeImpl impl, @NonNull C4Database c4db) throws LiteCoreException {
         return new C4Collection(
             impl,
-            impl.nGetDefaultCollection(c4db.getPeer()),
+            c4db.withPeerOrThrow(impl::nGetDefaultCollection),
             c4db, Scope.DEFAULT_NAME,
             Collection.DEFAULT_NAME);
     }
