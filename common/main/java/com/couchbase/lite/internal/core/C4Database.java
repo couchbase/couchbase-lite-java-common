@@ -150,10 +150,12 @@ public abstract class C4Database extends C4NativePeer {
     static final class ManagedC4Database extends C4Database {
         @NonNull
         private final NativeImpl impl;
+        private final C4NativePeer.TimeStamp ts;
 
         ManagedC4Database(@NonNull NativeImpl impl, @NonNull String name, long peer) {
             super(impl, name, peer);
             this.impl = impl;
+            ts = C4NativePeer.register();
         }
 
         @Override
@@ -162,6 +164,7 @@ public abstract class C4Database extends C4NativePeer {
         @SuppressWarnings("NoFinalizer")
         @Override
         protected void finalize() throws Throwable {
+            C4NativePeer.remove(ts);
             try { closePeer(LogDomain.DATABASE); }
             finally { super.finalize(); }
         }
@@ -327,8 +330,8 @@ public abstract class C4Database extends C4NativePeer {
     //-------------------------------------------------------------------------
     protected C4Database(@NonNull NativeImpl impl, @NonNull String name, long peer) {
         super(peer);
-        this.name = name;
         this.impl = impl;
+        this.name = name;
     }
 
     //-------------------------------------------------------------------------

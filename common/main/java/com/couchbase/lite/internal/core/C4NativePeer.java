@@ -19,6 +19,11 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -39,6 +44,58 @@ import com.couchbase.lite.internal.utils.Preconditions;
  * java.lang.NullPointerException: Null reference used for synchronization (monitor-enter)
  */
 public abstract class C4NativePeer implements AutoCloseable {
+    public static class TimeStamp {
+        public final long ts;
+
+        public TimeStamp() { this.ts = System.currentTimeMillis(); }
+    }
+
+    public static class Stats {
+        public final int minSize;
+        public final int maxSize;
+        public final List<TimeStamp> alive;
+
+        public Stats(int minSize, int maxSize, List<TimeStamp> alive) {
+            this.minSize = minSize;
+            this.maxSize = maxSize;
+            this.alive = alive;
+        }
+    }
+
+    private static final Set<TimeStamp> ALIVE = new HashSet<>();
+    private static int minSize;
+    private static int maxSize;
+
+    public static TimeStamp register() {
+        synchronized (ALIVE) {
+            final TimeStamp ts = new TimeStamp();
+            ALIVE.add(ts);
+            final int curSize = ALIVE.size();
+            if (maxSize < curSize) { maxSize = curSize; }
+            return ts;
+        }
+    }
+
+    public static void remove(TimeStamp ts) {
+        synchronized (ALIVE) {
+            ALIVE.remove(ts);
+            final int curSize = ALIVE.size();
+            if (minSize > curSize) { minSize = curSize; }
+        }
+    }
+
+    public static Stats getStats() {
+        final List<TimeStamp> alive;
+        synchronized (ALIVE) {
+            final Stats stats = new Stats(minSize, maxSize, new ArrayList<>(ALIVE));
+            final int curSize = ALIVE.size();
+            minSize = curSize;
+            maxSize = curSize;
+            return stats;
+        }
+    }
+
+
     @GuardedBy("getPeerLock()")
     private final long peer;
     @GuardedBy("getPeerLock()")

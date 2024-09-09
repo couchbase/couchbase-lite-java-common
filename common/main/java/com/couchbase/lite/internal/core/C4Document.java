@@ -141,6 +141,7 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private final NativeImpl impl;
+    private final C4NativePeer.TimeStamp ts;
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -149,6 +150,7 @@ public final class C4Document extends C4NativePeer {
     private C4Document(@NonNull NativeImpl impl, long peer) {
         super(peer);
         this.impl = impl;
+        ts = C4NativePeer.register();
     }
 
     @VisibleForTesting
@@ -283,6 +285,7 @@ public final class C4Document extends C4NativePeer {
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
+        C4NativePeer.remove(ts);
         // Since there is no good way to free these suckers explicitly,
         // we leave them to the finalizer and don't squawk about it.
         try { closePeer(null); }
