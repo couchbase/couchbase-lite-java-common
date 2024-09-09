@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -33,6 +34,7 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
         return createCollection(c4Db, scope, collection);
     }
 
+    @GuardedBy("dbLock")
     @Override
     public long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection) throws LiteCoreException {
         return getCollection(c4Db, scope, collection);
@@ -73,6 +75,12 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     @Override
     public void nCreateValueIndex(long peer, String name, int qLanguage, String indexSpec) throws LiteCoreException {
         createValueIndex(peer, name, qLanguage, indexSpec);
+    }
+
+    @Override
+    public void nCreateArrayIndex(long peer, String name, String path, String indexSpec)
+        throws LiteCoreException {
+        createArrayIndex(peer, name, path, indexSpec);
     }
 
     @Override
@@ -165,6 +173,11 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     private static native void createValueIndex(long peer, String name, int qLanguage, String indexSpec)
         throws LiteCoreException;
 
+    @GuardedBy("dbLock")
+    private static native void createArrayIndex(long peer, String name, String path, String indexSpec)
+        throws LiteCoreException;
+
+    @GuardedBy("dbLock")
     private static native void createFullTextIndex(
         long peer,
         String name,
