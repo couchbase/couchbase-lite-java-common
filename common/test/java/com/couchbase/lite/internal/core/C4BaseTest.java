@@ -163,17 +163,13 @@ public class C4BaseTest extends BaseTest {
     }
 
     protected int getTestDbFlags() {
-        int flags = C4Database.DB_FLAGS;
-        if (C4Database.VERSION_VECTORS_ENABLED) { flags |= C4Constants.DatabaseFlags.FAKE_CLOCK; }
-        return flags;
+        return C4Database.DB_FLAGS | C4Constants.DatabaseFlags.FAKE_CLOCK;
     }
 
     protected String getTestRevId(String node, int gen) {
-        return (!C4Database.VERSION_VECTORS_ENABLED)
-            ? gen + "-" + node
-            : gen + "@" + PlatformUtils.getEncoder().encodeToString(
-                    StringUtils.getUniqueName(node, 16).substring(0, 16).getBytes(StandardCharsets.US_ASCII))
-                .substring(0, 22);
+        return gen + "@" + PlatformUtils.getEncoder().encodeToString(
+                StringUtils.getUniqueName(node, 16).substring(0, 16).getBytes(StandardCharsets.US_ASCII))
+            .substring(0, 22);
     }
 
     protected String trimRevId(String revId) {

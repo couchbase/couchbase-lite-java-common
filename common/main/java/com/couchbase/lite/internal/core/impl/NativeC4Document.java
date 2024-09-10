@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core.impl;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.C4Document;
@@ -54,6 +55,12 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     @Override
     @NonNull
     public String nGetSelectedRevID(long doc) { return getSelectedRevID(doc); }
+
+    @Nullable
+    @Override
+    public String nGetRevisionHistory(long jdoc, long maxRevs, @Nullable String[] backToRevs) {
+        return getRevisionHistory(jdoc, maxRevs, backToRevs);
+    }
 
     @Override
     public long nGetTimestamp(long doc) { return getTimestamp(doc); }
@@ -132,6 +139,9 @@ public final class NativeC4Document implements C4Document.NativeImpl {
 
     @NonNull
     private static native String getSelectedRevID(long doc);
+
+    @Nullable
+    private static native String getRevisionHistory(long jdoc, long maxRevs, @Nullable String[] backToRevs);
 
     private static native long getTimestamp(long doc);
 

@@ -51,13 +51,11 @@ import com.couchbase.lite.internal.utils.Preconditions;
     "PMD.ExcessiveParameterList",
     "PMD.CyclomaticComplexity"})
 public abstract class C4Database extends C4NativePeer {
-    public static final boolean VERSION_VECTORS_ENABLED = false;
+    @VisibleForTesting
+    public static final String DB_EXTENSION = ".cblite2";
 
     @VisibleForTesting
     static final int DB_FLAGS = C4Constants.DatabaseFlags.CREATE;
-
-    @VisibleForTesting
-    public static final String DB_EXTENSION = ".cblite2";
 
     public interface NativeImpl {
         long nOpen(
@@ -233,8 +231,7 @@ public abstract class C4Database extends C4NativePeer {
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        // Stupid LiteCore will throw a total hissy fit if we pass
-        // it something that it decides isn't a directory.
+        // LiteCore will throw a total hissy fit if we pass it something that it decides isn't a directory.
         boolean pathOk = false;
         try {
             final File parentDir = new File(parentDirPath);
@@ -250,15 +247,13 @@ public abstract class C4Database extends C4NativePeer {
                 "Parent directory does not exist or is not a directory: " + parentDirPath);
         }
 
-        if (VERSION_VECTORS_ENABLED) { flags |= C4Constants.DatabaseFlags.VERSION_VECTORS; }
-
         return new ManagedC4Database(
             impl,
             name,
             impl.nOpen(
                 parentDirPath,
                 name,
-                flags,
+                flags | C4Constants.DatabaseFlags.VERSION_VECTORS,
                 algorithm,
                 encryptionKey));
     }

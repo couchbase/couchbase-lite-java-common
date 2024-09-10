@@ -22,6 +22,7 @@ import java.util.Locale;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.couchbase.lite.internal.CouchbaseLiteInternal;
@@ -93,6 +94,7 @@ public class MigrationTest extends BaseTest {
         }
     }
 
+    @Ignore("CBL-6239")
     @Test
     public void testOpenExistingDB() throws Exception {
         ZipUtils.unzip(PlatformUtils.getAsset("android200-sqlite.cblite2.zip"), dbDir);

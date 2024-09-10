@@ -168,6 +168,45 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID(
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
+ * Method:    getRevisionHistory
+ * Signature: (JJ[Ljava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory(
+        JNIEnv *env,
+        jclass ignore,
+        jlong jdoc,
+        jlong maxRevs,
+        jobjectArray jBackToRevs) {
+    C4String *backToRevs = nullptr;
+    unsigned int nBackToRevs = 0;
+
+    // if jBackToRevs is non-null, a Java String[], convert it to a C array of C4Slice:
+    if (jBackToRevs != nullptr) {
+        jsize n = env->GetArrayLength(jBackToRevs);
+        if (env->EnsureLocalCapacity(std::min(n + 1, MaxLocalRefsToUse)) < 0)
+            return nullptr;
+
+        std::vector<C4Slice> b2r(n);
+        std::vector<jstringSlice *> b2rAlloc;
+        for (jsize i = 0; i < n; i++) {
+            auto js = (jstring) env->GetObjectArrayElement(jBackToRevs, i);
+            auto *item = new jstringSlice(env, js);
+            b2rAlloc.push_back(item); // so its memory won't be freed at the end of the block
+            b2r[i] = *item;
+        }
+
+        backToRevs = b2r.data();
+        nBackToRevs = b2r.size();
+    }
+
+    auto revHistory = c4doc_getRevisionHistory((C4Document *) jdoc, (unsigned int) maxRevs, backToRevs, nBackToRevs);
+
+    return toJString(env, revHistory);
+}
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getSelectedRevID
  * Signature: (J)J;
  */
@@ -205,12 +244,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedBody2(
         JNIEnv *ignore1,
         jclass ignore2,
         jlong jdoc) {
-    auto doc = (C4Document *) jdoc;
-    FLDict root = nullptr;
-    C4Slice body = c4doc_getRevisionBody(doc);
-    if (body.size > 0)
-        root = FLValue_AsDict(FLValue_FromData({body.buf, body.size}, kFLTrusted));
-    return (jlong) root;
+    C4Slice body = c4doc_getRevisionBody((C4Document *) jdoc);
+    if (body.size == 0)
+        return (jlong) nullptr;
+
+    FLValue data = FLValue_FromData(body, kFLTrusted);
+
+    return (jlong) FLValue_AsDict(data);
 }
 
 // - Conflict resolution
