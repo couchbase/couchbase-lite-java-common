@@ -175,7 +175,6 @@
 
     <!-- DOCUMENTATION -->
     <rule ref="category/java/documentation.xml">
-        <exclude name="CommentSize" />
         <exclude name="CommentRequired" />
         <exclude name="UncommentedEmptyConstructor" />
 
@@ -185,7 +184,7 @@
 
     <rule ref="category/java/documentation.xml/CommentSize">
         <properties>
-            <property name="maxLines" value="40" />
+            <property name="maxLines" value="100" />
             <property name="maxLineLength" value="120" />
         </properties>
     </rule>

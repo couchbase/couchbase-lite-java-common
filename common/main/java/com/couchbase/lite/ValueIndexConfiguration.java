@@ -30,7 +30,7 @@ import com.couchbase.lite.internal.core.C4Collection;
 public final class ValueIndexConfiguration extends IndexConfiguration {
     public ValueIndexConfiguration(@NonNull String... expressions) { this(Arrays.asList(expressions)); }
 
-    ValueIndexConfiguration(@NonNull List<String> expressions) { super(expressions); }
+    public ValueIndexConfiguration(@NonNull List<String> expressions) { super(expressions); }
 
     @Override
     void createIndex(@NonNull String name, @NonNull C4Collection c4Collection) throws LiteCoreException {

@@ -49,6 +49,8 @@ public final class C4Collection extends C4NativePeer {
 
         void nCreateValueIndex(long peer, String name, int queryLanguage, String indexSpec) throws LiteCoreException;
 
+        void nCreateArrayIndex(long peer, String name, String path, String indexSpec) throws LiteCoreException;
+
         void nCreateFullTextIndex(
             long peer,
             String name,
@@ -91,6 +93,7 @@ public final class C4Collection extends C4NativePeer {
         return create(NATIVE_IMPL, c4db, scope, collection);
     }
 
+    @GuardedBy("dbLock")
     @Nullable
     public static C4Collection get(@NonNull C4Database c4db, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException {
@@ -119,6 +122,7 @@ public final class C4Collection extends C4NativePeer {
     }
 
     @VisibleForTesting
+    @GuardedBy("dbLock")
     @Nullable
     static C4Collection get(
         @NonNull NativeImpl impl,
@@ -238,6 +242,10 @@ public final class C4Collection extends C4NativePeer {
 
     public void createValueIndex(String name, int queryLanguage, String indexSpec) throws LiteCoreException {
         withPeer(peer -> impl.nCreateValueIndex(peer, name, queryLanguage, indexSpec));
+    }
+
+    public void createArrayIndex(String name, String path, String indexSpec) throws LiteCoreException {
+        withPeer(peer -> impl.nCreateArrayIndex(peer, name, path, indexSpec));
     }
 
     public void createFullTextIndex(
