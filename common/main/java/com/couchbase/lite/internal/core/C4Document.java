@@ -19,6 +19,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4Document;
@@ -45,6 +48,8 @@ public final class C4Document extends C4NativePeer {
         int nGetSelectedFlags(long doc);
         @NonNull
         String nGetSelectedRevID(long doc);
+        @Nullable
+        String nGetRevisionHistory(long jdoc, long maxRevs, @Nullable String[] backToRevs);
         long nGetTimestamp(long doc);
         long nGetSelectedSequence(long doc);
         // return pointer to FLValue
@@ -166,6 +171,18 @@ public final class C4Document extends C4NativePeer {
     @Nullable
     public String getSelectedRevID() { return withPeerOrNull(impl::nGetSelectedRevID); }
 
+    @Nullable
+    public List<String> getRevisonIds(long maxRevs, @Nullable List<String> backToRevs) {
+        final String[] backToRevsArray = (backToRevs == null) ? null : backToRevs.toArray(new String[0]);
+        final String revIds = nullableWithPeerOrThrow(peer -> impl.nGetRevisionHistory(peer, maxRevs, backToRevsArray));
+        if (revIds == null) { return null; }
+
+        final List<String> revisionIds = new ArrayList<>();
+        for (String id: revIds.split(",")) { revisionIds.add(id.trim()); }
+
+        return revisionIds;
+    }
+
     public long getSelectedSequence() { return withPeerOrDefault(0L, impl::nGetSelectedSequence); }
 
     @Nullable
@@ -178,7 +195,7 @@ public final class C4Document extends C4NativePeer {
 
     // - Conflict resolution
 
-    public long getTimestamp() { return withPeerOrDefault(-1L, impl::nGetTimestamp); }
+    public long getTimestamp() { return withPeerOrDefault(0L, impl::nGetTimestamp); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
         voidWithPeerOrThrow(peer -> impl.nSelectNextLeafRevision(peer, includeDeleted, withBody));

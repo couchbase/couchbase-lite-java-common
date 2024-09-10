@@ -178,7 +178,7 @@ class C4DatabaseTest : C4BaseTest() {
         c4Database = C4Database.getDatabase(
             dbParentDirPath,
             dbName,
-            (testDbFlags or C4Constants.DatabaseFlags.READ_ONLY) and NOT_CREATE_FLAG
+            (C4Database.DB_FLAGS or C4Constants.DatabaseFlags.READ_ONLY) and NOT_CREATE_FLAG
         )
         assertNotNull(c4Database)
         assertNotNull(c4Database.publicUUID)
@@ -206,7 +206,7 @@ class C4DatabaseTest : C4BaseTest() {
 
             // Reopen without 'create' flag:
             try {
-                bundle = C4Database.getDatabase(bundleDirPath, bundleName, testDbFlags and NOT_CREATE_FLAG)
+                bundle = C4Database.getDatabase(bundleDirPath, bundleName, C4Database.DB_FLAGS and NOT_CREATE_FLAG)
                 assertNotNull(bundle)
             } finally {
                 bundle?.closeDb()
@@ -223,7 +223,7 @@ class C4DatabaseTest : C4BaseTest() {
             C4Database.getDatabase(
                 getScratchDirectoryPath(getUniqueName("c4_test_2")),
                 getUniqueName("bundle"),
-                testDbFlags and NOT_CREATE_FLAG
+                C4Database.DB_FLAGS and NOT_CREATE_FLAG
             )
             fail()
         } catch (e: LiteCoreException) {
@@ -319,7 +319,7 @@ class C4DatabaseTest : C4BaseTest() {
                 c4Database.dbPath!!,
                 File(File(getScratchDirectoryPath(getUniqueName("a")), "aa"), "aaa").path,
                 getUniqueName("c4_copy_test_db"),
-                testDbFlags
+                C4Database.DB_FLAGS
             )
             fail("Copy to non-existent directory should fail")
         } catch (ex: LiteCoreException) {
@@ -335,7 +335,7 @@ class C4DatabaseTest : C4BaseTest() {
                 File(c4Database.dbPath?.let { File(it).parentFile }, "x" + C4Database.DB_EXTENSION).path,
                 getScratchDirectoryPath(getUniqueName("c4_test_2")),
                 getUniqueName("c4_copy_test_db"),
-                testDbFlags
+                C4Database.DB_FLAGS
             )
             fail("Copy from non-existent database should fail")
         } catch (ex: LiteCoreException) {
@@ -351,7 +351,7 @@ class C4DatabaseTest : C4BaseTest() {
     @Test
     fun testCreateScopeAndCollection() {
         val dbName = getUniqueName("c4_test_db")
-        val c4Db = C4Database.getDatabase(dbParentDirPath, dbName, testDbFlags)
+        val c4Db = C4Database.getDatabase(dbParentDirPath, dbName, C4Database.DB_FLAGS)
 
         assertEquals(1, c4Db.scopeNames.size)
         assertEquals(setOf(Scope.DEFAULT_NAME), c4Db.scopeNames)
@@ -429,8 +429,8 @@ class C4DatabaseTest : C4BaseTest() {
 
         val dbName = getUniqueName("c4_copy_test_db")
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
-        C4Database.copyDb(c4Database.dbPath!!, dstParentDirPath, dbName, testDbFlags)
-        val copyDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
+        C4Database.copyDb(c4Database.dbPath!!, dstParentDirPath, dbName, C4Database.DB_FLAGS)
+        val copyDb = C4Database.getDatabase(dstParentDirPath, dbName, C4Database.DB_FLAGS)
         assertNotNull(copyDb)
         assertEquals(2L, c4Collection.documentCount)
     }
@@ -441,7 +441,7 @@ class C4DatabaseTest : C4BaseTest() {
         createRev("doc002", REV_ID_1, fleeceBody)
         val srcDbPath = c4Database.dbPath
         val dstParentDirPath = getScratchDirectoryPath(getUniqueName("c4_test_2"))
-        var targetDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
+        var targetDb = C4Database.getDatabase(dstParentDirPath, dbName, C4Database.DB_FLAGS)
         createRev(targetDb.defaultCollection, "doc001", REV_ID_1, fleeceBody)
         assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
@@ -450,13 +450,13 @@ class C4DatabaseTest : C4BaseTest() {
                 srcDbPath!!,
                 dstParentDirPath,
                 dbName,
-                testDbFlags
+                C4Database.DB_FLAGS
             )
         } catch (ex: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.POSIX, ex.domain)
             assertEquals(POSIX_EEXIST, ex.code)
         }
-        targetDb = C4Database.getDatabase(dstParentDirPath, dbName, testDbFlags)
+        targetDb = C4Database.getDatabase(dstParentDirPath, dbName, C4Database.DB_FLAGS)
         assertEquals(1L, targetDb.defaultCollection.documentCount)
         targetDb.close()
     }

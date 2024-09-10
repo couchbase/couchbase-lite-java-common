@@ -19,6 +19,7 @@ import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -33,6 +34,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.MRoot;
 import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.Internal;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
@@ -187,12 +189,12 @@ public class Document implements DictionaryInterface, Iterable<String> {
     }
 
     /**
-     * Get the document's timestamp.
+     * The hybrid logical timestamp that the revision was created.
      *
-     * @return the document's timestamp
+     * @return the document's timestamp (nanoseconds)
      */
     public long getTimestamp() {
-        synchronized (lock) { return (c4Document == null) ? -1 : c4Document.getTimestamp(); }
+        synchronized (lock) { return (c4Document == null) ? 0 : c4Document.getTimestamp(); }
     }
 
     /**
@@ -431,6 +433,16 @@ public class Document implements DictionaryInterface, Iterable<String> {
      */
     @Override
     public boolean contains(@NonNull String key) { return getContent().contains(key); }
+
+    @Internal
+    @NonNull
+    public List<String> getRevisionHistory() {
+        List<String> revs = null;
+        synchronized (lock) {
+            if (c4Document != null) { revs = c4Document.getRevisonIds(Integer.MAX_VALUE, null); }
+        }
+        return (revs != null) ? revs : Collections.emptyList();
+    }
 
     //---------------------------------------------
     // Iterator implementation
