@@ -84,34 +84,34 @@ public final class C4Document extends C4Peer {
     @NonNull
     static C4Document create(@NonNull C4Collection coll, @NonNull String docID, @Nullable FLSliceResult body, int flags)
         throws LiteCoreException {
-        return new C4Document(
+        return coll.withPeerOrThrow(collPeer -> new C4Document(
             NATIVE_IMPL,
             NATIVE_IMPL.nCreateFromSlice(
-                coll.getPeer(),
+                collPeer,
                 docID,
                 (body == null) ? 0 : body.getBase(),
                 (body == null) ? 0 : body.getSize(),
-                flags));
+                flags)));
     }
 
     @Nullable
     static C4Document get(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, true, false);
+        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, false));
         return (doc == 0) ? null : new C4Document(NATIVE_IMPL, doc);
     }
 
     @Nullable
     static C4Document getWithRevs(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, true, true);
+        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, true));
         return (doc == 0) ? null : new C4Document(NATIVE_IMPL, doc);
     }
 
     @VisibleForTesting
     @NonNull
     static C4Document getOrCreateDocument(@NonNull C4Collection coll, @NonNull String docID) throws LiteCoreException {
-        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, false, true);
+        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, false, true));
 
         // This should never happen.  With "mustExist" set false we should get:
         // - the existing doc, if there is one
@@ -175,7 +175,7 @@ public final class C4Document extends C4Peer {
     @Nullable
     public String getRevisonIds(long maxRevs, @Nullable List<String> backToRevs) {
         final String[] backToRevsArray = (backToRevs == null) ? null : backToRevs.toArray(new String[0]);
-        return nullableWithPeerOrThrow(peer -> impl.nGetRevisionHistory(peer, maxRevs, backToRevsArray));
+        return withPeerOrNull(peer -> impl.nGetRevisionHistory(peer, maxRevs, backToRevsArray));
     }
 
     public long getSelectedSequence() { return withPeerOrDefault(0L, impl::nGetSelectedSequence); }
@@ -253,7 +253,7 @@ public final class C4Document extends C4Peer {
     @SuppressWarnings({"MissingSuperCall", "PMD.CallSuper"})
     @Override
     public void close() {
-        Log.w(LogDomain.DATABASE, "Unsafe call to C4Database.close()", new Exception("Unsafe call at:"));
+        Log.w(LogDomain.DATABASE, "Unsafe call to C4Document.close()", new Exception("Unsafe call at:"));
     }
 
     @NonNull

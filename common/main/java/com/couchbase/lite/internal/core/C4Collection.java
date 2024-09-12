@@ -18,7 +18,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.Collection;
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.Scope;
 import com.couchbase.lite.internal.core.impl.NativeC4Collection;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
@@ -26,7 +25,7 @@ import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public final class C4Collection extends C4NativePeer {
+public final class C4Collection extends C4Peer {
     public interface NativeImpl {
         // Factory methods
         long nCreateCollection(long c4Db, @NonNull String scope, @NonNull String collection)
@@ -170,7 +169,7 @@ public final class C4Collection extends C4NativePeer {
         @NonNull C4Database db,
         @NonNull String scope,
         @NonNull String name) {
-        super(peer);
+        super(peer, impl::nFree);
         this.impl = impl;
         this.db = db;
         this.scope = scope;
@@ -180,9 +179,6 @@ public final class C4Collection extends C4NativePeer {
     //-------------------------------------------------------------------------
     // public methods
     //-------------------------------------------------------------------------
-
-    @Override
-    public void close() { closePeer(null); }
 
     @NonNull
     @Override
@@ -211,7 +207,7 @@ public final class C4Collection extends C4NativePeer {
     }
 
     public void setDocumentExpiration(String docID, long timeStamp) throws LiteCoreException {
-        withPeer(peer -> impl.nSetDocExpiration(peer, docID, timeStamp));
+        voidWithPeerOrWarn(peer -> impl.nSetDocExpiration(peer, docID, timeStamp));
     }
 
     public long getDocumentExpiration(String docID) throws LiteCoreException {
@@ -219,7 +215,7 @@ public final class C4Collection extends C4NativePeer {
     }
 
     public void purgeDocument(String docID) throws LiteCoreException {
-        withPeer(peer -> impl.nPurgeDoc(peer, docID));
+        voidWithPeerOrWarn(peer -> impl.nPurgeDoc(peer, docID));
     }
 
     // - Observers
@@ -241,11 +237,11 @@ public final class C4Collection extends C4NativePeer {
     // completely polluted if we try to combine them into a single call.
 
     public void createValueIndex(String name, int queryLanguage, String indexSpec) throws LiteCoreException {
-        withPeer(peer -> impl.nCreateValueIndex(peer, name, queryLanguage, indexSpec));
+        voidWithPeerOrWarn(peer -> impl.nCreateValueIndex(peer, name, queryLanguage, indexSpec));
     }
 
     public void createArrayIndex(String name, String path, String indexSpec) throws LiteCoreException {
-        withPeer(peer -> impl.nCreateArrayIndex(peer, name, path, indexSpec));
+        voidWithPeerOrWarn(peer -> impl.nCreateArrayIndex(peer, name, path, indexSpec));
     }
 
     public void createFullTextIndex(
@@ -255,7 +251,7 @@ public final class C4Collection extends C4NativePeer {
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        withPeer(peer -> impl.nCreateFullTextIndex(
+        voidWithPeerOrWarn(peer -> impl.nCreateFullTextIndex(
             peer,
             name,
             queryLanguage,
@@ -265,7 +261,7 @@ public final class C4Collection extends C4NativePeer {
     }
 
     public void createPredictiveIndex(String name, String indexSpec) throws LiteCoreException {
-        withPeer(peer -> impl.nCreatePredictiveIndex(peer, name, indexSpec));
+        voidWithPeerOrWarn(peer -> impl.nCreatePredictiveIndex(peer, name, indexSpec));
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
@@ -283,7 +279,7 @@ public final class C4Collection extends C4NativePeer {
         long numProbes,
         boolean isLazy)
         throws LiteCoreException {
-        withPeer(peer -> impl.nCreateVectorIndex(
+        voidWithPeerOrWarn(peer -> impl.nCreateVectorIndex(
             peer,
             name,
             queryExpressions,
@@ -307,14 +303,12 @@ public final class C4Collection extends C4NativePeer {
     @GuardedBy("Database.getDbLock()")
     @Nullable
     public C4Index getIndex(@NonNull String name) throws LiteCoreException {
-        return nullableWithPeerOrThrow(peer -> {
-            final long idx = impl.nGetIndex(peer, name);
-            return (idx == 0L) ? null : C4Index.create(idx);
-        });
+        final long idx = withPeerOrThrow(peer -> impl.nGetIndex(peer, name));
+        return (idx == 0L) ? null : C4Index.create(idx);
     }
 
     public void deleteIndex(String name) throws LiteCoreException {
-        withPeer(peer -> impl.nDeleteIndex(peer, name));
+        voidWithPeerOrWarn(peer -> impl.nDeleteIndex(peer, name));
     }
 
     @NonNull
@@ -325,29 +319,4 @@ public final class C4Collection extends C4NativePeer {
 
     @NonNull
     public String getName() { return name; }
-
-    //-------------------------------------------------------------------------
-    // package access
-    //-------------------------------------------------------------------------
-
-    // ??? Exposes the peer handle
-    long getHandle() { return getPeer(); }
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { closePeer(LogDomain.DATABASE); }
-        finally { super.finalize(); }
-    }
-
-    // Dumb check for null is necessary because Android has a nasty habit
-    // of releasing fields befor calling finalize
-    private void closePeer(@Nullable LogDomain domain) {
-        releasePeer(
-            domain,
-            (peer) -> {
-                final NativeImpl nativeImpl = impl;
-                if (nativeImpl != null) { nativeImpl.nFree(peer); }
-            });
-    }
 }
