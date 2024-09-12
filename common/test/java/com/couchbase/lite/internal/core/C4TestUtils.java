@@ -79,7 +79,7 @@ public class C4TestUtils {
     // C4DocEnumerator
 
     public static C4DocEnumerator enumerateDocsForCollection(C4Collection coll, int flags) throws LiteCoreException {
-        return new C4DocEnumerator(coll.getPeer(), flags);
+        return coll.withPeerOrThrow(peer -> new C4DocEnumerator(peer, flags));
     }
 
     // C4BlobStore
@@ -129,17 +129,18 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return new C4Document(put(
-            collection.getPeer(),
-            body,
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID));
+        return collection.withPeerOrThrow(peer ->
+            new C4Document(put(
+                peer,
+                body,
+                docID,
+                revFlags,
+                existingRevision,
+                allowConflict,
+                history,
+                save,
+                maxRevTreeDepth,
+                remoteDBID)));
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
@@ -156,18 +157,19 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return new C4Document(put2(
-            collection.getPeer(),
-            body.getBase(),
-            body.getSize(),
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID));
+        return collection.withPeerOrThrow(peer ->
+            new C4Document(put2(
+                peer,
+                body.getBase(),
+                body.getSize(),
+                docID,
+                revFlags,
+                existingRevision,
+                allowConflict,
+                history,
+                save,
+                maxRevTreeDepth,
+                remoteDBID)));
     }
 
     // C4Key
@@ -187,7 +189,7 @@ public class C4TestUtils {
     // C4Collection
 
     public static boolean isIndexTrained(C4Collection collection, @NonNull String name) throws LiteCoreException {
-        return isIndexTrained(collection.getPeer(), name);
+        return collection.withPeerOrThrow(peer -> isIndexTrained(peer, name));
     }
 
 
