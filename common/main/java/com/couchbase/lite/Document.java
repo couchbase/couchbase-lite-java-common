@@ -18,8 +18,8 @@ package com.couchbase.lite;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -439,13 +439,11 @@ public class Document implements DictionaryInterface, Iterable<String> {
     public boolean contains(@NonNull String key) { return getContent().contains(key); }
 
     @Internal
-    @NonNull
-    public List<String> getRevisionHistory() {
-        List<String> revs = null;
-        synchronized (lock) {
-            if (c4Document != null) { revs = c4Document.getRevisonIds(Integer.MAX_VALUE, null); }
-        }
-        return (revs != null) ? revs : Collections.emptyList();
+    @VisibleForTesting
+    @Nullable
+    /* <Unsupported API> Internal used for testing purpose. */
+    public String getRevisionHistory() {
+        synchronized (lock) { return (c4Document == null) ? null : c4Document.getRevisonIds(Integer.MAX_VALUE, null); }
     }
 
     //---------------------------------------------
