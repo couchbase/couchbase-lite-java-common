@@ -84,7 +84,7 @@ class C4CollectionObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             C4CollectionObserver.newObserver(coll.peer, { i++ }).use { obs ->
 
-                val otherColl = C4Database.getDatabase(dbParentDirPath, dbName, testDbFlags)
+                val otherColl = C4Database.getDatabase(dbParentDirPath, dbName, C4Database.DB_FLAGS)
                     .getCollection(coll.name, coll.scope)
                 assertNotNull(otherColl)
 

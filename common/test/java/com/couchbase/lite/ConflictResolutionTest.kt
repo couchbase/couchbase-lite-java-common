@@ -59,7 +59,7 @@ class ConflictResolutionTest : BaseReplicatorTest() {
         doc1b.setString("artist", "Holly Sears")
         var succeeded = testCollection.save(doc1b) { cur: MutableDocument, prev: Document? ->
             // the doc we are replacing is 1a and was saved more recently
-            assertEquals(ts, (prev?.timestamp ?: 0))
+            assertEquals(ts, prev?.timestamp)
             assertEquals(doc1a, prev)
 
             // the doc we are replacing it with is 1b and was saved earlier
@@ -73,8 +73,9 @@ class ConflictResolutionTest : BaseReplicatorTest() {
 
         val newDoc = testCollection.getNonNullDoc(docID)
         assertEquals(doc1b, newDoc)
-        assertTrue(ts < newDoc.timestamp)
-        ts1 = newDoc.timestamp
+        val ts2 = newDoc.timestamp
+        assertTrue(ts < ts2)
+        ts1 = ts2
 
         val doc1c = testCollection.getNonNullDoc(docID).toMutable()
         val doc1d = testCollection.getNonNullDoc(docID).toMutable()
@@ -89,15 +90,16 @@ class ConflictResolutionTest : BaseReplicatorTest() {
 
         succeeded = testCollection.save(doc1d) { cur: MutableDocument, prev: Document? ->
             // the doc we are replacing is 1c and was saved more recently
-            assertEquals(ts, (prev?.timestamp ?: 0))
+            assertEquals(ts, prev?.timestamp)
             assertEquals(doc1c, prev)
 
             // the doc we are replacing it with is 1d and was saved earlier
-            assertEquals(ts1, cur.timestamp)
+            val ts3 = cur.timestamp
+            assertEquals(ts1, ts2)
             assertEquals(doc1d, cur)
 
             cur.setString("artist", "Sheep Jones")
-            ts = cur.timestamp
+            ts = ts3
             true
         }
         assertTrue(succeeded)
@@ -318,15 +320,17 @@ class ConflictResolutionTest : BaseReplicatorTest() {
             count++
             val doc1c = testCollection.getNonNullDoc(docID).toMutable()
             if (!doc1c.getBoolean("second update")) {
-                assertEquals(ts1, cur.timestamp)
+                var ts2 = cur.timestamp
+                assertEquals(ts1, ts2)
                 assertEquals(ts, prev?.timestamp)
-                ts = cur.timestamp
+                ts = ts2
 
                 doc1c.setBoolean("second update", true)
                 val nDoc = saveDocInCollection(doc1c)
 
-                assertTrue(ts < nDoc.timestamp)
-                ts = nDoc.timestamp
+                ts2 = nDoc.timestamp
+                assertTrue(ts < ts2)
+                ts = ts2
             }
 
             val data = prev?.toMap()?.toMutableMap() ?: mutableMapOf()

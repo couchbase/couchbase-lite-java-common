@@ -95,7 +95,7 @@ public class C4ObserverTest extends C4BaseTest {
 
             checkChanges(collObserver, Arrays.asList("A", "B"), Arrays.asList(revId1, revId2), false);
 
-            try (C4Database otherDb = C4Database.getDatabase(dbParentDirPath, dbName, getTestDbFlags())) {
+            try (C4Database otherDb = C4Database.getDatabase(dbParentDirPath, dbName, C4Database.DB_FLAGS)) {
                 assertNotNull(otherDb);
 
                 revId1 = getTestRevId("cc", 1);

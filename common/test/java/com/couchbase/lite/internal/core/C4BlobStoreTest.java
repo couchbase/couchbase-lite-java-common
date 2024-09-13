@@ -51,7 +51,7 @@ public class C4BlobStoreTest extends C4BaseTest {
         try {
             blobStore = new C4TestUtils.ManagedC4BlobStore(
                 blobDir.getCanonicalPath() + File.separator,
-                getTestDbFlags());
+                C4Database.DB_FLAGS);
             bogusKey = C4BlobKey.create("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }

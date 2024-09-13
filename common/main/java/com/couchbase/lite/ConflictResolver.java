@@ -50,20 +50,13 @@ class DefaultConflictResolver implements ConflictResolver {
     @Nullable
     @Override
     public Document resolve(@NonNull Conflict conflict) {
-        // deletion always wins.
         final Document localDoc = conflict.getLocalDocument();
         final Document remoteDoc = conflict.getRemoteDocument();
+
+        // deletion always wins.
         if ((localDoc == null) || (remoteDoc == null)) { return null; }
 
-        // if one of the docs is newer, return it
-        final int cmp = localDoc.compareAge(remoteDoc);
-        if (cmp > 0) { return localDoc; }
-        else if (cmp < 0) { return remoteDoc; }
-
-        // otherwise, choose one randomly, but deterministically.
-        final String localRevId = localDoc.getRevisionID();
-        if (localRevId == null) { return remoteDoc; }
-        final String remoteRevId = remoteDoc.getRevisionID();
-        return ((remoteRevId == null) || (localRevId.compareTo(remoteRevId) <= 0)) ? remoteDoc : localDoc;
+        // return the newer of the two docs.
+        return (localDoc.compareAge(remoteDoc) > 0) ? localDoc : remoteDoc;
     }
 }
