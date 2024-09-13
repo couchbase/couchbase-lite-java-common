@@ -19,7 +19,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.couchbase.lite.LiteCoreException;
@@ -172,15 +171,9 @@ public final class C4Document extends C4NativePeer {
     public String getSelectedRevID() { return withPeerOrNull(impl::nGetSelectedRevID); }
 
     @Nullable
-    public List<String> getRevisonIds(long maxRevs, @Nullable List<String> backToRevs) {
+    public String getRevisonIds(long maxRevs, @Nullable List<String> backToRevs) {
         final String[] backToRevsArray = (backToRevs == null) ? null : backToRevs.toArray(new String[0]);
-        final String revIds = nullableWithPeerOrThrow(peer -> impl.nGetRevisionHistory(peer, maxRevs, backToRevsArray));
-        if (revIds == null) { return null; }
-
-        final List<String> revisionIds = new ArrayList<>();
-        for (String id: revIds.split(",")) { revisionIds.add(id.trim()); }
-
-        return revisionIds;
+        return nullableWithPeerOrThrow(peer -> impl.nGetRevisionHistory(peer, maxRevs, backToRevsArray));
     }
 
     public long getSelectedSequence() { return withPeerOrDefault(0L, impl::nGetSelectedSequence); }
