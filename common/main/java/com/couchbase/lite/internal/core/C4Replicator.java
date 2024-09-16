@@ -515,17 +515,24 @@ public abstract class C4Replicator extends C4NativePeer {
 
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
-        final long peer = targetDb.withPeerOrThrow(dbPeer ->
-            impl.nCreateLocal(
-                ID + token,
-                colls,
-                db,
-                dbPeer,
-                (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PUSH),
-                (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PULL),
-                continuous,
-                ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
-                token));
+        final long peer;
+        try {
+            peer = targetDb.withPeerOrThrow(dbPeer ->
+                impl.nCreateLocal(
+                    ID + token,
+                    colls,
+                    db,
+                    dbPeer,
+                    (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PUSH),
+                    (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PULL),
+                    continuous,
+                    ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
+                    token));
+        }
+        catch (LiteCoreException e) {
+            BOUND_REPLICATORS.unbind(token);
+            throw e;
+        }
 
         final C4Replicator c4Replicator = new C4CommonReplicator(
             impl,
@@ -575,13 +582,20 @@ public abstract class C4Replicator extends C4NativePeer {
 
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
-        final long peer = impl.nCreateWithSocket(
-            ID + token,
-            colls,
-            db,
-            c4Socket.getPeerHandle(),
-            ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
-            token);
+        final long peer;
+        try {
+            peer = impl.nCreateWithSocket(
+                ID + token,
+                colls,
+                db,
+                c4Socket.getPeerHandle(),
+                ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
+                token);
+        }
+        catch (LiteCoreException e) {
+            BOUND_REPLICATORS.unbind(token);
+            throw e;
+        }
 
         final C4Replicator c4Replicator
             = new C4MessageEndpointReplicator(impl, peer, token, c4Socket, Arrays.asList(colls), statusListener);
