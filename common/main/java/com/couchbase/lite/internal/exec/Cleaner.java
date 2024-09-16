@@ -23,6 +23,7 @@ import androidx.annotation.VisibleForTesting;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -31,6 +32,7 @@ import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.logging.Log;
 import com.couchbase.lite.internal.utils.ClassUtils;
+import com.couchbase.lite.internal.utils.Fn;
 
 
 /**
@@ -141,6 +143,8 @@ class CleanerImpl {
         private final Cleaner.Cleanable cleanable;
         @NonNull
         private final String name;
+        private final long ts;
+
 
         CleanableRef(
             @NonNull Object referent,
@@ -148,6 +152,7 @@ class CleanerImpl {
             super(referent, zombies);
             this.cleanable = cleanable;
             this.name = referent.getClass().getSimpleName() + ClassUtils.objId(referent);
+            this.ts = System.currentTimeMillis();
         }
 
         @Override
@@ -159,7 +164,7 @@ class CleanerImpl {
             final boolean removed;
             synchronized (alive) {
                 removed = alive.remove(this);
-                curSize = alive.size();
+                final int curSize = alive.size();
                 if (curSize < minSize) { minSize = curSize; }
             }
 
@@ -205,8 +210,6 @@ class CleanerImpl {
     private final int timeoutMs;
 
     @GuardedBy("alive")
-    private int curSize;
-    @GuardedBy("alive")
     private int minSize;
     @GuardedBy("alive")
     private int maxSize;
@@ -226,7 +229,7 @@ class CleanerImpl {
         final CleanableRef ref = new CleanableRef(obj, cleanable);
         synchronized (alive) {
             if (!alive.add(ref)) { throw new CouchbaseLiteError("Attempt to register a duplicate CleanableRef"); }
-            curSize = alive.size();
+            final int curSize = alive.size();
             if (curSize > maxSize) { maxSize = curSize; }
         }
 
@@ -259,29 +262,24 @@ class CleanerImpl {
         synchronized (lock) { return shouldStop.get() && (cleanerThread == null); }
     }
 
-// Instrumentation
 
-    final long getCleanerNanos() {
-        synchronized (lock) { return (cleanerThread == null) ? 0 : cleanerThread.getRuntimeNanos(); }
-    }
-
-    final int getLiveCount() {
-        synchronized (alive) { return curSize; }
-    }
-
-    final int getMinLiveCount() {
+    // Instrumentation
+    @VisibleForTesting
+    @NonNull
+    final Cleaner.Stats getStats() {
         synchronized (alive) {
-            final int mSize = minSize;
+            final Cleaner.Stats stats = new Cleaner.Stats(
+                (cleanerThread == null) ? 0 : cleanerThread.getRuntimeNanos(),
+                minSize,
+                maxSize,
+                Fn.mapToList(alive, ref -> ref.ts)
+            );
+
+            final int curSize = alive.size();
             minSize = curSize;
-            return mSize;
-        }
-    }
-
-    final int getMaxLiveCount() {
-        synchronized (alive) {
-            final int mSize = maxSize;
             maxSize = curSize;
-            return mSize;
+
+            return stats;
         }
     }
 }
@@ -290,6 +288,21 @@ public final class Cleaner {
     @FunctionalInterface
     public interface Cleanable {
         void clean(boolean finalizing);
+    }
+
+    @VisibleForTesting
+    public static class Stats {
+        public final long timeIn;
+        public final int minSize;
+        public final int maxSize;
+        public final List<Long> alive;
+
+        public Stats(long timeIn, int minSize, int maxSize, @NonNull List<Long> alive) {
+            this.timeIn = timeIn;
+            this.minSize = minSize;
+            this.maxSize = maxSize;
+            this.alive = alive;
+        }
     }
 
     @NonNull
@@ -325,14 +338,6 @@ public final class Cleaner {
     boolean isStopped() { return impl.isStopped(); }
 
     @VisibleForTesting
-    public long getCleanerNanos() { return impl.getCleanerNanos(); }
-
-    @VisibleForTesting
-    public int getLiveCount() { return impl.getLiveCount(); }
-
-    @VisibleForTesting
-    public int getMinLiveCount() { return impl.getMinLiveCount(); }
-
-    @VisibleForTesting
-    public int getMaxLiveCount() { return impl.getMaxLiveCount(); }
+    @NonNull
+    public Stats getStats() { return impl.getStats(); }
 }

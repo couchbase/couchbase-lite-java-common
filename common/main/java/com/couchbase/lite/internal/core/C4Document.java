@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -31,7 +32,7 @@ import com.couchbase.lite.internal.logging.Log;
 
 
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
-public final class C4Document extends C4NativePeer {
+public final class C4Document extends C4Peer {
     public interface NativeImpl {
         //// Creating and Updating Documents
         long nGetFromCollection(long coll, String docID, boolean mustExist, boolean getAllRevs)
@@ -83,34 +84,34 @@ public final class C4Document extends C4NativePeer {
     @NonNull
     static C4Document create(@NonNull C4Collection coll, @NonNull String docID, @Nullable FLSliceResult body, int flags)
         throws LiteCoreException {
-        return new C4Document(
+        return coll.withPeerOrThrow(collPeer -> new C4Document(
             NATIVE_IMPL,
             NATIVE_IMPL.nCreateFromSlice(
-                coll.getPeer(),
+                collPeer,
                 docID,
                 (body == null) ? 0 : body.getBase(),
                 (body == null) ? 0 : body.getSize(),
-                flags));
+                flags)));
     }
 
     @Nullable
     static C4Document get(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, true, false);
+        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, false));
         return (doc == 0) ? null : new C4Document(NATIVE_IMPL, doc);
     }
 
     @Nullable
     static C4Document getWithRevs(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, true, true);
+        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, true));
         return (doc == 0) ? null : new C4Document(NATIVE_IMPL, doc);
     }
 
     @VisibleForTesting
     @NonNull
     static C4Document getOrCreateDocument(@NonNull C4Collection coll, @NonNull String docID) throws LiteCoreException {
-        final long doc = NATIVE_IMPL.nGetFromCollection(coll.getPeer(), docID, false, true);
+        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, false, true));
 
         // This should never happen.  With "mustExist" set false we should get:
         // - the existing doc, if there is one
@@ -139,6 +140,7 @@ public final class C4Document extends C4NativePeer {
     // Fields
     //-------------------------------------------------------------------------
 
+    @NonNull
     private final NativeImpl impl;
 
     //-------------------------------------------------------------------------
@@ -146,7 +148,7 @@ public final class C4Document extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private C4Document(@NonNull NativeImpl impl, long peer) {
-        super(peer);
+        super(peer, impl::nFree);
         this.impl = impl;
     }
 
@@ -173,17 +175,15 @@ public final class C4Document extends C4NativePeer {
     @Nullable
     public String getRevisonIds(long maxRevs, @Nullable List<String> backToRevs) {
         final String[] backToRevsArray = (backToRevs == null) ? null : backToRevs.toArray(new String[0]);
-        return nullableWithPeerOrThrow(peer -> impl.nGetRevisionHistory(peer, maxRevs, backToRevsArray));
+        return withPeerOrNull(peer -> impl.nGetRevisionHistory(peer, maxRevs, backToRevsArray));
     }
 
     public long getSelectedSequence() { return withPeerOrDefault(0L, impl::nGetSelectedSequence); }
 
     @Nullable
     public FLDict getSelectedBody2() {
-        return nullableWithPeerOrThrow(peer -> {
-            final long value = impl.nGetSelectedBody2(peer);
-            return value == 0 ? null : FLDict.create(value);
-        });
+        final long value = withPeerOrThrow(impl::nGetSelectedBody2);
+        return value == 0 ? null : FLDict.create(value);
     }
 
     // - Conflict resolution
@@ -246,14 +246,14 @@ public final class C4Document extends C4NativePeer {
         return C4Constants.hasFlags(getFlags(), C4Constants.RevisionFlags.HAS_ATTACHMENTS);
     }
 
-    // Although we inherit it from C4NativePeer, actually closing the C4Document
+    // Although we inherit it from AutoClosable, actually closing the C4Document
     // will cause crashes. Apparently, there may be multiple active references
     // to a single C4Document, making it very hard to figure out when they can be
-    // closed, explicitly.  Just log the call: don't actually close it.
-    // See finalize() below.
+    // closed, explicitly.  Just log the call but don't actually close it.
+    @SuppressWarnings({"MissingSuperCall", "PMD.CallSuper"})
     @Override
     public void close() {
-        Log.w(LogDomain.DATABASE, "Unsafe call to C4Database.close()", new Exception("Unsafe call at:"));
+        Log.w(LogDomain.DATABASE, "Unsafe call to C4Document.close()", new Exception("Unsafe call at:"));
     }
 
     @NonNull
@@ -261,45 +261,8 @@ public final class C4Document extends C4NativePeer {
     public String toString() { return "C4Document" + super.toString(); }
 
     //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    // As noted above (close()) and in Document.updateC4DocumentLocked it seems that there
-    // may be several live reference to a single C4Document (see MutableDocument.<init>).
-    // That means that it is pretty difficult to figure how to release them, explicitly.
-    // Attempts to close the C4Document, e.g. in Document.updateC4DocumentLocked resulted
-    // in many failed tests and even some native crashes in Database.saveInTransaction.
-    // That is just a huge shame, since it means that every single document created by
-    // client code, eventually ends up on the finalizer queue. A lot of code that seems
-    // to work -- some of it fairly mysterious -- would have to change to fix this.
-    // I'm quite reluctant to make such big changes without a clear benefit from doing so.
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        // Since there is no good way to free these suckers explicitly,
-        // we leave them to the finalizer and don't squawk about it.
-        try { closePeer(null); }
-        finally { super.finalize(); }
-    }
-
-    //-------------------------------------------------------------------------
     // private methods
     //-------------------------------------------------------------------------
 
     private int getFlags() { return withPeerOrDefault(0, impl::nGetFlags); }
-
-    // This idiom, which you will see in many places in this code,
-    // may protect against a failure that both customers and I have seen:
-    // the ART runtime frees (and nulls) a member reference before freeing the
-    // object that refers to it: impl may be null.
-    // If that happens, we are going to leak memory.  This idiom, though
-    // may prevent an NPE on the finalizer thread.
-    private void closePeer(@Nullable LogDomain domain) {
-        releasePeer(
-            domain,
-            (peer) -> {
-                final NativeImpl nativeImpl = impl;
-                if (nativeImpl != null) { nativeImpl.nFree(peer); }
-            });
-    }
 }
