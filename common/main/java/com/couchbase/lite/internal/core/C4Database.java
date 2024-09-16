@@ -42,6 +42,7 @@ import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 
 
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public abstract class C4Database extends C4Peer {
     public static final boolean VERSION_VECTORS_ENABLED = false;
 
@@ -199,8 +200,7 @@ public abstract class C4Database extends C4Peer {
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        // Stupid LiteCore will throw a total hissy fit if we pass
-        // it something that it decides isn't a directory.
+        // LiteCore will throw a total hissy fit if we pass it something that it decides isn't a directory.
         boolean pathOk = false;
         try {
             final File parentDir = new File(parentDirPath);
@@ -458,7 +458,7 @@ public abstract class C4Database extends C4Peer {
 
     // - Replicators
 
-    @SuppressWarnings("CheckFunctionalParameters")
+    @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
     public C4Replicator createRemoteReplicator(
         @NonNull Map<Collection, CollectionConfiguration> collections,
@@ -495,7 +495,6 @@ public abstract class C4Database extends C4Peer {
                 socketFactory));
     }
 
-    @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public C4Replicator createLocalReplicator(
         @NonNull Map<Collection, CollectionConfiguration> collections,
