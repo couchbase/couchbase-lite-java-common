@@ -17,16 +17,15 @@ package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.QueryLanguage;
 import com.couchbase.lite.internal.core.impl.NativeC4Query;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
-import com.couchbase.lite.internal.utils.Preconditions;
 
 
-public final class C4Query extends C4NativePeer {
+public final class C4Query extends C4Peer {
     public interface NativeImpl {
         long nCreateQuery(long db, int language, @NonNull String params) throws LiteCoreException;
         void nSetParameters(long peer, long paramPtr, long paramSize);
@@ -40,7 +39,7 @@ public final class C4Query extends C4NativePeer {
     }
 
     @NonNull
-     private static final NativeImpl NATIVE_IMPL = new NativeC4Query();
+    private static final NativeImpl NATIVE_IMPL = new NativeC4Query();
 
     @NonNull
     public static C4Query create(
@@ -48,7 +47,21 @@ public final class C4Query extends C4NativePeer {
         @NonNull QueryLanguage language,
         @NonNull String expression)
         throws LiteCoreException {
-        return c4db.withPeerOrThrow(dbPeer -> new C4Query(NATIVE_IMPL, dbPeer, language, expression));
+        return create(NATIVE_IMPL, c4db, language, expression);
+    }
+
+    @VisibleForTesting
+    @NonNull
+    public static C4Query create(
+        @NonNull NativeImpl impl,
+        @NonNull C4Database c4db,
+        @NonNull QueryLanguage language,
+        @NonNull String expression)
+        throws LiteCoreException {
+        return c4db.withPeerOrThrow(dbPeer -> {
+            final long peer = impl.nCreateQuery(dbPeer, language.getCode(), expression);
+            return new C4Query(impl, peer);
+        });
     }
 
 
@@ -62,13 +75,8 @@ public final class C4Query extends C4NativePeer {
     // Constructors
     //-------------------------------------------------------------------------
 
-    private C4Query(
-        @NonNull NativeImpl impl,
-        long db,
-        @NonNull QueryLanguage language,
-        @NonNull String expression)
-        throws LiteCoreException {
-        super(impl.nCreateQuery(Preconditions.assertNotZero(db, "db peer ref"), language.getCode(), expression));
+    private C4Query(@NonNull NativeImpl impl, long peer) {
+        super(peer, impl::nFree);
         this.impl = impl;
     }
 
@@ -76,12 +84,8 @@ public final class C4Query extends C4NativePeer {
     // public methods
     //-------------------------------------------------------------------------
 
-    // Documentation recommends that this call be made while holding the database lock
-    @Override
-    public void close() { closePeer(null); }
-
     public void setParameters(@NonNull FLSliceResult params) {
-        impl.nSetParameters(getPeer(), params.getBase(), params.getSize());
+        voidWithPeerOrThrow(peer -> impl.nSetParameters(peer, params.getBase(), params.getSize()));
     }
 
     @Nullable
@@ -96,36 +100,4 @@ public final class C4Query extends C4NativePeer {
 
     @Nullable
     public String getColumnNameForIndex(int idx) { return withPeerOrNull(peer -> impl.nColumnName(peer, idx)); }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        // Despite the fact that the documentation recommends that this call be made
-        // while holding the database lock, doing so can block the finalizer thread
-        // causing it to abort.
-        // Jens Alfke says: in practice it should be ok.
-        // Jim Borden says:
-        //   if the object is being finalized, it is not possible for client
-        //   code to affect the query: in this case, freeing wo/ the lock is ok.
-        //   That's how .NET does it.
-        try { closePeer(LogDomain.QUERY); }
-        finally { super.finalize(); }
-    }
-
-    //-------------------------------------------------------------------------
-    // Private methods
-    //-------------------------------------------------------------------------
-
-    private void closePeer(@Nullable LogDomain domain) {
-        releasePeer(
-            domain,
-            (peer) -> {
-                final NativeImpl nativeImpl = impl;
-                if (nativeImpl != null) { nativeImpl.nFree(peer); }
-            });
-    }
 }
