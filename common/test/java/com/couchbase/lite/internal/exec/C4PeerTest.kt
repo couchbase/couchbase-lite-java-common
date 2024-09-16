@@ -37,9 +37,9 @@ class C4PeerTest : BaseTest() {
     @Test
     fun testCleanerRefs() {
         val cleaner = Cleaner("refsTest", 1000)
-        assertEquals(1, cleaner.liveCount)
+        assertEquals(1, cleaner.stats.alive.size)
         cleaner.register(Object()) { _ -> }
-        assertEquals(2, cleaner.liveCount)
+        assertEquals(2, cleaner.stats.alive.size)
         // ??? Difficult to verify the removal of the ref, because it happens only after a GC.
     }
 

@@ -53,7 +53,7 @@ public abstract class C4Peer implements AutoCloseable {
     private static class PeerHolder implements Cleaner.Cleanable {
         @Nullable
         private final PeerCleaner cleaner;
-        private final long id;
+        protected final long id;
 
         @GuardedBy("name")
         private long peer;
@@ -82,22 +82,10 @@ public abstract class C4Peer implements AutoCloseable {
          */
         @SuppressFBWarnings("JLM_JSR166_UTILCONCURRENT_MONITORENTER")
         public final void clean(boolean finalizing) {
-            final C4Peer.PeerCleaner localCleaner = cleaner;
-            if (localCleaner != null) {
-                // All use of the peer is protected by the PeerLock.  If some other thread is still
-                // using the peer it must also be holding its lock.  When we get the lock, we set
-                // the peer to 0, so no other thread will be able to use it and queue the disposer,
-                // which, at that point, can safely use the peer without a lock.
-                final Object lock = getPeerLock();
-                CORE_CLEANER.execute(() -> {
-                    final long peerRef;
-                    synchronized (lock) {
-                        peerRef = peer;
-                        if (peerRef == 0) { return; }
-                        peer = 0L;
-                    }
-                    localCleaner.dispose(peerRef);
-                });
+            final C4Peer.PeerCleaner disposer = cleaner;
+            if (disposer != null) {
+                if (!finalizing) { disposeRef(disposer); }
+                else { CORE_CLEANER.execute(() -> disposeRef(disposer)); }
             }
 
             final Exception origin = lifecycle.get();
@@ -115,17 +103,6 @@ public abstract class C4Peer implements AutoCloseable {
             CORE_CLEANER.execute(() -> Log.d(LogDomain.DATABASE, "Peer %s not explicitly closed", createdAt, name));
         }
 
-        // It would be disastrous if there are two objects that plan on cleaning up the same peer
-        // PeerHolders are equal if they hold the same peer
-
-        @Override
-        public int hashCode() { return (int) id; }
-
-        @Override
-        public boolean equals(@Nullable Object o) {
-            return (this == o) || ((o instanceof PeerHolder) && (((PeerHolder) o).id == id));
-        }
-
         @NonNull
         @Override
         public String toString() { return "PeerHolder{" + Long.toHexString(peer) + " @" + createdAt + "}"; }
@@ -133,9 +110,43 @@ public abstract class C4Peer implements AutoCloseable {
         @NonNull
         Object getPeerLock() { return name; }
 
+        // All use of the peer is protected by the PeerLock.  If some other thread is still
+        // using the peer it must also be holding its lock.  When we get the lock, we set
+        // the peer to 0, so no other thread will be able to use it and queue the disposer,
+        // which, at that point, can safely use the peer without a lock.
+        // This runs synchronously, if called explicitly (`close`) from client code,
+        // and asynchronously if called from the Cleaner thread.
+        private void disposeRef(@NonNull C4Peer.PeerCleaner disposer) {
+            final Object lock = getPeerLock();
+            final long peerRef;
+            synchronized (lock) {
+                peerRef = peer;
+                peer = 0L;
+            }
+            if (peerRef == 0) { return; }
+            disposer.dispose(peerRef);
+        }
+
         // Log an attempt to use a closed peer.
         private void logBadCall() {
             Log.w(LogDomain.DATABASE, "Operation on closed native peer", new Exception("Used at:", lifecycle.get()));
+        }
+    }
+
+    /**
+     * LiteCore objects that are not ref-counted must not have multiple references.
+     */
+    private static class UncountedPeerHolder extends PeerHolder {
+        UncountedPeerHolder(@NonNull String name, long peer, @Nullable PeerCleaner cleaner) {
+            super(name, peer, cleaner);
+        }
+
+        @Override
+        public int hashCode() { return (int) id; }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            return (this == o) || ((o instanceof PeerHolder) && (((PeerHolder) o).id == id));
         }
     }
 
@@ -152,10 +163,25 @@ public abstract class C4Peer implements AutoCloseable {
     @NonNull
     final Cleaner.Cleanable cleaner;
 
-    protected C4Peer(long peer, @Nullable PeerCleaner cleaner) {
+    // Most LiteCore objects are ref-counted.  There may be several references to the same object.
+    protected C4Peer(long peer, @Nullable PeerCleaner cleaner) { this(peer, cleaner, true); }
+
+    // At this moment, he following LiteCore objects not ref-counted:
+    //    C4BlobKey
+    //    C4BlobReadStream
+    //    C4BlobStore
+    //    C4BlobWriteStream
+    //    C4DocumentObserver
+    //    C4Listener
+    //    C4QueryObserver
+    //    C4Replicator
+    protected C4Peer(long peer, @Nullable PeerCleaner cleaner, boolean refCounted) {
         this.name = getClass().getSimpleName() + ClassUtils.objId(this);
 
-        this.peerHolder = new PeerHolder(name, Preconditions.assertNotZero(peer, "peer"), cleaner);
+        Preconditions.assertNotZero(peer, "peer");
+        this.peerHolder = (refCounted)
+            ? new PeerHolder(name, peer, cleaner)
+            : new UncountedPeerHolder(name, peer, cleaner);
 
         // WARNING:
         // Anything to which the peerHolder holds a reference will be reachable until the cleaner is run

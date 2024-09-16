@@ -44,11 +44,11 @@ public final class C4Query extends C4NativePeer {
 
     @NonNull
     public static C4Query create(
-        @NonNull C4Database db,
+        @NonNull C4Database c4db,
         @NonNull QueryLanguage language,
         @NonNull String expression)
         throws LiteCoreException {
-        return new C4Query(NATIVE_IMPL, db.getPeer(), language, expression);
+        return c4db.withPeerOrThrow(dbPeer -> new C4Query(NATIVE_IMPL, dbPeer, language, expression));
     }
 
 

@@ -21,7 +21,6 @@ import androidx.annotation.Nullable;
 import java.nio.charset.StandardCharsets;
 
 import com.couchbase.lite.CBLError;
-import com.couchbase.lite.Collection;
 import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
@@ -80,7 +79,7 @@ public class C4TestUtils {
     // C4DocEnumerator
 
     public static C4DocEnumerator enumerateDocsForCollection(C4Collection coll, int flags) throws LiteCoreException {
-        return new C4DocEnumerator(coll.getPeer(), flags);
+        return coll.withPeerOrThrow(peer -> new C4DocEnumerator(peer, flags));
     }
 
     // C4BlobStore
@@ -98,17 +97,21 @@ public class C4TestUtils {
 
     @NonNull
     public static byte[] privateUUIDForDb(@NonNull C4Database db) throws LiteCoreException {
-        return getPrivateUUID(db.getPeer());
+        return db.withPeerOrThrow(C4TestUtils::getPrivateUUID);
     }
 
     @NonNull
     public static FLSliceResult encodeJSONInDb(@NonNull C4Database db, @NonNull String data) throws LiteCoreException {
-        return encodeJSON(db.getPeer(), data.getBytes(StandardCharsets.UTF_8));
+        final byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
+        return db.withPeerOrThrow(peer -> encodeJSON(peer, dataBytes));
     }
 
-    public static String idForDoc(@NonNull C4Document doc) { return getDocID(doc.getPeer()); }
+    @Nullable
+    public static String idForDoc(@NonNull C4Document doc) { return doc.withPeerOrNull(C4TestUtils::getDocID); }
 
-    public static int getFlags(@NonNull C4Database db) throws LiteCoreException { return getFlags(db.getPeer()); }
+    public static int getFlags(@NonNull C4Database db) throws LiteCoreException {
+        return db.withPeerOrThrow(C4TestUtils::getFlags);
+    }
 
     // C4Document
 
@@ -126,17 +129,18 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return new C4Document(put(
-            collection.getPeer(),
-            body,
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID));
+        return collection.withPeerOrThrow(peer ->
+            new C4Document(put(
+                peer,
+                body,
+                docID,
+                revFlags,
+                existingRevision,
+                allowConflict,
+                history,
+                save,
+                maxRevTreeDepth,
+                remoteDBID)));
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
@@ -153,18 +157,19 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return new C4Document(put2(
-            collection.getPeer(),
-            body.getBase(),
-            body.getSize(),
-            docID,
-            revFlags,
-            existingRevision,
-            allowConflict,
-            history,
-            save,
-            maxRevTreeDepth,
-            remoteDBID));
+        return collection.withPeerOrThrow(peer ->
+            new C4Document(put2(
+                peer,
+                body.getBase(),
+                body.getSize(),
+                docID,
+                revFlags,
+                existingRevision,
+                allowConflict,
+                history,
+                save,
+                maxRevTreeDepth,
+                remoteDBID)));
     }
 
     // C4Key
@@ -184,7 +189,7 @@ public class C4TestUtils {
     // C4Collection
 
     public static boolean isIndexTrained(C4Collection collection, @NonNull String name) throws LiteCoreException {
-        return isIndexTrained(collection.getPeer(), name);
+        return collection.withPeerOrThrow(peer -> isIndexTrained(peer, name));
     }
 
 

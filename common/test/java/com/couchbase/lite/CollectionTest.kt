@@ -757,7 +757,6 @@ class CollectionTest : BaseDbTest() {
     // Test that getIndexes from collection in deleted database causes CBLException
     @Test
     fun testGetIndexesFromCollectionFromDeletedDatabase() {
-
         testCollection.createIndex("index1", ValueIndexConfiguration("firstName", "lastName"))
         assertContents(testCollection.indexes.toList(), "index1")
 
