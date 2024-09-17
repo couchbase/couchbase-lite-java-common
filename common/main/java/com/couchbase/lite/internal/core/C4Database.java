@@ -42,13 +42,7 @@ import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 
 
-@SuppressWarnings({
-    "PMD.UnusedPrivateMethod",
-    "PMD.TooManyMethods",
-    "PMD.ExcessivePublicCount",
-    "PMD.ExcessiveParameterList",
-    "PMD.CyclomaticComplexity"})
-
+@SuppressWarnings("PMD.ExcessivePublicCount")
 public abstract class C4Database extends C4Peer {
     @VisibleForTesting
     public static final String DB_EXTENSION = ".cblite2";
@@ -460,7 +454,7 @@ public abstract class C4Database extends C4Peer {
 
     // - Replicators
 
-    @SuppressWarnings("CheckFunctionalParameters")
+    @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
     public C4Replicator createRemoteReplicator(
         @NonNull Map<Collection, CollectionConfiguration> collections,
@@ -497,7 +491,6 @@ public abstract class C4Database extends C4Peer {
                 socketFactory));
     }
 
-    @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public C4Replicator createLocalReplicator(
         @NonNull Map<Collection, CollectionConfiguration> collections,
