@@ -18,5 +18,5 @@ package com.couchbase.lite.internal.fleece
 import com.couchbase.lite.internal.utils.Fn
 
 
-fun <T> withContent(value: FLValue, fn: Fn.Function<Long, T>) = value.withContent(fn)
+fun <T> withContent(value: FLValue, fn: Fn.NonNullFunction<Long, T>) = value.withContent(fn)
 

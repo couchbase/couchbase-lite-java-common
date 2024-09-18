@@ -1,6 +1,7 @@
 package com.couchbase.lite.internal.core
 
 import com.couchbase.lite.Collection
+import com.couchbase.lite.LiteCoreException
 import com.couchbase.lite.Scope
 import com.couchbase.lite.internal.utils.StringUtils
 import org.junit.Assert.assertEquals
@@ -28,9 +29,10 @@ class C4CollectionDocObserverTest : C4BaseTest() {
     @Test
     fun testCreateC4CollectionDocObserver() {
         C4Collection.create(c4Database, collName, scopeName).use { coll ->
-            C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "test", {}).use {
+            coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
+                C4CollectionDocObserver.newObserver(mockCollectionDocObserver, peer, "test", {}).use {
                 assertNotNull(it)
-            }
+            }}
         }
     }
 
@@ -40,14 +42,16 @@ class C4CollectionDocObserverTest : C4BaseTest() {
         var i = 0
         createRev("A", getTestRevId("aa", 1), fleeceBody)
         C4Collection.create(c4Database, collName, scopeName).use { coll ->
-            C4CollectionDocObserver.newObserver(mockCollectionDocObserver, coll.peer, "A", { i++ }).use { obs ->
-                assertEquals(0, i)
+            coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
+                C4CollectionDocObserver.newObserver(mockCollectionDocObserver, peer, "A", { i++ }).use { obs ->
+                    assertEquals(0, i)
 
-                C4CollectionDocObserver.callback(obs.token, 43L, "A")
-                C4CollectionDocObserver.callback(obs.token, 43L, "A")
-                C4CollectionDocObserver.callback(obs.token, 43L, "A")
+                    C4CollectionDocObserver.callback(obs.token, 43L, "A")
+                    C4CollectionDocObserver.callback(obs.token, 43L, "A")
+                    C4CollectionDocObserver.callback(obs.token, 43L, "A")
 
-                assertEquals(3, i)
+                    assertEquals(3, i)
+                }
             }
         }
     }
@@ -59,13 +63,15 @@ class C4CollectionDocObserverTest : C4BaseTest() {
 
         var i = 0
         C4Collection.create(c4Database, Scope.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
-            C4CollectionDocObserver.newObserver(coll.peer, "A", { i++ }).use {
-                assertEquals(0, i)
+            coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
+                C4CollectionDocObserver.newObserver(peer, "A", { i++ }).use {
+                    assertEquals(0, i)
 
-                createRev(coll, "A", getTestRevId("bb", 2), fleeceBody)
-                createRev(coll, "B", getTestRevId("bb", 1), fleeceBody)
+                    createRev(coll, "A", getTestRevId("bb", 2), fleeceBody)
+                    createRev(coll, "B", getTestRevId("bb", 1), fleeceBody)
 
-                assertEquals(1, i)
+                    assertEquals(1, i)
+                }
             }
         }
     }
