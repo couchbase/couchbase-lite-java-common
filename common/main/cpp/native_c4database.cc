@@ -153,10 +153,10 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed(
         JNIEnv *env,
         jclass ignore,
-        jstring jname,
-        jstring jparentDir) {
-    jstringSlice name(env, jname);
+        jstring jparentDir,
+        jstring jname) {
     jstringSlice parentDir(env, jparentDir);
+    jstringSlice name(env, jname);
 
     C4Error error{};
     bool ok = c4db_deleteNamed(name, parentDir, &error);

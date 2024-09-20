@@ -156,6 +156,8 @@ public final class Blob implements FLEncodable {
 
         @Override
         public int read(@NonNull byte[] buf, int off, int len) throws IOException {
+            if (key == null) { throw new IOException("Stream is closed"); }
+
             Preconditions.assertNotNull(buf, "buffer");
             if (off < 0) { throw new IndexOutOfBoundsException("Read offset < 0: " + off); }
             if (len < 0) { throw new IndexOutOfBoundsException("Read length < 0: " + len); }
@@ -165,8 +167,6 @@ public final class Blob implements FLEncodable {
             }
 
             if (len == 0) { return 0; }
-
-            if (key == null) { throw new IOException("Stream is closed"); }
 
             try {
                 final int n = blobStream.read(buf, off, len);
@@ -578,7 +578,8 @@ public final class Blob implements FLEncodable {
         // blob was saved using Database.saveBlob();
         if (blobDigest != null) { return; }
 
-        try (C4BlobStore store = database.getBlobStore(); C4BlobKey key = getBlobKey(store)) {
+        if (db == null) { throw new CouchbaseLiteError("No database for Blob install"); }
+        try (C4BlobStore store = db.getBlobStore(); C4BlobKey key = getBlobKey(store)) {
             blobDigest = key.toString();
         }
         catch (Exception e) {

@@ -12,8 +12,12 @@ public final class NativeC4Key implements C4Key.NativeImpl {
     @Nullable
     public byte[] nPbkdf2(@NonNull String password) { return pbkdf2(password); }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     @Nullable

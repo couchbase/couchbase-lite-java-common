@@ -22,7 +22,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.internal.core.impl.NativeC4Blob;
-import com.couchbase.lite.internal.core.peers.LockManager;
 
 
 /**
@@ -78,9 +77,7 @@ public abstract class C4BlobStore extends C4NativePeer {
 
     @NonNull
     public static C4BlobStore create(long dbPeer) throws LiteCoreException {
-        synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
-            return new UnmanagedC4BlobStore(NATIVE_IMPL, NATIVE_IMPL.nGetBlobStore(dbPeer));
-        }
+        return new UnmanagedC4BlobStore(NATIVE_IMPL, NATIVE_IMPL.nGetBlobStore(dbPeer));
     }
 
     //-------------------------------------------------------------------------

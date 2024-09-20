@@ -202,7 +202,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory(
 
     auto revHistory = c4doc_getRevisionHistory((C4Document *) jdoc, (unsigned int) maxRevs, backToRevs, nBackToRevs);
 
-    return toJString(env, revHistory);
+    jstring res = toJString(env, revHistory);
+    FLSliceResult_Release(revHistory);
+
+    return res;
 }
 
 /*
@@ -403,9 +406,9 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_dictContainsBlobs(
         jclass ignore2,
         jlong jbodyPtr,
         jlong jbodySize,
-        jlong jsk) {
+        jlong sharedKeys) {
     FLSliceResult body{(const void *) jbodyPtr, (size_t) jbodySize};
-    FLDoc doc = FLDoc_FromResultData(body, kFLTrusted, (FLSharedKeys) jsk, kFLSliceNull);
+    FLDoc doc = FLDoc_FromResultData(body, kFLTrusted, (FLSharedKeys) sharedKeys, kFLSliceNull);
     const auto *const dict = (FLDict) FLDoc_GetRoot(doc);
     bool containsBlobs = c4doc_dictContainsBlobs(dict);
     FLDoc_Release(doc);

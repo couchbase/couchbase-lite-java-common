@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.internal.core.C4Socket;
@@ -57,8 +58,12 @@ public final class NativeC4Socket implements C4Socket.NativeImpl {
         closed(peer, errorDomain, errorCode, message);
     }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     // wrap an existing Java C4Socket in a C-native C4Socket
@@ -72,15 +77,21 @@ public final class NativeC4Socket implements C4Socket.NativeImpl {
 
     private static native void retain(long peer);
 
+    @GuardedBy("socLock")
     private static native void opened(long peer);
 
+    @GuardedBy("socLock")
     private static native void gotHTTPResponse(long peer, int httpStatus, @Nullable byte[] responseHeadersFleece);
 
+    @GuardedBy("socLock")
     private static native void completedWrite(long peer, long byteCount);
 
+    @GuardedBy("socLock")
     private static native void received(long peer, byte[] data);
 
+    @GuardedBy("socLock")
     private static native void closeRequested(long peer, int status, @Nullable String message);
 
+    @GuardedBy("socLock")
     private static native void closed(long peer, int errorDomain, int errorCode, String message);
 }

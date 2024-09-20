@@ -80,7 +80,7 @@ public abstract class C4Database extends C4Peer {
 
         void nDelete(long db) throws LiteCoreException;
 
-        void nDeleteNamed(@NonNull String name, @NonNull String dir) throws LiteCoreException;
+        void nDeleteNamed(@NonNull String parentDir, @NonNull String name) throws LiteCoreException;
 
         // - UUID
 
@@ -267,8 +267,8 @@ public abstract class C4Database extends C4Peer {
     }
 
     // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair
-    public static void deleteNamedDb(@NonNull String directory, @NonNull String name) throws LiteCoreException {
-        NATIVE_IMPL.nDeleteNamed(name, directory);
+    public static void deleteNamedDb(@NonNull String parentDir, @NonNull String name) throws LiteCoreException {
+        NATIVE_IMPL.nDeleteNamed(parentDir, name);
     }
 
     @NonNull

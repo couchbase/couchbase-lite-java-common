@@ -8,6 +8,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_C4TestUtils_enumerateAllDocs;
         Java_com_couchbase_lite_internal_core_C4TestUtils_free;
         Java_com_couchbase_lite_internal_core_C4TestUtils_freeStore;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_getBlobLength;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getDocID;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getDocument;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getFlags;
@@ -34,7 +35,6 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getBlobStore;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getContents;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getFilePath;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getLength;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getSize;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_install;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_openReadStream;

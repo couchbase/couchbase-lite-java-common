@@ -34,8 +34,12 @@ public final class NativeC4 implements C4.NativeImpl {
     @Nullable
     public String nGetMessage(int domain, int code, int internalInfo) { return getMessage(domain, code, internalInfo); }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     private static native void debug(boolean debugging);
