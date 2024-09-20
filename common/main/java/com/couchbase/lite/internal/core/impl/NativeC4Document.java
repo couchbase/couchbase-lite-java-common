@@ -55,8 +55,9 @@ public final class NativeC4Document implements C4Document.NativeImpl {
 
     @Nullable
     @Override
-    public String nGetRevisionHistory(long jdoc, long maxRevs, @Nullable String[] backToRevs) {
-        return getRevisionHistory(jdoc, maxRevs, backToRevs);
+    public String nGetRevisionHistory(long coll, long doc, long maxRevs, @Nullable String[] backToRevs)
+        throws LiteCoreException {
+        return getRevisionHistory(coll, doc, maxRevs, backToRevs);
     }
 
     @Override
@@ -147,7 +148,8 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     private static native String getSelectedRevID(long peer);
 
     @Nullable
-    private static native String getRevisionHistory(long jdoc, long maxRevs, @Nullable String[] backToRevs);
+    private static native String getRevisionHistory(long coll, long doc, long maxRevs, @Nullable String[] backToRevs)
+        throws LiteCoreException;
 
     private static native long getTimestamp(long peer);
 

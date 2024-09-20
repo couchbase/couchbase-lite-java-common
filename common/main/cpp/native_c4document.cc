@@ -169,12 +169,13 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedRevID(
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getRevisionHistory
- * Signature: (JJ[Ljava/lang/String;)Ljava/lang/String;
+ * Signature: (JJJ[Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory(
         JNIEnv *env,
         jclass ignore,
+        jlong jcoll,
         jlong jdoc,
         jlong maxRevs,
         jobjectArray jBackToRevs) {
@@ -200,7 +201,16 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory(
         nBackToRevs = b2r.size();
     }
 
-    auto revHistory = c4doc_getRevisionHistory((C4Document *) jdoc, (unsigned int) maxRevs, backToRevs, nBackToRevs);
+    auto *doc = (C4Document *) jdoc;
+
+    C4Error error{};
+    C4Document* allDoc = c4coll_getDoc((C4Collection*) jcoll, doc->docID, false, kDocGetAll, &error);
+    if ((allDoc == nullptr) && (error.code != 0)) {
+        throwError(env, error);
+        return 0;
+    }
+
+    auto revHistory = c4doc_getRevisionHistory(allDoc, (unsigned int) maxRevs, backToRevs, nBackToRevs);
 
     jstring res = toJString(env, revHistory);
     FLSliceResult_Release(revHistory);
