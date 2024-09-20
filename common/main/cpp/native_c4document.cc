@@ -210,7 +210,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory(
         return 0;
     }
 
-    auto revHistory = c4doc_getRevisionHistory(allDoc, (unsigned int) maxRevs, backToRevs, nBackToRevs);
+    FLSliceResult revHistory = c4doc_getRevisionHistory(allDoc, (unsigned int) maxRevs, backToRevs, nBackToRevs);
 
     jstring res = toJString(env, revHistory);
     FLSliceResult_Release(revHistory);
