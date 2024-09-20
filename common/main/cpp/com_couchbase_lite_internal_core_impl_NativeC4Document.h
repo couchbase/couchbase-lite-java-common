@@ -65,11 +65,11 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getSelectedR
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
  * Method:    getRevisionHistory
- * Signature: (JJ[Ljava/lang/String;)Ljava/lang/String;
+ * Signature: (JJJ[Ljava/lang/String;)Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getRevisionHistory
-    (JNIEnv *, jclass, jlong, jlong maxRevs, jobjectArray);
+    (JNIEnv *, jclass, jlong, jlong, jlong maxRevs, jobjectArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document

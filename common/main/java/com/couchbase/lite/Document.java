@@ -28,6 +28,7 @@ import java.util.Objects;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import com.couchbase.lite.internal.core.C4Collection;
 import com.couchbase.lite.internal.core.C4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
 import com.couchbase.lite.internal.fleece.FLEncoder;
@@ -442,8 +443,14 @@ public class Document implements DictionaryInterface, Iterable<String> {
     @VisibleForTesting
     @Nullable
     /* <Unsupported API> Internal used for testing purpose. */
-    public String getRevisionHistory() {
-        synchronized (lock) { return (c4Document == null) ? null : c4Document.getRevisonIds(Integer.MAX_VALUE, null); }
+    public String getRevisionHistory() throws CouchbaseLiteException {
+        synchronized (lock) {
+            if (c4Document == null) { return null; }
+            if (collection == null) { throw new CouchbaseLiteException("Document has no collection"); }
+            final C4Collection c4Coll = collection.getOpenC4Collection();
+            try { return c4Document.getRevisonIds(c4Coll, Integer.MAX_VALUE, null); }
+            catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }
+        }
     }
 
     //---------------------------------------------

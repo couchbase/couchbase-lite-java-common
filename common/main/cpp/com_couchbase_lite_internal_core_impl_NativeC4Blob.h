@@ -122,15 +122,6 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_read
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Blob
- * Method:    getLength
- * Signature: (J)J
- */
-JNIEXPORT jlong
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getLength
-        (JNIEnv *, jclass, jlong);
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Blob
  * Method:    seek
  * Signature: (JJ)V
  */

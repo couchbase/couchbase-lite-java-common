@@ -31,7 +31,7 @@ import com.couchbase.lite.internal.logging.Log;
 @SuppressWarnings("PMD.ClassWithOnlyPrivateConstructorsShouldBeFinal")
 public class C4DocumentObserver extends C4NativePeer {
     public interface NativeImpl {
-        long nCreate(long token, long coll, String docId) throws LiteCoreException;
+        long nCreate(long coll, long token, String docId) throws LiteCoreException;
         void nFree(long peer);
     }
 

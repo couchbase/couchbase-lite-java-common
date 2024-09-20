@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -53,20 +54,27 @@ public final class NativeC4Query implements C4Query.NativeImpl {
 
     //-------------------------------------------------------------------------
     // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
-    private static native long createQuery(long db, int language, @NonNull String params) throws LiteCoreException;
+    @GuardedBy("dbLock")
+    private static native long createQuery(long peer, int language, @NonNull String params) throws LiteCoreException;
 
     private static native void setParameters(long peer, long paramPtr, long paramSize);
 
+    @GuardedBy("dbLock")
     @Nullable
     private static native String explain(long peer);
 
-    private static native long run(long peer, long paramPtr, long paramSize)
-        throws LiteCoreException;
+    @GuardedBy("dbLock")
+    private static native long run(long peer, long paramPtr, long paramSize) throws LiteCoreException;
 
+    @GuardedBy("queryLock")
     private static native int columnCount(long peer);
 
+    @GuardedBy("queryLock")
     @Nullable
     private static native String columnName(long peer, int colIdx);
 

@@ -15,10 +15,12 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 import com.couchbase.lite.CBLError;
 import com.couchbase.lite.CouchbaseLiteError;
@@ -30,6 +32,75 @@ import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 // It is worth considering breaking this up.  You know, OOP and all...
 public class C4TestUtils {
+    public static class C4FullTextMatch extends C4NativePeer {
+        private static final long MOCK_PEER = 0x0cab00d1eL;
+
+        /**
+         * Return an array of details of each full-text match
+         */
+        @NonNull
+        public static C4FullTextMatch getFullTextMatches(@NonNull C4QueryEnumerator queryEnumerator, int idx) {
+            return new C4FullTextMatch(getFullTextMatch(queryEnumerator.getPeer(), idx));
+        }
+
+        public static long getMatchCount(C4QueryEnumerator queryEnumerator) {
+            return getFullTextMatchCount(queryEnumerator.getPeer());
+        }
+
+
+        private long dataSource;
+        private long property;
+        private long term;
+        private long start;
+        private long length;
+
+        //-------------------------------------------------------------------------
+        // Constructors
+        //-------------------------------------------------------------------------
+
+        C4FullTextMatch(long peer) { super(peer); }
+
+        C4FullTextMatch(long dataSource, long property, long term, long start, long length) {
+            super(MOCK_PEER);
+            this.dataSource = dataSource;
+            this.property = property;
+            this.term = term;
+            this.start = start;
+            this.length = length;
+        }
+
+        @Nullable
+        public C4FullTextMatch load() {
+            withPeer(peer -> {
+                if (peer == MOCK_PEER) { return; }
+                this.dataSource = dataSource(peer);
+                this.property = property(peer);
+                this.term = term(peer);
+                this.start = start(peer);
+                this.length = length(peer);
+            });
+            return this;
+        }
+
+        @Override
+        public void close() { }
+
+        @Override
+        public int hashCode() { return Objects.hash(dataSource, property, term, start, length); }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) { return true; }
+            if (!(o instanceof C4FullTextMatch)) { return false; }
+            final C4FullTextMatch match = (C4FullTextMatch) o;
+            return (dataSource == match.dataSource)
+                && (property == match.property)
+                && (term == match.term)
+                && (start == match.start)
+                && (length == match.length);
+        }
+    }
+
     public static class C4DocEnumerator extends C4NativePeer {
         public C4DocEnumerator(long db, int flags) throws LiteCoreException { this(enumerateAllDocs(db, flags)); }
 
@@ -80,6 +151,15 @@ public class C4TestUtils {
 
     public static C4DocEnumerator enumerateDocsForCollection(C4Collection coll, int flags) throws LiteCoreException {
         return coll.withPeerOrThrow(peer -> new C4DocEnumerator(peer, flags));
+    }
+
+    // C4Blob
+
+    /**
+     * Returns the exact length in bytes of the stream.
+     */
+    public static long getBlobLength(@NonNull C4BlobReadStream stream) throws LiteCoreException {
+        return stream.withPeerOrDefault(0L, C4TestUtils::getBlobLength);
     }
 
     // C4BlobStore
@@ -197,6 +277,22 @@ public class C4TestUtils {
     // native methods
     //-------------------------------------------------------------------------
 
+    // C4FullTextMatch
+
+    private static native long dataSource(long peer);
+
+    private static native long property(long peer);
+
+    private static native long term(long peer);
+
+    private static native long start(long peer);
+
+    private static native long length(long peer);
+
+    private static native long getFullTextMatchCount(long peer);
+
+    private static native long getFullTextMatch(long peer, int idx);
+
     // C4DocEnumerator
 
     private static native long enumerateAllDocs(long db, int flags) throws LiteCoreException;
@@ -206,6 +302,11 @@ public class C4TestUtils {
     private static native long getDocument(long peer) throws LiteCoreException;
 
     private static native void free(long peer);
+
+    // C4Blob
+
+    @GuardedBy("streamLock")
+    private static native long getBlobLength(long peer) throws LiteCoreException;
 
     // C4BlobStore
 
@@ -258,6 +359,7 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException;
+
     // C4Key
 
     @Nullable

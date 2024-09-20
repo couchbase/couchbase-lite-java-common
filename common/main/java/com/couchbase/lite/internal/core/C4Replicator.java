@@ -438,22 +438,29 @@ public abstract class C4Replicator extends C4NativePeer {
 
         final ReplicationCollection[] colls = ReplicationCollection.createAll(collections);
 
-        final long peer = impl.nCreate(
-            ID + replToken,
-            colls,
-            db,
-            scheme,
-            host,
-            port,
-            path,
-            remoteDbName,
-            MessageFraming.getC4Framing(framing),
-            (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PUSH),
-            (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PULL),
-            continuous,
-            ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
-            replToken,
-            sfToken);
+        final long peer;
+        try {
+            peer = impl.nCreate(
+                ID + replToken,
+                colls,
+                db,
+                scheme,
+                host,
+                port,
+                path,
+                remoteDbName,
+                MessageFraming.getC4Framing(framing),
+                (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PUSH),
+                (type == ReplicatorType.PUSH_AND_PULL) || (type == ReplicatorType.PULL),
+                continuous,
+                ((options == null) || (options.isEmpty())) ? null : FLEncoder.encodeMap(options),
+                replToken,
+                sfToken);
+        }
+        catch (LiteCoreException e) {
+            BOUND_REPLICATORS.unbind(replToken);
+            throw e;
+        }
 
         final C4Replicator c4Replicator = new C4CommonReplicator(
             impl,

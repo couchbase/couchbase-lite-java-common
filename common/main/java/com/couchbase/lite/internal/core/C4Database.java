@@ -42,13 +42,7 @@ import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.sockets.MessageFraming;
 
 
-@SuppressWarnings({
-    "PMD.UnusedPrivateMethod",
-    "PMD.TooManyMethods",
-    "PMD.ExcessivePublicCount",
-    "PMD.ExcessiveParameterList",
-    "PMD.CyclomaticComplexity"})
-
+@SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyMethods"})
 public abstract class C4Database extends C4Peer {
     public static final boolean VERSION_VECTORS_ENABLED = false;
 
@@ -88,7 +82,7 @@ public abstract class C4Database extends C4Peer {
 
         void nDelete(long db) throws LiteCoreException;
 
-        void nDeleteNamed(@NonNull String name, @NonNull String dir) throws LiteCoreException;
+        void nDeleteNamed(@NonNull String parentDir, @NonNull String name) throws LiteCoreException;
 
         // - UUID
 
@@ -278,8 +272,8 @@ public abstract class C4Database extends C4Peer {
     }
 
     // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair
-    public static void deleteNamedDb(@NonNull String directory, @NonNull String name) throws LiteCoreException {
-        NATIVE_IMPL.nDeleteNamed(name, directory);
+    public static void deleteNamedDb(@NonNull String parentDir, @NonNull String name) throws LiteCoreException {
+        NATIVE_IMPL.nDeleteNamed(parentDir, name);
     }
 
     @NonNull
@@ -465,7 +459,7 @@ public abstract class C4Database extends C4Peer {
 
     // - Replicators
 
-    @SuppressWarnings("CheckFunctionalParameters")
+    @SuppressWarnings("PMD.ExcessiveParameterList")
     @NonNull
     public C4Replicator createRemoteReplicator(
         @NonNull Map<Collection, CollectionConfiguration> collections,
@@ -502,7 +496,6 @@ public abstract class C4Database extends C4Peer {
                 socketFactory));
     }
 
-    @SuppressWarnings("CheckFunctionalParameters")
     @NonNull
     public C4Replicator createLocalReplicator(
         @NonNull Map<Collection, CollectionConfiguration> collections,

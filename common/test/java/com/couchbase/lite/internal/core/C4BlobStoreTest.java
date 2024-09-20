@@ -185,7 +185,7 @@ public class C4BlobStoreTest extends C4BaseTest {
             try (C4BlobReadStream stream = blobStore.openReadStream(key)) {
                 assertNotNull(stream);
 
-                assertEquals(blob.getBytes(StandardCharsets.UTF_8).length, stream.getLength());
+                assertEquals(blob.getBytes(StandardCharsets.UTF_8).length, C4TestUtils.getBlobLength(stream));
 
                 // Read it back, 6 bytes at a time:
                 StringBuilder readBack = new StringBuilder();
