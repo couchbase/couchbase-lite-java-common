@@ -40,9 +40,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open(
         jint jflags,
         jint encryptionAlg,
         jbyteArray encryptionKey) {
-    jstringSlice name(env, jname);
-
     jstringSlice parentDir(env, jparentDir);
+    jstringSlice name(env, jname);
 
     C4DatabaseConfig2 config;
     config.parentDirectory = parentDir;
@@ -116,9 +115,8 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy(
         jint encryptionAlg,
         jbyteArray encryptionKey) {
     jstringSlice fromPath(env, jfromPath);
-    jstringSlice name(env, jname);
-
     jstringSlice parentDir(env, jparentDir);
+    jstringSlice name(env, jname);
 
     C4DatabaseConfig2 config;
     config.parentDirectory = parentDir;
@@ -155,13 +153,13 @@ JNIEXPORT void JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed(
         JNIEnv *env,
         jclass ignore,
-        jstring name,
-        jstring dir) {
-    jstringSlice dbName(env, name);
-    jstringSlice inDirectory(env, dir);
+        jstring jname,
+        jstring jparentDir) {
+    jstringSlice name(env, jname);
+    jstringSlice parentDir(env, jparentDir);
 
     C4Error error{};
-    bool ok = c4db_deleteNamed(dbName, inDirectory, &error);
+    bool ok = c4db_deleteNamed(name, parentDir, &error);
     if (!ok && error.code != 0)
         throwError(env, error);
 }

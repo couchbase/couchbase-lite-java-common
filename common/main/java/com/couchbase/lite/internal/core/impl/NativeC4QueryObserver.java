@@ -10,13 +10,15 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
+
 import com.couchbase.lite.internal.core.C4QueryObserver;
 
 
 public final class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
 
     @Override
-    public long nCreate(long token, long c4Query) { return create(token, c4Query); }
+    public long nCreate(long peer, long token) { return create(peer, token); }
 
     @Override
     public void nEnable(long peer) { enable(peer); }
@@ -24,12 +26,17 @@ public final class NativeC4QueryObserver implements C4QueryObserver.NativeImpl {
     @Override
     public void nFree(long peer) { free(peer); }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
-    private static native long create(long token, long c4Query);
+    private static native long create(long peer, long token);
 
+    @GuardedBy("dbLock")
     private static native void enable(long peer);
 
     private static native void free(long peer);

@@ -375,10 +375,10 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Socket_closed(
         jlong jSocket,
         jint domain,
         jint code,
-        jstring message) {
+        jstring jmessage) {
     auto socket = (C4Socket *) jSocket;
-    jstringSlice sliceMessage(env, message);
-    C4Error error = c4error_make((C4ErrorDomain) domain, code, sliceMessage);
+    jstringSlice message(env, jmessage);
+    C4Error error = c4error_make((C4ErrorDomain) domain, code, message);
     c4socket_closed(socket, error);
     c4socket_release(socket);
 }

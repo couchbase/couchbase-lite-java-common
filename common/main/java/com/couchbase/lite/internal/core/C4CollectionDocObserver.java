@@ -7,7 +7,6 @@ import com.couchbase.lite.LiteCoreException;
 
 
 public final class C4CollectionDocObserver extends C4DocumentObserver {
-
     @NonNull
     public static C4CollectionDocObserver newObserver(long c4Coll, @NonNull String id, @NonNull Runnable listener)
         throws LiteCoreException {
@@ -21,10 +20,14 @@ public final class C4CollectionDocObserver extends C4DocumentObserver {
         long c4Coll,
         @NonNull String id,
         @NonNull Runnable listener)
-    throws LiteCoreException {
+        throws LiteCoreException {
         final long token = BOUND_OBSERVERS.reserveKey();
-        final C4CollectionDocObserver observer
-            = new C4CollectionDocObserver(impl, token, impl.nCreate(token, c4Coll, id), listener);
+        final C4CollectionDocObserver observer;
+        try { observer = new C4CollectionDocObserver(impl, token, impl.nCreate(c4Coll, token, id), listener); }
+        catch (LiteCoreException e) {
+            BOUND_OBSERVERS.unbind(token);
+            throw e;
+        }
         BOUND_OBSERVERS.bind(token, observer);
         return observer;
     }
