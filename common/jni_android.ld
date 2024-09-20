@@ -1,29 +1,30 @@
 CBL {
     global:
         JNI_OnLoad;
-        Java_com_couchbase_lite_internal_core_C4FullTextMatch_dataSource;
-        Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatch;
-        Java_com_couchbase_lite_internal_core_C4FullTextMatch_getFullTextMatchCount;
-        Java_com_couchbase_lite_internal_core_C4FullTextMatch_length;
-        Java_com_couchbase_lite_internal_core_C4FullTextMatch_property;
-        Java_com_couchbase_lite_internal_core_C4FullTextMatch_start;
-        Java_com_couchbase_lite_internal_core_C4FullTextMatch_term;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_dataSource;
         Java_com_couchbase_lite_internal_core_C4TestUtils_deleteStore;
         Java_com_couchbase_lite_internal_core_C4TestUtils_deriveKeyFromPassword;
         Java_com_couchbase_lite_internal_core_C4TestUtils_encodeJSON;
         Java_com_couchbase_lite_internal_core_C4TestUtils_enumerateAllDocs;
         Java_com_couchbase_lite_internal_core_C4TestUtils_free;
         Java_com_couchbase_lite_internal_core_C4TestUtils_freeStore;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_getBlobLength;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getDocID;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getDocument;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getFlags;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatch;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_getFullTextMatchCount;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getLevel;
         Java_com_couchbase_lite_internal_core_C4TestUtils_getPrivateUUID;
         Java_com_couchbase_lite_internal_core_C4TestUtils_isIndexTrained;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_length;
         Java_com_couchbase_lite_internal_core_C4TestUtils_next;
         Java_com_couchbase_lite_internal_core_C4TestUtils_openStore;
-        Java_com_couchbase_lite_internal_core_C4TestUtils_put;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_property;
         Java_com_couchbase_lite_internal_core_C4TestUtils_put2;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_put;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_start;
+        Java_com_couchbase_lite_internal_core_C4TestUtils_term;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_closeReadStream;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_closeWriteStream;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_computeBlobKey;
@@ -34,7 +35,6 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getBlobStore;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getContents;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getFilePath;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getLength;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getSize;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_install;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_openReadStream;

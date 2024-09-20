@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -28,6 +29,7 @@ import com.couchbase.lite.internal.core.impl.NativeC4Blob;
  */
 public abstract class C4BlobStore extends C4NativePeer {
     public interface NativeImpl {
+        @GuardedBy("dbLock")
         long nGetBlobStore(long db) throws LiteCoreException;
         long nGetSize(long peer, long key);
         @Nullable
@@ -40,16 +42,22 @@ public abstract class C4BlobStore extends C4NativePeer {
         long nOpenWriteStream(long peer) throws LiteCoreException;
 
         // BlobReadStream
+        @GuardedBy("streamLock")
         int nRead(long peer, byte[] data, int offset, long len) throws LiteCoreException;
-        long nGetLength(long peer) throws LiteCoreException;
+        @GuardedBy("streamLock")
         void nSeek(long peer, long pos) throws LiteCoreException;
-        void nCloseWriteStream(long peer);
+        @GuardedBy("streamLock")
+        void nCloseReadStream(long peer);
 
         // BlobReadStream
+        @GuardedBy("streamLock")
         void nWrite(long peer, byte[] data, int len) throws LiteCoreException;
+        @GuardedBy("streamLock")
         long nComputeBlobKey(long peer) throws LiteCoreException;
+        @GuardedBy("streamLock")
         void nInstall(long peer) throws LiteCoreException;
-        void nCloseReadStream(long peer);
+        @GuardedBy("streamLock")
+        void nCloseWriteStream(long peer);
     }
 
     // All of the blob stores used in production code are
@@ -68,8 +76,8 @@ public abstract class C4BlobStore extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     @NonNull
-    public static C4BlobStore create(long peer) throws LiteCoreException {
-        return new UnmanagedC4BlobStore(NATIVE_IMPL, NATIVE_IMPL.nGetBlobStore(peer));
+    public static C4BlobStore create(long dbPeer) throws LiteCoreException {
+        return new UnmanagedC4BlobStore(NATIVE_IMPL, NATIVE_IMPL.nGetBlobStore(dbPeer));
     }
 
     //-------------------------------------------------------------------------

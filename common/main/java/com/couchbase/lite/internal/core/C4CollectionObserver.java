@@ -73,8 +73,12 @@ public final class C4CollectionObserver
     static C4CollectionObserver newObserver(@NonNull NativeImpl impl, long c4Coll, @NonNull Runnable listener)
         throws LiteCoreException {
         final long token = BOUND_OBSERVERS.reserveKey();
-        final long peer = impl.nCreate(token, c4Coll);
-        final C4CollectionObserver observer = new C4CollectionObserver(impl, token, peer, listener);
+        final C4CollectionObserver observer;
+        try { observer = new C4CollectionObserver(impl, token, impl.nCreate(token, c4Coll), listener); }
+        catch (LiteCoreException e) {
+            BOUND_OBSERVERS.unbind(token);
+            throw e;
+        }
         BOUND_OBSERVERS.bind(token, observer);
         return observer;
     }

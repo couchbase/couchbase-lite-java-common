@@ -24,6 +24,7 @@ import java.util.Map;
 import org.junit.After;
 
 import com.couchbase.lite.LiteCoreException;
+import com.couchbase.lite.internal.core.C4TestUtils.C4FullTextMatch;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
@@ -104,7 +105,7 @@ public class C4QueryBaseTest extends C4BaseTest {
             assertNotNull(e);
             while (e.next()) {
                 List<C4FullTextMatch> match = new ArrayList<>();
-                for (int i = 0; i < C4FullTextMatch.getFullTextMatchCount(e); i++) {
+                for (int i = 0; i < C4FullTextMatch.getMatchCount(e); i++) {
                     match.add(C4FullTextMatch.getFullTextMatches(e, i).load());
                 }
                 matches.add(match);

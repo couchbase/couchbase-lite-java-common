@@ -33,8 +33,12 @@ public final class NativeC4QueryEnumerator implements C4QueryEnumerator.NativeIm
     @Override
     public long nGetMissingColumns(long peer) { return getMissingColumns(peer); }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     private static native boolean next(long peer) throws LiteCoreException;

@@ -264,22 +264,6 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_read(
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Blob
- * Method:    getLength
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL
-Java_com_couchbase_lite_internal_core_impl_NativeC4Blob_getLength(JNIEnv *env, jclass ignore, jlong jstream) {
-    C4Error error{};
-    int64_t length = c4stream_getLength((C4ReadStream *) jstream, &error);
-    if (length == -1) {
-        throwError(env, error);
-        return 0;
-    }
-    return (jlong) length;
-}
-
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Blob
  * Method:    seek
  * Signature: (JJ)V
  */

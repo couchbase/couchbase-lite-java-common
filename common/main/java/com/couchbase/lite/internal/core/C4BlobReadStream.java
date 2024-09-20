@@ -52,11 +52,6 @@ public final class C4BlobReadStream extends C4NativePeer {
     }
 
     /**
-     * Returns the exact length in bytes of the stream.
-     */
-    public long getLength() throws LiteCoreException { return withPeerOrDefault(0L, impl::nGetLength); }
-
-    /**
      * Moves to a random location in the stream; the next c4stream_read call will read from that
      * location.
      */

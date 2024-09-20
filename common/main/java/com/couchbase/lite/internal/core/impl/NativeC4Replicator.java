@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -137,14 +138,19 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     @Override
     public void nSetHostReachable(long peer, boolean reachable) { setHostReachable(peer, reachable); }
 
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     /*
      * Creates a new replicator.
      */
     @SuppressWarnings("PMD.ExcessiveParameterList")
+    @GuardedBy("dbLock")
     private static native long create(
         @NonNull String id,
         @NonNull ReplicationCollection[] collections,
@@ -166,6 +172,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     /*
      * Creates a new local replicator.
      */
+    @GuardedBy("dbLock")
     private static native long createLocal(
         @NonNull String id,
         @NonNull ReplicationCollection[] collections,
@@ -183,6 +190,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
      * that accept incoming connections.  Wrap them by calling `c4socket_fromNative()`, then
      * start a passive replication to service them.
      */
+    @GuardedBy("dbLock")
     private static native long createWithSocket(
         @NonNull String id,
         @NonNull ReplicationCollection[] collections,
@@ -238,6 +246,7 @@ public final class NativeC4Replicator implements C4Replicator.NativeImpl {
     /**
      * Set the core progress callback level.
      */
+    @GuardedBy("replLock")
     private static native void setProgressLevel(long peer, int progressLevel) throws LiteCoreException;
 
     /**

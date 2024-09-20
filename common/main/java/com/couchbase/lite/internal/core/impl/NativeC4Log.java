@@ -24,8 +24,13 @@ public final class NativeC4Log implements C4Log.NativeImpl {
         String path, int level, int maxRotateCount, long maxSize, boolean usePlaintext, String header) {
         writeToBinaryFile(path, level, maxRotateCount, maxSize, usePlaintext, header);
     }
+
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     private static native void log(String domain, int level, String message);

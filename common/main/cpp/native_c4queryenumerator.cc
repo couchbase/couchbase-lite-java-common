@@ -37,8 +37,8 @@ JNIEXPORT jboolean JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_next(
         JNIEnv *env,
         jclass ignore,
-        jlong handle) {
-    auto e = (C4QueryEnumerator *) handle;
+        jlong peer) {
+    auto e = (C4QueryEnumerator *) peer;
     if (e == nullptr)
         return false;
 
@@ -78,8 +78,8 @@ JNIEXPORT jlong JNICALL
 Java_com_couchbase_lite_internal_core_impl_NativeC4QueryEnumerator_getColumns(
         JNIEnv *env,
         jclass ignore,
-        jlong handle) {
-    auto e = (C4QueryEnumerator *) handle;
+        jlong peer) {
+    auto e = (C4QueryEnumerator *) peer;
     if (e == nullptr)
         return 0L;
 

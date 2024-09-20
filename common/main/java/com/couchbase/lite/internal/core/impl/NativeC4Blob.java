@@ -15,6 +15,7 @@
 //
 package com.couchbase.lite.internal.core.impl;
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.Nullable;
 
 import com.couchbase.lite.LiteCoreException;
@@ -36,6 +37,7 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
 
     //// BlobStore
 
+    @GuardedBy("dbLock")
     public long nGetBlobStore(long db) throws LiteCoreException { return getBlobStore(db); }
 
     public long nGetSize(long peer, long key) { return getSize(peer, key); }
@@ -56,29 +58,37 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
 
     //// BlobReadStream
 
+    @GuardedBy("streamLock")
     public int nRead(long peer, byte[] data, int offset, long len) throws LiteCoreException {
         return read(peer, data, offset, len);
     }
 
-    public long nGetLength(long peer) throws LiteCoreException { return getLength(peer); }
-
+    @GuardedBy("streamLock")
     public void nSeek(long peer, long pos) throws LiteCoreException { seek(peer, pos); }
-
-    public void nCloseWriteStream(long peer) { closeWriteStream(peer); }
-
-    //// BlobReadStream
-
-    public void nWrite(long peer, byte[] data, int len) throws LiteCoreException { write(peer, data, len); }
-
-    public long nComputeBlobKey(long peer) throws LiteCoreException { return computeBlobKey(peer); }
-
-    public void nInstall(long peer) throws LiteCoreException { install(peer); }
 
     public void nCloseReadStream(long peer) { closeReadStream(peer); }
 
 
+    //// BlobWriteStream
+
+    @GuardedBy("streamLock")
+    public void nWrite(long peer, byte[] data, int len) throws LiteCoreException { write(peer, data, len); }
+
+    @GuardedBy("streamLock")
+    public long nComputeBlobKey(long peer) throws LiteCoreException { return computeBlobKey(peer); }
+
+    @GuardedBy("streamLock")
+    public void nInstall(long peer) throws LiteCoreException { install(peer); }
+
+    @GuardedBy("streamLock")
+    public void nCloseWriteStream(long peer) { closeWriteStream(peer); }
+
+
     //-------------------------------------------------------------------------
-    // native methods
+    // Native methods
+    //
+    // Methods that take a peer as an argument assume that the peer is valid until the method returns
+    // Methods without a @GuardedBy annotation are otherwise thread-safe
     //-------------------------------------------------------------------------
 
     // BlobKey
@@ -91,6 +101,7 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
     private static native void free(long peer);
 
     // BlobStore
+    @GuardedBy("dbLock")
     private static native long getBlobStore(long db) throws LiteCoreException;
 
     private static native long getSize(long peer, long blobKey);
@@ -111,22 +122,27 @@ public final class NativeC4Blob implements C4BlobKey.NativeImpl, C4BlobStore.Nat
 
     // BlobReadStream
 
+    @GuardedBy("readStreamLock")
     private static native int read(long peer, byte[] b, int offset, long maxBytesToRead) throws LiteCoreException;
 
-    private static native long getLength(long peer) throws LiteCoreException;
-
+    @GuardedBy("readStreamLock")
     private static native void seek(long peer, long position) throws LiteCoreException;
 
+    @GuardedBy("readStreamLock")
     private static native void closeWriteStream(long peer);
 
     // BlobReadStream
 
+    @GuardedBy("writeStreamLock")
     private static native void write(long peer, byte[] bytes, int len) throws LiteCoreException;
 
+    @GuardedBy("writeStreamLock")
     private static native long computeBlobKey(long peer) throws LiteCoreException;
 
+    @GuardedBy("writeStreamLock")
     private static native void install(long peer) throws LiteCoreException;
 
+    @GuardedBy("writeStreamLock")
     private static native void closeReadStream(long peer);
 }
 
