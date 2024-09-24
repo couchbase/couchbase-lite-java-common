@@ -27,6 +27,7 @@ import com.couchbase.lite.CouchbaseLiteError;
 import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 
 
@@ -102,13 +103,16 @@ public class C4TestUtils {
     }
 
     public static class C4DocEnumerator extends C4NativePeer {
-        public C4DocEnumerator(long db, int flags) throws LiteCoreException { this(enumerateAllDocs(db, flags)); }
+        private final Object dbLock;
 
-        private C4DocEnumerator(long peer) { super(peer); }
+        public C4DocEnumerator(long db, int flags) throws LiteCoreException {
+            super(enumerateAllDocs(db, flags));
+            this.dbLock = LockManager.INSTANCE.getLock(db);
+        }
 
         @NonNull
         public C4Document getDocument() throws LiteCoreException {
-            return new C4Document(withPeerOrThrow(C4TestUtils::getDocument));
+            return new C4Document(withPeerOrThrow(C4TestUtils::getDocument), dbLock);
         }
 
         public boolean next() throws LiteCoreException {
@@ -209,18 +213,20 @@ public class C4TestUtils {
         int maxRevTreeDepth,
         int remoteDBID)
         throws LiteCoreException {
-        return collection.withPeerOrThrow(peer ->
-            new C4Document(put(
-                peer,
-                body,
-                docID,
-                revFlags,
-                existingRevision,
-                allowConflict,
-                history,
-                save,
-                maxRevTreeDepth,
-                remoteDBID)));
+        return collection.withPeerOrThrow(
+            peer -> new C4Document(
+                put(
+                    peer,
+                    body,
+                    docID,
+                    revFlags,
+                    existingRevision,
+                    allowConflict,
+                    history,
+                    save,
+                    maxRevTreeDepth,
+                    remoteDBID),
+                collection.getDbLock()));
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
@@ -238,18 +244,20 @@ public class C4TestUtils {
         int remoteDBID)
         throws LiteCoreException {
         return collection.withPeerOrThrow(peer ->
-            new C4Document(put2(
-                peer,
-                body.getBase(),
-                body.getSize(),
-                docID,
-                revFlags,
-                existingRevision,
-                allowConflict,
-                history,
-                save,
-                maxRevTreeDepth,
-                remoteDBID)));
+            new C4Document(
+                put2(
+                    peer,
+                    body.getBase(),
+                    body.getSize(),
+                    docID,
+                    revFlags,
+                    existingRevision,
+                    allowConflict,
+                    history,
+                    save,
+                    maxRevTreeDepth,
+                    remoteDBID),
+                collection.getDbLock()));
     }
 
     // C4Key

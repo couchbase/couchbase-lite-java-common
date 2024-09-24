@@ -71,6 +71,7 @@ class C4DatabaseTest : C4BaseTest() {
         override fun nGetCookies(db: Long, url: String): String = "test_cookies"
         override fun nGetSharedFleeceEncoder(db: Long): Long = 1L
         override fun nGetFLSharedKeys(db: Long): Long = 1L
+        override fun nDocContainsBlobs(dictPtr: Long, dictSize: Long, sharedKeys: Long) = false
         override fun nGetScopeNames(peer: Long): MutableSet<String> = mutableSetOf()
         override fun nHasScope(peer: Long, scope: String): Boolean = true
         override fun nGetCollectionNames(peer: Long, scope: String): MutableSet<String> = mutableSetOf()

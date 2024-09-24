@@ -145,6 +145,15 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getFLSharedK
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
+ * Method:    docContainsBlobs
+ * Signature: (JJJ)Z
+ */
+JNIEXPORT jboolean
+JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_docContainsBlobs
+        (JNIEnv *, jclass, jlong, jlong, jlong);
+
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
  * Method:    maintenance
  * Signature: (JI)Z
  */
