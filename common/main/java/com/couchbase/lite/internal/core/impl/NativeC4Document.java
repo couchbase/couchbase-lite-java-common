@@ -148,7 +148,7 @@ public final class NativeC4Document implements C4Document.NativeImpl {
     private static native String getSelectedRevID(long peer);
 
     @Nullable
-    private static native String getRevisionHistory(long coll, long doc, long maxRevs, @Nullable String[] backToRevs)
+    private static native String getRevisionHistory(long coll, long peer, long maxRevs, @Nullable String[] backToRevs)
         throws LiteCoreException;
 
     private static native long getTimestamp(long peer);

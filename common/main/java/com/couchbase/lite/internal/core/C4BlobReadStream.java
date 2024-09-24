@@ -18,8 +18,11 @@ package com.couchbase.lite.internal.core;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
+import com.couchbase.lite.internal.core.peers.LockManager;
 
 
 /**
@@ -28,6 +31,8 @@ import com.couchbase.lite.LogDomain;
 public final class C4BlobReadStream extends C4NativePeer {
     @NonNull
     private final C4BlobStore.NativeImpl impl;
+    @NonNull
+    private final Object lock;
 
     //-------------------------------------------------------------------------
     // Constructor
@@ -36,6 +41,7 @@ public final class C4BlobReadStream extends C4NativePeer {
     C4BlobReadStream(@NonNull C4BlobStore.NativeImpl impl, long peer) {
         super(peer);
         this.impl = impl;
+        lock = LockManager.INSTANCE.getLock(peer);
     }
 
     //-------------------------------------------------------------------------
@@ -48,28 +54,42 @@ public final class C4BlobReadStream extends C4NativePeer {
      * @param maxBytesToRead The maximum number of bytes to read to the buffer
      */
     public int read(byte[] b, int offset, long maxBytesToRead) throws LiteCoreException {
-        return withPeerOrDefault(0, peer -> impl.nRead(peer, b, offset, maxBytesToRead));
+        synchronized (lock) {
+            return withPeerOrDefault(0, peer -> impl.nRead(peer, b, offset, maxBytesToRead));
+        }
     }
 
     /**
      * Moves to a random location in the stream; the next c4stream_read call will read from that
      * location.
      */
-    public void seek(long position) throws LiteCoreException { withPeer(peer -> impl.nSeek(peer, position)); }
+    public void seek(long position) throws LiteCoreException {
+        synchronized (lock) {
+            withPeer(peer -> impl.nSeek(peer, position));
+        }
+    }
 
     /**
      * Closes a read-stream.
      */
     @Override
-    public void close() { closePeer(null); }
+    public void close() {
+        synchronized (lock) { closePeer(null); }
+    }
 
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try { closePeer(LogDomain.DATABASE); }
+        try {
+            if (lock == null) { closePeer(LogDomain.DATABASE); }
+            else {
+                synchronized (lock) { closePeer(LogDomain.DATABASE); }
+            }
+        }
         finally { super.finalize(); }
     }
 
@@ -78,10 +98,10 @@ public final class C4BlobReadStream extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     private void closePeer(@Nullable LogDomain domain) {
+        final C4BlobStore.NativeImpl nativeImpl = impl;
         releasePeer(
             domain,
             (peer) -> {
-                final C4BlobStore.NativeImpl nativeImpl = impl;
                 if (nativeImpl != null) { nativeImpl.nCloseReadStream(peer); }
             });
     }
