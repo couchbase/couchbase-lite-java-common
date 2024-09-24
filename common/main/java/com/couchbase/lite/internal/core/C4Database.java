@@ -37,6 +37,7 @@ import com.couchbase.lite.ReplicatorType;
 import com.couchbase.lite.internal.QueryLanguage;
 import com.couchbase.lite.internal.SocketFactory;
 import com.couchbase.lite.internal.core.impl.NativeC4Database;
+import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.sockets.MessageFraming;
@@ -291,6 +292,12 @@ public abstract class C4Database extends C4Peer {
     @NonNull
     private final String name;
 
+    // We need to hold a reference to this for this objects lifetime,
+    // to be sure that everyone else gets the same lock.
+    @SuppressWarnings({"PMD.UnusedPrivateField", "PMD.SingularField"})
+    @NonNull
+    private final Object lock;
+
     @NonNull
     final AtomicReference<File> dbFile = new AtomicReference<>();
 
@@ -301,6 +308,7 @@ public abstract class C4Database extends C4Peer {
         super(peer, cleaner);
         this.name = name;
         this.impl = impl;
+        this.lock = LockManager.INSTANCE.getLock(peer);
     }
 
     //-------------------------------------------------------------------------

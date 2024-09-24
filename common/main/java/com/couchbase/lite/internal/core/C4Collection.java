@@ -20,6 +20,7 @@ import com.couchbase.lite.Collection;
 import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.Scope;
 import com.couchbase.lite.internal.core.impl.NativeC4Collection;
+import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -28,28 +29,39 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public final class C4Collection extends C4Peer {
     public interface NativeImpl {
         // Factory methods
+
+        @GuardedBy("dbLock")
         long nCreateCollection(long c4Db, @NonNull String scope, @NonNull String collection)
             throws LiteCoreException;
+        @GuardedBy("dbLock")
         long nGetCollection(long c4Db, @NonNull String scope, @NonNull String collection) throws LiteCoreException;
         long nGetDefaultCollection(long c4Db) throws LiteCoreException;
 
         // Collections
         boolean nCollectionIsValid(long peer);
-        long nGetDocumentCount(long peer);
         void nFree(long peer);
+        @GuardedBy("dbLock")
+        long nGetDocumentCount(long peer);
 
         // Documents
+        @GuardedBy("dbLock")
         long nGetDocExpiration(long peer, @NonNull String docID) throws LiteCoreException;
+        @GuardedBy("dbLock")
         void nSetDocExpiration(long peer, @NonNull String docID, long timestamp) throws LiteCoreException;
+        @GuardedBy("dbLock")
         void nPurgeDoc(long peer, @NonNull String docID) throws LiteCoreException;
 
         // Indexes
+        @GuardedBy("dbLock")
         long nGetIndexesInfo(long peer) throws LiteCoreException;
 
+        @GuardedBy("dbLock")
         void nCreateValueIndex(long peer, String name, int queryLanguage, String indexSpec) throws LiteCoreException;
 
+        @GuardedBy("dbLock")
         void nCreateArrayIndex(long peer, String name, String path, String indexSpec) throws LiteCoreException;
 
+        @GuardedBy("dbLock")
         void nCreateFullTextIndex(
             long peer,
             String name,
@@ -59,8 +71,10 @@ public final class C4Collection extends C4Peer {
             boolean ignoreDiacritics)
             throws LiteCoreException;
 
+        @GuardedBy("dbLock")
         void nCreatePredictiveIndex(long peer, String name, String indexSpec) throws LiteCoreException;
 
+        @GuardedBy("dbLock")
         @SuppressWarnings("PMD.ExcessiveParameterList")
         void nCreateVectorIndex(
             long peer,
@@ -78,8 +92,10 @@ public final class C4Collection extends C4Peer {
             boolean isLazy)
             throws LiteCoreException;
 
+        @GuardedBy("dbLock")
         long nGetIndex(long peer, @NonNull String name) throws LiteCoreException;
 
+        @GuardedBy("dbLock")
         void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException;
     }
 
@@ -157,6 +173,8 @@ public final class C4Collection extends C4Peer {
     private final String scope;
     @NonNull
     private final String name;
+    @NonNull
+    private final Object dbLock;
 
 
     //-------------------------------------------------------------------------
@@ -174,6 +192,7 @@ public final class C4Collection extends C4Peer {
         this.db = db;
         this.scope = scope;
         this.name = name;
+        this.dbLock = db.withPeerOrThrow(dbPeer -> LockManager.INSTANCE.getLock(peer));
     }
 
     //-------------------------------------------------------------------------
@@ -188,7 +207,11 @@ public final class C4Collection extends C4Peer {
 
     // - Documents
 
-    public long getDocumentCount() { return withPeerOrDefault(0L, impl::nGetDocumentCount); }
+    public long getDocumentCount() {
+        synchronized (dbLock) {
+            return withPeerOrDefault(0L, impl::nGetDocumentCount);
+        }
+    }
 
     @Nullable
     public C4Document getDocument(@NonNull String docId) throws LiteCoreException {
