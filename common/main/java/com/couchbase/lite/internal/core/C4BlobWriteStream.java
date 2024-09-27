@@ -16,12 +16,8 @@
 package com.couchbase.lite.internal.core;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import com.couchbase.lite.LiteCoreException;
-import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.peers.LockManager;
 import com.couchbase.lite.internal.utils.Preconditions;
 
@@ -29,7 +25,16 @@ import com.couchbase.lite.internal.utils.Preconditions;
 /**
  * An open stream for writing data to a blob.
  */
-public final class C4BlobWriteStream extends C4NativePeer {
+public final class C4BlobWriteStream extends C4Peer {
+    private static void release(@NonNull C4BlobStore.NativeImpl impl, long peer) {
+        synchronized (LockManager.INSTANCE.getLock(peer)) { impl.nCloseWriteStream(peer); }
+    }
+
+
+    //-------------------------------------------------------------------------
+    // Fields
+    //-------------------------------------------------------------------------
+
     @NonNull
     private final C4BlobStore.NativeImpl impl;
 
@@ -42,7 +47,7 @@ public final class C4BlobWriteStream extends C4NativePeer {
     //-------------------------------------------------------------------------
 
     C4BlobWriteStream(@NonNull C4BlobStore.NativeImpl impl, long peer) {
-        super(peer);
+        super(peer, releasePeer -> release(impl, releasePeer));
         this.impl = impl;
         lock = LockManager.INSTANCE.getLock(peer);
     }
@@ -57,9 +62,7 @@ public final class C4BlobWriteStream extends C4NativePeer {
      * @param bytes array of bytes to be written in its entirety
      * @throws LiteCoreException on write failure
      */
-    public void write(@NonNull byte[] bytes) throws LiteCoreException {
-        write(bytes, bytes.length);
-    }
+    public void write(@NonNull byte[] bytes) throws LiteCoreException { write(bytes, bytes.length); }
 
     /**
      * Writes the len bytes from the passed array, to the stream.
@@ -71,7 +74,7 @@ public final class C4BlobWriteStream extends C4NativePeer {
     public void write(@NonNull byte[] bytes, int len) throws LiteCoreException {
         Preconditions.assertNotNull(bytes, "bytes");
         if (len <= 0) { return; }
-        withPeer(peer -> {
+        voidWithPeerOrThrow(peer -> {
             synchronized (lock) { impl.nWrite(peer, bytes, len); }
         });
     }
@@ -94,40 +97,8 @@ public final class C4BlobWriteStream extends C4NativePeer {
      * c4stream_computeBlobKey and found that the data does not match the expected digest/key.)
      */
     public void install() throws LiteCoreException {
-        withPeer(peer -> {
+        voidWithPeerOrThrow(peer -> {
             synchronized (lock) { impl.nInstall(peer); }
         });
-    }
-
-    /**
-     * Closes a blob write-stream. If c4stream_install was not already called, the temporary file
-     * will be deleted without adding the blob to the store.
-     */
-    @Override
-    public void close() { closePeer(null); }
-
-    //-------------------------------------------------------------------------
-    // protected methods
-    //-------------------------------------------------------------------------
-
-    @SuppressWarnings("NoFinalizer")
-    @Override
-    protected void finalize() throws Throwable {
-        try { closePeer(LogDomain.DATABASE); }
-        finally { super.finalize(); }
-    }
-
-    //-------------------------------------------------------------------------
-    // private methods
-    //-------------------------------------------------------------------------
-
-    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, this::free); }
-
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
-    @SuppressWarnings("ConstantConditions")
-    private void free(long peer) {
-        final C4BlobStore.NativeImpl nativeImpl = impl;
-        if (nativeImpl == null) { return; }
-        synchronized (LockManager.INSTANCE.getLock(peer)) { nativeImpl.nCloseWriteStream(peer); }
     }
 }
