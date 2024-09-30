@@ -19,9 +19,9 @@ import com.couchbase.lite.internal.utils.Preconditions;
 
 
 public class FLSharedKeys {
-    private final long handle; // hold pointer to FLSharedKeys
+    private final long peer; // hold pointer to FLSharedKeys
 
-    public FLSharedKeys(long handle) { this.handle = Preconditions.assertNotZero(handle, "handle"); }
+    public FLSharedKeys(long peer) { this.peer = Preconditions.assertNotZero(peer, "peer"); }
 
-    public long getHandle() { return handle; }
+    public long getPeer() { return peer; }
 }

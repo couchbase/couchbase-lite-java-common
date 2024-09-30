@@ -16,6 +16,7 @@
 package com.couchbase.lite.internal.core;
 
 
+import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -26,7 +27,6 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.LogDomain;
 import com.couchbase.lite.internal.core.impl.NativeC4Document;
 import com.couchbase.lite.internal.fleece.FLDict;
-import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.logging.Log;
 
@@ -35,8 +35,10 @@ import com.couchbase.lite.internal.logging.Log;
 public final class C4Document extends C4Peer {
     public interface NativeImpl {
         //// Creating and Updating Documents
+        @GuardedBy("dbLock")
         long nGetFromCollection(long coll, String docID, boolean mustExist, boolean getAllRevs)
             throws LiteCoreException;
+        @GuardedBy("dbLock")
         long nCreateFromSlice(long coll, String docID, long bodyPtr, long bodySize, int flags)
             throws LiteCoreException;
         //// Properties
@@ -54,9 +56,12 @@ public final class C4Document extends C4Peer {
         long nGetTimestamp(long doc);
         long nGetSelectedSequence(long doc);
         // return pointer to FLValue
+        @GuardedBy("dbLock")
         long nGetSelectedBody2(long doc);
         //// Conflict Resolution
+        @GuardedBy("dbLock")
         void nSelectNextLeafRevision(long doc, boolean includeDeleted, boolean withBody) throws LiteCoreException;
+        @GuardedBy("dbLock")
         void nResolveConflict(
             long doc,
             String winningRevID,
@@ -64,15 +69,16 @@ public final class C4Document extends C4Peer {
             byte[] mergeBody,
             int mergedFlags)
             throws LiteCoreException;
+        @GuardedBy("dbLock&docLock")
         long nUpdate(long doc, long bodyPtr, long bodySize, int flags) throws LiteCoreException;
+        @GuardedBy("dbLock&docLock")
         void nSave(long doc, int maxRevTreeDepth) throws LiteCoreException;
         //// Fleece-related
+        @GuardedBy("dbLock")
         @NonNull
         String nBodyAsJSON(long doc, boolean canonical) throws LiteCoreException;
         //// Lifecycle
         void nFree(long doc);
-        //// Utility
-        boolean nDictContainsBlobs(long dictPtr, long dictSize, long sk);
     }
 
     @NonNull
@@ -85,55 +91,62 @@ public final class C4Document extends C4Peer {
     @NonNull
     static C4Document create(@NonNull C4Collection coll, @NonNull String docID, @Nullable FLSliceResult body, int flags)
         throws LiteCoreException {
-        return coll.withPeerOrThrow(collPeer -> new C4Document(
-            NATIVE_IMPL,
-            NATIVE_IMPL.nCreateFromSlice(
-                collPeer,
-                docID,
-                (body == null) ? 0 : body.getBase(),
-                (body == null) ? 0 : body.getSize(),
-                flags)));
+        final Object lock = coll.getDbLock();
+
+        final long peer = coll.withPeerOrThrow(collPeer -> {
+            synchronized (lock) {
+                return NATIVE_IMPL.nCreateFromSlice(
+                    collPeer,
+                    docID,
+                    (body == null) ? 0 : body.getBase(),
+                    (body == null) ? 0 : body.getSize(),
+                    flags);
+            }
+        });
+
+        return new C4Document(NATIVE_IMPL, peer, lock);
     }
 
     @Nullable
     static C4Document get(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, false));
-        return (doc == 0) ? null : new C4Document(NATIVE_IMPL, doc);
+        final Object lock = coll.getDbLock();
+        final long peer = coll.withPeerOrThrow(collPeer -> {
+            synchronized (lock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, false); }
+        });
+        return (peer == 0) ? null : new C4Document(NATIVE_IMPL, peer, lock);
     }
 
     @Nullable
     static C4Document getWithRevs(@NonNull C4Collection coll, @NonNull String docID)
         throws LiteCoreException {
-        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, true));
-        return (doc == 0) ? null : new C4Document(NATIVE_IMPL, doc);
+        final Object lock = coll.getDbLock();
+        final long peer = coll.withPeerOrThrow(collPeer -> {
+            synchronized (lock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, true, true); }
+        });
+        return (peer == 0) ? null : new C4Document(NATIVE_IMPL, peer, lock);
     }
 
     @VisibleForTesting
     @NonNull
     static C4Document getOrCreateDocument(@NonNull C4Collection coll, @NonNull String docID) throws LiteCoreException {
-        final long doc = coll.withPeerOrThrow(collPeer -> NATIVE_IMPL.nGetFromCollection(collPeer, docID, false, true));
+        final Object lock = coll.getDbLock();
+        final long peer = coll.withPeerOrThrow(collPeer -> {
+            synchronized (lock) { return NATIVE_IMPL.nGetFromCollection(collPeer, docID, false, true); }
+        });
 
         // This should never happen.  With "mustExist" set false we should get:
         // - the existing doc, if there is one
         // - a new doc if none exists
         // - an exception other than "not found"
-        if (doc == 0) {
+        if (peer == 0) {
             throw new LiteCoreException(
                 C4Constants.ErrorDomain.LITE_CORE,
                 C4Constants.LiteCoreError.NOT_FOUND,
                 "Could not create document: " + docID);
         }
 
-        return new C4Document(NATIVE_IMPL, doc);
-    }
-
-    //-------------------------------------------------------------------------
-    // Static Utility Methods
-    //-------------------------------------------------------------------------
-
-    public static boolean dictContainsBlobs(@NonNull FLSliceResult dict, @NonNull FLSharedKeys sk) {
-        return NATIVE_IMPL.nDictContainsBlobs(dict.getBase(), dict.getSize(), sk.getHandle());
+        return new C4Document(NATIVE_IMPL, peer, lock);
     }
 
 
@@ -144,17 +157,21 @@ public final class C4Document extends C4Peer {
     @NonNull
     private final NativeImpl impl;
 
+    @NonNull
+    private final Object dbLock;
+
     //-------------------------------------------------------------------------
     // Constructor
     //-------------------------------------------------------------------------
 
-    private C4Document(@NonNull NativeImpl impl, long peer) {
+    private C4Document(@NonNull NativeImpl impl, long peer, @NonNull Object lock) {
         super(peer, impl::nFree);
         this.impl = impl;
+        this.dbLock = lock;
     }
 
     @VisibleForTesting
-    C4Document(long peer) { this(NATIVE_IMPL, peer); }
+    C4Document(long peer, @NonNull Object lock) { this(NATIVE_IMPL, peer, lock); }
 
     //-------------------------------------------------------------------------
     // public methods
@@ -185,7 +202,9 @@ public final class C4Document extends C4Peer {
 
     @Nullable
     public FLDict getSelectedBody2() {
-        final long value = withPeerOrThrow(impl::nGetSelectedBody2);
+        final long value = withPeerOrThrow(peer -> {
+            synchronized (dbLock) { return impl.nGetSelectedBody2(peer); }
+        });
         return value == 0 ? null : FLDict.create(value);
     }
 
@@ -194,35 +213,47 @@ public final class C4Document extends C4Peer {
     public long getTimestamp() { return withPeerOrDefault(0L, impl::nGetTimestamp); }
 
     public void selectNextLeafRevision(boolean includeDeleted, boolean withBody) throws LiteCoreException {
-        voidWithPeerOrThrow(peer -> impl.nSelectNextLeafRevision(peer, includeDeleted, withBody));
+        voidWithPeerOrThrow(peer -> {
+            synchronized (dbLock) { impl.nSelectNextLeafRevision(peer, includeDeleted, withBody); }
+        });
     }
 
     public void resolveConflict(String winningRevID, String losingRevID, byte[] mergeBody, int mergedFlags)
         throws LiteCoreException {
-        voidWithPeerOrThrow(peer -> impl.nResolveConflict(peer, winningRevID, losingRevID, mergeBody, mergedFlags));
+        voidWithPeerOrThrow(peer -> {
+            synchronized (dbLock) { impl.nResolveConflict(peer, winningRevID, losingRevID, mergeBody, mergedFlags); }
+        });
     }
 
     @Nullable
     public C4Document update(@Nullable FLSliceResult body, int flags) throws LiteCoreException {
         final long newDoc = withPeerOrDefault(
             0L,
-            h -> impl.nUpdate(
-                h,
-                (body == null) ? 0 : body.getBase(),
-                (body == null) ? 0 : body.getSize(),
-                flags));
-        return (newDoc == 0) ? null : new C4Document(impl, newDoc);
+            peer -> {
+                synchronized (dbLock) {
+                    return impl.nUpdate(
+                        peer,
+                        (body == null) ? 0 : body.getBase(),
+                        (body == null) ? 0 : body.getSize(),
+                        flags);
+                }
+            });
+        return (newDoc == 0) ? null : new C4Document(impl, newDoc, dbLock);
     }
 
     public void save(int maxRevTreeDepth) throws LiteCoreException {
-        voidWithPeerOrThrow(peer -> impl.nSave(peer, maxRevTreeDepth));
+        voidWithPeerOrThrow(peer -> {
+            synchronized (dbLock) { impl.nSave(peer, maxRevTreeDepth); }
+        });
     }
 
     // - Fleece
 
     @NonNull
     public String bodyAsJSON(boolean canonical) throws LiteCoreException {
-        return withPeerOrThrow(h -> impl.nBodyAsJSON(h, canonical));
+        return withPeerOrThrow(peer -> {
+            synchronized (dbLock) { return impl.nBodyAsJSON(peer, canonical); }
+        });
     }
 
     // - Helper methods
