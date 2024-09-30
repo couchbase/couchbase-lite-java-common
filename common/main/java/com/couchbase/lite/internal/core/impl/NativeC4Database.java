@@ -19,11 +19,14 @@ public final class NativeC4Database implements C4Database.NativeImpl {
         return open(parentDir, name, flags, algorithm, encryptionKey);
     }
 
+    @GuardedBy("dbLock")
     @Override
     public void nClose(long db) throws LiteCoreException { close(db); }
 
     @Override
     public void nFree(long db) { free(db); }
+
+    // - File System
 
     @Override
     @Nullable
@@ -43,51 +46,81 @@ public final class NativeC4Database implements C4Database.NativeImpl {
         deleteNamed(parentDir, name);
     }
 
+    // - UUID
+
+    @GuardedBy("dbLock")
     @NonNull
     @Override
     public byte[] nGetPublicUUID(long db) throws LiteCoreException { return getPublicUUID(db); }
 
+    // - Transactions
+
+    @GuardedBy("dbLock")
     @Override
     public void nBeginTransaction(long db) throws LiteCoreException { beginTransaction(db); }
 
+    @GuardedBy("dbLock")
     @Override
     public void nEndTransaction(long db, boolean commit) throws LiteCoreException { endTransaction(db, commit); }
 
-    @Override
-    public boolean nMaintenance(long db, int type) throws LiteCoreException { return maintenance(db, type); }
+    // - Maintenance
 
     @Override
     public void nRekey(long db, int keyType, byte[] newKey) throws LiteCoreException { rekey(db, keyType, newKey); }
 
+    @GuardedBy("dbLock")
+    @Override
+    public boolean nMaintenance(long db, int type) throws LiteCoreException { return maintenance(db, type); }
+
+    // - Cookie Store
+
+    @GuardedBy("dbLock")
     @Override
     public void nSetCookie(long db, String url, String setCookieHeader, boolean acceptParentDomain)
         throws LiteCoreException {
         setCookie(db, url, setCookieHeader, acceptParentDomain);
     }
 
+    @GuardedBy("dbLock")
     @Nullable
     @Override
     public String nGetCookies(long db, @NonNull String url) throws LiteCoreException { return getCookies(db, url); }
 
+    // - Utilities
+
+    @GuardedBy("dbLock")
     @Override
     public long nGetSharedFleeceEncoder(long db) { return getSharedFleeceEncoder(db); }
 
+    @GuardedBy("dbLock")
     @Override
     public long nGetFLSharedKeys(long db) { return getFLSharedKeys(db); }
 
+    @GuardedBy("dbLock")
+    @Override
+    public boolean nDocContainsBlobs(long dictPtr, long dictSize, long sharedKeys) {
+        return docContainsBlobs(dictPtr, dictSize, sharedKeys);
+    }
+
+    // - Scopes and Collections
+
+    @GuardedBy("dbLock")
     @NonNull
     @Override
     public Set<String> nGetScopeNames(long peer) throws LiteCoreException { return getScopeNames(peer); }
 
+    @GuardedBy("dbLock")
     @Override
     public boolean nHasScope(long peer, @NonNull String scope) { return hasScope(peer, scope); }
 
+    @GuardedBy("dbLock")
     @NonNull
     @Override
     public Set<String> nGetCollectionNames(long peer, @NonNull String scope) throws LiteCoreException {
         return getCollectionNames(peer, scope);
     }
 
+    @GuardedBy("dbLock")
     @Override
     public void nDeleteCollection(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException {
@@ -175,23 +208,22 @@ public final class NativeC4Database implements C4Database.NativeImpl {
     @GuardedBy("dbLock")
     private static native long getFLSharedKeys(long peer);
 
+    @GuardedBy("dbLock")
+    private static native boolean docContainsBlobs(long peer, long dictSize, long sharedKeys);
+
     // - Scopes and Collections
 
-    // returns Set<String> of scope names
     @GuardedBy("dbLock")
     @NonNull
     private static native Set<String> getScopeNames(long peer) throws LiteCoreException;
 
-    // returns true if the db has a scope with the passed name
     @GuardedBy("dbLock")
     private static native boolean hasScope(long peer, @NonNull String scope);
 
-    // returns Set<String> of scope names
     @GuardedBy("dbLock")
     @NonNull
     private static native Set<String> getCollectionNames(long peer, @NonNull String scope) throws LiteCoreException;
 
-    // deletes the named collection
     @GuardedBy("dbLock")
     private static native void deleteCollection(long peer, @NonNull String scope, @NonNull String collection)
         throws LiteCoreException;

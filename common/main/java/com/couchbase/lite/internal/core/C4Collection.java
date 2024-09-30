@@ -21,6 +21,7 @@ import com.couchbase.lite.LiteCoreException;
 import com.couchbase.lite.Scope;
 import com.couchbase.lite.internal.core.impl.NativeC4Collection;
 import com.couchbase.lite.internal.core.peers.LockManager;
+import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.fleece.FLValue;
 import com.couchbase.lite.internal.utils.Preconditions;
@@ -29,7 +30,6 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public final class C4Collection extends C4Peer {
     public interface NativeImpl {
         // Factory methods
-
         @GuardedBy("dbLock")
         long nCreateCollection(long c4Db, @NonNull String scope, @NonNull String collection)
             throws LiteCoreException;
@@ -53,14 +53,11 @@ public final class C4Collection extends C4Peer {
 
         // Indexes
         @GuardedBy("dbLock")
-        long nGetIndexesInfo(long peer) throws LiteCoreException;
-
-        @GuardedBy("dbLock")
         void nCreateValueIndex(long peer, String name, int queryLanguage, String indexSpec) throws LiteCoreException;
-
         @GuardedBy("dbLock")
         void nCreateArrayIndex(long peer, String name, String path, String indexSpec) throws LiteCoreException;
-
+        @GuardedBy("dbLock")
+        void nCreatePredictiveIndex(long peer, String name, String indexSpec) throws LiteCoreException;
         @GuardedBy("dbLock")
         void nCreateFullTextIndex(
             long peer,
@@ -70,10 +67,6 @@ public final class C4Collection extends C4Peer {
             String language,
             boolean ignoreDiacritics)
             throws LiteCoreException;
-
-        @GuardedBy("dbLock")
-        void nCreatePredictiveIndex(long peer, String name, String indexSpec) throws LiteCoreException;
-
         @GuardedBy("dbLock")
         @SuppressWarnings("PMD.ExcessiveParameterList")
         void nCreateVectorIndex(
@@ -91,10 +84,10 @@ public final class C4Collection extends C4Peer {
             long numProbes,
             boolean isLazy)
             throws LiteCoreException;
-
+        @GuardedBy("dbLock")
+        long nGetIndexesInfo(long peer) throws LiteCoreException;
         @GuardedBy("dbLock")
         long nGetIndex(long peer, @NonNull String name) throws LiteCoreException;
-
         @GuardedBy("dbLock")
         void nDeleteIndex(long peer, @NonNull String name) throws LiteCoreException;
     }
@@ -128,12 +121,14 @@ public final class C4Collection extends C4Peer {
         @NonNull String scope,
         @NonNull String collection)
         throws LiteCoreException {
-        return new C4Collection(
-            impl,
-            c4db.withPeerOrThrow(dbPeer -> impl.nCreateCollection(dbPeer, scope, collection)),
-            c4db,
-            scope,
-            collection);
+
+        final long peer = c4db.withPeerOrThrow(dbPeer -> {
+            synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
+                return impl.nCreateCollection(dbPeer, scope, collection);
+            }
+        });
+
+        return new C4Collection(impl, peer, c4db, scope, collection);
     }
 
     @VisibleForTesting
@@ -145,8 +140,12 @@ public final class C4Collection extends C4Peer {
         @NonNull String scope,
         @NonNull String collection)
         throws LiteCoreException {
-        final long c4collection = c4db.withPeerOrThrow(dbPeer -> impl.nGetCollection(dbPeer, scope, collection));
-        return (c4collection == 0L) ? null : new C4Collection(impl, c4collection, c4db, scope, collection);
+        final long peer = c4db.withPeerOrThrow(dbPeer -> {
+            synchronized (LockManager.INSTANCE.getLock(dbPeer)) {
+                return impl.nGetCollection(dbPeer, scope, collection);
+            }
+        });
+        return (peer == 0L) ? null : new C4Collection(impl, peer, c4db, scope, collection);
     }
 
     @VisibleForTesting
@@ -159,6 +158,11 @@ public final class C4Collection extends C4Peer {
             Collection.DEFAULT_NAME);
     }
 
+    private static void release(@NonNull NativeImpl impl, long peer) {
+        if (impl == null) { return; }
+        synchronized (LockManager.INSTANCE.getLock(peer)) { impl.nFree(peer); }
+    }
+
 
     //-------------------------------------------------------------------------
     // Fields
@@ -166,6 +170,11 @@ public final class C4Collection extends C4Peer {
 
     @NonNull
     private final NativeImpl impl;
+
+    // Seize this lock *after* the peer lock
+    @NonNull
+    private final Object dbLock;
+
     @NonNull
     private final C4Database db;
 
@@ -173,8 +182,6 @@ public final class C4Collection extends C4Peer {
     private final String scope;
     @NonNull
     private final String name;
-    @NonNull
-    private final Object dbLock;
 
 
     //-------------------------------------------------------------------------
@@ -187,7 +194,7 @@ public final class C4Collection extends C4Peer {
         @NonNull C4Database db,
         @NonNull String scope,
         @NonNull String name) {
-        super(peer, impl::nFree);
+        super(peer, releasePeer -> C4Collection.release(impl, releasePeer));
         this.impl = impl;
         this.db = db;
         this.scope = scope;
@@ -195,23 +202,33 @@ public final class C4Collection extends C4Peer {
         this.dbLock = db.withPeerOrThrow(dbPeer -> LockManager.INSTANCE.getLock(peer));
     }
 
-    //-------------------------------------------------------------------------
-    // public methods
-    //-------------------------------------------------------------------------
+    @NonNull
+    public Object getDbLock() { return db.getLock(); }
+
+    @NonNull
+    public C4Database getDb() { return db; }
+
+    @NonNull
+    public String getScope() { return scope; }
+
+    @NonNull
+    public String getName() { return name; }
 
     @NonNull
     @Override
     public String toString() { return "C4Collection" + super.toString(); }
 
+    // - Collections
+
     public boolean isValid() { return withPeerOrDefault(false, impl::nCollectionIsValid); }
 
-    // - Documents
-
     public long getDocumentCount() {
-        synchronized (dbLock) {
-            return withPeerOrDefault(0L, impl::nGetDocumentCount);
-        }
+        return withPeerOrDefault(0L, peer -> {
+            synchronized (dbLock) { return impl.nGetDocumentCount(peer); }
+        });
     }
+
+    // - Documents
 
     @Nullable
     public C4Document getDocument(@NonNull String docId) throws LiteCoreException {
@@ -229,17 +246,25 @@ public final class C4Collection extends C4Peer {
         return C4Document.create(this, docID, body, flags);
     }
 
-    public void setDocumentExpiration(String docID, long timeStamp) throws LiteCoreException {
-        voidWithPeerOrWarn(peer -> impl.nSetDocExpiration(peer, docID, timeStamp));
+    public long getDocumentExpiration(String docID) throws LiteCoreException {
+        return withPeerOrDefault(0L, peer -> {
+            synchronized (dbLock) { return impl.nGetDocExpiration(peer, docID); }
+        });
     }
 
-    public long getDocumentExpiration(String docID) throws LiteCoreException {
-        return withPeerOrDefault(0L, peer -> impl.nGetDocExpiration(peer, docID));
+    public void setDocumentExpiration(String docID, long timeStamp) throws LiteCoreException {
+        voidWithPeerOrWarn(peer -> {
+            synchronized (dbLock) { impl.nSetDocExpiration(peer, docID, timeStamp); }
+        });
     }
 
     public void purgeDocument(String docID) throws LiteCoreException {
-        voidWithPeerOrWarn(peer -> impl.nPurgeDoc(peer, docID));
+        voidWithPeerOrWarn(peer -> {
+            synchronized (dbLock) { impl.nPurgeDoc(peer, docID); }
+        });
     }
+
+    public boolean docContainsBlobs(FLSliceResult body, FLSharedKeys keys) { return db.docContainsBlobs(body, keys); }
 
     // - Observers
 
@@ -260,11 +285,21 @@ public final class C4Collection extends C4Peer {
     // completely polluted if we try to combine them into a single call.
 
     public void createValueIndex(String name, int queryLanguage, String indexSpec) throws LiteCoreException {
-        voidWithPeerOrWarn(peer -> impl.nCreateValueIndex(peer, name, queryLanguage, indexSpec));
+        voidWithPeerOrWarn(peer -> {
+            synchronized (dbLock) { impl.nCreateValueIndex(peer, name, queryLanguage, indexSpec); }
+        });
     }
 
     public void createArrayIndex(String name, String path, String indexSpec) throws LiteCoreException {
-        voidWithPeerOrWarn(peer -> impl.nCreateArrayIndex(peer, name, path, indexSpec));
+        voidWithPeerOrWarn(peer -> {
+            synchronized (dbLock) { impl.nCreateArrayIndex(peer, name, path, indexSpec); }
+        });
+    }
+
+    public void createPredictiveIndex(String name, String indexSpec) throws LiteCoreException {
+        voidWithPeerOrWarn(peer -> {
+            synchronized (dbLock) { impl.nCreatePredictiveIndex(peer, name, indexSpec); }
+        });
     }
 
     public void createFullTextIndex(
@@ -274,17 +309,17 @@ public final class C4Collection extends C4Peer {
         String language,
         boolean ignoreDiacritics)
         throws LiteCoreException {
-        voidWithPeerOrWarn(peer -> impl.nCreateFullTextIndex(
-            peer,
-            name,
-            queryLanguage,
-            indexSpec,
-            language,
-            ignoreDiacritics));
-    }
-
-    public void createPredictiveIndex(String name, String indexSpec) throws LiteCoreException {
-        voidWithPeerOrWarn(peer -> impl.nCreatePredictiveIndex(peer, name, indexSpec));
+        voidWithPeerOrWarn(peer -> {
+            synchronized (dbLock) {
+                impl.nCreateFullTextIndex(
+                    peer,
+                    name,
+                    queryLanguage,
+                    indexSpec,
+                    language,
+                    ignoreDiacritics);
+            }
+        });
     }
 
     @SuppressWarnings("PMD.ExcessiveParameterList")
@@ -302,44 +337,45 @@ public final class C4Collection extends C4Peer {
         long numProbes,
         boolean isLazy)
         throws LiteCoreException {
-        voidWithPeerOrWarn(peer -> impl.nCreateVectorIndex(
-            peer,
-            name,
-            queryExpressions,
-            dimensions,
-            metric,
-            centroids,
-            encoding,
-            subquantizers,
-            bits,
-            minTrainingSize,
-            maxTrainingSize,
-            numProbes,
-            isLazy));
+        voidWithPeerOrWarn(peer -> {
+            synchronized (dbLock) {
+                impl.nCreateVectorIndex(
+                    peer,
+                    name,
+                    queryExpressions,
+                    dimensions,
+                    metric,
+                    centroids,
+                    encoding,
+                    subquantizers,
+                    bits,
+                    minTrainingSize,
+                    maxTrainingSize,
+                    numProbes,
+                    isLazy);
+            }
+        });
     }
 
     @NonNull
     public FLValue getIndexesInfo() throws LiteCoreException {
-        return withPeerOrThrow(peer -> FLValue.getFLValue(impl.nGetIndexesInfo(peer)));
+        return withPeerOrThrow(peer -> {
+            synchronized (dbLock) { return FLValue.getFLValue(impl.nGetIndexesInfo(peer)); }
+        });
     }
 
-    @GuardedBy("Database.getDbLock()")
     @Nullable
     public C4Index getIndex(@NonNull String name) throws LiteCoreException {
-        final long idx = withPeerOrThrow(peer -> impl.nGetIndex(peer, name));
+        final long idx;
+        idx = withPeerOrThrow(peer -> {
+            synchronized (dbLock) { return impl.nGetIndex(peer, name); }
+        });
         return (idx == 0L) ? null : C4Index.create(idx);
     }
 
     public void deleteIndex(String name) throws LiteCoreException {
-        voidWithPeerOrWarn(peer -> impl.nDeleteIndex(peer, name));
+        voidWithPeerOrWarn(peer -> {
+            synchronized (dbLock) { impl.nDeleteIndex(peer, name); }
+        });
     }
-
-    @NonNull
-    public C4Database getDb() { return db; }
-
-    @NonNull
-    public String getScope() { return scope; }
-
-    @NonNull
-    public String getName() { return name; }
 }

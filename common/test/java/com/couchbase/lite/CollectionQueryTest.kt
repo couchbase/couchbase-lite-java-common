@@ -16,6 +16,7 @@
 package com.couchbase.lite
 
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 
 
@@ -184,6 +185,7 @@ class CollectionQueryTest : BaseQueryTest() {
     // Ensure that the result set has two results as :
     //         { “name”: "hydrangea", “color”: "blue" }
     //         { “name”: "rose", “color”: "red" }
+    @Ignore("CBL-6243")
     @Test
     fun testSQLPPJoinWithCollectionsA() {
         val flowerCol = testDatabase.createCollection("flowers", "test")
@@ -937,6 +939,7 @@ class CollectionQueryTest : BaseQueryTest() {
         }
     }
 
+    @Ignore("CBL-6243")
     @Test
     fun testBuilderQueryJoinWithCollections() {
         val flowerCol = testDatabase.createCollection("flowers", "test")

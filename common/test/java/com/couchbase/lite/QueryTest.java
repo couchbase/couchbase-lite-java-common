@@ -2976,12 +2976,12 @@ public class QueryTest extends BaseQueryTest {
             query,
             6,
             (n, result) -> {
-                assertEquals(expectedLocal.get(n - 1), result.getString(0));
-                assertEquals(expectedJST.get(n - 1), result.getString(1));
-                assertEquals(expectedJST.get(n - 1), result.getString(2));
-                assertEquals(expectedPST.get(n - 1), result.getString(3));
-                assertEquals(expectedPST.get(n - 1), result.getString(4));
-                assertEquals(expectedUTC.get(n - 1), result.getString(5));
+                assertEquals("Local match @" + n, expectedLocal.get(n - 1), result.getString(0));
+                assertEquals("JST match#1 @" + n, expectedJST.get(n - 1), result.getString(1));
+                assertEquals("JST match#2 @" + n, expectedJST.get(n - 1), result.getString(2));
+                assertEquals("PST match#1 @" + n, expectedPST.get(n - 1), result.getString(3));
+                assertEquals("PST match#2 @" + n, expectedPST.get(n - 1), result.getString(4));
+                assertEquals("UTC match @" + n, expectedUTC.get(n - 1), result.getString(5));
             });
     }
 

@@ -361,6 +361,26 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getFLSharedKeys(JNIE
     return (jlong) c4db_getFLSharedKeys((C4Database *) db);
 }
 
+/*
+ * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
+ * Method:    docContainsBlobs
+ * Signature: (JJJ)Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_com_couchbase_lite_internal_core_impl_NativeC4Database_docContainsBlobs(
+        JNIEnv *ignore1,
+        jclass ignore2,
+        jlong jbodyPtr,
+        jlong jbodySize,
+        jlong sharedKeys) {
+    FLSliceResult body{(const void *) jbodyPtr, (size_t) jbodySize};
+    FLDoc doc = FLDoc_FromResultData(body, kFLTrusted, (FLSharedKeys) sharedKeys, kFLSliceNull);
+    const auto *const dict = (FLDict) FLDoc_GetRoot(doc);
+    bool containsBlobs = c4doc_dictContainsBlobs(dict);
+    FLDoc_Release(doc);
+    return containsBlobs;
+}
+
 // - Scopes and Collections
 
 /*

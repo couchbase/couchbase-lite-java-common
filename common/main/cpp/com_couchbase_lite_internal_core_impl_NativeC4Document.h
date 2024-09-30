@@ -161,15 +161,6 @@ JNIEXPORT jstring
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON
         (JNIEnv *, jclass, jlong, jboolean);
 
-/*
- * Class:     com_couchbase_lite_internal_core_impl_NativeC4Document
- * Method:    dictContainsBlobs
- * Signature: (JJJ)Z
- */
-JNIEXPORT jboolean
-JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Document_dictContainsBlobs
-        (JNIEnv *, jclass, jlong, jlong, jlong);
-
 #ifdef __cplusplus
 }
 #endif

@@ -68,6 +68,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_delete;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteCollection;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_deleteNamed;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4Database_docContainsBlobs;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_endTransaction;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_free;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Database_getCollectionNames;
@@ -86,7 +87,6 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4DocumentObserver_free;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_bodyAsJSON;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_createFromSlice;
-        Java_com_couchbase_lite_internal_core_impl_NativeC4Document_dictContainsBlobs;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_free;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFlags;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Document_getFromCollection;

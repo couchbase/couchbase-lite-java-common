@@ -32,6 +32,8 @@ import com.couchbase.lite.internal.utils.Preconditions;
 public final class C4BlobWriteStream extends C4NativePeer {
     @NonNull
     private final C4BlobStore.NativeImpl impl;
+
+    // Seize this lock *after* the peer lock
     @NonNull
     private final Object lock;
 
@@ -69,9 +71,9 @@ public final class C4BlobWriteStream extends C4NativePeer {
     public void write(@NonNull byte[] bytes, int len) throws LiteCoreException {
         Preconditions.assertNotNull(bytes, "bytes");
         if (len <= 0) { return; }
-        synchronized (lock) {
-            withPeer(peer -> impl.nWrite(peer, bytes, len));
-        }
+        withPeer(peer -> {
+            synchronized (lock) { impl.nWrite(peer, bytes, len); }
+        });
     }
 
     /**
@@ -80,9 +82,9 @@ public final class C4BlobWriteStream extends C4NativePeer {
      */
     @NonNull
     public C4BlobKey computeBlobKey() throws LiteCoreException {
-        synchronized (lock) {
-            return withPeerOrThrow(peer -> C4BlobKey.create(impl.nComputeBlobKey(peer)));
-        }
+        return withPeerOrThrow(peer -> {
+            synchronized (lock) { return C4BlobKey.create(impl.nComputeBlobKey(peer)); }
+        });
     }
 
     /**
@@ -92,7 +94,9 @@ public final class C4BlobWriteStream extends C4NativePeer {
      * c4stream_computeBlobKey and found that the data does not match the expected digest/key.)
      */
     public void install() throws LiteCoreException {
-        synchronized (lock) { withPeer(impl::nInstall); }
+        withPeer(peer -> {
+            synchronized (lock) { impl.nInstall(peer); }
+        });
     }
 
     /**
@@ -100,24 +104,16 @@ public final class C4BlobWriteStream extends C4NativePeer {
      * will be deleted without adding the blob to the store.
      */
     @Override
-    public void close() {
-        synchronized (lock) { closePeer(null); }
-    }
+    public void close() { closePeer(null); }
 
     //-------------------------------------------------------------------------
     // protected methods
     //-------------------------------------------------------------------------
 
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @SuppressWarnings("NoFinalizer")
     @Override
     protected void finalize() throws Throwable {
-        try {
-            if (lock == null) { closePeer(LogDomain.DATABASE); }
-            else {
-                synchronized (lock) { closePeer(LogDomain.DATABASE); }
-            }
-        }
+        try { closePeer(LogDomain.DATABASE); }
         finally { super.finalize(); }
     }
 
@@ -125,12 +121,13 @@ public final class C4BlobWriteStream extends C4NativePeer {
     // private methods
     //-------------------------------------------------------------------------
 
-    private void closePeer(@Nullable LogDomain domain) {
-        releasePeer(
-            domain,
-            (peer) -> {
-                final C4BlobStore.NativeImpl nativeImpl = impl;
-                if (nativeImpl != null) { nativeImpl.nCloseWriteStream(peer); }
-            });
+    private void closePeer(@Nullable LogDomain domain) { releasePeer(domain, this::free); }
+
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
+    @SuppressWarnings("ConstantConditions")
+    private void free(long peer) {
+        final C4BlobStore.NativeImpl nativeImpl = impl;
+        if (nativeImpl == null) { return; }
+        synchronized (LockManager.INSTANCE.getLock(peer)) { nativeImpl.nCloseWriteStream(peer); }
     }
 }

@@ -898,7 +898,7 @@ public final class Collection extends BaseCollection
             else if (!document.isEmpty()) {
                 // Encode properties to Fleece data:
                 body = document.encode();
-                if (C4Document.dictContainsBlobs(body, db.getSharedKeys())) {
+                if (c4Collection.docContainsBlobs(body, db.getSharedKeys())) {
                     revFlags |= C4Constants.RevisionFlags.HAS_ATTACHMENTS;
                 }
             }
