@@ -35,7 +35,7 @@ public abstract class IndexConfiguration extends AbstractIndex {
     IndexConfiguration(@NonNull List<String> expressions) {
         this.expressions = Fn.filterToList(Preconditions.assertNotEmpty(expressions, "expressions"), s -> s != null);
         if (expressions.size() != this.expressions.size()) {
-            throw new IllegalArgumentException("Null expressions are not legal");
+            throw new IllegalArgumentException("Expressions may not be null");
         }
     }
 
