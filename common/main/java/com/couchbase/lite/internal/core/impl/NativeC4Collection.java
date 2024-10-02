@@ -78,8 +78,7 @@ public final class NativeC4Collection implements C4Collection.NativeImpl {
     }
 
     @Override
-    public void nCreateArrayIndex(long peer, String name, String path, String indexSpec)
-        throws LiteCoreException {
+    public void nCreateArrayIndex(long peer, String name, String path, String indexSpec) throws LiteCoreException {
         createArrayIndex(peer, name, path, indexSpec);
     }
 

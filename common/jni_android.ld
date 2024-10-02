@@ -46,6 +46,7 @@ CBL {
         Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_create;
         Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_free;
         Java_com_couchbase_lite_internal_core_impl_NativeC4CollectionObserver_getChanges;
+        Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createArrayIndex;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createCollection;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createFullTextIndex;
         Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createPredictiveIndex;
