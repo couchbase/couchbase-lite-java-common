@@ -108,7 +108,7 @@ public class C4BaseTest extends BaseTest {
 
             dbName = getUniqueName("c4_test_db");
 
-            c4Database = C4Database.getDatabase(dbParentDirPath, dbName, C4Database.DB_FLAGS);
+            c4Database = C4Database.getDatabase(dbParentDirPath, dbName);
 
             c4Collection = c4Database.addCollection(
                 getUniqueName("c4_test_collection"),
@@ -183,7 +183,7 @@ public class C4BaseTest extends BaseTest {
 
     protected void reopenDB() throws LiteCoreException {
         closeC4Database();
-        c4Database = C4Database.getDatabase(dbParentDirPath, dbName, C4Database.DB_FLAGS);
+        c4Database = C4Database.getDatabase(dbParentDirPath, dbName);
         assertNotNull(c4Database);
     }
 

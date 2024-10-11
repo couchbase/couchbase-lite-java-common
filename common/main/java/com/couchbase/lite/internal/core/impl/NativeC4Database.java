@@ -14,7 +14,7 @@ import com.couchbase.lite.internal.core.C4Database;
 public final class NativeC4Database implements C4Database.NativeImpl {
 
     @Override
-    public long nOpen(@NonNull String parentDir, @NonNull String name, int flags, int algorithm, byte[] encryptionKey)
+    public long nOpen(@NonNull String parentDir, @NonNull String name, long flags, int algorithm, byte[] encryptionKey)
         throws LiteCoreException {
         return open(parentDir, name, flags, algorithm, encryptionKey);
     }
@@ -33,7 +33,7 @@ public final class NativeC4Database implements C4Database.NativeImpl {
     public String nGetPath(long db) { return getPath(db); }
 
     @Override
-    public void nCopy(String sourcePath, String parentDir, String name, int flags, int algorithm, byte[] encryptionKey)
+    public void nCopy(String sourcePath, String parentDir, String name, long flags, int algorithm, byte[] encryptionKey)
         throws LiteCoreException {
         copy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
     }
@@ -140,7 +140,7 @@ public final class NativeC4Database implements C4Database.NativeImpl {
     static native long open(
         @NonNull String parentDir,
         @NonNull String name,
-        int flags,
+        long flags,
         int algorithm,
         byte[] encryptionKey)
         throws LiteCoreException;
@@ -160,7 +160,7 @@ public final class NativeC4Database implements C4Database.NativeImpl {
         String sourcePath,
         String parentDir,
         String name,
-        int flags,
+        long flags,
         int algorithm,
         byte[] encryptionKey)
         throws LiteCoreException;

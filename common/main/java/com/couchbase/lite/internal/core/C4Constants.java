@@ -73,16 +73,16 @@ public final class C4Constants {
         // why most of these are visible in the LiteCore API is utterly beyond me
 
         // @formatter:off
-        static final int CREATE = 0x01;                 // Create the file if it doesn't exist
+        static final long CREATE = 0x01;                 // Create the file if it doesn't exist
         @VisibleForTesting
-        static final int READ_ONLY = 0x02;              // Open file read-only
-        private static final int AUTO_COMPACT = 0x04;   // Enable auto-compaction [UNIMPLEMENTED]
-        static final int VERSION_VECTORS = 0x08;        // Upgrade DB to version vectors instead of rev trees [EXPERIMENTAL]
-        private static final int NO_UPGRADE = 0x20;     // Disable upgrading an older-version database
-        private static final int NON_OBSERVABLE = 0x40; // Disable database/collection observers, for slightly faster writes
-        public static final int DISC_FULL_SYNC = 0x80;  // Flush to disk after each transaction
+        static final long READ_ONLY = 0x02;              // Open file read-only
+        private static final long AUTO_COMPACT = 0x04;   // Enable auto-compaction [UNIMPLEMENTED]
+        static final long VERSION_VECTORS = 0x08;        // Upgrade DB to version vectors instead of rev trees [EXPERIMENTAL]
+        private static final long NO_UPGRADE = 0x20;     // Disable upgrading an older-version database
+        private static final long NON_OBSERVABLE = 0x40; // Disable database/collection observers, for slightly faster writes
         @VisibleForTesting
-        static final int FAKE_CLOCK = 0x100;            // Use counters instead of timestamps in version vectors (TESTS ONLY)
+        public static final long DISC_FULL_SYNC = 0x80;  // Flush to disk after each transaction
+        private static final long FAKE_CLOCK = 0x100;    // Use counters instead of timestamps in version vectors (TESTS ONLY)
         // @formatter:on
     }
 

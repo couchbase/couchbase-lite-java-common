@@ -91,7 +91,7 @@ class C4CollectionObserverTest : C4BaseTest() {
         C4Collection.create(c4Database, Collection.DEFAULT_NAME, Collection.DEFAULT_NAME).use { coll ->
             coll.voidWithPeerOrThrow<LiteCoreException> { peer ->
                 C4CollectionObserver.newObserver(peer, { i++ }).use { obs ->
-                    val otherColl = C4Database.getDatabase(dbParentDirPath, dbName, C4Database.DB_FLAGS)
+                    val otherColl = C4Database.getDatabase(dbParentDirPath, dbName)
                         .getCollection(coll.name, coll.scope)
                     assertNotNull(otherColl)
 

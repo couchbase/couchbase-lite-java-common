@@ -49,9 +49,7 @@ public class C4BlobStoreTest extends C4BaseTest {
     public final void setUpC4BlobStoreTest() throws CouchbaseLiteException {
         blobDir = new File(getScratchDirectoryPath(getUniqueName("cbl_blobs")));
         try {
-            blobStore = new C4TestUtils.ManagedC4BlobStore(
-                blobDir.getCanonicalPath() + File.separator,
-                C4Database.DB_FLAGS);
+            blobStore = new C4TestUtils.ManagedC4BlobStore(blobDir.getCanonicalPath() + File.separator);
             bogusKey = C4BlobKey.create("sha1-VVVVVVVVVVVVVVVVVVVVVVVVVVU=");
         }
         catch (LiteCoreException e) { throw CouchbaseLiteException.convertException(e); }

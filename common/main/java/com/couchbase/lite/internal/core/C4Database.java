@@ -43,6 +43,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.sockets.MessageFraming;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 @SuppressWarnings("PMD.ExcessivePublicCount")
@@ -50,14 +51,11 @@ public abstract class C4Database extends C4Peer {
     @VisibleForTesting
     public static final String DB_EXTENSION = ".cblite2";
 
-    @VisibleForTesting
-    static final int DB_FLAGS = C4Constants.DatabaseFlags.CREATE;
-
     public interface NativeImpl {
         long nOpen(
             @NonNull String parentDir,
             @NonNull String name,
-            int flags,
+            long flags,
             int algorithm,
             byte[] encryptionKey)
             throws LiteCoreException;
@@ -77,7 +75,7 @@ public abstract class C4Database extends C4Peer {
             String sourcePath,
             String parentDir,
             String name,
-            int flags,
+            long flags,
             int algorithm,
             byte[] encryptionKey)
             throws LiteCoreException;
@@ -203,16 +201,23 @@ public abstract class C4Database extends C4Peer {
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        int dbFlags = DB_FLAGS;
-        if (isFullSync) { dbFlags |= C4Constants.DatabaseFlags.DISC_FULL_SYNC; }
-        return getDatabase(NATIVE_IMPL, parentDirPath, name, dbFlags, algorithm, encryptionKey);
+        long flags = C4Constants.DatabaseFlags.CREATE;
+        if (isFullSync) { flags |= C4Constants.DatabaseFlags.DISC_FULL_SYNC; }
+        return getDatabase(NATIVE_IMPL, parentDirPath, name, flags, algorithm, encryptionKey);
     }
 
     @VisibleForTesting
     @NonNull
-    static C4Database getDatabase(@NonNull String parentDirPath, @NonNull String name, int flags)
+    static C4Database getDatabase(@NonNull String parentDirPath, @NonNull String name)
         throws LiteCoreException {
-        return getDatabase(NATIVE_IMPL, parentDirPath, name, flags, C4Constants.EncryptionAlgorithm.NONE, null);
+        return getDatabase(parentDirPath, name, C4Constants.DatabaseFlags.CREATE);
+    }
+
+    @VisibleForTesting
+    @NonNull
+    static C4Database getDatabase(@NonNull String parentDirPath, @NonNull String name, long flags)
+        throws LiteCoreException {
+        return getDatabase(NATIVE_IMPL, parentDirPath, name, flags);
     }
 
     @VisibleForTesting
@@ -221,10 +226,23 @@ public abstract class C4Database extends C4Peer {
         @NonNull NativeImpl impl,
         @NonNull String parentDirPath,
         @NonNull String name,
-        int flags,
+        long flags)
+        throws LiteCoreException {
+        return getDatabase(impl, parentDirPath, name, flags, C4Constants.EncryptionAlgorithm.NONE, null);
+    }
+
+    @VisibleForTesting
+    @NonNull
+    static C4Database getDatabase(
+        @NonNull NativeImpl impl,
+        @NonNull String parentDirPath,
+        @NonNull String name,
+        long flags,
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
+        Preconditions.assertUInt32(flags, "flags");
+
         // LiteCore will throw a total hissy fit if we pass it something that it decides isn't a directory.
         boolean pathOk = false;
         try {
@@ -262,17 +280,16 @@ public abstract class C4Database extends C4Peer {
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        copyDb(NATIVE_IMPL, sourcePath, parentDir, name, DB_FLAGS, algorithm, encryptionKey);
+        copyDb(NATIVE_IMPL, sourcePath, parentDir, name, algorithm, encryptionKey);
     }
 
     @VisibleForTesting
     static void copyDb(
         @NonNull String sourcePath,
         @NonNull String parentDir,
-        @NonNull String name,
-        int flags)
+        @NonNull String name)
         throws LiteCoreException {
-        copyDb(NATIVE_IMPL, sourcePath, parentDir, name, flags, C4Constants.EncryptionAlgorithm.NONE, null);
+        copyDb(NATIVE_IMPL, sourcePath, parentDir, name, C4Constants.EncryptionAlgorithm.NONE, null);
     }
 
     @VisibleForTesting
@@ -281,7 +298,6 @@ public abstract class C4Database extends C4Peer {
         @NonNull String sourcePath,
         @NonNull String parentDir,
         @NonNull String name,
-        int flags,
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
@@ -289,7 +305,13 @@ public abstract class C4Database extends C4Peer {
 
         if (parentDir.charAt(parentDir.length() - 1) != File.separatorChar) { parentDir += File.separator; }
 
-        impl.nCopy(sourcePath, parentDir, name, flags, algorithm, encryptionKey);
+        impl.nCopy(
+            sourcePath,
+            parentDir,
+            name,
+            C4Constants.DatabaseFlags.CREATE | C4Constants.DatabaseFlags.VERSION_VECTORS,
+            algorithm,
+            encryptionKey);
     }
 
     // This will throw domain = 0, code = 0 if called for a non-existent name/dir pair

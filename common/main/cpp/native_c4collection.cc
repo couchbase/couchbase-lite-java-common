@@ -284,7 +284,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Collection_createArrayIndex(
     jstringSlice path(env, jpath);
 
     C4IndexOptions options = {};
-    //options.path = path.c_str();
+    //options.unnestPath = path.c_str();
 
     createIndex(env, coll, kC4ArrayIndex, jName, kC4N1QLQuery, jqueryExpressions, options);
 }
