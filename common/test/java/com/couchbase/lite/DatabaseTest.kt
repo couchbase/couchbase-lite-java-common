@@ -18,6 +18,7 @@ package com.couchbase.lite
 import com.couchbase.lite.internal.CouchbaseLiteInternal
 import com.couchbase.lite.internal.core.C4Constants
 import com.couchbase.lite.internal.core.C4Database
+import com.couchbase.lite.internal.core.C4TestUtils
 import com.couchbase.lite.internal.utils.FileUtils
 import com.couchbase.lite.internal.utils.SlowTest
 import com.couchbase.lite.internal.utils.StringUtils
@@ -31,7 +32,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 import java.io.File
 import java.nio.charset.StandardCharsets
-import java.util.*
+import java.util.Date
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
 
@@ -179,7 +180,9 @@ class DatabaseTest : BaseDbTest() {
 
             // Attempt to save the doc in the wrong db
             doc.setValue(TEST_DOC_TAG_KEY, "bam!!!")
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+                otherCollection.save(doc)
+            }
         }
     }
 
@@ -198,7 +201,9 @@ class DatabaseTest : BaseDbTest() {
 
             // Attempt to save the doc in a *very* wrong db
             doc.setValue(TEST_DOC_TAG_KEY, "bam!!!")
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.save(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+                otherCollection.save(doc)
+            }
         } finally {
             // delete otherDb
             eraseDb(otherDb)
@@ -235,7 +240,9 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.close()
         val doc = MutableDocument()
         doc.setValue(TEST_DOC_TAG_KEY, testTag)
-        assertThrowsCBLException(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) { testCollection.save(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) {
+            testCollection.save(doc)
+        }
     }
 
     @Test
@@ -244,7 +251,9 @@ class DatabaseTest : BaseDbTest() {
         testDatabase.delete()
         val doc = MutableDocument()
         doc.setValue(TEST_DOC_TAG_KEY, testTag)
-        assertThrowsCBLException(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) { testCollection.save(doc) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, C4Constants.LiteCoreError.NOT_OPEN) {
+            testCollection.save(doc)
+        }
     }
 
     //---------------------------------------------
@@ -284,7 +293,9 @@ class DatabaseTest : BaseDbTest() {
             assertEquals(n + 1, testCollection.count)
 
             // Delete from the wrong db
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+                otherCollection.delete(doc)
+            }
         }
     }
 
@@ -301,7 +312,9 @@ class DatabaseTest : BaseDbTest() {
             assertNotSame(otherCollection, testCollection)
 
             // Delete from the different db:
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.delete(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+                otherCollection.delete(doc)
+            }
         } finally {
             eraseDb(otherDb)
         }
@@ -388,7 +401,9 @@ class DatabaseTest : BaseDbTest() {
             assertEquals(n + 1, otherCollection.count)
 
             // purge document against other db instance:
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+                otherCollection.purge(doc)
+            }
         }
     }
 
@@ -406,7 +421,9 @@ class DatabaseTest : BaseDbTest() {
             assertEquals(0, otherCollection.count)
 
             // Purge document against other db:
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) { otherCollection.purge(doc) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.INVALID_PARAMETER) {
+                otherCollection.purge(doc)
+            }
         } finally {
             eraseDb(otherDb)
         }
@@ -593,7 +610,9 @@ class DatabaseTest : BaseDbTest() {
     fun testCloseInInBatch() {
         testDatabase.inBatch<RuntimeException> {
             // can't close a db in a transaction
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) { testDatabase.close() }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) {
+                testDatabase.close()
+            }
         }
     }
 
@@ -714,7 +733,9 @@ class DatabaseTest : BaseDbTest() {
         val path = File(testDatabase.path!!)
         assertTrue(path.exists())
         testDatabase.inBatch<RuntimeException> {
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) { testDatabase.delete() }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.TRANSACTION_NOT_CLOSED) {
+                testDatabase.delete()
+            }
         }
     }
 
@@ -761,7 +782,9 @@ class DatabaseTest : BaseDbTest() {
         assertNotNull(path)
         assertTrue(path.exists())
 
-        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.BUSY) { Database.delete(testDatabase.name, null) }
+        assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.BUSY) {
+            Database.delete(testDatabase.name, null)
+        }
     }
 
     @Test
@@ -923,7 +946,9 @@ class DatabaseTest : BaseDbTest() {
             // All of these things should throw
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.getDocument(doc.id) }
 
-            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.save(MutableDocument()) }
+            assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) {
+                collection.save(MutableDocument())
+            }
 
             assertThrowsCBLException(CBLError.Domain.CBLITE, CBLError.Code.NOT_OPEN) { collection.delete(doc) }
 
@@ -1885,6 +1910,44 @@ class DatabaseTest : BaseDbTest() {
         }
     }
 
+    /**
+     * Steps
+     * 1. Create a DatabaseConfiguration object and set mmapEnabled to false.
+     * 2. Create a database with the config.
+     * 3. Get the configuration object from the database and check that the mmapEnabled is false.
+     * 4. Use c4db_config2 to confirm that its config contains the kC4DB_MmapDisabled flag
+     * 5. Set the config's mmapEnabled property true
+     * 6. Create a database with the config.
+     * 7. Get the configuration object from the database and verify that mmapEnabled is true
+     * 8. Use c4db_config2 to confirm that its config doesn't contains the kC4DB_MmapDisabled flag
+     */
+    @Test
+    fun testDatabaseWithConfiguredMMap() {
+        val config = DatabaseConfiguration()
+        config.setMMapEnabled(false)
+
+        var db = createDb("mmapdb1", config)
+        assertFalse(db.config.isMMapEnabled)
+
+        try {
+            assertEquals(
+                C4Constants.DatabaseFlags.DISABLE_MMAP,
+                C4TestUtils.getFlags(db.openC4Database) and C4Constants.DatabaseFlags.DISABLE_MMAP
+            )
+        } finally {
+            eraseDb(db)
+        }
+
+        config.setMMapEnabled(true)
+        db = createDb("mmapdb2", config)
+        assertTrue(db.config.isMMapEnabled)
+
+        try {
+            assertEquals(0, C4TestUtils.getFlags(db.openC4Database) and C4Constants.DatabaseFlags.DISABLE_MMAP)
+        } finally {
+            eraseDb(db)
+        }
+    }
 
     /////////////////////////////////   H E L P E R S   //////////////////////////////////////
 
@@ -1952,6 +2015,7 @@ class DatabaseTest : BaseDbTest() {
                 assertEquals(doc1b.toMap(), savedDoc!!.toMap())
                 assertEquals(4, savedDoc.sequence)
             }
+
             ConcurrencyControl.FAIL_ON_CONFLICT -> {
                 assertFalse(testCollection.save(doc1b, cc))
                 val savedDoc = testCollection.getDocument(doc.id)
@@ -1986,6 +2050,7 @@ class DatabaseTest : BaseDbTest() {
                 assertEquals(3, doc1b.sequence)
                 assertNull(testCollection.getDocument(doc1b.id))
             }
+
             ConcurrencyControl.FAIL_ON_CONFLICT -> {
                 assertFalse(testCollection.delete(doc1b, cc))
                 val savedDoc = testCollection.getDocument(doc.id)
@@ -2013,6 +2078,7 @@ class DatabaseTest : BaseDbTest() {
                 assertEquals(doc1b.toMap(), savedDoc!!.toMap())
                 assertEquals(2, savedDoc.sequence)
             }
+
             ConcurrencyControl.FAIL_ON_CONFLICT -> {
                 assertFalse(testCollection.save(doc1b, cc))
                 savedDoc = testCollection.getDocument(doc1b.id)
@@ -2046,6 +2112,7 @@ class DatabaseTest : BaseDbTest() {
                 assertEquals(doc1b.toMap(), savedDoc!!.toMap())
                 assertEquals(3, savedDoc.sequence)
             }
+
             ConcurrencyControl.FAIL_ON_CONFLICT -> {
                 assertFalse(testCollection.save(doc1b, cc))
                 assertNull(testCollection.getDocument(doc.id))

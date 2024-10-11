@@ -30,27 +30,32 @@ abstract class AbstractDatabaseConfiguration {
     //---------------------------------------------
     private String dbDirectory;
     private boolean fullSync;
+    private boolean mmapEnabled;
 
     //---------------------------------------------
     // Constructors
     //---------------------------------------------
-    protected AbstractDatabaseConfiguration() { this(null, Defaults.Database.FULL_SYNC); }
+    protected AbstractDatabaseConfiguration() {
+        this(null, Defaults.Database.FULL_SYNC, Defaults.Database.MMAP_ENABLED);
+    }
 
     protected AbstractDatabaseConfiguration(@Nullable AbstractDatabaseConfiguration config) {
         this(
             (config == null) ? null : config.getDirectory(),
-            (config == null) ? Defaults.Database.FULL_SYNC : config.isFullSync()
+            (config == null) ? Defaults.Database.FULL_SYNC : config.isFullSync(),
+            (config == null) ? Defaults.Database.MMAP_ENABLED : config.isMMapEnabled()
         );
     }
 
     protected AbstractDatabaseConfiguration(@NonNull BaseImmutableDatabaseConfiguration config) {
-        this(config.getDirectory(), config.isFullSync());
+        this(config.getDirectory(), config.isFullSync(), config.isMMapEnabled());
     }
 
-    private AbstractDatabaseConfiguration(@Nullable String dbDir, boolean fullSync) {
+    private AbstractDatabaseConfiguration(@Nullable String dbDir, boolean fullSync, boolean mmapEnabled) {
         CouchbaseLiteInternal.requireInit("Cannot create database configuration");
         this.dbDirectory = (dbDir != null) ? dbDir : CouchbaseLiteInternal.getDefaultDbDirPath();
         this.fullSync = fullSync;
+        this.mmapEnabled = mmapEnabled;
     }
 
     //---------------------------------------------
@@ -61,7 +66,7 @@ abstract class AbstractDatabaseConfiguration {
      * Set the canonical path of the directory in which to store the database.
      * If the directory doesn't already exist it will be created.
      * If it cannot be created an CouchbaseLiteError will be thrown.
-     *
+     * <p>
      * Note: The directory set by this method is the canonical path to the
      * directory whose path is passed.  It is *NOT* necessarily the case that
      * directory.equals(config.setDirectory(directory).getDirectory())
@@ -84,7 +89,7 @@ abstract class AbstractDatabaseConfiguration {
      * Returns the path to the directory that contains the database.
      * If this path has not been set explicitly (see: <code>setDirectory</code> below),
      * then it is the system default.
-     *
+     * <p>
      * Note: The directory returned by this method is the canonical path to the
      * directory whose path was set.  It is *NOT* necessarily the case that
      * directory.equals(config.setDirectory(directory).getDirectory())
@@ -102,13 +107,25 @@ abstract class AbstractDatabaseConfiguration {
      * very safe but it is also <b>dramatically</b> slower.
      */
     @NonNull
-    public DatabaseConfiguration setFullSync(boolean isfullSync) {
-        this.fullSync = isfullSync;
+    public DatabaseConfiguration setFullSync(boolean isFullSync) {
+        this.fullSync = isFullSync;
         return getDatabaseConfiguration();
     }
 
     public boolean isFullSync() { return fullSync; }
 
+    /**
+     * Advises Core to enable or disables memory-mapped Database files, if possible.
+     * In version 3.2, memory-mapped database files are enabled by default, except on MacOS,
+     * where they <b>cannot</b> be enabled at all.
+     */
+    @NonNull
+    public DatabaseConfiguration setMMapEnabled(boolean mmapEnabled) {
+        this.mmapEnabled = mmapEnabled;
+        return getDatabaseConfiguration();
+    }
+
+    public boolean isMMapEnabled() { return mmapEnabled; }
 
     //---------------------------------------------
     // Protected level access
