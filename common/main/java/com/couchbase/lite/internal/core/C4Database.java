@@ -43,6 +43,7 @@ import com.couchbase.lite.internal.fleece.FLEncoder;
 import com.couchbase.lite.internal.fleece.FLSharedKeys;
 import com.couchbase.lite.internal.fleece.FLSliceResult;
 import com.couchbase.lite.internal.sockets.MessageFraming;
+import com.couchbase.lite.internal.utils.Preconditions;
 
 
 @SuppressWarnings({"PMD.ExcessivePublicCount", "PMD.TooManyMethods"})
@@ -53,13 +54,13 @@ public abstract class C4Database extends C4Peer {
     public static final String DB_EXTENSION = ".cblite2";
 
     @VisibleForTesting
-    static final int DB_FLAGS = C4Constants.DatabaseFlags.CREATE;
+    static final long DB_FLAGS = C4Constants.DatabaseFlags.CREATE;
 
     public interface NativeImpl {
         long nOpen(
             @NonNull String parentDir,
             @NonNull String name,
-            int flags,
+            long flags,
             int algorithm,
             byte[] encryptionKey)
             throws LiteCoreException;
@@ -79,7 +80,7 @@ public abstract class C4Database extends C4Peer {
             String sourcePath,
             String parentDir,
             String name,
-            int flags,
+            long flags,
             int algorithm,
             byte[] encryptionKey)
             throws LiteCoreException;
@@ -205,14 +206,14 @@ public abstract class C4Database extends C4Peer {
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        int dbFlags = DB_FLAGS;
+        long dbFlags = DB_FLAGS;
         if (isFullSync) { dbFlags |= C4Constants.DatabaseFlags.DISC_FULL_SYNC; }
         return getDatabase(NATIVE_IMPL, parentDirPath, name, dbFlags, algorithm, encryptionKey);
     }
 
     @VisibleForTesting
     @NonNull
-    static C4Database getDatabase(@NonNull String parentDirPath, @NonNull String name, int flags)
+    static C4Database getDatabase(@NonNull String parentDirPath, @NonNull String name, long flags)
         throws LiteCoreException {
         return getDatabase(NATIVE_IMPL, parentDirPath, name, flags, C4Constants.EncryptionAlgorithm.NONE, null);
     }
@@ -223,12 +224,13 @@ public abstract class C4Database extends C4Peer {
         @NonNull NativeImpl impl,
         @NonNull String parentDirPath,
         @NonNull String name,
-        int flags,
+        long flags,
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {
-        // Stupid LiteCore will throw a total hissy fit if we pass
-        // it something that it decides isn't a directory.
+        Preconditions.assertUInt32(flags, "flags");
+
+        // LiteCore will throw a total hissy fit if we pass it something that it decides isn't a directory.
         boolean pathOk = false;
         try {
             final File parentDir = new File(parentDirPath);
@@ -275,7 +277,7 @@ public abstract class C4Database extends C4Peer {
         @NonNull String sourcePath,
         @NonNull String parentDir,
         @NonNull String name,
-        int flags)
+        long flags)
         throws LiteCoreException {
         copyDb(NATIVE_IMPL, sourcePath, parentDir, name, flags, C4Constants.EncryptionAlgorithm.NONE, null);
     }
@@ -286,7 +288,7 @@ public abstract class C4Database extends C4Peer {
         @NonNull String sourcePath,
         @NonNull String parentDir,
         @NonNull String name,
-        int flags,
+        long flags,
         int algorithm,
         @Nullable byte[] encryptionKey)
         throws LiteCoreException {

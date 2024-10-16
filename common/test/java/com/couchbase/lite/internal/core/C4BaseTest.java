@@ -162,8 +162,8 @@ public class C4BaseTest extends BaseTest {
         }
     }
 
-    protected int getTestDbFlags() {
-        int flags = C4Database.DB_FLAGS;
+    protected long getTestDbFlags() {
+        long flags = C4Database.DB_FLAGS;
         if (C4Database.VERSION_VECTORS_ENABLED) { flags |= C4Constants.DatabaseFlags.FAKE_CLOCK; }
         return flags;
     }

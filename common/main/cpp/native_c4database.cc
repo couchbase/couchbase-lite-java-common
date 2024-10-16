@@ -37,7 +37,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open(
         jclass ignore,
         jstring jparentDir,
         jstring jname,
-        jint jflags,
+        jlong jflags,
         jint encryptionAlg,
         jbyteArray encryptionKey) {
     jstringSlice parentDir(env, jparentDir);
@@ -111,7 +111,7 @@ Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy(
         jstring jfromPath,
         jstring jparentDir,
         jstring jname,
-        jint jflags,
+        jlong jflags,
         jint encryptionAlg,
         jbyteArray encryptionKey) {
     jstringSlice fromPath(env, jfromPath);

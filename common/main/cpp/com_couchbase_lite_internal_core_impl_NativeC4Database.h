@@ -15,7 +15,7 @@ extern "C" {
  */
 JNIEXPORT jlong
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_open
-        (JNIEnv *, jclass, jstring, jstring, jint, jint, jbyteArray);
+        (JNIEnv *, jclass, jstring, jstring, jlong, jint, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database
@@ -33,7 +33,7 @@ JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_free
  */
 JNIEXPORT void
 JNICALL Java_com_couchbase_lite_internal_core_impl_NativeC4Database_copy
-        (JNIEnv *, jclass, jstring, jstring, jstring, jint, jint, jbyteArray);
+        (JNIEnv *, jclass, jstring, jstring, jstring, jlong, jint, jbyteArray);
 
 /*
  * Class:     com_couchbase_lite_internal_core_impl_NativeC4Database

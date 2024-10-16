@@ -43,7 +43,7 @@ class C4DatabaseTest : C4BaseTest() {
         override fun nOpen(
             parentDir: String,
             name: String,
-            flags: Int,
+            flags: Long,
             algorithm: Int,
             encryptionKey: ByteArray?,
         ): Long = 0xeb6eb15aL
@@ -55,7 +55,7 @@ class C4DatabaseTest : C4BaseTest() {
             sourcePath: String?,
             parentDir: String?,
             name: String?,
-            flags: Int,
+            flags: Long,
             algorithm: Int,
             encryptionKey: ByteArray?,
         ) = Unit
@@ -83,19 +83,19 @@ class C4DatabaseTest : C4BaseTest() {
     // Test if java platform receives a peer value for c4Database, a java c4Database should exist
     @Test
     fun testOpenDb() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L, C4Constants.EncryptionAlgorithm.NONE, null)
             .use { c4Database -> assertNotNull(c4Database) }
     }
 
     @Test
     fun testGetSharedFleeceEncoder() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L, C4Constants.EncryptionAlgorithm.NONE, null)
             .use { c4Database -> assertNotNull(c4Database.sharedFleeceEncoder) }
     }
 
     @Test
     fun testGetFLSharedKeys() {
-        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0, C4Constants.EncryptionAlgorithm.NONE, null)
+        C4Database.getDatabase(mockDatabase, dbParentDirPath, "test_DB", 0L, C4Constants.EncryptionAlgorithm.NONE, null)
             .use { c4Database -> assertNotNull(c4Database.flSharedKeys) }
     }
 
@@ -107,7 +107,7 @@ class C4DatabaseTest : C4BaseTest() {
     @Test
     fun testDatabaseErrorMessages() {
         try {
-            C4Database.getDatabase("", "", 0)
+            C4Database.getDatabase("", "", 0L)
             fail()
         } catch (e: LiteCoreException) {
             assertEquals(C4Constants.ErrorDomain.LITE_CORE, e.domain)
@@ -605,7 +605,7 @@ class C4DatabaseTest : C4BaseTest() {
         }
         json.append("]}")
 
-       C4TestUtils.encodeJSONInDb(c4Database, json5(json.toString())).use { body ->
+        C4TestUtils.encodeJSONInDb(c4Database, json5(json.toString())).use { body ->
             // Don't try to autoclose this: See C4Document.close()
             assertNotNull(
                 C4TestUtils.create(
