@@ -93,7 +93,7 @@ public final class C4Query extends C4Peer {
 
     @Nullable
     public C4QueryEnumerator run(@NonNull FLSliceResult params) throws LiteCoreException {
-        return withPeerOrNull(h -> C4QueryEnumerator.create(impl.nRun(h, params.getBase(), params.getSize())));
+        return withPeerOrNull(peer -> C4QueryEnumerator.create(impl.nRun(peer, params.getBase(), params.getSize())));
     }
 
     public int getColumnCount() { return withPeerOrDefault(0, impl::nColumnCount); }

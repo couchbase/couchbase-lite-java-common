@@ -193,7 +193,7 @@ public class C4TestUtils {
     @Nullable
     public static String idForDoc(@NonNull C4Document doc) { return doc.withPeerOrNull(C4TestUtils::getDocID); }
 
-    public static int getFlags(@NonNull C4Database db) throws LiteCoreException {
+    public static long getFlags(@NonNull C4Database db) throws LiteCoreException {
         return db.withPeerOrThrow(C4TestUtils::getFlags);
     }
 
@@ -335,7 +335,7 @@ public class C4TestUtils {
     @Nullable
     private static native String getDocID(long doc);
 
-    private static native int getFlags(long db) throws LiteCoreException;
+    private static native long getFlags(long db) throws LiteCoreException;
 
     // C4Document
 
