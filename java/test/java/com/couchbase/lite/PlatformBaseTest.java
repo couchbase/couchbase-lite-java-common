@@ -50,12 +50,12 @@ public abstract class PlatformBaseTest implements PlatformTest {
             new Exclusion(
                 "Not supported on Windows",
                 () -> System.getProperty("os.name").toLowerCase().contains("windows")));
-        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
         m.put(
             "SWEDISH UNSUPPORTED",
             new Exclusion(
                 "Swedish locale not supported",
                 () -> !Arrays.asList(Locale.getAvailableLocales()).contains(new Locale("sv"))));
+        PLATFORM_DEPENDENT_TESTS = Collections.unmodifiableMap(m);
     }
 
     static { CouchbaseLite.init(true); }

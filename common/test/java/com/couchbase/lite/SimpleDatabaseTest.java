@@ -39,21 +39,49 @@ public class SimpleDatabaseTest extends BaseTest {
         DatabaseConfiguration config1 = new DatabaseConfiguration();
         assertNotNull(config1.getDirectory());
         assertFalse(config1.getDirectory().isEmpty());
-        // # 1.2 TestSQLiteFullSyncDefault
-        assertEquals(Defaults.Database.FULL_SYNC, config1.isFullSync());
 
         // Custom
         DatabaseConfiguration config2 = new DatabaseConfiguration();
         String dbDir = getScratchDirectoryPath(getUniqueName("tmp"));
         config2.setDirectory(dbDir);
         assertEquals(dbDir, config2.getDirectory());
+    }
+
+    @Test
+    public void testFullSync() {
+        DatabaseConfiguration config = new DatabaseConfiguration();
+
+        // # 1.2 TestSQLiteFullSyncDefault
+        assertEquals(Defaults.Database.FULL_SYNC, config.isFullSync());
+
+        config = new DatabaseConfiguration();
 
         // # 1.3-4 TestSetGetFullSync
-        config2.setFullSync(true);
-        assertTrue(config2.isFullSync());
+        config.setFullSync(true);
+        assertTrue(config.isFullSync());
         // # 1.5-6 TestSetGetFullSync
-        config2.setFullSync(false);
-        assertFalse(config2.isFullSync());
+        config.setFullSync(false);
+        assertFalse(config.isFullSync());
+    }
+
+    /**
+     * Steps
+     * 1. Create a DatabaseConfiguration object.
+     * 2. Get and check that the value of the mmapEnabled property is true.
+     * 3. Set the mmapEnabled property to false and verify that the value is false.
+     * 4. Set the mmapEnabled property to true, and verify that the mmap value is true.
+     */
+    @Test
+    public void testMMapConfig() {
+        DatabaseConfiguration config = new DatabaseConfiguration();
+
+        assertEquals(Defaults.Database.MMAP_ENABLED, config.isMMapEnabled());
+
+        config.setMMapEnabled(false);
+        assertFalse(config.isMMapEnabled());
+
+        config.setMMapEnabled(true);
+        assertTrue(config.isMMapEnabled());
     }
 
     @Test
